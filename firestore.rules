@@ -1,0 +1,112 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function uidMatches(fieldName) {
+      return isSignedIn()
+        && (
+          (
+            (request.method == "create" || request.method == "update")
+            && request.resource.data[fieldName] == request.auth.uid
+          )
+          || (
+            (request.method == "get" || request.method == "list" || request.method == "delete")
+            && resource.data[fieldName] == request.auth.uid
+          )
+        );
+    }
+
+    function dailyGuidanceDocBelongsToUser(docId) {
+      return isSignedIn() && docId.matches(request.auth.uid + "_.*");
+    }
+
+    // Users can only read and write their own documents.
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /dailyStates/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /blueprints/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    match /healingProgress/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /journals/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    match /system/astrology/transits/current {
+      allow read: if isSignedIn();
+    }
+
+    match /journalEntries/{docId} {
+      allow read, write: if uidMatches("uid");
+    }
+
+    match /meditationEntries/{docId} {
+      allow read, write: if uidMatches("uid");
+    }
+
+    match /audioHealingEntries/{docId} {
+      allow read, write: if uidMatches("uid");
+    }
+
+    match /healingMemory/{userId} {
+      allow read, write: if isOwner(userId) || uidMatches("uid");
+    }
+
+    match /journeyData/{userId} {
+      allow read, write: if isOwner(userId) || uidMatches("uid");
+    }
+
+    match /weeklyReports/{reportId} {
+      allow read, write: if uidMatches("uid");
+    }
+
+    match /dailyGuidance/{docId} {
+      allow create, update: if dailyGuidanceDocBelongsToUser(docId)
+        && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if dailyGuidanceDocBelongsToUser(docId)
+        && (resource == null || resource.data.uid == request.auth.uid);
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /notifications/{userId} {
+      allow read, write: if isOwner(userId) || uidMatches("uid");
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+  }
+}

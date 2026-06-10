@@ -1,0 +1,289 @@
+/* =========================
+   BHUMI AMARTYA THEME
+========================= */
+
+@import "tailwindcss";
+
+*,
+*::before,
+*::after {
+
+  box-sizing:
+    border-box;
+
+}
+
+:root {
+
+  --background:
+    #F5F1E8;
+
+  --foreground:
+    #4F5E52;
+
+  --card:
+    #F8F5EE;
+
+  --sage:
+    #7D977B;
+
+  --gold:
+    #D6B36A;
+
+  --soft-gold:
+    #E7D4A2;
+
+  --muted:
+    #7B8776;
+
+  --border:
+    rgba(0,0,0,0.06);
+
+}
+
+html,
+body {
+
+  margin: 0;
+  padding: 0;
+
+  background:
+    var(--background);
+
+  color:
+    var(--foreground);
+
+  font-family:
+    "Georgia",
+    serif;
+
+  min-height:
+    100vh;
+
+  overflow-x:
+    hidden;
+
+}
+
+/* SCROLL */
+
+::-webkit-scrollbar {
+
+  width: 6px;
+
+}
+
+::-webkit-scrollbar-thumb {
+
+  background:
+    rgba(0,0,0,0.12);
+
+  border-radius:
+    20px;
+
+}
+
+/* TYPOGRAPHY */
+
+h1,
+h2,
+h3,
+h4 {
+
+  margin: 0;
+
+  font-weight:
+    500;
+
+}
+
+p {
+
+  line-height:
+    1.8;
+
+}
+
+/* CARD */
+
+.bhumi-card {
+
+  background:
+    var(--card);
+
+  border:
+    1px solid var(--border);
+
+  border-radius:
+    32px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.05);
+
+}
+
+/* BUTTON */
+
+.bhumi-button {
+
+  background:
+    linear-gradient(
+      to right,
+      var(--sage),
+      #91A58F
+    );
+
+  color:
+    white;
+
+  border:
+    none;
+
+  border-radius:
+    999px;
+
+  padding:
+    14px 24px;
+
+  font-size:
+    16px;
+
+  cursor:
+    pointer;
+
+  transition:
+    all 0.3s ease;
+
+}
+
+.bhumi-button:hover {
+
+  transform:
+    translateY(-2px);
+
+  opacity:
+    0.95;
+
+}
+
+.bhumi-button:focus-visible {
+
+  outline:
+    3px solid rgba(125,151,123,0.28);
+
+  outline-offset:
+    3px;
+
+}
+
+.bhumi-button:active {
+
+  transform:
+    translateY(0);
+
+}
+
+.bhumi-button-secondary {
+
+  align-items:
+    center;
+
+  background:
+    transparent;
+
+  border:
+    1px solid var(--foreground);
+
+  border-radius:
+    999px;
+
+  color:
+    var(--foreground);
+
+  cursor:
+    pointer;
+
+  display:
+    inline-flex;
+
+  font-size:
+    16px;
+
+  justify-content:
+    center;
+
+  min-height:
+    52px;
+
+  padding:
+    14px 24px;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+}
+
+.bhumi-button-secondary:hover {
+
+  background:
+    rgba(79,94,82,0.08);
+
+  border-color:
+    #3D4A3F;
+
+  box-shadow:
+    0 8px 20px rgba(79,94,82,0.08);
+
+  transform:
+    translateY(-1px);
+
+}
+
+.bhumi-button-secondary:focus-visible {
+
+  outline:
+    3px solid rgba(79,94,82,0.24);
+
+  outline-offset:
+    3px;
+
+}
+
+.bhumi-button-secondary:active {
+
+  background:
+    rgba(79,94,82,0.14);
+
+  transform:
+    translateY(0);
+
+}
+
+button,
+a,
+input,
+textarea,
+select {
+
+  touch-action:
+    manipulation;
+
+}
+
+button {
+
+  -webkit-tap-highlight-color:
+    transparent;
+
+}
+
+button:disabled {
+
+  cursor:
+    not-allowed;
+
+}

@@ -1,0 +1,71 @@
+{
+  "project_info": {
+    "project_number": "59259824153",
+    "project_id": "bhumiamartya-fe85c",
+    "storage_bucket": "bhumiamartya-fe85c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59259824153:android:204d11fa49fa41371ee288",
+        "android_client_info": {
+          "package_name": "com.bhumiamartya.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "59259824153-kr5peim2rugkknbc3bhs1dd9ggq605qm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bhumiamartya.app",
+            "certificate_hash": "202ec34b7b4cfc6cfe61db97790d7388bdf7f7b0"
+          }
+        },
+        {
+          "client_id": "59259824153-ms47sd37567smnc6r41q33ku5ran89i0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bhumiamartya.app",
+            "certificate_hash": "e7767929e8c41492fefad0e8a53abe2749ffa8d4"
+          }
+        },
+        {
+          "client_id": "59259824153-sbepa3vfh66o1qlotmja8qbgk6h57m4m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bhumiamartya.app",
+            "certificate_hash": "b51c84d07b869580c7d59d36e8faf852f792cc52"
+          }
+        },
+        {
+          "client_id": "59259824153-v3mdnh3d7r9rte4lhldnfsf8dksj2kp5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bhumiamartya.app",
+            "certificate_hash": "109b2b241933b18574a8686f67f1d084538fb75d"
+          }
+        },
+        {
+          "client_id": "59259824153-vldlev9s91l6sss3ulqbh8mnaah4n4c9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkFSBnPdT9TfmcTe5ImI5QBCFEl5vbE_0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "59259824153-lf1aej0rshgaidnvs209671sg42efnp3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

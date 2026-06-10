@@ -1,0 +1,42 @@
+[project]
+name = "humandesign-api"
+version = "4.0.0"
+description = "Human Design API"
+authors = [
+    {name = "Dogan Turkuler", email = "dogan.turkuler@gmail.com"}
+]
+license = {text = "AGPL-3.0-or-later OR LicenseRef-DevAIble-Commercial"}
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipython>=8.12.3",
+    "numpy>=2.1.2",
+    "pandas>=2.2.3",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2024.2",
+    "pyswisseph>=2.10.3.2",
+    "tqdm>=4.66.5",
+    "fastapi>=0.115.0",
+    "uvicorn==0.27.1",
+    "pydantic>=2.7.0",
+    "geopy==2.4.1",
+    "timezonefinder>=8.2.0",
+    "python-dotenv",
+    "matplotlib",
+    "svgpath2mpl",
+    "Pillow",
+    "ruff",
+    "pytest",
+    "httpx"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+humandesign = ["data/*.json"]
+

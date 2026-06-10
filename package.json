@@ -1,0 +1,45 @@
+{
+  "name": "bhumi-amartya-clean",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000 --no-turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint app components lib src",
+    "check:destiny": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkDestinyMatrix.ts",
+    "android:sync": ".\\node_modules\\.bin\\cap.cmd sync android",
+    "android:open": ".\\node_modules\\.bin\\cap.cmd open android"
+  },
+  "dependencies": {
+    "@capacitor-firebase/authentication": "^8.2.0",
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@google/generative-ai": "^0.24.1",
+    "@googlemaps/js-api-loader": "^2.0.2",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@types/luxon": "^3.7.1",
+    "astronomy-engine": "^2.1.19",
+    "axios": "^1.16.1",
+    "firebase": "^12.13.0",
+    "lucide-react": "^1.17.0",
+    "luxon": "^3.7.2",
+    "next": "16.2.6",
+    "openai": "^6.39.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "swisseph": "^0.5.17",
+    "ts-node": "^10.9.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,82 @@
+PROJECT: BHUMI AMARTYA
+
+CURRENT STAGE:
+MVP LOCAL-FIRST
+
+CRITICAL RULES:
+
+1. DO NOT TOUCH HUMAN DESIGN.
+2. DO NOT TOUCH FIREBASE AUTH.
+3. DO NOT TOUCH AI INTEGRATION.
+4. DO NOT TOUCH GEMINI.
+5. DO NOT ADD NEW FEATURES.
+
+CURRENT PRIORITY:
+
+Landing
+→ Setup
+→ Save Profile
+→ Generate Blueprint
+→ Dashboard
+
+Must work 100%.
+
+Workflow:
+
+NEW USER
+
+/
+→ click Mulai Perjalanan
+→ /setup
+
+/setup
+→ enter profile
+→ save localStorage
+
+localStorage:
+bhumiUserProfile
+bhumiBlueprint
+
+→ redirect /dashboard
+
+/dashboard
+→ read localStorage
+→ show profile
+→ show blueprint
+
+RETURNING USER
+
+/
+→ detect localStorage
+
+IF bhumiUserProfile exists:
+→ go dashboard
+
+IF not:
+→ go setup
+
+TEMPORARY:
+
+NO FIREBASE
+NO HUMAN DESIGN
+NO AI
+
+Only localStorage.
+
+REMOVE:
+
+CURRENT PAGE labels
+DEBUG PANELS
+TEMPORARY AUTH DEBUG
+TEMPORARY ROUTING DEBUG
+
+SUCCESS CRITERIA:
+
+1. Setup saves profile.
+2. Dashboard loads profile.
+3. Dashboard loads blueprint.
+4. Refresh still works.
+5. Return user goes dashboard.
+6. New user goes setup.
+
+DO NOT START OTHER TASKS UNTIL ALL ABOVE PASS.

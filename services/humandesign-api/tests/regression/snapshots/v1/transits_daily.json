@@ -1,0 +1,192 @@
+{
+  "meta": {
+    "birth_date": "1968-02-21T11:00:00Z",
+    "create_date": "(1967, 11, 26, 18, 14)",
+    "place": "Europe/Istanbul",
+    "age": 58,
+    "gender": "male",
+    "islive": true,
+    "transit_date_local": "2026-01-18 12:00",
+    "transit_date_utc": "2026-01-18T09:00:00Z",
+    "calculation_place": "Europe/Istanbul",
+    "zodiac_sign": "Pisces",
+    "energy_type": "Manifesting Generator",
+    "strategy": "Wait to Respond",
+    "signature": "Satisfaction",
+    "not_self": "Frustration & Anger",
+    "aura": "Open & Enveloping",
+    "inner_authority": "Emotional Authority",
+    "inc_cross": "((55, 59), (34, 20))-RAC",
+    "profile": "2/4: Hermit Opportunist",
+    "defined_centers": [
+      "Throat",
+      "Heart",
+      "Root",
+      "Spleen",
+      "G_Center",
+      "Sacral",
+      "Solar Plexus"
+    ],
+    "undefined_centers": [
+      "Head",
+      "Ajna"
+    ],
+    "definition": "Split Definition",
+    "channels": {
+      "Channels": [
+        {
+          "channel": "59/6: Mating (A d. focused on reproduction)"
+        },
+        {
+          "channel": "34/20: Charisma (D. where thoughts must become deeds)"
+        },
+        {
+          "channel": "51/25: Initiation (A d. of needing to be first)"
+        },
+        {
+          "channel": "57/34: Power (A d. of an archetype)"
+        },
+        {
+          "channel": "60/3: Mutation (Energy which fluctuates and initiates, pulse)"
+        },
+        {
+          "channel": "20/57: The Brain Wave (D. of penetrating awareness)"
+        }
+      ]
+    }
+  },
+  "composite_changes": {
+    "new_channels": [
+      {
+        "gates": "1-8",
+        "name": "Inspiration",
+        "description": "The creative role model"
+      },
+      {
+        "gates": "37-40",
+        "name": "Community",
+        "description": "A d. of being part, seeking a whole"
+      }
+    ],
+    "new_centers": []
+  },
+  "planetary_transits": [
+    {
+      "planets": "Sun",
+      "gate": 60,
+      "line": 3,
+      "color": 1,
+      "tone": 1,
+      "base": 5,
+      "lon": 298.271
+    },
+    {
+      "planets": "Earth",
+      "gate": 56,
+      "line": 3,
+      "color": 1,
+      "tone": 1,
+      "base": 5,
+      "lon": 118.271
+    },
+    {
+      "planets": "Moon",
+      "gate": 61,
+      "line": 3,
+      "color": 3,
+      "tone": 6,
+      "base": 5,
+      "lon": 293.091
+    },
+    {
+      "planets": "North_Node",
+      "gate": 37,
+      "line": 5,
+      "color": 1,
+      "tone": 3,
+      "base": 2,
+      "lon": 339.558
+    },
+    {
+      "planets": "South_Node",
+      "gate": 40,
+      "line": 5,
+      "color": 1,
+      "tone": 3,
+      "base": 2,
+      "lon": 159.558
+    },
+    {
+      "planets": "Mercury",
+      "gate": 61,
+      "line": 6,
+      "color": 5,
+      "tone": 4,
+      "base": 2,
+      "lon": 296.148
+    },
+    {
+      "planets": "Venus",
+      "gate": 60,
+      "line": 5,
+      "color": 6,
+      "tone": 6,
+      "base": 5,
+      "lon": 301.062
+    },
+    {
+      "planets": "Mars",
+      "gate": 61,
+      "line": 6,
+      "color": 5,
+      "tone": 2,
+      "base": 3,
+      "lon": 296.1
+    },
+    {
+      "planets": "Jupiter",
+      "gate": 53,
+      "line": 5,
+      "color": 2,
+      "tone": 1,
+      "base": 1,
+      "lon": 109.035
+    },
+    {
+      "planets": "Saturn",
+      "gate": 36,
+      "line": 6,
+      "color": 1,
+      "tone": 4,
+      "base": 2,
+      "lon": 357.401
+    },
+    {
+      "planets": "Uranus",
+      "gate": 8,
+      "line": 4,
+      "color": 2,
+      "tone": 5,
+      "base": 2,
+      "lon": 57.581
+    },
+    {
+      "planets": "Neptune",
+      "gate": 25,
+      "line": 2,
+      "color": 4,
+      "tone": 6,
+      "base": 4,
+      "lon": 359.803
+    },
+    {
+      "planets": "Pluto",
+      "gate": 41,
+      "line": 2,
+      "color": 3,
+      "tone": 1,
+      "base": 3,
+      "lon": 303.261
+    }
+  ]
+}

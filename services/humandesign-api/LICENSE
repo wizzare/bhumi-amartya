@@ -1,0 +1,39 @@
+Human Design API — Dual License
+
+Copyright (C) 2026 Dogan Turkuler <dogan.turkuler@gmail.com>
+https://devaible.com
+
+This software is available under two licenses:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LICENSE 1 — GNU Affero General Public License v3 (AGPL-3.0)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you meet the conditions of AGPL-3.0, you may use this software
+for free under those terms. See LICENSE-AGPL for full text.
+
+Key condition: If you run this software as a network service,
+you must make your complete corresponding source code available
+to all users of that service under AGPL-3.0.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LICENSE 2 — Commercial License
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If you cannot comply with AGPL-3.0 — for example, because you want
+to use this software in a closed-source commercial product or hosted
+service — you may purchase a Commercial License.
+
+See LICENSE-COMMERCIAL for terms, or contact:
+📧 dogan.turkuler@gmail.com
+🌐 https://devaible.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CHOOSING YOUR LICENSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   Open source project?          → AGPL-3.0 (free)
+   Personal / research use?      → AGPL-3.0 (free)
+   Closed-source commercial app? → Commercial License (paid)
+   Hosted API / SaaS product?    → Commercial License (paid)
+   Don't want to share changes?  → Commercial License (paid)

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Bhumi Amartya</string>
+    <string name="title_activity_main">Bhumi Amartya</string>
+    <string name="package_name">com.bhumiamartya.app</string>
+    <string name="custom_url_scheme">com.bhumiamartya.app</string>
+</resources>

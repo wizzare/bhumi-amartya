@@ -1,0 +1,352 @@
+{
+  "general": {
+    "birth_date": "1968-02-21T09:00:00Z",
+    "create_date": "1967-11-26T18:14:00Z",
+    "place": "Europe/Istanbul",
+    "age": 57,
+    "gender": "male",
+    "islive": true,
+    "zodiac_sign": "Pisces",
+    "energy_type": "Manifesting Generator",
+    "strategy": "Wait to Respond",
+    "signature": "Satisfaction",
+    "not_self": "Frustration & Anger",
+    "aura": "Open & Enveloping",
+    "inner_authority": "Emotional Authority",
+    "inc_cross": "The Right Angle Cross of the Sleeping Phoenix (1)",
+    "profile": "2/4: Hermit Opportunist",
+    "defined_centers": [
+      "Throat",
+      "Heart",
+      "Root",
+      "Spleen",
+      "G_Center",
+      "Sacral",
+      "Solar Plexus"
+    ],
+    "undefined_centers": [
+      "Head",
+      "Ajna"
+    ],
+    "definition": "Split Definition",
+    "variables": {
+      "top_right": {
+        "value": "right",
+        "name": "Motivation",
+        "aspect": "Personality (Mind)",
+        "def_type": "Receptive"
+      },
+      "bottom_right": {
+        "value": "left",
+        "name": "Perspective",
+        "aspect": "Personality (View)",
+        "def_type": "Focused"
+      },
+      "top_left": {
+        "value": "right",
+        "name": "Digestion",
+        "aspect": "Design (Brain)",
+        "def_type": "Passive"
+      },
+      "bottom_left": {
+        "value": "right",
+        "name": "Environment",
+        "aspect": "Design (Body)",
+        "def_type": "Observer"
+      },
+      "short_code": "PRL DRR"
+    }
+  },
+  "channels": {
+    "Channels": [
+      {
+        "channel": "6/59: The Channel of Mating (A Design Focused on Reproduction)"
+      },
+      {
+        "channel": "20/34: The Channel of Charisma (A Design of Thoughts Becoming Deeds)"
+      },
+      {
+        "channel": "25/51: The Channel of Initiation (A Design of Needing to be First)"
+      },
+      {
+        "channel": "34/57: The Channel of Power (A Design of an Archetype)"
+      },
+      {
+        "channel": "3/60: The Channel of Mutation (Energy that Generates and Initiates)"
+      },
+      {
+        "channel": "20/57: The Channel of the Brainwave (A Design of Penetrating Awareness)"
+      }
+    ]
+  },
+  "gates": {
+    "prs": {
+      "Planets": [
+        {
+          "Planet": "Sun",
+          "Lon": 331.8,
+          "Gate": 55,
+          "Line": 2,
+          "Color": 5,
+          "Tone": 5,
+          "Base": 2,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Earth",
+          "Lon": 151.8,
+          "Gate": 59,
+          "Line": 2,
+          "Color": 5,
+          "Tone": 5,
+          "Base": 2,
+          "Ch_Gate": 6
+        },
+        {
+          "Planet": "Moon",
+          "Lon": 244.818,
+          "Gate": 34,
+          "Line": 6,
+          "Color": 1,
+          "Tone": 1,
+          "Base": 1,
+          "Ch_Gate": 20
+        },
+        {
+          "Planet": "North_Node",
+          "Lon": 19.862,
+          "Gate": 51,
+          "Line": 6,
+          "Color": 1,
+          "Tone": 2,
+          "Base": 5,
+          "Ch_Gate": 25
+        },
+        {
+          "Planet": "South_Node",
+          "Lon": 199.862,
+          "Gate": 57,
+          "Line": 6,
+          "Color": 1,
+          "Tone": 2,
+          "Base": 5,
+          "Ch_Gate": 34
+        },
+        {
+          "Planet": "Mercury",
+          "Lon": 319.982,
+          "Gate": 49,
+          "Line": 2,
+          "Color": 2,
+          "Tone": 1,
+          "Base": 3,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Venus",
+          "Lon": 301.439,
+          "Gate": 60,
+          "Line": 6,
+          "Color": 3,
+          "Tone": 3,
+          "Base": 3,
+          "Ch_Gate": 3
+        },
+        {
+          "Planet": "Mars",
+          "Lon": 3.241,
+          "Gate": 25,
+          "Line": 6,
+          "Color": 2,
+          "Tone": 6,
+          "Base": 4,
+          "Ch_Gate": 51
+        },
+        {
+          "Planet": "Jupiter",
+          "Lon": 150.757,
+          "Gate": 59,
+          "Line": 1,
+          "Color": 5,
+          "Tone": 1,
+          "Base": 2,
+          "Ch_Gate": 6
+        },
+        {
+          "Planet": "Saturn",
+          "Lon": 10.114,
+          "Gate": 21,
+          "Line": 1,
+          "Color": 4,
+          "Tone": 6,
+          "Base": 3,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Uranus",
+          "Lon": 178.231,
+          "Gate": 6,
+          "Line": 6,
+          "Color": 6,
+          "Tone": 6,
+          "Base": 2,
+          "Ch_Gate": 59
+        },
+        {
+          "Planet": "Neptune",
+          "Lon": 236.521,
+          "Gate": 14,
+          "Line": 3,
+          "Color": 1,
+          "Tone": 6,
+          "Base": 3,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Pluto",
+          "Lon": 172.058,
+          "Gate": 47,
+          "Line": 6,
+          "Color": 3,
+          "Tone": 3,
+          "Base": 2,
+          "Ch_Gate": 0
+        }
+      ]
+    },
+    "des": {
+      "Planets": [
+        {
+          "Planet": "Sun",
+          "Lon": 243.8,
+          "Gate": 34,
+          "Line": 4,
+          "Color": 6,
+          "Tone": 4,
+          "Base": 1,
+          "Ch_Gate": 20
+        },
+        {
+          "Planet": "Earth",
+          "Lon": 63.8,
+          "Gate": 20,
+          "Line": 4,
+          "Color": 6,
+          "Tone": 4,
+          "Base": 1,
+          "Ch_Gate": 57
+        },
+        {
+          "Planet": "Moon",
+          "Lon": 176.126,
+          "Gate": 6,
+          "Line": 4,
+          "Color": 5,
+          "Tone": 3,
+          "Base": 3,
+          "Ch_Gate": 59
+        },
+        {
+          "Planet": "North_Node",
+          "Lon": 27.399,
+          "Gate": 3,
+          "Line": 2,
+          "Color": 1,
+          "Tone": 4,
+          "Base": 2,
+          "Ch_Gate": 60
+        },
+        {
+          "Planet": "South_Node",
+          "Lon": 207.399,
+          "Gate": 50,
+          "Line": 2,
+          "Color": 1,
+          "Tone": 4,
+          "Base": 2,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Mercury",
+          "Lon": 226.802,
+          "Gate": 1,
+          "Line": 4,
+          "Color": 5,
+          "Tone": 5,
+          "Base": 3,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Venus",
+          "Lon": 198.08,
+          "Gate": 57,
+          "Line": 4,
+          "Color": 1,
+          "Tone": 6,
+          "Base": 3,
+          "Ch_Gate": 34
+        },
+        {
+          "Planet": "Mars",
+          "Lon": 296.089,
+          "Gate": 61,
+          "Line": 6,
+          "Color": 5,
+          "Tone": 2,
+          "Base": 1,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Jupiter",
+          "Lon": 154.804,
+          "Gate": 59,
+          "Line": 5,
+          "Color": 6,
+          "Tone": 6,
+          "Base": 4,
+          "Ch_Gate": 6
+        },
+        {
+          "Planet": "Saturn",
+          "Lon": 5.791,
+          "Gate": 17,
+          "Line": 3,
+          "Color": 1,
+          "Tone": 2,
+          "Base": 3,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Uranus",
+          "Lon": 178.531,
+          "Gate": 46,
+          "Line": 1,
+          "Color": 2,
+          "Tone": 5,
+          "Base": 4,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Neptune",
+          "Lon": 234.442,
+          "Gate": 43,
+          "Line": 6,
+          "Color": 6,
+          "Tone": 4,
+          "Base": 4,
+          "Ch_Gate": 0
+        },
+        {
+          "Planet": "Pluto",
+          "Lon": 172.621,
+          "Gate": 47,
+          "Line": 6,
+          "Color": 6,
+          "Tone": 6,
+          "Base": 5,
+          "Ch_Gate": 0
+        }
+      ]
+    }
+  }
+}

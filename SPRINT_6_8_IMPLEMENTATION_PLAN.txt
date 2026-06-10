@@ -1,0 +1,110 @@
+BHUMI AMARTYA V2 - MASTER IMPLEMENTATION PLAN (SPRINT 6-8)
+
+======================================================
+SPRINT 6 - INNERWORK INTELLIGENCE
+=================================
+
+* Objective: Membangun sistem rekomendasi aktivitas yang presisi berdasarkan "cuaca" energi hari ini dan profil unik pengguna.
+* Files Created:
+  - lib/engines/innerworkIntelligence.ts (Core logic)
+  - lib/data/innerworkContent.ts (Database gerakan Yoga, resep Herbal, tipe Workout)
+* Files Modified:
+  - lib/engines/dailyGuidanceEngine.ts (Integrasi pemilihan tugas)
+  - components/dashboard/InnerworkTodayCard.tsx (UI binding data nyata)
+* Firestore Changes:
+  - Update koleksi 'dailyGuidance': Menambah field 'innerworkRecommendations' berisi ID konten spesifik.
+* Engine Dependencies:
+  - Profile V2 (Sprint 5): Membaca dominansi energi jiwa.
+  - Reason Engine (Sprint 3): Membaca house activation & retrograde.
+* Recovery Mode Logic:
+  - Jika AI gagal memetakan aktivitas, sistem menggunakan default "Grounding Pattern" (Pernapasan & Seduhan Serai).
+* Founder Test: User merasa Bhumi tahu apa yang dibutuhkan tubuh mereka secara fisik, bukan hanya mental.
+* Risks: Rekomendasi aktivitas intens (Workout) saat mood user sedang sangat rendah.
+* Acceptance Criteria:
+  - Kartu "Innerwork Hari Ini" menampilkan judul aktivitas nyata (bukan placeholder).
+  - Terdapat alasan logis ("Mengapa?") untuk setiap rekomendasi.
+
+======================================================
+SPRINT 7 - REFLECTION ENGINE
+============================
+
+* Objective: Mendesain sistem refleksi bertingkat (Harian, Mingguan, Bulanan) untuk memberikan makna pada perjalanan user.
+* Files Created:
+  - lib/engines/reflectionEngine.ts (Logika perangkuman narasi)
+  - lib/repositories/reflectionRepository.ts (Firestore CRUD)
+  - components/journey/ReflectionCard.tsx (UI Weekly/Monthly Summary)
+* Files Modified:
+  - app/journey/page.tsx (Implementasi Nested Timeline)
+  - app/innerwork/[pilar]/page.tsx (Trigger Daily Reflection setelah simpan aktivitas)
+* Firestore Changes:
+  - Koleksi baru: 'weeklyReflections' dan 'monthlyReflections'.
+  - Update 'dailyStates': Tambah field 'dailyInsight' (string).
+* Daily Reflection Flow: 2 Tugas Selesai -> Prompt: "Apa yang kamu pelajari?" -> Simpan Insight.
+* Weekly Soul Summary Flow: Setiap hari ke-7 -> AI meringkas 7 insight menjadi satu "Pesan Pertumbuhan".
+* Monthly Growth Review Flow: Setiap akhir bulan -> Analisis pola dominan dan transisi mood/aktivitas.
+* Reflection Diversity Strategy: AI dilarang mengulang kalimat yang sama; menggunakan seed tanggal untuk variasi diksi.
+* Founder Test: User merasa seperti memiliki buku harian yang bisa "berbicara" dan memberikan kesimpulan bijak.
+* Risks: Refleksi terasa robotik atau repetitif jika aktivitas user sangat statis.
+* Acceptance Criteria:
+  - Muncul notifikasi/pop-up refleksi harian setelah 2 tugas.
+  - Halaman Journey menampilkan Weekly Soul Summary secara rapi.
+
+======================================================
+SPRINT 8 - GROWTH ENGINE
+========================
+
+* Objective: Mengonversi data aktivitas dan refleksi menjadi indikator pertumbuhan yang membanggakan (visualisasi evolusi jiwa).
+* Files Created:
+  - lib/engines/growthEngine.ts (Algoritma 6 Growth Signals)
+  - components/profile/GrowthChart.tsx (Visualisasi Radar/Pohon)
+* Files Modified:
+  - app/profile/page.tsx (Menambah Tab 'Pertumbuhan')
+  - android/app/build.gradle (Final RC Versioning v1.2.0)
+* Firestore Changes:
+  - Update 'users/{uid}': Menambah field 'growthProfile' (signals, currentTheme, milestones).
+* Growth Signals Logic:
+  - Kesadaran, Konsistensi, Refleksi, Keseimbangan, Keberanian, Penerimaan.
+* Growth Themes Logic: Clustering kategori yang paling sering aktif dalam 30 hari (misal: "The Weaver of Boundaries").
+* Growth Story Logic: Narasi komparatif antara data minggu 1 dan minggu 4.
+* Milestone Logic: Metafora botani (Seed -> Sprout -> Sapling -> Canopy).
+* Founder Test: User merasa terharu melihat progres dirinya: "Aku tidak menyangka sudah melangkah sejauh ini."
+* Risks: Indikator terasa kompetitif atau membebani (Gamification berlebih).
+* Acceptance Criteria:
+  - Tab Potensi di Profil menampilkan Radar Chart Growth Signals.
+  - User mendapatkan badge Milestone botani saat mencapai target tertentu.
+
+======================================================
+DEPENDENCY MAP
+==============
+
+Profile V2 (Foundation)
+↓
+Innerwork Intelligence (Action)
+↓
+Reflection Engine (Awareness)
+↓
+Growth Engine (Evolution)
+
+======================================================
+BUILD STRATEGY
+==============
+
+Sprint 6 → Build Check (npm run build)
+Sprint 7 → Build Check (npm run build)
+Sprint 8 → Build Check (npm run build)
+Final Audit → Release Candidate Build (AAB)
+
+======================================================
+GUARDRAILS
+==========
+
+1. NO NEW FEATURES: Dilarang menambah fitur di luar Sprint 5-8.
+2. NO V3 SCOPE: Komunitas, Marketplace, dan Social Feed tetap di backlog V3.
+3. STABILITY FIRST: Fokus pada keakuratan sintesis Reason Engine.
+4. LANGUAGE FREEZE: Hanya mendukung Indonesia dan Inggris.
+5. NO CODE BEFORE DOC: Jangan mulai coding Sprint 6 sebelum rencana ini disetujui.
+
+------------------------------------------------------
+Plan Created: 9 Juni 2026
+Location: C:/Users/shein/bhumi-amartya-clean/SPRINT_6_8_IMPLEMENTATION_PLAN.txt
+------------------------------------------------------
