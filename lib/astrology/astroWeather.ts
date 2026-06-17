@@ -201,7 +201,7 @@ export function buildAstroWeatherReflection({
       `Cuaca kolektif hari ini mengajak perhatian pada tema ${primaryTheme}. ` +
       "Ini bukan tanda pasti, melainkan konteks lembut untuk membaca ritme, pilihan, dan kapasitas dirimu dengan lebih sadar.",
     personalReflection:
-      `Dengan blueprint ${blueprintSunSign}, ${moodText}, dan ringkasan jurnalmu: ${journalSummary}, ` +
+      `Membaca jati dirimu, ${moodText}, dan ringkasan jurnalmu: ${journalSummary}, ` +
       `${transitName} mungkin terasa seperti ajakan untuk memperlambat respons dan mengecek kembali kebutuhan batinmu. ` +
       `Kamu mungkin menyadari tema ${primaryTheme} muncul sebagai bahan refleksi, bukan sesuatu yang harus dipaksakan menjadi keputusan segera.`,
     suggestedPractice,

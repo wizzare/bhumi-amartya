@@ -15,10 +15,12 @@ import {
   MessageSquare,
   HelpCircle
 } from "lucide-react";
-import { DailyGuidance } from "@/lib/dailyGuidance/types";
+import { DailyGuidance, DailyGuidanceCategory } from "@/lib/dailyGuidance/types";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { useAuth } from "@/context/AuthContext";
 import { cleanMarkdown } from "@/lib/utils/markdown";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { seededIndex } from "@/lib/dailyGuidance/dailyContentKey";
 
 interface DailyNoteV2Props {
   dailyGuidance: DailyGuidance | null;
@@ -75,7 +77,7 @@ const CATEGORY_CONFIG = {
     bgColor: "bg-yellow-50"
   },
   advice: {
-    label: { id: "Saran", en: "Advice" },
+    label: { id: "Saran Bhumi", en: "Bhumi Advice" },
     icon: MessageSquare,
     color: "text-blue-600",
     bgColor: "bg-blue-50"
@@ -111,6 +113,12 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
     const isExpanding = expandedCategory !== key;
     if (isExpanding) {
       trackEvent("expand_reason", auth?.user?.uid);
+      if (auth?.user?.uid) {
+        const dateKey = dailyGuidance.localDateKey || dailyGuidance.date || new Date().toISOString().slice(0, 10);
+        void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
+          dailyNoteDone: true,
+        });
+      }
     }
     setExpandedCategory(isExpanding ? key : null);
   };
@@ -123,15 +131,16 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
         </h3>
         <p className="text-[#3C3C3C] text-[13px] mt-1 font-medium opacity-70">
           {language === "id"
-            ? "Membaca Blueprint Gabunganmu bersama kondisi langit."
-            : "Reading your Combined Blueprint alongside celestial conditions."}
+            ? "Membaca jiwamu bersama kondisi langit."
+            : "Reading your soul alongside celestial conditions."}
         </p>
       </div>
 
       <div className="space-y-3">
         {Object.entries(CATEGORY_CONFIG).map(([key, config]) => {
-          const categoryData = (dailyGuidance.categories as any)[key];
+          const categoryData = dailyGuidance.categories?.[key as keyof typeof dailyGuidance.categories] as DailyGuidanceCategory | undefined;
           if (!categoryData) return null;
+          const displayCategory = withDailyCategoryAngle(categoryData, key, dailyGuidance, language);
 
           const isExpanded = expandedCategory === key;
           const Icon = config.icon;
@@ -157,7 +166,7 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
                     {isExpanded ? <ChevronUp size={16} className="text-[#7B8776]" /> : <ChevronDown size={16} className="text-[#7B8776]" />}
                   </div>
                   <h4 className={`text-[15px] font-bold text-[#4F6658] leading-snug mt-1 ${isExpanded ? '' : 'line-clamp-2'}`}>
-                    {cleanMarkdown(categoryData.insight)}
+                    {cleanMarkdown(displayCategory.insight)}
                   </h4>
                 </div>
               </button>
@@ -175,12 +184,12 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
                       </p>
                     </div>
                     <p className="text-sm text-[#3C3C3C] leading-relaxed font-medium italic bg-[#FCFAF5] p-5 rounded-2xl border border-[#E8E9E5]/50">
-                      {cleanMarkdown(categoryData.reason)}
+                      {cleanMarkdown(displayCategory.reason)}
                     </p>
                   </div>
 
                   {/* B. REFLEKSI */}
-                  {categoryData.reflection && (
+                  {displayCategory.reflection && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                          <MessageSquare size={14} className="text-[#7B8776]" />
@@ -189,7 +198,7 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
                         </p>
                       </div>
                       <div className="space-y-4">
-                        {categoryData.reflection.split('\n').filter((l: string) => l.trim().length > 0).map((q: string, i: number) => (
+                        {displayCategory.reflection.split('\n').filter((l: string) => l.trim().length > 0).map((q: string, i: number) => (
                            <p key={i} className="text-[14px] text-[#3C3C3C] font-bold leading-relaxed pl-5 border-l-2 border-[#9BB89A]">
                              {cleanMarkdown(q)}
                            </p>
@@ -201,10 +210,10 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
                   {/* C. SARAN PRAKTIS */}
                   <div className="bg-[#4F5E52] p-7 rounded-[2rem] shadow-sm">
                     <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-[#9BB89A] mb-4">
-                      {language === "id" ? "Saran Mentor" : "Practical Advice"}
+                      {language === "id" ? "Saran Bhumi" : "Bhumi Advice"}
                     </p>
                     <p className="text-[14px] text-white leading-relaxed font-medium opacity-90">
-                      {cleanMarkdown(categoryData.advice)}
+                      {cleanMarkdown(displayCategory.advice)}
                     </p>
                   </div>
                 </div>
@@ -215,5 +224,50 @@ export function DailyNoteV2({ dailyGuidance, language }: DailyNoteV2Props) {
       </div>
     </div>
   );
+}
+
+function withDailyCategoryAngle(
+  category: DailyGuidanceCategory,
+  categoryKey: string,
+  guidance: DailyGuidance,
+  language: "id" | "en",
+): DailyGuidanceCategory {
+  const seed = guidance.dailyVariationSeed || `${guidance.uid}|${guidance.localDateKey || guidance.date}`;
+  const isId = language === "id";
+  const angles = isId
+    ? [
+        "Tema Saat Ini: pilih satu hal kecil yang bisa dibuat lebih jujur hari ini.",
+        "Kemungkinan Pola: perhatikan bagian dirimu yang ingin bergerak terlalu cepat.",
+        "Perhatian Ekstra: beri tubuhmu jeda sebelum mengambil keputusan berikutnya.",
+        "Jalur Aman: mulai dari langkah yang paling dekat, paling nyata, dan paling lembut.",
+      ]
+    : [
+        "Current Theme: choose one small thing that can become more honest today.",
+        "Possible Pattern: notice the part of you that wants to move too fast.",
+        "Extra Care: give your body a pause before the next decision.",
+        "Safe Path: begin with the closest, most concrete, and gentlest step.",
+      ];
+  const questions = isId
+    ? [
+        "Apa satu respons yang terasa lebih membumi untuk hari ini?",
+        "Bagian mana dari diriku yang meminta ritme lebih lembut?",
+        "Apa yang bisa kurapikan tanpa memaksa semuanya selesai?",
+        "Dukungan kecil apa yang paling mungkin kulakukan hari ini?",
+      ]
+    : [
+        "What response feels more grounded today?",
+        "Which part of me is asking for a softer rhythm?",
+        "What can I organize without forcing everything to be done?",
+        "What small support is most realistic today?",
+      ];
+  const angle = angles[seededIndex(`${seed}|${categoryKey}|angle`, angles.length)];
+  const question = questions[seededIndex(`${seed}|${categoryKey}|question`, questions.length)];
+
+  return {
+    ...category,
+    reason: `${category.reason}\n\n${angle}`,
+    reflection: [category.reflection, question].filter(Boolean).join("\n"),
+    advice: category.advice,
+  };
 }
 

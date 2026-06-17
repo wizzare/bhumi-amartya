@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dailyGuidanceEngine } from "@/lib/engines/dailyGuidanceEngine";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
+import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -10,54 +11,120 @@ type DailyGuidanceErrorReason =
   | "missing_localDateKey"
   | "ai_failed";
 
+type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInput> & {
+  uid?: string;
+  profile?: Record<string, unknown> | null;
+  localDateKey?: string;
+  date?: string;
+  astrologyToday?: string | null;
+  generatedAt?: string;
+};
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function getLocalDateKey(body: DailyGuidanceRequestBody | null): string | null {
+  const explicit = body?.localDateKey || body?.date;
+  if (typeof explicit === "string" && explicit.trim()) return explicit.slice(0, 10);
+
+  const generatedAt = "generatedAt" in (body ?? {}) ? body?.generatedAt : null;
+  if (typeof generatedAt === "string" && generatedAt.trim()) return generatedAt.slice(0, 10);
+
+  return new Date().toISOString().slice(0, 10);
+}
+
+function normalizeDailyGuidanceRequest(
+  body: DailyGuidanceRequestBody | null,
+): { input: DailyGuidanceContext | null; missingReason: DailyGuidanceErrorReason | null } {
+  const localDateKey = getLocalDateKey(body);
+  const dashboardUser = asRecord("user" in (body ?? {}) ? body?.user : null);
+  const profile = asRecord(body?.profile) ?? dashboardUser;
+  const blueprint = asRecord(body?.blueprint);
+  const uid = typeof body?.uid === "string" && body.uid.trim()
+    ? body.uid
+    : typeof dashboardUser?.uid === "string"
+      ? dashboardUser.uid
+      : null;
+  const astrologyTransits = asRecord("astrologyTransits" in (body ?? {}) ? body?.astrologyTransits : null);
+  const currentSky = asRecord(body?.currentSky)
+    ?? (astrologyTransits
+      ? {
+          source: astrologyTransits.source ?? "dashboard-astrology-transits",
+          generatedAt: astrologyTransits.generatedAt ?? new Date().toISOString(),
+          summary: astrologyTransits.summary ?? null,
+          activeTransits: astrologyTransits.activeTransits ?? [],
+          bodies: [],
+        }
+      : null);
+
+  const missingReason: DailyGuidanceErrorReason | null = !uid
+    ? "missing_uid"
+    : !profile
+      ? "missing_profile"
+      : !blueprint
+        ? "missing_blueprint"
+        : !currentSky
+          ? "missing_currentSky"
+          : !localDateKey
+            ? "missing_localDateKey"
+            : null;
+
+  if (missingReason) return { input: null, missingReason };
+
+  const previousGuidance = "previousGuidance" in (body ?? {}) && Array.isArray(body?.previousGuidance)
+    ? body.previousGuidance
+    : undefined;
+
+  return {
+    missingReason: null,
+    input: {
+      ...(body as Record<string, unknown>),
+      uid: uid as string,
+      date: localDateKey as string,
+      localDateKey: localDateKey as string,
+      language: body?.language === "en" ? "en" : "id",
+      profile,
+      blueprint,
+      astrologyToday: typeof astrologyTransits?.summary === "string"
+        ? astrologyTransits.summary
+        : typeof body?.astrologyToday === "string"
+          ? body.astrologyToday
+          : null,
+      currentSky,
+      previousGuidance,
+    } as DailyGuidanceContext,
+  };
+}
+
 export async function POST(request: Request) {
   try {
     console.log("[DAILY_GUIDANCE_API_START]");
     console.log(process.env.GEMINI_API_KEY ? "FOUND" : "MISSING");
-    const body = (await request.json().catch(() => null)) as (Partial<DailyGuidanceContext> & {
-      localDateKey?: string;
-    }) | null;
-    const localDateKey = body?.localDateKey || body?.date;
-
-    const missingReason: DailyGuidanceErrorReason | null = !body?.uid
-      ? "missing_uid"
-      : !body.profile
-        ? "missing_profile"
-        : !body.blueprint
-          ? "missing_blueprint"
-          : !body.currentSky
-            ? "missing_currentSky"
-            : !localDateKey
-              ? "missing_localDateKey"
-              : null;
+    const body = (await request.json().catch(() => null)) as DailyGuidanceRequestBody | null;
+    const normalized = normalizeDailyGuidanceRequest(body);
 
     console.log("[DAILY GUIDANCE REQUEST]", {
-      uid: body?.uid ?? null,
-      localDateKey: localDateKey ?? null,
-      hasProfile: Boolean(body?.profile),
+      uid: normalized.input?.uid ?? body?.uid ?? ("user" in (body ?? {}) ? body?.user?.uid : null) ?? null,
+      localDateKey: normalized.input?.localDateKey ?? body?.localDateKey ?? body?.date ?? null,
+      hasProfile: Boolean(normalized.input?.profile ?? body?.profile ?? ("user" in (body ?? {}) ? body?.user : null)),
       hasBlueprint: Boolean(body?.blueprint),
+      normalizedFromDashboardInput: Boolean(!body?.profile && "user" in (body ?? {}) && body?.user),
     });
     console.log("[DAILY_GUIDANCE_REQUEST]", body);
 
-    if (missingReason) {
+    if (normalized.missingReason) {
+      console.error("[DAILY_GUIDANCE_BAD_REQUEST]", normalized.missingReason);
       return NextResponse.json(
-        { ok: false, reason: missingReason },
+        { ok: false, reason: normalized.missingReason },
         { status: 400 },
       );
     }
 
-    const validBody = body as DailyGuidanceContext & { localDateKey?: string };
-    const dateKey = localDateKey as string;
-    const input: DailyGuidanceContext = {
-      ...validBody,
-      uid: validBody.uid,
-      date: dateKey,
-      localDateKey: dateKey,
-      language: validBody.language || "id",
-      profile: validBody.profile,
-      blueprint: validBody.blueprint,
-      currentSky: validBody.currentSky,
-    } as DailyGuidanceContext;
+    const input = normalized.input as DailyGuidanceContext;
+    const dateKey = input.localDateKey as string;
 
     const guidance = await dailyGuidanceEngine.getOrCreateDailyGuidance(
       input.uid,

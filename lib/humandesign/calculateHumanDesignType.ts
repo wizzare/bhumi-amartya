@@ -14,7 +14,7 @@ const gateOrder = [
   28, 44, 1, 43, 14, 34, 9, 5, 26, 11, 10, 58, 38, 54, 61, 60,
 ];
 
-const centersByChannel: Record<string, [string, string]> = {
+export const centersByChannel: Record<string, [string, string]> = {
   "1-8": ["G", "Throat"],
   "2-14": ["Sacral", "G"],
   "3-60": ["Root", "Sacral"],
@@ -171,12 +171,15 @@ function eclipticLongitude(body: Astronomy.Body, date: Date): number {
 }
 
 function gateFromLongitude(longitude: number): number {
-  const adjusted = normalizeDegrees(longitude + 58);
+  // Standard HD Mandala Offset: Gate 41 starts at 19° 15' Aquarius (319.25°)
+  // adjusted = (longitude + 360 - 319.25) % 360
+  // or (longitude + 40.75) % 360
+  const adjusted = normalizeDegrees(longitude + 40.75);
   return gateOrder[Math.floor((adjusted / 360) * 64)];
 }
 
 function lineFromLongitude(longitude: number): number {
-  const adjusted = normalizeDegrees(longitude + 58);
+  const adjusted = normalizeDegrees(longitude + 40.75);
   const gateProgress = (adjusted / 360) * 64;
   const gateFraction = gateProgress % 1;
   return Math.floor(gateFraction * 6) + 1;
@@ -207,12 +210,25 @@ function findDesignDate(birthDate: Date): Date {
   return new Date((start.getTime() + end.getTime()) / 2);
 }
 
+function getNorthNodeLongitude(date: Date): number {
+  // Approximate Mean North Node (Standard HD Fallback)
+  const epoch = Date.UTC(2000, 0, 1, 12, 0, 0);
+  const days = (date.getTime() - epoch) / (1000 * 60 * 60 * 24);
+  const lon = 259.183275 - 0.0529539222 * days;
+  return normalizeDegrees(lon);
+}
+
 function activatedGatesForDate(date: Date): number[] {
   const gates = planets.map((body) => gateFromLongitude(eclipticLongitude(body, date)));
   const sunGate = gateFromLongitude(eclipticLongitude(Astronomy.Body.Sun, date));
   const earthGate = gateFromLongitude(normalizeDegrees(eclipticLongitude(Astronomy.Body.Sun, date) + 180));
 
-  return [...new Set([...gates, sunGate, earthGate])];
+  // Add Lunar Nodes
+  const northNodeLon = getNorthNodeLongitude(date);
+  const southNodeLon = normalizeDegrees(northNodeLon + 180);
+  const nodeGates = [gateFromLongitude(northNodeLon), gateFromLongitude(southNodeLon)];
+
+  return [...new Set([...gates, sunGate, earthGate, ...nodeGates])];
 }
 
 const motors = ["Sacral", "Root", "Solar Plexus", "Ego"];
@@ -249,12 +265,53 @@ function motorToThroat(channels: string[], definedCenters: Set<string>): boolean
   return false;
 }
 
+function getDefinition(channels: string[], definedCenters: Set<string>): string {
+  if (definedCenters.size === 0) return "No Definition";
+
+  const centers = Array.from(definedCenters);
+  const adj = new Map<string, string[]>();
+
+  channels.forEach(ch => {
+    const [c1, c2] = centersByChannel[ch];
+    if (!adj.has(c1)) adj.set(c1, []);
+    if (!adj.has(c2)) adj.set(c2, []);
+    adj.get(c1)!.push(c2);
+    adj.get(c2)!.push(c1);
+  });
+
+  const visited = new Set<string>();
+  let islands = 0;
+
+  centers.forEach(c => {
+    if (!visited.has(c)) {
+      islands++;
+      const queue = [c];
+      visited.add(c);
+      while (queue.length > 0) {
+        const curr = queue.shift()!;
+        (adj.get(curr) || []).forEach(next => {
+          if (!visited.has(next)) {
+            visited.add(next);
+            queue.push(next);
+          }
+        });
+      }
+    }
+  });
+
+  if (islands === 1) return "Single Definition";
+  if (islands === 2) return "Split Definition";
+  if (islands === 3) return "Triple Split Definition";
+  if (islands === 4) return "Quadruple Split Definition";
+  return "Single Definition";
+}
+
 export function calculateHumanDesignTypeFromBirthData(
   birthDate: string,
   birthTime: string,
   timezone?: string | null,
   longitude?: number | null,
-): HumanDesignType | null {
+): { type: HumanDesignType; definition: string; channels: string[]; activeGates: number[] } | null {
   const personalityDate = birthDateTimeToUtcDate(birthDate, birthTime, timezone, longitude);
 
   if (Number.isNaN(personalityDate.getTime())) {
@@ -262,31 +319,30 @@ export function calculateHumanDesignTypeFromBirthData(
   }
 
   const designDate = findDesignDate(personalityDate);
-  const activeGates = new Set([
+  const activeGatesSet = new Set([
     ...activatedGatesForDate(personalityDate),
     ...activatedGatesForDate(designDate),
   ]);
+  const activeGates = Array.from(activeGatesSet).sort((a, b) => a - b);
+
   const channels = Object.keys(centersByChannel).filter((channel) => {
     const [firstGate, secondGate] = channel.split("-").map(Number);
-    return activeGates.has(firstGate) && activeGates.has(secondGate);
+    return activeGatesSet.has(firstGate) && activeGatesSet.has(secondGate);
   });
   const definedCenters = new Set(channels.flatMap((channel) => centersByChannel[channel]));
 
-  if (channels.length === 0) return "Reflector";
-  
+  const definition = getDefinition(channels, definedCenters);
+
+  if (channels.length === 0 || definedCenters.size === 0) return null;
+
+  let type: HumanDesignType = "Projector";
   if (definedCenters.has("Sacral")) {
-    if (motorToThroat(channels, definedCenters)) {
-      return "Manifesting Generator";
-    } else {
-      return "Generator";
-    }
+    type = motorToThroat(channels, definedCenters) ? "Manifesting Generator" : "Generator";
+  } else if (motorToThroat(channels, definedCenters)) {
+    type = "Manifestor";
   }
 
-  if (motorToThroat(channels, definedCenters)) {
-    return "Manifestor";
-  } else {
-    return "Projector";
-  }
+  return { type, definition, channels, activeGates };
 }
 
 export function calculateHumanDesignProfileFromBirthData(

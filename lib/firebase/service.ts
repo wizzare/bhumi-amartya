@@ -1,6 +1,8 @@
 import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, limit, getDocs, updateDoc, deleteDoc, serverTimestamp, documentId } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
+import type { GaiaProfile } from '@/lib/profile/gaia/types';
+import { sanitizeForFirestore } from '@/lib/firebase/sanitizeForFirestore';
 
 // Type definitions matching the localStorage structures
 export interface UserProfile {
@@ -16,6 +18,7 @@ export interface UserProfile {
   birthCountry: string | null;
   latitude: number | null;
   longitude: number | null;
+  timezone?: string | null;
   language: string;
   setupCompleted: boolean;
   authProvider: "google" | "local" | null;
@@ -37,6 +40,21 @@ export interface UserProfile {
   trialStartedAt?: string;
   trialEndsAt?: string;
   lastActiveAt?: string;
+  appVersion?: string;
+  buildNumber?: string;
+  profileVersion?: string;
+  engineVersion?: string;
+  migrationVersion?: string;
+  gaiaProfile?: GaiaProfile;
+
+  // Guardian Identity V3
+  guardianRole?: "founder" | "admin" | "user";
+  guardianBadge?: "core_guardian" | "guardian";
+  recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "GUARDIAN";
+  recognitionDate?: string;
+  membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME";
+  membershipExpiresAt?: string;
+  isFoundingMember?: boolean;
 }
 
 export interface UserPlan {
@@ -286,7 +304,7 @@ export class FirebaseService {
       // Remove ID from the data since it's the document ID
       delete (userData as any).id;
       
-      await setDoc(userRef, userData);
+      await setDoc(userRef, sanitizeForFirestore(userData));
       return true;
     } catch (error) {
       console.error('Error saving user profile:', error);
@@ -324,7 +342,7 @@ export class FirebaseService {
         updatedAt: serverTimestamp()
       };
       
-      await setDoc(blueprintRef, blueprintData);
+      await setDoc(blueprintRef, sanitizeForFirestore(blueprintData));
       return true;
     } catch (error) {
       console.error('Error saving user blueprint:', error);
@@ -591,7 +609,7 @@ export class FirebaseService {
       }
       this.logFirestore("setDoc", "healingMemory", memory.uid);
       const memoryRef = doc(db, 'healingMemory', memory.uid);
-      await setDoc(memoryRef, memory);
+      await setDoc(memoryRef, sanitizeForFirestore(memory));
       return true;
     } catch (error) {
       console.error('Error saving healing memory:', error);
@@ -622,7 +640,7 @@ export class FirebaseService {
       }
       this.logFirestore("setDoc", "journeyData", journey.uid);
       const journeyRef = doc(db, 'journeyData', journey.uid);
-      await setDoc(journeyRef, journey);
+      await setDoc(journeyRef, sanitizeForFirestore(journey));
       return true;
     } catch (error) {
       console.error('Error saving journey data:', error);
@@ -662,7 +680,7 @@ export class FirebaseService {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       };
-      await setDoc(reportRef, reportData);
+      await setDoc(reportRef, sanitizeForFirestore(reportData));
       return true;
     } catch (error) {
       console.error('Error saving weekly report:', error);
@@ -704,7 +722,7 @@ export class FirebaseService {
         updatedAt: serverTimestamp()
       };
       
-      await setDoc(prefsRef, prefsData);
+      await setDoc(prefsRef, sanitizeForFirestore(prefsData));
       return true;
     } catch (error) {
       console.error('Error saving notification preferences:', error);

@@ -7,17 +7,27 @@ import { Blueprint } from "@/lib/types/blueprint";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
-import { InnerworkTodayCard } from "@/components/dashboard/InnerworkTodayCard";
 import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
-import { ManifestationCard } from "@/components/dashboard/ManifestationCard";
+import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
-import { PenjagaBhumiIntiBanner } from "@/components/dashboard/PenjagaBhumiIntiBanner";
+import { AccuracyUpgradeBanner } from "@/components/dashboard/AccuracyUpgradeBanner";
+import { GuardianIdentityCard } from "@/components/dashboard/GuardianIdentityCard";
+import { SafetyActionCard } from "@/components/safety/SafetyActionCard";
+import { evaluateSafetyTriggers, SafetyState } from "@/lib/engines/safetySentinelEngine";
+import { safetyRepository, TrustedContact } from "@/lib/repositories/safetyRepository";
+import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
-import { getDailyGuidanceStaleReason } from "@/lib/dailyGuidance/version";
+import {
+  DAILY_GUIDANCE_PROMPT_VERSION,
+  DAILY_GUIDANCE_SCHEMA_VERSION,
+  DAILY_GUIDANCE_CONTENT_VERSION,
+  getDailyGuidanceStaleReason,
+} from "@/lib/dailyGuidance/version";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { journalRepository } from "@/lib/repositories/journalRepository";
@@ -29,9 +39,15 @@ import { getTrialDaysLeft, isTrialExpired } from "@/lib/billing/accessControl";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { repairOwnerHumanDesign } from "@/lib/humandesign/ownerOverride";
 import { generateLocalDailyGuidance } from "@/lib/orchestrators/localDailyGuidanceFallback";
+import { innerworkIntelligence } from "@/lib/engines/innerworkIntelligence";
+import { calculateProgressMetrics } from "@/lib/engines/progressCalculationEngine";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 import { safeJsonParse } from "@/lib/storage/safeJson";
+import { participationEngine } from "@/lib/engines/participationEngine";
+import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
+import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
+import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFacingGuidance";
 
 export function DashboardClient() {
   const router = useRouter();
@@ -40,7 +56,10 @@ export function DashboardClient() {
   const [profile, setProfile] = useState<any>(null);
   const [blueprint, setBlueprint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [dailyState, setDailyState] = useState<any>(null);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [safetyState, setSafetyState] = useState<SafetyState | null>(null);
+  const [trustedContact, setTrustedContact] = useState<TrustedContact | undefined>(undefined);
   const [dgLoading, setDgLoading] = useState(false);
   const [trialMessage, setTrialMessage] = useState<string | null>(null);
 
@@ -54,9 +73,25 @@ export function DashboardClient() {
     const invalidCacheKeys = ["dailyGuidance", `dailyGuidance:${today}`, "dailyGuidance:today", "globalDailyGuidance", "sharedReflection", "staticReflection"];
 
     setDgLoading(true);
+    let journals: any[] = [];
+    let meditations: any[] = [];
+    let audios: any[] = [];
+    let activities: any[] = [];
+
     try {
-      const dailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
-      const completion = getCompletionSummary(dailyState);
+      const existingDailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
+      setDailyState(existingDailyState);
+      const completion = getCompletionSummary(existingDailyState);
+
+      // BUILD 37: Consolidate yesterday if needed
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = getLocalDateKey(yesterday, timezone);
+      const yesterdayState = await dailyStateRepository.getDailyState(uid, yesterdayKey).catch(() => null);
+      if (yesterdayState && !yesterdayState.consolidatedAt) {
+        console.log(`[CONSOLIDATION] Triggering end-of-day summary for ${yesterdayKey}`);
+        void dailyStateRepository.consolidateDay(uid, yesterdayKey).catch(err => console.error("Consolidation failed", err));
+      }
 
       if (completion.isUnlocked) {
         trackEvent("daily_completion_reached", uid);
@@ -64,13 +99,26 @@ export function DashboardClient() {
 
       invalidCacheKeys.forEach((key) => window.localStorage.removeItem(key));
 
-      const [recent, journals, meditations, audios, activities] = await Promise.all([
+      const [recent, j, m, a, act, mapping, safetyCfg] = await Promise.all([
         dailyGuidanceRepository.getRecentGuidance(uid, 5).catch(() => []),
         journalRepository.getJournalEntries(uid, 5).catch(() => []),
         meditationRepository.getMeditationEntries(uid, 5).catch(() => []),
         audioHealingRepository.getAudioHealingEntries(uid, 5).catch(() => []),
         activityRepository.getRecentActivities(uid, 5).catch(() => []),
+        wellnessMappingRepository.getMapping(uid).catch(() => null),
+        safetyRepository.getSafetyConfig(uid).catch(() => null)
       ]);
+
+      journals = j;
+      meditations = m;
+      audios = a;
+      activities = act;
+      setTrustedContact(safetyCfg?.trustedContact);
+
+      if (mapping) {
+         const sState = evaluateSafetyTriggers(mapping, existingDailyState?.wellnessSnapshot ? [existingDailyState.wellnessSnapshot] : []);
+         setSafetyState(sState);
+      }
 
       const previousGuidance = recent.find(g => g.localDateKey !== today);
       const memoryContext = {
@@ -92,8 +140,12 @@ export function DashboardClient() {
           previousGuidance
         }) : "parse_error";
         if (parsed && !staleReason) {
+          const normalized = normalizeUserFacingGuidance(parsed);
           console.log(`[DAILY GUIDANCE CACHE HIT] Local storage hit for ${uid} on ${today}`);
-          setDailyGuidance(parsed);
+          setDailyGuidance(normalized);
+          window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
+          setDgLoading(false);
+          return;
         } else {
           console.log(`[DAILY GUIDANCE CACHE MISS] Local storage stale or missing for ${uid} on ${today}. Reason: ${staleReason}`);
           window.localStorage.removeItem(localCacheKey);
@@ -110,13 +162,16 @@ export function DashboardClient() {
       });
 
       if (existing && !existingStaleReason) {
-        setDailyGuidance(existing);
-        window.localStorage.setItem(localCacheKey, JSON.stringify(existing));
+        const normalized = normalizeUserFacingGuidance(existing);
+        setDailyGuidance(normalized);
+        window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
+        await dailyGuidanceRepository.saveDailyGuidance(normalized).catch(() => {});
+        setDgLoading(false);
         return;
       }
 
       const { calculateCurrentSky } = await import("@/lib/astrology/calculateCurrentSky");
-      const sky = calculateCurrentSky(new Date());
+      const sky = calculateCurrentSky(new Date(`${today}T12:00:00`));
       const payload = {
         uid, date: today, localDateKey: today, language, profile: p, blueprint: b,
         currentSky: sky as any,
@@ -138,8 +193,14 @@ export function DashboardClient() {
 
       const result = await response.json() as { ok: true; guidance: DailyGuidance } | { ok: false; reason: string };
       if (!result.ok) throw new Error(result.reason);
-      const dg = result.guidance;
-      const staleReason = getDailyGuidanceStaleReason(dg, { uid, localDateKey: today, previousGuidance });
+      const dg = normalizeUserFacingGuidance(result.guidance);
+      const staleReason = getDailyGuidanceStaleReason(dg, {
+        uid,
+        localDateKey: today,
+        blueprint: b,
+        context: memoryContext,
+        previousGuidance,
+      });
       if (staleReason) throw new Error(`Daily guidance returned stale output: ${staleReason}`);
 
       setDailyGuidance(dg);
@@ -161,11 +222,15 @@ export function DashboardClient() {
           journalHistory: [],
           meditationHistory: [],
           audioHealingHistory: [],
-          activityHistory: {},
+          activityHistory: [],
           momentumState: null,
           healingMemory: null,
           adaptiveContext: {
-            dailyVariationSeed: today,
+            dailyVariationSeed: createDailyContentSeed({
+              uid,
+              localDateKey: today,
+              blueprint: b as Record<string, unknown>,
+            }),
             completionRateYesterday: 0,
             journalCompletedYesterday: false,
             meditationCompletedYesterday: false,
@@ -180,11 +245,20 @@ export function DashboardClient() {
           generatedAt: new Date().toISOString(),
         };
 
+        const fallbackSeed = input.adaptiveContext?.dailyVariationSeed || createDailyContentSeed({
+          uid,
+          localDateKey: today,
+          blueprint: b as Record<string, unknown>,
+        });
         const localOutput = generateLocalDailyGuidance(input);
         const localGuidance: DailyGuidance = {
           uid,
           date: today,
           localDateKey: today,
+          schemaVersion: DAILY_GUIDANCE_SCHEMA_VERSION,
+          generatedWithPromptVersion: DAILY_GUIDANCE_PROMPT_VERSION,
+          guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
+          dailyVariationSeed: fallbackSeed,
           source: "local-fallback",
           soulReflectionText: localOutput.soulReflectionText || localOutput.soulReflection.dailyMessage,
           dailyNoteText: localOutput.dailyNoteText || (localOutput.companionReflection?.fullReflection ?? ""),
@@ -201,6 +275,27 @@ export function DashboardClient() {
           groundedAction: localOutput.soulReflection.guidance,
           manifestation: localOutput.manifestation,
           categories: localOutput.categories,
+          innerworkRecommendations: innerworkIntelligence.getRecommendations({
+            activations: [],
+            hdType: getCanonicalHumanDesignType(b?.humanDesign) || "",
+            lifePath: b?.lifePath?.number || 0,
+            arcanaCenter: b?.destinyMatrix?.center || 0,
+            rawBlueprint: b as Record<string, unknown> | null,
+            unifiedBlueprint: buildUnifiedBlueprintSynthesis({
+              language: p?.profile?.language || p?.language || "id",
+              profile: p,
+              blueprint: b,
+            }),
+            gaiaProfile: p?.gaiaProfile || null,
+            activityHistory: activities as any,
+            progressMetrics: calculateProgressMetrics({
+              journalEntries: journals as any,
+              meditationEntries: meditations as any,
+              audioHealingEntries: audios as any,
+              physicalActivities: activities as any,
+            }),
+            localDateKey: today
+          }),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           profileSnapshot: p,
@@ -209,7 +304,7 @@ export function DashboardClient() {
           previousProgressSummary: "Local fallback",
         };
 
-        setDailyGuidance(localGuidance);
+        setDailyGuidance(normalizeUserFacingGuidance(localGuidance));
       } catch (fallbackErr) {
         console.error("[DAILY_GUIDANCE_FALLBACK_ERROR]", fallbackErr);
       }
@@ -276,10 +371,23 @@ export function DashboardClient() {
         }
 
         trackEvent("open_dashboard", auth.user.uid);
+        void participationEngine.recordActivity(auth.user.uid, "launch");
+
+        // App Resume Listener (Build 37A Requirement)
+        if (typeof window !== "undefined") {
+          import("@capacitor/app").then(({ App }) => {
+            App.addListener("appStateChange", ({ isActive }) => {
+              if (isActive && auth.user?.uid) {
+                console.log("[APP RESUME] Updating presence...");
+                void participationEngine.recordActivity(auth.user.uid, "launch");
+              }
+            });
+          }).catch(err => console.warn("Capacitor App plugin not available", err));
+        }
 
         const daysLeft = getTrialDaysLeft(p as any);
-        if (isTrialExpired(p as any)) setTrialMessage("Masa percobaan berakhir");
-        else if (daysLeft < 3) setTrialMessage(`Masa percobaan berakhir dalam ${daysLeft} hari`);
+        if (isTrialExpired(p as any)) setTrialMessage("Akses Bhumi kamu perlu diperbarui.");
+        else if (daysLeft < 3) setTrialMessage(null);
 
         setLoading(false);
         clearTimeout(watchdog);
@@ -329,11 +437,36 @@ export function DashboardClient() {
 
       <DashboardHeader userName={profile.fullName} language={language} />
 
+      <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
+
+      {safetyState?.isSafetyMode && (
+        <SafetyActionCard
+          state={safetyState}
+          trustedContact={trustedContact}
+          language={language}
+          onDismiss={async () => {
+            if (auth?.user?.uid) {
+              const nextState = { ...safetyState, isSafetyMode: false };
+              setSafetyState(nextState);
+              await safetyRepository.saveSafetyState(auth.user.uid, nextState).catch(() => {});
+            }
+          }}
+        />
+      )}
+
       {trialMessage && (
         <div className="mt-6 p-4 bg-yellow-50/50 text-yellow-800 text-[12px] text-center rounded-2xl font-bold uppercase tracking-widest border border-yellow-100/50">
           {trialMessage}
         </div>
       )}
+
+      <GuardianIdentityCard
+        role={profile.guardianRole === "founder" || profile.guardianRole === "admin" ? profile.guardianRole : "user"}
+        badge={profile.guardianBadge === "core_guardian" ? "core_guardian" : "guardian"}
+        tier={profile.recognitionTier === "FOUNDER" || profile.recognitionTier === "CORE_GUARDIAN" ? profile.recognitionTier : "GUARDIAN"}
+        recognitionDate={profile.recognitionDate}
+        language={language}
+      />
 
       <CoreIdentity
         lifePath={blueprint.lifePath?.display || blueprint.lifePath?.number || 0}
@@ -352,10 +485,6 @@ export function DashboardClient() {
         }}
       />
 
-      {profile?.membershipType === "PENJAGA_BHUMI_INTI" && (
-        <PenjagaBhumiIntiBanner />
-      )}
-
       <SoulReflectionCard
         language={language}
         reflection={dailyGuidance?.soulReflectionText}
@@ -367,7 +496,7 @@ export function DashboardClient() {
           profile, blueprint, birthDate: profile.birthDate,
           sunSign: blueprint.astrology?.sunSign,
           lifePathNumber: blueprint.lifePath?.number,
-          humanDesignType: blueprint.humanDesign?.type,
+          humanDesignType: getCanonicalHumanDesignType(blueprint.humanDesign),
           arcanaCenter: blueprint.destinyMatrix?.center,
         }}
       />
@@ -377,16 +506,7 @@ export function DashboardClient() {
         language={language}
       />
 
-      <InnerworkTodayCard
-        dailyGuidance={dailyGuidance}
-        language={language}
-        labels={t.dashboard.innerworkToday}
-      />
-
-      <ManifestationCard
-        language={language}
-        manifestation={dailyGuidance?.manifestation}
-      />
+      <DailyUserFlowGuide language={language} />
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">

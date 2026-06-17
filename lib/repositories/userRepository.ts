@@ -1,8 +1,10 @@
 import { db } from "../firebase/firebase";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
 import { BlueprintStatus } from "@/lib/types/blueprint";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
+import { BuildInfo, getRuntimeBuildInfo, hasBuildInfoChanged } from "@/lib/config/buildInfo";
+import type { GaiaProfile } from "@/lib/profile/gaia/types";
 
 export type UserProfile = {
   uid: string;
@@ -24,12 +26,49 @@ export type UserProfile = {
   setupCompleted: boolean;
   plan: "trial" | "pro" | "expired" | "free" | "premium" | "developer";
   planLabel?: string | null;
-  membershipType?: "REGULAR" | "PENJAGA_BHUMI_INTI" | string | null;
   membershipStartDate?: Timestamp | null;
-  membershipExpiryDate?: Timestamp | null;
   trialStartedAt?: Timestamp;
   trialEndsAt?: Timestamp;
   isDeveloper?: boolean;
+  isFoundingMember?: boolean;
+  guardianRole?: "founder" | "admin" | "user";
+  guardianBadge?: "core_guardian" | "guardian";
+  recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "CORE_GUARDIAN_CANDIDATE" | "GUARDIAN";
+  recognitionDate?: string;
+  membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME" | "PENJAGA_BHUMI_INTI" | "REGULAR" | string | null;
+  membershipExpiryDate?: Timestamp | null;
+  role?: string | null;
+  versionName?: string | null;
+  versionCode?: number | null;
+  buildNumber?: string | null;
+  platform?: string | null;
+  appVersion?: string | null;
+  profileVersion?: string | null;
+  engineVersion?: string | null;
+  migrationVersion?: string | null;
+  gaiaGeneratedAt?: string | null;
+  gaiaProfile?: GaiaProfile | null;
+  lastSeen?: Timestamp | string | null;
+  registeredAt?: Timestamp | string | null;
+  guardianCandidate?: boolean;
+  guardianApproved?: boolean;
+  guardianApprovedAt?: Timestamp | string | null;
+  guardianApprovedBy?: string | null;
+  participationMetrics?: {
+    loginCount: number;
+    lastSeen: string;
+    lastLoginAt?: string;
+    lastCheckInAt?: string;
+    lastAssessmentAt?: string;
+    buildNumber?: string;
+    versionName?: string;
+    versionCode?: number;
+    appVersion?: string;
+    platform?: string;
+    hasCompletedCheckIn: boolean;
+    hasCompletedAssessment: boolean;
+    activeDays: string[];
+  };
   healingProgress: {
     healingStreak: number;
     totalJournalEntries: number;
@@ -153,9 +192,75 @@ const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   return null;
 };
 
+const updatePresence = async (
+  uid: string,
+  data: {
+    email?: string | null;
+    displayName?: string | null;
+    role?: string | null;
+    buildInfo?: Partial<BuildInfo>;
+    registered?: boolean;
+  } = {},
+) => {
+  const userRef = doc(db, "users", uid);
+  const path = `users/${uid}`;
+  const existingProfile = await getUserProfile(uid).catch(() => null);
+  const runtimeBuildInfo = await getRuntimeBuildInfo();
+  const buildInfo = { ...runtimeBuildInfo, ...data.buildInfo };
+  const lastSeenIso = new Date().toISOString();
+  const existingMetrics = existingProfile?.participationMetrics;
+  const buildInfoChanged = hasBuildInfoChanged(existingProfile, buildInfo);
+  const metricsBuildInfoChanged = hasBuildInfoChanged(existingMetrics, buildInfo);
+
+  const payload = {
+    uid,
+    email: data.email ?? existingProfile?.email ?? null,
+    displayName: data.displayName ?? existingProfile?.displayName ?? existingProfile?.fullName ?? null,
+    role: data.role ?? existingProfile?.guardianRole ?? existingProfile?.role ?? "user",
+    lastSeen: serverTimestamp(),
+    registeredAt: data.registered && !existingProfile?.registeredAt
+      ? serverTimestamp()
+      : existingProfile?.registeredAt ?? serverTimestamp(),
+    participationMetrics: {
+      loginCount: existingMetrics?.loginCount || 0,
+      hasCompletedCheckIn: existingMetrics?.hasCompletedCheckIn || false,
+      hasCompletedAssessment: existingMetrics?.hasCompletedAssessment || false,
+      activeDays: existingMetrics?.activeDays || [],
+      ...existingMetrics,
+      lastSeen: lastSeenIso,
+    },
+    updatedAt: Timestamp.now(),
+  } as Partial<UserProfile>;
+
+  if (buildInfoChanged) {
+    payload.versionName = buildInfo.versionName;
+    payload.appVersion = buildInfo.versionName;
+    payload.versionCode = buildInfo.versionCode;
+    payload.buildNumber = buildInfo.buildNumber;
+    payload.platform = buildInfo.platform;
+  }
+
+  if (metricsBuildInfoChanged && payload.participationMetrics) {
+    payload.participationMetrics = {
+      ...payload.participationMetrics,
+      buildNumber: buildInfo.buildNumber,
+      versionName: buildInfo.versionName,
+      appVersion: buildInfo.versionName,
+      versionCode: buildInfo.versionCode,
+      platform: buildInfo.platform,
+    };
+  }
+
+  await debugFirestoreOperation(
+    { operation: "setDoc", path, uid, payloadKeys: Object.keys(payload) },
+    () => setDoc(userRef, sanitizeForFirestore(payload), { merge: true }),
+  );
+};
+
 export const userRepository = {
   upsertUserProfile,
   getUserProfile,
+  updatePresence,
   recordHealingPractice,
   recordJournalProgress,
   updateEmotionalState,

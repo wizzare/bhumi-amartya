@@ -26,13 +26,17 @@ export function buildBhumiManifestationPrompt(
 
     // Core Data Sources
     blueprint: context.input.blueprint,
+    unifiedBlueprint: context.unifiedBlueprint ?? null,
+    differentiators: Array.isArray(context.unifiedBlueprint?.differentiators)
+      ? context.unifiedBlueprint.differentiators
+      : [],
     todayAstro: context.input.astrologyTransits?.summary || "Cosmic flow",
 
     // Memory Context
     memory: {
       recentJournals: context.journalHistory?.slice(-5) ?? [],
       emotionalThemes: context.input.emotionalMemory?.recurringThemes ?? [],
-      growthStage: context.input.healingProgress?.journeyPhase ?? "Awareness",
+      growthStage: (context.input.healingProgress as any)?.journeyPhase ?? "Awareness",
       consistency: context.input.healingProgress?.healingStreak ?? 0,
       weeklyReflections: context.weeklyReflections ?? [],
     },
@@ -53,6 +57,7 @@ export function buildBhumiManifestationPrompt(
     criticalRules: [
       "Use 'kamu' and 'dirimu' (for id) or 'you' (for en) if applicable, but keep statements in first person ('Aku' or 'I') as they are meant to be repeated by the user.",
       "Ground every statement in the reality of the user's recent journey.",
+      "Use available differentiators such as personalYear, incarnationCross, moneyLine, loveLine, Venus, Saturn, MC, or Nodes internally; do not reduce the statement to Life Path plus Human Design Type.",
       "If the user is struggling with fatigue (from journals), the affirmation should be about restorative peace, not explosive productivity.",
       "If the user is in a 'Growth' phase, the assumption can be slightly more expansive while remaining grounded.",
     ],

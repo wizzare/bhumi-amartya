@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { PremiumFeature, canAccessPremiumFeature } from "@/lib/access/accessControl";
 import { useAuth } from "@/context/AuthContext";
 
@@ -16,7 +15,7 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
   if (!auth || auth.loading) return children;
 
   const { userProfile } = auth;
-  const hasAccess = canAccessPremiumFeature(userProfile as any, feature);
+  const hasAccess = canAccessPremiumFeature(userProfile, feature);
 
   if (hasAccess) {
     return <>{children}</>;
@@ -35,7 +34,7 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
             Perjalanan Berlanjut
           </h3>
           <p className="text-sm text-[#7B8776] mb-8 leading-relaxed">
-            Masa percobaan Anda telah berakhir. Nantikan fitur Premium untuk melanjutkan praktik batin terpandu Anda.
+            Akses Bhumi kamu perlu diperbarui. Kami sedang menyiapkan langkah berikutnya agar perjalananmu tetap terasa nyaman.
           </p>
           <button
             onClick={() => window.location.href = '/dashboard'}

@@ -51,24 +51,21 @@ export function DailyPromptCard({ prompt }: DailyPromptCardProps) {
         {prompt.generatedBasedOn && (
           <div className="bg-[#FBF9F4] rounded-2xl p-4 border border-[#E8E9E5]">
             <p className="text-[#7B8776] font-medium mb-3 text-xs uppercase tracking-wide">
-              Generated for your blueprint
+              Membaca dirimu hari ini
             </p>
             <div className="space-y-2">
               {prompt.generatedBasedOn.lifePathInsight && (
                 <p className="text-[#8B9488] text-sm">
-                  <span className="font-medium">Life Path:</span>{" "}
                   {prompt.generatedBasedOn.lifePathInsight}
                 </p>
               )}
               {prompt.generatedBasedOn.arcanaInsight && (
                 <p className="text-[#8B9488] text-sm">
-                  <span className="font-medium">Arcana:</span>{" "}
                   {prompt.generatedBasedOn.arcanaInsight}
                 </p>
               )}
               {prompt.generatedBasedOn.humanDesignInsight && (
                 <p className="text-[#8B9488] text-sm">
-                  <span className="font-medium">Design:</span>{" "}
                   {prompt.generatedBasedOn.humanDesignInsight}
                 </p>
               )}

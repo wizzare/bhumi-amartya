@@ -30,6 +30,9 @@ export function buildBhumiDailyReflectionPrompt(
       "Use this specifically for Catatan Hari Ini / Today's Note. Astro Hari Ini stays factual. Refleksi Jiwa is a separate short emotional reminder and must not be derived from this text.",
     userProfile: context.input.user,
     unifiedBlueprint: context.unifiedBlueprint ?? null,
+    differentiators: Array.isArray(context.unifiedBlueprint?.differentiators)
+      ? context.unifiedBlueprint.differentiators
+      : [],
     blueprint: context.input.blueprint,
     identityContext: context.input.identity,
     currentSky: context.currentSky ?? context.input.astrologyTransits ?? null,
@@ -59,10 +62,12 @@ export function buildBhumiDailyReflectionPrompt(
       "Translate sky data into everyday life situations. Connect today's highlighted house with the user's actual memory context.",
       "If House 4 (Restoration) is active and the user's journals mention fatigue, emphasize recovery. If House 10 (Career) is active but the user is in a 'Release' phase, suggest closure over new starts.",
       "Use current sky, blueprint, house activations, journal history, meditation history, audio healing history, physical activity memory, weekly reflections, and growth signals.",
+      "Use available differentiators such as ASC, Venus, Saturn, MC, North Node, house placements, channels, gates, incarnationCross, Soul Searching, Socialization, Spiritual Knowledge, and dominant Health Chart chakra so users with similar core labels do not receive near-identical notes. Do NOT mention 'Money Line', 'Love Line', or 'Karmic Tail' by name.",
       "The fullReflection must use astroHouseActivations and mention at least three relevant planet-house effects in natural human language.",
       "Use observations more than instructions.",
       "Use simple Indonesian when language is id; use warm natural English when language is en.",
       "The user should not feel analyzed. They should feel Bhumi is sitting beside them.",
+      "DO NOT mention any technical engine terms, raw blueprint numbers, or internal engine structures.",
     ],
     writingStyle:
       "Warm, deep, human, gentle, grounded, emotionally intelligent, conversational, natural. Like sitting with a wise friend who quietly understands the sky above and the journey within.",

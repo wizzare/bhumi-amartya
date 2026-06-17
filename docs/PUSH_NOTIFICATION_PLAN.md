@@ -1,31 +1,30 @@
-﻿# Future Feature: Daily Innerwork Reminder Notification
+# Gentle Night Reminder
 
 ## Purpose
 
-If user has not opened the app today and has not completed any innerwork activity today, send a push notification.
+Bhumi schedules one local Android notification for 21:00 device time when the app has not been opened that day.
 
-## Activities Counted As Innerwork
+## Current Implementation
 
-- Journal entry
-- Meditation practice
-- Audio healing reflection
+- Uses Capacitor Local Notifications; no remote push service is required.
+- App launch or resume stores `lastOpenedAt` and local `lastOpenedDate` in Capacitor Preferences with a localStorage fallback.
+- App launch or resume cancels notification ID `2100` for the current day and schedules the next reminder for tomorrow at 21:00 local device time.
+- Opening the app on the scheduled day cancels that night's reminder and moves it to the following night.
+- Notification permission is requested at most once automatically. A denial does not block app usage and is remembered locally.
 
 ## Notification Copy
 
-"Hai, kamu baik-baik aja? Hari ini belum innerwork dan grounding ya? Yuk login."
+Title: "Bhumi menunggumu sebentar"
+
+Body: "Ambil satu menit untuk menyapa dirimu malam ini."
 
 ## Rules
 
-- Send max once per day.
-- Do not send if user already opened app today.
-- Do not send if user completed journal/meditation/audio healing today.
-- User must opt in to notifications.
-- Future implementation may use:
-  - Web Push Notification
-  - Firebase Cloud Messaging
-  - Mobile app push notification
-  - Scheduled backend job / n8n workflow
+- Maximum once per day through the fixed notification ID `2100`.
+- Reminder eligibility is based on app open/resume, not innerwork completion.
+- Scheduling uses the device's local timezone.
+- Permission denial is handled silently after the first request.
 
-## Implementation Note
+## Verification
 
-Do not implement push notification now. Documentation only.
+Inspect pending notifications with Android Studio or `adb shell dumpsys alarm` and filter for the application package or notification ID `2100`.

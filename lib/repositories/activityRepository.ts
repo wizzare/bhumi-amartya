@@ -81,15 +81,11 @@ export const activityRepository = {
     );
 
     // 2. Update Daily State (Build 31.35 Hardening)
+    // NOTE: Optional wellness activities no longer trigger mandatory Journey slots.
     const updateData: any = {
       completedActivityIds: arrayUnion(fullActivity.id),
       updatedAt: new Date().toISOString(),
     };
-
-    // Backward compatibility flags
-    if (activity.category === "yoga") updateData.yogaDone = true;
-    if (activity.category === "workout") updateData.workoutDone = true;
-    if (activity.category === "healthyFood") updateData.herbalDone = true;
 
     await debugFirestoreOperation(
       { operation: "setDoc", path: `dailyStates/${uid}/entries/${date}`, uid },

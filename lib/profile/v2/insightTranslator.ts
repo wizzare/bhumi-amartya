@@ -4,7 +4,18 @@
  * Follows the "Founder Test": Warm, Non-Technical, Mentor-like.
  */
 
+import { buildDestinyProfileSections } from "@/lib/engines/destinyMatrixIntelligence";
+import { careerIntelligenceEngine, CareerIntelligence } from "@/lib/engines/careerIntelligenceEngine";
+import { calculateHumanDesignStyle, HumanDesignStyle } from "@/lib/humandesign/intelligence/styleEngine";
+import { getCrossMission } from "@/lib/humandesign/intelligence/crossIntelligence";
+import { getCanonicalHumanDesignType, isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+
 export interface TranslatedProfile {
+  astrology: {
+    sunSign: string;
+    moonSign: string;
+    ascendant: string;
+  };
   identity: {
     title: string;
     description: string;
@@ -21,6 +32,18 @@ export interface TranslatedProfile {
     strengths: string[];
     soulMission: string;
     lightManifestation: string;
+    career: CareerIntelligence;
+    hdStyle: HumanDesignStyle;
+  };
+  destinyMatrix: {
+    soulMission: string;
+    greatestPotential: string;
+    repeatingPatterns: string;
+    innerChild: string;
+    ancestorKarma: string;
+    moneyAndWork: string;
+    loveAndRelationships: string;
+    healthChartSummary?: string;
   };
 }
 
@@ -96,17 +119,27 @@ const ARCANA_SHADOW_DICT: Record<number, string> = {
  */
 export function translateBlueprintV2(blueprint: any, language: "id" | "en" = "id"): TranslatedProfile {
   const lpNumber = blueprint.lifePath?.number || 1;
-  const hdType = blueprint.humanDesign?.type || "Generator";
+  const hdType = getCanonicalHumanDesignType(blueprint.humanDesign);
   const arcanaNumber = blueprint.destinyMatrix?.center || 0;
   const sunSign = blueprint.astrology?.sunSign || "Zodiak";
 
   const lpInfo = LIFE_PATH_DICT[lpNumber] || LIFE_PATH_DICT[1];
-  const hdDescription = HD_TYPE_DICT[hdType] || HD_TYPE_DICT["Generator"];
+  const hdDescription = hdType ? HD_TYPE_DICT[hdType] || "" : "";
   const shadowDescription = ARCANA_SHADOW_DICT[arcanaNumber] || "Kamu mungkin sering merasakan tekanan untuk memenuhi ekspektasi luar yang tidak selalu selaras dengan panggilan batinmu.";
+  const destinySections = buildDestinyProfileSections(blueprint);
+  const careerIntelligence = careerIntelligenceEngine.calculateCareer(blueprint);
+  const canonicalHd = isCanonicalHumanDesign(blueprint.humanDesign);
+  const hdStyle = calculateHumanDesignStyle(canonicalHd ? blueprint : { ...blueprint, humanDesign: undefined });
+  const cross = getCrossMission(canonicalHd ? ((blueprint.humanDesign?.incarnationCross as any)?.name || blueprint.humanDesign?.incarnationCross) : null);
 
   const isId = language === "id";
 
   return {
+    astrology: {
+      sunSign: blueprint.astrology?.sunSign || "Unknown",
+      moonSign: blueprint.astrology?.moonSign || "Unknown",
+      ascendant: blueprint.astrology?.ascendant || "Unknown"
+    },
     identity: {
       title: isId ? "Siapa Aku?" : "Who Am I?",
       coreEssence: `${lpInfo.essence} (${sunSign})`,
@@ -125,8 +158,11 @@ export function translateBlueprintV2(blueprint: any, language: "id" | "en" = "id
         "Daya tahan batin yang kuat dalam menghadapi tantangan hidup.",
         "Kepekaan alami dalam membangun hubungan yang bermakna."
       ],
-      soulMission: "Misi jiwamu adalah menjadi jembatan yang menghubungkan ide-ide besar dengan tindakan nyata yang membawa manfaat bagi pertumbuhan diri dan lingkunganmu.",
-      lightManifestation: "Saat kamu berada dalam kondisi selaras, kehadiranmu akan menjadi sumber ketenangan dan kejernihan bagi siapa pun yang bersinggungan denganmu."
-    }
+      soulMission: cross.soulMission || "Misi jiwamu adalah menjadi jembatan yang menghubungkan ide-ide besar dengan tindakan nyata yang membawa manfaat bagi pertumbuhan diri dan lingkunganmu.",
+      lightManifestation: "Saat kamu berada dalam kondisi selaras, kehadiranmu akan menjadi sumber ketenangan dan kejernihan bagi siapa pun yang bersinggungan denganmu.",
+      career: careerIntelligence,
+      hdStyle,
+    },
+    destinyMatrix: destinySections,
   };
 }

@@ -22,6 +22,10 @@ interface FocusPool {
   durations: string[];
 }
 
+function dayOffset(): number {
+  return Number(new Date().toISOString().slice(0, 10).replaceAll("-", ""));
+}
+
 const focusByYearlyNumber: Record<number, FocusPool> = {
   1: {
     practices: [
@@ -220,14 +224,15 @@ const focusByYearlyNumber: Record<number, FocusPool> = {
 export function generateDailyFocus(context: AIGenerationContext): DailyFocusData {
   const yearly = calculateYearlyNumerology(new Date().getFullYear());
   const yearlyNum = yearly.masterNumber ?? yearly.reduction;
+  const offset = dayOffset();
 
   const pool = focusByYearlyNumber[yearlyNum] || focusByYearlyNumber[1];
 
-  const practice = pool.practices[Math.floor(Math.random() * pool.practices.length)];
-  const insight = pool.insights[Math.floor(Math.random() * pool.insights.length)];
-  const duration = pool.durations[Math.floor(Math.random() * pool.durations.length)];
+  const practice = pool.practices[offset % pool.practices.length];
+  const insight = pool.insights[offset % pool.insights.length];
+  const duration = pool.durations[offset % pool.durations.length];
 
-  const lifeArea = yearly.focusAreas[Math.floor(Math.random() * yearly.focusAreas.length)];
+  const lifeArea = yearly.focusAreas[offset % yearly.focusAreas.length];
 
   return {
     title: yearly.archetype,

@@ -153,7 +153,7 @@ export class DashboardOrchestrator {
   private isCacheForCurrentProfile(data: DashboardData): boolean {
     const profile = this.config.userProfile;
     return (
-      data.user.id === profile.uid &&
+      data.user.uid === profile.uid &&
       data.user.birthDate === (profile.birthDate || profile.profile.blueprintInput?.birthDate || "") &&
       data.user.birthTime === (profile.birthTime || profile.profile.blueprintInput?.birthTime || "") &&
       data.user.birthPlace === (profile.birthCity || profile.profile.blueprintInput?.birthCity || "")

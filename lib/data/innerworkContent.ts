@@ -38,6 +38,22 @@ export const WORKOUT_DATABASE: Record<string, InnerworkContent> = {
     instruction: ["Neck rolls", "Shoulder rotations", "Forward fold", "Seated twist"],
     benefits: ["Relaksasi otot", "Meredakan stres", "Mendukung pemulihan batin"],
     durationMinutes: 10
+  },
+  "restorative-rest": {
+    id: "restorative-rest",
+    title: "Restorative Recovery",
+    description: "Gerakan minimalis untuk pemulihan total saat energi sedang sangat rendah.",
+    instruction: ["Lie down on your back", "Place hands on belly", "Deep slow breathing for 5 minutes", "Gentle limb shaking"],
+    benefits: ["Nervous system reset", "Deep recovery", "Energy preservation"],
+    durationMinutes: 8
+  },
+  "endurance-build": {
+    id: "endurance-build",
+    title: "Endurance Building",
+    description: "Latihan ritmik untuk membangun daya tahan batin dan fisik secara bertahap.",
+    instruction: ["Slow jogging or rhythmic step 10 min", "Squat holds 30s", "Plank 30s", "Repeat 3 times"],
+    benefits: ["Physical resilience", "Mental grit", "Steady energy flow"],
+    durationMinutes: 20
   }
 };
 
@@ -64,6 +80,30 @@ export const YOGA_DATABASE: Record<string, InnerworkContent> = {
     description: "Membangun api internal dan keberanian diri.",
     instruction: ["Warrior I", "Warrior II", "Plank Pose"],
     benefits: ["Kepercayaan diri", "Tekad", "Kekuatan batin"],
+    durationMinutes: 10
+  },
+  "throat-clarity": {
+    id: "throat-clarity",
+    title: "Vocal Clarity Flow",
+    description: "Pose untuk melepaskan hambatan di area tenggorokan dan ekspresi diri.",
+    instruction: ["Cat-Cow stretch with neck focus", "Fish Pose (Matsyasana)", "Lion's Breath"],
+    benefits: ["Honest expression", "Clear communication", "Thyroid health"],
+    durationMinutes: 12
+  },
+  "sacral-fluidity": {
+    id: "sacral-fluidity",
+    title: "Sacral Fluidity",
+    description: "Gerakan panggul untuk melepaskan emosi yang tertahan dan kreativitas.",
+    instruction: ["Hip circles", "Pigeon Pose", "Bound Angle Pose (Baddha Konasana)"],
+    benefits: ["Emotional release", "Creative spark", "Flexibility"],
+    durationMinutes: 15
+  },
+  "crown-connection": {
+    id: "crown-connection",
+    title: "Crown Silence Flow",
+    description: "Gerakan lembut untuk menghubungkan batin dengan kesadaran yang lebih luas.",
+    instruction: ["Child's Pose with head support", "Downward Dog (Adho Mukha Svanasana)", "Seated Meditation"],
+    benefits: ["Spiritual connection", "Mental peace", "Higher perspective"],
     durationMinutes: 10
   }
 };
@@ -124,5 +164,50 @@ export const HEALTHY_FOOD_DATABASE: Record<string, InnerworkContent> = {
     benefits: ["Stabilitas emosi", "Koneksi dengan bumi", "Menyangga energi"],
     durationMinutes: 20,
     disclaimer: "Pilih sumber makanan organik jika memungkinkan untuk manfaat maksimal."
+  },
+  "cooling-mint": {
+    id: "cooling-mint",
+    title: "Cooling Mint & Cucumber",
+    description: "Minuman penyegar untuk menenangkan amarah atau panas batin yang berlebih.",
+    ingredients: ["Daun mint segar", "Irisan mentimun", "Air dingin/suhu ruang"],
+    instruction: ["Masukkan mint dan mentimun ke dalam air", "Diamkan sejenak", "Minum dengan kesadaran untuk mendinginkan emosi"],
+    benefits: ["Cooling anger", "Hydration", "Calm focus"],
+    durationMinutes: 5
+  },
+  "nourishing-soup": {
+    id: "nourishing-soup",
+    title: "Nourishing Warm Soup",
+    description: "Sup hangat untuk memulihkan tenaga batin yang terkuras.",
+    ingredients: ["Sayuran hijau", "Kaldu bening", "Sedikit bawang putih"],
+    instruction: ["Masak sup dengan api kecil", "Nikmati selagi hangat dalam hening"],
+    benefits: ["Nourishing the soul", "Physical recovery", "Gentle digestion"],
+    durationMinutes: 15
+  }
+};
+
+export const AUDIO_HEALING_DATABASE: Record<string, InnerworkContent> = {
+  "frequency-396": {
+    id: "frequency-396",
+    title: "Solfeggio 396Hz - Liberation",
+    description: "Frekuensi untuk melepaskan rasa takut, rasa bersalah, dan hambatan batin.",
+    instruction: ["Gunakan headphone jika memungkinkan", "Duduk atau berbaring dengan nyaman", "Bernapaslah dengan ritme yang alami"],
+    benefits: ["Melepaskan kecemasan", "Membersihkan rasa bersalah", "Grounding emosional"],
+    durationMinutes: 15
+  },
+  "frequency-432": {
+    id: "frequency-432",
+    title: "Nature Harmony 432Hz",
+    description: "Frekuensi penyelarasan dengan alam untuk ketenangan mendalam dan penyembuhan seluler.",
+    instruction: ["Fokus pada getaran suara", "Bayangkan dirimu berada di tengah hutan yang tenang", "Lepaskan ketegangan di area wajah dan rahang"],
+    benefits: ["Ketenangan pikiran", "Penyelarasan energi batin", "Meningkatkan intuisi"],
+    durationMinutes: 20
+  },
+  "frequency-528": {
+    id: "frequency-528",
+    title: "Transformation 528Hz",
+    description: "Dikenal sebagai frekuensi 'Love' atau 'Miracle', mendukung perbaikan DNA dan transformasi positif.",
+    instruction: ["Buka hati untuk menerima energi baru", "Visualisasikan cahaya keemasan di area dada", "Ucapkan afirmasi syukur dalam hati"],
+    benefits: ["Transformasi batin", "Energi cinta kasih", "Pemulihan vitalitas"],
+    durationMinutes: 15
   }
 };

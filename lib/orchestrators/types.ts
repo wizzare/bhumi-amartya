@@ -15,6 +15,7 @@ import type {
 import type { Blueprint } from "@/lib/types/blueprint";
 import type { UserEmotionalState, UserHealingProgress } from "@/lib/types/user";
 import type { DailyGuidanceAdaptiveContext, DailyGuidance } from "@/lib/dailyGuidance/types";
+import { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 
 export type AstrologyTransitContext = {
   source: string;
@@ -34,6 +35,7 @@ export type DailyGuidanceInput = {
   user: DashboardUserProfile;
   identity: CoreIdentity;
   blueprint: Blueprint;
+  wellnessMapping?: WellnessMapping | null;
   emotionalState: UserEmotionalState;
   emotionalMemory: EmotionalMemory;
   healingProgress: UserHealingProgress;
@@ -45,7 +47,7 @@ export type DailyGuidanceInput = {
   journalHistory?: Array<Record<string, unknown>>;
   meditationHistory?: Array<Record<string, unknown>>;
   audioHealingHistory?: Array<Record<string, unknown>>;
-  activityHistory?: Record<string, unknown> | null;
+  activityHistory?: Array<Record<string, unknown>> | null;
   momentumState?: Record<string, unknown> | null;
   healingMemory?: Record<string, unknown> | null;
   weeklyReflections?: Array<Record<string, unknown>>;

@@ -9,10 +9,11 @@
 #   - Commercial License: see LICENSE-COMMERCIAL or contact dogan.turkuler@gmail.com
 
 """
-synchronize IGING and zodiac circle ->58°
-    Human design systems start at gate 41, Aries, (source :Ra Uru BlackBook)
+synchronize IGING and zodiac circle ->40.75°
+    Standard Human Design Mandala: Gate 41 starts at 19° 15' Aquarius (319.25°).
+    Offset = 360 - 319.25 = 40.75
 """
-IGING_offset = 58  
+IGING_offset = 58.00
 
 # codes from swe-> dict([[i,swe.get_planet_name(i)] for i in range(0,23)])
 SWE_PLANET_DICT = {"Sun":0,

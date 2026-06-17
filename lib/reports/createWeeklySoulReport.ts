@@ -4,6 +4,7 @@ import {
   readOwnedCacheObject,
   writeOwnedCacheObject,
 } from "@/lib/storage/derivedCacheOwnership";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -127,7 +128,7 @@ function filterLastSevenDays(entries: UnknownRecord[], weekStart: string, weekEn
 
 function buildBlueprintReflection(blueprint: UnknownRecord | null | undefined): string {
   const lifePath = getNumber(blueprint, ["lifePath", "number"]) ?? getNumber(blueprint, ["numerology", "number"]);
-  const humanDesignType = getString(blueprint, ["humanDesign", "type"]);
+  const humanDesignType = getCanonicalHumanDesignType((blueprint as any)?.humanDesign);
   const arcanaCenter = getNumber(blueprint, ["arcanaCenter", "number"]) ?? getNumber(blueprint, ["destinyMatrix", "center"]);
   const sunSign = getString(blueprint, ["sunSign", "sign"]) ?? getString(blueprint, ["natalChart", "sunSign"]);
 

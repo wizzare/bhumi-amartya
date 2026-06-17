@@ -1,3 +1,5 @@
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
+
 type UnknownRecord = Record<string, unknown>;
 
 export type AstroTodayInput = {
@@ -179,7 +181,7 @@ export function createBlueprintAstroInsight({
 }: BlueprintAstroInsightInput): BlueprintAstroInsight {
   const firstName = (getString(profile, ["fullName"]) || "Jiwa").split(" ")[0];
   const lifePathNumber = getNumber(blueprint, ["lifePath", "number"]) ?? getNumber(blueprint, ["numerology", "number"]);
-  const humanDesignType = getString(blueprint, ["humanDesign", "type"]);
+  const humanDesignType = getCanonicalHumanDesignType((blueprint as any)?.humanDesign);
   const sunSign = getString(blueprint, ["sunSign", "sign"]) ?? getString(blueprint, ["natalChart", "sunSign"]) ?? getString(blueprint, ["astrology", "sunSign"]);
 
   const date = new Date();

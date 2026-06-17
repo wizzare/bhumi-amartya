@@ -6,7 +6,8 @@ export type HumanDesignStatus =
   | "error"
   | "needs_verified_engine"
   | "verified"
-  | "needs_verified_timezone";
+  | "needs_verified_timezone"
+  | "service_unavailable";
 export type HumanDesignSource =
   | "hdkit"
   | "pending"
@@ -21,6 +22,9 @@ export type HumanDesignCalculationQuality =
   | "verified"
   | "manual_verified_owner_override"
   | "fallback_approximation"
+  | "service_unavailable"
+  | "timeout"
+  | "connection_error"
   | "unavailable";
 
 export type HumanDesignAccuracy = "verified" | "approximate" | "unavailable";
@@ -62,13 +66,24 @@ export type HumanDesignChart = {
   note?: string;
   generatedAt: string | Timestamp;
   updatedAt: string | Timestamp;
-  calculationStatus: "completed" | "pending" | "error" | "needs_verified_engine" | "needs_verified_timezone";
+  calculationStatus:
+    | "completed"
+    | "pending"
+    | "error"
+    | "needs_verified_engine"
+    | "needs_verified_timezone"
+    | "service_unavailable"
+    | "timeout"
+    | "connection_error";
   // Build 31 Audit Metadata
   timezone?: string | null;
   timezoneSource?: "user" | "city-fallback" | "browser-guess" | "longitude-approx" | "verified-lookup" | "default";
   calculationSource?: string;
   calculatedAt?: string;
   inputHash?: string;
+  needsUpgrade?: boolean;
+  hdEngineVersion?: string;
+  hdAuditStatus?: "validated" | "pending" | "invalid";
 };
 
 export type HumanDesignBirthProfile = {
@@ -120,6 +135,8 @@ export const createPendingHumanDesignChart = (note: string): HumanDesignChart =>
     generatedAt: now,
     updatedAt: now,
     calculationStatus: "pending",
+    hdEngineVersion: "gaia-hd-v1",
+    hdAuditStatus: "pending",
   };
 };
 

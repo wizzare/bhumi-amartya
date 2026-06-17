@@ -33,7 +33,7 @@ docker-compose.yml
 .docs/
 .backup/
 .tobedeleted/
-README.md
+# README.md
 CHANGELOG.md
 LICENSE
 docs/

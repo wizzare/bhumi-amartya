@@ -11,30 +11,16 @@ export type UserRoleResult = {
   isDev: boolean;
 };
 
-const ADMIN_EMAIL = "wizzare@gmail.com";
-const ADMIN_NAME = "widhi wedhaswara";
+const FOUNDER_EMAIL = "wizzare@gmail.com";
+const ADMIN_EMAILS = [
+  "ayeshiaad@gmail.com",
+  "dj.neynna@gmail.com",
+  "wedancewiththetime@gmail.com",
+  "kahfifa46@gmail.com"
+];
 
 function normalize(value?: string | null): string {
   return typeof value === "string" ? value.trim().toLowerCase() : "";
-}
-
-function getCandidateName(profile: RoleInputProfile): string {
-  if (!profile) return "";
-
-  const nestedProfile = profile.profile && typeof profile.profile === "object"
-    ? profile.profile as Record<string, unknown>
-    : null;
-
-  const nestedFullName = typeof nestedProfile?.fullName === "string" ? nestedProfile.fullName : null;
-  const nestedDisplayName = typeof nestedProfile?.displayName === "string" ? nestedProfile.displayName : null;
-
-  return normalize(
-    profile.fullName
-      ?? profile.displayName
-      ?? nestedFullName
-      ?? nestedDisplayName
-      ?? null,
-  );
 }
 
 function getCandidateEmail(profile: RoleInputProfile): string {
@@ -50,18 +36,14 @@ function getCandidateEmail(profile: RoleInputProfile): string {
 
 export function getUserRole(profile: RoleInputProfile): UserRoleResult {
   const email = getCandidateEmail(profile);
-  const name = getCandidateName(profile);
-  const emailMatchesAdmin = email === ADMIN_EMAIL;
+  const isFounder = email === FOUNDER_EMAIL;
+  const isAdmin = ADMIN_EMAILS.includes(email) || isFounder;
 
-  // Name is only a secondary signal for diagnostics; access still requires email match.
-  const nameLooksLikeAdmin = name === ADMIN_NAME;
-  void nameLooksLikeAdmin;
-
-  if (emailMatchesAdmin) {
+  if (isFounder || isAdmin) {
     return {
       role: "dev_admin",
       isAdmin: true,
-      isDev: true,
+      isDev: isFounder,
     };
   }
 

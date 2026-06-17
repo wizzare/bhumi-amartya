@@ -12,24 +12,43 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from 'firebase/firestore';
 import { auth } from '../firebase/firebase';
 import { userRepository, UserProfile } from '../repositories/userRepository';
-import { firstUserProfileSeed, isFirstUserEmail } from '@/lib/data/firstUser';
-
-const GOOGLE_REDIRECT_PENDING_KEY = "bhumi.googleRedirectPending";
 
 type GoogleRedirectProcessingResult = {
   user: User | null;
   redirectResultUser: User | null;
 };
 
+type NativeGoogleSignInResult = {
+  credential?: {
+    idToken?: string | null;
+    accessToken?: string | null;
+  } | null;
+  user?: {
+    email?: string | null;
+  } | null;
+};
+
+type NativeGoogleAuthWithLegacyOptions = typeof FirebaseAuthentication & {
+  signInWithGoogle(options: {
+    webClientId: string;
+    useCredentialManager: boolean;
+  }): Promise<NativeGoogleSignInResult>;
+};
+
 export const ensureMinimalUserProfile = async (user: User) => {
   const existingProfile = await userRepository.getUserProfile(user.uid);
   if (existingProfile) {
+    await userRepository.updatePresence(user.uid, {
+      email: user.email || existingProfile.email || "",
+      displayName: user.displayName ?? existingProfile.displayName ?? existingProfile.fullName ?? "",
+      role: existingProfile.guardianRole || existingProfile.role || "user",
+    });
     return existingProfile;
   }
 
   const now = Timestamp.now();
-  const sevenDaysInSeconds = 7 * 24 * 60 * 60;
-  const trialEndsAt = new Timestamp(now.seconds + sevenDaysInSeconds, now.nanoseconds);
+  const threeDaysInSeconds = 3 * 24 * 60 * 60;
+  const trialEndsAt = new Timestamp(now.seconds + threeDaysInSeconds, now.nanoseconds);
 
   // REMOVED: firstUser/wizzare fallback logic to ensure isolation
 
@@ -77,11 +96,24 @@ export const ensureMinimalUserProfile = async (user: User) => {
       },
     },
     settings: {},
+    role: "user",
+    registeredAt: now,
+    guardianCandidate: false,
+    guardianApproved: false,
+    guardianRole: "user",
+    guardianBadge: "guardian",
+    recognitionTier: "GUARDIAN",
     createdAt: now,
     updatedAt: now,
   };
 
   await userRepository.upsertUserProfile(user.uid, minimalProfile);
+  await userRepository.updatePresence(user.uid, {
+    email: user.email || "",
+    displayName: user.displayName ?? "",
+    role: "user",
+    registered: true,
+  });
   const createdProfile = (await userRepository.getUserProfile(user.uid)) ?? minimalProfile;
   console.log("[PROFILE CREATED]", {
     uid: user.uid,
@@ -114,7 +146,8 @@ export const signInWithGoogle = async (options?: {
 
       // FALLBACK: Disabling Credential Manager to use legacy Google Sign-In flow
       // This is often more reliable when SHA-1/Signature issues occur on newer Android versions.
-      const result = await (FirebaseAuthentication as any).signInWithGoogle({
+      const nativeAuth = FirebaseAuthentication as NativeGoogleAuthWithLegacyOptions;
+      const result = await nativeAuth.signInWithGoogle({
         webClientId: WEB_CLIENT_ID,
         useCredentialManager: false,
       });

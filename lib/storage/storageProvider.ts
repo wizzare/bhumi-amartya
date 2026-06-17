@@ -684,10 +684,23 @@ class FirebaseStorageProvider implements StorageProvider {
 class DualStorageProvider implements StorageProvider {
   private localStorageProvider: LocalStorageProvider;
   private firebaseStorageProvider: FirebaseStorageProvider;
+  private FIREBASE_TIMEOUT_MS = 3000;
 
   constructor() {
     this.localStorageProvider = new LocalStorageProvider();
     this.firebaseStorageProvider = new FirebaseStorageProvider();
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((resolve) =>
+        setTimeout(() => {
+          console.warn("[STORAGE PROVIDER] Firebase call timed out, falling back.");
+          resolve(fallback);
+        }, this.FIREBASE_TIMEOUT_MS)
+      ),
+    ]);
   }
 
   private getCurrentUserId(): string | null {
@@ -702,10 +715,15 @@ class DualStorageProvider implements StorageProvider {
 
   async getUserProfile(): Promise<UserProfile | null> {
     try {
-      const firebaseProfile = await this.firebaseStorageProvider.getUserProfile();
+      const firebaseProfile = await this.withTimeout(
+        this.firebaseStorageProvider.getUserProfile(),
+        null
+      );
       if (firebaseProfile) return firebaseProfile;
     } catch (error) {
-      if (!this.isPermissionDenied(error)) throw error;
+      if (!this.isPermissionDenied(error)) {
+        console.error("[STORAGE PROVIDER] Firebase getUserProfile error:", error);
+      }
     }
     
     return await this.localStorageProvider.getUserProfile();
@@ -714,7 +732,7 @@ class DualStorageProvider implements StorageProvider {
   async saveUserProfile(profile: UserProfile): Promise<boolean> {
     const [localSuccess, firebaseSuccess] = await Promise.allSettled([
       this.localStorageProvider.saveUserProfile(profile),
-      this.firebaseStorageProvider.saveUserProfile(profile)
+      this.withTimeout(this.firebaseStorageProvider.saveUserProfile(profile), false)
     ]);
 
     return (localSuccess.status === 'fulfilled' && localSuccess.value) ||
@@ -723,10 +741,15 @@ class DualStorageProvider implements StorageProvider {
 
   async getUserBlueprint(): Promise<UserBlueprint | null> {
     try {
-      const firebaseBlueprint = await this.firebaseStorageProvider.getUserBlueprint();
+      const firebaseBlueprint = await this.withTimeout(
+        this.firebaseStorageProvider.getUserBlueprint(),
+        null
+      );
       if (firebaseBlueprint) return firebaseBlueprint;
     } catch (error) {
-      if (!this.isPermissionDenied(error)) throw error;
+      if (!this.isPermissionDenied(error)) {
+        console.error("[STORAGE PROVIDER] Firebase getUserBlueprint error:", error);
+      }
     }
     
     return await this.localStorageProvider.getUserBlueprint();
@@ -735,7 +758,7 @@ class DualStorageProvider implements StorageProvider {
   async saveUserBlueprint(blueprint: UserBlueprint): Promise<boolean> {
     const [localSuccess, firebaseSuccess] = await Promise.allSettled([
       this.localStorageProvider.saveUserBlueprint(blueprint),
-      this.firebaseStorageProvider.saveUserBlueprint(blueprint)
+      this.withTimeout(this.firebaseStorageProvider.saveUserBlueprint(blueprint), false)
     ]);
 
     return (localSuccess.status === 'fulfilled' && localSuccess.value) ||

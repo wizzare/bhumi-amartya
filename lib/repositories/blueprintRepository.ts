@@ -7,6 +7,7 @@ import { calculateLifePath } from "@/lib/calculations/calculateLifePath";
 import { calculateDestinyMatrix } from "@/lib/calculations/calculateDestinyMatrix";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
+import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
 
 const userBlueprintDoc = (uid: string) => doc(db, "blueprints", uid);
 const userBlueprintPath = (uid: string) => `blueprints/${uid}`;
@@ -106,6 +107,7 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
       ...destinyMatrix,
       center: destinyMatrix.center ?? destinyMatrix.arcanaCenter ?? 0,
       arcanaCenter: destinyMatrix.arcanaCenter ?? destinyMatrix.center ?? 0,
+      destinyIntelligence: normalizeDestinyMatrixIntelligence({ destinyMatrix }),
     },
     generatedAt: data.generatedAt ?? new Date().toISOString(),
     updatedAt: data.updatedAt ?? new Date().toISOString(),

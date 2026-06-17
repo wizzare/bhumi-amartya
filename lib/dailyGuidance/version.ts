@@ -1,12 +1,20 @@
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
+import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 import { generateBlueprintHash, generateMemoryHash, calculateSimilarity } from "@/lib/utils/hashing";
 
-export const DAILY_GUIDANCE_SCHEMA_VERSION = "dailyGuidance.v8";
-export const DAILY_GUIDANCE_PROMPT_VERSION = "BHUMI_DAILY_COMPANION_ENGINE_V8_QUOTA_SAFE";
+export const DAILY_GUIDANCE_SCHEMA_VERSION = "dailyGuidance.v11";
+export const DAILY_GUIDANCE_PROMPT_VERSION = "BHUMI_DAILY_COMPANION_ENGINE_V11_WEEKDAY_MENTOR_REFRESH";
+export const DAILY_GUIDANCE_CONTENT_VERSION = "fanta-v2";
 
 export function getDailyGuidanceStaleReason(
   guidance: DailyGuidance | null,
-  expected: { uid: string; localDateKey: string; blueprint?: any; context?: any; previousGuidance?: DailyGuidance | null },
+  expected: {
+    uid: string;
+    localDateKey: string;
+    blueprint?: Record<string, unknown> | null;
+    context?: Record<string, unknown> | null;
+    previousGuidance?: DailyGuidance | null;
+  },
 ): string | null {
   if (!guidance) return null;
 
@@ -14,6 +22,14 @@ export function getDailyGuidanceStaleReason(
   if (guidance.localDateKey !== expected.localDateKey) return "local_date_key_mismatch";
   if (guidance.schemaVersion !== DAILY_GUIDANCE_SCHEMA_VERSION) return "schema_version_mismatch";
   if (guidance.generatedWithPromptVersion !== DAILY_GUIDANCE_PROMPT_VERSION) return "prompt_version_mismatch";
+  if (guidance.guidanceVersion !== DAILY_GUIDANCE_CONTENT_VERSION) return "guidance_version_mismatch";
+
+  const expectedSeed = createDailyContentSeed({
+    uid: expected.uid,
+    localDateKey: expected.localDateKey,
+    blueprint: expected.blueprint,
+  });
+  if (guidance.dailyVariationSeed !== expectedSeed) return "daily_content_seed_mismatch";
 
   // Build 31.3: Quota-safe hash validation
   if (expected.blueprint) {
@@ -37,6 +53,12 @@ export function getDailyGuidanceStaleReason(
 
     if (soulSim > 0.85) return "repetition_detected_soul";
     if (noteSim > 0.85) return "repetition_detected_note";
+
+    const currentAdvice = guidance.categories?.general?.advice || guidance.categories?.advice?.advice || "";
+    const previousAdvice = expected.previousGuidance.categories?.general?.advice || expected.previousGuidance.categories?.advice?.advice || "";
+    if (currentAdvice && previousAdvice && calculateSimilarity(currentAdvice, previousAdvice) > 0.85) {
+      return "repetition_detected_mentor_advice";
+    }
   }
 
   // Stale Rule: If it was generated via fallback but AI is now available (server side)
@@ -67,7 +89,10 @@ export function getDailyGuidanceStaleReason(
   if (guidance.companionReflection.preview.includes("Catatan belum tersedia")) return "missing_catatan_static_fallback";
   if (!guidance.companionReflection.fullReflection?.trim()) return "missing_companionReflection.fullReflection";
   if (guidance.companionReflection.fullReflection.includes("Catatan belum tersedia")) return "missing_catatan_static_fallback";
-  if (guidance.companionReflection.fullReflection.trim().length < 3000) return "short_companionReflection.fullReflection";
+  if (guidance.companionReflection.fullReflection.trim().length < 300) return "short_companionReflection.fullReflection";
+  if (!guidance.innerworkRecommendations?.journaling) return "missing_innerworkRecommendations.journaling";
+  if (!guidance.innerworkRecommendations?.meditation) return "missing_innerworkRecommendations.meditation";
+  if (!guidance.innerworkRecommendations?.manifestation) return "missing_innerworkRecommendations.manifestation";
   if (!guidance.soulReflectionText?.trim()) return "missing_soulReflectionText";
 
   // Build 31.3: Removed aggressive character count checks to prevent 429 loops.

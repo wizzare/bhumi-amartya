@@ -40,7 +40,7 @@ export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
         </div>
 
         <h2 className="text-2xl font-semibold text-[#4F5E52]">
-          Innerwork Selesai 🌱
+          Praktik berhasil disimpan 🌱
         </h2>
 
         <p className="mt-4 leading-relaxed text-[#7B8776]">
@@ -55,10 +55,10 @@ export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
 
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/innerwork")}
           className="bhumi-button mt-8 w-full"
         >
-          Kembali ke Dashboard
+          Kembali ke Innerwork
         </button>
       </div>
     </div>

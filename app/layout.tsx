@@ -4,6 +4,7 @@ import "./globals.css";
 import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { APP_VERSION, RELEASE_NAME } from "@/src/lib/version";
+import { GentleNightReminderLifecycle } from "@/components/notifications/GentleNightReminderLifecycle";
 
 export const metadata: Metadata = {
 
@@ -29,6 +30,7 @@ export default function RootLayout({
 
         <AuthProvider>
           <LanguageProvider>
+            <GentleNightReminderLifecycle />
             {children}
             <footer className="border-t border-[#4F5E52]/10 bg-[#FCFAF5] px-6 py-4 text-center text-xs uppercase tracking-[0.18em] text-[#7B8776]">
               Versi: {APP_VERSION} {RELEASE_NAME}

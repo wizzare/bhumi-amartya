@@ -7,8 +7,9 @@
 // ============= USER IDENTITY =============
 
 export interface UserProfile {
-  id: string;
+  uid: string;
   name: string;
+  fullName?: string;
   birthDate: string; // YYYY-MM-DD
   birthTime: string; // HH:mm
   birthPlace: string;
@@ -19,6 +20,29 @@ export interface UserProfile {
   createdAt: string;
   lastActive: string;
   email?: string;
+
+  // Guardian Identity V3
+  guardianRole?: "founder" | "admin" | "user";
+  guardianBadge?: "core_guardian" | "guardian";
+  recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "CORE_GUARDIAN_CANDIDATE" | "GUARDIAN";
+  recognitionDate?: string;
+  membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME";
+  membershipExpiresAt?: string;
+  isFoundingMember?: boolean;
+
+  // Participation Metrics for Core Guardian Validation
+  participationMetrics?: {
+    loginCount: number;
+    lastSeen: string;
+    lastCheckInAt?: string;
+    lastAssessmentAt?: string;
+    buildNumber?: string;
+    appVersion?: string;
+    platform?: string;
+    hasCompletedCheckIn: boolean;
+    hasCompletedAssessment: boolean;
+    activeDays: string[]; // List of unique YYYY-MM-DD strings
+  };
 }
 
 export interface CoreIdentity {
@@ -34,6 +58,30 @@ export interface CoreIdentity {
   humanDesignProfile: string;
   enneagramType?: number;
   enneagramWing?: string;
+}
+
+// ============= WELLNESS V3 =============
+
+export type WellnessNeed =
+  | 'REST'
+  | 'CLARITY'
+  | 'CONNECTION'
+  | 'MOVEMENT'
+  | 'PEACE'
+  | 'COURAGE'
+  | 'FOCUS'
+  | 'HEALING';
+
+export interface WellnessSnapshot {
+  metrics: {
+    sleep: number; // 1-10
+    energy: number; // 1-10
+    emotion: number; // 1-10
+    focus: number; // 1-10
+  };
+  needs: WellnessNeed[];
+  checkInCompleted: boolean;
+  updatedAt: string; // ISO timestamp
 }
 
 // ============= AI REFLECTION =============

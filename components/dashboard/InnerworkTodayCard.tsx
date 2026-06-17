@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { cleanMarkdown } from "@/lib/utils/markdown";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 
 interface InnerworkTodayCardProps {
   dailyGuidance: DailyGuidance | null;
@@ -17,7 +18,7 @@ interface InnerworkTodayCardProps {
 }
 
 export function InnerworkTodayCard({ dailyGuidance, language, labels }: InnerworkTodayCardProps) {
-  const hdType = (dailyGuidance?.blueprintSnapshot as any)?.humanDesign?.type || "Generator";
+  const hdType = getCanonicalHumanDesignType((dailyGuidance?.blueprintSnapshot as any)?.humanDesign);
 
   const ctaLabels: Record<string, string> = {
     "Manifesting Generator": language === "id" ? "Aktivasi Energi Hari Ini" : "Activate Energy Today",
@@ -27,7 +28,7 @@ export function InnerworkTodayCard({ dailyGuidance, language, labels }: Innerwor
     "Manifestor": language === "id" ? "Salurkan Energi Hari Ini" : "Channel Energy Today",
   };
 
-  const ctaText = ctaLabels[hdType] || labels.viewAll;
+  const ctaText = (hdType && ctaLabels[hdType]) || labels.viewAll;
 
   const narrative = cleanMarkdown(dailyGuidance?.innerworkNarrative) ||
     (language === "id"
@@ -49,6 +50,25 @@ export function InnerworkTodayCard({ dailyGuidance, language, labels }: Innerwor
         <p className="text-[15px] text-[#3C3C3C] leading-relaxed font-bold italic mb-8 opacity-90">
           "{narrative}"
         </p>
+
+        {dailyGuidance?.innerworkRecommendations && (
+          <div className="mb-8 space-y-3">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-orange-50/50 border border-orange-100/50">
+              <span className="text-lg">🏃</span>
+              <div>
+                <p className="text-xs font-bold text-orange-800 uppercase tracking-wider">Workout: {dailyGuidance.innerworkRecommendations.workout.title}</p>
+                <p className="text-[11px] text-orange-700 mt-0.5 leading-relaxed">{dailyGuidance.innerworkRecommendations.workout.reason}</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-green-50/50 border border-green-100/50">
+              <span className="text-lg">🧘</span>
+              <div>
+                <p className="text-xs font-bold text-green-800 uppercase tracking-wider">Yoga: {dailyGuidance.innerworkRecommendations.yoga.title}</p>
+                <p className="text-[11px] text-green-700 mt-0.5 leading-relaxed">{dailyGuidance.innerworkRecommendations.yoga.reason}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <Link
           href="/innerwork"

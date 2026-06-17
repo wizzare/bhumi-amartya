@@ -1,6 +1,96 @@
 import type { DailyGuidanceAdaptiveContext } from "@/lib/dailyGuidance/types";
+import {
+  interpretDestinyMatrixIntelligence,
+  type DestinyHealthChart,
+  type DestinyMatrixIntelligenceResult,
+} from "@/lib/engines/destinyMatrixIntelligence";
+import { natalIntelligenceEngine, type NatalIntelligence } from "@/lib/astrology/natalIntelligence";
+import { aspectEngine, type Aspect } from "@/lib/astrology/aspectEngine";
+import { destinyMatrixV3Engine, type DestinyMatrixV3 } from "@/lib/engines/destinyMatrixV3";
 
 type UnknownRecord = Record<string, unknown>;
+type BlueprintFieldValue = string | number | boolean | string[] | number[] | UnknownRecord | UnknownRecord[];
+
+export type FullLifePathSignals = {
+  lifePath: number | null;
+  birthdayNumber?: number;
+  attitudeNumber?: number;
+  maturityNumber?: number;
+  pinnacles?: BlueprintFieldValue;
+  challenges?: BlueprintFieldValue;
+  personalYear?: number;
+};
+
+export type FullHumanDesignSignals = {
+  type: string | null;
+  strategy: string | null;
+  authority: string | null;
+  profile: string | null;
+  definition?: string;
+  signature?: string;
+  notSelf?: string;
+  incarnationCross?: string;
+  channels?: BlueprintFieldValue;
+  gates?: BlueprintFieldValue;
+  definedCenters?: BlueprintFieldValue;
+  openCenters?: BlueprintFieldValue;
+};
+
+export type FullDestinyMatrixSignals = {
+  arcanaCenter: string | null;
+  commonEnergy: string | null;
+  karmicPatterns: string[];
+  personalQualities?: BlueprintFieldValue;
+  moneyLine?: BlueprintFieldValue;
+  loveLine?: BlueprintFieldValue;
+  karmicTail?: BlueprintFieldValue;
+  fatherLine?: BlueprintFieldValue;
+  motherLine?: BlueprintFieldValue;
+  ancestorLine?: BlueprintFieldValue;
+  talentsFather?: BlueprintFieldValue;
+  talentsMother?: BlueprintFieldValue;
+  talentsGreat?: BlueprintFieldValue;
+  healthChart?: BlueprintFieldValue;
+  chakraMatrix?: BlueprintFieldValue;
+  destinyIntelligence?: {
+    soulSearching?: number;
+    socialization?: number;
+    spiritualKnowledge?: number;
+    healthChart?: DestinyHealthChart;
+  };
+  intelligenceInterpretation?: DestinyMatrixIntelligenceResult;
+  dmV3?: DestinyMatrixV3;
+};
+
+export type FullNatalChartSignals = {
+  sun: string | null;
+  moon: string | null;
+  ascendant: string | null;
+  mc?: string;
+  mercury?: string;
+  venus?: string;
+  mars?: string;
+  jupiter?: string;
+  saturn?: string;
+  uranus?: string;
+  neptune?: string;
+  pluto?: string;
+  northNode?: string;
+  southNode?: string;
+  chiron?: string;
+  elements?: BlueprintFieldValue;
+  modalities?: BlueprintFieldValue;
+  polarities?: BlueprintFieldValue;
+  dominantHouses?: BlueprintFieldValue;
+  housePlacements?: BlueprintFieldValue;
+  placidusHouses?: BlueprintFieldValue;
+  wholeSignHouses?: BlueprintFieldValue;
+  majorAspects?: BlueprintFieldValue;
+  patterns?: BlueprintFieldValue;
+  dominance?: BlueprintFieldValue;
+  natalIntelligence?: NatalIntelligence;
+  aspects?: Aspect[];
+};
 
 export type UnifiedBlueprintSynthesisInput = {
   language: "id" | "en";
@@ -40,6 +130,13 @@ export type UnifiedBlueprintSynthesis = {
     moonSign: string | null;
     ascendant: string | null;
   };
+  fullBlueprint: {
+    lifePath: FullLifePathSignals;
+    humanDesign: FullHumanDesignSignals;
+    destinyMatrix: FullDestinyMatrixSignals;
+    natalChart: FullNatalChartSignals;
+  };
+  differentiators: string[];
 };
 
 function readValue(source: unknown, path: string[]): unknown {
@@ -53,12 +150,32 @@ function readValue(source: unknown, path: string[]): unknown {
   return cursor;
 }
 
+function hasValue(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return Boolean(value.trim());
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value as UnknownRecord).length > 0;
+  return true;
+}
+
+function readAvailable(source: unknown, paths: string[][]): BlueprintFieldValue | undefined {
+  for (const path of paths) {
+    const value = readValue(source, path);
+    if (hasValue(value)) return value as BlueprintFieldValue;
+  }
+  return undefined;
+}
+
 function readString(source: unknown, paths: string[][]): string | null {
   for (const path of paths) {
     const value = readValue(source, path);
     if (typeof value === "string" && value.trim()) return value.trim();
   }
   return null;
+}
+
+function readOptionalString(source: unknown, paths: string[][]): string | undefined {
+  return readString(source, paths) ?? undefined;
 }
 
 function readNumber(source: unknown, paths: string[][]): number | null {
@@ -68,6 +185,10 @@ function readNumber(source: unknown, paths: string[][]): number | null {
     if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) return Number(value);
   }
   return null;
+}
+
+function readOptionalNumber(source: unknown, paths: string[][]): number | undefined {
+  return readNumber(source, paths) ?? undefined;
 }
 
 function readStringArray(source: unknown, paths: string[][]): string[] {
@@ -300,6 +421,35 @@ function uniqueNeeds(needs: string[]): string[] {
   });
 }
 
+function compactValue(value: unknown): string | null {
+  if (!hasValue(value)) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((item) => compactValue(item))
+      .filter(Boolean)
+      .slice(0, 4)
+      .join(", ") || null;
+  }
+  if (typeof value === "object") {
+    const record = value as UnknownRecord;
+    return readString(record, [["name"], ["label"], ["title"], ["value"], ["description"], ["theme"]])
+      ?? Object.entries(record)
+        .filter(([, entryValue]) => hasValue(entryValue))
+        .slice(0, 3)
+        .map(([key, entryValue]) => `${key}: ${compactValue(entryValue) ?? ""}`)
+        .join(", ");
+  }
+  return null;
+}
+
+function compactSignal(label: string, value: unknown): string | null {
+  const compacted = compactValue(value);
+  return compacted ? `${label}: ${compacted}` : null;
+}
+
 export function getArchetypes(lifePath: number | null, arcana: string | null, hdType: string | null): string[] {
   const archetypes: string[] = [];
   const normalizedHD = normalizeHumanDesignType(hdType);
@@ -319,15 +469,15 @@ export function getArchetypes(lifePath: number | null, arcana: string | null, hd
   if (lifePath === 33) archetypes.push("Master Teacher", "Healer");
 
   // HD Archetypes
-  if (normalizedHD === "manifestor") archetypes.push("Trailblazer", "Leader");
-  if (normalizedHD === "generator") archetypes.push("Worker", "Engine");
-  if (normalizedHD === "manifestinggenerator") archetypes.push("Multi-tasker", "Fast-mover");
-  if (normalizedHD === "projector") archetypes.push("Guide", "Advisor");
-  if (normalizedHD === "reflector") archetypes.push("Mirror", "Observer");
+  if (normalizedHD === "manifestor") archetypes.push("Penerobos", "Pemimpin");
+  if (normalizedHD === "generator") archetypes.push("Pekerja", "Penggerak");
+  if (normalizedHD === "manifestinggenerator") archetypes.push("Multi-tugas", "Penggerak Cepat");
+  if (normalizedHD === "projector") archetypes.push("Pembimbing", "Penasihat");
+  if (normalizedHD === "reflector") archetypes.push("Cermin", "Pengamat");
 
   // Arcana specific additions
-  if (arcana === "8") archetypes.push("Courageous Soul");
-  if (arcana === "9") archetypes.push("Wise Guide");
+  if (arcana === "8") archetypes.push("Jiwa Berani");
+  if (arcana === "9") archetypes.push("Pembimbing Bijak");
 
   // Deduplicate and take top 4
   return Array.from(new Set(archetypes)).slice(0, 4);
@@ -337,11 +487,10 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
   const { profile, blueprint } = input;
   const lifePath = readNumber(blueprint, [["numerology", "lifePath"], ["lifePath", "number"], ["lifePath"]])
     ?? readNumber(profile, [["lifePath"]]);
-  const humanDesign = readValue(blueprint, [["humanDesign"]]) ?? readValue(profile, [["humanDesign"]]) as UnknownRecord | null;
-  const isHDVerified = (humanDesign as UnknownRecord)?.status === "ready" || (humanDesign as UnknownRecord)?.status === "verified";
+  const humanDesign = readValue(blueprint, ["humanDesign"]) ?? readValue(profile, ["humanDesign"]) as UnknownRecord | null;
+  const isHDVerified = isCanonicalHumanDesign(humanDesign);
 
-  const humanDesignType = isHDVerified ? (readString(blueprint, [["humanDesign", "type"], ["humanDesign", "energyType"]])
-    ?? readString(profile, [["humanDesignType"]])) : null;
+  const humanDesignType = isHDVerified ? readString(blueprint, [["humanDesign", "type"], ["humanDesign", "energyType"]]) : null;
   const humanDesignProfile = isHDVerified ? (readString(blueprint, [["humanDesign", "profile"]])
     ?? readString(profile, [["humanDesignProfile"]])) : null;
   const authority = isHDVerified ? (readString(blueprint, [["humanDesign", "authority"]])
@@ -358,6 +507,93 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     ?? readString(profile, [["moonSign"]]);
   const ascendant = readString(blueprint, [["astrology", "ascendant"], ["natalChart", "ascendant"]])
     ?? readString(profile, [["ascendant"]]);
+  const fullLifePath: FullLifePathSignals = {
+    lifePath,
+    birthdayNumber: readOptionalNumber(blueprint, [["lifePath", "birthdayNumber"], ["numerology", "birthdayNumber"], ["birthdayNumber"]]),
+    attitudeNumber: readOptionalNumber(blueprint, [["lifePath", "attitudeNumber"], ["numerology", "attitudeNumber"], ["attitudeNumber"]]),
+    maturityNumber: readOptionalNumber(blueprint, [["lifePath", "maturityNumber"], ["numerology", "maturityNumber"], ["maturityNumber"]]),
+    pinnacles: readAvailable(blueprint, [["lifePath", "pinnacles"], ["numerology", "pinnacles"], ["pinnacles"]]),
+    challenges: readAvailable(blueprint, [["lifePath", "challenges"], ["numerology", "challenges"], ["challenges"]]),
+    personalYear: readOptionalNumber(blueprint, [["lifePath", "personalYear"], ["numerology", "personalYear"], ["personalYear"]]),
+  };
+  const fullHumanDesign: FullHumanDesignSignals = {
+    type: humanDesignType,
+    strategy,
+    authority,
+    profile: humanDesignProfile,
+    definition: isHDVerified ? readOptionalString(blueprint, [["humanDesign", "definition"]]) : undefined,
+    signature: isHDVerified ? readOptionalString(blueprint, [["humanDesign", "signature"]]) : undefined,
+    notSelf: isHDVerified ? readOptionalString(blueprint, [["humanDesign", "notSelf"], ["humanDesign", "notSelfTheme"]]) : undefined,
+    incarnationCross: isHDVerified ? readOptionalString(blueprint, [["humanDesign", "incarnationCross"]]) : undefined,
+    channels: isHDVerified ? readAvailable(blueprint, [["humanDesign", "channels"]]) : undefined,
+    gates: isHDVerified ? readAvailable(blueprint, [["humanDesign", "gates"]]) : undefined,
+    definedCenters: isHDVerified ? readAvailable(blueprint, [["humanDesign", "definedCenters"], ["humanDesign", "defined"]]) : undefined,
+    openCenters: isHDVerified ? readAvailable(blueprint, [["humanDesign", "openCenters"], ["humanDesign", "open"]]) : undefined,
+  };
+  const fullDestinyMatrix: FullDestinyMatrixSignals = {
+    arcanaCenter,
+    commonEnergy,
+    karmicPatterns,
+    personalQualities: readAvailable(blueprint, [["destinyMatrix", "personalQualities"], ["personalQualities"]]),
+    moneyLine: readAvailable(blueprint, [["destinyMatrix", "moneyLine"], ["moneyLine"]]),
+    loveLine: readAvailable(blueprint, [["destinyMatrix", "loveLine"], ["loveLine"]]),
+    karmicTail: readAvailable(blueprint, [["destinyMatrix", "karmicTail"], ["karmicTail"]]),
+    fatherLine: readAvailable(blueprint, [["destinyMatrix", "fatherLine"], ["destinyMatrix", "fatherProgram"], ["fatherProgram"]]),
+    motherLine: readAvailable(blueprint, [["destinyMatrix", "motherLine"], ["destinyMatrix", "motherProgram"], ["motherProgram"]]),
+    ancestorLine: readAvailable(blueprint, [["destinyMatrix", "ancestorLine"], ["ancestorLine"]]),
+    talentsFather: readAvailable(blueprint, [["destinyMatrix", "talentsFather"], ["destinyMatrix", "talentaAyah"], ["talentsFather"]]),
+    talentsMother: readAvailable(blueprint, [["destinyMatrix", "talentsMother"], ["destinyMatrix", "talentaIbu"], ["talentsMother"]]),
+    talentsGreat: readAvailable(blueprint, [["destinyMatrix", "talentsGreat"], ["destinyMatrix", "talentaAgung"], ["talentsGreat"]]),
+    healthChart: readAvailable(blueprint, [["destinyMatrix", "healthChart"], ["healthChart"]]),
+    chakraMatrix: readAvailable(blueprint, [["destinyMatrix", "chakraMatrix"], ["chakraMatrix"]]),
+  };
+  const fullNatalChart: FullNatalChartSignals = {
+    sun: sunSign,
+    moon: moonSign,
+    ascendant,
+    mc: readOptionalString(blueprint, [["astrology", "mc"], ["natalChart", "mc"], ["astrology", "midheaven"], ["natalChart", "midheaven"]]),
+    mercury: readOptionalString(blueprint, [["astrology", "mercury"], ["natalChart", "mercury"]]),
+    venus: readOptionalString(blueprint, [["astrology", "venus"], ["natalChart", "venus"]]),
+    mars: readOptionalString(blueprint, [["astrology", "mars"], ["natalChart", "mars"]]),
+    jupiter: readOptionalString(blueprint, [["astrology", "jupiter"], ["natalChart", "jupiter"]]),
+    saturn: readOptionalString(blueprint, [["astrology", "saturn"], ["natalChart", "saturn"]]),
+    uranus: readOptionalString(blueprint, [["astrology", "uranus"], ["natalChart", "uranus"]]),
+    neptune: readOptionalString(blueprint, [["astrology", "neptune"], ["natalChart", "neptune"]]),
+    pluto: readOptionalString(blueprint, [["astrology", "pluto"], ["natalChart", "pluto"]]),
+    northNode: readOptionalString(blueprint, [["astrology", "northNode"], ["natalChart", "northNode"], ["astrology", "planets", "NorthNode", "sign"], ["natalChart", "planets", "NorthNode", "sign"]]),
+    southNode: readOptionalString(blueprint, [["astrology", "southNode"], ["natalChart", "southNode"], ["astrology", "planets", "SouthNode", "sign"], ["natalChart", "planets", "SouthNode", "sign"]]),
+    chiron: readOptionalString(blueprint, [["astrology", "chiron"], ["natalChart", "chiron"], ["astrology", "planets", "Chiron", "sign"], ["natalChart", "planets", "Chiron", "sign"]]),
+    elements: readAvailable(blueprint, [["astrology", "elements"], ["natalChart", "elements"]]),
+    modalities: readAvailable(blueprint, [["astrology", "modalities"], ["natalChart", "modalities"]]),
+    polarities: readAvailable(blueprint, [["astrology", "polarities"], ["natalChart", "polarities"]]),
+    dominantHouses: readAvailable(blueprint, [["astrology", "dominantHouses"], ["natalChart", "dominantHouses"], ["astrology", "dominance", "dominantHouse"], ["natalChart", "dominance", "dominantHouse"]]),
+    housePlacements: readAvailable(blueprint, [["astrology", "housePlacements"], ["natalChart", "housePlacements"], ["astrology", "planets"], ["natalChart", "planets"], ["natalChart", "houses"]]),
+    placidusHouses: readAvailable(blueprint, [["astrology", "placidusHouses"], ["natalChart", "placidusHouses"], ["astrology", "houses"], ["natalChart", "houses"]]),
+    wholeSignHouses: readAvailable(blueprint, [["astrology", "wholeSignHouses"], ["natalChart", "wholeSignHouses"]]),
+    majorAspects: readAvailable(blueprint, [["astrology", "majorAspects"], ["natalChart", "majorAspects"], ["astrology", "aspects"], ["natalChart", "aspects"]]),
+    patterns: readAvailable(blueprint, [["astrology", "patterns"], ["natalChart", "patterns"]]),
+    dominance: readAvailable(blueprint, [["astrology", "dominance"], ["natalChart", "dominance"]]),
+  };
+
+  const planetsData = (blueprint as any)?.astrology?.planets || (blueprint as any)?.natalChart?.planets;
+  // Apply Natal Intelligence
+  fullNatalChart.natalIntelligence = natalIntelligenceEngine.calculateIntelligence({
+    astrology: {
+      ...fullNatalChart,
+      planets: planetsData,
+    },
+  } as any);
+  if (planetsData) {
+    fullNatalChart.aspects = aspectEngine.calculateAspects(planetsData);
+  }
+
+  const destinyIntelligence = interpretDestinyMatrixIntelligence({ destinyMatrix: readValue(blueprint, ["destinyMatrix"]) ?? blueprint });
+  fullDestinyMatrix.destinyIntelligence = destinyIntelligence.intelligence;
+  fullDestinyMatrix.intelligenceInterpretation = destinyIntelligence;
+  fullDestinyMatrix.dmV3 = destinyMatrixV3Engine.calculateIntelligence({
+    destinyMatrix: fullDestinyMatrix,
+    input: input.profile || input.blueprint
+  } as any);
 
   const hdThemes = getHumanDesignPracticeTheme(humanDesignType);
   const lifePathThemes = getLifePathPracticeTheme(lifePath);
@@ -367,16 +603,52 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
   );
 
   const archetypes = getArchetypes(lifePath, arcanaCenter, humanDesignType);
+  const differentiators = [
+    compactSignal("Birthday", fullLifePath.birthdayNumber),
+    compactSignal("Personal Year", fullLifePath.personalYear),
+    compactSignal("Incarnation Cross", fullHumanDesign.incarnationCross),
+    compactSignal("Channels", fullHumanDesign.channels),
+    compactSignal("Gates", fullHumanDesign.gates),
+    compactSignal("Money Line", fullDestinyMatrix.moneyLine),
+    compactSignal("Love Line", fullDestinyMatrix.loveLine),
+    compactSignal("Karmic Tail", fullDestinyMatrix.karmicTail),
+    compactSignal("Soul Searching", destinyIntelligence.intelligence.soulSearching),
+    compactSignal("Socialization", destinyIntelligence.intelligence.socialization),
+    compactSignal("Spiritual Knowledge", destinyIntelligence.intelligence.spiritualKnowledge),
+    compactSignal("Dominant Chakra", destinyIntelligence.dominantChakra),
+    compactSignal("ASC", fullNatalChart.ascendant),
+    compactSignal("MC", fullNatalChart.mc),
+    compactSignal("Venus", fullNatalChart.venus),
+    compactSignal("Saturn", fullNatalChart.saturn),
+    compactSignal("North Node", fullNatalChart.northNode),
+    compactSignal("South Node", fullNatalChart.southNode),
+    compactSignal("Chiron", fullNatalChart.chiron),
+    compactSignal("Elements", fullNatalChart.elements),
+    compactSignal("Modalities", fullNatalChart.modalities),
+    compactSignal("Polarities", fullNatalChart.polarities),
+    compactSignal("House Placements", fullNatalChart.housePlacements),
+    compactSignal("Whole Sign Houses", fullNatalChart.wholeSignHouses),
+    compactSignal("Aspects", fullNatalChart.majorAspects),
+    compactSignal("Patterns", fullNatalChart.patterns),
+    compactSignal("Natal Dominance", fullNatalChart.dominance),
+  ].filter((item): item is string => Boolean(item));
 
   const coreNeeds = [
     mergeThemes(lifePathThemes.grounding, hdThemes.grounding, "grounded steadiness"),
-    arcanaCenter || commonEnergy || "emotional integration",
+    compactSignal("Money Line", fullDestinyMatrix.moneyLine)
+      || compactSignal("Love Line", fullDestinyMatrix.loveLine)
+      || arcanaCenter
+      || commonEnergy
+      || "emotional integration",
     mergeThemes(lifePathThemes.action, hdThemes.action, "practical action"),
-    input.astrologyToday ? "current sky awareness" : sunSign || moonSign || ascendant || "self-awareness",
+    input.astrologyToday ? "current sky awareness" : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || "self-awareness",
+    differentiators[0],
     progressTone.label,
   ].filter(Boolean);
+  const humanNeeds = uniqueNeeds(
+    coreNeeds.map((need) => humanizeNeed(String(need), input.language)),
+  );
 
-  const humanNeeds = uniqueNeeds(coreNeeds.map((need) => humanizeNeed(need, input.language))).slice(0, 4);
   const blueprintSummary = input.language === "en"
     ? `Today may feel more workable when you give yourself ${humanNeeds[0] ?? "a steadier rhythm"}, ${humanNeeds[1] ?? "one honest pause"}, and ${humanNeeds[2] ?? "one doable next step"}. Let the day stay practical: one honest check-in, one grounded choice, one small follow-through.`
     : `Hari ini mungkin terasa lebih bisa dijalani saat kamu memberi ruang untuk ${humanNeeds[0] ?? "ritme yang lebih stabil"}, ${humanNeeds[1] ?? "satu jeda jujur"}, dan ${humanNeeds[2] ?? "satu langkah yang bisa dilakukan"}. Biarkan harimu tetap sederhana: satu cek-in jujur, satu pilihan yang membumi, satu langkah kecil yang benar-benar dilakukan.`;
@@ -404,5 +676,13 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
       moonSign,
       ascendant,
     },
+    fullBlueprint: {
+      lifePath: fullLifePath,
+      humanDesign: fullHumanDesign,
+      destinyMatrix: fullDestinyMatrix,
+      natalChart: fullNatalChart,
+    },
+    differentiators,
   };
 }
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";

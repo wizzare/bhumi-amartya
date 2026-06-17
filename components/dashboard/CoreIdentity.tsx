@@ -1,5 +1,7 @@
 "use client";
 
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+
 interface CoreIdentityProps {
   lifePath?: string | number;
   lifePathRole?: string;
@@ -8,6 +10,9 @@ interface CoreIdentityProps {
   humanDesign?: {
     type?: string | null;
     status?: string | null;
+    source?: string | null;
+    hdEngineVersion?: string | null;
+    calculationQuality?: string | null;
   } | null;
   labels: {
     title: string;
@@ -38,7 +43,7 @@ export function CoreIdentity({
   humanDesign,
   labels,
 }: CoreIdentityProps) {
-  const isVerified = humanDesign?.status === "ready" || humanDesign?.status === "verified";
+  const isVerified = isCanonicalHumanDesign(humanDesign);
   let humanDesignValue = isVerified ? humanDesign?.type : null;
 
   if (!humanDesignValue) {

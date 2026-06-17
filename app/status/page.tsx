@@ -5,19 +5,19 @@ const statusItems = [
   ["Build Status", "Ready"],
   ["Version", `${APP_VERSION} ${RELEASE_NAME}`],
   ["Last Update", LAST_UPDATED],
-  ["Environment", "Production Preview"],
-  ["Route Count", "11 public routes"],
-  ["Fitur Aktif", "7 feature modules"],
+  ["Environment", "Internal Testing"],
+  ["Version Code", "45"],
+  ["Release", "BHUMI V3 FANTA"],
 ];
 
 const activeFeatures = [
-  "Blueprint Soul Map",
-  "Human Design (Beta)",
-  "Daily Soul Guidance",
-  "Guided Journaling",
-  "Meditation Practices",
-  "Healing Audio",
-  "Journey Tracking",
+  "Dashboard Harian",
+  "Astro Personal",
+  "Kenali Diri",
+  "Journey",
+  "Profile Lima Bagian",
+  "Share Cards",
+  "Innerwork dan Manifestasi",
 ];
 
 export default function StatusPage() {

@@ -2,11 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function LandingPage() {
   const router = useRouter();
   const auth = useAuth();
+  const [showFallback, setShowFallback] = useState(false);
+
+  useEffect(() => {
+    if (auth?.loading) {
+      const timer = setTimeout(() => {
+        setShowFallback(true);
+      }, 10000); // 10 seconds
+      return () => clearTimeout(timer);
+    } else {
+      setShowFallback(false);
+    }
+  }, [auth?.loading]);
 
   useEffect(() => {
     console.log("[LANDING RENDER]", {
@@ -57,9 +69,21 @@ export default function LandingPage() {
   if (auth?.loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <div className="animate-pulse flex flex-col items-center">
-           <div className="w-16 h-16 bg-[#4F5E52]/10 rounded-full mb-4"></div>
-           <p className="text-[#4F5E52] text-sm font-medium">Menghubungkan perjalanan...</p>
+        <div className="flex flex-col items-center">
+           {!showFallback ? (
+             <div className="animate-pulse flex flex-col items-center">
+                <div className="w-16 h-16 bg-[#4F5E52]/10 rounded-full mb-4"></div>
+                <p className="text-[#4F5E52] text-sm font-medium">Menghubungkan perjalanan...</p>
+             </div>
+           ) : (
+             <div className="flex flex-col items-center gap-4 text-center px-6 max-w-xs">
+                <p className="text-[#4F5E52] text-sm font-medium">Sepertinya koneksi melambat atau sesi terganggu.</p>
+                <div className="flex gap-2 w-full">
+                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">Coba Lagi</button>
+                  <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="flex-1 py-3 border border-[#4F5E52] text-[#4F5E52] rounded-xl text-xs font-bold uppercase tracking-wider">Masuk Ulang</button>
+                </div>
+             </div>
+           )}
         </div>
       </main>
     );
@@ -74,7 +98,7 @@ export default function LandingPage() {
       <h1 className="text-4xl font-serif text-[#4F5E52] mb-4">Bhumi Amartya</h1>
 
       <p className="max-w-xs text-[#7B8776] leading-relaxed mb-12">
-        Ruang harian untuk mengenali diri, membaca ritme hidup, dan menjalani innerwork sesuai blueprint-mu.
+        Ruang harian untuk mengenali diri, membaca ritme hidup, dan menjalani praktik batin sesuai jati dirimu.
       </p>
 
       <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -92,39 +116,6 @@ export default function LandingPage() {
           Saya Sudah Punya Akun
         </button>
       </div>
-
-      {/* P1 AUDIT BYPASS */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="mt-8 flex gap-2 flex-wrap justify-center">
-          <button
-            onClick={() => {
-              localStorage.setItem("bhumi_audit_user", "widhi");
-              router.push("/dashboard?audit=widhi");
-            }}
-            className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-[10px] font-bold"
-          >
-            AUDIT: WIDHI
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem("bhumi_audit_user", "sheina");
-              router.push("/dashboard?audit=sheina");
-            }}
-            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold"
-          >
-            AUDIT: SHEINA
-          </button>
-          <button
-            onClick={() => {
-              localStorage.setItem("bhumi_audit_user", "amartya");
-              router.push("/dashboard?audit=amartya");
-            }}
-            className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold"
-          >
-            AUDIT: AMARTYA
-          </button>
-        </div>
-      )}
 
       <p className="mt-12 text-[10px] text-[#7B8776]/50 uppercase tracking-widest font-mono">
         Closed Beta v1.0

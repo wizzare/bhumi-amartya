@@ -3,6 +3,9 @@
 import React from "react";
 import { Sparkles, Zap, Target } from "lucide-react";
 import { cleanMarkdown } from "@/lib/utils/markdown";
+import { useAuth } from "@/context/AuthContext";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 interface ManifestationCardProps {
   language: "id" | "en";
@@ -14,6 +17,20 @@ interface ManifestationCardProps {
 }
 
 export function ManifestationCard({ language, manifestation }: ManifestationCardProps) {
+  const auth = useAuth();
+
+  React.useEffect(() => {
+    if (!manifestation || !auth?.user?.uid) return;
+
+    const profile = auth.userProfile;
+    const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const dateKey = getLocalDateKey(new Date(), timezone);
+
+    void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
+      manifestDone: true,
+    });
+  }, [auth?.user?.uid, manifestation, auth?.userProfile]);
+
   if (!manifestation) return null;
 
   return (
@@ -40,7 +57,7 @@ export function ManifestationCard({ language, manifestation }: ManifestationCard
               Affirmation
             </p>
             <p className="text-[15px] text-[#3C3C3C] leading-relaxed font-bold italic">
-              "{cleanMarkdown(manifestation.affirmation)}"
+              &quot;{cleanMarkdown(manifestation.affirmation)}&quot;
             </p>
           </div>
         </div>
@@ -55,7 +72,7 @@ export function ManifestationCard({ language, manifestation }: ManifestationCard
               Assumption
             </p>
             <p className="text-[15px] text-[#3C3C3C] leading-relaxed font-bold italic">
-              "{cleanMarkdown(manifestation.assumption)}"
+              &quot;{cleanMarkdown(manifestation.assumption)}&quot;
             </p>
           </div>
         </div>
@@ -70,7 +87,7 @@ export function ManifestationCard({ language, manifestation }: ManifestationCard
               Attraction
             </p>
             <p className="text-[15px] text-[#3C3C3C] leading-relaxed font-bold italic">
-              "{cleanMarkdown(manifestation.attraction)}"
+              &quot;{cleanMarkdown(manifestation.attraction)}&quot;
             </p>
           </div>
         </div>

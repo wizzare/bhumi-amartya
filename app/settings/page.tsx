@@ -1,9 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { HD_API_URL } from "@/lib/config/hdApiUrl";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { Shield, ShieldCheck, ShieldAlert, User as UserIcon, Info } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
+import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import CityAutocomplete from "@/components/ui/CityAutocomplete";
 import type { CitySelection } from "@/components/ui/CityAutocomplete";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -27,6 +30,7 @@ import {
 import { safeJsonParse } from "@/lib/storage/safeJson";
 import { auth as firebaseAuth } from "@/lib/firebase/firebase";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { userRepository } from "@/lib/repositories/userRepository";
 import type { UserProfile as StorageUserProfile, UserBlueprint as StorageUserBlueprint } from "@/lib/firebase/service";
 import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
@@ -56,7 +60,7 @@ async function fetchHumanDesign(input: {
   timezone?: string | null;
 }): Promise<LocalHumanDesign> {
   try {
-    const response = await fetch("/api/humandesign/calculate", {
+    const response = await fetch(HD_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -250,6 +254,48 @@ export default function SettingsPage() {
 
   const effectiveEmail = googleEmail || email;
   const planStatus = getUserPlanStatus({ ...plan, email: effectiveEmail });
+
+  const statusBadge = useMemo(() => {
+    const profile = originalProfile as any;
+    if (!profile) return null;
+
+    const email = (profile.email || googleEmail || "").trim().toLowerCase();
+    const isFounder = profile.guardianRole === "founder" || profile.recognitionTier === "FOUNDER" || email === "wizzare@gmail.com";
+
+    if (isFounder) {
+      return {
+        key: "founder",
+        color: "bg-amber-100 text-amber-800 border-amber-200",
+        Icon: ShieldCheck,
+      };
+    }
+    if (profile.guardianRole === "admin") {
+      return {
+        key: "admin",
+        color: "bg-blue-100 text-blue-800 border-blue-200",
+        Icon: Shield,
+      };
+    }
+    if (profile.guardianBadge === "core_guardian" || profile.recognitionTier === "CORE_GUARDIAN") {
+      return {
+        key: "core_guardian",
+        color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        Icon: ShieldCheck,
+      };
+    }
+    if (profile.guardianBadge === "guardian" || profile.recognitionTier === "GUARDIAN") {
+      return {
+        key: "guardian",
+        color: "bg-indigo-100 text-indigo-800 border-indigo-200",
+        Icon: Shield,
+      };
+    }
+    return {
+      key: "user",
+      color: "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]",
+      Icon: UserIcon,
+    };
+  }, [originalProfile]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
@@ -461,6 +507,15 @@ export default function SettingsPage() {
 
       await storageProvider.saveUserProfile(nextProfile as unknown as StorageUserProfile);
       await storageProvider.saveUserBlueprint(nextBlueprint as unknown as StorageUserBlueprint);
+      if (activeUid !== "local-user") {
+        await userRepository.updatePresence(activeUid, {
+          email: effectiveEmail || null,
+          displayName: fullName,
+          role: nextProfile.guardianRole || nextProfile.role || "user",
+        }).catch((error) => {
+          console.warn("[Settings] Presence update failed", error);
+        });
+      }
 
       if (activeUid && activeUid !== "local-user") {
         localStorage.setItem(`${LANGUAGE_STORAGE_KEY}:${activeUid}`, language);
@@ -495,6 +550,7 @@ export default function SettingsPage() {
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-28">
       <AppNav />
       <div className="mx-auto max-w-3xl space-y-6">
+        <BhumiPageHeader />
         <header className="bhumi-card p-7 bg-gradient-to-br from-[#FCFAF5] to-[#F5F1E8]">
           <h1 className="text-3xl font-semibold text-[#4F5E52]">{t.settings.title}</h1>
           <p className="mt-4 text-[#7B8776] leading-relaxed">
@@ -552,21 +608,47 @@ export default function SettingsPage() {
           {/* TODO: apply language preference globally across all app text */}
         </section>
 
-        <section className="bhumi-card space-y-4 p-6">
+        <section className="bhumi-card space-y-6 p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">{t.settings.accountStatus}</h2>
-          {planStatus.isPro ? (
-            <>
-              <p className="text-2xl font-semibold text-[#4F5E52]">Pro Plan aktif</p>
-              <p className="text-[#7B8776]">
-                {planStatus.isDeveloper ? "Developer Access" : "Langganan Aktif"}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className="text-2xl font-semibold text-[#4F5E52]">Beta Access</p>
-              <p className="text-[#7B8776]">Nikmati akses penuh selama masa Beta.</p>
-            </>
+
+          {statusBadge && (
+            <div className="flex items-start gap-4 p-5 rounded-[2rem] bg-white border border-[#E8E9E5]/60 shadow-sm">
+              <div className={`p-3 rounded-2xl ${statusBadge.color} shrink-0`}>
+                <statusBadge.Icon size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-[#4F5E52]">
+                  {t.settings.accountStatusBadges[statusBadge.key as keyof typeof t.settings.accountStatusBadges].label}
+                </h3>
+                <p className="text-sm text-[#7B8776] mt-1 leading-relaxed">
+                  {t.settings.accountStatusBadges[statusBadge.key as keyof typeof t.settings.accountStatusBadges].description}
+                </p>
+              </div>
+            </div>
           )}
+
+          <div className="pt-4 border-t border-[#F5F1E8]">
+            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Subscription Plan</p>
+            {planStatus.isPro ? (
+              <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-bold text-amber-900">Pro Plan Aktif</p>
+                  <p className="text-xs text-amber-700/70 mt-0.5">
+                    {planStatus.isDeveloper ? "Developer Access" : "Langganan Aktif"}
+                  </p>
+                </div>
+                <ShieldCheck size={24} className="text-amber-600" />
+              </div>
+            ) : (
+              <div className="p-4 rounded-2xl bg-[#FCFAF5] border border-[#E8E9E5] flex items-center justify-between">
+                <div>
+                  <p className="text-lg font-bold text-[#4F5E52]">Beta Access</p>
+                  <p className="text-xs text-[#7B8776] mt-0.5">Nikmati akses penuh selama masa Beta.</p>
+                </div>
+                <Info size={24} className="text-[#9BB89A]" />
+              </div>
+            )}
+          </div>
         </section>
 
         <section className="bhumi-card space-y-4 p-6">

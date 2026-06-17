@@ -4,6 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   output: 'export',
   trailingSlash: true,
+  // @ts-ignore
+  allowedDevOrigins: ['192.168.1.8', '192.168.1.11', 'localhost'],
   images: {
     unoptimized: true,
   },

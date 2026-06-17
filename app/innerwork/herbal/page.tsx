@@ -10,29 +10,50 @@ import { useAuth } from "@/context/AuthContext";
 import { HEALTHY_FOOD_DATABASE } from "@/lib/data/innerworkContent";
 import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
-import { v4 as uuidv4 } from "uuid";
+import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
+import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
+
+const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_VARIATION_LIBRARY.healthyFood];
+const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function HealthyFoodPage() {
   const auth = useAuth();
-  const [completed, setCompleted] = React.useState<Record<string, boolean>>({});
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [saving, setSaving] = React.useState(false);
+  const [saved, setSaved] = React.useState(false);
 
   React.useEffect(() => {
     trackEvent("open_healthy_food", auth?.user?.uid);
   }, [auth?.user?.uid]);
 
-  const toggleComplete = async (activity: any) => {
-    const id = activity.id;
-    if (completed[id]) return;
+  const toggleSelection = (id: string) => {
+    if (saved) return;
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-    setCompleted(prev => ({ ...prev, [id]: true }));
+  const handleSaveAll = async () => {
+    if (selectedIds.size === 0 || !auth?.user?.uid || saving) return;
 
-    if (auth?.user?.uid) {
-      try {
-        await activityRepository.completeActivity({
-          uid: auth.user.uid,
-          date: getLocalDateKey(),
+    const uid = auth.user.uid;
+    setSaving(true);
+    try {
+      const profile = auth.userProfile;
+      const nestedProfile = profile?.profile as { timezone?: string } | undefined;
+      const timezone = profile?.timezone || nestedProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const date = getLocalDateKey(new Date(), timezone);
+
+      const savePromises = Array.from(selectedIds).map(id => {
+        const activity = FOOD_BY_ID[id];
+        return activityRepository.completeActivity({
+          uid,
+          date,
           activity: {
-            id: uuidv4(),
+            id: `food-${id}-${Date.now()}`,
             category: "healthyFood",
             contentId: id,
             title: activity.title,
@@ -40,15 +61,19 @@ export default function HealthyFoodPage() {
             sourceVersion: "1.0",
           }
         });
-        trackEvent("complete_healthy_food_item", auth.user.uid);
-      } catch (err) {
-        console.error("[HEALTHY_FOOD_COMPLETE_ERROR]", err);
-        setCompleted(prev => ({ ...prev, [id]: false }));
-      }
+      });
+
+      await Promise.all(savePromises);
+      trackEvent("complete_healthy_food", uid);
+      setSaved(true);
+    } catch (err) {
+      console.error("[HEALTHY_FOOD_SAVE_ERROR]", err);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const activities = Object.values(HEALTHY_FOOD_DATABASE);
+  const activities = FOOD_ACTIVITIES;
 
   return (
     <ProtectedRoute>
@@ -61,7 +86,7 @@ export default function HealthyFoodPage() {
             <span className="text-sm font-medium">Kembali ke Hub</span>
           </Link>
 
-          <header className="mb-10">
+          <header className="mb-8">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
               <Utensils size={32} />
             </div>
@@ -69,9 +94,19 @@ export default function HealthyFoodPage() {
             <p className="text-[#7B8776]">Rekomendasi makanan sehat, jamu, dan herbal untuk mendukung tubuhmu.</p>
           </header>
 
+          <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">
+            <p className="text-[11px] text-[#7B8776] leading-relaxed italic text-center">
+              Aktivitas ini bersifat opsional dan bukan syarat untuk melanjutkan perjalananmu di Bhumi.
+            </p>
+          </div>
+
           <div className="space-y-6">
             {activities.map((activity) => (
-              <section key={activity.id} className="bhumi-card p-6 bg-white">
+              <section
+                key={activity.id}
+                className={`bhumi-card p-6 transition-all duration-300 border-2 cursor-pointer ${selectedIds.has(activity.id) ? 'bg-emerald-50/30 border-emerald-200 shadow-md' : 'bg-white border-transparent'}`}
+                onClick={() => toggleSelection(activity.id)}
+              >
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-xl font-semibold text-[#4F5E52]">{activity.title}</h2>
@@ -80,12 +115,9 @@ export default function HealthyFoodPage() {
                       <span className="text-xs font-medium">{activity.durationMinutes} menit persiapan</span>
                     </div>
                   </div>
-                  <button
-                    onClick={() => toggleComplete(activity)}
-                    className={`p-2 rounded-full transition-colors ${completed[activity.id] ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'}`}
-                  >
+                  <div className={`p-2 rounded-full transition-colors ${selectedIds.has(activity.id) ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-300'}`}>
                     <CheckCircle2 size={24} />
-                  </button>
+                  </div>
                 </div>
 
                 <p className="text-[#7B8776] text-sm mb-4">{activity.description}</p>
@@ -123,15 +155,21 @@ export default function HealthyFoodPage() {
                     </div>
                   )}
                 </div>
-
-                <button
-                  onClick={() => toggleComplete(activity)}
-                  className={`w-full mt-6 py-3 rounded-xl font-semibold text-sm transition-all ${completed[activity.id] ? 'bg-green-600 text-white shadow-md' : 'bg-[#F5F1E8] text-[#4F5E52] hover:bg-[#E8E4D8]'}`}
-                >
-                  {completed[activity.id] ? 'Selesai ✨' : 'Tandai Selesai'}
-                </button>
               </section>
             ))}
+          </div>
+
+          <div className="mt-12">
+            <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
+              Klik save hanya jika kamu sudah melakukan.
+            </p>
+            <button
+              onClick={handleSaveAll}
+              disabled={selectedIds.size === 0 || saving || saved}
+              className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : selectedIds.size > 0 ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
+            >
+              {saved ? 'Langkah Tersimpan ✨' : saving ? 'Menyimpan...' : 'Save'}
+            </button>
           </div>
 
           <div className="mt-10 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
@@ -142,6 +180,7 @@ export default function HealthyFoodPage() {
           </div>
         </div>
       </main>
+      <InnerworkCelebration isOpen={saved} />
     </ProtectedRoute>
   );
 }

@@ -2,19 +2,22 @@ import type {
   DailyGuidance,
   DailyGuidanceAdaptiveContext,
 } from "@/lib/dailyGuidance/types";
+import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
+import { DailyState } from "@/lib/repositories/dailyStateRepository";
 
 type UnknownRecord = Record<string, unknown>;
 
 type BuildAdaptiveContextInput = {
   uid: string;
   date: string;
+  blueprint?: UnknownRecord | null;
+  blueprintSummary?: string | null;
   journalEntries?: UnknownRecord[];
   meditationEntries?: UnknownRecord[];
   audioHealingEntries?: UnknownRecord[];
   previousGuidance?: DailyGuidance[];
+  yesterdayState?: DailyState | null;
 };
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function addDays(dateKey: string, days: number): string {
   const date = new Date(`${dateKey}T00:00:00.000Z`);
@@ -90,7 +93,12 @@ function selectTone(completionRateYesterday: number): DailyGuidanceAdaptiveConte
 export function buildAdaptiveDailyGuidanceContext(
   input: BuildAdaptiveContextInput,
 ): DailyGuidanceAdaptiveContext {
-  const dailyVariationSeed = `${input.date}:${input.uid}`;
+  const dailyVariationSeed = createDailyContentSeed({
+    uid: input.uid,
+    localDateKey: input.date,
+    blueprint: input.blueprint,
+    blueprintSummary: input.blueprintSummary,
+  });
   const yesterday = addDays(input.date, -1);
   const journalCompletedYesterday = hasEntryOnDate(input.journalEntries, yesterday);
   const meditationCompletedYesterday = hasEntryOnDate(input.meditationEntries, yesterday);
@@ -120,13 +128,18 @@ export function buildAdaptiveDailyGuidanceContext(
       totalPractices: guidance.dailyPractices.length,
     }));
 
+  const yesterdayWellnessMapping = input.yesterdayState?.wellnessMapping || null;
+  const yesterdaySummary = input.yesterdayState?.dailySummary || null;
+
   const previousProgressSummary =
     `Yesterday ${yesterday}: completion ${completionRateYesterday}%, `
     + `journal ${journalCompletedYesterday ? "completed" : "not completed"}, `
     + `meditation ${meditationCompletedYesterday ? "completed" : "not completed"}, `
     + `audio healing ${audioCompletedYesterday ? "completed" : "not completed"}, `
     + `daily practices ${practiceCompletedCountYesterday}/${totalPracticesYesterday}, `
-    + `streak ${streakDays} day(s), tone ${adaptiveTone}.`;
+    + `streak ${streakDays} day(s), tone ${adaptiveTone}.`
+    + (yesterdayWellnessMapping ? ` Wellness Theme: ${yesterdayWellnessMapping.results[0]?.label || "Normal"}.` : " No wellness record yesterday.")
+    + (yesterdaySummary ? ` Summary: ${yesterdaySummary}` : "");
 
   return {
     dailyVariationSeed,
@@ -138,6 +151,7 @@ export function buildAdaptiveDailyGuidanceContext(
     streakDays,
     adaptiveTone,
     previousProgressSummary,
+    yesterdayWellnessMapping,
     previousGuidanceSummaries,
   };
 }

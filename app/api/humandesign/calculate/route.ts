@@ -1,3 +1,5 @@
+import { HD_ENGINE_VERSION } from "../../../../lib/humandesign/hdAudit";
+
 type HumanDesignCalculateResult = {
   type: string | null;
   profile: string | null;
@@ -9,13 +11,29 @@ type HumanDesignCalculateResult = {
   openCenters: string[];
   gatesPersonality: string[];
   gatesDesign: string[];
-  status: "ready" | "pending" | "error";
+  incarnationCross: string | null;
+  inc_cross: string | null;
+  channels: string[];
+  definition: string | number | null;
+  status: "ready" | "pending" | "error" | "service_unavailable";
   source: "human-design-py";
+  hdEngineVersion?: string;
+  calculationStatus?: "completed" | "pending" | "error" | "service_unavailable" | "timeout" | "connection_error";
+  calculationQuality?: "verified" | "service_unavailable" | "timeout" | "connection_error" | "unavailable";
   note?: string;
+  variables?: any;
+  digestion?: string | null;
+  environment?: string | null;
+  motivation?: string | null;
+  cognition?: string | null;
 };
 
 const DEFAULT_OFFSET_MINUTES = 420;
-const PYTHON_CALCULATE_URL = "http://localhost:8000/calculate";
+export const HD_SERVICE_TIMEOUT_MS = 7000;
+export const HD_SERVICE_BASE_URL =
+  process.env.HUMAN_DESIGN_SERVICE_URL?.replace(/\/$/, "") ||
+  "http://localhost:8000";
+const PYTHON_CALCULATE_URL = `${HD_SERVICE_BASE_URL}/calculate`;
 
 const readString = (value: unknown): string | null => {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
@@ -111,6 +129,32 @@ const parseBirthTime = (birthTime: string) => {
   return { hour, minute, second };
 };
 
+const serviceUnavailableResult = (
+  reason: "service_unavailable" | "timeout" | "connection_error",
+  note: string,
+): HumanDesignCalculateResult => ({
+  type: null,
+  profile: null,
+  authority: null,
+  strategy: null,
+  notSelfTheme: null,
+  signature: null,
+  definedCenters: [],
+  openCenters: [],
+  gatesPersonality: [],
+  gatesDesign: [],
+  incarnationCross: null,
+  inc_cross: null,
+  channels: [],
+  definition: null,
+  status: "service_unavailable",
+  source: "human-design-py",
+  hdEngineVersion: HD_ENGINE_VERSION,
+  calculationStatus: reason,
+  calculationQuality: reason,
+  note,
+});
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
@@ -127,6 +171,10 @@ export async function POST(request: Request) {
           openCenters: [],
           gatesPersonality: [],
           gatesDesign: [],
+          incarnationCross: null,
+          inc_cross: null,
+          channels: [],
+          definition: null,
           status: "error",
           source: "human-design-py",
           note: "Invalid JSON body.",
@@ -152,6 +200,10 @@ export async function POST(request: Request) {
           openCenters: [],
           gatesPersonality: [],
           gatesDesign: [],
+          incarnationCross: null,
+          inc_cross: null,
+          channels: [],
+          definition: null,
           status: "error",
           source: "human-design-py",
           note: "birthDate and birthTime are required.",
@@ -175,6 +227,10 @@ export async function POST(request: Request) {
           openCenters: [],
           gatesPersonality: [],
           gatesDesign: [],
+          incarnationCross: null,
+          inc_cross: null,
+          channels: [],
+          definition: null,
           status: "error",
           source: "human-design-py",
           note: "birthDate or birthTime format is invalid.",
@@ -186,23 +242,43 @@ export async function POST(request: Request) {
     const { hour, minute, second } = parsedBirthTime;
     const utc_offset = normalizeTimezoneToUtcOffset(bodyRecord.timezone);
 
-    const response = await fetch(PYTHON_CALCULATE_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: fullName,
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        utc_offset,
-      }),
-      cache: "no-store",
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), HD_SERVICE_TIMEOUT_MS);
+    let response: Response;
+
+    try {
+      response = await fetch(PYTHON_CALCULATE_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: fullName,
+          year,
+          month,
+          day,
+          hour,
+          minute,
+          second,
+          utc_offset,
+        }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const reason = error instanceof DOMException && error.name === "AbortError" ? "timeout" : "connection_error";
+      return Response.json(
+        serviceUnavailableResult(
+          reason,
+          reason === "timeout"
+            ? "Human Design service request timed out."
+            : "Human Design service is not reachable.",
+        ),
+        { status: 503 },
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const data = await response.json().catch(() => ({}));
     const dataObj = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
@@ -222,6 +298,37 @@ export async function POST(request: Request) {
         : {};
     const gatesDesignObj =
       gates.design && typeof gates.design === "object" ? (gates.design as Record<string, unknown>) : {};
+    const incarnationCross = readString(dataObj.incarnationCross) ?? readString(dataObj.inc_cross);
+    const rawDefinition = dataObj.definition ?? general.definition;
+    const definition =
+      typeof rawDefinition === "number" && Number.isFinite(rawDefinition)
+        ? rawDefinition
+        : readString(rawDefinition);
+
+    const variables = dataObj.variables && typeof dataObj.variables === "object" ? (dataObj.variables as any) : null;
+    let digestion: string | null = null;
+    let environment: string | null = null;
+    let motivation: string | null = null;
+    let cognition: string | null = null;
+
+    if (variables) {
+      digestion = variables.top_left?.def_type || null;
+      environment = variables.bottom_left?.def_type || null;
+      motivation = variables.top_right?.def_type || null;
+
+      const tone = variables.top_left?.tone;
+      if (typeof tone === "number") {
+        const cognitions: Record<number, string> = {
+          1: "Smell",
+          2: "Taste",
+          3: "Outer Vision",
+          4: "Inner Vision",
+          5: "Feeling",
+          6: "Touch"
+        };
+        cognition = cognitions[tone] || null;
+      }
+    }
 
     const result: HumanDesignCalculateResult = {
       type: readString(dataObj.type) ?? readString(general.energy_type),
@@ -242,39 +349,42 @@ export async function POST(request: Request) {
       gatesDesign: readStringArray(dataObj.gatesDesign).length
         ? readStringArray(dataObj.gatesDesign)
         : Object.keys(gatesDesignObj),
+      incarnationCross,
+      inc_cross: incarnationCross,
+      channels: readStringArray(dataObj.channels),
+      definition,
+      variables,
+      digestion,
+      environment,
+      motivation,
+      cognition,
       status: readString(dataObj.status) === "error" ? "error" : "pending",
       source: "human-design-py",
+      hdEngineVersion: HD_ENGINE_VERSION,
+      calculationStatus: "pending",
+      calculationQuality: "unavailable",
     };
 
     if (result.type) {
       result.status = "ready";
+      result.calculationStatus = "completed";
+      result.calculationQuality = "verified";
     } else if (!response.ok) {
       result.status = "error";
+      result.calculationStatus = "error";
       result.note = `Human Design service returned ${response.status}.`;
     } else {
       result.status = "pending";
+      result.calculationStatus = "pending";
+      result.calculationQuality = "unavailable";
       result.note = "Human Design type is not available yet.";
     }
 
     return Response.json(result, { status: response.ok ? 200 : response.status });
   } catch (error) {
     return Response.json(
-      {
-        type: null,
-        profile: null,
-        authority: null,
-        strategy: null,
-        notSelfTheme: null,
-        signature: null,
-        definedCenters: [],
-        openCenters: [],
-        gatesPersonality: [],
-        gatesDesign: [],
-        status: "pending",
-        source: "human-design-py",
-        note: "Human Design service is not running.",
-      } satisfies HumanDesignCalculateResult,
-      { status: 200 },
+      serviceUnavailableResult("service_unavailable", "Human Design service is not reachable."),
+      { status: 503 },
     );
   }
 }

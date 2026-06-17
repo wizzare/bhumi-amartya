@@ -24,6 +24,7 @@ export type CurrentMoonInfo = {
   daysRemaining: number;
   theme: string;
   nextPhaseLabel: string;
+  nextPhaseSign: string;
 };
 
 export type CurrentSky = {
@@ -56,6 +57,12 @@ const ZODIAC_SIGNS = [
 function getSign(longitude: number): string {
   const normalized = ((longitude % 360) + 360) % 360;
   return ZODIAC_SIGNS[Math.floor(normalized / 30)];
+}
+
+function getGeocentricLongitude(body: unknown, bodyName: string, date: Date): number {
+  const Ast = Astronomy as typeof Astronomy;
+  if (bodyName === "Sun") return Ast.SunPosition(date).elon;
+  return Ast.Ecliptic(Ast.GeoVector(body as Astronomy.Body, date, true)).elon;
 }
 
 export function getMoonPhaseLabel(phaseAngle: number): string {
@@ -98,9 +105,7 @@ function findSignBoundary(body: any, bodyName: string, targetSign: number, start
   // 1. Exponential Jump
   while (high <= limitDays) {
     const testDate = new Date(startMs + direction * high * dayMs);
-    const lon = bodyName === "Sun"
-      ? Ast.SunPosition(testDate).elon
-      : Ast.EclipticLongitude(body, testDate);
+    const lon = getGeocentricLongitude(body, bodyName, testDate);
     const sign = Math.floor((((lon % 360) + 360) % 360) / 30);
 
     if (sign !== targetSign) {
@@ -119,9 +124,7 @@ function findSignBoundary(body: any, bodyName: string, targetSign: number, start
   while (low <= high) {
     const mid = Math.floor((low + high) / 2);
     const testDate = new Date(startMs + direction * mid * dayMs);
-    const lon = bodyName === "Sun"
-      ? Ast.Ecliptic(Ast.GeoVector(Ast.Body.Sun, testDate, true)).elon
-      : Ast.EclipticLongitude(body, testDate);
+    const lon = getGeocentricLongitude(body, bodyName, testDate);
     const sign = Math.floor((((lon % 360) + 360) % 360) / 30);
 
     if (sign !== targetSign) {
@@ -155,8 +158,8 @@ function findRetrogradeBoundary(body: any, bodyName: string, startDate: Date, di
     if (bodyName === "Sun") return 1;
     if (bodyName === "Moon") return 1;
 
-    l0 = Ast.EclipticLongitude(body, d0);
-    l1 = Ast.EclipticLongitude(body, d1);
+    l0 = getGeocentricLongitude(body, bodyName, d0);
+    l1 = getGeocentricLongitude(body, bodyName, d1);
 
     let diff = l1 - l0;
     if (diff > 180) diff -= 360;
@@ -242,6 +245,7 @@ export function calculateCurrentSky(date: Date = new Date()): CurrentSky {
     const daysRemaining = Math.max(0, Math.round((nextMajor.date.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)));
 
     const nextPhaseLabel = endAngle === 0 ? "Bulan Baru" : endAngle === 90 ? "First Quarter" : endAngle === 180 ? "Bulan Purnama" : "Last Quarter";
+    const nextPhaseSign = getSign(Ast.EclipticGeoMoon(nextMajor.date).lon);
 
     const moonInfo: CurrentMoonInfo = {
       label: moonPhaseLabel,
@@ -249,7 +253,8 @@ export function calculateCurrentSky(date: Date = new Date()): CurrentSky {
       endDate,
       daysRemaining,
       theme: getMoonPhaseTheme(moonPhaseLabel),
-      nextPhaseLabel
+      nextPhaseLabel,
+      nextPhaseSign,
     };
 
     const bodyNames: SkyBody[] = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "North Node", "Chiron", "Lilith"];
@@ -288,8 +293,8 @@ export function calculateCurrentSky(date: Date = new Date()): CurrentSky {
           lon0 = Ast.EclipticGeoMoon(apsis0.time.date).lon;
         } else {
           const body = BodyObj[name];
-          lon1 = Ast.EclipticLongitude(body, date);
-          lon0 = Ast.EclipticLongitude(body, yesterday);
+          lon1 = getGeocentricLongitude(body, name, date);
+          lon0 = getGeocentricLongitude(body, name, yesterday);
         }
 
         let diff = lon1 - lon0;

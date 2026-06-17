@@ -1,4 +1,5 @@
 export const PENJAGA_BHUMI_INTI_EMAILS = [
+  "alhadistrw@gmail.com",
   "akylelyana@gmail.com",
   "aveyria2412@gmail.com",
   "cecesyahdilla@gmail.com",
@@ -24,4 +25,7 @@ export const PENJAGA_BHUMI_INTI_EMAILS = [
   "zeroaka07@gmail.com",
 ];
 
-export const PENJAGA_BHUMI_INTI_DURATION_DAYS = 60;
+export const PENJAGA_BHUMI_INTI_DIRECT_EMAILS = [
+  "alhadistrw@gmail.com",
+] as const;
+

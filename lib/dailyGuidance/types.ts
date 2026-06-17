@@ -1,3 +1,6 @@
+import { PhysicalActivity } from "@/lib/repositories/activityRepository";
+import { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
+
 export type DailyGuidancePractice = {
   id: string;
   category?: "grounding" | "reflection" | "action";
@@ -31,6 +34,7 @@ export type DailyGuidance = {
   localDateKey?: string;
   schemaVersion?: string;
   generatedWithPromptVersion?: string;
+  guidanceVersion?: string;
   dailyVariationSeed?: string;
   promptContextLength?: number;
   generatedAt?: string;
@@ -69,6 +73,10 @@ export type DailyGuidance = {
     workout: { id: string; title: string; reason: string };
     yoga: { id: string; title: string; reason: string };
     healthyFood: { id: string; title: string; reason: string };
+    audioHealing: { id: string; title: string; reason: string };
+    journaling: { id: string; title: string; reason: string };
+    meditation: { id: string; title: string; reason: string };
+    manifestation: { id: string; title: string; reason: string };
   };
   manifestation?: DailyManifestation;
   innerworkNarrative?: string; // Narrative invitation for V2 Dashboard
@@ -87,6 +95,7 @@ export type DailyGuidance = {
   blueprintHash?: string;
   memoryHash?: string;
   model?: string;
+  note?: string;
   status?: "success" | "fallback" | "error";
   fallbackUsed?: boolean;
   createdAt: string;
@@ -108,6 +117,10 @@ export type DailyGuidanceContext = {
     workout: { id: string; title: string; reason: string };
     yoga: { id: string; title: string; reason: string };
     healthyFood: { id: string; title: string; reason: string };
+    audioHealing: { id: string; title: string; reason: string };
+    journaling: { id: string; title: string; reason: string };
+    meditation: { id: string; title: string; reason: string };
+    manifestation: { id: string; title: string; reason: string };
   };
   manifestation?: DailyManifestation;
   innerworkNarrative?: string; // Narrative invitation for V2 Dashboard
@@ -119,7 +132,7 @@ export type DailyGuidanceContext = {
   previousMeditationEntries?: Array<Record<string, unknown>>;
   previousAudioHealingEntries?: Array<Record<string, unknown>>;
   previousGuidance?: DailyGuidance[];
-  activityHistory?: Record<string, unknown> | null;
+  activityHistory?: PhysicalActivity[] | null;
   momentumState?: Record<string, unknown> | null;
   healingMemory?: Record<string, unknown> | null;
 };
@@ -134,6 +147,7 @@ export type DailyGuidanceAdaptiveContext = {
   streakDays: number;
   adaptiveTone: "gentle_encouraging_restart" | "appreciative_growth_oriented" | "steady_supportive";
   previousProgressSummary: string;
+  yesterdayWellnessMapping?: WellnessMapping | null;
   previousGuidanceSummaries: Array<{
     date: string;
     aiInsight: string;

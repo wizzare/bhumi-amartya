@@ -41,7 +41,11 @@ export type AnalyticsEventName =
   | "practice_completed"
   | "daily_completion_reached"
   | "profile_view"
-  | "settings_view";
+  | "settings_view"
+  | "wellness_checkin_completed"
+  | "wellness_assessment_completed"
+  | "safety_alert_triggered"
+  | "safety_alert_dismissed";
 
 export type AnalyticsErrorName =
   | "failed_blueprint_generation"

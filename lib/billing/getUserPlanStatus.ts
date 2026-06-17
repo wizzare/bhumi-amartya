@@ -1,5 +1,6 @@
 import { safeJsonParse } from "@/lib/storage/safeJson";
 import { getUserRole } from "@/lib/auth/getUserRole";
+import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 
 export const USER_PLAN_STORAGE_KEY = "bhumiUserPlan";
 export const FREE_TRIAL_DAYS = 7;
@@ -77,6 +78,17 @@ export function createDefaultUserPlan(now = new Date()): UserPlan {
 }
 
 export function getUserPlanStatus(planObject: UserPlanStatusInput, now = new Date()): UserPlanStatus {
+  if (isGaiaAccessOverrideActive(now)) {
+    return {
+      plan: "free",
+      isPro: false,
+      isDeveloper: false,
+      isTrialActive: true,
+      trialDaysLeft: null,
+      isLocked: false,
+      source: "local-mvp",
+    };
+  }
   const role = getUserRole({ email: planObject?.email ?? null });
   if (role.isAdmin || role.isDev || isDeveloperProEmail(planObject?.email)) {
     return {

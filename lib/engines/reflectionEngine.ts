@@ -1,22 +1,21 @@
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { WeeklyReflection } from "@/lib/repositories/reflectionRepository";
+import { getCompletionItems, getCompletionSummary } from "@/lib/engines/completionEngine";
 
 export const reflectionEngine = {
   /**
    * Generates a weekly soul summary based on 7 days of activity.
    */
   generateWeeklySummary(uid: string, weekId: string, states: DailyState[]): WeeklyReflection {
-    const totalActivities = states.reduce((acc, s) => {
-      return acc + [s.journalingDone, s.meditationDone, s.audioHealingDone, s.workoutDone, s.yogaDone, s.herbalDone].filter(Boolean).length;
-    }, 0);
+    const totalActivities = states.reduce((acc, s) => acc + getCompletionSummary(s).count, 0);
 
-    const journalCount = states.filter(s => s.journalingDone).length;
-    const meditationCount = states.filter(s => s.meditationDone).length;
+    const journalCount = states.filter(s => getCompletionItems(s).some((item) => item.id === "journal" && item.completed)).length;
+    const practiceCount = states.filter(s => getCompletionItems(s).some((item) => (item.id === "meditation" || item.id === "audio") && item.completed)).length;
 
     // Determine Theme
     let theme = "Keseimbangan Batin";
-    if (journalCount > meditationCount) theme = "Kejernihan Pikiran";
-    if (meditationCount > journalCount) theme = "Ketenteraman Tubuh";
+    if (journalCount > practiceCount) theme = "Kejernihan Pikiran";
+    if (practiceCount > journalCount) theme = "Ketenteraman Tubuh";
     if (totalActivities < 5) theme = "Awal Kesadaran";
 
     return {

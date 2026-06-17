@@ -28,12 +28,14 @@ User Blueprint:
     context += `- Rising Sign: ${blueprint.astrology.risingSign}\n`;
   }
 
-  if (blueprint.humanDesign.status === "ready" || blueprint.humanDesign.status === "verified") {
-    context += `- Human Design Type: ${blueprint.humanDesign.type}\n`;
-    context += `- Human Design Strategy: ${blueprint.humanDesign.strategy}\n`;
+  const humanDesign = getCanonicalHumanDesign(blueprint.humanDesign);
+  if (humanDesign) {
+    context += `- Human Design Type: ${humanDesign.type}\n`;
+    context += `- Human Design Strategy: ${humanDesign.strategy}\n`;
   } else {
     context += `- Human Design: Pending\n`;
   }
 
   return context;
 };
+import { getCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";

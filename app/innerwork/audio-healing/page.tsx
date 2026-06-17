@@ -223,11 +223,14 @@ function AudioHealingExperience() {
 
         <section className="bhumi-card p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Save</h2>
+          <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
+            Klik save hanya jika kamu sudah melakukan.
+          </p>
           <button
             type="button"
             onClick={handleSave}
             disabled={saved}
-            className="mt-5 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-3 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {saved ? "Pengalaman tersimpan..." : "Simpan Pengalaman"}
           </button>
@@ -242,7 +245,12 @@ function AudioHealingExperience() {
                 <p className="text-sm font-semibold text-[#4F5E52]">✨ Fokus Besok</p>
                 <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{reflection.nextFocus}</p>
               </div>
-              <p className="text-xs text-[#9BB89A]">Mengembalikanmu ke dashboard...</p>
+              <button
+                onClick={() => router.push("/innerwork")}
+                className="w-full py-3 mt-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest"
+              >
+                Kembali ke Hub
+              </button>
             </div>
           )}
         </section>

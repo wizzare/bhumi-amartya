@@ -6,6 +6,8 @@ import { saveLastActivity } from "@/lib/activity/getLastActivity";
 import { readOwnedCacheArray, withActiveUid } from "@/lib/storage/derivedCacheOwnership";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { auth } from "@/lib/firebase/firebase";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 export const JOURNAL_STORAGE_KEY = "bhumiJournalEntries";
 
@@ -215,6 +217,15 @@ export function saveLocalJournalEntry(entry: LocalJournalEntry): LocalJournalEnt
   refreshJourneyData();
   refreshCompiledInnerwork();
   refreshProgressData();
+
+  // Sync to Firestore for Journey Progress
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    void dailyStateRepository.saveDailyState(uid, getLocalDateKey(), {
+      journalingDone: true,
+    }).catch(err => console.error("[SYNC_JOURNAL_ERROR]", err));
+  }
+
   return nextEntries;
 }
 

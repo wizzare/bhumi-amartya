@@ -72,6 +72,41 @@ export const MUDRA_GUIDES: Record<string, MudraGuide> = {
     benefits: "Membuka hati untuk menerima, cinta, dan keindahan.",
     affirmation: "Hatiku terbuka untuk memberi dan menerima cinta.",
   },
+  "Shuni Mudra": {
+    name: "Shuni Mudra",
+    duration: "4-6 menit",
+    steps: ["Sentuhkan ujung jari tengah ke ujung ibu jari.", "Biarkan tiga jari lain rileks.", "Letakkan tangan di paha dengan bahu lembut."],
+    benefits: "Mendukung kesabaran, kedisiplinan lembut, dan kestabilan saat menjalani proses.",
+    affirmation: "Aku menghormati proses dan bertumbuh dalam ritmeku sendiri.",
+  },
+  "Surya Mudra": {
+    name: "Surya Mudra",
+    duration: "3-5 menit",
+    steps: ["Tekuk jari manis menuju pangkal ibu jari.", "Tahan lembut dengan ibu jari.", "Jaga jari lain tetap rileks."],
+    benefits: "Mendukung semangat, keberanian, dan aktivasi energi ketika tubuh terasa lesu.",
+    affirmation: "Aku menyalakan daya hidupku dengan sadar.",
+  },
+  "Vayu Mudra": {
+    name: "Vayu Mudra",
+    duration: "4-6 menit",
+    steps: ["Tekuk jari telunjuk ke pangkal ibu jari.", "Tekan lembut dengan ibu jari.", "Biarkan jari lain memanjang tanpa tegang."],
+    benefits: "Membantu menenangkan kegelisahan, gerak pikiran, dan ketegangan yang sulit diam.",
+    affirmation: "Aku memberi ruang bagi pikiranku untuk menjadi lebih tenang.",
+  },
+  "Kubera Mudra": {
+    name: "Kubera Mudra",
+    duration: "3-5 menit",
+    steps: ["Satukan ibu jari, telunjuk, dan jari tengah.", "Tekuk jari manis dan kelingking ke telapak.", "Pegang niat dengan napas yang tenang."],
+    benefits: "Mendukung fokus niat, kejernihan arah, dan keberanian mengambil langkah nyata.",
+    affirmation: "Niatku jernih dan langkahku selaras.",
+  },
+  "Yoni Mudra": {
+    name: "Yoni Mudra",
+    duration: "5-7 menit",
+    steps: ["Satukan ibu jari dan telunjuk membentuk segitiga.", "Jalin atau rapatkan jari lainnya dengan nyaman.", "Letakkan tangan di bawah pusar."],
+    benefits: "Mendukung rasa aman, koneksi batin, kreativitas, dan ketenangan emosional.",
+    affirmation: "Aku pulang ke ruang aman di dalam diriku.",
+  },
 };
 
 export type MudraName = keyof typeof MUDRA_GUIDES;

@@ -34,9 +34,6 @@ export function isBlueprintComplete(blueprint: UnknownRecord): boolean {
   const sunSign = astrology?.sunSign ?? blueprint.sunSign;
   const hasSunSign = typeof sunSign === "string" && sunSign.trim().length > 0;
 
-  const humanDesign = blueprint.humanDesign as UnknownRecord;
-  const humanDesignType = typeof humanDesign?.type === "string" ? humanDesign.type.trim() : "";
-  const hasHumanDesign = Boolean(humanDesignType);
-
-  return hasLifePath && hasArcanaCenter && hasSunSign && hasHumanDesign;
+  // HD may legitimately remain pending until a verified Gaia engine result exists.
+  return hasLifePath && hasArcanaCenter && hasSunSign;
 }

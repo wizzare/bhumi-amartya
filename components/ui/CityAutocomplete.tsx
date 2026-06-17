@@ -53,21 +53,18 @@ export default function CityAutocomplete({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const [searchEnabled, setSearchEnabled] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const trimmedValue = value.trim();
 
   const visibleSuggestions = useMemo(
-    () => (trimmedValue ? suggestions : []),
-    [suggestions, trimmedValue],
+    () => (searchEnabled && trimmedValue ? suggestions : []),
+    [searchEnabled, suggestions, trimmedValue],
   );
 
   useEffect(() => {
-    if (!trimmedValue) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
+    if (!searchEnabled || !trimmedValue) return;
 
     const controller = new AbortController();
 
@@ -129,7 +126,7 @@ export default function CityAutocomplete({
     return () => {
       controller.abort();
     };
-  }, [trimmedValue]);
+  }, [searchEnabled, trimmedValue]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -151,6 +148,7 @@ export default function CityAutocomplete({
       country: suggestion.country,
     });
     setOpen(false);
+    setSearchEnabled(false);
     setSuggestions([]);
     setActiveIndex(0);
   };
@@ -162,8 +160,12 @@ export default function CityAutocomplete({
         placeholder={placeholder}
         value={value}
         onChange={(event) => {
+          if (!event.target.value.trim()) {
+            setSuggestions([]);
+            setOpen(false);
+          }
+          setSearchEnabled(true);
           onInputChange(event.target.value);
-          setOpen(true);
         }}
         onKeyDown={(event) => {
           if (!open || visibleSuggestions.length === 0) return;
@@ -191,6 +193,7 @@ export default function CityAutocomplete({
         autoComplete="off"
         role="combobox"
         aria-expanded={open}
+        aria-controls="birth-city-suggestions"
         aria-autocomplete="list"
       />
 
@@ -199,7 +202,7 @@ export default function CityAutocomplete({
       ) : null}
 
       {open && visibleSuggestions.length > 0 ? (
-        <div className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-xl sm:text-sm" role="listbox">
+        <div id="birth-city-suggestions" className="absolute left-0 right-0 z-20 mt-2 overflow-hidden rounded-3xl border border-black/10 bg-white shadow-xl sm:text-sm" role="listbox">
           {visibleSuggestions.map((suggestion, index) => (
             <button
               key={suggestion.id}

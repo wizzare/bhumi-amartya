@@ -4,10 +4,12 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, browserLocalPersistence, onAuthStateChanged, setPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
 import { ensureMinimalUserProfile, signOut as signOutAction } from '@/lib/auth/authActions';
-import { UserProfile } from '@/lib/repositories/userRepository';
+import { UserProfile, userRepository } from '@/lib/repositories/userRepository';
 import { clearBhumiSessionForSignOut } from '@/lib/auth/onboardingIntent';
 import { storageProvider } from '@/lib/storage/storageProvider';
 import { processMembershipGrant } from '@/lib/billing/membershipLogic';
+import { participationEngine } from '@/lib/engines/participationEngine';
+import { migrateUserToGaia } from '@/lib/profile/gaia/migration';
 
 interface AuthContextType {
   user: User | null;
@@ -136,7 +138,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setProfileLoading(true);
           try {
             // 1. Try to get profile from high-level storageProvider (which handles local + firebase)
-            let profile = await withProfileTimeout(storageProvider.getUserProfile() as Promise<any>);
+            let profile = await withProfileTimeout(storageProvider.getUserProfile() as Promise<UserProfile | null>);
 
             // 2. If storageProvider didn't return a full profile, ensure minimal profile (creates in Firestore if missing)
             if (!profile || !profile.setupCompleted) {
@@ -144,7 +146,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (freshProfile) {
                 profile = freshProfile;
                 // Sync to local storage
-                await storageProvider.saveUserProfile(profile as any);
+                await storageProvider.saveUserProfile(profile as unknown as Parameters<typeof storageProvider.saveUserProfile>[0]);
               }
             }
 
@@ -169,7 +171,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
               // Apply membership grant if eligible
               const grantedProfile = await processMembershipGrant(profile as UserProfile);
-              setUserProfile(grantedProfile);
+              const migratedProfile = await migrateUserToGaia(grantedProfile).catch((error) => {
+                console.warn("[GAIA MIGRATION DEFERRED]", error);
+                return grantedProfile;
+              });
+              await participationEngine.recordActivity(firebaseUser.uid, "login", {
+                ...migratedProfile,
+                email: firebaseUser.email || migratedProfile.email || "",
+                displayName: firebaseUser.displayName ?? migratedProfile.displayName ?? migratedProfile.fullName ?? "",
+              }).catch((error) => {
+                console.warn("[LOGIN PARTICIPATION UPDATE FAILED]", error);
+              });
+              setUserProfile(migratedProfile);
             } else {
               setUserProfile(null);
             }
@@ -178,7 +191,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             console.error("Auth profile loading error:", error);
 
             // Final fallback: try local-only storage just in case
-            const localFallback = await storageProvider.getUserProfile() as any;
+            const localFallback = await storageProvider.getUserProfile() as UserProfile | null;
             if (localFallback && localFallback.uid === firebaseUser.uid) {
                console.log("[AUTH] Using local fallback profile after error");
                setUserProfile(localFallback);
@@ -210,6 +223,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       unsubscribe?.();
     };
   }, []);
+
+  useEffect(() => {
+    const updateResumePresence = () => {
+      const firebaseUser = auth.currentUser;
+      if (document.visibilityState !== "visible" || !firebaseUser) return;
+
+      void userRepository.updatePresence(firebaseUser.uid, {
+        email: firebaseUser.email || userProfile?.email || "",
+        displayName: firebaseUser.displayName ?? userProfile?.displayName ?? userProfile?.fullName ?? "",
+        role: userProfile?.guardianRole || userProfile?.role || "user",
+      }).catch((error) => {
+        console.warn("[PRESENCE RESUME UPDATE FAILED]", error);
+      });
+    };
+
+    document.addEventListener("visibilitychange", updateResumePresence);
+    return () => document.removeEventListener("visibilitychange", updateResumePresence);
+  }, [userProfile]);
 
 
   const loading = authLoading || profileLoading;

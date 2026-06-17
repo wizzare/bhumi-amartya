@@ -2,6 +2,8 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
+import { WellnessSnapshot } from "@/lib/data/types";
+import { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 
 export type DailyState = {
   uid: string;
@@ -10,13 +12,22 @@ export type DailyState = {
   emotionalWord?: string;
   nervousSystemState?: string;
   groundingDone?: boolean;
+  dailyNoteDone?: boolean;
   journalingDone?: boolean;
+  assessmentDone?: boolean;
+  manifestDone?: boolean;
+  supportPathDone?: boolean;
+  innerworkDone?: boolean;
   meditationDone?: boolean;
   audioHealingDone?: boolean;
   workoutDone?: boolean;
   yogaDone?: boolean;
   herbalDone?: boolean;
   completedActivityIds?: string[]; // Build 31.35 Upgrade
+  wellnessSnapshot?: WellnessSnapshot; // V3 Addition
+  wellnessMapping?: WellnessMapping; // V3.0.2 Consolidation
+  dailySummary?: string; // V3.0.2 Summary
+  consolidatedAt?: string;
   updatedAt: string;
 };
 
@@ -66,4 +77,25 @@ export const dailyStateRepository = {
       ),
     );
   },
+
+  async markActivityDone(uid: string, date: string, activityKey: keyof Omit<DailyState, "uid" | "date" | "updatedAt" | "completedActivityIds" | "wellnessSnapshot">): Promise<void> {
+    await this.saveDailyState(uid, date, { [activityKey]: true });
+  },
+
+  async consolidateDay(uid: string, date: string): Promise<void> {
+    assertAuthenticatedOwner(uid);
+    const state = await this.getDailyState(uid, date);
+    if (!state) return;
+
+    const { getCompletionSummary } = await import("@/lib/engines/completionEngine");
+    const summary = getCompletionSummary(state);
+
+    const theme = state.wellnessMapping?.results[0]?.label || "Normal";
+    const dailySummaryText = `Hari ini (${date}) kamu berfokus pada tema ${theme}. Kamu menyelesaikan ${summary.count}/${summary.total} praktik inti harian. ${summary.label}.`;
+
+    await this.saveDailyState(uid, date, {
+      dailySummary: dailySummaryText,
+      consolidatedAt: new Date().toISOString(),
+    });
+  }
 };

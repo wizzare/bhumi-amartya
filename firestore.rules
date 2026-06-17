@@ -10,6 +10,25 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
+    // NEW AUDITABLE FOUNDER RULE
+    function isFounderByEmail() {
+      return isSignedIn() && request.auth.token.email == 'wizzare@gmail.com';
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isFounderOrAdmin() {
+      let data = getUserData();
+      return isSignedIn() && (
+        data.guardianRole == 'founder' ||
+        data.guardianRole == 'admin' ||
+        data.role == 'admin' ||
+        request.auth.token.email == 'wizzare@gmail.com'
+      );
+    }
+
     function uidMatches(fieldName) {
       return isSignedIn()
         && (
@@ -28,40 +47,49 @@ service cloud.firestore {
       return isSignedIn() && docId.matches(request.auth.uid + "_.*");
     }
 
-    // Users can only read and write their own documents.
+    // USERS COLLECTION
     match /users/{userId} {
+      // User can always read/write their own doc
       allow read, write: if isOwner(userId);
 
+      // Founder can list and get ALL users
+      allow list: if isFounderByEmail() || isFounderOrAdmin();
+      allow get: if isFounderByEmail() || isFounderOrAdmin();
+
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
     }
 
     match /dailyStates/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
     }
 
     match /blueprints/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /wellnessMappings/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
     
     match /healingProgress/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
     }
 
     match /journals/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
     }
 
@@ -70,43 +98,47 @@ service cloud.firestore {
     }
 
     match /journalEntries/{docId} {
-      allow read, write: if uidMatches("uid");
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /meditationEntries/{docId} {
-      allow read, write: if uidMatches("uid");
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /audioHealingEntries/{docId} {
-      allow read, write: if uidMatches("uid");
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /healingMemory/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid");
+      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /journeyData/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid");
+      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /weeklyReports/{reportId} {
-      allow read, write: if uidMatches("uid");
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /dailyGuidance/{docId} {
-      allow create, update: if dailyGuidanceDocBelongsToUser(docId)
-        && request.resource.data.uid == request.auth.uid;
-      allow read, delete: if dailyGuidanceDocBelongsToUser(docId)
-        && (resource == null || resource.data.uid == request.auth.uid);
-      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create, update: if (dailyGuidanceDocBelongsToUser(docId)
+        && request.resource.data.uid == request.auth.uid) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, delete: if (dailyGuidanceDocBelongsToUser(docId)
+        && (resource == null || resource.data.uid == request.auth.uid)) || isFounderByEmail() || isFounderOrAdmin();
+      allow list: if (isSignedIn() && resource.data.uid == request.auth.uid) || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /notifications/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid");
+      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
+    }
+
+    match /adminAuditLogs/{docId} {
+      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
     }
   }
 }

@@ -6,6 +6,7 @@ type BlueprintSummaryProps = {
   sunSign?: string;
   moonSign?: string;
   risingSign?: string;
+  midheaven?: string;
   humanDesignType?: string;
   arcanaCenter?: number;
 };
@@ -20,6 +21,7 @@ export function BlueprintSummary({
   sunSign,
   moonSign,
   risingSign,
+  midheaven,
   humanDesignType,
   arcanaCenter,
 }: BlueprintSummaryProps) {
@@ -31,6 +33,7 @@ export function BlueprintSummary({
     ["Sun sign", sunSign],
     ["Moon sign", moonSign],
     ["Rising sign", risingSign],
+    ["Midheaven", midheaven],
     ["Human Design type", humanDesignType],
     ["Arcana center", arcanaCenter],
   ];

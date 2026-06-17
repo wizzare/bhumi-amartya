@@ -15,8 +15,35 @@ export type BirthData = {
 export type PlanetaryPosition = {
   sign: string;
   degree: number;
-  house: number;
-  retrograde?: boolean;
+  longitude: number;
+  retrograde: boolean;
+  house?: number;
+  placidusHouse?: number;
+  wholeSignHouse?: number;
+};
+
+export type NatalAspect = {
+  p1: string;
+  p2: string;
+  type: "Conjunction" | "Sextile" | "Square" | "Trine" | "Opposition";
+  orb: number;
+};
+
+export type NatalPattern = {
+  type: "Stellium" | "Grand Trine" | "T-Square" | "Yod";
+  planets: string[];
+  sign?: string;
+  house?: number;
+};
+
+export type NatalBalance = Record<string, number>;
+
+export type NatalDominance = {
+  dominantPlanet?: string;
+  dominantSign?: string;
+  dominantElement?: string;
+  dominantModality?: string;
+  dominantHouse?: number;
 };
 
 export interface LifePathBlueprint {
@@ -31,8 +58,40 @@ export interface NatalChartBlueprint {
   sunSign: string;
   moonSign?: string;
   risingSign?: string;
+  midheaven?: string;
+  mc?: string;
   houses?: Record<string, { sign: string; degree: number }>;
-  planets?: Record<string, PlanetaryPosition>;
+  placidusHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
+  wholeSignHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
+  planets?: {
+    Sun?: PlanetaryPosition;
+    Moon?: PlanetaryPosition;
+    Mercury?: PlanetaryPosition;
+    Venus?: PlanetaryPosition;
+    Mars?: PlanetaryPosition;
+    Jupiter?: PlanetaryPosition;
+    Saturn?: PlanetaryPosition;
+    Uranus?: PlanetaryPosition;
+    Neptune?: PlanetaryPosition;
+    Pluto?: PlanetaryPosition;
+    NorthNode?: PlanetaryPosition;
+    SouthNode?: PlanetaryPosition;
+    Chiron?: PlanetaryPosition;
+  };
+  northNode?: string;
+  southNode?: string;
+  chiron?: string;
+  elements?: NatalBalance;
+  modalities?: NatalBalance;
+  polarities?: NatalBalance;
+  aspects?: NatalAspect[];
+  patterns?: NatalPattern[];
+  dominance?: NatalDominance;
+  dominantPlanet?: string;
+  dominantSign?: string;
+  dominantElement?: string;
+  dominantModality?: string;
+  dominantHouse?: number;
 }
 
 export type HumanDesignBlueprint = HumanDesignChart;
@@ -49,12 +108,31 @@ export interface DestinyMatrixBlueprint {
   karmicTail?: number[];
   fatherLine?: number[];
   motherLine?: number[];
-  talents?: number[];
+  ancestorLine?: number[];
+  talentsFather?: number[];
+  talentsMother?: number[];
+  talentsGreat?: number[];
   yearlyArcana?: number;
   purposes?: Record<string, number>;
   chartHeart?: Record<string, number>;
   years?: Record<string, number>;
   rawPoints?: Record<string, number>;
+  destinyIntelligence?: {
+    soulSearching?: number;
+    socialization?: number;
+    spiritualKnowledge?: number;
+    healthChart?: {
+      sahasrara?: { physics?: number; energy?: number; emotion?: number };
+      ajna?: { physics?: number; energy?: number; emotion?: number };
+      vishudha?: { physics?: number; energy?: number; emotion?: number };
+      anahata?: { physics?: number; energy?: number; emotion?: number };
+      manipura?: { physics?: number; energy?: number; emotion?: number };
+      svadhisthana?: { physics?: number; energy?: number; emotion?: number };
+      muladhara?: { physics?: number; energy?: number; emotion?: number };
+    };
+  };
+  healthChart?: Record<string, { physics?: number; energy?: number; emotion?: number }>;
+  chakraMatrix?: Record<string, { physics?: number; energy?: number; emotion?: number }>;
   status?: "pending" | "completed" | "error";
 }
 

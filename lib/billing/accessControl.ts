@@ -1,5 +1,5 @@
 import { getUserRole } from "@/lib/auth/getUserRole";
-import { isPenjagaBhumiInti } from "@/lib/billing/membershipGrant";
+import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 
 export type TrialPlan = "trial" | "pro" | "expired";
 
@@ -22,7 +22,7 @@ export type FeatureKey =
   | "weeklyReport"
   | "healingMemory";
 
-const TRIAL_DAYS = 7;
+const TRIAL_DAYS = 3;
 
 function toDate(value?: string | null): Date | null {
   if (!value) return null;
@@ -46,6 +46,7 @@ export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
 }
 
 export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean {
+  if (isGaiaAccessOverrideActive(now)) return false;
   const role = getUserRole({ email: profile.email ?? null });
   if (role.isAdmin || role.isDev) return false;
 
@@ -63,6 +64,7 @@ export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean
 }
 
 export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): number {
+  if (isGaiaAccessOverrideActive(now)) return 999;
   const role = getUserRole({ email: profile.email ?? null });
   if (role.isAdmin || role.isDev || profile.isPro || String(profile.plan).toLowerCase() === "pro") return 999;
 
@@ -81,9 +83,9 @@ export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): numbe
 
 export function hasFeatureAccess(profile: TrialProfile, feature: FeatureKey, now = new Date()): boolean {
   void feature;
+  if (isGaiaAccessOverrideActive(now)) return true;
   const role = getUserRole({ email: profile.email ?? null });
   if (role.isAdmin || role.isDev) return true;
   if (profile.isPro || String(profile.plan).toLowerCase() === "pro") return true;
   return !isTrialExpired(profile, now);
 }
-

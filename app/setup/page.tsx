@@ -161,6 +161,12 @@ export default function SetupPage() {
 
       console.log("[PROFILE WRITE ATTEMPT]");
       await userRepository.upsertUserProfile(uid, profilePayload);
+      await userRepository.updatePresence(uid, {
+        email: user.email || "",
+        displayName: fullName,
+        role: "user",
+        registered: true,
+      });
       setDebug(prev => ({ ...prev, profileWrite: "success" }));
       console.log("[PROFILE WRITE SUCCESS]");
 
@@ -183,6 +189,11 @@ export default function SetupPage() {
       console.log("[FINAL PROFILE WRITE ATTEMPT]");
       const finalProfile = { ...profilePayload, setupCompleted: true, blueprintStatus: "ready" as any, updatedAt: Timestamp.now() };
       await userRepository.upsertUserProfile(uid, finalProfile);
+      await userRepository.updatePresence(uid, {
+        email: user.email || "",
+        displayName: fullName,
+        role: "user",
+      });
       setDebug(prev => ({ ...prev, finalProfileWrite: "success" }));
       console.log("[FINAL PROFILE WRITE SUCCESS]");
 

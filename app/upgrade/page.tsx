@@ -1,19 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/navigation/AppNav";
-import { initiateGooglePlaySubscription } from "@/lib/billing/googlePlayBilling";
 
 export default function UpgradePage() {
-  const [loading, setLoading] = useState(false);
-
-  const handleUpgrade = async () => {
-    setLoading(true);
-    await initiateGooglePlaySubscription();
-    setLoading(false);
-  };
-
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-6 py-12 flex flex-col items-center justify-center text-center pb-24">
       <AppNav />

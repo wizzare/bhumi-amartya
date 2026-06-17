@@ -83,7 +83,8 @@ def get_variables(date_to_gate_dict):
             "value": val,
             "name": meta.get("name", "Unknown"),
             "aspect": meta.get("aspect", "Unknown"),
-            "def_type": def_type
+            "def_type": def_type,
+            "tone": int(tone)
         }
 
     # Calculate Standard Shorthand (e.g., "PRL DRR")

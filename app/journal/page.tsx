@@ -23,6 +23,7 @@ import { generateDailyJournalPrompt } from "@/lib/engines/generateJournalPrompt"
 import { analyzeJournalEmotion } from "@/lib/engines/analyzeJournalEmotion";
 import { getSuggestedHealingPractices } from "@/lib/engines/generateHealingRecommendation";
 import { updateEmotionalMemory } from "@/lib/engines/updateEmotionalMemory";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import { APP_MODE } from "@/lib/config/appMode";
 import {
   generateLocalJournalInsight,
@@ -155,7 +156,7 @@ export default function JournalPage() {
            birthDate: getStringValue(profile, "birthDate"),
            sunSign: getNestedString(blueprint as any, ["sunSign", "sign"]),
            lifePathNumber: getNestedNumber(blueprint as any, ["lifePath", "number"]),
-           humanDesignType: getNestedString(blueprint as any, ["humanDesign", "type"]),
+           humanDesignType: getCanonicalHumanDesignType((blueprint as any)?.humanDesign),
            arcanaCenter: getNestedNumber(blueprint as any, ["arcanaCenter", "number"]),
            natalChart: (blueprint as any).astrology?.natalChart || (blueprint as any).natalChart,
            destinyMatrix: (blueprint as any).destinyMatrix,

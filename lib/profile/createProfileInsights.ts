@@ -1,3 +1,6 @@
+import { buildDestinyProfileSections, interpretDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
+
 type UnknownRecord = Record<string, unknown>;
 
 export type ProfileInsights = {
@@ -106,11 +109,13 @@ export function createProfileInsights({
   const arcanaCenter = getNumber(blueprint, ["arcanaCenter", "number"])
     ?? getNumber(blueprint, ["destinyMatrix", "center"])
     ?? getNumber(blueprint, ["destinyMatrix", "arcanaCenter"]);
-  const humanDesignType = getString(blueprint, ["humanDesign", "type"]);
+  const humanDesignType = getCanonicalHumanDesignType(blueprint?.humanDesign);
   const sunSign = getString(blueprint, ["sunSign", "sign"])
     ?? getString(blueprint, ["natalChart", "sunSign"])
     ?? getString(blueprint, ["astrology", "sunSign"]);
   const name = getString(profile, ["fullName"]) || "dirimu";
+  const destinySections = buildDestinyProfileSections(blueprint);
+  const destinyIntelligence = interpretDestinyMatrixIntelligence(blueprint);
   const patterns = LIFE_PATH_PATTERNS[lifePath ?? 0] ?? [
     "mengabaikan sinyal tubuh saat hidup terasa sibuk",
     "menunggu validasi sebelum mempercayai pilihanmu",
@@ -135,13 +140,13 @@ export function createProfileInsights({
         : ["merasa tidak cukup", "sulit menerima bantuan", "takut gagal"];
 
   return {
-    ancestorKarma: `Karma leluhur di sini tidak dibaca sebagai hukuman, melainkan pola yang mungkin diwariskan melalui cara keluarga memandang tanggung jawab, cinta, uang, atau rasa aman. Pada perjalanan ${name}, bagian terpentingnya adalah belajar memilih respons yang lebih sadar daripada sekadar mengulang pola lama.\n\nHal ini bisa terasa melalui cara kamu mencari rasa aman, mengatur kedekatan, dan memegang tanggung jawab. Perubahan tidak harus keras; ia bisa dimulai dari mendengar tubuhmu dengan lebih jujur, lalu memilih satu tindakan kecil yang terasa lebih sehat dari biasanya.`,
+    ancestorKarma: `${destinySections.ancestorKarma}\n\nPada perjalanan ${name}, bagian terpentingnya adalah belajar memilih respons yang lebih sadar daripada sekadar mengulang pola lama.`,
     repeatingPatterns: {
       patterns: patterns.slice(0, 3),
       question: "Pola mana yang paling sering muncul saat kamu merasa harus aman, diterima, atau berhasil?",
     },
     innerWounds: {
-      paragraph: `Kemungkinan luka batin yang bisa diperhatikan bukanlah diagnosis, melainkan petunjuk lembut tentang bagian dalam dirimu yang mungkin belajar bertahan terlalu lama. Jika pola ini muncul, dekati dengan rasa ingin tahu, bukan menyalahkan diri.`,
+      paragraph: `Kemungkinan luka batin yang bisa diperhatikan bukanlah diagnosis, melainkan petunjuk lembut tentang bagian dalam dirimu yang mungkin belajar bertahan terlalu lama. ${destinySections.innerChild} Jika pola ini muncul, dekati dengan rasa ingin tahu, bukan menyalahkan diri.`,
       themes: woundThemes,
     },
     soulFragmentMap: parts.slice(0, 3).map((part, index) => ({
@@ -151,7 +156,7 @@ export function createProfileInsights({
     })),
     shadowIntegrationMap: {
       shadowPattern: arcanaMap.shadow,
-      growthInvitation: arcanaMap.growth,
+      growthInvitation: `${arcanaMap.growth} ${destinyIntelligence.dominantChakra ? `Health Chart dominan: ${destinyIntelligence.dominantChakra}.` : ""}`.trim(),
       dailyPractice: arcanaMap.practice,
     },
   };

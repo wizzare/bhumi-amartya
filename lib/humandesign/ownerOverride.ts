@@ -2,6 +2,7 @@ import { HumanDesignChart, emptyHumanDesignCenters } from "./types";
 import { Timestamp } from "firebase/firestore";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { HD_ENGINE_VERSION } from "./hdAudit";
 
 export const OWNER_EMAIL = "wizzare@gmail.com";
 
@@ -24,6 +25,7 @@ export function getOwnerManualHumanDesignOverride(): Partial<HumanDesignChart> {
     source: "manual_verified",
     calculationQuality: "manual_verified_owner_override",
     calculationStatus: "completed",
+    hdEngineVersion: HD_ENGINE_VERSION,
     note: "Verified manual data for owner account.",
   };
 }
@@ -49,10 +51,11 @@ export async function repairOwnerHumanDesign(uid: string, email: string) {
     const blueprint = await blueprintRepository.getUserBlueprint(uid);
     const storedType = blueprint?.humanDesign?.type;
     const storedSource = blueprint?.humanDesign?.source;
+    const storedEngineVersion = blueprint?.humanDesign?.hdEngineVersion;
 
     console.log("[HD OWNER OVERRIDE CHECK] Current stored values:", { storedType, storedSource });
 
-    if (storedSource === "manual_verified" && storedType === "Manifesting Generator") {
+    if (storedSource === "manual_verified" && storedType === "Manifesting Generator" && storedEngineVersion === HD_ENGINE_VERSION) {
       console.log("[HD OWNER OVERRIDE CHECK] Already correct. No write needed.");
       return;
     }
@@ -87,14 +90,16 @@ export async function repairOwnerHumanDesign(uid: string, email: string) {
     const vType = verifiedBlueprint?.humanDesign?.type;
     const vSource = verifiedBlueprint?.humanDesign?.source;
     const vQuality = (verifiedBlueprint?.humanDesign as any)?.calculationQuality;
+    const vEngineVersion = verifiedBlueprint?.humanDesign?.hdEngineVersion;
 
-    const success = vType === "Manifesting Generator" && vSource === "manual_verified";
+    const success = vType === "Manifesting Generator" && vSource === "manual_verified" && vEngineVersion === HD_ENGINE_VERSION;
 
     console.log("[HD OWNER OVERRIDE VERIFY]", {
       path,
       storedType: vType,
       storedSource: vSource,
       storedQuality: vQuality,
+      storedEngineVersion: vEngineVersion,
       result: success ? "PASSED" : "FAILED"
     });
 

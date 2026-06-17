@@ -1,309 +1,151 @@
 "use client";
 
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
-import { useLanguage } from "@/app/context/LanguageContext";
-import { translations } from "@/lib/data/translations";
-import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
-import { createProfileInsights, type ProfileInsights } from "@/lib/profile/createProfileInsights";
-import { translateBlueprintV2, type TranslatedProfile } from "@/lib/profile/v2/insightTranslator";
-import { ProfileTabs } from "@/components/profile/ProfileTabs";
-import { growthEngine, GrowthProfile } from "@/lib/engines/growthEngine";
-import { journeyRepository } from "@/lib/repositories/journeyRepository";
-import { ChevronDown, ChevronUp, Beaker } from "lucide-react";
-import { safeJsonParse } from "@/lib/storage/safeJson";
+import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { createProfileEcho, ProfileEchoV1 } from "@/lib/profile/echo";
+import { ShareCard } from "@/components/ui/ShareCard";
+import { useAuth } from "@/context/AuthContext";
+import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import type { DailyGuidance } from "@/lib/dailyGuidance/types";
+import { synthesizeGaiaProfile } from "@/lib/profile/gaia/synthesisEngine";
+import { getShareSafeGaiaInsights } from "@/lib/profile/gaia/selectors";
+import type { GaiaProfile, GaiaTheme } from "@/lib/profile/gaia/types";
+import { GAIA_SECTION_PRESENTATION } from "@/lib/profile/gaia/presentation";
+import { isCompleteGaiaWarehouse } from "@/lib/profile/gaia/validation";
 
 type LocalRecord = Record<string, unknown>;
-const PROFILE_EMPTY = "Belum dilengkapi";
-const BLUEPRINT_PENDING = "Dalam Persiapan";
 
-function getText(record: LocalRecord | null, path: string[], fallback = "Dalam Persiapan"): string {
-  const value = path.reduce<unknown>((current, key) => {
-    if (!current || typeof current !== "object") return undefined;
-    return (current as LocalRecord)[key];
-  }, record);
-
-  if (typeof value === "number") return String(value);
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
-}
-
-function getFirstText(record: LocalRecord | null, paths: string[][], fallback = "Dalam Persiapan"): string {
-  for (const path of paths) {
-    const value = getText(record, path, "");
-    if (value) return value;
+function profileName(profile: LocalRecord): string {
+  for (const key of ["fullName", "displayName", "name"]) {
+    const value = profile[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return fallback;
+  return "Penghuni Bhumi";
 }
 
-function normalizeProfile(profile: LocalRecord | null) {
-  return {
-    name: getFirstText(profile, [["fullName"], ["displayName"], ["name"]], PROFILE_EMPTY),
-    email: getFirstText(profile, [["email"]], PROFILE_EMPTY),
-    birthDate: getFirstText(profile, [["birthDate"]], PROFILE_EMPTY),
-    birthTime: getFirstText(profile, [["birthTime"]], PROFILE_EMPTY),
-    birthCity: getFirstText(profile, [["birthPlace"], ["birthCity"], ["cityOfBirth"]], PROFILE_EMPTY),
-    setupCompleted: profile?.setupCompleted === true,
-  };
+function isGaiaWarehouse(profile: GaiaProfile): boolean {
+  return isCompleteGaiaWarehouse(profile);
 }
 
-function normalizeBlueprint(blueprint: LocalRecord | null) {
-  return {
-    lifePath: getFirstText(blueprint, [
-      ["lifePath", "display"],
-      ["lifePath", "number"],
-      ["numerology", "display"],
-      ["numerology", "lifePath"],
-      ["numerology", "number"],
-      ["lifePath"],
-    ], BLUEPRINT_PENDING),
-    arcanaCenter: getFirstText(blueprint, [
-      ["destinyMatrix", "arcanaCenter", "number"],
-      ["destinyMatrix", "arcanaCenter"],
-      ["destinyMatrix", "center"],
-      ["arcanaCenter", "number"],
-      ["arcanaCenter"],
-    ], BLUEPRINT_PENDING),
-    humanDesignType: getText(blueprint, ["humanDesign", "type"], BLUEPRINT_PENDING),
-    humanDesignProfile: getText(blueprint, ["humanDesign", "profile"], BLUEPRINT_PENDING),
-    humanDesignAuthority: getText(blueprint, ["humanDesign", "authority"], BLUEPRINT_PENDING),
-    sunSign: getFirstText(blueprint, [["astrology", "sunSign"], ["natalChart", "sunSign"], ["sunSign", "sign"], ["sunSign"]], BLUEPRINT_PENDING),
-    moonSign: getFirstText(blueprint, [["astrology", "moonSign"], ["natalChart", "moonSign"]], BLUEPRINT_PENDING),
-    ascendant: getFirstText(blueprint, [["astrology", "risingSign"], ["natalChart", "ascendant"]], BLUEPRINT_PENDING),
-  };
-}
+function SummaryCard({ gaia }: { gaia: GaiaProfile }) {
+  const items = [
+    ["Life Path", gaia.identity.lifePath],
+    ["Arcana Center", gaia.identity.arcanaCenter],
+    ["Human Design Type", gaia.identity.humanDesignType],
+    ["Zodiak Matahari", gaia.identity.sunSign],
+  ];
 
-function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-[#E8E9E5] py-3 last:border-0">
-      <p className="text-sm text-[#7B8776]">{label}</p>
-      <p className="text-right font-medium text-[#4F5E52]">{value}</p>
-    </div>
-  );
-}
-
-function ProfileCard({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="bhumi-card p-6">
-      <h2 className="text-xl font-semibold text-[#4F5E52]">{title}</h2>
-      <div className="mt-4">{children}</div>
+    <section className="bhumi-card border-none bg-white p-6 shadow-sm">
+      <div className="mb-5 flex items-center gap-2">
+        <Sparkles size={15} className="text-[#9AA394]" />
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9AA394]">Identitas Jiwa</p>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {items.map(([label, value]) => (
+          <div key={label} className="rounded-2xl bg-[#F7F4ED] p-4">
+            <p className="text-[9px] font-bold uppercase tracking-wider text-[#9AA394]">{label}</p>
+            <p className="mt-2 text-sm font-semibold text-[#4F5E52]">{value}</p>
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
 
 export default function ProfilePage() {
-  const { language } = useLanguage();
-  const t = translations[language];
-  const [profile, setProfile] = useState<LocalRecord | null>(null);
-  const [blueprint, setBlueprint] = useState<LocalRecord | null>(null);
-  const [insights, setInsights] = useState<ProfileInsights | null>(null);
-  const [v2Data, setV2Data] = useState<TranslatedProfile | null>(null);
-  const [growthData, setGrowthData] = useState<GrowthProfile | null>(null);
-  const [showTechnical, setShowTechnical] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const auth = useAuth();
+  const [name, setName] = useState("Penghuni Bhumi");
+  const [gaia, setGaia] = useState<GaiaProfile | null>(null);
+  const [echo, setEcho] = useState<ProfileEchoV1 | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [dateKey, setDateKey] = useState("");
 
   useEffect(() => {
-    const loadProfile = async () => {
+    async function load() {
       try {
-      const profileData = await storageProvider.getUserProfile();
-      const blueprintData = await storageProvider.getUserBlueprint();
-
-      if (!profileData?.setupCompleted || !profileData || !blueprintData) {
-        setLoaded(true);
-        return;
+        const [profile, blueprint] = await Promise.all([
+          storageProvider.getUserProfile(),
+          storageProvider.getUserBlueprint(),
+        ]);
+        if (profile) {
+          setName(profileName(profile as unknown as LocalRecord));
+          const storedGaia = (profile as unknown as { gaiaProfile?: GaiaProfile }).gaiaProfile;
+          if (storedGaia && isGaiaWarehouse(storedGaia)) setGaia(storedGaia);
+        }
+        const timezone = (profile as LocalRecord | null)?.timezone;
+        const today = getLocalDateKey(new Date(), typeof timezone === "string" ? timezone : Intl.DateTimeFormat().resolvedOptions().timeZone);
+        setDateKey(today);
+        if (auth?.user?.uid) {
+          setDailyGuidance(await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today).catch(() => null));
+        }
+        if (blueprint) {
+          setGaia((current) => current ?? synthesizeGaiaProfile(blueprint));
+          setEcho(createProfileEcho(blueprint));
+        }
+      } finally {
+        setLoading(false);
       }
-
-      const uid = profileData.uid;
-      const parsedProfile = profileData as unknown as LocalRecord;
-      const parsedBlueprint = blueprintData as unknown as LocalRecord;
-
-      const natalChart = calculateNatalBasics({
-        birthDate: String(parsedProfile.birthDate || ""),
-        birthTime: String(parsedProfile.birthTime || ""),
-        birthCity: String(parsedProfile.birthCity || parsedProfile.birthPlace || ""),
-        timezone: (parsedProfile.timezone as string | undefined) || undefined,
-        latitude: (parsedProfile.latitude as number | null | undefined) ?? undefined,
-        longitude: (parsedProfile.longitude as number | null | undefined) ?? undefined,
-      });
-
-      const nextBlueprint = {
-        ...parsedBlueprint,
-        natalChart: {
-          ...(parsedBlueprint.natalChart || {}),
-          ...natalChart,
-        },
-      };
-
-      setProfile(parsedProfile);
-      setBlueprint(nextBlueprint);
-      setInsights(createProfileInsights({ profile: parsedProfile, blueprint: nextBlueprint }));
-      setV2Data(translateBlueprintV2(nextBlueprint, language));
-
-      // Fetch Journey for Growth Engine
-      const states = await journeyRepository.getRecentDailyStates(uid);
-      setGrowthData(growthEngine.calculateGrowth(states));
-
-    } catch (error) {
-      console.error("[Profile Page] Failed to load local blueprint", error);
-    } finally {
-      setLoaded(true);
     }
-    };
-    void loadProfile();
-  }, [language]);
+    void load();
+  }, [auth?.user?.uid]);
 
-  if (!loaded) {
-    return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
-        <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-          <p className="text-[#4F5E52] text-lg">Membuka profil blueprint...</p>
-        </div>
-      </main>
-    );
-  }
-
-  if (!profile || !blueprint || !insights) {
-    return (
-      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-24">
-        <AppNav />
-        <div className="mx-auto max-w-3xl">
-          <section className="bhumi-card p-8 text-center">
-            <h1 className="text-3xl font-semibold text-[#4F5E52]">{t.profile.title}</h1>
-            <p className="mt-4 text-[#7B8776]">
-              {t.profile.missing}
-            </p>
-            <Link href="/" className="bhumi-button mt-6 inline-flex">
-              Kembali ke Awal →
-            </Link>
-          </section>
-        </div>
-      </main>
-    );
-  }
-
-  const normalizedProfile = normalizeProfile(profile);
-  const normalizedBlueprint = normalizeBlueprint(blueprint);
+  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
+  if (!gaia || !echo) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
 
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
       <AppNav />
-      <div className="mx-auto max-w-3xl space-y-8">
-        <header className="bhumi-card p-8 bg-white border-none shadow-sm flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-[#4F5E52] text-white rounded-full flex items-center justify-center text-2xl font-serif mb-4">
-            {normalizedProfile.name.charAt(0)}
-          </div>
-          <h1 className="text-3xl font-serif text-[#4F5E52] mb-1">{normalizedProfile.name}</h1>
-          <p className="text-[#7B8776] text-sm italic mb-4">
-            Jiwa {normalizedBlueprint.sunSign}
-          </p>
-
-          {profile?.membershipType === "PENJAGA_BHUMI_INTI" && (
-            <div className="mb-6 inline-flex flex-col items-center px-6 py-3 rounded-2xl bg-emerald-50 border border-emerald-100 shadow-sm">
-              <p className="text-emerald-700 font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                🌱 Penjaga Bhumi Inti
-              </p>
-              <p className="text-emerald-600/70 text-[10px] font-medium mt-1">
-                Free Plan aktif selama 2 bulan.
-              </p>
-            </div>
-          )}
-
-          <Link
-            href="/tentang"
-            className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest hover:text-[#4F5E52] transition-colors"
-          >
-            Tentang Bhumi Amartya
-          </Link>
+      <div className="mx-auto max-w-lg space-y-8">
+        <BhumiPageHeader />
+        <header className="text-center">
+          <h1 className="text-3xl font-serif text-[#4F5E52]">{name}</h1>
+          <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali. Mari melihat dirimu dengan lebih jernih.</p>
         </header>
 
-        {v2Data && <ProfileTabs data={v2Data} growth={growthData} />}
+        <SummaryCard gaia={gaia} />
 
-        {/* SECTION: LEGACY / TECHNICAL DATA (Hidden by default) */}
-        <div className="pt-10">
-          <button
-            onClick={() => setShowTechnical(!showTechnical)}
-            className="w-full flex items-center justify-center gap-2 py-4 text-[#9AA394] text-[10px] font-bold uppercase tracking-widest hover:text-[#7B8776] transition-colors"
-          >
-            <Beaker size={14} />
-            {showTechnical ? "Sembunyikan Data Teknis" : "Lihat Data Teknis (Legacy)"}
-            {showTechnical ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-          </button>
+        <section>
+          <header className="mb-5 px-1">
+            <h2 className="text-xl font-serif text-[#4F5E52]">Gudang Identitas Jiwa</h2>
+            <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
+          </header>
+          <div className="grid grid-cols-2 gap-4">
+          {(Object.keys(GAIA_SECTION_PRESENTATION) as GaiaTheme[]).map((theme) => {
+            const item = GAIA_SECTION_PRESENTATION[theme];
+            const Icon = item.icon;
+            return (
+              <Link key={theme} href={`/profile/${theme}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
+                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${item.color}`}><Icon size={24} /></div>
+                <h3 className="text-sm font-semibold text-[#4F5E52]">{item.title}</h3>
+                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{item.subtitle}</p>
+              </Link>
+            );
+          })}
+          </div>
+        </section>
 
-          {showTechnical && (
-            <div className="mt-6 space-y-6 animate-in fade-in zoom-in-95 duration-300">
-              <ProfileCard title={t.profile.birthData}>
-                <InfoRow label={t.profile.name} value={normalizedProfile.name} />
-                <InfoRow label={t.profile.email} value={normalizedProfile.email} />
-                <InfoRow label={t.profile.birthDate} value={normalizedProfile.birthDate} />
-                <InfoRow label={t.profile.birthCity} value={normalizedProfile.birthCity} />
-                <InfoRow label={t.profile.birthTime} value={normalizedProfile.birthTime} />
-              </ProfileCard>
+        <section className="space-y-5 pt-4">
+          <header className="text-center">
+            <h2 className="text-2xl font-serif text-[#4F5E52]">Bagikan Refleksi Jiwamu</h2>
+            <p className="mt-2 text-sm text-[#7B8776]">Satu ringkasan personal dalam format media sosial.</p>
+          </header>
+          <ShareCard
+            userName={name}
+            echo={echo}
+            dateKey={dateKey}
+            userSeed={auth?.user?.uid ?? name}
+            guidance={dailyGuidance}
+            gaiaInsights={getShareSafeGaiaInsights(gaia)}
+          />
+        </section>
 
-              <ProfileCard title={t.profile.blueprintSummary}>
-                <InfoRow label={t.dashboard.lifePath} value={normalizedBlueprint.lifePath} />
-                <InfoRow label={t.dashboard.arcanaCenter} value={normalizedBlueprint.arcanaCenter} />
-                <InfoRow label={t.dashboard.humanDesign} value={normalizedBlueprint.humanDesignType} />
-                <InfoRow label={t.dashboard.humanDesign} value={normalizedBlueprint.humanDesignProfile} />
-                <InfoRow label={t.dashboard.humanDesign} value={normalizedBlueprint.humanDesignAuthority} />
-                <InfoRow label={t.dashboard.sunSign} value={normalizedBlueprint.sunSign} />
-                <InfoRow label={t.profile.moonSign} value={normalizedBlueprint.moonSign} />
-                <InfoRow label={t.profile.ascendant} value={normalizedBlueprint.ascendant} />
-              </ProfileCard>
-
-               <ProfileCard title={language === "id" ? "Karma Leluhur" : "Ancestor Karma"}>
-                 <div className="space-y-4 text-[#4F5E52] leading-7">
-                   {insights.ancestorKarma.split("\n\n").map((paragraph) => (
-                     <p key={paragraph}>{paragraph}</p>
-                   ))}
-                 </div>
-               </ProfileCard>
-
-               <ProfileCard title={language === "id" ? "Pola Berulang" : "Repeating Patterns"}>
-                 <ul className="space-y-3">
-                   {insights.repeatingPatterns.patterns.map((pattern) => (
-                     <li key={pattern} className="rounded-2xl bg-[#FCFAF5] p-4 text-[#4F5E52]">
-                       {pattern}
-                     </li>
-                   ))}
-                 </ul>
-                 <p className="mt-5 text-sm font-medium text-[#7B8776]">{insights.repeatingPatterns.question}</p>
-               </ProfileCard>
-
-               <ProfileCard title={language === "id" ? "Luka Batin" : "Inner Wounds"}>
-                 <p className="text-[#4F5E52] leading-7">{insights.innerWounds.paragraph}</p>
-                 <div className="mt-4 flex flex-wrap gap-2">
-                   {insights.innerWounds.themes.map((theme) => (
-                     <span key={theme} className="rounded-full bg-[#FCFAF5] px-3 py-2 text-sm font-medium text-[#4F5E52]">
-                       {theme}
-                     </span>
-                   ))}
-                 </div>
-               </ProfileCard>
-
-               <ProfileCard title="Soul Fragment & Inner Child Map (Legacy)">
-                 <div className="space-y-4">
-                   {insights.soulFragmentMap.map((item, index) => (
-                     <div key={item.part} className="rounded-2xl bg-[#FCFAF5] p-4">
-                       <p className="font-semibold text-[#4F5E52]">{index + 1}. {item.part}</p>
-                       <p className="mt-2 text-sm text-[#7B8776]">{language === "id" ? "Kebutuhan: " : "Need: "}{item.need}</p>
-                       <p className="mt-2 text-sm text-[#7B8776]">{language === "id" ? "Praktik: " : "Practice: "}{item.practice}</p>
-                     </div>
-                   ))}
-                 </div>
-               </ProfileCard>
-
-               <ProfileCard title="Shadow Integration Map (Legacy)">
-                 <div className="space-y-4">
-                   <InfoRow label={language === "id" ? "Bayangan" : "Shadow"} value={insights.shadowIntegrationMap.shadowPattern} />
-                   <InfoRow label={language === "id" ? "Pertumbuhan" : "Growth"} value={insights.shadowIntegrationMap.growthInvitation} />
-                   <InfoRow label={language === "id" ? "Praktik" : "Practice"} value={insights.shadowIntegrationMap.dailyPractice} />
-                 </div>
-               </ProfileCard>
-            </div>
-          )}
-        </div>
       </div>
     </main>
   );

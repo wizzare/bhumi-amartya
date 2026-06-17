@@ -5,6 +5,8 @@ import { refreshProgressData } from "@/lib/insights/createInsightProgress";
 import { saveLastActivity } from "@/lib/activity/getLastActivity";
 import { readOwnedCacheArray, withActiveUid } from "@/lib/storage/derivedCacheOwnership";
 import { auth } from "@/lib/firebase/firebase";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 export const AUDIO_HEALING_STORAGE_KEY = "bhumiAudioHealingEntries";
 
@@ -74,6 +76,16 @@ export function saveAudioHealingEntry(entry: AudioHealingEntry): AudioHealingEnt
   refreshJourneyData();
   refreshCompiledInnerwork();
   refreshProgressData();
+
+  // Sync to Firestore for Journey Progress
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    void dailyStateRepository.saveDailyState(uid, getLocalDateKey(), {
+      audioHealingDone: true,
+      innerworkDone: true,
+    }).catch(err => console.error("[SYNC_AUDIO_ERROR]", err));
+  }
+
   return nextEntries;
 }
 

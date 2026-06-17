@@ -54,7 +54,7 @@ export default function TentangPage() {
             <p>Setiap orang memiliki perjalanan hidup yang unik.</p>
             <p>Di balik pengalaman, tantangan, hubungan, pekerjaan, mimpi, dan luka yang pernah dialami, terdapat pola yang membentuk siapa diri kita hari ini.</p>
             <p>Bhumi Amartya hadir untuk membantu kamu memahami pola tersebut dengan cara yang sederhana, personal, dan membumi.</p>
-            <p>Aplikasi ini dipersembahkan untuk para Penjaga Bhumi — mereka yang sedang bertumbuh, belajar mengenali dirinya, merawat kesadarannya, dan berusaha menghadirkan manfaat bagi diri sendiri, keluarga, lingkungan, serta kehidupan yang lebih luas.</p>
+            <p>Aplikasi ini dipersembahkan untuk para Penghuni Bhumi, mereka yang sedang bertumbuh, belajar mengenali diri, dan merawat kesadarannya setiap hari.</p>
           </div>
         </section>
 
@@ -73,7 +73,7 @@ export default function TentangPage() {
             <p>Bhumi mengolah berbagai pendekatan pengenalan diri dan pertumbuhan personal menjadi panduan harian yang mudah dipahami dan diterapkan.</p>
             <p>Kamu tidak perlu mempelajari berbagai sistem yang rumit.</p>
             <p className="text-[#4F6658] font-bold">Biarkan Bhumi bekerja mengolah kompleksitas menjadi kejelasan.</p>
-            <p>Di balik layar, Bhumi mengolah berbagai data personal untuk membantu menghadirkan refleksi, wawasan, dan panduan yang lebih relevan bagi setiap Penjaga Bhumi.</p>
+            <p>Di balik layar, Bhumi mengolah berbagai data personal untuk membantu menghadirkan refleksi, wawasan, dan panduan yang lebih relevan bagi setiap Penghuni Bhumi.</p>
             <p>Kamu tidak perlu memahami semua proses tersebut.</p>
             <p>Cukup fokus pada perjalananmu, sementara Bhumi membantu menyusun petanya.</p>
           </div>
@@ -98,7 +98,7 @@ export default function TentangPage() {
                   <item.icon size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#4F6658] mb-1">🌱 {item.title}</h3>
+                  <h3 className="font-bold text-[#4F6658] mb-1">{item.title}</h3>
                   <p className="text-xs text-[#7B8776] leading-relaxed font-medium">{item.desc}</p>
                 </div>
               </div>
@@ -118,24 +118,24 @@ export default function TentangPage() {
               <p>Namun peta yang rumit tidak selalu membantu.</p>
               <p>Karena itu Bhumi hadir untuk menyederhanakan berbagai informasi menjadi wawasan yang lebih mudah dipahami dan diterapkan dalam kehidupan sehari-hari.</p>
               <p>Tujuan Bhumi bukan untuk meramal masa depan.</p>
-              <p>Tujuan Bhumi adalah membantu para Penjaga Bhumi memahami dirinya, mengenali pola hidupnya, dan menjalani perjalanan hidup dengan lebih sadar.</p>
+              <p>Tujuan Bhumi adalah membantu para Penghuni Bhumi memahami dirinya, mengenali pola hidupnya, dan menjalani perjalanan hidup dengan lebih sadar.</p>
             </div>
           </div>
         </section>
 
-        {/* Penjaga Bhumi Section */}
+        {/* Penghuni Bhumi Section */}
         <section className="space-y-6 px-4">
           <div className="flex items-center gap-4 text-[#4F6658]">
             <div className="p-2.5 rounded-xl bg-white border border-[#E8E9E5] shadow-sm">
               <Users size={22} />
             </div>
-            <h2 className="text-xl font-serif font-bold">Siapa Itu Penjaga Bhumi?</h2>
+            <h2 className="text-xl font-serif font-bold">Siapa Itu Penghuni Bhumi?</h2>
           </div>
           <div className="space-y-4 text-base leading-relaxed text-[#7B8776] font-medium">
-            <p>Penjaga Bhumi adalah setiap orang yang memilih untuk terus belajar, bertumbuh, dan mengenali dirinya.</p>
+            <p>Penghuni Bhumi adalah setiap orang yang memilih untuk terus belajar, bertumbuh, dan mengenali dirinya.</p>
             <p>Bukan mereka yang sudah sempurna.</p>
             <p>Melainkan mereka yang bersedia melangkah sedikit demi sedikit setiap hari.</p>
-            <p>Penjaga Bhumi memahami bahwa perubahan besar lahir dari kesadaran kecil yang dilakukan secara konsisten.</p>
+            <p>Penghuni Bhumi memahami bahwa perubahan besar lahir dari kesadaran kecil yang dilakukan secara konsisten.</p>
           </div>
         </section>
 
@@ -146,7 +146,7 @@ export default function TentangPage() {
           </div>
           <h2 className="text-xl font-serif font-bold text-[#4F6658]">Visi</h2>
           <p className="text-base text-[#7B8776] font-medium leading-relaxed italic px-4">
-            Membantu melahirkan lebih banyak Penjaga Bhumi yang sadar, bertumbuh, dan mampu menjadi cahaya bagi dirinya sendiri maupun lingkungan sekitarnya.
+            Menjadi ruang bagi lebih banyak Penghuni Bhumi untuk hidup dengan sadar, bertumbuh, dan mengenali jalan pulangnya sendiri.
           </p>
         </section>
 
@@ -173,7 +173,7 @@ export default function TentangPage() {
               <Sparkles size={40} />
             </div>
             <p className="text-lg font-serif font-medium text-[#4F6658] leading-relaxed italic px-4">
-              "Perjalanan mengenal diri bukan tentang mengetahui segalanya.<br />Tetapi tentang memahami diri sedikit lebih baik setiap hari."
+              &quot;Perjalanan mengenal diri bukan tentang mengetahui segalanya.<br />Tetapi tentang memahami diri sedikit lebih baik setiap hari.&quot;
             </p>
           </blockquote>
 
@@ -181,7 +181,7 @@ export default function TentangPage() {
             <h3 className="text-2xl font-serif font-bold text-[#4F6658]">Bhumi Amartya</h3>
             <p className="text-sm font-medium text-[#7B8776] tracking-wide">Rumah untuk Pulang dan Mengenali Diri</p>
             <p className="text-xs font-bold text-[#9BB89A] uppercase tracking-[0.2em] pt-4">
-              🌱 Untuk Para Penjaga Bhumi
+              Untuk Para Penghuni Bhumi
             </p>
           </div>
         </footer>

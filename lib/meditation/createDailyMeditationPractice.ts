@@ -7,6 +7,8 @@ import { saveLastActivity } from "@/lib/activity/getLastActivity";
 import { readOwnedCacheArray, withActiveUid } from "@/lib/storage/derivedCacheOwnership";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { auth } from "@/lib/firebase/firebase";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 export const MEDITATION_STORAGE_KEY = "bhumiMeditationEntries";
 
@@ -83,7 +85,7 @@ const THEMES: MeditationTheme[] = [
   "Body Safety",
 ];
 
-const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmation: string; mudra: MudraName }> = {
+const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmation: string; mudras: MudraName[] }> = {
   "Inner Child": {
     practices: [
       "Duduk tenang 5 menit sambil membayangkan dirimu kecil duduk di tempat yang aman.",
@@ -91,7 +93,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 6 hitungan.",
     ],
     affirmation: "Aku boleh merasa aman menjadi diriku yang lembut.",
-    mudra: "Anjali Mudra",
+    mudras: ["Anjali Mudra", "Yoni Mudra", "Prithvi Mudra"],
   },
   "Love Block": {
     practices: [
@@ -100,7 +102,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik ke dada 4 hitungan, buang 6 hitungan.",
     ],
     affirmation: "Aku boleh menerima cinta tanpa meninggalkan diriku.",
-    mudra: "Padma Mudra",
+    mudras: ["Padma Mudra", "Anjali Mudra", "Yoni Mudra"],
   },
   "Money Block": {
     practices: [
@@ -109,7 +111,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 6 hitungan.",
     ],
     affirmation: "Aku boleh menerima rezeki tanpa kehilangan diriku.",
-    mudra: "Prithvi Mudra",
+    mudras: ["Prithvi Mudra", "Kubera Mudra", "Surya Mudra"],
   },
   "Repeating Patterns": {
     practices: [
@@ -118,7 +120,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 3 hitungan, tahan 2, buang 6.",
     ],
     affirmation: "Aku bisa memilih respons baru dengan lembut.",
-    mudra: "Gyan Mudra",
+    mudras: ["Gyan Mudra", "Vayu Mudra", "Hakini Mudra"],
   },
   "Self Worth": {
     practices: [
@@ -127,7 +129,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 4 hitungan.",
     ],
     affirmation: "Nilai diriku tidak perlu dibuktikan hari ini.",
-    mudra: "Hakini Mudra",
+    mudras: ["Hakini Mudra", "Surya Mudra", "Kubera Mudra"],
   },
   "Family Dynamics": {
     practices: [
@@ -136,7 +138,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang sambil merilekskan rahang.",
     ],
     affirmation: "Aku boleh mencintai tanpa memikul semuanya.",
-    mudra: "Apana Mudra",
+    mudras: ["Apana Mudra", "Anjali Mudra", "Shuni Mudra"],
   },
   "Karmic Lessons": {
     practices: [
@@ -145,7 +147,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 8 hitungan.",
     ],
     affirmation: "Aku belajar tanpa harus menghukum diriku.",
-    mudra: "Gyan Mudra",
+    mudras: ["Gyan Mudra", "Shuni Mudra", "Apana Mudra"],
   },
   "Ancestral Patterns": {
     practices: [
@@ -154,7 +156,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik dari hidung, buang lewat mulut perlahan.",
     ],
     affirmation: "Aku menghormati asal-usulku sambil memilih jalan yang lebih sadar.",
-    mudra: "Prithvi Mudra",
+    mudras: ["Prithvi Mudra", "Yoni Mudra", "Shuni Mudra"],
   },
   Forgiveness: {
     practices: [
@@ -163,7 +165,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang sambil melembutkan dada.",
     ],
     affirmation: "Aku boleh melepaskan sedikit demi sedikit.",
-    mudra: "Apana Mudra",
+    mudras: ["Apana Mudra", "Vayu Mudra", "Anjali Mudra"],
   },
   "Purpose & Calling": {
     practices: [
@@ -172,7 +174,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 5 hitungan, buang 5 hitungan.",
     ],
     affirmation: "Aku bisa mengikuti panggilanku satu langkah sadar hari ini.",
-    mudra: "Hakini Mudra",
+    mudras: ["Hakini Mudra", "Kubera Mudra", "Gyan Mudra"],
   },
   "Nervous System Grounding": {
     practices: [
@@ -181,7 +183,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 7 hitungan.",
     ],
     affirmation: "Tubuhku boleh kembali ke ritme yang lebih aman.",
-    mudra: "Prithvi Mudra",
+    mudras: ["Prithvi Mudra", "Vayu Mudra", "Yoni Mudra"],
   },
   "Emotional Release": {
     practices: [
@@ -190,7 +192,7 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik lewat hidung, buang panjang lewat mulut.",
     ],
     affirmation: "Aku boleh merasakan tanpa tenggelam di dalamnya.",
-    mudra: "Apana Mudra",
+    mudras: ["Apana Mudra", "Yoni Mudra", "Vayu Mudra"],
   },
   "Body Safety": {
     practices: [
@@ -199,26 +201,9 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
       "Napas: tarik 4 hitungan, buang 6 hitungan.",
     ],
     affirmation: "Aku sedang belajar hadir di tubuhku dengan aman.",
-    mudra: "Gyan Mudra",
+    mudras: ["Gyan Mudra", "Prithvi Mudra", "Yoni Mudra"],
   },
 };
-
-function getRecordValue(record: UnknownRecord | null | undefined, path: string[]): unknown {
-  return path.reduce<unknown>((current, key) => {
-    if (!current || typeof current !== "object") return undefined;
-    return (current as UnknownRecord)[key];
-  }, record);
-}
-
-function getString(record: UnknownRecord | null | undefined, path: string[]): string | null {
-  const value = getRecordValue(record, path);
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function getNumber(record: UnknownRecord | null | undefined, path: string[]): number | null {
-  const value = getRecordValue(record, path);
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
 
 function getDateSeed(date = new Date()): number {
   return Number(date.toISOString().slice(0, 10).replaceAll("-", ""));
@@ -263,11 +248,6 @@ function adaptPractices(
   input: CreateDailyMeditationPracticeInput,
   base: { practices: string[]; affirmation: string; mudra: MudraGuide | null },
 ): { practices: string[]; affirmation: string; mudra: MudraGuide | null } {
-  const synthesis = buildUnifiedBlueprintSynthesis({
-    language: "id",
-    profile: input.profile ?? null,
-    blueprint: input.blueprint ?? null,
-  });
   const practices = [...base.practices];
 
   practices[0] = "Duduk 5-7 menit dan perhatikan bagian tubuh mana yang paling meminta pelan hari ini.";
@@ -284,7 +264,11 @@ function adaptPractices(
 export function createDailyMeditationPractice(input: CreateDailyMeditationPracticeInput): DailyMeditationPractice {
   const theme = chooseTheme(input);
   const themeData = THEME_PRACTICES[theme];
-  const mudraGuide = getMudraGuide(themeData.mudra) ?? null;
+  const lastMudra = input.previousMeditationEntries?.[0]?.mudraName;
+  const availableMudras = themeData.mudras.filter((mudra) => mudra !== lastMudra);
+  const mudraPool = availableMudras.length ? availableMudras : themeData.mudras;
+  const mudraName = mudraPool[(getDateSeed() + theme.length + (input.previousMeditationEntries?.length ?? 0)) % mudraPool.length];
+  const mudraGuide = getMudraGuide(mudraName) ?? null;
 
   const basePractice = {
     practices: themeData.practices,
@@ -341,6 +325,16 @@ export function saveMeditationEntry(entry: MeditationEntry): MeditationEntry[] {
   refreshJourneyData();
   refreshCompiledInnerwork();
   refreshProgressData();
+
+  // Sync to Firestore for Journey Progress
+  const uid = auth.currentUser?.uid;
+  if (uid) {
+    void dailyStateRepository.saveDailyState(uid, getLocalDateKey(), {
+      meditationDone: true,
+      innerworkDone: true,
+    }).catch(err => console.error("[SYNC_MEDITATION_ERROR]", err));
+  }
+
   return nextEntries;
 }
 

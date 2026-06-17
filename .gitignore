@@ -1,70 +1,74 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Bhumi Gaia audit / temporary files
+runtime-proof/
+scratch/
+screenshots/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Android build cache
+android/.next/
 
-# testing
-/coverage
+# Human Design audit output
+services/humandesign-api/current_response.json
+services/humandesign-api/random_response.json
 
-# next.js
-/.next/
-/out/
+# HD sample vendor
+lib/humandesign/hdkit-main/hdkit-main/sample-apps/sfhdl/vendor/
 
-# production
-/build
-/release/
-/capacitor-www/
-*.keystore
-*.jks
-*.apk
-*.aab
+# Python cache
+__pycache__/
+*.pyc
+node_modules
+# Local env
+.env
+.env.local
+.env.*.local
 
-# Android
-android/app/build/
-android/.gradle/
-android/local.properties
-android/captures/
-android/navigation/
-android/gradlew.bat
-android/gradlew
-
-# IDE / Tooling
-.continue/
+# Chrome profiles
 .chrome-profile-*/
-.tmp-*/
+
+# Next logs
 *.log
-.idea/
+*.err.log
+
+# Next build
+.next/
+
+# VS Code
 .vscode/
-*.swp
-*.swo
 
-# database
+# Continue
+.continue/
+
+# Temp files
+.tmp-*/
+
+# APK builds
+*.apk
+
+# Android IDE
+android/.idea/
+
+# SQLite
 *.sqlite
-*.db
 
-# screenshots
-*.png
-!**/public/**/*.png
-!**/src/main/res/**/*.png
-!**/app/**/*.png
+# HD sample app env
+**/.env.development
+**/.env.production
 
-# misc
-.DS_Store
-*.pem
+# Runtime folders
+runtime-proof/
+scratch/
+screenshots/
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
+# Generated outputs
+current_response.json
+random_response.json
+# More generated outputs
+out/
+release/
+capacitor-www/
 next-env.d.ts
+
+# Android generated/local
+android/gradlew
+android/gradlew.bat
+android/astro-current-screen.png

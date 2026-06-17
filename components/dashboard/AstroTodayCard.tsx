@@ -1,238 +1,170 @@
-import { useState, useEffect } from "react";
-import { calculateCurrentSky, CurrentSky } from "@/lib/astrology/calculateCurrentSky";
+"use client";
+
+import { useMemo, useState } from "react";
+import { Calendar, ChevronDown, ChevronUp, Compass, Moon, Orbit, ShieldAlert } from "lucide-react";
+import { calculateCurrentSky, CurrentSky, SkyBody } from "@/lib/astrology/calculateCurrentSky";
 import { buildAstroHouseActivations, AstroHouseActivation } from "@/lib/astrology/astroHouseActivations";
-import { ChevronDown, ChevronUp, Moon, Compass, ShieldAlert, Calendar } from "lucide-react";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { buildTransitNarrative } from "@/lib/astrology/personalizedTransitNarrative";
 
 type BlueprintAstroContext = {
   profile?: Record<string, unknown> | null;
   blueprint?: Record<string, unknown> | null;
-  birthDate?: string | null;
-  sunSign?: string | null;
-  moonSign?: string | null;
-  risingSign?: string | null;
-  lifePathNumber?: number | null;
-  arcanaCenter?: number | null;
-  humanDesignType?: string | null;
+  [key: string]: unknown;
 };
 
-type AstroTodayCardProps = {
-  context: BlueprintAstroContext;
+type AstroTodayCardProps = { context: BlueprintAstroContext };
+type AstroBlueprintRecord = Record<string, unknown> & {
+  astrology?: Record<string, unknown> & { houses?: Array<Record<string, unknown>> | Record<string, unknown> | null };
+  natalChart?: Record<string, unknown>;
 };
 
-const GLYPHS: Record<string, string> = {
-  Sun: "☀",
-  Moon: "🌙",
-  Mercury: "☿",
-  Venus: "♀",
-  Mars: "♂",
-  Jupiter: "♃",
-  Saturn: "♄",
-  Uranus: "♅",
-  Neptune: "♆",
-  Pluto: "♇",
-  "North Node": "☊",
-  Chiron: "⚷",
-  Lilith: "⚸",
-};
+const DISPLAY_BODIES: SkyBody[] = [
+  "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Chiron",
+];
 
 const BODY_LABELS: Record<string, string> = {
-  Sun: "Matahari",
-  Moon: "Bulan",
-  Mercury: "Merkurius",
-  Venus: "Venus",
-  Mars: "Mars",
-  Jupiter: "Jupiter",
-  Saturn: "Saturnus",
-  Uranus: "Uranus",
-  Neptune: "Neptunus",
-  Pluto: "Pluto",
-  "North Node": "North Node",
+  Sun: "Matahari", Moon: "Bulan", Mercury: "Merkurius", Venus: "Venus", Mars: "Mars",
+  Jupiter: "Jupiter", Saturn: "Saturnus", Uranus: "Uranus", Neptune: "Neptunus", Pluto: "Pluto",
   Chiron: "Chiron",
-  Lilith: "Lilith",
 };
 
+function formatPeriod(periodStart: string | undefined, periodEnd: string | undefined, fallbackDate: string): string {
+  if (periodStart && periodEnd) return `${periodStart} - ${periodEnd}`;
+  if (periodStart) return `Sejak ${periodStart}`;
+  if (periodEnd) return `Hingga ${periodEnd}`;
+  return `Aktif pada ${fallbackDate}`;
+}
+
 export function AstroTodayCard({ context }: AstroTodayCardProps) {
-  const [sky, setSky] = useState<CurrentSky | null>(null);
-  const [activations, setActivations] = useState<AstroHouseActivation[]>([]);
-  const [calcError, setCalcError] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const timezone = context.profile && typeof context.profile.timezone === "string" ? context.profile.timezone : undefined;
+  const [localDateKey] = useState(() => getLocalDateKey(new Date(), timezone));
 
-  useEffect(() => {
-    const calc = async () => {
-      try {
-        const skyResult = calculateCurrentSky(new Date());
-        setSky(skyResult);
+  const astroData = useMemo(() => {
+    try {
+      const currentSky = calculateCurrentSky(new Date(`${localDateKey}T12:00:00`));
+      const blueprint = (context.blueprint || {}) as AstroBlueprintRecord;
+      const result = buildAstroHouseActivations({
+        currentSky,
+        natalChart: blueprint.astrology || blueprint.natalChart || null,
+        natalHouses: blueprint.astrology?.houses || null,
+      });
+      return { sky: currentSky, activations: result.activations, error: false };
+    } catch (error) {
+      console.error("Astro Card Error:", error);
+      return { sky: null, activations: [] as AstroHouseActivation[], error: true };
+    }
+  }, [context.blueprint, localDateKey]);
+  const sky: CurrentSky | null = astroData.sky;
+  const activations = astroData.activations;
 
-        if (context.blueprint || context.profile) {
-          const { activations: houseActs } = buildAstroHouseActivations({
-            currentSky: skyResult,
-            natalChart: (context.blueprint as any)?.astrology || (context.blueprint as any)?.natalChart || null,
-            natalHouses: (context.blueprint as any)?.astrology?.houses || null,
-          });
-          setActivations(houseActs);
-        }
-      } catch (e: any) {
-        console.error("Astro Card Error:", e);
-        setCalcError(true);
-      }
-    };
-    void calc();
-  }, [context.blueprint, context.profile]);
+  const planets = useMemo(() => sky?.bodies.filter((body) => DISPLAY_BODIES.includes(body.body) && body.sign !== "Unknown") ?? [], [sky]);
+  const retrogrades = planets.filter((body) => body.isRetrograde);
+  const moonBody = planets.find((body) => body.body === "Moon");
+  const currentMoonSign = moonBody?.sign || "zodiak hari ini";
+  const moonActivation = activations.find((item) => item.planet === "Moon");
+  const importantTransits = planets.filter((body) => ["Saturn", "Uranus", "Neptune", "Pluto", "Chiron"].includes(body.body));
+  const moonNarrative = moonBody ? buildTransitNarrative(moonBody, moonActivation, context as Record<string, unknown>) : null;
 
-  if (calcError || !sky) {
-    return (
-      <div className="mt-8 bhumi-card p-10 bg-[#FCFAF5] border border-[#E8E9E5]/50 text-center italic text-[#7B8776] text-sm">
-        Membaca data langit...
-      </div>
-    );
+  if (astroData.error || !sky) {
+    return <div className="mt-8 bhumi-card p-8 text-center text-sm italic text-[#7B8776]">Membaca data langit...</div>;
   }
 
-  const moonActivation = activations.find(a => a.planet === "Moon");
-  const majorPlanets = ["Sun", "Mercury", "Venus", "Mars", "Jupiter", "Saturn"];
-  const activePlanets = sky.bodies.filter(b => majorPlanets.includes(b.body) && !b.isRetrograde);
-  const retrogrades = sky.bodies.filter(b => b.isRetrograde);
-
   return (
-    <div className="mt-10 space-y-6">
-      <div className="px-1">
-        <h3 className="text-[#4F6658] font-serif text-2xl font-bold italic">✨ Astro Hari Ini</h3>
-        <p className="text-[#3C3C3C] text-[13px] mt-1 font-medium opacity-70">
-          Konteks kosmik untuk perjalanan jiwamu.
-        </p>
-      </div>
+    <section className="mt-10 space-y-4">
+      <header className="px-1">
+        <h3 className="text-2xl font-serif font-bold text-[#4F6658]">Astro Hari Ini</h3>
+        <p className="mt-1 text-[13px] font-medium text-[#3C3C3C]/70">Catatan langit yang ringkas dan membumi.</p>
+      </header>
 
-      {/* SECTION 1: MOON PHASE */}
-      <div className="bhumi-card bg-white shadow-sm overflow-hidden border-none group">
-        <div className="p-8">
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-indigo-50 text-indigo-500 group-hover:scale-110 transition-transform duration-500">
-                <Moon size={22} />
-              </div>
-              <div>
-                <h4 className="font-bold text-[#4F6658] text-lg">Bulan: {sky.moonInfo.label}</h4>
-                <p className="text-[12px] text-[#3C3C3C] font-semibold italic mt-0.5 opacity-70">
-                  Menuju {sky.moonInfo.nextPhaseLabel} (±{sky.moonInfo.daysRemaining} hari)
-                </p>
-              </div>
+      <div className="bhumi-card overflow-hidden border-none bg-white shadow-sm">
+        <div className="p-7">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-500"><Moon size={22} /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9AA394]">Fase Bulan</p>
+              <h4 className="mt-1 text-lg font-bold text-[#4F6658]">Bulan: {sky.moonInfo.label} di {currentMoonSign}</h4>
+              <p className="mt-1 text-xs font-semibold text-[#7B8776]">
+                Menuju {sky.moonInfo.nextPhaseLabel} di {sky.moonInfo.nextPhaseSign} · {sky.moonInfo.endDate} (±{sky.moonInfo.daysRemaining} hari)
+              </p>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <p className="text-[15px] text-[#3C3C3C] font-bold italic leading-relaxed">
-              Theme: {sky.moonInfo.theme}
-            </p>
-
-            {isExpanded && moonActivation && (
-              <div className="pt-5 mt-5 border-t border-[#F5F1E8] animate-in fade-in slide-in-from-top-2 duration-500">
-                <p className="text-sm text-[#4F6658] leading-relaxed">
-                  Fase ini mengaktifkan <span className="font-bold">Area {moonActivation.lifeArea}</span> kamu.
-                </p>
-                <p className="text-[13px] text-[#7B8776] mt-2 leading-relaxed italic">
-                  Waktunya menyelaraskan kebutuhan emosional dengan tema {moonActivation.keywords.join(", ")}.
-                </p>
-              </div>
-            )}
-          </div>
+          <p className="mt-5 text-[14px] leading-relaxed text-[#3C3C3C]">{moonNarrative?.personalImpact || sky.moonInfo.theme}</p>
         </div>
+
+        <button type="button" onClick={() => setIsExpanded((value) => !value)} className="flex w-full items-center justify-center gap-2 border-t border-[#F1EEE7] bg-[#FCFAF5] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4F6658]">
+          {isExpanded ? <>Tutup Detail <ChevronUp size={16} /></> : <>Lihat Pengaruh ke Dirimu <ChevronDown size={16} /></>}
+        </button>
       </div>
 
-      {/* SECTION 2: ACTIVE PLANETS */}
-      <div className="bhumi-card bg-white shadow-sm overflow-hidden border-none group">
-        <div className="p-8">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 rounded-2xl bg-emerald-50 text-emerald-500 group-hover:rotate-12 transition-transform duration-500">
-              <Compass size={22} />
-            </div>
-            <h4 className="font-bold text-[#4F6658] text-lg">Planet Aktif</h4>
-          </div>
+      {isExpanded && (
+        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <DetailSection icon={<Moon size={18} />} title="Fase Bulan">
+            <p><strong>{sky.moonInfo.label} di {currentMoonSign}</strong> membawa tema {sky.moonInfo.theme.toLowerCase()}</p>
+            <p className="mt-2 text-xs text-[#9AA394]">Periode fase: {sky.moonInfo.startDate} - {sky.moonInfo.endDate}</p>
+            <p className="mt-2">Fase berikutnya adalah <strong>{sky.moonInfo.nextPhaseLabel} di {sky.moonInfo.nextPhaseSign}</strong>, sekitar {sky.moonInfo.endDate}.</p>
+            {moonNarrative && <TransitNarrativeView narrative={moonNarrative} />}
+          </DetailSection>
 
-          <div className="space-y-6">
-            {activePlanets.map(planet => {
-              const activation = activations.find(a => a.planet === planet.body);
-              return (
-                <div key={planet.body} className="relative">
-                  <div className="space-y-1.5">
-                    <p className="text-[15px] font-bold text-[#4F5E52] flex items-center gap-3">
-                      <span className="text-xl opacity-80">{GLYPHS[planet.body]}</span>
-                      {BODY_LABELS[planet.body]} di {planet.sign}
-                    </p>
-                    <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest ml-8">Periode Berjalan</p>
-                  </div>
-
-                  {isExpanded && activation && (
-                    <div className="mt-3 ml-8 pl-5 border-l-2 border-[#F5F1E8] animate-in fade-in slide-in-from-left-2 duration-500">
-                      <p className="text-[13px] text-[#4F6658] leading-relaxed">
-                        Mengaktifkan <span className="font-bold">Area {activation.lifeArea}</span>.
-                      </p>
-                      <p className="text-[12px] text-[#7B8776] mt-1.5 italic font-medium">
-                        Mendukung fokus pada {activation.keywords.slice(0, 2).join(" dan ")}.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* SECTION 3: RETROGRADE */}
-      {retrogrades.length > 0 && (
-        <div className="bhumi-card bg-white shadow-sm overflow-hidden border-none group">
-          <div className="p-8">
-            <div className="flex items-center gap-4 mb-8">
-              <div className="p-3 rounded-2xl bg-orange-50 text-orange-600 group-hover:scale-95 transition-transform duration-500">
-                <ShieldAlert size={22} />
-              </div>
-              <h4 className="font-bold text-[#4F6658] text-lg">Fase Evaluasi (℞)</h4>
-            </div>
-
-            <div className="space-y-6">
-              {retrogrades.map(planet => {
-                const activation = activations.find(a => a.planet === planet.body);
-                return (
-                  <div key={planet.body} className="space-y-1.5">
-                    <p className="text-[15px] font-bold text-orange-700 flex items-center gap-3">
-                      <span className="text-xl opacity-80">{GLYPHS[planet.body]}</span>
-                      {BODY_LABELS[planet.body]} Retrograde
-                    </p>
-                    <p className="text-[10px] font-bold text-orange-200 uppercase tracking-widest ml-8">Fase Tinjau Ulang</p>
-
-                    {isExpanded && activation && (
-                      <div className="mt-3 ml-8 pl-5 border-l-2 border-orange-100 animate-in fade-in duration-500">
-                        <p className="text-[13px] text-[#4F6658] leading-relaxed">
-                          Meninjau ulang <span className="font-bold">Area {activation.lifeArea}</span>.
-                        </p>
-                        <p className="text-[12px] text-[#7B8776] mt-1.5 leading-relaxed italic font-medium">
-                          Waktunya mengevaluasi {activation.keywords.join(", ")} tanpa terburu-buru.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                );
+          <DetailSection icon={<Compass size={18} />} title="Planet Aktif">
+            <div className="space-y-4">
+              {planets.map((planet) => {
+                const activation = activations.find((item) => item.planet === planet.body);
+                const narrative = buildTransitNarrative(planet, activation, context as Record<string, unknown>);
+                return <div key={planet.body} className="border-b border-[#F1EEE7] pb-4 last:border-0 last:pb-0">
+                  <p className="font-bold text-[#4F6658]">{BODY_LABELS[planet.body]} di {planet.sign}{planet.isRetrograde ? " · Retrograde" : ""}</p>
+                  <p className="mt-1 text-xs font-medium text-[#9AA394]">Periode: {planet.body === "Moon" ? `${sky.moonInfo.startDate} - ${sky.moonInfo.endDate}` : formatPeriod(planet.periodStart, planet.periodEnd, localDateKey)}</p>
+                  <TransitNarrativeView narrative={narrative} />
+                </div>;
               })}
             </div>
-          </div>
+          </DetailSection>
+
+          <DetailSection icon={<Orbit size={18} />} title="Transit Penting">
+            <div className="space-y-4">
+              <div>
+                <p className="font-bold text-[#4F6658]">{sky.moonInfo.nextPhaseLabel} di {sky.moonInfo.nextPhaseSign}</p>
+                <p className="mt-1 text-sm text-[#7B8776]">{sky.moonInfo.endDate}. Menandai pergantian ritme emosional dan ruang untuk menata fokus berikutnya.</p>
+              </div>
+              {importantTransits.map((planet) => {
+                const activation = activations.find((item) => item.planet === planet.body);
+                const narrative = buildTransitNarrative(planet, activation, context as Record<string, unknown>);
+                return <div key={planet.body}>
+                  <p className="font-bold text-[#4F6658]">{BODY_LABELS[planet.body]} di {planet.sign}</p>
+                  <p className="mt-1 text-xs text-[#9AA394]">Periode: {formatPeriod(planet.periodStart, planet.periodEnd, localDateKey)}</p>
+                  <TransitNarrativeView narrative={narrative} />
+                </div>;
+              })}
+            </div>
+          </DetailSection>
+
+          {retrogrades.length > 0 && <DetailSection icon={<ShieldAlert size={18} />} title="Retrograde & Masa Evaluasi">
+            <div className="space-y-3">{retrogrades.map((planet) => <div key={planet.body}>
+              <p className="font-bold text-[#4F6658]">{BODY_LABELS[planet.body]} Retrograde di {planet.sign}</p>
+              <p className="mt-1 text-xs text-[#9AA394]">Periode retrograde: {formatPeriod(planet.periodStart, planet.periodEnd, localDateKey)}</p>
+              <TransitNarrativeView narrative={buildTransitNarrative(planet, activations.find((item) => item.planet === planet.body), context as Record<string, unknown>)} />
+            </div>)}</div>
+          </DetailSection>}
+
+          <p className="flex items-center justify-center gap-2 pt-1 text-[9px] font-bold uppercase tracking-[0.2em] text-[#9AA394]"><Calendar size={11} /> Dihitung untuk {localDateKey} · Astronomy Engine</p>
         </div>
       )}
-
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-center gap-3 py-5 rounded-[2rem] bg-[#FCFAF5] border border-[#E8E9E5]/60 text-[11px] font-bold text-[#7B8776] uppercase tracking-[0.2em] hover:bg-white active:scale-[0.98] transition-all shadow-sm group"
-      >
-        {isExpanded ? (
-          <>Tutup Detail <ChevronUp size={16} className="group-hover:-translate-y-1 transition-transform" /></>
-        ) : (
-          <>Lihat Pengaruh ke Blueprint <ChevronDown size={16} className="group-hover:translate-y-1 transition-transform" /></>
-        )}
-      </button>
-
-      <div className="pt-2">
-        <p className="text-[9px] text-[#9AA394] text-center font-bold uppercase tracking-[0.25em] opacity-60 flex items-center justify-center gap-2">
-          <Calendar size={10} /> Data Sinkronis 24 Jam
-        </p>
-      </div>
-    </div>
+    </section>
   );
+}
+
+function TransitNarrativeView({ narrative }: { narrative: ReturnType<typeof buildTransitNarrative> }) {
+  return <div className="mt-3 space-y-3">
+    <div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Tema Kolektif</p><p className="mt-1">{narrative.collectiveTheme}</p></div>
+    <div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Menyentuh Dirimu</p><p className="mt-1">{narrative.personalImpact}</p></div>
+    <div><p className="text-[9px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Yang Bisa Dilakukan</p><p className="mt-1 text-[#4F6658]">{narrative.action}</p></div>
+  </div>;
+}
+
+function DetailSection({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
+  return <div className="bhumi-card border-none bg-white p-7 shadow-sm">
+    <div className="mb-5 flex items-center gap-3 text-[#4F6658]">{icon}<h4 className="font-bold">{title}</h4></div>
+    <div className="text-sm leading-relaxed text-[#3C3C3C]">{children}</div>
+  </div>;
 }

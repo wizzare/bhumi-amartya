@@ -19,6 +19,12 @@ COPY requirements.txt .
 # Install dependencies directly into a specific prefix
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# Copy package files and build the package in the builder stage (where gcc/g++ are available)
+COPY pyproject.toml .
+COPY README.md .
+COPY src/ ./src/
+RUN pip install --no-cache-dir --prefix=/install .
+
 # Stage 2: Runtime
 # Use a slim Python image as the base for the final application
 FROM python:3.12-slim
@@ -32,11 +38,10 @@ COPY --from=builder /install /usr/local
 # Copy all application files into the container
 COPY . /app
 
-# Install the package
-RUN pip install .
-
-# Expose the port the API runs on
-EXPOSE 9021
+# Expose the port the API runs on (Cloud Run default)
+EXPOSE 8080
 
 # Command to run the API using uvicorn
-CMD ["uvicorn", "humandesign.api:app", "--host", "0.0.0.0", "--port", "9021"]
+# Uses main:app which exposes POST /calculate (Bhumi Gaia client contract)
+# Dynamically reads the PORT environment variable (required for Railway deployment)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]

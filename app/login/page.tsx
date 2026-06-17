@@ -8,6 +8,7 @@ import { signInWithGoogle } from "@/lib/auth/authActions";
 import { useAuth } from "@/context/AuthContext";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
+import { participationEngine } from "@/lib/engines/participationEngine";
 
 function LoginContent() {
   const router = useRouter();
@@ -31,6 +32,7 @@ function LoginContent() {
 
       console.log("[LOGIN SUCCESS] UID:", authUser.uid);
       trackEvent("login_success", authUser.uid);
+      void participationEngine.recordActivity(authUser.uid, "login");
       console.log("[POST LOGIN CHECK] Checking Profile and Blueprint...");
 
       try {

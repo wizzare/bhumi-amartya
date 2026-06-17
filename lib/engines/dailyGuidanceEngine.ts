@@ -30,6 +30,7 @@ import {
   DAILY_GUIDANCE_SCHEMA_VERSION,
   getDailyGuidanceStaleReason,
 } from "@/lib/dailyGuidance/version";
+import { getCanonicalHumanDesign, getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 
 /**
  * BHUMI AMARTYA - Daily AI Guidance Engine
@@ -106,7 +107,7 @@ function buildPersonalDailyNote(params: {
   const signals = safeRecord(params.synthesis?.identitySignals);
   const blueprint = safeRecord(params.context?.blueprint);
   const astrology = safeRecord(blueprint.astrology || blueprint.natalChart);
-  const humanDesign = safeRecord(blueprint.humanDesign);
+  const humanDesign = safeRecord(getCanonicalHumanDesign(blueprint.humanDesign));
   const destinyMatrix = safeRecord(blueprint.destinyMatrix);
   const bodies = safeList<any>(params.context?.currentSky?.bodies);
   const activeTransits = safeList<any>(params.context?.astrologyTransits?.activeTransits);
@@ -284,7 +285,6 @@ export const dailyGuidanceEngine = {
     }
 
     // 4. Generate new with Cooldown Lock
-    const lastGenTime = activeGenerations.get(uid);
     if (lastGenTime && now - lastGenTime < COOLDOWN_MS) {
       console.log(`[GENERATION SKIPPED] Cooldown protection active for ${uid}.`);
       if (existing) return existing;
@@ -339,7 +339,7 @@ export const dailyGuidanceEngine = {
       } catch (e) { /* ignore */ }
 
       console.log(`[FALLBACK USED] Generating new local deterministic fallback for ${uid}.`);
-      const fallback = this.generateFallbackDailyGuidance(uid, date, { ...context, previousGuidance: recent }, adaptiveContext);
+      const fallback = this.generateFallbackDailyGuidance(uid, date, { ...context, previousGuidance: recent });
       fallback.blueprintHash = bpHash;
       fallback.memoryHash = memHash;
       fallback.localDate = date;
@@ -404,7 +404,7 @@ export const dailyGuidanceEngine = {
     const adaptiveContext = buildAdaptiveDailyGuidanceContext({
       uid,
       date,
-      journalEntries: journalHistory,
+      journalEntries: journalHistory.map((entry) => ({ ...entry })),
       meditationEntries: meditationHistory,
       audioHealingEntries: audioHistory,
       previousGuidance,
@@ -440,10 +440,10 @@ export const dailyGuidanceEngine = {
       houseData: houseData as unknown as Record<string, unknown>,
       astroHouseActivations: astroHouseActivations as unknown as Array<Record<string, unknown>>,
       natalHouses,
-      journalHistory: journalHistory,
+      journalHistory: journalHistory.map((entry) => ({ ...entry })),
       meditationHistory: meditationHistory,
       audioHealingHistory: audioHistory,
-      activityHistory: activityHistory,
+      activityHistory: activityHistory.map((entry) => ({ ...entry })),
       momentumState: context.momentumState ?? null,
       healingMemory: context.healingMemory ?? null,
       weeklyReflections: recentWeeklyReflections,
@@ -513,7 +513,7 @@ export const dailyGuidanceEngine = {
       name,
       traits: {
         lifePath: (blueprint as any)?.lifePath?.number,
-        humanDesignType: (blueprint as any)?.humanDesign?.type,
+        humanDesignType: getCanonicalHumanDesignType((blueprint as any)?.humanDesign) || undefined,
         arcana: (blueprint as any)?.destinyMatrix?.center,
       },
       sky: context.currentSky,
@@ -534,8 +534,8 @@ export const dailyGuidanceEngine = {
       {
         name,
         lifePath: (blueprint as any)?.lifePath?.number,
-        humanDesignType: (blueprint as any)?.humanDesign?.type,
-        humanDesignProfile: (blueprint as any)?.humanDesign?.profile,
+        humanDesignType: getCanonicalHumanDesignType((blueprint as any)?.humanDesign) || undefined,
+        humanDesignProfile: getCanonicalHumanDesign((blueprint as any)?.humanDesign)?.profile || undefined,
         arcana: (blueprint as any)?.destinyMatrix?.center,
         sunSign: (blueprint as any)?.astrology?.sunSign,
         moonSign: (blueprint as any)?.astrology?.moonSign,
@@ -600,9 +600,14 @@ export const dailyGuidanceEngine = {
       } as unknown as DailyGuidanceInput, "ai_missing"),
       innerworkRecommendations: innerworkIntelligence.getRecommendations({
         activations: (context.astroHouseActivations as AstroHouseActivation[]) || [],
-        hdType: String((context.blueprint as any)?.humanDesign?.type || "Generator"),
+        hdType: getCanonicalHumanDesignType((context.blueprint as any)?.humanDesign) || "",
         lifePath: Number((context.blueprint as any)?.lifePath?.number || 0),
-        arcanaCenter: Number((context.blueprint as any)?.destinyMatrix?.center || 0)
+        arcanaCenter: Number((context.blueprint as any)?.destinyMatrix?.center || 0),
+        rawBlueprint: context.blueprint as Record<string, unknown> | null,
+        unifiedBlueprint: synthesis,
+        activityHistory: context.activityHistory || [],
+        localDateKey: date,
+        gaiaProfile: ((context.profile as any)?.gaiaProfile || null),
       }),
 
       houseData: context.houseData ?? null,
@@ -754,9 +759,14 @@ export const dailyGuidanceEngine = {
       } as unknown as DailyGuidanceInput, "partial_json"),
       innerworkRecommendations: innerworkIntelligence.getRecommendations({
         activations: (context.astroHouseActivations as AstroHouseActivation[]) || [],
-        hdType: String((context.blueprint as any)?.humanDesign?.type || "Generator"),
+        hdType: getCanonicalHumanDesignType((context.blueprint as any)?.humanDesign) || "",
         lifePath: Number((context.blueprint as any)?.lifePath?.number || 0),
-        arcanaCenter: Number((context.blueprint as any)?.destinyMatrix?.center || 0)
+        arcanaCenter: Number((context.blueprint as any)?.destinyMatrix?.center || 0),
+        rawBlueprint: context.blueprint as Record<string, unknown> | null,
+        unifiedBlueprint: synthesis,
+        activityHistory: context.activityHistory || [],
+        localDateKey: date,
+        gaiaProfile: ((context.profile as any)?.gaiaProfile || null),
       }),
       soulReflectionText: output.soulReflectionText || output.soulReflection?.dailyMessage || "",
       dailyNoteText: output.dailyNoteText || output.companionReflection?.preview || "",

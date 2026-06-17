@@ -23,6 +23,7 @@ import { generateDailyJournalPrompt } from "@/lib/engines/generateJournalPrompt"
 import { analyzeJournalEmotion } from "@/lib/engines/analyzeJournalEmotion";
 import { getSuggestedHealingPractices } from "@/lib/engines/generateHealingRecommendation";
 import { updateEmotionalMemory } from "@/lib/engines/updateEmotionalMemory";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import { APP_MODE } from "@/lib/config/appMode";
 import {
   generateLocalJournalInsight,
@@ -154,7 +155,7 @@ export default function JournalPage() {
            birthDate: getStringValue(profile, "birthDate"),
            sunSign: getNestedString(blueprint as any, ["sunSign", "sign"]),
            lifePathNumber: getNestedNumber(blueprint as any, ["lifePath", "number"]),
-           humanDesignType: getNestedString(blueprint as any, ["humanDesign", "type"]),
+           humanDesignType: getCanonicalHumanDesignType((blueprint as any)?.humanDesign),
            arcanaCenter: getNestedNumber(blueprint as any, ["arcanaCenter", "number"]),
            natalChart: (blueprint as any).astrology?.natalChart || (blueprint as any).natalChart,
            destinyMatrix: (blueprint as any).destinyMatrix,
@@ -478,11 +479,14 @@ export default function JournalPage() {
 
           <section className="bhumi-card p-6">
             <h2 className="text-xl font-semibold text-[#4F5E52]">Section D · Save</h2>
+            <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
+              Klik save hanya jika kamu sudah melakukan.
+            </p>
             <button
               type="button"
               onClick={handleLocalSave}
               disabled={localSaved}
-              className="mt-5 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-3 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {localSaved ? "Refleksi tersimpan..." : "Simpan Refleksi"}
             </button>
@@ -497,7 +501,12 @@ export default function JournalPage() {
                   <p className="text-sm font-semibold text-[#4F5E52]">✨ Fokus Besok</p>
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.tomorrowFocus}</p>
                 </div>
-                <p className="text-xs text-[#9BB89A]">Mengembalikanmu ke dashboard...</p>
+                <button
+                  onClick={() => router.push("/innerwork")}
+                  className="w-full py-3 mt-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest"
+                >
+                  Kembali ke Hub
+                </button>
               </div>
             )}
           </section>
@@ -591,15 +600,15 @@ export default function JournalPage() {
                       setEmotionalAnalysis(null);
                       setHealingRecommendations([]);
                     }}
-                    className="flex-1 py-3 px-4 rounded-xl bg-[#4F5E52] text-white font-medium hover:bg-[#3D4A3F] transition-colors"
+                    className="flex-1 py-3 px-4 rounded-xl border-2 border-[#4F5E52] text-[#4F5E52] font-medium hover:bg-[#F0EDEA] transition-colors"
                   >
                     Journal Again
                   </button>
                   <button
-                    onClick={() => router.push("/dashboard")}
-                    className="flex-1 py-3 px-4 rounded-xl border-2 border-[#4F5E52] text-[#4F5E52] font-medium hover:bg-[#F0EDEA] transition-colors"
+                    onClick={() => router.push("/innerwork")}
+                    className="flex-1 py-3 px-4 rounded-xl bg-[#4F5E52] text-white font-medium hover:bg-[#3D4A3F] transition-colors"
                   >
-                    Back to Dashboard
+                    Back to Innerwork Hub
                   </button>
                 </div>
               </div>

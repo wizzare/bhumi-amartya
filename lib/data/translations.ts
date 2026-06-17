@@ -3,69 +3,33 @@ export const translations = {
   id: {
 
     welcome: {
-
-      title:
-        "Bhumi Amartya",
-
-      subtitle:
-        "Ruang untuk pulang, mengenali diri, dan bertumbuh perlahan.",
-
-      newJourney:
-        "🌿 Mulai Perjalanan Baru",
-
-      continueJourney:
-        "✨ Lanjutkan Perjalanan",
-
-      newUser:
-        "Aku Baru di Sini",
-
-      returningUser:
-        "Aku Sudah Pernah Daftar",
-
-      indonesia:
-        "🇮🇩 Indonesia",
-
-      english:
-        "🇺🇸 English",
-
+      title: "Bhumi Amartya",
+      subtitle: "Ruang untuk pulang, mengenali diri, dan bertumbuh perlahan.",
+      newJourney: "🌿 Mulai Langkah Baru",
+      continueJourney: "✨ Lanjutkan Langkah",
+      newUser: "Aku Baru di Sini",
+      returningUser: "Aku Sudah Pernah Daftar",
+      indonesia: "🇮🇩 Indonesia",
+      english: "🇺🇸 English",
     },
 
     setup: {
-
-      title:
-        "Bhumi Amartya",
-
-      subtitle:
-        "Masukkan data kelahiranmu untuk membuka perjalanan jiwamu.",
-
-      name:
-        "Nama",
-
-      birthDate:
-        "Tanggal Lahir",
-
-      birthTime:
-        "Jam Lahir",
-
-      birthPlace:
-        "Kota Kelahiran",
-
-      continue:
-        "Lanjutkan Perjalanan ✨",
-
-      validationError:
-        "Mohon isi nama lengkap, tanggal lahir, jam lahir, dan kota lahirmu.",
-
-      genericError:
-        "Terjadi kesalahan yang tidak terduga. Silakan coba lagi.",
-
+      title: "Bhumi Amartya",
+      subtitle: "Masukkan data kelahiranmu untuk mulai memetakan jiwamu.",
+      name: "Nama",
+      birthDate: "Tanggal Lahir",
+      birthTime: "Jam Lahir",
+      birthPlace: "Kota Kelahiran",
+      continue: "Lanjutkan Langkah ✨",
+      validationError: "Mohon isi nama lengkap, tanggal lahir, jam lahir, dan kota lahirmu.",
+      genericError: "Terjadi kesalahan yang tidak terduga. Silakan coba lagi.",
     },
 
     dashboard: {
       loading: "Menghubungkan perjalananmu...",
       unavailable: "Dashboard belum tersedia.",
-      blueprintMissing: "Blueprint belum tersedia. Selesaikan setup untuk menyiapkan dashboard.",
-      blueprintPreparing: "Blueprint sedang disiapkan. Silakan coba lagi.",
+      blueprintMissing: "Peta jiwamu belum tersedia. Selesaikan setup untuk menyiapkan dashboard.",
+      blueprintPreparing: "Peta jiwamu sedang disiapkan. Silakan coba lagi.",
       openSetup: "Buka Setup",
       coreIdentity: "Identitas Inti",
       lifePath: "Life Path",
@@ -80,18 +44,18 @@ export const translations = {
       dailyGuidance: {
         title: "Panduan Hari Ini",
         mainInsight: "Wawasan Utama",
-        astrology: "Pengaruh Astrologi",
+        astrology: "Kondisi Langit",
         emotionalFocus: "Fokus Emosional",
         spiritualFocus: "Fokus Spiritual",
         journalPrompt: "Pertanyaan Jurnal",
         meditationSuggestion: "Saran Meditasi",
         practices: "Praktik Harian",
         groundedAction: "Tindakan Nyata",
-        sourceAi: "Dibantu oleh AI",
-        sourceFallback: "Panduan Dasar",
+        sourceAi: "Saran Bhumi",
+        sourceFallback: "Pesan Penghuni Bhumi",
       },
       momentum: {
-        title: "Perjalananmu",
+        title: "Langkahmu",
         restarting: "Mulai kembali",
         stabilizing: "Mulai stabil",
         growing: "Mulai bertumbuh",
@@ -118,24 +82,60 @@ export const translations = {
       profile: "Profil",
       settings: "Pengaturan",
       about: "Tentang Bhumi",
-      admin: "Admin",
+      admin: "Admin Dashboard",
       innerwork: "Innerwork",
+      kenaliDiri: "Kenali Diri",
+      lainnya: "Lainnya",
+    },
+
+    kenaliDiri: {
+      title: "Kenali Diri",
+      subtitle: "Mari memetakan kondisimu saat ini untuk menemukan langkah dukungan yang paling tepat.",
+      daily: "Refleksi Harian",
+      weekly: "Refleksi Mingguan",
+      monthly: "Refleksi Bulanan (Penuh)",
+      note: "Ini bukan penilaian medis, melainkan alat bantu refleksi untuk mengenali kebutuhan batinmu.",
+      save: "Simpan Refleksi",
+      saving: "Menyimpan...",
+      reviewTitle: "Refleksi Selesai",
+      reviewSubtitle: "Klik simpan hanya jika kamu sudah melakukan refleksi dengan jujur.",
+      results: {
+        theme: "Tema Saat Ini",
+        patterns: "Pola Diri",
+        attention: "Perhatian Ekstra",
+        safePath: "Jalur Aman",
+      },
+      recommendations: {
+        title: "Dukungan Untukmu",
+        level1: "Langkah Dasar",
+        level2: "Dukungan Komunitas",
+        innerwork: "Lanjutkan ke Hub",
+        meditation: "Meditasi",
+        journaling: "Jurnal",
+        audio: "Audio",
+        manifestation: "Manifestasi",
+        sobatMistis: "Sobat Mistis Bhumi Amartya",
+        circle: "Lingkaran Refleksi",
+        buddy: "Teman Cerita",
+      },
+      insufficientData: "Data belum mencukupi. Terus lakukan refleksi harian.",
     },
 
     innerwork: {
-      title: "Innerwork Hub",
+      title: "Innerwork",
       subtitle: "Pilih praktik harian untuk menyelaraskan diri.",
       journaling: "Journaling",
       meditation: "Meditasi",
       audio: "Audio Healing",
-      workout: "Workout",
+      workout: "Olahraga",
       yoga: "Yoga",
-      herbal: "Healthy Food",
+      herbal: "Makanan Sehat",
+      manifestasi: "Manifestasi Hari Ini"
     },
 
      profile: {
-       title: "Profil Blueprint",
-       missing: "Data blueprint belum ditemukan. Silakan isi setup terlebih dahulu.",
+       title: "Profil Diri",
+       missing: "Peta jiwamu belum ditemukan. Silakan isi setup terlebih dahulu.",
        backHome: "Kembali ke Awal",
        birthData: "Data Kelahiran",
        name: "Nama",
@@ -143,7 +143,7 @@ export const translations = {
        birthDate: "Tanggal lahir",
        birthCity: "Kota lahir",
        birthTime: "Jam lahir",
-       blueprintSummary: "Ringkasan Blueprint",
+       blueprintSummary: "Peta Dasar Jiwa",
        moonSign: "Zodiak Bulan",
        ascendant: "Penampilan",
      },
@@ -159,6 +159,28 @@ export const translations = {
        birthTime: "Jam lahir",
        language: "Bahasa Aplikasi",
        accountStatus: "Status Akun",
+       accountStatusBadges: {
+         founder: {
+           label: "Founder Bhumi",
+           description: "Pemegang visi dan arah pengembangan Bhumi Amartya.",
+         },
+         admin: {
+           label: "Admin Bhumi",
+           description: "Membantu pengelolaan dan operasional Bhumi.",
+         },
+         core_guardian: {
+           label: "Penjaga Bhumi Inti",
+           description: "Aktif berpartisipasi dan dipercaya menjaga ruang Bhumi.",
+         },
+         guardian: {
+           label: "Penghuni Bhumi",
+           description: "Bagian dari ruang Bhumi yang bertumbuh dan mengenali diri.",
+         },
+         user: {
+           label: "Penghuni Bhumi",
+           description: "Sedang menjalani perjalanan mengenali diri.",
+         },
+       },
        account: "Account",
        save: "Simpan Pengaturan",
        saving: "Menyimpan...",
@@ -170,7 +192,7 @@ export const translations = {
       tryAgain: "Silakan coba lagi.",
       userDataNotReady: "Data dirimu belum siap.",
       profileSaveFailed: "Gagal menyimpan profil.",
-      blueprintGenerateFailed: "Gagal menghasilkan blueprint.",
+      blueprintGenerateFailed: "Gagal memetakan jiwamu.",
       continueJourney: "Lanjutkan Perjalanan",
       newHere: "Aku Baru di Sini",
       alreadyHaveAccount: "Saya Sudah Pernah Daftar",
@@ -183,7 +205,7 @@ export const translations = {
       settings: "Pengaturan",
       signOut: "Keluar",
       userData: "Data Pengguna",
-      blueprintSummary: "Ringkasan Blueprint",
+      blueprintSummary: "Ringkasan Jiwa",
       inPreparation: "Dalam Persiapan",
       notCompleted: "Belum dilengkapi",
     },
@@ -193,69 +215,33 @@ export const translations = {
   en: {
 
     welcome: {
-
-      title:
-        "Bhumi Amartya",
-
-      subtitle:
-        "A space to return home, understand yourself, and grow gently.",
-
-      newJourney:
-        "🌿 Begin New Journey",
-
-      continueJourney:
-        "✨ Continue Journey",
-
-      newUser:
-        "I Am New Here",
-
-      returningUser:
-        "I Already Have an Account",
-
-      indonesia:
-        "🇮🇩 Indonesia",
-
-      english:
-        "🇺🇸 English",
-
+      title: "Bhumi Amartya",
+      subtitle: "A space to return home, understand yourself, and grow gently.",
+      newJourney: "🌿 Begin New Step",
+      continueJourney: "✨ Continue Step",
+      newUser: "I Am New Here",
+      returningUser: "I Already Have an Account",
+      indonesia: "🇮🇩 Indonesia",
+      english: "🇺🇸 English",
     },
 
     setup: {
-
-      title:
-        "Bhumi Amartya",
-
-      subtitle:
-        "Enter your birth details to begin your soul journey.",
-
-      name:
-        "Name",
-
-      birthDate:
-        "Birth Date",
-
-      birthTime:
-        "Birth Time",
-
-      birthPlace:
-        "Birth Place",
-
-      continue:
-        "Continue Journey ✨",
-
-      validationError:
-        "Please fill in your full name, birth date, birth time, and birth city.",
-
-      genericError:
-        "An unexpected error occurred. Please try again.",
-
+      title: "Bhumi Amartya",
+      subtitle: "Enter your birth details to begin your soul map.",
+      name: "Name",
+      birthDate: "Birth Date",
+      birthTime: "Birth Time",
+      birthPlace: "Birth Place",
+      continue: "Continue Step ✨",
+      validationError: "Please fill in your full name, birth date, birth time, and birth city.",
+      genericError: "An unexpected error occurred. Please try again.",
     },
 
     dashboard: {
       loading: "Connecting your journey...",
       unavailable: "Dashboard is not available yet.",
-      blueprintMissing: "Blueprint is not available yet. Complete setup to prepare your dashboard.",
-      blueprintPreparing: "Blueprint is being prepared. Please try again.",
+      blueprintMissing: "Your soul map is not available yet. Complete setup to prepare your dashboard.",
+      blueprintPreparing: "Your soul map is being prepared. Please try again.",
       openSetup: "Open Setup",
       coreIdentity: "Core Identity",
       lifePath: "Life Path",
@@ -270,18 +256,18 @@ export const translations = {
       dailyGuidance: {
         title: "Today's Guidance",
         mainInsight: "Main Insight",
-        astrology: "Astrology Influence",
+        astrology: "Current Sky",
         emotionalFocus: "Emotional Focus",
         spiritualFocus: "Spiritual Focus",
         journalPrompt: "Journal Prompt",
         meditationSuggestion: "Meditation Suggestion",
         practices: "Daily Practices",
         groundedAction: "Grounded Action",
-        sourceAi: "AI Assisted",
-        sourceFallback: "Basic Guidance",
+        sourceAi: "Bhumi Advice",
+        sourceFallback: "Bhumi Resident Message",
       },
       momentum: {
-        title: "Your Journey",
+        title: "Your Steps",
         restarting: "Restarting",
         stabilizing: "Stabilizing",
         growing: "Growing",
@@ -308,12 +294,47 @@ export const translations = {
       profile: "Profile",
       settings: "Settings",
       about: "About Bhumi",
-      admin: "Admin",
+      admin: "Admin Dashboard",
       innerwork: "Innerwork",
+      kenaliDiri: "Know Yourself",
+      lainnya: "More",
+    },
+
+    kenaliDiri: {
+      title: "Know Yourself",
+      subtitle: "Let's map your current state to find the most appropriate support steps.",
+      daily: "Daily Reflection",
+      weekly: "Weekly Reflection",
+      monthly: "Monthly Reflection (Full)",
+      note: "This is not a medical assessment, but a reflection tool to identify your inner needs.",
+      save: "Save Reflection",
+      saving: "Saving...",
+      reviewTitle: "Reflection Complete",
+      reviewSubtitle: "Click save only if you have reflected honestly.",
+      results: {
+        theme: "Current Theme",
+        patterns: "Self Patterns",
+        attention: "Extra Attention",
+        safePath: "Safe Path",
+      },
+      recommendations: {
+        title: "Support for You",
+        level1: "Basic Steps",
+        level2: "Community Support",
+        innerwork: "Continue to Hub",
+        meditation: "Meditation",
+        journaling: "Journaling",
+        audio: "Audio",
+        manifestation: "Manifestation",
+        sobatMistis: "Sobat Mistis Bhumi Amartya",
+        circle: "Circle Reflection",
+        buddy: "Buddy Support",
+      },
+      insufficientData: "Insufficient data. Keep doing daily reflections.",
     },
 
     innerwork: {
-      title: "Innerwork Hub",
+      title: "Inner Practices",
       subtitle: "Choose your daily practice to align yourself.",
       journaling: "Journaling",
       meditation: "Meditation",
@@ -321,11 +342,12 @@ export const translations = {
       workout: "Workout",
       yoga: "Yoga",
       herbal: "Healthy Food",
+      manifestasi: "Today's Manifestation"
     },
 
     profile: {
-      title: "Blueprint Profile",
-      missing: "Blueprint data was not found. Please complete setup first.",
+      title: "Self Profile",
+      missing: "Your soul map was not found. Please complete setup first.",
       backHome: "Back Home",
       birthData: "Birth Data",
       name: "Name",
@@ -333,7 +355,7 @@ export const translations = {
       birthDate: "Birth date",
       birthCity: "Birth city",
       birthTime: "Birth time",
-      blueprintSummary: "Blueprint Summary",
+      blueprintSummary: "Soul Map",
       moonSign: "Moon Sign",
       ascendant: "Ascendant",
     },
@@ -349,6 +371,28 @@ export const translations = {
       birthTime: "Birth time",
       language: "App Language",
       accountStatus: "Account Status",
+      accountStatusBadges: {
+        founder: {
+          label: "Founder Bhumi",
+          description: "Holder of vision and direction for Bhumi Amartya development.",
+        },
+        admin: {
+          label: "Admin Bhumi",
+          description: "Assists in management and operational aspects of Bhumi.",
+        },
+        core_guardian: {
+          label: "Core Bhumi Guardian",
+          description: "Actively participates and is trusted to guard the Bhumi space.",
+        },
+        guardian: {
+          label: "Bhumi Resident",
+          description: "Part of the Bhumi space for growth and self-discovery.",
+        },
+        user: {
+          label: "Bhumi Resident",
+          description: "On a journey of self-discovery.",
+        },
+      },
       account: "Account",
       save: "Save Settings",
       saving: "Saving...",
@@ -360,8 +404,8 @@ export const translations = {
       tryAgain: "Please try again.",
       userDataNotReady: "User data is not ready.",
       profileSaveFailed: "Failed to save profile.",
-      blueprintGenerateFailed: "Failed to generate blueprint.",
-      continueJourney: "Continue Journey",
+      blueprintGenerateFailed: "Failed to map your soul.",
+      continueJourney: "Continue Step",
       newHere: "I'm New Here",
       alreadyHaveAccount: "I Already Have an Account",
       dashboard: "Dashboard",
@@ -373,7 +417,7 @@ export const translations = {
       settings: "Settings",
       signOut: "Sign Out",
       userData: "User Data",
-      blueprintSummary: "Blueprint Summary",
+      blueprintSummary: "Soul Map",
       inPreparation: "In Preparation",
       notCompleted: "Not completed yet",
     },

@@ -25,7 +25,7 @@ export function PenjagaBhumiIntiBanner() {
             Selamat, kamu adalah bagian dari <span className="font-bold text-[#4F6658]">Penjaga Bhumi Inti</span> yang membersamai perjalanan Bhumi Amartya sejak tahap awal.
           </p>
           <p>
-            Sebagai bentuk apresiasi, <span className="font-bold text-[#4F6658]">Free Plan kamu aktif selama 2 bulan</span>.
+            Sebagai bentuk apresiasi, akses Bhumi Inti tersedia selama fase Fanta berlangsung.
           </p>
           <p className="italic opacity-80">
             Terima kasih telah ikut membantu Bhumi bertumbuh menjadi Rumah untuk Pulang dan Mengenali Diri.

@@ -18,17 +18,17 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
     {
       role: "Bhumi Amartya daily AI orchestration engine",
       instruction:
-        "Generate original, user-aware daily dashboard guidance following the BHUMI AMARTYA V1.4.2 STRICT INTELLIGENCE CHAIN. Every output field must be a synthesis of the FULL COMBINED BLUEPRINT and TODAY'S COSMIC CONTEXT, integrated with the USER'S ACTUAL JOURNEY (Memory). Return valid JSON only. No markdown.",
+        "Generate original, user-aware daily dashboard guidance following the BHUMI AMARTYA V3 STRICT INTELLIGENCE CHAIN. Every output field must be a synthesis of the FULL COMBINED BLUEPRINT, TODAY'S COSMIC CONTEXT, and THE USER'S CURRENT CONDITION (wellnessMapping), integrated with the USER'S ACTUAL JOURNEY (Memory). Return valid JSON only. No markdown.",
       repetitionAvoidanceRule:
         "REPETITION AVOIDANCE: You are provided with yesterday's soulReflectionText and dailyNoteText in userContext.previousGuidance. You MUST ensure today's text is significantly different in phrasing, focus, and narrative structure while remaining true to the blueprint. Do not repeat the same analogies or opening hooks.",
       intelligenceChainRule:
-        "STRICT CHAIN RULE: 1. Full Blueprint + Journey Memory → Refleksi Jiwa (No transits). 2. Full Blueprint + Astro Today + Journey Memory → Catatan Hari Ini. 3. Catatan Hari Ini + House Activation + User Progress → Innerwork. 4. Innerwork + Catatan Hari Ini + Full Blueprint → Manifestasi Hari Ini.",
+        "STRICT CHAIN RULE: 1. Full Blueprint + Journey Memory → Refleksi Jiwa (No transits). 2. Full Blueprint + Astro Today + Wellness Mapping + Journey Memory → Catatan Hari Ini. 3. Catatan Hari Ini + House Activation + User Progress → Innerwork. 4. Innerwork + Catatan Hari Ini + Wellness Mapping + Full Blueprint → Manifestasi Hari Ini.",
       blueprintDefinition:
-        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint: Numerology (number, archetype, lesson), Human Design (Type, Strategy, Authority, Profile, Defined/Open Centers, Gates, Channels, Incarnation Cross), Natal Chart (Sun, Moon, Ascendant, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, North Node, Lilith, House placements), Destiny Matrix (Arcana Center, Money Line, Love Line, Karmic Tail, Talents). Never simplify the blueprint to just 4-5 labels.",
+        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint AND the normalized userContext.unifiedBlueprint.fullBlueprint object: Numerology (number, archetype, lesson, birthday, attitude, maturity, pinnacles, challenges, personal year), Human Design (Type, Strategy, Authority, Profile, Definition, Signature, Not-Self, Defined/Open Centers, Gates, Channels, Incarnation Cross), Natal Chart (Sun, Moon, Ascendant, MC, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, North Node, South Node, House placements, major aspects), Destiny Matrix Core (Arcana Center, Common Energy, Money Line, Love Line, Karmic Tail, Father/Mother/Ancestor lines, Talents), and Destiny Matrix Intelligence (Soul Searching, Socialization, Spiritual Knowledge, Health Chart physics/energy/emotion for each chakra, dominant chakra interpretation). NEVER use raw technical labels (like 'Money Line', 'Karmic Tail', 'Projector', 'Sacral') or raw blueprint numbers in the final output. Every piece of data must be translated into warm, descriptive human language.",
       strictFilter:
         "CRITICAL: Do NOT use generic spiritual cliches: 'dengarkan suara hati', 'beri ruang', 'renungkan perlahan', 'biarkan energi mengalir', 'proses batin', 'kelembutan'. If these concepts are needed, they MUST be translated into the user's specific archetype language and blueprint context.",
       safety:
-        "This is reflective wellbeing guidance, not medical, legal, or financial advice. Do not make fear-based spiritual claims. Keep language grounded, compassionate, non-diagnostic, practical, and agency-preserving. Never use prohibited phrases: blueprint pattern, isolated system, synthesis, deterministic, Soul Core, generated from, engine, fallback, source, local-fallback.",
+        "This is reflective wellbeing guidance, not medical, legal, or financial advice. Do not make fear-based spiritual claims. Keep language grounded, compassionate, non-diagnostic, practical, and agency-preserving. NEVER mention technical terms: Money Line, Karmic Tail, compatibility, blueprint pattern, isolated system, synthesis, deterministic, Soul Core, generated from, engine, fallback, source, local-fallback. Do not mention raw blueprint numbers or internal engine structures.",
       language: input.language,
       architectureV141: {
         mirrorWeightingRule: "PHASE 4 – BLUEPRINT WEIGHTING: Refleksi Jiwa (Mirror) must prioritize: Life Path (25%), Human Design (25%), Arcana Center (20%), Natal Sun (15%), Natal Moon (15%). Prevent astrology transits from overpowering the identity blueprint.",
@@ -43,8 +43,10 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         identity: input.identity,
         blueprint: input.blueprint || null,
         unifiedBlueprint,
+        blueprintDifferentiators: unifiedBlueprint.differentiators,
         dominantArchetypes: unifiedBlueprint.archetypes,
         emotionalState: input.emotionalState,
+        wellnessMapping: input.wellnessMapping ?? null,
         emotionalMemory: {
           timeframe: emotionalMemory.timeframe ?? null,
           emotionalTrends: emotionalMemory.emotionalTrends ?? [],
@@ -100,7 +102,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
           journalHistory: input.journalHistory,
           meditationHistory: input.meditationHistory,
           audioHealingHistory: input.audioHealingHistory,
-          activityHistory: input.activityHistory,
+          activityHistory: input.activityHistory as any,
           weeklyReflections: input.weeklyReflections,
           momentumState: input.momentumState,
           healingMemory: input.healingMemory,
@@ -119,11 +121,11 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         reflectionRule:
           "For the 'reflection' field in each category, provide 2-3 deep reflective questions related to the category's theme and today's cosmic context. Help the user look inward.",
         adviceRule:
-          "For the 'advice' field in each category, provide a warm, grounded, and practical mentor-like guidance (10-20 sentences). Your tone should be membumi, hangat, and supportive.",
+          "For each category's 'advice', write a standalone Saran Bhumi of exactly 2-3 complete sentences and 220-320 characters in one paragraph. Use Soul Reflection, Today's Note, current sky, core identity, and journey memory only as hidden context. Never quote, summarize, concatenate, or refer to those sections. Never write 'Ini selaras dengan', 'pesan harianmu', 'Inti dirimu', 'Kamu berada di', or 'berdasarkan'. Do not reuse the same opening or recommendation across categories. Give one concrete, gentle action. Never expose raw technical labels, raw blueprint numbers, Money Line, Love Line, Karmic Tail, House numbers, engine names, or internal payload structures.",
         separateReflectionRule:
           "Soul Reflection (Mirror) is about WHO YOU ARE FUNDAMENTALLY. Write from an ARCHETYPE PERSPECTIVE. Today's Note (Compass) is about HOW TODAY AFFECTS YOU. They must not repeat the same data sources or ideas.",
         dailyPracticeRules:
-          "Generate exactly 3 dailyInnerwork.tasks following SECTION 4: Mirror + Compass synthesis. Grounding first, reflection/journaling second, action/real life third. Each must be measurable, personalized, achievable in 5-20 minutes.",
+          "Generate exactly 3 dailyInnerwork.tasks following SECTION 4: Mirror + Compass synthesis. Grounding first, reflection/journaling second, action/real life third. Each must be measurable, personalized, achievable in 5-20 minutes. Meditation MUST be personalized based on the user's current growth focus, today's challenges, and their progress stage. Manifestation MUST be personalized based on their journey phase (Awareness, Release, etc.), growth focus, and their next milestone.",
         generatedAt: input.generatedAt,
       },
       outputSchema: {
@@ -132,52 +134,58 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         // V2 Categories (Catatan Hari Ini / Compass)
         categories: {
           general: {
-            insight: "string (Bahasa Indonesia), general mood and energy theme for today (Compass)",
+            insight: "string (Bahasa Indonesia), general mood and energy theme for today (Compass). Title: Kondisi Umum",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. 3-5 sentences. Explain connection between Today's Sky and Natal Houses.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           mental: {
-            insight: "string (Bahasa Indonesia), cognitive focus and mental clarity status",
+            insight: "string (Bahasa Indonesia), cognitive focus and mental clarity status. Title: Mental",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Mercury/House 3 or Ajna Center transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           finance: {
-            insight: "string (Bahasa Indonesia), approach to resources and material stability",
+            insight: "string (Bahasa Indonesia), approach to resources and material stability. Title: Keuangan",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 2 or House 10 transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           love: {
-            insight: "string (Bahasa Indonesia), emotional intimacy and romantic tone",
+            insight: "string (Bahasa Indonesia), emotional intimacy and romantic tone. Title: Percintaan",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 5, 7 or 11 transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           relational: {
-            insight: "string (Bahasa Indonesia), communication with friends, family, and community",
+            insight: "string (Bahasa Indonesia), communication with friends, family, and community. Title: Relasi & Keluarga",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 11 or Mercury transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           spiritual: {
-            insight: "string (Bahasa Indonesia), connection to meaning and inner silence",
+            insight: "string (Bahasa Indonesia), connection to meaning and inner silence. Title: Spiritual",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 12 or Neptune transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           challenges: {
-            insight: "string (Bahasa Indonesia), the specific friction point today (Challenges)",
+            insight: "string (Bahasa Indonesia), the specific friction point today (Challenges). Title: Tantangan",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Retrogrades/Saturn/Mars transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           opportunities: {
-            insight: "string (Bahasa Indonesia), the specific opening or potential today (Peluang)",
+            insight: "string (Bahasa Indonesia), the specific opening or potential today (Peluang). Title: Peluang",
             reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Jupiter or North Node transits.",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. 10-20 sentences."
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+          },
+          advice: {
+            insight: "string (Bahasa Indonesia), practical summary of guidance for the day. Title: Saran",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on practical application of blueprint and transit.",
+            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
+            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           }
         },
 
@@ -296,4 +304,3 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
     2,
   );
 }
-

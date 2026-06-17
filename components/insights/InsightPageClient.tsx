@@ -23,6 +23,7 @@ import {
   type HealingInsightResult,
 } from "@/lib/healing/createHealingInsights";
 import { loadJourneyData, refreshJourneyData, type JourneyData } from "@/lib/journey/createJourneyData";
+import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import { InsightOrchestrator, type InsightPageData } from "@/lib/orchestrators/insightOrchestrator";
 
 type UnknownRecord = Record<string, unknown>;
@@ -106,7 +107,7 @@ function createBodyReflection(progress: ProgressData | null): string {
 function createBlueprintParagraphs(blueprint: UnknownRecord | null): string[] {
   const lifePath = getString(blueprint, ["lifePath", "number"]);
   const arcana = getString(blueprint, ["arcanaCenter", "number"]);
-  const humanDesignType = getString(blueprint, ["humanDesign", "type"]);
+  const humanDesignType = getCanonicalHumanDesignType((blueprint as any)?.humanDesign);
   const humanDesignProfile = getString(blueprint, ["humanDesign", "profile"]);
   const humanDesignAuthority = getString(blueprint, ["humanDesign", "authority"]);
   const sunSign = getString(blueprint, ["sunSign", "sign"]) ?? getString(blueprint, ["natalChart", "sunSign"]);

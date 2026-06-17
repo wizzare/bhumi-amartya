@@ -2,6 +2,12 @@
 
 import React from "react";
 import { Star, ShieldCheck, Compass } from "lucide-react";
+import { CareerIntelligence } from "@/lib/engines/careerIntelligenceEngine";
+import { CareerCard } from "./CareerCard";
+import { HumanDesignStyle } from "@/lib/humandesign/intelligence/styleEngine";
+import { TopTalentCard } from "./TopTalentCard";
+import { RelationshipStyleCard } from "./RelationshipStyleCard";
+import { SpiritualArchetypeCard } from "./SpiritualArchetypeCard";
 
 interface PotentialTabProps {
   data: {
@@ -9,12 +15,22 @@ interface PotentialTabProps {
     strengths: string[];
     soulMission: string;
     lightManifestation: string;
+    career: CareerIntelligence;
+    hdStyle: HumanDesignStyle;
   };
 }
 
 export function PotentialTab({ data }: PotentialTabProps) {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
+      <CareerCard career={data.career} />
+
+      <div className="grid grid-cols-1 gap-4">
+         <TopTalentCard style={data.hdStyle} />
+         <RelationshipStyleCard style={data.hdStyle} />
+         <SpiritualArchetypeCard style={data.hdStyle} />
+      </div>
+
       <section className="bhumi-card p-6 bg-white border-none shadow-sm">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
