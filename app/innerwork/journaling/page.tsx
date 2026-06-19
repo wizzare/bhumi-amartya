@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { profileToCoreIdentity } from "@/lib/mappers/userProfileMapper";
@@ -118,7 +118,15 @@ export default function JournalPage() {
   const [localInsight, setLocalInsight] = useState<LocalJournalInsight | null>(null);
   const [localSaved, setLocalSaved] = useState(false);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
-  const [zoneBContext, setZoneBContext] = useState<ZoneBContext | null>(null);
+  const zoneBSearch = useSyncExternalStore(
+    () => () => {},
+    () => window.location.search,
+    () => "",
+  );
+  const zoneBContext = useMemo<ZoneBContext | null>(
+    () => readZoneBContext(zoneBSearch),
+    [zoneBSearch],
+  );
 
   useEffect(() => {
     trackEvent("journal_open");
@@ -153,8 +161,7 @@ export default function JournalPage() {
           return;
         }
          const entries = loadLocalJournalEntries();
-         const incomingContext = readZoneBContext(window.location.search);
-         setZoneBContext(incomingContext);
+         const incomingContext = zoneBContext;
          const context: BlueprintJournalContext = {
            birthDate: getStringValue(profile, "birthDate"),
            sunSign: getNestedString(blueprint as any, ["sunSign", "sign"]),
@@ -215,8 +222,7 @@ export default function JournalPage() {
         const identity: CoreIdentity = profileToCoreIdentity(userProfile as any, blueprint);
         setCoreIdentity(identity);
 
-        const incomingContext = readZoneBContext(window.location.search);
-        setZoneBContext(incomingContext);
+        const incomingContext = zoneBContext;
         const prompt = generateDailyJournalPrompt(identity, 5);
         if (incomingContext) {
           const guide = getZoneBGuide(incomingContext);
@@ -245,7 +251,7 @@ export default function JournalPage() {
     };
 
     initialize();
-  }, [auth, router]);
+  }, [auth, router, zoneBContext]);
 
   const handleLocalBodySignalToggle = (signal: string) => {
     setLocalBodySignals((current) => {

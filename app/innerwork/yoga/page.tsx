@@ -20,8 +20,14 @@ export default function YogaPage() {
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
   const [reflectionResult, setReflectionResult] = React.useState("");
-  const [zoneBContext] = React.useState<ZoneBContext | null>(
-    () => typeof window === "undefined" ? null : readZoneBContext(window.location.search),
+  const zoneBSearch = React.useSyncExternalStore(
+    () => () => {},
+    () => window.location.search,
+    () => "",
+  );
+  const zoneBContext = React.useMemo<ZoneBContext | null>(
+    () => readZoneBContext(zoneBSearch),
+    [zoneBSearch],
   );
 
   React.useEffect(() => {
