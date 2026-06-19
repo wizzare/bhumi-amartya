@@ -44,8 +44,8 @@ type RawActivation = {
 };
 
 const DEFAULT_OFFSET_MINUTES = 420;
-export const HD_SERVICE_TIMEOUT_MS = 7000;
-export const HD_SERVICE_BASE_URL =
+const HD_SERVICE_TIMEOUT_MS = 7000;
+const HD_SERVICE_BASE_URL =
   process.env.HUMAN_DESIGN_SERVICE_URL?.replace(/\/$/, "") ||
   "http://localhost:8000";
 const PYTHON_CALCULATE_URL = `${HD_SERVICE_BASE_URL}/calculate`;
