@@ -6,6 +6,7 @@ import {
 } from "./types";
 import { HD_ENGINE_VERSION } from "./hdAudit";
 import { HD_API_URL } from "@/lib/config/hdApiUrl";
+import type { HumanDesignActivation } from "./types";
 
 export type HumanDesignTypeResult = {
   type: string | null;
@@ -80,6 +81,26 @@ const toStringArray = (value: unknown): string[] => {
   )].sort();
 };
 
+const toActivations = (value: unknown): HumanDesignActivation[] => {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const item = entry as Record<string, unknown>;
+    const gate = Number(item.gate);
+    const line = Number(item.line);
+    if (!Number.isFinite(gate) || !Number.isFinite(line)) return [];
+    const optionalNumber = (key: string) => Number.isFinite(Number(item[key])) ? Number(item[key]) : undefined;
+    return [{
+      planet: String(item.planet || ""),
+      gate,
+      line,
+      color: optionalNumber("color"),
+      tone: optionalNumber("tone"),
+      base: optionalNumber("base"),
+    }];
+  });
+};
+
 const normalizeCenters = (definedCenters: unknown) => {
   const centers = emptyHumanDesignCenters();
   const normalized = toStringArray(definedCenters).map((center) => center.toLowerCase());
@@ -135,6 +156,7 @@ export const normalizeHdkitBodygraph = (bodygraph: HdkitBodygraphLike): HumanDes
     hdAuditStatus: "validated",
     generatedAt: now,
     updatedAt: now,
+    perspective: null,
     calculationStatus: "completed",
   };
 };
@@ -193,6 +215,8 @@ export async function calculateWithHdkit(
     });
 
     const now = new Date().toISOString();
+    const rawPersonalityGates = toActivations(data.personalityActivations || data.diagnostic?.raw_personality_gates);
+    const rawDesignGates = toActivations(data.designActivations || data.diagnostic?.raw_design_gates);
 
     return {
       type,
@@ -207,11 +231,20 @@ export async function calculateWithHdkit(
       centers,
       gates: (data.gatesPersonality || []).concat(data.gatesDesign || []).map(Number),
       channels: data.channels || [],
+      diagnostic: {
+        raw_personality_gates: rawPersonalityGates,
+        raw_design_gates: rawDesignGates,
+      },
+      personalityActivations: rawPersonalityGates,
+      designActivations: rawDesignGates,
+      raw_personality_gates: rawPersonalityGates,
+      raw_design_gates: rawDesignGates,
       variables: data.variables || null,
       digestion: data.digestion || null,
       cognition: data.cognition || null,
       motivation: data.motivation || null,
       environment: data.environment || null,
+      perspective: data.perspective || null,
       status: "ready",
       source: "human-design-py",
       accuracy: "verified",

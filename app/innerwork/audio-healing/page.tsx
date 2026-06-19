@@ -7,8 +7,7 @@ import { PremiumLock } from "@/components/auth/PremiumLock";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppNav } from "@/components/navigation/AppNav";
 import { APP_MODE } from "@/lib/config/appMode";
-import { safeJsonParse } from "@/lib/storage/safeJson";
-import { hasFeatureAccess } from "@/lib/billing/accessControl";
+import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { useAuth } from "@/context/AuthContext";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
@@ -62,7 +61,8 @@ function AudioHealingExperience() {
       const resolved = await resolveActiveProfile(auth);
       if (resolved.isLoading) return;
       if (resolved.isMissing) return;
-      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as any, "audioHealing"));
+      if (!resolved.profile) return;
+      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "audioHealing"));
     };
     void initialize();
   }, [auth]);
@@ -134,6 +134,32 @@ function AudioHealingExperience() {
 
         <section className="bhumi-card p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">Section A · Playlist</h2>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl bg-[#FCFAF5] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Deskripsi</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
+                Audio Healing adalah ruang mendengarkan terpandu untuk membantu perhatian kembali pada tubuh dan suasana hati.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#FCFAF5] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Durasi</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
+                Mulai dari 10–15 menit. Kamu boleh berhenti lebih awal jika tubuh terasa cukup.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#FCFAF5] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Sebaiknya Digunakan Saat</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
+                Pikiran terasa ramai, tubuh sulit beristirahat, atau kamu membutuhkan teman yang tenang saat berefleksi.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#FCFAF5] p-4">
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Manfaat yang Diharapkan</p>
+              <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
+                Napas terasa lebih teratur, tubuh lebih mudah diamati, dan emosi memperoleh ruang tanpa harus segera dijelaskan.
+              </p>
+            </div>
+          </div>
           <div className="mt-5 overflow-hidden rounded-3xl bg-black shadow-sm">
             <div className="relative w-full pt-[56.25%]">
               <iframe
@@ -144,18 +170,6 @@ function AudioHealingExperience() {
                 allowFullScreen
               />
             </div>
-          </div>
-
-          <div className="mt-4 rounded-2xl bg-[#F5F1E8] p-4 text-center">
-            <p className="text-sm font-medium text-[#4F5E52]">Playlist tidak dapat diputar di dalam aplikasi?</p>
-            <a
-              href={AUDIO_HEALING_PLAYLIST_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#4F5E52] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#3D4A3F]"
-            >
-              🎧 Buka Playlist di YouTube
-            </a>
           </div>
 
           <p className="mt-5 text-sm leading-relaxed text-[#7B8776]">

@@ -3,6 +3,9 @@ import { auth, db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
 import type { GaiaProfile } from '@/lib/profile/gaia/types';
 import { sanitizeForFirestore } from '@/lib/firebase/sanitizeForFirestore';
+import type { WetonBlueprint } from '@/lib/weton/types';
+import type { BaziBlueprint } from '@/lib/bazi/types';
+import type { VedicBlueprint } from '@/lib/vedic/types';
 
 // Type definitions matching the localStorage structures
 export interface UserProfile {
@@ -112,6 +115,9 @@ export interface UserBlueprint {
     energy: string;
     focus: string;
   };
+  weton?: WetonBlueprint;
+  bazi?: BaziBlueprint;
+  vedic?: VedicBlueprint;
   createdAt: string;
   updatedAt: string;
 }

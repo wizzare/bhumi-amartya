@@ -170,20 +170,55 @@ function meaningForSignal(signal: GaiaSignal): string {
   return FIELD_MEANING_HINTS[signal.field] || signal.tags[0]?.replaceAll("-", " ") || "pola diri yang sedang terlihat";
 }
 
-function personalNarrative(definition: InsightDefinition, signals: GaiaSignal[]): string {
+function personalNarrative(definition: InsightDefinition, signals: GaiaSignal[], theme: GaiaTheme): string {
   if (!signals.length) return `${definition.summary} Data yang tersedia belum cukup untuk membentuk pembacaan yang lebih khusus, sehingga bagian ini akan berkembang bersama profilmu.`;
   const sources = [...new Set(signals.map((signal) => signal.source))];
-  const sourceCount = sources.length;
-  const hints = sources.slice(0, 3).map((s) => SOURCE_NARRATIVE_HINTS[s] || s).join(", ");
+  const hints = sources.slice(0, 3).map((s) => SOURCE_NARRATIVE_HINTS[s] || s).join(" dan ");
   const meaningFragment = [...new Set(signals.slice(0, 4).map(meaningForSignal))].slice(0, 3).join(", ");
-  const valueFragment = meaningFragment ? ` Pola yang paling terlihat berkaitan dengan ${meaningFragment}.` : "";
-  if (sourceCount >= 3) {
-    return `Tiga lapisan dirimu — ${hints} — bertemu pada tema ${definition.title.toLowerCase()}.${valueFragment} Ketika beberapa sumber menunjukkan arah yang sama, kemungkinan besar ini adalah pola yang cukup kuat untuk diamati dalam keseharianmu.`;
+  
+  const fallbackMeaning = meaningFragment || definition.title.toLowerCase();
+  const fallbackHints = hints || "pola bawaanmu";
+
+  switch (definition.id) {
+    case "recurringPatterns":
+      return `Siklus yang terus berulang dalam hidupmu seringkali berpangkal pada urusan ${fallbackMeaning}. Ketika menghadapi pemicu yang menyentuh ${fallbackHints}, kamu cenderung merespons secara otomatis untuk melindungi diri. Reaksi ini mungkin dulu menyelamatkanmu, namun kini berpotensi menahan langkahmu. Respons yang baru bisa lahir saat kamu menyadari polanya sebelum keburu bertindak.`;
+    case "coreFear":
+      return `Kecemasan terdalammu sering terpusat pada isu ${fallbackMeaning}. Untuk menjaga diri agar tetap aman, kamu secara tidak sadar membangun strategi pertahanan yang berkaitan dengan ${fallbackHints}. Harga tersembunyi dari perlindungan ini adalah hilangnya kebebasan dan ruang bernapas batin. Arah penyembuhan dimulai dengan memvalidasi rasa takut tersebut, lalu memilih untuk tidak memberikan kendali penuh padanya.`;
+    case "innerChild":
+      return `Ada kebutuhan emosional di masa lalumu yang belum tuntas mengenai ${fallbackMeaning}. Sinyal dari bagian dirimu ini sering muncul hari ini sebagai kecemasan atau emosi kuat saat bersinggungan dengan ${fallbackHints}. Bagian ini sebenarnya hanya meminta untuk dilihat dan divalidasi. Proses kembali terhubung dimulai saat kamu bersedia merawat dirimu yang sekarang dengan kelembutan.`;
+    case "talentDNA":
+      return `Kekuatan terbesarmu berporos pada ${fallbackMeaning}. Bakat ini muncul secara alami saat kamu sedang memproses atau mengelola ${fallbackHints}. Kemampuan ini akan tumbuh pesat di lingkungan yang membiarkanmu bekerja sesuai ritme aslimu. Cara terbaik melatihnya adalah dengan mewujudkannya dalam satu tanggung jawab nyata secara konsisten.`;
+    case "elementComposition":
+      return `Komposisi unsur alam dalam dirimu sangat menentukan kelancaran ${fallbackMeaning}. Sementara unsur yang paling minim asupannya bisa memunculkan area rentan saat kamu berhadapan dengan ${fallbackHints}. Kekuatanmu terletak pada ritme elemen yang mendominasi, sedangkan area minim mengingatkanmu untuk tidak memaksa satu pendekatan saja. Integrasi terbangun saat kamu menyertakan unsur yang jarang disadari ke dalam keseharian.`;
+    case "chakraProfile":
+      return `Aliran energimu saat ini paling tangguh di area ${fallbackMeaning}. Di sisi lain, titik yang menuntut pemulihan sangat terkait dengan urusan ${fallbackHints}. Dalam kehidupan sehari-hari, ketimpangan ini bisa terasa sebagai kelelahan yang berulang di area yang sama. Keseimbangan akan kembali bukan dengan memaksa area yang kuat, melainkan merawat bagian yang sedang kehabisan daya.`;
+    case "loveStyle":
+      return `Bahasa utamamu dalam memberikan perhatian erat kaitannya dengan ${fallbackMeaning}. Saat menerima kasih sayang, kamu paling merasa aman jika itu diekspresikan melalui ${fallbackHints}. Kedekatan emosionalmu membutuhkan wadah yang mengakomodasi gaya memberi dan menerima ini. Relasimu bertumbuh matang saat kamu menyadari hakmu untuk menerima cinta secara utuh.`;
+    case "careerDNA":
+      return `Daya dorong kerjamu paling hidup saat kamu memberikan sumbangsih pada ${fallbackMeaning}. Ritme dan gayamu menyelesaikan sesuatu sangat terkalibrasi dengan ${fallbackHints}. Nilai nyata akan terwujud dengan mudah ketika kamu berhenti memaksakan diri bekerja dengan cara orang lain. Arah karirmu terus menanjak seiring keberanian menjaga ritme orisinalmu.`;
+    case "moneyBlock":
+      return `Hambatan dalam menerima kelimpahan sering tersangkut pada keyakinan tentang ${fallbackMeaning}. Saat merasa tertekan secara finansial atau nilai diri, insting bertahannya melibatkan pola ${fallbackHints}. Biaya dari pertahanan ini adalah rasa tidak pernah cukup. Ekspansi kapasitasmu dimulai dengan memisahkan nilai sejatimu dari seberapa banyak pencapaian materimu.`;
+    case "soulMission":
+      return `Benang merah perjalanan hidupmu bermuara pada tema ${fallbackMeaning}. Pelajaran yang terus berulang dan memperdalam kesadaranmu sering datang dari dinamika ${fallbackHints}. Menyelaraskan diri dengan panggilan ini bukanlah tentang mencapai garis akhir, melainkan menghidupinya setiap hari. Tanda bahwa kamu bertumbuh adalah hadirnya ketenangan batin walau hasilnya belum sepenuhnya terlihat.`;
+    case "spiritualArchetype":
+      return `Pola kebijaksanaan bawaanmu memiliki esensi kuat terkait ${fallbackMeaning}. Berkah dari peran ini paling bersinar ketika kamu mewujudkan kualitas ${fallbackHints}. Sisi bayangannya muncul saat kamu terlalu kaku atau merasa identitasmu sebatas peran tersebut. Menyatukan peran ini berarti menjalaninya dengan kesadaran, bukan sekadar pelabelan.`;
+    case "coreWound":
+    case "relationshipWound":
+      return `Luka batin ini membekas pada ruang ${fallbackMeaning}. Pola perlindungan yang terbentuk seringkali dikendalikan oleh insting pada ${fallbackHints}. Dampaknya adalah kesulitan menyerahkan kepercayaan secara penuh. Pemulihan dimulai saat kamu melepaskan tuntutan untuk harus segera sembuh tanpa jeda.`;
+    case "naturalStrength":
+    case "coreStrengths":
+      return `Kapasitas intimu bermuara pada ${fallbackMeaning}. Dorongan ini beresonansi kuat dengan cara kerjamu melalui ${fallbackHints}. Kapasitas ini menjadi optimal di ruang yang mengizinkannya hadir tanpa banyak intervensi. Kembangkan potensinya dengan latihan berkesadaran.`;
+    case "dominantEnergy":
+    case "strongestEnergyArea":
+      return `Kapasitas energimu yang dominan memancarkan ${fallbackMeaning}. Daya ini sangat terbantu oleh stabilitas pada ${fallbackHints}. Manifestasi sehatnya berupa stamina mental dan fisik yang terjaga lama. Rawat energi ini dengan memahami kapan saatnya beristirahat total.`;
+    case "relationshipPattern":
+    case "conflictPatterns":
+      return `Kecenderungan interaksimu sangat dipengaruhi oleh kebutuhan akan ${fallbackMeaning}. Saat bergesekan dengan orang lain, emosinya sering diwarnai oleh ${fallbackHints}. Menyadari reaksi pertamamu akan memberimu ruang pilihan yang lebih lega. Bertumbuh dalam relasi berarti berani mengubah respons reaktif menjadi pilihan yang berkesadaran.`;
+    case "physics":
+      return `Lapisan fisikmu memiliki cara khusus dalam merespons beban di area ${fallbackMeaning}. Tingkat ketahanan ini sangat dipengaruhi oleh kelancaran energi pada ${fallbackHints}. Menjaga ritme tubuh berarti memahami batas kapasitas fisik harianmu, sehingga kamu bisa tetap bergerak tanpa harus memaksakan diri hingga terkuras habis.`;
+    default:
+      return `Pola ini menunjukkan signifikansinya melalui ${fallbackMeaning}. Cara kerjanya diwarnai oleh dinamika pada ${fallbackHints}. Memahami alur ini membantumu melangkah dengan kejernihan dan intensi yang lebih terarah setiap harinya.`;
   }
-  if (sourceCount === 2) {
-    return `Dua lapisan dirimu — ${hints} — saling memperjelas tema ${definition.title.toLowerCase()}.${valueFragment} Kombinasi ini menjadi cermin yang lebih tajam daripada satu sumber saja.`;
-  }
-  return `Satu lapisan profilmu (${hints}) mulai menunjukkan tema ${definition.title.toLowerCase()}.${valueFragment} Anggap ini sebagai undangan untuk mengamati pengalamanmu, bukan sebagai kesimpulan yang harus langsung kamu percaya.`;
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -226,6 +261,14 @@ function scoreStatus(value: unknown): string {
   const numbers = numericValues(value);
   if (!numbers.length) return "Sedang dibaca";
   const score = numbers.reduce((sum, item) => sum + item, 0) / numbers.length;
+  
+  // If the values are Arcana numbers from Destiny Matrix (typically 1-22), 
+  // the average will often exceed 7 on a 10-scale. We adjust the threshold for 22-scale.
+  const isArcanaScale = value && typeof value === "object" && "physics" in value && "energy" in value && "emotion" in value;
+  if (isArcanaScale) {
+    return score >= 15 ? "Kuat" : score >= 8 ? "Sedang" : "Perlu perhatian";
+  }
+
   return score >= 7 ? "Kuat" : score >= 4 ? "Sedang" : "Perlu perhatian";
 }
 
@@ -296,7 +339,16 @@ function createDataPoints(definition: InsightDefinition, signals: GaiaSignal[]):
   if (definition.id === "elementComposition") {
     const raw = signals.find((signal) => signal.source === "elements")?.rawValue;
     if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-      return ["Fire", "Earth", "Air", "Water", "Ether"].flatMap((element) => {
+      if ("status" in raw && raw.status === "incomplete") {
+        return [{
+          label: "Komposisi Elemen",
+          value: "Tidak Lengkap",
+          meaning: "Data komposisi elemen belum lengkap. Perbarui profil untuk menghitung ulang.",
+          effect: `Hanya ${(raw as any).validCount || 0} elemen planet yang ditemukan (minimal 8 diperlukan untuk hasil akurat).`,
+          score: 0
+        }];
+      }
+      return ["Fire", "Earth", "Air", "Water"].flatMap((element) => {
         const value = (raw as Record<string, unknown>)[element] ?? (raw as Record<string, unknown>)[element.toLowerCase()];
         if (value === undefined || value === null) return [];
         const score = typeof value === "number" && Number.isFinite(value) ? value : undefined;
@@ -320,58 +372,40 @@ function createDataPoints(definition: InsightDefinition, signals: GaiaSignal[]):
   return points.slice(0, definition.id === "topTalents" ? 5 : 7);
 }
 
-const GUIDANCE_VOICE: Record<GaiaTheme, {
-  opening: (title: string, pattern: string) => string;
-  practice: (secondary: string) => string;
-  closing: string;
-}> = {
-  shadow: {
-    opening: (title, pattern) => `Untuk bekerja dengan ${title.toLowerCase()}, jangan mulai dari keinginan menghapus pola. Mulailah dengan mengenali kapan ${pattern} aktif, situasi apa yang mendahuluinya, dan bentuk perlindungan apa yang sebenarnya sedang dicoba oleh dirimu.`,
-    practice: (secondary) => `Buat catatan singkat setiap kali pola ini muncul: kejadian, sensasi tubuh, emosi, pikiran otomatis, lalu kebutuhan yang belum terucap. Jika tema ini bersentuhan dengan ${secondary}, pilih respons yang membuatmu lebih aman sebelum meminta dirimu bertindak berbeda.`,
-    closing: "Pemulihan tidak selalu terlihat sebagai perubahan besar. Kadang kemajuannya adalah mampu berhenti beberapa detik, menyadari apa yang terjadi, lalu memilih respons yang sedikit lebih lembut daripada sebelumnya.",
-  },
-  talents: {
-    opening: (title, pattern) => `${title} akan lebih mudah dikenali melalui penggunaan nyata daripada melalui label. Perhatikan kapan ${pattern} membuat sesuatu terasa lebih ringan, lebih jelas, atau lebih hidup ketika kamu mengerjakannya.`,
-    practice: (secondary) => `Pilih satu proyek kecil selama tujuh hari untuk menguji kekuatan ini. Tentukan hasil sederhana, gunakan bakatmu dengan sengaja, lalu minta umpan balik tentang dampak yang benar-benar dirasakan orang lain. Hubungkan eksperimen itu dengan ${secondary} agar potensimu tidak berhenti sebagai ide tentang diri sendiri.`,
-    closing: "Bakat menjadi kekuatan ketika diberi latihan, batas, dan tempat untuk berguna. Kamu tidak perlu mengembangkan semuanya sekaligus; satu kemampuan yang dipelihara dengan konsisten dapat membuka banyak kemungkinan lain.",
-  },
-  energy: {
-    opening: (title, pattern) => `Arah untuk ${title.toLowerCase()} dimulai dari membaca tubuh sebagai sumber informasi. Amati bagaimana ${pattern} berubah pada pagi, siang, dan malam, serta kegiatan apa yang membuat energimu mengembang atau menyusut.`,
-    practice: (secondary) => `Susun ritme harian dengan tiga penanda: waktu untuk bergerak, waktu untuk fokus, dan waktu untuk pulih. Saat sinyal ${secondary} mulai terasa, kurangi intensitas sebelum tubuh benar-benar kehabisan tenaga. Gunakan napas, air, makanan, gerakan, dan lingkungan sebagai dukungan yang konkret.`,
-    closing: "Keseimbangan bukan berarti energimu harus selalu tinggi. Tujuannya adalah mengenali gelombangmu lebih awal sehingga kamu dapat memakai tenaga dengan sadar dan kembali pulih tanpa menunggu tubuh memaksa berhenti.",
-  },
-  relationships: {
-    opening: (title, pattern) => `${title} perlu dibaca melalui interaksi nyata: apa yang kamu lakukan saat merasa dekat, tidak dipahami, kecewa, atau membutuhkan ruang. Perhatikan bagaimana ${pattern} memengaruhi cara kamu berbicara dan menafsirkan respons orang lain.`,
-    practice: (secondary) => `Pilih satu relasi yang cukup aman untuk berlatih. Sampaikan satu kebutuhan tanpa menyalahkan, dengarkan jawaban tanpa langsung membela diri, lalu sepakati satu batas atau bentuk dukungan yang jelas. Jika ${secondary} muncul, beri jeda sebelum melanjutkan percakapan.`,
-    closing: "Relasi yang sehat tidak menuntutmu selalu selaras. Relasi menjadi tempat bertumbuh ketika perbedaan dapat dibicarakan, batas dihormati, dan kamu tetap mampu hadir tanpa kehilangan pusat dirimu sendiri.",
-  },
-  career: {
-    opening: (title, pattern) => `Untuk mengembangkan ${title.toLowerCase()}, terjemahkan ${pattern} menjadi nilai yang dapat dilihat dan dirasakan. Tanyakan masalah apa yang mampu kamu bantu selesaikan, untuk siapa, dan melalui bentuk kerja seperti apa energimu dapat bertahan.`,
-    practice: (secondary) => `Bangun satu eksperimen kerja yang kecil: layanan sederhana, contoh karya, percakapan dengan calon pengguna, atau perbaikan proses. Tentukan ukuran keberhasilan yang bukan hanya uang, tetapi juga kegunaan, kualitas, keberlanjutan, dan respons nyata. Gunakan ${secondary} untuk menilai apakah arah ini layak dilanjutkan.`,
-    closing: "Arah karir tidak harus ditemukan sekaligus. Ia dapat dibangun dari rangkaian percobaan yang jujur, evaluasi yang tenang, dan keberanian memperbaiki cara berkarya sampai kontribusimu bertemu kebutuhan dunia nyata.",
-  },
-  spirituality: {
-    opening: (title, pattern) => `${title} tidak perlu dijadikan jawaban besar tentang siapa dirimu. Gunakan ${pattern} sebagai kompas untuk melihat pengalaman mana yang memberi makna, memperluas kepedulian, dan membuatmu ingin hadir dengan lebih utuh.`,
-    practice: (secondary) => `Sisihkan waktu mingguan untuk meninjau satu pengalaman penting: apa yang diajarkannya, nilai apa yang ingin kamu jaga, dan tindakan apa yang dapat membumikan pemahaman tersebut. Biarkan ${secondary} diterjemahkan menjadi pelayanan, karya, cara berelasi, atau kebiasaan yang nyata.`,
-    closing: "Perjalanan jiwa tidak hanya berlangsung dalam refleksi. Makna menjadi hidup ketika ia mengubah cara kamu memilih, merawat diri, memperlakukan orang lain, dan memberikan sesuatu yang berguna melalui keberadaanmu.",
-  },
+const THEME_EFFECTS: Record<GaiaTheme, (title: string) => string> = {
+  shadow: (title) => `Pola ${title.toLowerCase()} memengaruhi caramu merespons situasi pemicu, bentuk perlindungan batin yang muncul otomatis, dan kebutuhan emosional yang mendasarinya.`,
+  talents: (title) => `Bakat ${title.toLowerCase()} akan paling terlihat dari cara potensimu muncul secara alami, berkembang saat dilatih, dan akhirnya menjadi kekuatan yang dapat diandalkan orang lain.`,
+  energy: (title) => `Dinamika ${title.toLowerCase()} menentukan ritme vitalitas tubuhmu, seberapa cepat kamu terkuras, dan bentuk pemulihan yang paling efektif untuk mengembalikan keseimbangan.`,
+  relationships: (title) => `Pola ${title.toLowerCase()} membentuk caramu menavigasi kedekatan, menetapkan batas yang sehat, serta gaya komunikasi dan keterikatan emosionalmu dengan orang lain.`,
+  career: (title) => `Arah ${title.toLowerCase()} memandu caramu menghasilkan kontribusi nyata, ritme kerja yang berkelanjutan, serta cara potensimu diterjemahkan menjadi nilai tambah.`,
+  spirituality: (title) => `Dalam konteks ${title.toLowerCase()}, pola ini menjadi kompas yang menunjukkan arah makna, pelajaran besar kehidupan, serta panggilan batin yang sedang kamu tuju.`,
 };
+
+function effectNarrative(theme: GaiaTheme, definition: InsightDefinition, dataPoints: GaiaDataPoint[]): string {
+  if (!dataPoints.length) {
+    return `Bagian ini akan menjadi lebih spesifik ketika sumber profil yang relevan sudah lengkap.`;
+  }
+  return THEME_EFFECTS[theme](definition.title);
+}
 
 function guidanceNarrative(theme: GaiaTheme, definition: InsightDefinition, signals: GaiaSignal[]): string {
   if (!signals.length) {
-    return `${definition.guidance} Sumber khusus untuk bagian ini belum tersedia, sehingga Bhumi tidak akan mengisinya dengan pola dari bagian lain atau membuat kesimpulan yang belum didukung datamu. Biarkan ruang ini tetap terbuka sampai profil memiliki bahan yang benar-benar relevan.
-
-Sambil menunggu, gunakan judul bagian ini sebagai pertanyaan refleksi, bukan sebagai label diri. Catat pengalaman nyata yang terasa berhubungan, tetapi jangan memaksakan kecocokan. Ketika sumber baru tersedia, Profile Gaia akan membentuk pembacaan yang lebih personal dari data tersebut.`;
+    return `${definition.guidance} Sumber khusus untuk bagian ini belum tersedia. Biarkan ruang ini tetap terbuka sebagai pertanyaan refleksi sampai profil memiliki bahan yang benar-benar relevan.`;
   }
-  const sourceCount = new Set(signals.map((signal) => signal.source)).size;
+  
   const tags = [...new Set(signals.flatMap((signal) => signal.tags))];
-  const firstPattern = (tags[0] ?? "kesadaran diri").replaceAll("-", " ");
-  const secondPattern = (tags[1] ?? "ritme yang lebih selaras").replaceAll("-", " ");
-  const voice = GUIDANCE_VOICE[theme];
-  const evidence = sourceCount > 1
-    ? `Pembacaan ini didukung oleh beberapa lapisan yang bertemu pada tema ${secondPattern}, jadi kamu dapat mengujinya melalui pola yang berulang dalam kehidupan sehari-hari.`
-    : `Pembacaan ini masih bersifat awal. Biarkan pengalaman nyata membuktikan apakah arah tersebut memang sesuai untukmu.`;
-  return `${definition.guidance} ${voice.opening(definition.title, firstPattern)} ${evidence}\n\n${voice.practice(secondPattern)} ${voice.closing}`;
+  const primaryPattern = (tags[0] ?? "dinamika ini").replaceAll("-", " ");
+  
+  const closingByTheme: Record<GaiaTheme, string> = {
+    shadow: `Langkah awal untuk mengurai ${primaryPattern} bukan dengan melawannya, melainkan dengan mengamati kapan ia aktif dan apa yang sebenarnya sedang dilindungi oleh batinmu.`,
+    talents: `Untuk melihat hasil dari ${primaryPattern}, bawa kekuatan ini ke dalam satu tanggung jawab nyata, lalu perhatikan perubahannya saat digunakan secara konsisten.`,
+    energy: `Tubuh tidak bisa dipaksa melampaui batas ${primaryPattern} tanpa konsekuensi. Jadwalkan waktu jeda sebelum kamu benar-benar kehabisan tenaga.`,
+    relationships: `Dalam merawat ${primaryPattern}, pastikan kamu mengkomunikasikan batasmu dengan jelas sehingga kedekatan tidak terasa seperti kehilangan diri.`,
+    career: `Cari tempat di mana ${primaryPattern} dapat menjawab masalah yang nyata, karena di situlah nilai kerjamu akan bertumbuh secara organik.`,
+    spirituality: `Jadikan ${primaryPattern} sebagai cermin dalam keseharian. Makna tidak harus selalu berupa hal besar, melainkan terlihat pada kejujuran caramu hadir setiap hari.`
+  };
+
+  return `${definition.guidance} ${closingByTheme[theme]}`;
 }
 
 function createInsight(theme: GaiaTheme, definition: InsightDefinition, themeSignals: GaiaSignal[]): GaiaInsight {
@@ -390,11 +424,9 @@ function createInsight(theme: GaiaTheme, definition: InsightDefinition, themeSig
     theme,
     title: definition.title,
     summary: definition.summary,
-    narrative: personalNarrative(definition, signals),
+    narrative: personalNarrative(definition, signals, theme),
     dataPoints,
-    effect: dataPoints.length
-      ? `Pola pada bagian ini dapat memengaruhi pilihan, respons emosional, dan cara kamu membawa diri ketika tema ${definition.title.toLowerCase()} sedang aktif.`
-      : `Bagian ini akan menjadi lebih spesifik ketika sumber profil yang relevan sudah lengkap.`,
+    effect: effectNarrative(theme, definition, dataPoints),
     strengths: [...new Set(signals.filter((signal) => signal.tags.some((tag) => tag.includes("strength") || tag.includes("gift"))).map(meaningForSignal))].slice(0, 5),
     challenges: [...new Set(signals.filter((signal) => signal.tags.some((tag) => tag.includes("pattern") || tag.includes("edge"))).map(meaningForSignal))].slice(0, 4),
     needs: [...new Set(signals.filter((signal) => signal.tags.some((tag) => tag.includes("needs") || tag.includes("grounding"))).map(meaningForSignal))].slice(0, 4),
@@ -404,9 +436,11 @@ function createInsight(theme: GaiaTheme, definition: InsightDefinition, themeSig
   };
 }
 
-export function synthesizeGaiaProfile(blueprint: unknown): GaiaProfile {
+export function synthesizeGaiaProfile(blueprint: unknown, userProfile?: unknown): GaiaProfile {
   const now = new Date().toISOString();
-  const signals = normalizeGaiaSources(blueprint);
+  // Merge userProfile into blueprint temporarily for normalization so that birth data is available
+  const mergedSource = userProfile ? { ...((blueprint && typeof blueprint === 'object') ? blueprint : {}), userProfile } : blueprint;
+  const signals = normalizeGaiaSources(mergedSource);
   const themes = Object.keys(GAIA_INSIGHT_DEFINITIONS) as GaiaTheme[];
   const sections = Object.fromEntries(themes.map((theme) => {
     const themeSignals = signals.filter((signal) => signal.theme === theme);

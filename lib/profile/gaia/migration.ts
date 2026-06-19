@@ -34,7 +34,7 @@ export async function migrateUserToGaia(profile: UserProfile): Promise<UserProfi
   const blueprint = await blueprintRepository.getUserBlueprint(profile.uid);
   if (!blueprint) throw new Error("Gaia migration requires a persisted blueprint.");
 
-  const gaiaProfile = synthesizeGaiaProfile(blueprint);
+  const gaiaProfile = synthesizeGaiaProfile(blueprint, profile);
   const buildInfo = await getRuntimeBuildInfo();
   const payload: Partial<UserProfile> = {
     gaiaProfile,

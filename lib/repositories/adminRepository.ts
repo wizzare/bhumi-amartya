@@ -114,7 +114,7 @@ export const adminRepository = {
   async rerunGaiaMigration(founderUid: string, user: UserProfile): Promise<UserProfile> {
     const blueprint = await blueprintRepository.getUserBlueprint(user.uid);
     if (!blueprint) throw new Error("Blueprint user tidak ditemukan.");
-    const gaiaProfile = synthesizeGaiaProfile(blueprint);
+    const gaiaProfile = synthesizeGaiaProfile(blueprint, user);
     const migrated = {
       ...user,
       gaiaProfile,

@@ -24,6 +24,10 @@ import { wellnessNavigatorEngine, WellnessNavigatorState } from "@/lib/engines/w
 import { wellnessSupportEngine, SupportEngineState } from "@/lib/engines/wellnessSupportEngine";
 import { COMMUNITY_CONFIG } from "@/lib/config/community";
 import { AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
+import { BASELINE_QUESTIONS } from "@/lib/data/baselineWellnessQuestions";
+import { baselineWellnessEngine } from "@/lib/engines/baselineWellnessEngine";
+import { useAuth } from "@/context/AuthContext";
+import { userRepository, BaselineWellnessProfile } from "@/lib/repositories/userRepository";
 
 interface WellnessAssessmentFlowProps {
   uid: string;
@@ -45,8 +49,16 @@ const QUESTIONS = [
 
 export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlowProps) {
   const t = translations[language];
+  const auth = useAuth();
+  const userProfile = auth?.userProfile;
+  const refreshUserProfile = auth?.refreshUserProfile;
+
+  const isBaselinePending = !userProfile?.baselineWellnessCompleted && userProfile?.guardianRole !== 'founder';
+  const currentQuestions = isBaselinePending ? BASELINE_QUESTIONS : QUESTIONS;
+
   const [stage, setStage] = useState<Stage>("intro");
   const [answers, setAnswers] = useState<Record<number, number>>({});
+  const [calculatedBaseline, setCalculatedBaseline] = useState<BaselineWellnessProfile | null>(null);
   const [mapping, setMapping] = useState<WellnessMapping | null>(null);
   const [navigator, setNavigator] = useState<WellnessNavigatorState | null>(null);
   const [support, setSupport] = useState<SupportEngineState | null>(null);
@@ -81,7 +93,7 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
   };
 
   const handleSubmit = async () => {
-    if (Object.keys(answers).length < QUESTIONS.length) return;
+    if (Object.keys(answers).length < currentQuestions.length) return;
     if (!uid) {
       setError(language === "id" ? "Sesi akun belum siap. Silakan masuk kembali lalu coba lagi." : "Your account session is not ready. Please sign in again and retry.");
       return;
@@ -92,11 +104,25 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
     setNotice(null);
 
     try {
-      const mappingInput = QUESTIONS.map(q => ({
+      const mappingInput = currentQuestions.map(q => ({
         questionId: q.id,
-        dimension: q.dimension,
+        dimension: q.dimension as any,
         score: answers[q.id]
       }));
+
+      if (isBaselinePending) {
+        const baselineProfile = baselineWellnessEngine.calculate(uid, mappingInput);
+        await userRepository.upsertUserProfile(uid, {
+          baselineWellnessCompleted: true,
+          baselineWellnessProfile: baselineProfile
+        });
+        setCalculatedBaseline(baselineProfile);
+        if (refreshUserProfile) {
+          await refreshUserProfile();
+        }
+        setStage("results");
+        return;
+      }
 
       const result = wellnessMappingEngine.calculateMapping(uid, mappingInput);
       if (!result.assessment || result.results.length === 0) {
@@ -130,9 +156,11 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
           <Sparkles size={40} />
         </div>
         <div className="space-y-4">
-          <h2 className="text-3xl font-serif text-[#4F5E52]">{t.kenaliDiri.title}</h2>
+          <h2 className="text-3xl font-serif text-[#4F5E52]">{isBaselinePending ? "Langkah Terakhir Onboarding" : t.kenaliDiri.title}</h2>
           <p className="text-[#7B8776] leading-relaxed max-w-sm mx-auto">
-            {t.kenaliDiri.subtitle}
+            {isBaselinePending
+              ? "Bhumi sudah mengenal identitasmu. Sekarang bantu Bhumi memahami kondisi dirimu saat ini melalui 30 pertanyaan singkat agar pendampingan menjadi lebih sesuai."
+              : t.kenaliDiri.subtitle}
           </p>
         </div>
         <div className="pt-4">
@@ -148,14 +176,14 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
   }
 
   if (stage === "questions") {
-    const progress = Math.round((Object.keys(answers).length / QUESTIONS.length) * 100);
+    const progress = Math.round((Object.keys(answers).length / currentQuestions.length) * 100);
 
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="flex justify-between items-end px-2">
             <div>
-                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Refleksi Harian</p>
-                <h3 className="text-xl font-serif text-[#4F5E52]">Pemetaan Kondisi</h3>
+                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isBaselinePending ? "Baseline Assessment" : "Refleksi Harian"}</p>
+                <h3 className="text-xl font-serif text-[#4F5E52]">{isBaselinePending ? "Kenali Dirimu" : "Pemetaan Kondisi"}</h3>
             </div>
             <p className="text-sm font-bold text-[#4F5E52]">{progress}%</p>
         </header>
@@ -165,7 +193,7 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
         </div>
 
         <div className="space-y-10 py-4">
-          {QUESTIONS.map((q) => (
+          {currentQuestions.map((q) => (
             <div key={q.id} className="space-y-6">
               <p className="text-lg font-medium text-[#4F5E52] leading-relaxed">
                 {q.text[language]}
@@ -200,7 +228,7 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
             </p>
           )}
           <button
-            disabled={Object.keys(answers).length < QUESTIONS.length || loading}
+            disabled={Object.keys(answers).length < currentQuestions.length || loading}
             onClick={handleSubmit}
             className="bhumi-button w-full py-5 text-xl disabled:opacity-30 disabled:cursor-not-allowed"
           >
@@ -212,6 +240,40 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
   }
 
   if (stage === "results") {
+    if (calculatedBaseline || (isBaselinePending && userProfile?.baselineWellnessProfile)) {
+      const profile = calculatedBaseline || userProfile?.baselineWellnessProfile;
+      if (profile) {
+        return (
+          <div className="bhumi-card p-8 bg-white border-none shadow-sm space-y-12 animate-in fade-in zoom-in duration-500">
+             <div className="text-center space-y-4">
+                <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto text-[#4F5E52]">
+                   <Sparkles size={32} />
+                </div>
+                <h3 className="text-2xl font-serif text-[#4F5E52]">Baseline Wellness Selesai</h3>
+                <p className="text-sm text-[#7B8776]">Terima kasih telah membantu Bhumi mengenal kondisimu saat ini. Pendampinganmu kini telah disesuaikan.</p>
+             </div>
+
+             <section className="grid grid-cols-2 gap-3">
+                <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Navigator Mode</p>
+                   <p className="text-sm font-bold text-[#4F5E52]">{profile.navigatorMode}</p>
+                </div>
+                <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Strongest Area</p>
+                   <p className="text-sm font-bold text-[#4F5E52]">{profile.strongestDomain}</p>
+                </div>
+             </section>
+
+             <div className="pt-4 pb-2">
+                <Link href="/dashboard" className="bhumi-button w-full py-4 text-center block text-lg">
+                   Masuk ke Dashboard →
+                </Link>
+             </div>
+          </div>
+        );
+      }
+    }
+
     return (
       <div className="bhumi-card p-8 bg-white border-none shadow-sm space-y-12">
         {error && (

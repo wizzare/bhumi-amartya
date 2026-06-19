@@ -7,6 +7,8 @@ import {
 import { natalIntelligenceEngine, type NatalIntelligence } from "@/lib/astrology/natalIntelligence";
 import { aspectEngine, type Aspect } from "@/lib/astrology/aspectEngine";
 import { destinyMatrixV3Engine, type DestinyMatrixV3 } from "@/lib/engines/destinyMatrixV3";
+import { calculateNumerology } from "@/lib/calculations/calculateNumerology";
+import { calculateBirthDayNumber, calculatePersonalYear } from "@/lib/calculations/calculateLifePath";
 
 type UnknownRecord = Record<string, unknown>;
 type BlueprintFieldValue = string | number | boolean | string[] | number[] | UnknownRecord | UnknownRecord[];
@@ -19,6 +21,9 @@ export type FullLifePathSignals = {
   pinnacles?: BlueprintFieldValue;
   challenges?: BlueprintFieldValue;
   personalYear?: number;
+  expression?: number;
+  soulUrge?: number;
+  personality?: number;
 };
 
 export type FullHumanDesignSignals = {
@@ -507,14 +512,23 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     ?? readString(profile, [["moonSign"]]);
   const ascendant = readString(blueprint, [["astrology", "ascendant"], ["natalChart", "ascendant"]])
     ?? readString(profile, [["ascendant"]]);
+  const birthDate = readString(profile, [["birthDate"]]) ?? readString(blueprint, [["birthDate"], ["birthData", "date"]]);
+  const fullName = readString(profile, [["fullName"]]);
+  const derivedNumerology = fullName && birthDate ? calculateNumerology(fullName, birthDate) : null;
+  const derivedBirthDay = birthDate ? calculateBirthDayNumber(birthDate) : undefined;
+  const derivedPersonalYear = birthDate ? calculatePersonalYear(birthDate) : undefined;
+
   const fullLifePath: FullLifePathSignals = {
     lifePath,
-    birthdayNumber: readOptionalNumber(blueprint, [["lifePath", "birthdayNumber"], ["numerology", "birthdayNumber"], ["birthdayNumber"]]),
+    birthdayNumber: readOptionalNumber(blueprint, [["lifePath", "birthdayNumber"], ["numerology", "birthdayNumber"], ["numerology", "birthDay"], ["birthdayNumber"]]) ?? derivedBirthDay,
     attitudeNumber: readOptionalNumber(blueprint, [["lifePath", "attitudeNumber"], ["numerology", "attitudeNumber"], ["attitudeNumber"]]),
     maturityNumber: readOptionalNumber(blueprint, [["lifePath", "maturityNumber"], ["numerology", "maturityNumber"], ["maturityNumber"]]),
     pinnacles: readAvailable(blueprint, [["lifePath", "pinnacles"], ["numerology", "pinnacles"], ["pinnacles"]]),
     challenges: readAvailable(blueprint, [["lifePath", "challenges"], ["numerology", "challenges"], ["challenges"]]),
-    personalYear: readOptionalNumber(blueprint, [["lifePath", "personalYear"], ["numerology", "personalYear"], ["personalYear"]]),
+    personalYear: readOptionalNumber(blueprint, [["lifePath", "personalYear"], ["numerology", "personalYear"], ["personalYear"]]) ?? derivedPersonalYear,
+    expression: readOptionalNumber(blueprint, [["numerology", "expression"]]) ?? derivedNumerology?.expression,
+    soulUrge: readOptionalNumber(blueprint, [["numerology", "soulUrge"]]) ?? derivedNumerology?.soulUrge,
+    personality: readOptionalNumber(blueprint, [["numerology", "personality"]]) ?? derivedNumerology?.personality,
   };
   const fullHumanDesign: FullHumanDesignSignals = {
     type: humanDesignType,

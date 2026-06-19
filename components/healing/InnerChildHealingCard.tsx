@@ -9,7 +9,7 @@ interface InnerChildHealingCardProps {
 export function InnerChildHealingCard({ prompt, invitation, reassurance }: InnerChildHealingCardProps) {
   return (
     <section className="rounded-[32px] bg-[#F6F5F1] p-7 shadow-soft border border-[#E8E9E5]">
-      <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">Perhatian anak batin</p>
+      <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">Perhatian inner child</p>
       <h2 className="text-2xl font-semibold text-[#3D4A41]">Sebuah momen lembut untuk dirimu yang lebih muda</h2>
       <p className="mt-4 text-[#5F6B60] leading-relaxed">{prompt}</p>
       <div className="mt-6 rounded-[24px] bg-white p-5 border border-[#E8E9E5]">

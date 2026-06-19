@@ -18,6 +18,22 @@ export type DailyState = {
   manifestDone?: boolean;
   supportPathDone?: boolean;
   innerworkDone?: boolean;
+  innerworkReflection?: string;
+  innerworkJourney?: {
+    date: string;
+    userId: string;
+    dominantIssue: string;
+    issueCategory: string;
+    innerworkType: string;
+    practiceId: string;
+    practiceTitle: string;
+    durationMinutes: number;
+    navigatorMode: string;
+    completed: boolean;
+    reflectionResult: string;
+    sourceSignals: string[];
+    createdAt: string;
+  };
   meditationDone?: boolean;
   audioHealingDone?: boolean;
   workoutDone?: boolean;

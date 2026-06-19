@@ -38,6 +38,7 @@ async function waitForCardImages(container: HTMLElement): Promise<void> {
 
 export function ShareCard({ echo, dateKey, userSeed, guidance, userName, gaiaInsights }: ShareCardProps) {
   const [isExporting, setIsExporting] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   const cardRef = useRef<HTMLDivElement>(null);
 
   const content = useMemo(() => createDailyShareCardContent({
@@ -46,13 +47,19 @@ export function ShareCard({ echo, dateKey, userSeed, guidance, userName, gaiaIns
     userSeed,
     guidance,
     gaiaInsights,
-  }), [dateKey, echo, gaiaInsights, guidance, userSeed]);
+    now,
+  }), [dateKey, echo, gaiaInsights, guidance, now, userSeed]);
   const shareDate = useMemo(() => new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   }).format(new Date()), []);
+
+  React.useEffect(() => {
+    const interval = window.setInterval(() => setNow(new Date()), 30000);
+    return () => window.clearInterval(interval);
+  }, []);
   const handleShare = async () => {
     if (!cardRef.current) return;
 
@@ -138,14 +145,27 @@ export function ShareCard({ echo, dateKey, userSeed, guidance, userName, gaiaIns
               </div>
             </section>
 
-            <div className="mt-3 grid grid-cols-2 gap-2.5">
-              <section className="min-h-36 rounded-2xl border border-white/80 bg-white/60 p-3.5 shadow-sm">
-                <div className="flex items-center gap-1.5"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" /><p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#765126]">{content.dailyAdvice.label}</p></div>
-                <p className="mt-2 text-[9px] leading-[1.5] text-[#4F5E52]">{content.dailyAdvice.content}</p>
+            <div className="mt-3 flex flex-col gap-2.5">
+              <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                <div className="flex items-center gap-1.5"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" /><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.catatanHariIni.label}</p></div>
+                <p className="mt-2 text-[9px] leading-[1.5] text-[#4F5E52]">{content.catatanHariIni.content}</p>
               </section>
-              <section className="min-h-36 rounded-2xl border border-white/80 bg-white/60 p-3.5 shadow-sm">
-                <div className="flex items-center gap-1.5"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" /><p className="text-[8px] font-bold uppercase tracking-[0.12em] text-[#765126]">{content.profileInsight.label}</p></div>
-                <p className="mt-2 text-[9px] leading-[1.5] text-[#4F5E52]">{content.profileInsight.content}</p>
+              <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm relative overflow-hidden">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1.5"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" /><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Profil Hari Ini</p></div>
+                    <p className="text-[8px] italic text-[#7B8776] mb-1.5">Satu bagian dari dirimu yang layak diamati hari ini.</p>
+                    <h4 className="text-[11px] font-bold text-[#4F6658]">{content.profileInsight.label}</h4>
+                  </div>
+                  <span className="text-[7px] font-bold uppercase tracking-wider text-[#9BB89A] bg-white px-2 py-1 rounded-full border border-[#E8E9E5]/50">Lihat Detail</span>
+                </div>
+                <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.profileInsight.content}</p>
+                {content.profileInsight.reflection && (
+                  <div className="mt-2.5 pt-2.5 border-t border-white flex gap-2 items-start">
+                    <span className="text-[8px] font-bold uppercase tracking-[0.15em] text-[#9AA394] mt-0.5 shrink-0">Refleksi</span>
+                    <p className="text-[9px] italic text-[#4F6658] font-medium">&quot;{content.profileInsight.reflection}&quot;</p>
+                  </div>
+                )}
               </section>
             </div>
 

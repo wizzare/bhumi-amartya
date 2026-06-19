@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { AppNav } from "@/components/navigation/AppNav";
 import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
-import { safeJsonParse } from "@/lib/storage/safeJson";
-import { hasFeatureAccess } from "@/lib/billing/accessControl";
+import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { useAuth } from "@/context/AuthContext";
@@ -19,9 +18,11 @@ import {
   type DailyMeditationPractice,
   type MeditationReflection,
 } from "@/lib/meditation/createDailyMeditationPractice";
-import { type MudraName } from "@/lib/meditation/mudraGuides";
+import { getMudraGuide, type MudraName } from "@/lib/meditation/mudraGuides";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
+import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 
 const EMOTIONAL_STATES = [
   "😊 Lebih ringan",
@@ -46,14 +47,6 @@ const BODY_SIGNALS = [
   "Tidak ada sensasi khusus",
 ];
 
-function createGoogleImageSearchUrl(query: string) {
-  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
-}
-
-function createYoutubeSearchUrl(query: string) {
-  return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} mudra tutorial`)}`;
-}
-
 export default function MeditationPage() {
   const router = useRouter();
   const auth = useAuth();
@@ -68,6 +61,7 @@ export default function MeditationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
+  const [zoneBContext, setZoneBContext] = useState<ZoneBContext | null>(null);
 
   useEffect(() => {
     trackEvent("meditation_open");
@@ -82,7 +76,8 @@ export default function MeditationPage() {
         router.replace("/setup");
         return;
       }
-      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as any, "meditation"));
+      if (!resolved.profile) return;
+      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "meditation"));
       const parsedBlueprint = await storageProvider.getUserBlueprint();
 
       if (!resolved.profile || !parsedBlueprint) {
@@ -97,17 +92,32 @@ export default function MeditationPage() {
       }
       const previousMeditationEntries = loadMeditationEntries();
       const previousJournalEntries = loadLocalJournalEntries();
+      const incomingContext = readZoneBContext(window.location.search);
+      setZoneBContext(incomingContext);
 
       setProfile(parsedProfile);
-      setBlueprint(parsedBlueprint as any);
-      setPractice(
-        createDailyMeditationPractice({
+      const blueprintRecord = parsedBlueprint as unknown as Record<string, unknown>;
+      setBlueprint(blueprintRecord);
+      const generatedPractice = createDailyMeditationPractice({
           profile: parsedProfile,
-          blueprint: parsedBlueprint as any,
+          blueprint: blueprintRecord,
           previousMeditationEntries,
           previousJournalEntries,
-        }),
-      );
+        });
+      if (incomingContext) {
+        const guide = getZoneBGuide(incomingContext);
+        const mudra = incomingContext.practiceCategory === "mudra"
+          ? getMudraGuide(incomingContext.title as MudraName) ?? null
+          : null;
+        setPractice({
+          theme: incomingContext.title as DailyMeditationPractice["theme"],
+          practices: guide.steps,
+          mudra,
+          affirmation: `Aku memberi ruang bagi ${incomingContext.sourceTheme} dengan lembut.`,
+        });
+      } else {
+        setPractice(generatedPractice);
+      }
     } catch (loadError) {
       console.error("[Meditation Page] Failed to load local data", loadError);
       setError("Data lokal belum siap. Silakan ulangi setup.");
@@ -133,7 +143,7 @@ export default function MeditationPage() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!practice) return;
 
     const generatedReflection = createMeditationReflection({
@@ -163,9 +173,24 @@ export default function MeditationPage() {
 
       // Update Daily State for Completion System
       if (auth?.user?.uid) {
-        void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
+        await dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
           meditationDone: true,
           moodLevel: undefined, // Don't override if not set
+        });
+        const journeyContext = zoneBContext ?? {
+          issue: "general_innerwork",
+          practiceId: `meditation-${practice.theme.toLowerCase().replaceAll(" ", "-")}`,
+          practiceCategory: "meditation" as const,
+          sourceTheme: practice.theme,
+          title: practice.theme,
+          durationMinutes: 10,
+        };
+        await saveZoneBJourneyContext({
+            uid: auth.user.uid,
+            date: dateKey,
+            context: journeyContext,
+            reflectionResult: emotionalState,
+            reflectionResponse: generatedReflection.insight,
         });
       }
 
@@ -240,6 +265,26 @@ export default function MeditationPage() {
         </section>
 
         <section className="bhumi-card p-6">
+          <h2 className="text-xl font-semibold text-[#4F5E52]">Panduan Meditasi</h2>
+          <div className="mt-5">
+            <GuidedLearningDetails
+              title={practice.theme}
+              description="Meditasi adalah latihan mengarahkan perhatian pada napas, tubuh, atau satu fokus dengan lembut. Tujuannya bukan mengosongkan pikiran, melainkan menyadari apa yang hadir tanpa harus segera bereaksi."
+              benefits={[
+                "Membantu tubuh melambat",
+                "Meningkatkan kesadaran diri",
+                "Memberi jarak dari pikiran yang berulang",
+              ]}
+              steps={practice.practices}
+              duration="Ikuti durasi pada praktik hari ini. Untuk pemula, 5–10 menit sudah cukup."
+              googleSearchPhrase={`${practice.theme} meditation posture breathing guide`}
+              youtubeSearchPhrase={`${practice.theme} guided meditation for beginners`}
+              accentClass="bg-purple-50 text-purple-600"
+            />
+          </div>
+        </section>
+
+        <section className="bhumi-card p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">Section A · Daily To-Do Practice</h2>
           <ol className="mt-5 space-y-4">
             {practice.practices.map((item, index) => (
@@ -263,24 +308,16 @@ export default function MeditationPage() {
                   <h3 className="text-lg font-semibold">🖐 {practice.mudra.name}</h3>
 
                   <div className="mt-4 space-y-4 text-sm leading-relaxed">
-                    <div>
-                      <p className="font-semibold text-[#4F5E52]">Tujuan:</p>
-                      <p className="mt-1 text-[#7B8776]">{practice.mudra.benefits}</p>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-[#4F5E52]">Cara Melakukan:</p>
-                      <ol className="mt-1 list-inside list-decimal text-[#7B8776]">
-                        {practice.mudra.steps.map((step, i) => (
-                          <li key={i}>{step}</li>
-                        ))}
-                      </ol>
-                    </div>
-
-                    <div>
-                      <p className="font-semibold text-[#4F5E52]">Durasi:</p>
-                      <p className="mt-1 text-[#7B8776]">{practice.mudra.duration}</p>
-                    </div>
+                    <GuidedLearningDetails
+                      title={practice.mudra.name}
+                      description={`Mudra adalah posisi tangan yang digunakan sebagai jangkar perhatian selama meditasi. ${practice.mudra.name} dipilih untuk mendukung tema praktikmu hari ini.`}
+                      benefits={[practice.mudra.benefits]}
+                      steps={practice.mudra.steps}
+                      duration={practice.mudra.duration}
+                      googleSearchPhrase={`${practice.mudra.name} hand position step by step`}
+                      youtubeSearchPhrase={`${practice.mudra.name} mudra tutorial for beginners`}
+                      accentClass="bg-amber-50 text-amber-700"
+                    />
 
                     {practice.mudra.affirmation && (
                        <div>
@@ -289,27 +326,6 @@ export default function MeditationPage() {
                        </div>
                     )}
 
-                    <div className="rounded-2xl bg-[#FCFAF5] p-4">
-                      <p className="font-semibold text-[#4F5E52]">Referensi Belajar</p>
-                      <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                        <a
-                          href={createGoogleImageSearchUrl(practice.mudra.name)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border border-[#E8E9E5] bg-white px-4 py-3 text-center text-sm font-medium text-[#4F5E52] transition hover:bg-[#F5F1E8]"
-                        >
-                          Lihat Gambar Mudra
-                        </a>
-                        <a
-                          href={createYoutubeSearchUrl(practice.mudra.name)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded-full border border-[#E8E9E5] bg-white px-4 py-3 text-center text-sm font-medium text-[#4F5E52] transition hover:bg-[#F5F1E8]"
-                        >
-                          Lihat Video Tutorial
-                        </a>
-                      </div>
-                    </div>
                   </div>
                 </article>
               </div>

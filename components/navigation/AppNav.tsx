@@ -28,7 +28,7 @@ const UTILITY_NAV_ITEMS: NavItem[] = [
   { Icon: Settings, labelKey: "settings", href: "/settings" },
 ];
 
-const ADMIN_ITEM: NavItem = { Icon: Shield, labelKey: "admin", href: "/admin" };
+const ADMIN_ITEM: NavItem = { Icon: Shield, labelKey: "admin", href: "/admin/activity" };
 
 export function AppNav() {
   const pathname = usePathname();

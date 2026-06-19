@@ -1,6 +1,6 @@
 import * as Astronomy from "astronomy-engine";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
-import { NatalAspect, NatalBalance, NatalDominance, NatalPattern, PlanetaryPosition } from "@/lib/types/blueprint";
+import { BlackMoonLilith, NatalAspect, NatalBalance, NatalDominance, NatalPattern, PlanetaryPosition } from "@/lib/types/blueprint";
 
 export type NatalBasicsInput = {
   birthDate?: string | null;
@@ -35,6 +35,7 @@ export type NatalBasics = {
   northNode?: string;
   southNode?: string;
   chiron?: string;
+  lilith?: BlackMoonLilith;
   houses?: Record<string, { sign: string; degree: number; longitude: number }>;
   placidusHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
   wholeSignHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
@@ -159,8 +160,44 @@ function parseTimezoneOffsetMinutes(timezone?: string | null): number | null {
   return sign * (hours * 60 + minutes);
 }
 
+function getOffsetString(timezone: string, date: Date = new Date()): string {
+  try {
+    if (/^([+-])\d{1,2}:?\d{2}?$/.test(timezone.trim())) {
+      return timezone.trim();
+    }
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone.trim(),
+      timeZoneName: "longOffset",
+    });
+    const parts = formatter.formatToParts(date);
+    const tzPart = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (tzPart) {
+      const match = tzPart.match(/GMT([+-]\d{1,2}):?(\d{2})?/);
+      if (match) {
+        const sign = match[1][0];
+        const hours = match[1].slice(1).padStart(2, "0");
+        const minutes = match[2] ?? "00";
+        return `${sign}${hours}:${minutes}`;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to resolve named timezone:", timezone, e);
+  }
+  return "";
+}
+
 function toUtcDate(birthDate: string, birthTime: string, timezone: string): Date | null {
-  const offsetMinutes = parseTimezoneOffsetMinutes(timezone);
+  let offsetMinutes = parseTimezoneOffsetMinutes(timezone);
+  if (offsetMinutes === null) {
+    const [year, month, day] = birthDate.split("-").map(Number);
+    const [hour, minute] = birthTime.split(":").map(Number);
+    if ([year, month, day, hour, minute].every(Number.isFinite)) {
+      const resolved = getOffsetString(timezone, new Date(Date.UTC(year, month - 1, day, hour, minute)));
+      if (resolved) {
+        offsetMinutes = parseTimezoneOffsetMinutes(resolved);
+      }
+    }
+  }
   if (offsetMinutes === null) return null;
 
   const [year, month, day] = birthDate.split("-").map(Number);
@@ -242,6 +279,19 @@ function calculateApproximateChironLongitude(date: Date): number {
   const j2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
   const days = (date.getTime() - j2000) / 86_400_000;
   return normalizeLongitude(251.35 + days * 0.019777);
+}
+
+function calculateMeanBlackMoonLilithLongitude(date: Date): number {
+  const julianDate = date.getTime() / 86_400_000 + 2_440_587.5;
+  const centuriesFromJ2000 = (julianDate - 2_451_545) / 36_525;
+  const t = centuriesFromJ2000;
+  const meanPerigee =
+    83.3532465 +
+    4_069.0137287 * t -
+    0.01032 * t * t -
+    (t * t * t) / 80_053 +
+    (t * t * t * t) / 18_999_000;
+  return normalizeLongitude(meanPerigee + 180);
 }
 
 function buildWholeSignHouses(ascendantLongitude: number): Record<string, { sign: string; degree: number; longitude: number }> {
@@ -532,6 +582,14 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
     const placidusHouses = buildApproximatePlacidusHouses(ascendantLongitude);
     const wholeSignHouses = buildWholeSignHouses(ascendantLongitude);
     const planets = enrichNatalPlanets(calculatePlanetsLocal(utcDate), placidusHouses, wholeSignHouses);
+    const lilithLongitude = calculateMeanBlackMoonLilithLongitude(utcDate);
+    const lilithHouse = determineHouse(lilithLongitude, placidusHouses);
+    if (!lilithHouse) throw new Error("Unable to resolve Mean Black Moon Lilith house.");
+    const lilith: BlackMoonLilith = {
+      sign: signFromLongitude(lilithLongitude),
+      degree: degreeInSign(lilithLongitude),
+      house: lilithHouse,
+    };
     const intelligence = buildNatalIntelligence(planets);
 
     return {
@@ -543,6 +601,7 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
       northNode: planets.NorthNode?.sign,
       southNode: planets.SouthNode?.sign,
       chiron: planets.Chiron?.sign,
+      lilith,
       houses: placidusHouses,
       placidusHouses,
       wholeSignHouses,
@@ -596,6 +655,7 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
           data.wholeSignHouses,
         );
         const intelligence = buildNatalIntelligence(planets);
+        const lilith = localResult.lilith;
         return {
           sunSign: planets.Sun?.sign || localResult.sunSign,
           moonSign: planets.Moon?.sign || localResult.moonSign,
@@ -605,6 +665,7 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
           northNode: planets.NorthNode?.sign,
           southNode: planets.SouthNode?.sign,
           chiron: planets.Chiron?.sign,
+          lilith,
           houses: data.houses || data.placidusHouses || localResult.houses,
           placidusHouses: data.placidusHouses || data.houses || localResult.placidusHouses,
           wholeSignHouses: data.wholeSignHouses || localResult.wholeSignHouses,

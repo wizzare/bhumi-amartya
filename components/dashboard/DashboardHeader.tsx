@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
+import { getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 interface DashboardHeaderProps {
   userName: string;
@@ -23,7 +24,7 @@ export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
     minute: "2-digit",
     hour12: false,
   });
-  const greeting = getGreeting(now, language);
+  const greeting = getTimeOfDayGreeting(now, language);
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 30000);
@@ -43,20 +44,4 @@ export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
       </div>
     </header>
   );
-}
-
-function getGreeting(date: Date, language: "id" | "en"): string {
-  const hour = date.getHours();
-
-  if (language === "en") {
-    if (hour >= 4 && hour <= 10) return "Good morning";
-    if (hour >= 11 && hour <= 14) return "Good afternoon";
-    if (hour >= 15 && hour <= 17) return "Good evening";
-    return "Good night";
-  }
-
-  if (hour >= 4 && hour <= 10) return "Selamat pagi";
-  if (hour >= 11 && hour <= 14) return "Selamat siang";
-  if (hour >= 15 && hour <= 17) return "Selamat sore";
-  return "Selamat malam";
 }

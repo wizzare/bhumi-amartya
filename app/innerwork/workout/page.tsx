@@ -12,6 +12,8 @@ import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
+import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
+import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 
 const WORKOUT_ACTIVITIES = [...Object.values(WORKOUT_DATABASE), ...INNERWORK_VARIATION_LIBRARY.workout];
 const WORKOUT_BY_ID = Object.fromEntries(WORKOUT_ACTIVITIES.map((activity) => [activity.id, activity]));
@@ -21,6 +23,10 @@ export default function WorkoutPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [reflectionResult, setReflectionResult] = React.useState("");
+  const [zoneBContext] = React.useState<ZoneBContext | null>(
+    () => typeof window === "undefined" ? null : readZoneBContext(window.location.search),
+  );
 
   React.useEffect(() => {
     trackEvent("open_workout", auth?.user?.uid);
@@ -64,6 +70,18 @@ export default function WorkoutPage() {
       });
 
       await Promise.all(savePromises);
+      for (const id of selectedIds) {
+        const activity = WORKOUT_BY_ID[id] ?? activities.find((item) => item.id === id);
+        const context = zoneBContext ?? {
+          issue: "general_innerwork",
+          practiceId: id,
+          practiceCategory: "workout" as const,
+          sourceTheme: "workout learning",
+          title: activity.title,
+          durationMinutes: activity.durationMinutes,
+        };
+        await saveZoneBJourneyContext({ uid, date, context, reflectionResult: reflectionResult || "Belum Yakin" });
+      }
       trackEvent("complete_workout", uid);
       setSaved(true);
     } catch (err) {
@@ -73,7 +91,17 @@ export default function WorkoutPage() {
     }
   };
 
-  const activities = WORKOUT_ACTIVITIES;
+  const lockedGuide = zoneBContext ? getZoneBGuide(zoneBContext) : null;
+  const activities = lockedGuide
+    ? [{
+        id: zoneBContext!.practiceId,
+        title: lockedGuide.title,
+        description: lockedGuide.description,
+        instruction: lockedGuide.steps,
+        benefits: lockedGuide.benefits,
+        durationMinutes: lockedGuide.durationMinutes,
+      }]
+    : WORKOUT_ACTIVITIES;
 
   return (
     <ProtectedRoute>
@@ -120,43 +148,44 @@ export default function WorkoutPage() {
                   </div>
                 </div>
 
-                <p className="text-[#7B8776] text-sm mb-4">{activity.description}</p>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Langkah-langkah</h3>
-                    <ul className="space-y-2">
-                      {activity.instruction.map((step, idx) => (
-                        <li key={idx} className="text-sm text-[#4F5E52] flex gap-3">
-                          <span className="w-5 h-5 rounded-full bg-[#F5F1E8] text-[#9AA394] flex items-center justify-center text-[10px] shrink-0">{idx + 1}</span>
-                          {step}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Manfaat</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {activity.benefits.map((benefit, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-orange-50 text-orange-600 rounded-lg text-[10px] font-semibold">
-                          {benefit}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <GuidedLearningDetails
+                  title={activity.title}
+                  description={activity.description}
+                  benefits={activity.benefits}
+                  steps={activity.instruction}
+                  duration={`${activity.durationMinutes} menit`}
+                  googleSearchPhrase={`${activity.title} exercise proper form`}
+                  youtubeSearchPhrase={`${activity.title} beginner workout tutorial`}
+                  accentClass="bg-orange-50 text-orange-600"
+                />
               </section>
             ))}
           </div>
 
           <div className="mt-12">
+            {zoneBContext && (
+              <div className="mb-6">
+                <p className="mb-3 text-center text-sm font-medium text-[#4F5E52]">Bagaimana keadaanmu setelah praktik?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Lebih Tenang", "Sama Saja", "Sedikit Lebih Berat", "Belum Yakin"].map((result) => (
+                    <button
+                      key={result}
+                      type="button"
+                      onClick={() => setReflectionResult(result)}
+                      className={`rounded-xl border p-3 text-xs font-semibold ${reflectionResult === result ? "border-orange-600 bg-orange-50 text-orange-700" : "border-[#E8E9E5] bg-white text-[#7B8776]"}`}
+                    >
+                      {result}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
               Klik save hanya jika kamu sudah melakukan.
             </p>
             <button
               onClick={handleSaveAll}
-              disabled={selectedIds.size === 0 || saving || saved}
+              disabled={selectedIds.size === 0 || saving || saved || Boolean(zoneBContext && !reflectionResult)}
               className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : selectedIds.size > 0 ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
             >
               {saved ? 'Langkah Tersimpan ✨' : saving ? 'Menyimpan...' : 'Save'}

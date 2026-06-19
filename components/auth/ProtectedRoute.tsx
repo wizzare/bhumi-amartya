@@ -36,6 +36,22 @@ export function ProtectedRoute({
     if (auth?.authStateResolved && !auth.user) {
       console.log("[PROTECTED ROUTE] No User -> Redirecting to:", redirectTo);
       router.replace(redirectTo);
+      return;
+    }
+
+    // MANDATORY BASELINE WELLNESS CHECK (KARA V3)
+    if (
+      auth?.authStateResolved &&
+      auth.user &&
+      auth.userProfile &&
+      !auth.userProfile.baselineWellnessCompleted &&
+      auth.userProfile.guardianRole !== 'founder' &&
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/wellness-assessment' &&
+      window.location.pathname !== '/setup'
+    ) {
+      console.log("[PROTECTED ROUTE] Baseline Pending -> Redirecting to Wellness Assessment");
+      router.replace('/wellness-assessment');
     }
   }, [auth?.authStateResolved, auth?.user, router, redirectTo]);
 

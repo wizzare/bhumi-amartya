@@ -41,6 +41,20 @@ export type HumanDesignCenters = {
   root: boolean | null;
 };
 
+export type HumanDesignActivation = {
+  planet: string;
+  gate: number;
+  line: number;
+  color?: number;
+  tone?: number;
+  base?: number;
+};
+
+export type HumanDesignDiagnostic = {
+  raw_personality_gates: HumanDesignActivation[];
+  raw_design_gates: HumanDesignActivation[];
+};
+
 export type HumanDesignChart = {
   type: string | null;
   strategy: string | null;
@@ -54,11 +68,17 @@ export type HumanDesignChart = {
   centers: HumanDesignCenters;
   gates: number[];
   channels: string[];
+  diagnostic?: HumanDesignDiagnostic | null;
+  personalityActivations?: HumanDesignActivation[];
+  designActivations?: HumanDesignActivation[];
+  raw_personality_gates?: HumanDesignActivation[];
+  raw_design_gates?: HumanDesignActivation[];
   variables: Record<string, unknown> | null;
   digestion: string | null;
   cognition: string | null;
   motivation: string | null;
   environment: string | null;
+  perspective: string | null;
   status: HumanDesignStatus;
   source: HumanDesignSource;
   accuracy?: HumanDesignAccuracy;
@@ -124,11 +144,17 @@ export const createPendingHumanDesignChart = (note: string): HumanDesignChart =>
     centers: emptyHumanDesignCenters(),
     gates: [],
     channels: [],
+    diagnostic: null,
+    personalityActivations: [],
+    designActivations: [],
+    raw_personality_gates: [],
+    raw_design_gates: [],
     variables: null,
     digestion: null,
     cognition: null,
     motivation: null,
     environment: null,
+    perspective: null,
     status: "pending",
     source: "pending",
     note,

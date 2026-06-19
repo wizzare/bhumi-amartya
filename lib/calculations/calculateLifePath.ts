@@ -48,4 +48,21 @@ export const calculateLifePath = (birthDate: string): LifePathBlueprint => {
   };
 };
 
+export const calculateBirthDayNumber = (birthDate: string): number | undefined => {
+  if (!birthDate) return undefined;
+  const parts = birthDate.split("-");
+  if (parts.length < 3) return undefined;
+  return reduceNumber(Number(parts[2]));
+};
 
+export const calculatePersonalYear = (birthDate: string, currentYear: number = new Date().getFullYear()): number | undefined => {
+  if (!birthDate) return undefined;
+  const parts = birthDate.split("-");
+  if (parts.length < 3) return undefined;
+  
+  const monthNumber = reduceNumber(Number(parts[1]));
+  const dayNumber = reduceNumber(Number(parts[2]));
+  const yearNumber = reduceNumber(sumDigits(String(currentYear)));
+  
+  return reduceNumber(monthNumber + dayNumber + yearNumber);
+};

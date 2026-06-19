@@ -52,6 +52,12 @@ export type DailyGuidance = {
   blueprintSummary?: string;
   soulReflectionText?: string;
   dailyNoteText?: string;
+  dominantIssue?: {
+    key: string;
+    label: string;
+    category: string;
+    source: "catatan";
+  };
   content?: string;
   localDate?: string;
 

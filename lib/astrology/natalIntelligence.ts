@@ -4,6 +4,7 @@
  */
 
 import { Blueprint, PlanetaryPosition } from "@/lib/types/blueprint";
+import { ASTRO_PLANET_MEANINGS, ASTRO_SIGN_MEANINGS, ASTRO_HOUSE_MEANINGS, ASTRO_ASPECT_MEANINGS } from "@/lib/data/astrologyDictionaries";
 
 export interface NatalIntelligence {
   dominantPlanet: string;
@@ -135,3 +136,79 @@ export const natalIntelligenceEngine = {
     };
   }
 };
+
+export function composePlanetMeaning(planet: string, sign: string): string {
+  if (!planet || !sign) return "Belum tersedia";
+  const pMeaning = ASTRO_PLANET_MEANINGS[planet] || planet;
+  const sMeaning = ASTRO_SIGN_MEANINGS[sign] || sign;
+  return `Mewakili ${pMeaning} ${sMeaning}`;
+}
+
+export function getTopHouses(planets: Record<string, any>): { house: number; title: string; desc: string; count: number }[] {
+  if (!planets) return [];
+  const houseCounts: Record<number, number> = {};
+  Object.values(planets).forEach(pos => {
+    const h = pos.placidusHouse || pos.house;
+    if (h) houseCounts[h] = (houseCounts[h] || 0) + 1;
+  });
+  
+  const sorted = Object.entries(houseCounts).sort((a, b) => b[1] - a[1]);
+  return sorted.slice(0, 3).map(([houseStr, count]) => {
+    const houseNum = Number(houseStr);
+    const meta = ASTRO_HOUSE_MEANINGS[houseNum] || { title: `House ${houseNum}`, desc: "" };
+    return { house: houseNum, title: meta.title, desc: meta.desc, count };
+  });
+}
+
+function getTopAspectsLegacy(aspects: any[]): any[] {
+  if (!Array.isArray(aspects)) return [];
+  return aspects
+    .sort((a, b) => Math.abs(a.orb) - Math.abs(b.orb))
+    .slice(0, 5)
+    .map(a => {
+      const type = a.aspectType || a.type;
+      let symbol = "☌";
+      if (type === "Trine") symbol = "△";
+      if (type === "Square") symbol = "□";
+      if (type === "Sextile") symbol = "✶";
+      if (type === "Opposition") symbol = "☍";
+      
+      return {
+        title: `${symbol} ${a.planet1} ${type} ${a.planet2}`,
+        type,
+        orb: a.orb,
+        meaning: ASTRO_ASPECT_MEANINGS[type] || "Interaksi antar energi planetary.",
+      };
+    });
+}
+
+export function getTopAspects(aspects: any[]): any[] {
+  if (!Array.isArray(aspects)) return [];
+  const symbols: Record<string, string> = {
+    Conjunction: "\u260c",
+    Trine: "\u25b3",
+    Square: "\u25a1",
+    Sextile: "\u2736",
+    Opposition: "\u260d",
+  };
+
+  return aspects
+    .filter((aspect) => Boolean(
+      (aspect.p1 || aspect.planet1) &&
+      (aspect.p2 || aspect.planet2) &&
+      (aspect.aspectType || aspect.type),
+    ))
+    .sort((a, b) => Math.abs(Number(a.orb) || 0) - Math.abs(Number(b.orb) || 0))
+    .slice(0, 5)
+    .map((aspect) => {
+      const type = aspect.aspectType || aspect.type;
+      const planet1 = aspect.p1 || aspect.planet1;
+      const planet2 = aspect.p2 || aspect.planet2;
+      return {
+        title: `${symbols[type] || symbols.Conjunction} ${planet1} ${type} ${planet2}`,
+        type,
+        orb: aspect.orb,
+        meaning: ASTRO_ASPECT_MEANINGS[type] || "Interaksi antar energi planetary.",
+      };
+    });
+}

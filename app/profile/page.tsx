@@ -12,11 +12,11 @@ import { useAuth } from "@/context/AuthContext";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
-import { synthesizeGaiaProfile } from "@/lib/profile/gaia/synthesisEngine";
-import { getShareSafeGaiaInsights } from "@/lib/profile/gaia/selectors";
-import type { GaiaProfile, GaiaTheme } from "@/lib/profile/gaia/types";
-import { GAIA_SECTION_PRESENTATION } from "@/lib/profile/gaia/presentation";
-import { isCompleteGaiaWarehouse } from "@/lib/profile/gaia/validation";
+import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
+import { HumanMeaningService } from "@/lib/services/humanMeaningService";
+import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
+import type { ProfileSection } from "@/lib/types/profileRuntime";
+import type { Blueprint } from "@/lib/types/blueprint";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -28,32 +28,86 @@ function profileName(profile: LocalRecord): string {
   return "Penghuni Bhumi";
 }
 
-function isGaiaWarehouse(profile: GaiaProfile): boolean {
-  return isCompleteGaiaWarehouse(profile);
+function slugify(title: string) {
+  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function SummaryCard({ gaia }: { gaia: GaiaProfile }) {
-  const items = [
-    ["Life Path", gaia.identity.lifePath],
-    ["Arcana Center", gaia.identity.arcanaCenter],
-    ["Human Design Type", gaia.identity.humanDesignType],
-    ["Zodiak Matahari", gaia.identity.sunSign],
+function IdentitasJiwaHub() {
+  const cards = [
+    {
+      title: "Life Path",
+      icon: "🔢",
+      desc: "Jalan belajar dan pertumbuhan jiwamu.",
+      href: "/blueprint/numerology"
+    },
+    {
+      title: "Destiny Matrix",
+      icon: "🜂",
+      desc: "Pola energi, pelajaran, dan potensi yang membentuk perjalananmu.",
+      href: "/blueprint/destiny-matrix"
+    },
+    {
+      title: "Human Design",
+      icon: "⚡",
+      desc: "Cara alami energimu bekerja dan mengambil keputusan.",
+      href: "/blueprint/human-design"
+    },
+    {
+      title: "Natal Chart",
+      icon: "🌙",
+      desc: "Peta langit saat kamu lahir dan pengaruhnya dalam hidupmu.",
+      href: "/blueprint/natal-chart"
+    },
+    {
+      title: "Weton",
+      icon: "🌾",
+      desc: "Jejak hari dan pasaran kelahiran dalam tradisi Jawa.",
+      href: "/blueprint/weton"
+    },
+    {
+      title: "BaZi",
+      icon: "☯️",
+      desc: "Empat pilar dan keseimbangan unsur pada waktu kelahiranmu.",
+      href: "/blueprint/bazi"
+    },
+    {
+      title: "Vedic Astrology",
+      icon: "🕉️",
+      desc: "Peta langit kelahiran melalui tradisi astrologi Vedik.",
+      href: "/blueprint/vedic"
+    },
+    {
+      title: "Tzolkin Maya",
+      icon: "☀️",
+      desc: "Kode waktu dan ritme kesadaran dari kalender sakral Maya.",
+      href: "/blueprint/tzolkin"
+    }
   ];
 
   return (
-    <section className="bhumi-card border-none bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center gap-2">
-        <Sparkles size={15} className="text-[#9AA394]" />
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#9AA394]">Identitas Jiwa</p>
+    <section className="space-y-4">
+      <div className="mb-2 flex items-center gap-2">
+        <Sparkles size={20} className="text-[#9AA394]" />
+        <div>
+          <h2 className="text-xl font-serif text-[#4F5E52]">Identitas Jiwa</h2>
+          <p className="text-sm text-[#7B8776] mt-1">Delapan cermin utama untuk mengenal dirimu lebih dalam.</p>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        {items.map(([label, value]) => (
-          <div key={label} className="rounded-2xl bg-[#F7F4ED] p-4">
-            <p className="text-[9px] font-bold uppercase tracking-wider text-[#9AA394]">{label}</p>
-            <p className="mt-2 text-sm font-semibold text-[#4F5E52]">{value}</p>
-          </div>
+      
+      <div className="grid grid-cols-1 gap-3">
+        {cards.map(c => (
+          <Link key={c.title} href={c.href} className="bhumi-card border-none bg-white p-5 shadow-sm flex items-start gap-4 transition-transform active:scale-95">
+            <div className="text-2xl pt-0.5">{c.icon}</div>
+            <div>
+              <h3 className="font-semibold text-[#4F5E52]">{c.title}</h3>
+              <p className="text-xs text-[#7B8776] mt-1">{c.desc}</p>
+            </div>
+          </Link>
         ))}
       </div>
+      <p className="text-center text-[10px] uppercase tracking-wider text-[#9AA394] mt-4">
+        Klik masing-masing bagian untuk melihat pembacaan lengkap.
+      </p>
     </section>
   );
 }
@@ -61,11 +115,11 @@ function SummaryCard({ gaia }: { gaia: GaiaProfile }) {
 export default function ProfilePage() {
   const auth = useAuth();
   const [name, setName] = useState("Penghuni Bhumi");
-  const [gaia, setGaia] = useState<GaiaProfile | null>(null);
-  const [echo, setEcho] = useState<ProfileEchoV1 | null>(null);
+  const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dateKey, setDateKey] = useState("");
+  const [echo, setEcho] = useState<ProfileEchoV1 | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -76,8 +130,6 @@ export default function ProfilePage() {
         ]);
         if (profile) {
           setName(profileName(profile as unknown as LocalRecord));
-          const storedGaia = (profile as unknown as { gaiaProfile?: GaiaProfile }).gaiaProfile;
-          if (storedGaia && isGaiaWarehouse(storedGaia)) setGaia(storedGaia);
         }
         const timezone = (profile as LocalRecord | null)?.timezone;
         const today = getLocalDateKey(new Date(), typeof timezone === "string" ? timezone : Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -86,7 +138,10 @@ export default function ProfilePage() {
           setDailyGuidance(await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today).catch(() => null));
         }
         if (blueprint) {
-          setGaia((current) => current ?? synthesizeGaiaProfile(blueprint));
+          const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
+          const meaning = HumanMeaningService.generate(canonical);
+          const sections = ProfileRuntimeAdapter.buildProfile(meaning);
+          setProfileSections(sections);
           setEcho(createProfileEcho(blueprint));
         }
       } finally {
@@ -97,7 +152,7 @@ export default function ProfilePage() {
   }, [auth?.user?.uid]);
 
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
-  if (!gaia || !echo) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
+  if (!profileSections.length || !echo) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
 
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
@@ -109,7 +164,7 @@ export default function ProfilePage() {
           <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali. Mari melihat dirimu dengan lebih jernih.</p>
         </header>
 
-        <SummaryCard gaia={gaia} />
+        <IdentitasJiwaHub />
 
         <section>
           <header className="mb-5 px-1">
@@ -117,14 +172,12 @@ export default function ProfilePage() {
             <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
           </header>
           <div className="grid grid-cols-2 gap-4">
-          {(Object.keys(GAIA_SECTION_PRESENTATION) as GaiaTheme[]).map((theme) => {
-            const item = GAIA_SECTION_PRESENTATION[theme];
-            const Icon = item.icon;
+          {(profileSections).map((section) => {
             return (
-              <Link key={theme} href={`/profile/${theme}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
-                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${item.color}`}><Icon size={24} /></div>
-                <h3 className="text-sm font-semibold text-[#4F5E52]">{item.title}</h3>
-                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{item.subtitle}</p>
+              <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
+                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600`}><Sparkles size={24} /></div>
+                <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
+                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{section.cards.length} insight</p>
               </Link>
             );
           })}
@@ -142,7 +195,7 @@ export default function ProfilePage() {
             dateKey={dateKey}
             userSeed={auth?.user?.uid ?? name}
             guidance={dailyGuidance}
-            gaiaInsights={getShareSafeGaiaInsights(gaia)}
+            gaiaInsights={[]}
           />
         </section>
 

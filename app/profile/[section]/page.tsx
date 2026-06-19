@@ -1,8 +1,16 @@
 import ProfileSectionClient from "@/components/profile/details/ProfileSectionClient";
-import { GAIA_SECTION_PRESENTATION } from "@/lib/profile/gaia/presentation";
 
 export function generateStaticParams() {
-  return Object.keys(GAIA_SECTION_PRESENTATION).map((section) => ({ section }));
+  return [
+    { section: "siapa-dirimu" },
+    { section: "energi-mekanika" },
+    { section: "luka-bayangan-warisan" },
+    { section: "karya-talenta" },
+    { section: "cinta-relasi" },
+    { section: "raga-ruang" },
+    { section: "spiritualitas-evolusi" },
+    { section: "fase-kehidupan-saat-ini" }
+  ];
 }
 
 export default async function ProfileSectionPage({ params }: { params: Promise<{ section: string }> }) {

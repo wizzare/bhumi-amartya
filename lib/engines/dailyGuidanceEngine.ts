@@ -106,9 +106,7 @@ function buildPersonalDailyNote(params: {
 }): string {
   const signals = safeRecord(params.synthesis?.identitySignals);
   const blueprint = safeRecord(params.context?.blueprint);
-  const astrology = safeRecord(blueprint.astrology || blueprint.natalChart);
   const humanDesign = safeRecord(getCanonicalHumanDesign(blueprint.humanDesign));
-  const destinyMatrix = safeRecord(blueprint.destinyMatrix);
   const bodies = safeList<any>(params.context?.currentSky?.bodies);
   const activeTransits = safeList<any>(params.context?.astrologyTransits?.activeTransits);
   const seed = simpleHash([
@@ -129,8 +127,9 @@ function buildPersonalDailyNote(params: {
 
   const houseActivations = safeList<any>(params.context?.astroHouseActivations);
   const houseTransit = houseActivations.find(a => a.planet === (transit.planet || transit.body || transit.name));
-  const houseInfo = houseTransit ? ` (House ${houseTransit.house}: ${houseTransit.lifeArea})` : "";
+  const houseInfo = houseTransit ? ` di area ${houseTransit.lifeArea.toLowerCase()}` : "";
 
+  const planetName = transit.planet || transit.body || transit.name || "Merkurius";
   const planet = localizeDailyNoteLabel(firstText(transit.planet, transit.body, transit.name, "Merkurius"));
   const sign = firstText(transit.sign, transit.zodiacSign, params.context?.currentSky?.moonSign, "tema analitis");
   const transitSummary = firstText(
@@ -140,50 +139,51 @@ function buildPersonalDailyNote(params: {
     "fokus mental, keputusan kecil, dan cara kamu mengatur respons harian"
   );
 
-  const lifePath = firstText(signals.lifePath, blueprint.lifePath?.number);
-  const humanDesignType = firstText(signals.humanDesignType, humanDesign.type);
-  const strategy = localizeDailyNoteLabel(firstText(signals.strategy, humanDesign.strategy));
-  const authority = localizeDailyNoteLabel(firstText(signals.authority, humanDesign.authority));
-  const arcanaCenter = firstText(signals.arcanaCenter, destinyMatrix.center);
-  const sunSign = firstText(signals.sunSign, astrology.sunSign);
-  const moonSign = firstText(signals.moonSign, astrology.moonSign);
-  const ascendant = firstText(signals.ascendant, astrology.ascendant);
+  const lifePath = String(firstText(signals.lifePath, blueprint.lifePath?.number));
+  const hdType = String(firstText(signals.humanDesignType, humanDesign.type)).toLowerCase();
+  const authority = String(firstText(signals.authority, humanDesign.authority)).toLowerCase();
 
-  const lifePathThemes: Record<string, string> = {
-    "1": "memulai dengan keputusan yang mandiri",
-    "2": "menjaga harmoni tanpa menghilangkan kebutuhanmu sendiri",
-    "3": "mengubah rasa menjadi ekspresi yang jelas",
-    "4": "membangun struktur, ritme, dan konsistensi",
-    "5": "mengelola kebebasan supaya tidak berubah menjadi energi tercecer",
-    "6": "merawat orang lain tanpa kehilangan pusat dirimu",
-    "7": "membaca makna sebelum mengambil kesimpulan",
-    "8": "memakai daya dan kendali dengan lebih bersih",
-    "9": "melepaskan pola lama dengan kedewasaan",
-    "11": "menurunkan intuisi menjadi langkah yang bisa dijalankan",
-    "22": "menjaga visi besar lewat fondasi kecil yang stabil",
-    "33": "melayani dengan hati tanpa memikul semuanya",
-  };
-  const humanDesignThemes: Record<string, string> = {
-    generator: "tubuhmu perlu merasa punya respons yang nyata sebelum menambah beban",
-    "manifesting generator": "energi cepatmu tetap butuh jeda agar tidak meloncat ke terlalu banyak arah",
-    projector: "perhatianmu lebih tajam ketika kamu memilih tempat yang benar-benar layak menerima energimu",
-    manifestor: "dorongan memulai akan terasa lebih bersih ketika kamu menyampaikan arah tanpa harus membela diri",
-    reflector: "kejernihanmu sangat dipengaruhi lingkungan, ritme, dan siapa yang sedang kamu serap hari ini",
-  };
-  const arcanaThemes: Record<string, string> = {
-    "4": "disiplin yang tidak kaku",
-    "6": "pilihan relasi yang lebih sadar",
-    "8": "kekuatan batin, batas, dan keberanian mengatur ulang kendali",
-    "9": "kebijaksanaan, penyelesaian, dan keberanian menutup siklus lama",
-    "11": "kepekaan yang perlu diterjemahkan menjadi tindakan sederhana",
-    "12": "melihat dari sudut pandang baru sebelum bereaksi",
+  const lifePathMeanings: Record<string, string> = {
+    "1": "belajar memimpin langkahmu sendiri dengan mandiri",
+    "2": "belajar mendengarkan kebutuhan bersama sambil tetap menghargai batas dirimu",
+    "3": "belajar menuangkan perasaan jujurmu menjadi inspirasi bagi orang lain",
+    "4": "belajar merapikan langkah harian secara konsisten dan terarah",
+    "5": "belajar menyalurkan rasa penasaranmu tanpa membuat energimu tercecer",
+    "6": "belajar merawat kebersamaan dengan tanggung jawab yang seimbang",
+    "7": "belajar mengamati kebenaran di balik situasi sebelum kamu bertindak",
+    "8": "belajar mengelola kendali dan daya pribadi secara bijaksana",
+    "9": "belajar merampungkan hal yang telah selesai dan melepaskan masa lalu",
+    "11": "belajar mengalirkan ide-ide besarmu menjadi aksi nyata yang sederhana",
+    "22": "belajar menyusun fondasi jangka panjang lewat disiplin kecil sehari-hari",
+    "33": "belajar melayani kepedulian batinmu dengan bijak tanpa merugikan diri sendiri",
   };
 
-  const lpTheme = lifePathThemes[lifePath] || "mengenali pola yang membuat hidupmu lebih stabil";
-  const hdTheme = humanDesignThemes[humanDesignType.toLowerCase()] || "cara tubuhmu mengambil keputusan perlu dihormati sebelum pikiran mempercepat cerita";
-  const arcanaTheme = arcanaThemes[arcanaCenter] || "pusat energimu sedang diminta bekerja lebih sadar";
-  const natalLine = [sunSign && `Matahari ${sunSign}`, moonSign && `Bulan ${moonSign}`, ascendant && `Ascendant ${ascendant}`].filter(Boolean).join(", ");
-  const transitText = `${planet} ${sign} ${transitSummary}`.toLowerCase();
+  let decisionMeaning = "mengikuti kejujuran batinmu sebelum mengambil keputusan";
+  if (hdType.includes("generator")) {
+    if (authority.includes("sacral") || authority.includes("sakral")) {
+      decisionMeaning = "bergerak berdasarkan respons fisik tubuhmu secara jujur, bukan dari desakan pikiran";
+    } else if (authority.includes("emotional") || authority.includes("emosional")) {
+      decisionMeaning = "menunggu kejernihan emosimu setelah gelombang perasaan mereda";
+    } else {
+      decisionMeaning = "menghormati tanggapan alami dari dalam tubuhmu";
+    }
+  } else if (hdType.includes("projector")) {
+    if (authority.includes("splenic") || authority.includes("splenik") || authority.includes("instingtif")) {
+      decisionMeaning = "mendengarkan insting spontan tubuhmu dan mengutamakan jeda sebelum setuju";
+    } else if (authority.includes("emotional") || authority.includes("emosional")) {
+      decisionMeaning = "menunggu hingga emosimu terasa jernih dan tenang sebelum merespons situasi";
+    } else {
+      decisionMeaning = "menjaga energimu dan mengutamakan jeda sebelum membagikan perhatianmu";
+    }
+  } else if (hdType.includes("manifestor")) {
+    decisionMeaning = "mengomunikasikan langkah tindakanmu kepada lingkungan sekitar sebelum memulai arah baru";
+  } else if (hdType.includes("reflector")) {
+    decisionMeaning = "memberikan waktu bagi dirimu seiring berjalannya siklus untuk mengkristalkan pilihan";
+  }
+
+  const lpMeaning = lifePathMeanings[lifePath] || "mengenali pola yang membuat hidupmu lebih stabil";
+
+  const transitText = `${planetName} ${sign} ${transitSummary}`.toLowerCase();
   const dominantTheme = transitText.includes("venus") || transitText.includes("relasi") || transitText.includes("hubungan")
     ? "relationship"
     : transitText.includes("mars") || transitText.includes("aksi") || transitText.includes("energi")
@@ -195,6 +195,7 @@ function buildPersonalDailyNote(params: {
           : transitText.includes("pluto") || transitText.includes("lepas") || transitText.includes("transform")
             ? "release"
             : "clarity";
+
   const focusByTransit: Record<string, string> = {
     clarity: "Pilih satu keputusan kecil yang paling membutuhkan kejelasan, lalu rapikan informasinya sebelum kamu merespons.",
     structure: "Bereskan satu fondasi kecil: jadwal, prioritas, batas kerja, atau tugas tertunda yang membuat pikiran terus kembali ke tempat yang sama.",
@@ -203,6 +204,7 @@ function buildPersonalDailyNote(params: {
     emotion: "Beri ruang pada satu rasa yang paling kuat muncul hari ini, lalu cari tindakan sederhana yang membuat tubuhmu merasa lebih aman.",
     release: "Lepaskan satu hal kecil yang sudah tidak perlu kamu bawa hari ini: ekspektasi, jawaban lama, atau tanggung jawab yang bukan milikmu.",
   };
+
   const questionByTransit: Record<string, string> = {
     clarity: "Hal apa yang sebenarnya sudah jelas, tetapi masih kutunda karena takut harus mengubah cara bergerakku?",
     structure: "Fondasi kecil apa yang perlu kubereskan agar energiku tidak terus bocor ke hal yang berserakan?",
@@ -211,13 +213,10 @@ function buildPersonalDailyNote(params: {
     emotion: "Rasa apa yang sedang meminta didengar sebelum aku mengambil keputusan hari ini?",
     release: "Apa yang bisa kulepaskan hari ini supaya ruang batinku terasa lebih ringan and jernih?",
   };
-  const natalPhrase = natalLine
-    ? `Dengan warna dasar ${natalLine}, dorongan ini menyentuh cara alamimu mencari aman, membaca detail, dan menjaga ritme yang bisa dipercaya.`
-    : "Dorongan ini menyentuh cara alamimu mencari aman, membaca situasi, dan menjaga ritme yang bisa dipercaya.";
 
   return [
-    `Hari ini ${planet}${houseInfo} di ${sign} membuat tema ${transitSummary.toLowerCase()} lebih mudah terasa dalam pikiran dan keputusan kecil. Kamu mungkin lebih cepat menangkap sinyal, lebih peka pada hal yang belum rapi, atau lebih mudah berpindah dari satu urusan ke urusan lain.`,
-    `${natalPhrase} Pola dasarmu berkembang lewat ${lpTheme}; energimu juga lebih tepat ketika ${hdTheme}${strategy ? `, dimulai dari ${strategy}` : ""}${authority ? ` dan kepekaan ${authority}` : ""}. Di lapisan yang lebih dalam, tema ${arcanaTheme} sedang meminta kamu memilih kendali yang lebih sadar, bukan sekadar menahan semuanya sendiri.`,
+    `Hari ini energi ${planet}${houseInfo} di ${sign} mengajakmu menyelaraskan pikiran dan keputusan kecil dengan tema ${transitSummary.toLowerCase()}. Kamu mungkin lebih cepat menangkap sinyal batin, lebih peka pada hal-hal yang belum rapi, atau ingin bergerak menyelesaikan urusan yang tertunda.`,
+    `Dalam proses ini, kamu diajak untuk ${lpMeaning}. Langkahmu akan terasa jauh lebih selaras ketika kamu ${decisionMeaning}. Di lapisan yang lebih dalam, hadapi setiap tantangan hari ini dengan welas asih dan jagalah ketenangan hatimu tanpa harus memikul semua beban sendirian.`,
     `Fokus hari ini:\n${focusByTransit[dominantTheme]}`,
     `Pertanyaan refleksi:\n${questionByTransit[dominantTheme]}`,
   ].join("\n\n");

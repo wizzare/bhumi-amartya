@@ -12,7 +12,10 @@ interface SoulReflectionCardProps {
 
 export function SoulReflectionCard({ language, reflection, loading }: SoulReflectionCardProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const cleanedReflection = React.useMemo(() => cleanMarkdown(reflection), [reflection]);
+  const cleanedReflection = React.useMemo(
+    () => cleanMarkdown(reflection),
+    [reflection],
+  );
 
   return (
     <div className="mt-8 space-y-4">
@@ -52,7 +55,7 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
                   : "Reading your soul today"}
               </p>
               <h2 className={`text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
-                "{cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}"
+                &ldquo;{cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}&rdquo;
               </h2>
 
               {isExpanded && (

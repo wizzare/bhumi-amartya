@@ -10,6 +10,7 @@ import { natalIntelligenceEngine } from "@/lib/astrology/natalIntelligence";
 import { destinyMatrixV3Engine } from "@/lib/engines/destinyMatrixV3";
 import { astroContextEngine } from "@/lib/engines/astroContextEngine";
 import { getCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 function safeString(value: any, fallback: string = ""): string {
   if (typeof value === "string") return value;
@@ -274,6 +275,7 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
 
   const isId = synthesis.language !== "en";
   const firstName = userName.split(" ")[0] || (isId ? "kamu" : "friend");
+  const greeting = getTimeOfDayGreeting(new Date(), isId ? "id" : "en");
 
   const lp = String(signals.lifePath || "");
   const hd = String(signals.humanDesignType || "");
@@ -298,13 +300,13 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
     ? [
         `Hai ${firstName}, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu.`,
         `${firstName}, mari sejenak menengok ke dalam di hari ${weekdayName(dateKey, "id")} ini.`,
-        `Selamat pagi ${firstName}, hari ini ada ruang untuk berjalan dengan lebih sadar.`,
+        `${greeting} ${firstName}, hari ini ada ruang untuk berjalan dengan lebih sadar.`,
         `Hai ${firstName}, izinkan jiwamu berbicara pelan hari ini.`,
       ]
     : [
         `Hi ${firstName}, take a moment to listen to what is moving within you.`,
         `${firstName}, let's take a moment to look inward on this ${weekdayName(dateKey, "en")}.`,
-        `Good morning ${firstName}, today offers room to move with greater awareness.`,
+        `${greeting} ${firstName}, today offers room to move with greater awareness.`,
         `Hi ${firstName}, allow your soul to speak softly today.`,
       ];
 

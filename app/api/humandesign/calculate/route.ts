@@ -14,6 +14,12 @@ type HumanDesignCalculateResult = {
   incarnationCross: string | null;
   inc_cross: string | null;
   channels: string[];
+  diagnostic?: {
+    raw_personality_gates: RawActivation[];
+    raw_design_gates: RawActivation[];
+  };
+  personalityActivations?: RawActivation[];
+  designActivations?: RawActivation[];
   definition: string | number | null;
   status: "ready" | "pending" | "error" | "service_unavailable";
   source: "human-design-py";
@@ -26,6 +32,15 @@ type HumanDesignCalculateResult = {
   environment?: string | null;
   motivation?: string | null;
   cognition?: string | null;
+};
+
+type RawActivation = {
+  planet: string;
+  gate: number;
+  line: number;
+  color?: number;
+  tone?: number;
+  base?: number;
 };
 
 const DEFAULT_OFFSET_MINUTES = 420;
@@ -44,6 +59,35 @@ const readStringArray = (value: unknown): string[] => {
     return [];
   }
   return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+};
+
+const readFiniteNumber = (value: unknown): number | undefined => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : undefined;
+};
+
+const readActivations = (value: unknown): RawActivation[] => {
+  const entries = Array.isArray(value)
+    ? value.map((item, index) => [String((item as any)?.planet || index), item] as const)
+    : value && typeof value === "object"
+      ? Object.entries(value as Record<string, unknown>)
+      : [];
+
+  return entries.flatMap(([key, raw]) => {
+    if (!raw || typeof raw !== "object") return [];
+    const item = raw as Record<string, unknown>;
+    const gate = readFiniteNumber(item.gate ?? item.g ?? key);
+    const line = readFiniteNumber(item.line ?? item.l);
+    if (gate === undefined || line === undefined) return [];
+    return [{
+      planet: readString(item.planet) || readString(item.name) || key,
+      gate,
+      line,
+      color: readFiniteNumber(item.color),
+      tone: readFiniteNumber(item.tone),
+      base: readFiniteNumber(item.base),
+    }];
+  });
 };
 
 const normalizeTimezoneToUtcOffset = (timezone: unknown): number => {
@@ -261,6 +305,7 @@ export async function POST(request: Request) {
           minute,
           second,
           utc_offset,
+          debug: true,
         }),
         cache: "no-store",
         signal: controller.signal,
@@ -306,6 +351,16 @@ export async function POST(request: Request) {
         : readString(rawDefinition);
 
     const variables = dataObj.variables && typeof dataObj.variables === "object" ? (dataObj.variables as any) : null;
+    const upstreamDiagnostic =
+      dataObj.diagnostic && typeof dataObj.diagnostic === "object"
+        ? dataObj.diagnostic as Record<string, unknown>
+        : {};
+    const rawPersonalityGates = readActivations(
+      upstreamDiagnostic.raw_personality_gates ?? dataObj.raw_personality_gates ?? gates.personality,
+    );
+    const rawDesignGates = readActivations(
+      upstreamDiagnostic.raw_design_gates ?? dataObj.raw_design_gates ?? gates.design,
+    );
     let digestion: string | null = null;
     let environment: string | null = null;
     let motivation: string | null = null;
@@ -352,6 +407,12 @@ export async function POST(request: Request) {
       incarnationCross,
       inc_cross: incarnationCross,
       channels: readStringArray(dataObj.channels),
+      diagnostic: {
+        raw_personality_gates: rawPersonalityGates,
+        raw_design_gates: rawDesignGates,
+      },
+      personalityActivations: rawPersonalityGates,
+      designActivations: rawDesignGates,
       definition,
       variables,
       digestion,

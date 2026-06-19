@@ -12,6 +12,8 @@ import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBluep
 import { ArrowLeft, Sparkles, Clock, Heart, Flag } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCompletionSummary } from "@/lib/engines/completionEngine";
+import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
+
 
 interface JourneyDetailClientProps {
   id: string;
@@ -21,6 +23,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const auth = useAuth();
   const [history, setHistory] = useState<DailyState[]>([]);
   const [story, setStory] = useState<GrowthStory | null>(null);
+  const [learning, setLearning] = useState<JourneyDailyMemory | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +37,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
 
         const states = await journeyRepository.getRecentDailyStates(uid);
         setHistory(states);
+
+        const memory = await journeyRepository.getDailyMemory(uid);
+        setLearning(memory);
 
         if (blueprintData) {
             const synthesis = buildUnifiedBlueprintSynthesis({
@@ -77,6 +83,31 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-4">{story.stage.label}</h2>
               <p className="text-[#7B8776] leading-relaxed italic">{story.stage.description}</p>
             </div>
+            
+            {/* Theme Evolution */}
+            {learning?.growthNarrative?.growthNarrative && (
+              <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm">
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-4">Evolusi Tema Dirimu</p>
+                <div className="text-sm text-[#4F5E52] font-semibold space-y-2 whitespace-pre-line text-center bg-[#F5F1E8]/30 py-4 rounded-2xl">
+                  {learning.growthNarrative.growthNarrative}
+                </div>
+                {learning.growthNarrative.currentLesson && (
+                  <p className="text-xs text-[#7B8776] mt-4 leading-relaxed text-center">Pelajaran saat ini: “{learning.growthNarrative.currentLesson}”</p>
+                )}
+                {learning.growthNarrative.nextInvitation && (
+                  <p className="text-xs text-[#4F5E52] font-bold mt-2 text-center">Undangan berikutnya: {learning.growthNarrative.nextInvitation}</p>
+                )}
+              </div>
+            )}
+
+            {/* Coach Memory */}
+            {learning?.coachMemory?.coachMemory && (
+              <div className="bhumi-card p-6 bg-[#4F5E52] text-white border-none shadow-sm">
+                <p className="text-xs font-bold text-white/70 uppercase tracking-widest mb-3">Catatan Pembelajaran Bhumi</p>
+                <p className="text-sm leading-relaxed">{learning.coachMemory.coachMemory}</p>
+              </div>
+            )}
+
             <div className="bhumi-card p-6 bg-[#F5F1E8]/50 border-none">
                 <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-2">Insight Pertumbuhan</p>
                 <p className="text-sm text-[#7B8776] leading-relaxed">
@@ -88,13 +119,35 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
       case "focus":
       case "growing":
         return (
-          <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm">
-            <h2 className="text-xs font-bold text-[#9AA394] uppercase tracking-[0.2em] mb-4">Fokus Saat Ini</h2>
-            <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{story.growthFocus}</p>
-            <div className="mt-8 pt-6 border-t border-[#F5F1E8]">
-              <p className="text-sm font-bold text-[#4F5E52] mb-2">Yang sedang tumbuh</p>
-              <p className="text-sm text-[#7B8776]">{story.growingAreas[0]}</p>
+          <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm space-y-6">
+            <div>
+              <h2 className="text-xs font-bold text-[#9AA394] uppercase tracking-[0.2em] mb-4">Fokus Saat Ini</h2>
+              <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{story.growthFocus}</p>
+              <div className="mt-6 pt-6 border-t border-[#F5F1E8]">
+                <p className="text-sm font-bold text-[#4F5E52] mb-2">Yang sedang tumbuh</p>
+                <p className="text-sm text-[#7B8776]">{story.growingAreas[0]}</p>
+              </div>
             </div>
+
+            {learning?.weeklyLearning?.weeklyPattern && (
+              <div className="pt-6 border-t border-[#F5F1E8]">
+                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Pola 7 Hari Terakhir</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{learning.weeklyLearning.weeklyPattern}</p>
+                {learning.weeklyLearning.coachObservation && (
+                  <p className="text-xs text-[#7B8776] mt-2 italic">“{learning.weeklyLearning.coachObservation}”</p>
+                )}
+              </div>
+            )}
+
+            {learning?.monthlyLearning?.monthlyTheme && (
+              <div className="pt-6 border-t border-[#F5F1E8]">
+                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Tema 30 Hari Terakhir</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{learning.monthlyLearning.monthlyTheme}</p>
+                {learning.monthlyLearning.monthlyNarrative && (
+                  <p className="text-xs text-[#7B8776] mt-2 leading-relaxed">{learning.monthlyLearning.monthlyNarrative}</p>
+                )}
+              </div>
+            )}
           </div>
         );
       case "attention":
@@ -109,6 +162,39 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                     <span className="font-bold text-[#4F5E52]">{area}</span>
                 </div>
             ))}
+
+            {learning?.practiceInsights?.practiceInsights && learning.practiceInsights.practiceInsights.length > 0 && (
+              <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm space-y-4">
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest">Efektivitas Praktik Harian</p>
+                <div className="space-y-4">
+                  {learning.practiceInsights.practiceInsights.map(({ practice, helpfulScore }) => {
+                    let levelLabel = "Sangat Membantu";
+                    let levelColor = "bg-[#4F5E52]";
+                    if (helpfulScore < 35) {
+                      levelLabel = "Berat / Butuh Penyesuaian";
+                      levelColor = "bg-amber-600";
+                    } else if (helpfulScore < 60) {
+                      levelLabel = "Cukup Membantu";
+                      levelColor = "bg-[#7B8776]";
+                    } else if (helpfulScore < 75) {
+                      levelLabel = "Membantu";
+                      levelColor = "bg-[#4F5E52]/80";
+                    }
+                    return (
+                      <div key={practice} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-bold text-[#4F5E52]">{practice}</span>
+                          <span className="text-xs text-[#7B8776]">{levelLabel}</span>
+                        </div>
+                        <div className="w-full bg-[#F5F1E8] h-2 rounded-full overflow-hidden">
+                          <div className={`${levelColor} h-full rounded-full`} style={{ width: `${helpfulScore}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         );
       case "milestone":

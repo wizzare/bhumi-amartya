@@ -188,7 +188,7 @@ export default function HealingPage() {
   }
 
   const shadowPattern = analysis.recurringWounds[0] || "Luka tersembunyi ini siap bertemu dengan kelembutan.";
-  const innerChildPrompt = "Jika anak batinmu bisa bicara, apa yang ia butuhkan untuk didengar sekarang?";
+  const innerChildPrompt = "Jika inner child-mu bisa bicara, apa yang ia butuhkan untuk didengar sekarang?";
   const ancestorInvitation = "Rasakan garis keturunan yang telah membawa pergulatan ini. Dukungan apa yang mereka tawarkan?";
   const mudraName = "Shuni Mudra";
   const mudraPractice = "Sentuhkan ujung jari tengah ke ujung ibu jari dengan lembut. Letakkan tangan di pangkuan dan tarik napas dengan sabar.";
@@ -238,7 +238,7 @@ export default function HealingPage() {
 
             <InnerChildHealingCard
               prompt={innerChildPrompt}
-              invitation="Tulis atau bicara kepada anak batin itu dengan nada yang stabil dan penuh kasih."
+              invitation="Tulis atau bicara kepada inner child itu dengan nada yang stabil dan penuh kasih."
               reassurance="Tidak perlu terburu-buru. Satu-satunya syarat adalah hadir."
             />
 

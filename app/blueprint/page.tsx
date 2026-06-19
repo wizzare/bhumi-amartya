@@ -7,6 +7,8 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { BlueprintDetailV1, createBlueprintDetail } from "@/lib/profile/echo";
+import { calculateBhumiMatrix } from "@/lib/engines/calculateBhumiMatrix";
+import { buildDestinyMatrixVisualModel, type DestinyMatrixVisualModel } from "@/lib/visual/destinyMatrixVisualModel";
 
 function DataGroup({ title, values }: { title: string; values: Record<string, string> }) {
   return (
@@ -26,13 +28,20 @@ function DataGroup({ title, values }: { title: string; values: Record<string, st
 
 export default function BlueprintPage() {
   const [detail, setDetail] = useState<BlueprintDetailV1 | null>(null);
+  const [matrix, setMatrix] = useState<DestinyMatrixVisualModel | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
         const blueprint = await storageProvider.getUserBlueprint();
-        if (blueprint) setDetail(createBlueprintDetail(blueprint));
+        if (blueprint) {
+          setDetail(createBlueprintDetail(blueprint));
+          const source = blueprint as unknown as { input?: { birthDate?: string } };
+          if (source.input?.birthDate) {
+            setMatrix(buildDestinyMatrixVisualModel(calculateBhumiMatrix(source.input.birthDate)));
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -42,9 +51,15 @@ export default function BlueprintPage() {
 
   const core: Record<string, string> = detail ? {
     "Life Path": detail.coreIdentity.lifePath,
-    "Arcana Center": detail.coreIdentity.arcanaCenter,
+    "Arcana Center": matrix?.center.values[0]?.toString() || "Coming Soon",
     "Sun Sign": detail.coreIdentity.sunSign,
     "Human Design Type": detail.coreIdentity.humanDesignType,
+  } : {};
+  const matrixValues: Record<string, string> = matrix ? {
+    "Arcana Center": matrix.center.values.join(" · "),
+    "Soul Searching": "Coming Soon",
+    "Socialization": matrix.socialization.values.join(" · "),
+    "Spiritual Knowledge": "Coming Soon",
   } : {};
 
   return (
@@ -65,7 +80,7 @@ export default function BlueprintPage() {
               <DataGroup title="Core Identity" values={core} />
               <DataGroup title="Human Design" values={detail.humanDesign} />
               <DataGroup title="Natal Chart" values={detail.natalChart} />
-              <DataGroup title="Destiny Matrix" values={detail.destinyMatrix} />
+              <DataGroup title="Destiny Matrix" values={matrixValues} />
               <div className="flex items-center gap-2 rounded-2xl bg-[#F5F1E8] p-4 text-xs leading-5 text-[#7B8776]"><Sparkles size={15} />Data ini tidak menggantikan makna dan refleksi yang ada di Profile Echo.</div>
             </div>
           ) : <p className="text-center text-[#7B8776]">Blueprint belum tersedia.</p>}

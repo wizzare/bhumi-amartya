@@ -5,6 +5,8 @@
 
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { UnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
+import { JourneyDailyRecord, CoachMemorySummary } from "@/lib/types/journeyDailyRecord";
+
 
 export interface JourneyStory {
   narrative: string;
@@ -60,5 +62,82 @@ export const journeyNarrativeEngine = {
       soulInsight,
       milestoneTitle
     };
+  },
+
+  generateCoachMemory(records: JourneyDailyRecord[], synthesis?: UnifiedBlueprintSynthesis): CoachMemorySummary {
+    const last30 = records.slice(0, 30);
+    const bhumiObservations: string[] = [];
+
+    let somaticCompleted = 0;
+    let mentalCompleted = 0;
+    let shortCompleted = 0;
+    let longCompleted = 0;
+    let lowSleepCompleted = 0;
+    let lowSleepTotal = 0;
+
+    last30.forEach(rec => {
+      const comp = rec.innerworkCompletion;
+      if (!comp.completed) {
+        if (rec.wellnessState?.sleep && Number(rec.wellnessState.sleep) < 6) {
+          lowSleepTotal++;
+        }
+        return;
+      }
+
+      const pType = rec.innerworkRecommendation?.practiceType || comp.actualPracticeType || "unknown";
+      if (pType.toLowerCase().includes("journal")) {
+        mentalCompleted++;
+      } else if (pType.toLowerCase().includes("medit") || pType.toLowerCase().includes("yoga") || pType.toLowerCase().includes("audio")) {
+        somaticCompleted++;
+      }
+
+      const duration = comp.actualDuration || rec.innerworkRecommendation?.durationMinutes || 0;
+      if (duration > 0) {
+        if (duration <= 6) shortCompleted++;
+        else longCompleted++;
+      }
+
+      if (rec.wellnessState?.sleep && Number(rec.wellnessState.sleep) < 6) {
+        lowSleepTotal++;
+        lowSleepCompleted++;
+      }
+    });
+
+    // Heuristics 1: Somatic vs Mental
+    if (somaticCompleted > mentalCompleted) {
+      bhumiObservations.push("Kamu cenderung berkembang lebih baik melalui praktik singkat yang langsung melibatkan tubuh dibanding praktik yang terlalu panjang.");
+    } else if (mentalCompleted > somaticCompleted) {
+      bhumiObservations.push("Kamu cenderung lebih cepat menemukan kejernihan saat menuangkan isi kepala ke dalam tulisan dibanding meditasi hening.");
+    } else {
+      bhumiObservations.push("Kamu menyeimbangkan pemrosesan fisik dan mental dengan baik sepanjang perjalananmu.");
+    }
+
+    // Heuristics 2: Short vs Long
+    if (shortCompleted > longCompleted) {
+      bhumiObservations.push("Kamu lebih mudah bergerak maju ketika langkahnya sederhana dan tidak terlalu membebani.");
+    } else if (longCompleted > shortCompleted) {
+      bhumiObservations.push("Kamu menikmati eksplorasi diri yang mendalam dan memberikan waktu lebih panjang untuk meresapi setiap panduan.");
+    }
+
+    // Heuristics 3: Sleep/Energy behaviors
+    if (lowSleepTotal > 0 && (lowSleepCompleted / lowSleepTotal) < 0.3) {
+      bhumiObservations.push("Ketika tidurmu kurang dari 6 jam, kamu cenderung melompati praktik. Di hari seperti ini, Bhumi akan membantumu dengan langkah pemulihan yang sangat ringan.");
+    }
+
+    // Fallback seed data if no records exist to ensure "No Coming Soon"
+    if (bhumiObservations.length === 0) {
+      bhumiObservations.push(
+        "Kamu cenderung berkembang lebih baik melalui praktik singkat yang langsung melibatkan tubuh dibanding praktik yang terlalu panjang.",
+        "Kamu lebih mudah bergerak maju ketika langkahnya sederhana dan tidak terlalu membebani."
+      );
+    }
+
+    const coachMemory = `Akhir-akhir ini, Bhumi memperhatikan bahwa ${bhumiObservations.join(" Selain itu, ").replace(/^Kamu/, "kamu")}`;
+
+    return {
+      coachMemory,
+      bhumiObservations
+    };
   }
 };
+

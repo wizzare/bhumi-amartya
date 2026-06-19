@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Blueprint } from "@/lib/types/blueprint";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
@@ -30,6 +29,10 @@ import {
 } from "@/lib/dailyGuidance/version";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import type { DailyState } from "@/lib/repositories/dailyStateRepository";
+import { journeyRepository } from "@/lib/repositories/journeyRepository";
+import { wellnessNavigatorRepository } from "@/lib/repositories/wellnessNavigatorRepository";
+import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import { journalRepository } from "@/lib/repositories/journalRepository";
 import { meditationRepository } from "@/lib/repositories/meditationRepository";
 import { audioHealingRepository } from "@/lib/repositories/audioHealingRepository";
@@ -48,6 +51,11 @@ import { participationEngine } from "@/lib/engines/participationEngine";
 import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFacingGuidance";
+import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
+import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
+import { HumanMeaningService } from "@/lib/services/humanMeaningService";
+import { DashboardMirrorRuntimeAdapter } from "@/lib/services/dashboardMirrorRuntimeAdapter";
+import type { HumanMeaning } from "@/lib/types/humanMeaning";
 
 export function DashboardClient() {
   const router = useRouter();
@@ -56,8 +64,14 @@ export function DashboardClient() {
   const [profile, setProfile] = useState<any>(null);
   const [blueprint, setBlueprint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [dailyState, setDailyState] = useState<any>(null);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [mirrorReflection, setMirrorReflection] = useState("");
+  const [humanMeaning, setHumanMeaning] = useState<HumanMeaning | null>(null);
+  const [dailyState, setDailyState] = useState<DailyState | null>(null);
+  const [yesterdayState, setYesterdayState] = useState<DailyState | null>(null);
+  const [recentDailyStates, setRecentDailyStates] = useState<DailyState[]>([]);
+  const [navigatorState, setNavigatorState] = useState<NavigatorState | null>(null);
+  const [dailyNoteFocus, setDailyNoteFocus] = useState<string>("");
   const [safetyState, setSafetyState] = useState<SafetyState | null>(null);
   const [trustedContact, setTrustedContact] = useState<TrustedContact | undefined>(undefined);
   const [dgLoading, setDgLoading] = useState(false);
@@ -65,6 +79,59 @@ export function DashboardClient() {
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid || !dailyGuidance || !profile) return;
+    const timezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const appDate = dailyGuidance.localDateKey || dailyGuidance.date || getLocalDateKey(new Date(), timezone);
+    const categories = dailyGuidance.categories;
+    const dominantIssue = dailyGuidance.dominantIssue?.key || "";
+    const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
+    const profileSignals = humanMeaning
+      ? [
+          humanMeaning.shadow.sabotage.medium,
+          humanMeaning.shadow.triggers.medium,
+          humanMeaning.relationships.boundaries.medium,
+        ].filter(Boolean)
+      : [];
+
+    void journeyRepository.updateDailyRecord(uid, appDate, {
+      dominantIssue,
+      issueCategory: dailyGuidance.dominantIssue?.category || "",
+      navigatorMode: navigatorState?.mode || "REFLECTION",
+      catatanSummary: dailyGuidance.dailyNoteText || dailyGuidance.companionReflection?.fullReflection || "",
+      catatanMainDirection: categories?.advice?.advice || dailyGuidance.groundedAction || "",
+      catatanChallenge: categories?.challenges?.insight || categories?.challenges?.reason || "",
+      catatanOpportunity: categories?.opportunities?.insight || categories?.opportunities?.reason || "",
+      astroSummary: dailyGuidance.astrologyToday || awareness.currentMoonPhase.label,
+      astroEvents: awareness.activeAwarenessEvents.map((event) => `${event.type}:${event.title}`),
+      profileSignals,
+      sourceConfidence: dominantIssue ? 0.9 : categories ? 0.75 : 0.5,
+    }).catch((error) => console.warn("[JOURNEY_CATATAN_UPDATE_FAILED]", error));
+  }, [auth?.user?.uid, dailyGuidance, humanMeaning, navigatorState?.mode, profile]);
+
+  function buildMirrorReflection(p: any, b: any) {
+    try {
+      const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const dateKey = getLocalDateKey(new Date(), timezone);
+      const meaning = HumanMeaningService.generate(CanonicalTranslatorService.translate(b));
+      setHumanMeaning(meaning);
+      const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
+      setMirrorReflection(DashboardMirrorRuntimeAdapter.buildReflection(
+        meaning,
+        p?.fullName || "Jiwa",
+        dateKey,
+        awareness,
+      ));
+    } catch (error) {
+      console.warn("[MIRROR V4 FALLBACK]", error);
+      const dayName = new Intl.DateTimeFormat("id-ID", { weekday: "long" }).format(new Date());
+      setMirrorReflection(
+        `Hai ${p?.fullName?.split(" ")[0] || "Jiwa"}, bagaimana keadaanmu di hari ${dayName} ini?\n\nAda bagian dalam dirimu yang mungkin sedang meminta untuk dilihat dengan lebih lembut. Ia tidak membutuhkan penjelasan besar, hanya ruang untuk hadir apa adanya.\n\nPeluk hangat dari Bhumi untukmu.\n\nYuk kita lanjutkan perjalanan mengenal diri, satu langkah kecil pada satu waktu.`,
+      );
+    }
+  }
 
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -81,6 +148,16 @@ export function DashboardClient() {
     try {
       const existingDailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
       setDailyState(existingDailyState);
+      await journeyRepository.ensureDailyRecord(uid, today, {
+        navigatorMode: "REFLECTION",
+        wellnessState: existingDailyState?.wellnessSnapshot
+          ? { ...existingDailyState.wellnessSnapshot.metrics, nervousSystemState: existingDailyState.nervousSystemState ?? "" }
+          : {},
+        dailyScanCompleted: Boolean(existingDailyState?.wellnessSnapshot?.checkInCompleted),
+        dailyScanSummary: existingDailyState?.emotionalWord
+          ? `Emosi hari ini: ${existingDailyState.emotionalWord}.`
+          : "",
+      }).catch((error) => console.warn("[JOURNEY_DAILY_ENSURE_FAILED]", error));
       const completion = getCompletionSummary(existingDailyState);
 
       // BUILD 37: Consolidate yesterday if needed
@@ -88,6 +165,7 @@ export function DashboardClient() {
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayKey = getLocalDateKey(yesterday, timezone);
       const yesterdayState = await dailyStateRepository.getDailyState(uid, yesterdayKey).catch(() => null);
+      setYesterdayState(yesterdayState);
       if (yesterdayState && !yesterdayState.consolidatedAt) {
         console.log(`[CONSOLIDATION] Triggering end-of-day summary for ${yesterdayKey}`);
         void dailyStateRepository.consolidateDay(uid, yesterdayKey).catch(err => console.error("Consolidation failed", err));
@@ -99,18 +177,25 @@ export function DashboardClient() {
 
       invalidCacheKeys.forEach((key) => window.localStorage.removeItem(key));
 
-      const [recent, j, m, a, act, mapping, safetyCfg] = await Promise.all([
+      const [recent, j, m, a, act, mapping, safetyCfg, journeyStates, navigator] = await Promise.all([
         dailyGuidanceRepository.getRecentGuidance(uid, 5).catch(() => []),
         journalRepository.getJournalEntries(uid, 5).catch(() => []),
         meditationRepository.getMeditationEntries(uid, 5).catch(() => []),
         audioHealingRepository.getAudioHealingEntries(uid, 5).catch(() => []),
         activityRepository.getRecentActivities(uid, 5).catch(() => []),
         wellnessMappingRepository.getMapping(uid).catch(() => null),
-        safetyRepository.getSafetyConfig(uid).catch(() => null)
+        safetyRepository.getSafetyConfig(uid).catch(() => null),
+        journeyRepository.getRecentDailyStates(uid, 7).catch(() => []),
+        wellnessNavigatorRepository.getNavigatorState(uid).catch(() => null),
       ]);
+      setRecentDailyStates(journeyStates);
+      setNavigatorState(navigator);
+      await journeyRepository.updateDailyRecord(uid, today, {
+        navigatorMode: navigator?.mode || "REFLECTION",
+      }).catch((error) => console.warn("[JOURNEY_NAVIGATOR_UPDATE_FAILED]", error));
 
       journals = j;
-      meditations = m;
+       meditations = m;
       audios = a;
       activities = act;
       setTrustedContact(safetyCfg?.trustedContact);
@@ -128,6 +213,11 @@ export function DashboardClient() {
         previousAudioHealingEntries: audios,
         previousActivityEntries: activities,
       };
+
+      const { calculateCurrentSky } = await import("@/lib/astrology/calculateCurrentSky");
+      const sky = calculateCurrentSky(new Date(`${today}T12:00:00`));
+      const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
+      setDailyNoteFocus(awareness.activeAwarenessEvents[0]?.explanation.id || "");
 
       const cached = window.localStorage.getItem(localCacheKey);
       if (cached) {
@@ -170,8 +260,6 @@ export function DashboardClient() {
         return;
       }
 
-      const { calculateCurrentSky } = await import("@/lib/astrology/calculateCurrentSky");
-      const sky = calculateCurrentSky(new Date(`${today}T12:00:00`));
       const payload = {
         uid, date: today, localDateKey: today, language, profile: p, blueprint: b,
         currentSky: sky as any,
@@ -330,6 +418,7 @@ export function DashboardClient() {
           const b = getMockBlueprint(auditUser);
           setProfile(p);
           setBlueprint(b);
+          buildMirrorReflection(p, b);
           setLoading(false);
           clearTimeout(watchdog);
           void fetchBackgroundData(`${auditUser}_uid`, p, b);
@@ -365,6 +454,7 @@ export function DashboardClient() {
 
         setProfile(p);
         setBlueprint(b);
+        buildMirrorReflection(p, b);
 
         if (auth.user.email) {
           void repairOwnerHumanDesign(auth.user.uid, auth.user.email);
@@ -404,7 +494,7 @@ export function DashboardClient() {
     return () => clearTimeout(watchdog);
   }, [auth, router]);
 
-;
+
 
   if (loading) {
     return (
@@ -487,8 +577,8 @@ export function DashboardClient() {
 
       <SoulReflectionCard
         language={language}
-        reflection={dailyGuidance?.soulReflectionText}
-        loading={dgLoading}
+        reflection={mirrorReflection}
+        loading={!mirrorReflection}
       />
 
       <AstroTodayCard
@@ -503,7 +593,14 @@ export function DashboardClient() {
 
       <DailyNoteV2
         dailyGuidance={dailyGuidance}
+        focus={dailyNoteFocus}
         language={language}
+        userName={profile.fullName}
+        dailyState={dailyState}
+        yesterdayState={yesterdayState}
+        recentDailyStates={recentDailyStates}
+        navigatorState={navigatorState}
+        meaning={humanMeaning}
       />
 
       <DailyUserFlowGuide language={language} />

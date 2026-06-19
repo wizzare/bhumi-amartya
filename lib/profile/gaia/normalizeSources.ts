@@ -1,6 +1,9 @@
 import type { GaiaIdentity, GaiaSignal, GaiaTheme } from "./types";
 import { isCanonicalHumanDesign } from "../../humandesign/hdAudit";
 import { normalizeDestinyMatrixIntelligence } from "../../engines/destinyMatrixIntelligence";
+import { calculateNatalBasics } from "../../astrology/calculateNatalBasics";
+import { calculateNumerology } from "../../calculations/calculateNumerology";
+import { calculateBirthDayNumber, calculatePersonalYear } from "../../calculations/calculateLifePath";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -38,35 +41,119 @@ const SIGN_ELEMENTS: Record<string, "Earth" | "Water" | "Air" | "Fire"> = {
   cancer: "Water", scorpio: "Water", pisces: "Water",
 };
 
-/** Case-insensitive planet field lookup: tries "Mercury" then "mercury" */
 function readPlanet(astrology: UnknownRecord, planet: string, field: string): unknown {
-  const planets = record(astrology.planets);
+  const planets = astrology.planets;
+  if (Array.isArray(planets)) {
+    const p = planets.find((item: any) => typeof item === "object" && item && String(item.name).toLowerCase() === planet.toLowerCase());
+    return p ? p[field] : undefined;
+  }
+  const planetsObj = record(planets);
   const capitalized = planet.charAt(0).toUpperCase() + planet.slice(1);
   const lower = planet.toLowerCase();
-  const entry = record(planets[capitalized] ?? planets[lower]);
+  const entry = record(planetsObj[capitalized] ?? planetsObj[lower]);
   return entry[field];
 }
 
-function createElementComposition(root: UnknownRecord, astrology: UnknownRecord): Record<string, number> | undefined {
-  const explicit = read(root, [["elements"], ["elementComposition"], ["gaiaSources", "elements"], ["astrology", "elements"], ["natalChart", "elements"]]) || astrology.elements;
-  if (explicit && typeof explicit === "object" && !Array.isArray(explicit)) return explicit as Record<string, number>;
-  const signs = [astrology.sunSign, astrology.moonSign, astrology.ascendant, astrology.midheaven, astrology.mc];
-  const planets = record(astrology.planets);
-  signs.push(...Object.values(planets).map((planet) => record(planet).sign));
-  const counts = { Earth: 0, Water: 0, Air: 0, Fire: 0, Ether: 0 };
-  for (const sign of signs) {
-    const element = SIGN_ELEMENTS[String(sign ?? "").toLowerCase()];
-    if (element) counts[element] += 1;
+function extractPlanetSigns(astrology: UnknownRecord, blueprint: UnknownRecord): { signs: string[]; source: "structured_planets" | "top_level_planet_fields" | "recalculated" | "incomplete"; validCount: number } {
+  let signs: string[] = [];
+  const planets = astrology.planets ?? read(blueprint, [["astrology", "planets"], ["natalChart", "planets"]]);
+
+  if (Array.isArray(planets)) {
+    signs.push(...planets.map((p: any) => String(p?.sign || "")).filter(Boolean));
+  } else if (planets && typeof planets === "object") {
+    signs.push(...Object.values(record(planets)).map((p) => String(record(p).sign || "")).filter(Boolean));
   }
-  const total = counts.Earth + counts.Water + counts.Air + counts.Fire;
-  if (!total) return undefined;
-  return Object.fromEntries(Object.entries(counts).map(([element, count]) => [element, element === "Ether" ? 0 : Math.round((count / total) * 100)]));
+
+  let validCount = signs.filter(s => SIGN_ELEMENTS[s.toLowerCase()]).length;
+  if (validCount >= 8) {
+    return { signs, source: "structured_planets", validCount };
+  }
+
+  signs = [];
+  const topLevelFields = ["sunSign", "moonSign", "mercurySign", "venusSign", "marsSign", "jupiterSign", "saturnSign", "uranusSign", "neptuneSign", "plutoSign"];
+  for (const field of topLevelFields) {
+    const val = String(astrology[field] || read(blueprint, [["astrology", field], ["natalChart", field]]) || readPlanet(astrology, field.replace("Sign", ""), "sign") || "");
+    if (val) signs.push(val);
+  }
+
+  validCount = signs.filter(s => SIGN_ELEMENTS[s.toLowerCase()]).length;
+  if (validCount >= 8) {
+    return { signs, source: "top_level_planet_fields", validCount };
+  }
+
+  const birthDate = read(blueprint, [["birthDate"], ["profile", "birthDate"], ["birthData", "date"], ["userProfile", "birthDate"]]) as string;
+  const birthTime = read(blueprint, [["birthTime"], ["profile", "birthTime"], ["birthData", "time"], ["userProfile", "birthTime"]]) as string;
+  const birthCity = read(blueprint, [["birthCity"], ["profile", "birthCity"], ["birthData", "city"], ["userProfile", "birthCity"]]) as string;
+  const latitude = read(blueprint, [["latitude"], ["profile", "latitude"], ["birthData", "latitude"], ["coordinates", "latitude"], ["userProfile", "latitude"]]) as number;
+  const longitude = read(blueprint, [["longitude"], ["profile", "longitude"], ["birthData", "longitude"], ["coordinates", "longitude"], ["userProfile", "longitude"]]) as number;
+  const timezone = read(blueprint, [["timezone"], ["profile", "timezone"], ["birthData", "timezone"], ["userProfile", "timezone"]]) as string;
+
+  if (birthDate && birthTime) {
+    try {
+      const recalculated = calculateNatalBasics({
+        birthDate,
+        birthTime,
+        birthCity,
+        timezone,
+        latitude,
+        longitude
+      });
+      if (recalculated && recalculated.planets) {
+        signs = [];
+        signs.push(...Object.values(recalculated.planets).map((p: any) => String(p?.sign || "")).filter(Boolean));
+        validCount = signs.filter(s => SIGN_ELEMENTS[s.toLowerCase()]).length;
+        if (validCount >= 8) {
+          return { signs, source: "recalculated", validCount };
+        }
+      }
+    } catch (err) {
+      console.error("Failed to recalculate planets in normalizeSources", err);
+    }
+  }
+
+  console.log("[V3 DEBUG] createElementComposition incomplete:", {
+    validPlanetCount: validCount,
+    extractedSigns: signs,
+    birthDate: birthDate ? `Found in ${read(blueprint, [["birthDate"]]) ? "blueprint.birthDate" : read(blueprint, [["profile", "birthDate"]]) ? "profile.birthDate" : "birthData.date"}` : "Missing",
+    birthTime: birthTime ? `Found in ${read(blueprint, [["birthTime"]]) ? "blueprint.birthTime" : read(blueprint, [["profile", "birthTime"]]) ? "profile.birthTime" : "birthData.time"}` : "Missing",
+    birthCity: birthCity ? `Found` : "Missing",
+    timezone: timezone ? `Found` : "Missing",
+    latitude: latitude ? `Found` : "Missing",
+    longitude: longitude ? `Found` : "Missing",
+  });
+
+  return { signs: [], source: "incomplete", validCount };
 }
 
-function dominantElement(composition: Record<string, number> | undefined): string | undefined {
-  if (!composition) return undefined;
+function createElementComposition(root: UnknownRecord, astrology: UnknownRecord): Record<string, number> | { status: "incomplete"; reason: string; validCount: number } | undefined {
+  const { signs, source, validCount } = extractPlanetSigns(astrology, root);
+
+  if (source === "incomplete") {
+    return { status: "incomplete", reason: "planet_signs_missing", validCount };
+  }
+
+  const counts = { Earth: 0, Water: 0, Air: 0, Fire: 0 } as Record<string, number>;
+  let hasSign = false;
+  for (const sign of signs) {
+    if (!sign) continue;
+    const element = SIGN_ELEMENTS[String(sign).toLowerCase()];
+    if (element && counts[element] !== undefined) {
+      counts[element] += 1;
+      hasSign = true;
+    }
+  }
+
+  if (hasSign) {
+    const total = counts.Earth + counts.Water + counts.Air + counts.Fire;
+    return Object.fromEntries(Object.entries(counts).map(([element, count]) => [element, Math.round((count / total) * 100)]));
+  }
+  
+  return undefined;
+}
+
+function dominantElement(composition: Record<string, number> | { status: "incomplete"; reason: string; validCount: number } | undefined): string | undefined {
+  if (!composition || "status" in composition) return undefined;
   return Object.entries(composition)
-    .filter(([element]) => element !== "Ether")
     .sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0];
 }
 
@@ -97,6 +184,18 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
   const elementComposition = createElementComposition(root, astrology);
   const lifePathNumber = read(root, [["lifePath", "number"], ["numerology", "lifePath"]]);
 
+  const fullName = read(root, [["fullName"], ["profile", "fullName"], ["userProfile", "fullName"]]) as string;
+  const birthDate = read(root, [["birthDate"], ["profile", "birthDate"], ["birthData", "date"], ["userProfile", "birthDate"]]) as string;
+  const derivedNumerology = fullName && birthDate ? calculateNumerology(fullName, birthDate) : null;
+  const derivedBirthDay = birthDate ? calculateBirthDayNumber(birthDate) : undefined;
+  const derivedPersonalYear = birthDate ? calculatePersonalYear(birthDate) : undefined;
+
+  const finalExpression = numerology.expression ?? derivedNumerology?.expression;
+  const finalSoulUrge = numerology.soulUrge ?? derivedNumerology?.soulUrge;
+  const finalPersonality = numerology.personality ?? derivedNumerology?.personality;
+  const finalBirthDay = numerology.birthDay ?? numerology.birthdayNumber ?? read(root, [["lifePath", "birthdayNumber"], ["birthdayNumber"]]) ?? derivedBirthDay;
+  const finalPersonalYear = numerology.personalYear ?? read(root, [["lifePath", "personalYear"], ["personalYear"]]) ?? derivedPersonalYear;
+
   // --- Numerology ---
   const lifePathRole = read(root, [["lifePath", "role"], ["numerology", "role"]]);
   const lifePathStrengths = read(root, [["lifePath", "positiveTraits"]]);
@@ -107,20 +206,27 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
   add(signals, "shadow", "lifePath", "weaknesses", lifePathWeaknesses, ["growth-edge"]);
   add(signals, "spirituality", "lifePath", "purpose", lifePathRole, ["life-direction"]);
   add(signals, "career", "lifePath", "number", lifePathNumber, ["career-direction"]);
-  add(signals, "career", "numerology", "expression", numerology.expression, ["value-creation", "communication-gift", "career-direction"]);
-  add(signals, "talents", "numerology", "expression", numerology.expression, ["natural-strength", "communication-gift"]);
-  add(signals, "relationships", "numerology", "soulUrge", numerology.soulUrge, ["emotional-needs", "love-style"]);
-  add(signals, "spirituality", "numerology", "soulUrge", numerology.soulUrge, ["soul-direction"]);
-  add(signals, "career", "numerology", "personality", numerology.personality, ["work-style"]);
-  add(signals, "shadow", "numerology", "soulUrge", numerology.soulUrge, ["inner-child", "emotional-needs"]);
-  add(signals, "shadow", "numerology", "personality", numerology.personality, ["inner-child", "emotional-needs", "growth-edge"]);
+  
+  add(signals, "career", "numerology", "expression", finalExpression, ["value-creation", "communication-gift", "career-direction"]);
+  add(signals, "talents", "numerology", "expression", finalExpression, ["natural-strength", "communication-gift"]);
+  add(signals, "relationships", "numerology", "soulUrge", finalSoulUrge, ["emotional-needs", "love-style"]);
+  add(signals, "spirituality", "numerology", "soulUrge", finalSoulUrge, ["soul-direction"]);
+  add(signals, "career", "numerology", "personality", finalPersonality, ["work-style"]);
+  add(signals, "shadow", "numerology", "soulUrge", finalSoulUrge, ["inner-child", "emotional-needs"]);
+  add(signals, "shadow", "numerology", "personality", finalPersonality, ["inner-child", "emotional-needs", "growth-edge"]);
+  
+  add(signals, "talents", "numerology", "birthDay", finalBirthDay, ["natural-strength"]);
+  add(signals, "career", "numerology", "birthDay", finalBirthDay, ["work-style"]);
+  add(signals, "spirituality", "numerology", "personalYear", finalPersonalYear, ["evolution-direction"]);
+  add(signals, "career", "numerology", "personalYear", finalPersonalYear, ["growth-edge"]);
+
   add(signals, "energy", "lifePath", "number", lifePathNumber, ["energy-rhythm", "natural-strength"]);
   add(signals, "energy", "lifePath", "strengths", lifePathStrengths, ["energy-balance", "natural-strength"]);
   add(signals, "energy", "lifePath", "challenges", lifePathWeaknesses, ["energy-balance", "growth-edge"]);
   add(signals, "energy", "numerology", "strengthChallengePattern", [lifePathStrengths, lifePathWeaknesses].flat().filter(Boolean), ["energy-balance", "growth-edge"]);
-  add(signals, "energy", "numerology", "expression", numerology.expression, ["energy-rhythm", "natural-strength"]);
-  add(signals, "energy", "numerology", "soulUrge", numerology.soulUrge, ["energy-rhythm", "emotional-needs"]);
-  add(signals, "career", "numerology", "moneyPattern", [lifePathNumber, numerology.expression, numerology.personality].filter(Boolean), ["economic-pattern", "growth-edge"]);
+  add(signals, "energy", "numerology", "expression", finalExpression, ["energy-rhythm", "natural-strength"]);
+  add(signals, "energy", "numerology", "soulUrge", finalSoulUrge, ["energy-rhythm", "emotional-needs"]);
+  add(signals, "career", "numerology", "moneyPattern", [lifePathNumber, finalExpression, finalPersonality].filter(Boolean), ["economic-pattern", "growth-edge"]);
 
   // --- Destiny Matrix ---
   add(signals, "shadow", "destinyMatrix", "karmicTail", dm.karmicTail, ["recurring-pattern", "integration"]);
@@ -161,6 +267,10 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
   const neptuneSign = readPlanet(astrology, "neptune", "sign");
   const plutoSign = readPlanet(astrology, "pluto", "sign");
   const chironSign = readPlanet(astrology, "chiron", "sign");
+  const lilith = record(astrology.lilith);
+  const lilithPlacement = lilith.sign && lilith.house
+    ? `${lilith.sign}, House ${lilith.house}`
+    : undefined;
   const midheavenSign = astrology.midheaven || astrology.mc;
   const sunSign = astrology.sunSign || readPlanet(astrology, "sun", "sign");
 
@@ -200,6 +310,8 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
   // Chiron → shadow + spirituality
   add(signals, "shadow", "natalChart", "chiron", chironSign, ["inner-child", "wound-healing"]);
   add(signals, "spirituality", "natalChart", "chiron", chironSign, ["wound-healing", "evolution-direction"]);
+  // Lilith → Shadow Layer, Pola Berulang, Inner Child, Shadow Integration
+  add(signals, "shadow", "natalChart", "lilith", lilithPlacement, ["growth-edge", "recurring-pattern", "inner-child", "integration", "power-transformation"], 1);
   // Midheaven → career
   add(signals, "career", "natalChart", "midheaven", midheavenSign, ["career-direction", "economic-pattern"]);
   // Sun → talents + energy
@@ -235,6 +347,10 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
     add(signals, "shadow", "humanDesign", "notSelfTheme", hd.notSelfTheme, ["inner-child", "recurring-pattern", "growth-edge"], 1);
     add(signals, "shadow", "humanDesign", "openCenters", hd.openCenters, ["inner-child", "emotional-needs", "growth-edge", "energy-balance"], 1);
     add(signals, "career", "humanDesign", "moneyPattern", [hd.motivation, hd.environment, hd.notSelfTheme].filter(Boolean), ["economic-pattern", "growth-edge", "work-style"], 1);
+    add(signals, "relationships", "humanDesign", "perspective", hd.perspective, ["connection-style", "worldview"], 1);
+    add(signals, "spirituality", "humanDesign", "perspective", hd.perspective, ["worldview", "soul-direction"], 1);
+    add(signals, "energy", "humanDesign", "variables", read(hd, [["variables", "advanced", "variable"]]), ["energy-rhythm", "learning-mode"], 1);
+    add(signals, "talents", "humanDesign", "variables", read(hd, [["variables", "advanced", "variable"]]), ["natural-strength", "learning-mode"], 1);
   }
 
   const extensions = record(root.gaiaSources || root.profileSources || root.intelligence);

@@ -1,0 +1,9 @@
+- `[x]` Trace current Profile UI (Phase 1)
+- `[x]` Build migration map (Phase 2)
+- `[x]` Implement replacement in `app/profile/page.tsx` (Phase 3)
+- `[x]` Implement replacement in `app/profile/[section]/page.tsx` (Phase 3)
+- `[x]` Implement replacement in `components/profile/details/ProfileSectionClient.tsx` (Phase 3)
+- `[x]` Update routes to match ProfileRuntimeAdapter (1 through 8) instead of themes (Phase 4)
+- `[ ]` Validation (Phase 5)
+- `[ ]` Generate `PROFILE_V4_EXECUTION_REPORT.md`
+- `[ ]` Generate `walkthrough.md`

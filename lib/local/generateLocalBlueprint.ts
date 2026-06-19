@@ -3,6 +3,9 @@ import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import calculateArcanaCenter from "@/lib/calculations/calculateArcanaCenter";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import type { UserPlan } from "@/lib/billing/getUserPlanStatus";
+import { calculateWeton } from "@/lib/weton/calculateWeton";
+import { calculateBazi } from "@/lib/bazi/calculateBazi";
+import { calculateVedic } from "@/lib/vedic/calculateVedic";
 
 export type LocalUserProfile = {
   uid: string;
@@ -75,6 +78,23 @@ export function generateLocalBlueprint(profile: LocalUserProfile) {
     arcanaCenter: {
       number: arcanaCenter,
     },
+    weton: calculateWeton({
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+    }),
+    bazi: calculateBazi({
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+      timezone: profile.timezone,
+    }),
+    vedic: calculateVedic({
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+      birthCity: profile.birthCity,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
+      timezone: profile.timezone,
+    }),
     humanDesign: {
       type: null,
       profile: null,

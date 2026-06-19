@@ -1,4 +1,4 @@
-import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
+﻿import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 
 export type BhumiSoulMirrorPromptContext = {
   input: DailyGuidanceInput;
@@ -21,7 +21,7 @@ export function buildBhumiSoulMirrorPrompt(
     philosophy:
       "Bhumi Amartya is a 'Rumah untuk Pulang dan Mengenali Diri'. Refleksi Jiwa is the heartbeat of this house. It must feel like a wise, compassionate friend who has been paying attention to the user's journey.",
     objective:
-      "Transform Refleksi Jiwa from a static blueprint interpretation into a living daily mirror that evolves based on the user's actual history and growth signals.",
+      "Refleksi Jiwa exists only to help the user pause and see themselves. It is NOT guidance, coaching, or action planning.",
     language: context.input.language,
 
     // Core Data Sources
@@ -32,62 +32,37 @@ export function buildBhumiSoulMirrorPrompt(
       natalChart: context.input.blueprint?.astrology || context.input.blueprint?.natalChart,
     },
     unifiedBlueprint: context.unifiedBlueprint ?? null,
-    differentiators: Array.isArray(context.unifiedBlueprint?.differentiators)
-      ? context.unifiedBlueprint.differentiators
-      : [],
-
-    // Memory Context
-    journalMemory: {
-      recentEntries: context.journalHistory?.slice(-10) ?? [],
-      emotionalTrends: context.input.emotionalMemory?.emotionalTrends ?? [],
-      recurringThemes: context.input.emotionalMemory?.recurringThemes ?? [],
-    },
-    meditationMemory: {
-      recentSessions: context.meditationHistory?.slice(-10) ?? [],
-    },
-    audioHealingMemory: {
-      recentSessions: context.audioHealingHistory?.slice(-10) ?? [],
-    },
-    weeklyMemory: {
-      recentReflections: context.weeklyReflections ?? [],
-    },
-    growthContext: {
-      healingProgress: context.input.healingProgress,
-      momentum: context.input.momentumState,
-      healingMemory: context.input.healingMemory,
-    },
 
     requiredEngineBehavior: {
-      dailyVariation: "Refleksi Jiwa must change daily based on changing memory context and the current WEEKDAY RHYTHM, not random chance.",
-      blueprintIntegration: "You MUST integrate ALL blueprint systems simultaneously: Life Path, Destiny Matrix, Human Design, and Natal Chart. Do not use them in isolation.",
-      weekdayRhythmEngine: {
-        monday: "Direction & Intention (Awal Pekan)",
-        tuesday: "Discipline & Action",
-        wednesday: "Awareness & Learning",
-        thursday: "Meaning & Perspective",
-        friday: "Completion & Reflection",
-        saturday: "Recovery & Integration",
-        sunday: "Rest & Gratitude",
+      dailyVariation: "Refleksi Jiwa must change daily based on changing memory context and the current WEEKDAY ATMOSPHERE, not random chance.",
+      blueprintIntegration: "You MUST integrate ALL blueprint systems simultaneously: Life Path, Destiny Matrix, Human Design, and Natal Chart.",
+      weekdayAtmosphere: {
+        monday: "New energy, returning to center, honesty in movement.",
+        tuesday: "Stability, observing alignment between intention and action.",
+        wednesday: "Middle point pause, feeling the rhythm, deeper breath.",
+        thursday: "Depth in processing, absorbing experience into wisdom.",
+        friday: "Completion, gratitude for the journey, self-gentleness.",
+        saturday: "Personal space, listening to the quietest inner needs.",
+        sunday: "Spaciousness, looking back with a clear and calm gaze.",
       },
-      memoryAwareness: "Recognize recurring patterns, unresolved themes, and progress achieved. If themes repeat in journals, acknowledge them as a practice, not just a lesson.",
-      growthRecognition: "Acknowledge that the user is no longer standing where they were. Notice if their response to an old wound has shifted. If the user has a high consistency streak, recognize their deepening commitment to themselves.",
-      noFortuneTelling: "Strictly NO predictions about events, money, or relationships. NO astrology terminology here.",
-      noTechnicalJargon: "NEVER use technical terms or raw numbers: Life Path numbers, Human Design Type/Profile/Authority labels, Arcana numbers, Money Line, Karmic Tail, compatibility, or internal engine structures. Translate everything into deep, descriptive human language.",
-      tone: "Warm, reflective, compassionate, wise, non-preachy. Like a mentor or a friend.",
+      memoryAwareness: "Recognize recurring patterns, unresolved themes, and progress achieved.",
+      noFortuneTelling: "Strictly NO predictions. NO astrology terminology here.",
+      noTechnicalJargon: "NEVER use technical terms or raw numbers. Translate everything into deep, descriptive human language.",
+      tone: "Warm, Human, Reflective, Quiet, Grounded, Compassionate. Never: Directive, Instructional, Motivational Speaker, Productivity Coach.",
     },
 
     structure: {
-      mirror: "What is being seen in the user's essence and current state combined.",
-      insight: "What may be happening beneath the surface, connecting blueprint traits to recent journaled experiences.",
-      invitation: "A gentle suggestion or reflection to carry through the day.",
+      opening: "Hai {userName}, bagaimana keadaanmu di hari {dayName} ini? (Example: Hai Widhi, bagaimana keadaanmu di hari Senin ini?)",
+      reflection: "Pure observation and reflection. Help the user pause and see themselves through their identity essence.",
     },
 
     criticalRules: [
+      "MIRROR IS NOT GUIDANCE. Mirror is not coaching. Mirror is not action planning. It is not Innerwork.",
+      "REMOVE ALL: Actionable Reflection, Suggested Actions, Next Step, Recommendations, Micro Tasks, CTA Language, Coaching Language, Problem Solving Language.",
+      "KEEP: Reflection, Observation, Awareness, Gentle Questions, Contemplation, Meaning.",
       "NEVER mention technical blueprint terms: Life Path, Human Design, Arcana, Projector, Generator, etc.",
       "NEVER mention astrology terms: transits, planets, houses, etc. This is NOT astrology.",
-      "Use the differentiators and Destiny Matrix Intelligence internally, especially Soul Searching, Socialization, Spiritual Knowledge, and dominant chakra, so two users with the same Life Path and Human Design Type can still receive a distinct mirror. Do NOT mention 'Money Line', 'Love Line', or 'Karmic Tail' by name.",
       "Length: 80-150 words.",
-      "Write in one continuous cohesive piece, not as a list.",
       "Use 'kamu' and 'dirimu' (for id) or 'you' (for en).",
       "Ensure the content is significantly different from the 'Catatan Hari Ini' which focuses on the sky.",
     ],

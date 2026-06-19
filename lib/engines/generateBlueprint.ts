@@ -7,6 +7,10 @@ import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride"
 import { calculateNatalBasicsAsync } from "@/lib/astrology/calculateNatalBasics";
 import { Blueprint } from "../types/blueprint";
 import { auth } from "@/lib/firebase/firebase";
+import { calculateWeton } from "@/lib/weton/calculateWeton";
+import { calculateBazi } from "@/lib/bazi/calculateBazi";
+import { calculateVedic } from "@/lib/vedic/calculateVedic";
+import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 
 type BlueprintInput = {
   uid: string;
@@ -27,6 +31,21 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
   const lifePathBlueprint = calculateLifePath(birthDate);
   const nameNumerology = calculateNumerology(input.fullName, birthDate);
   const destinyMatrix = calculateDestinyMatrixForBlueprint(birthDate);
+  const weton = calculateWeton({ birthDate, birthTime });
+  const bazi = calculateBazi({
+    birthDate,
+    birthTime: birthTime || "12:00",
+    timezone,
+  });
+  const vedic = calculateVedic({
+    birthDate,
+    birthTime: birthTime || "12:00",
+    birthCity,
+    latitude,
+    longitude,
+    timezone,
+  });
+  const tzolkin = calculateTzolkin({ birthDate });
 
   let humanDesign = await calculateHumanDesign({
     birthDate,
@@ -74,6 +93,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     northNode: natalBasics.northNode ?? natalBasics.planets?.NorthNode?.sign ?? undefined,
     southNode: natalBasics.southNode ?? natalBasics.planets?.SouthNode?.sign ?? undefined,
     chiron: natalBasics.chiron ?? natalBasics.planets?.Chiron?.sign ?? undefined,
+    lilith: natalBasics.lilith,
     houses: natalBasics.houses ?? natalBasics.placidusHouses ?? undefined,
     placidusHouses: natalBasics.placidusHouses ?? natalBasics.houses ?? undefined,
     wholeSignHouses: natalBasics.wholeSignHouses ?? undefined,
@@ -112,6 +132,10 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
       arcanaCenter: destinyMatrix.center,
       calculationStatus: "completed",
     },
+    weton,
+    bazi,
+    vedic,
+    tzolkin,
   };
 
   // Add metadata for the full Blueprint type

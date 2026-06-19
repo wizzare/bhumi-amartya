@@ -6,6 +6,22 @@ import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { BuildInfo, getRuntimeBuildInfo, hasBuildInfoChanged } from "@/lib/config/buildInfo";
 import type { GaiaProfile } from "@/lib/profile/gaia/types";
 
+export type BaselineWellnessProfile = {
+  bodyScore: number;
+  emotionScore: number;
+  mindScore: number;
+  relationshipScore: number;
+  meaningScore: number;
+  regulationScore: number;
+  navigatorMode: "RECOVERY" | "REFLECTION" | "GROWTH";
+  strongestDomain: string;
+  growthDomain: string;
+  attentionDomain: string;
+  completedAt: string;
+  confidenceLevel: "LOW" | "MEDIUM" | "HIGH";
+  version: string;
+};
+
 export type UserProfile = {
   uid: string;
   email?: string | null;
@@ -22,6 +38,8 @@ export type UserProfile = {
   timezone?: string | null;
   language?: "id" | "en";
   onboardingCompleted: boolean;
+  baselineWellnessCompleted: boolean;
+  baselineWellnessProfile?: BaselineWellnessProfile;
   blueprintStatus: BlueprintStatus;
   setupCompleted: boolean;
   plan: "trial" | "pro" | "expired" | "free" | "premium" | "developer";
@@ -106,13 +124,6 @@ const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
     updatedAt: now,
   };
 
-  // Add createdAt only if it's missing in existing doc or provided data
-  // Using merge: true will keep existing createdAt if we don't send it
-  if (!data.createdAt) {
-    // We don't want to overwrite if it exists, but setDoc with merge: true
-    // handles this if we just omit it. However, for a new user, we want it.
-  }
-
   await debugFirestoreOperation(
     { operation: "setDoc", path, uid, payloadKeys: Object.keys(payload) },
     () => setDoc(userRef, sanitizeForFirestore(payload), { merge: true }),
@@ -122,7 +133,6 @@ const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
 const recordHealingPractice = async (uid: string, meditationMinutes: number) => {
   const userRef = doc(db, "users", uid);
   const path = `users/${uid}`;
-  // This is a simplified version. Ideally we'd use increment()
   const profile = await getUserProfile(uid);
   if (!profile) return;
 

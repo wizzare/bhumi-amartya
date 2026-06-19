@@ -9,6 +9,7 @@ import { journalRepository } from "@/lib/repositories/journalRepository";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 import { healingRepository } from "@/lib/repositories/healingRepository";
 import type {
   JournalEntry,
@@ -117,6 +118,7 @@ export default function JournalPage() {
   const [localInsight, setLocalInsight] = useState<LocalJournalInsight | null>(null);
   const [localSaved, setLocalSaved] = useState(false);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
+  const [zoneBContext, setZoneBContext] = useState<ZoneBContext | null>(null);
 
   useEffect(() => {
     trackEvent("journal_open");
@@ -151,6 +153,8 @@ export default function JournalPage() {
           return;
         }
          const entries = loadLocalJournalEntries();
+         const incomingContext = readZoneBContext(window.location.search);
+         setZoneBContext(incomingContext);
          const context: BlueprintJournalContext = {
            birthDate: getStringValue(profile, "birthDate"),
            sunSign: getNestedString(blueprint as any, ["sunSign", "sign"]),
@@ -162,7 +166,16 @@ export default function JournalPage() {
          };
 
          setLocalContext(context);
-         setLocalPrompt(getTodayJournalPrompt(context, entries));
+         if (incomingContext) {
+           const guide = getZoneBGuide(incomingContext);
+           setLocalPrompt({
+             theme: incomingContext.title as LocalJournalPrompt["theme"],
+             dashboardQuestion: guide.reflectionQuestions[0],
+             questions: guide.reflectionQuestions,
+           });
+         } else {
+           setLocalPrompt(getTodayJournalPrompt(context, entries));
+         }
        } catch (error) {
          console.error("[Journal Page] Failed to load local journal data", error);
          setLoadError("Data lokal belum siap. Silakan ulangi setup.");
@@ -202,8 +215,24 @@ export default function JournalPage() {
         const identity: CoreIdentity = profileToCoreIdentity(userProfile as any, blueprint);
         setCoreIdentity(identity);
 
+        const incomingContext = readZoneBContext(window.location.search);
+        setZoneBContext(incomingContext);
         const prompt = generateDailyJournalPrompt(identity, 5);
-        setDailyPrompt(prompt);
+        if (incomingContext) {
+          const guide = getZoneBGuide(incomingContext);
+          setDailyPrompt({
+            id: incomingContext.practiceId,
+            prompt: guide.reflectionQuestions[0],
+            subPrompts: guide.reflectionQuestions.slice(1),
+            theme: incomingContext.sourceTheme,
+            emotionalDepth: "medium",
+            purpose: guide.description,
+            relatedArea: incomingContext.issue,
+            generatedBasedOn: {},
+          });
+        } else {
+          setDailyPrompt(prompt);
+        }
 
         const memory = await emotionalMemoryRepository.getOrCreate(userProfile.uid);
         setEmotionalMemory(memory);
@@ -233,7 +262,7 @@ export default function JournalPage() {
     });
   };
 
-  const handleLocalSave = () => {
+  const handleLocalSave = async () => {
     if (!localPrompt) return;
 
     const generatedInsight = generateLocalJournalInsight({
@@ -264,6 +293,23 @@ export default function JournalPage() {
           previousEntryCount: loadLocalJournalEntries().length,
         },
       });
+      if (auth?.user?.uid) {
+        const journeyContext = zoneBContext ?? {
+          issue: "general_innerwork",
+          practiceId: `journaling-${localPrompt.theme.toLowerCase().replaceAll(" ", "-")}`,
+          practiceCategory: "journaling" as const,
+          sourceTheme: localPrompt.theme,
+          title: localPrompt.theme,
+          durationMinutes: 10,
+        };
+        await saveZoneBJourneyContext({
+          uid: auth.user.uid,
+          date: createdAt.slice(0, 10),
+          context: journeyContext,
+          reflectionResult: localEmotionalState,
+          reflectionResponse: generatedInsight.insight,
+        });
+      }
       trackEvent("journal_saved");
     } catch (error) {
       console.error("[Journal Page] Failed to save local journal", error);
@@ -325,6 +371,23 @@ export default function JournalPage() {
         nervousSystemState: checkIn.nervousSystemState,
         journalingDone: true,
       });
+      {
+        const journeyContext = zoneBContext ?? {
+          issue: "general_innerwork",
+          practiceId: dailyPrompt.id,
+          practiceCategory: "journaling" as const,
+          sourceTheme: dailyPrompt.theme,
+          title: dailyPrompt.theme,
+          durationMinutes,
+        };
+        await saveZoneBJourneyContext({
+          uid,
+          date: entry.dateCreated.slice(0, 10),
+          context: journeyContext,
+          reflectionResult: checkIn.emotionalWord,
+          reflectionResponse: analysis.gentleInsight,
+        });
+      }
       await userRepository.recordJournalProgress(uid);
       await healingRepository.saveHealingProgress(uid, {
         totalJournalEntries: (userProfile.healingProgress?.totalJournalEntries || 0) + 1,

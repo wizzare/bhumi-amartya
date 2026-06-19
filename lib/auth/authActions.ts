@@ -6,12 +6,12 @@ import {
   User,
   setPersistence,
   browserLocalPersistence,
-} from 'firebase/auth';
+} from "firebase/auth";
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
-import { Timestamp } from 'firebase/firestore';
-import { auth } from '../firebase/firebase';
-import { userRepository, UserProfile } from '../repositories/userRepository';
+import { Timestamp } from "firebase/firestore";
+import { auth } from "../firebase/firebase";
+import { userRepository, UserProfile } from "../repositories/userRepository";
 
 type GoogleRedirectProcessingResult = {
   user: User | null;
@@ -50,8 +50,6 @@ export const ensureMinimalUserProfile = async (user: User) => {
   const threeDaysInSeconds = 3 * 24 * 60 * 60;
   const trialEndsAt = new Timestamp(now.seconds + threeDaysInSeconds, now.nanoseconds);
 
-  // REMOVED: firstUser/wizzare fallback logic to ensure isolation
-
   const minimalProfile: UserProfile = {
     uid: user.uid,
     fullName: user.displayName ?? "",
@@ -68,6 +66,7 @@ export const ensureMinimalUserProfile = async (user: User) => {
     timezone: null,
     language: "id",
     onboardingCompleted: false,
+    baselineWellnessCompleted: false,
     setupCompleted: false,
     blueprintStatus: "missing",
     plan: "free",
@@ -144,8 +143,6 @@ export const signInWithGoogle = async (options?: {
         forceCodeForRefreshToken: true
       });
 
-      // FALLBACK: Disabling Credential Manager to use legacy Google Sign-In flow
-      // This is often more reliable when SHA-1/Signature issues occur on newer Android versions.
       const nativeAuth = FirebaseAuthentication as NativeGoogleAuthWithLegacyOptions;
       const result = await nativeAuth.signInWithGoogle({
         webClientId: WEB_CLIENT_ID,
@@ -179,7 +176,6 @@ export const signInWithGoogle = async (options?: {
       console.error("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
       const err = error as { name?: string; message?: string; code?: string; stack?: string, errorMessage?: string };
 
-      // Attempt to extract more info from Capacitor error
       const detailedError = {
         name: err?.name,
         message: err?.message || err?.errorMessage,
@@ -220,11 +216,9 @@ export const signOut = async (): Promise<void> => {
   console.log("[AUTH] Starting signOut flow...");
 
   try {
-    // 1. Firebase Sign Out
     await firebaseSignOut(auth);
     console.log("[AUTH] Firebase signOut successful");
 
-    // 2. Native Plugin Sign Out (if applicable)
     if (Capacitor.isNativePlatform()) {
       try {
         await FirebaseAuthentication.signOut();
@@ -234,9 +228,6 @@ export const signOut = async (): Promise<void> => {
       }
     }
 
-    // 3. Clear Local Storage / Session Data
-    // We clear everything starting with 'bhumi' to be safe,
-    // and explicitly target profile/auth related keys.
     const keysToRemove = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -252,9 +243,6 @@ export const signOut = async (): Promise<void> => {
 
     sessionStorage.clear();
     console.log("[AUTH] sessionStorage cleared");
-
-    // 4. Final redirect is usually handled by the AuthListener or the component calling this,
-    // but we ensure we return a clean slate.
   } catch (error) {
     console.error("[AUTH] Error during signOut flow:", error);
     throw error;

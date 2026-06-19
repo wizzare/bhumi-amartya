@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Flower2, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
@@ -12,13 +11,18 @@ import { YOGA_DATABASE } from "@/lib/data/innerworkContent";
 import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
+import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
+import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 
 export default function YogaPage() {
   const auth = useAuth();
-  const router = useRouter();
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [reflectionResult, setReflectionResult] = React.useState("");
+  const [zoneBContext] = React.useState<ZoneBContext | null>(
+    () => typeof window === "undefined" ? null : readZoneBContext(window.location.search),
+  );
 
   React.useEffect(() => {
     trackEvent("open_yoga", auth?.user?.uid);
@@ -41,7 +45,8 @@ export default function YogaPage() {
     setSaving(true);
     try {
       const profile = auth.userProfile;
-      const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const nestedProfile = profile?.profile as { timezone?: string } | undefined;
+      const timezone = profile?.timezone || nestedProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const date = getLocalDateKey(new Date(), timezone);
 
       const savePromises = Array.from(selectedIds).map(id => {
@@ -61,6 +66,18 @@ export default function YogaPage() {
       });
 
       await Promise.all(savePromises);
+      for (const id of selectedIds) {
+        const activity = YOGA_DATABASE[id] ?? activities.find((item) => item.id === id);
+        const context = zoneBContext ?? {
+          issue: "general_innerwork",
+          practiceId: id,
+          practiceCategory: "yoga" as const,
+          sourceTheme: "yoga learning",
+          title: activity.title,
+          durationMinutes: activity.durationMinutes,
+        };
+        await saveZoneBJourneyContext({ uid, date, context, reflectionResult: reflectionResult || "Belum Yakin" });
+      }
       trackEvent("complete_yoga", uid);
       setSaved(true);
     } catch (err) {
@@ -70,7 +87,17 @@ export default function YogaPage() {
     }
   };
 
-  const activities = Object.values(YOGA_DATABASE);
+  const lockedGuide = zoneBContext ? getZoneBGuide(zoneBContext) : null;
+  const activities = lockedGuide
+    ? [{
+        id: zoneBContext!.practiceId,
+        title: lockedGuide.title,
+        description: lockedGuide.description,
+        instruction: lockedGuide.steps,
+        benefits: lockedGuide.benefits,
+        durationMinutes: lockedGuide.durationMinutes,
+      }]
+    : Object.values(YOGA_DATABASE);
 
   return (
     <ProtectedRoute>
@@ -117,43 +144,44 @@ export default function YogaPage() {
                   </div>
                 </div>
 
-                <p className="text-[#7B8776] text-sm mb-4">{activity.description}</p>
-
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Instruksi</h3>
-                    <ul className="space-y-2">
-                      {activity.instruction.map((step, idx) => (
-                        <li key={idx} className="text-sm text-[#4F5E52] flex gap-3">
-                          <span className="w-5 h-5 rounded-full bg-[#F5F1E8] text-[#9AA394] flex items-center justify-center text-[10px] shrink-0">{idx + 1}</span>
-                          {step}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Manfaat</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {activity.benefits.map((benefit, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-green-50 text-green-600 rounded-lg text-[10px] font-semibold">
-                          {benefit}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <GuidedLearningDetails
+                  title={activity.title}
+                  description={activity.description}
+                  benefits={activity.benefits}
+                  steps={activity.instruction}
+                  duration={`${activity.durationMinutes} menit`}
+                  googleSearchPhrase={`${activity.title} yoga pose step by step`}
+                  youtubeSearchPhrase={`${activity.title} beginner yoga tutorial`}
+                  accentClass="bg-green-50 text-green-600"
+                />
               </section>
             ))}
           </div>
 
           <div className="mt-12">
+            {zoneBContext && (
+              <div className="mb-6">
+                <p className="mb-3 text-center text-sm font-medium text-[#4F5E52]">Bagaimana keadaanmu setelah praktik?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Lebih Tenang", "Sama Saja", "Sedikit Lebih Berat", "Belum Yakin"].map((result) => (
+                    <button
+                      key={result}
+                      type="button"
+                      onClick={() => setReflectionResult(result)}
+                      className={`rounded-xl border p-3 text-xs font-semibold ${reflectionResult === result ? "border-green-600 bg-green-50 text-green-700" : "border-[#E8E9E5] bg-white text-[#7B8776]"}`}
+                    >
+                      {result}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
               Klik save hanya jika kamu sudah melakukan.
             </p>
             <button
               onClick={handleSaveAll}
-              disabled={selectedIds.size === 0 || saving || saved}
+              disabled={selectedIds.size === 0 || saving || saved || Boolean(zoneBContext && !reflectionResult)}
               className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : selectedIds.size > 0 ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
             >
               {saved ? 'Selesai ✨' : saving ? 'Menyimpan...' : 'Save'}

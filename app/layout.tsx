@@ -5,6 +5,8 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { APP_VERSION, RELEASE_NAME } from "@/src/lib/version";
 import { GentleNightReminderLifecycle } from "@/components/notifications/GentleNightReminderLifecycle";
+import { ActivityTracker } from "@/components/analytics/ActivityTracker";
+import { VersionChecker } from "@/components/global/VersionChecker";
 
 export const metadata: Metadata = {
 
@@ -29,6 +31,8 @@ export default function RootLayout({
       <body>
 
         <AuthProvider>
+          <ActivityTracker />
+          <VersionChecker />
           <LanguageProvider>
             <GentleNightReminderLifecycle />
             {children}

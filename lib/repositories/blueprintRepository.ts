@@ -8,6 +8,10 @@ import { calculateDestinyMatrix } from "@/lib/calculations/calculateDestinyMatri
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
 import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
+import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
+import { calculateWeton } from "@/lib/weton/calculateWeton";
+import { calculateBazi } from "@/lib/bazi/calculateBazi";
+import { calculateVedic } from "@/lib/vedic/calculateVedic";
 
 const userBlueprintDoc = (uid: string) => doc(db, "blueprints", uid);
 const userBlueprintPath = (uid: string) => `blueprints/${uid}`;
@@ -19,6 +23,32 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
     birthCity: "",
   };
   const birthDate = input.birthDate || "";
+  const weton = data.weton ?? (birthDate
+    ? calculateWeton({ birthDate, birthTime: input.birthTime })
+    : undefined);
+  const bazi = data.bazi ?? (birthDate
+    ? calculateBazi({
+        birthDate,
+        birthTime: input.birthTime,
+        timezone: input.timezone,
+      })
+    : undefined);
+  const vedic = data.vedic ?? (birthDate && input.birthTime
+    ? (() => {
+        try {
+          return calculateVedic({
+            birthDate,
+            birthTime: input.birthTime,
+            birthCity: input.birthCity,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            timezone: input.timezone,
+          });
+        } catch {
+          return undefined;
+        }
+      })()
+    : undefined);
   const lifePath = data.numerology ?? (birthDate ? calculateLifePath(birthDate) : {
     number: 0,
     role: "Pending",
@@ -37,12 +67,36 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
     center: 0,
     calculationStatus: "pending",
   };
+  const savedLilith = data.natalChart?.lilith ?? data.astrology?.lilith;
+  const calculatedLilith = !savedLilith && birthDate && input.birthTime
+    ? calculateNatalBasics({
+        birthDate,
+        birthTime: input.birthTime,
+        birthCity: input.birthCity,
+        birthCountry: input.birthCountry,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        timezone: input.timezone,
+      }).lilith
+    : undefined;
 
   const astrology = {
     sunSign: data.natalChart?.sunSign ?? data.astrology?.sunSign ?? (birthDate ? calculateSunSign(birthDate) : "Pending"),
     moonSign: data.natalChart?.moonSign ?? data.astrology?.moonSign ?? "Pending",
-    risingSign: data.natalChart?.risingSign ?? data.astrology?.risingSign ?? "Pending",
+    risingSign: data.natalChart?.risingSign ?? data.astrology?.risingSign ?? (data.natalChart as any)?.ascendant ?? (data.astrology as any)?.ascendant ?? "Pending",
     calculationStatus: data.natalChart?.calculationStatus ?? data.astrology?.calculationStatus ?? "pending",
+    ascendant: (data.natalChart as any)?.ascendant ?? (data.astrology as any)?.ascendant ?? undefined,
+    midheaven: (data.natalChart as any)?.midheaven ?? (data.astrology as any)?.midheaven ?? undefined,
+    planets: data.natalChart?.planets ?? data.astrology?.planets ?? undefined,
+    northNode: data.natalChart?.northNode ?? data.astrology?.northNode ?? undefined,
+    southNode: data.natalChart?.southNode ?? data.astrology?.southNode ?? undefined,
+    chiron: data.natalChart?.chiron ?? data.astrology?.chiron ?? undefined,
+    lilith: savedLilith ?? calculatedLilith,
+    placidusHouses: data.natalChart?.placidusHouses ?? data.astrology?.placidusHouses ?? undefined,
+    wholeSignHouses: data.natalChart?.wholeSignHouses ?? data.astrology?.wholeSignHouses ?? undefined,
+    elements: data.natalChart?.elements ?? data.astrology?.elements ?? undefined,
+    modalities: data.natalChart?.modalities ?? data.astrology?.modalities ?? undefined,
+    aspects: data.natalChart?.aspects ?? data.astrology?.aspects ?? undefined,
   };
   const fallbackHumanDesign = createPendingHumanDesignChart("Human Design engine is being prepared.");
   const savedHumanDesign = data.humanDesign as Partial<HumanDesignChart> | undefined;
@@ -73,6 +127,11 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
     },
     gates: savedHumanDesign?.gates ?? [],
     channels: savedHumanDesign?.channels ?? [],
+    diagnostic: savedHumanDesign?.diagnostic ?? null,
+    personalityActivations: savedHumanDesign?.personalityActivations ?? savedHumanDesign?.raw_personality_gates ?? savedHumanDesign?.diagnostic?.raw_personality_gates ?? [],
+    designActivations: savedHumanDesign?.designActivations ?? savedHumanDesign?.raw_design_gates ?? savedHumanDesign?.diagnostic?.raw_design_gates ?? [],
+    raw_personality_gates: savedHumanDesign?.raw_personality_gates ?? savedHumanDesign?.diagnostic?.raw_personality_gates ?? [],
+    raw_design_gates: savedHumanDesign?.raw_design_gates ?? savedHumanDesign?.diagnostic?.raw_design_gates ?? [],
     variables: savedHumanDesign?.variables ?? null,
     digestion: savedHumanDesign?.digestion ?? null,
     cognition: savedHumanDesign?.cognition ?? null,
@@ -109,6 +168,9 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
       arcanaCenter: destinyMatrix.arcanaCenter ?? destinyMatrix.center ?? 0,
       destinyIntelligence: normalizeDestinyMatrixIntelligence({ destinyMatrix }),
     },
+    weton,
+    bazi,
+    vedic,
     generatedAt: data.generatedAt ?? new Date().toISOString(),
     updatedAt: data.updatedAt ?? new Date().toISOString(),
   };

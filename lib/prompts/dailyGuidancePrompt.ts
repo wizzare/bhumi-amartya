@@ -24,11 +24,11 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
       intelligenceChainRule:
         "STRICT CHAIN RULE: 1. Full Blueprint + Journey Memory → Refleksi Jiwa (No transits). 2. Full Blueprint + Astro Today + Wellness Mapping + Journey Memory → Catatan Hari Ini. 3. Catatan Hari Ini + House Activation + User Progress → Innerwork. 4. Innerwork + Catatan Hari Ini + Wellness Mapping + Full Blueprint → Manifestasi Hari Ini.",
       blueprintDefinition:
-        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint AND the normalized userContext.unifiedBlueprint.fullBlueprint object: Numerology (number, archetype, lesson, birthday, attitude, maturity, pinnacles, challenges, personal year), Human Design (Type, Strategy, Authority, Profile, Definition, Signature, Not-Self, Defined/Open Centers, Gates, Channels, Incarnation Cross), Natal Chart (Sun, Moon, Ascendant, MC, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, North Node, South Node, House placements, major aspects), Destiny Matrix Core (Arcana Center, Common Energy, Money Line, Love Line, Karmic Tail, Father/Mother/Ancestor lines, Talents), and Destiny Matrix Intelligence (Soul Searching, Socialization, Spiritual Knowledge, Health Chart physics/energy/emotion for each chakra, dominant chakra interpretation). NEVER use raw technical labels (like 'Money Line', 'Karmic Tail', 'Projector', 'Sacral') or raw blueprint numbers in the final output. Every piece of data must be translated into warm, descriptive human language.",
+        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint AND the normalized userContext.unifiedBlueprint.fullBlueprint object: Numerology (number, archetype, lesson, birthday, attitude, maturity, pinnacles, challenges, personal year), Human Design (Type, Strategy, Authority, Profile, Definition, Signature, Not-Self, Defined/Open Centers, Gates, Channels, Incarnation Cross, Variables, Digestion, Cognition, Environment, Motivation, Perspective), Natal Chart (Sun, Moon, Ascendant, MC, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, Pluto, Chiron, North Node, South Node, House placements, major aspects), Destiny Matrix Core (Arcana Center, Common Energy, Money Line, Love Line, Karmic Tail, Father/Mother/Ancestor lines, Talents), and Destiny Matrix Intelligence (Soul Searching, Socialization, Spiritual Knowledge, Health Chart physics/energy/emotion for each chakra, dominant chakra interpretation). NEVER use raw technical labels (like 'Money Line', 'Karmic Tail', 'Projector', 'Sacral', 'Variables', 'Digestion') or raw blueprint numbers in the final output. Every piece of data must be translated into warm, descriptive human language.",
       strictFilter:
         "CRITICAL: Do NOT use generic spiritual cliches: 'dengarkan suara hati', 'beri ruang', 'renungkan perlahan', 'biarkan energi mengalir', 'proses batin', 'kelembutan'. If these concepts are needed, they MUST be translated into the user's specific archetype language and blueprint context.",
       safety:
-        "This is reflective wellbeing guidance, not medical, legal, or financial advice. Do not make fear-based spiritual claims. Keep language grounded, compassionate, non-diagnostic, practical, and agency-preserving. NEVER mention technical terms: Money Line, Karmic Tail, compatibility, blueprint pattern, isolated system, synthesis, deterministic, Soul Core, generated from, engine, fallback, source, local-fallback. Do not mention raw blueprint numbers or internal engine structures.",
+        "This is reflective wellbeing guidance, not medical, legal, or financial advice. Do not make fear-based spiritual claims. Keep language grounded, compassionate, non-diagnostic, practical, and agency-preserving. NEVER mention technical terms: Money Line, Karmic Tail, compatibility, blueprint pattern, isolated system, synthesis, deterministic, Soul Core, generated from, engine, fallback, source, local-fallback, Life Path, Human Design, Arcana, House numbers (e.g., House 5, House 10), or transit angles. Do not mention raw blueprint numbers or internal engine structures.",
       language: input.language,
       architectureV141: {
         mirrorWeightingRule: "PHASE 4 – BLUEPRINT WEIGHTING: Refleksi Jiwa (Mirror) must prioritize: Life Path (25%), Human Design (25%), Arcana Center (20%), Natal Sun (15%), Natal Moon (15%). Prevent astrology transits from overpowering the identity blueprint.",
@@ -36,7 +36,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         genericFilterRule: "PHASE 6 – GENERIC LANGUAGE FILTER: REDUCE overused phrases: 'dengarkan suara hati', 'beri ruang', 'renungkan perlahan', 'biarkan energi mengalir', 'proses batin', 'kelembutan'. These may only appear when strongly justified by Blueprint or Transit.",
         mirrorRule: "SECTION 1 – REFLEKSI JIWA (MIRROR): Purpose: Answer 'Siapa dirimu secara mendasar?'. Use ONLY core blueprint + archetypes. Similarity between users MUST be < 30%.",
         compassRule: "SECTION 2 – CATATAN HARI INI (COMPASS): Purpose: Answer 'Hari ini apa yang sedang mempengaruhi dirimu?'. Formula: Mirror x Transit mapped to Natal Houses.",
-        houseImpactRule: "PHASE 3 – HOUSE IMPACT: Compass must be driven by house activation. e.g. Mars in House 2 = Money/Self-worth, Mars in House 7 = Relationships, Mars in House 10 = Career. If a house is active, you MUST discuss its specific themes.",
+        houseImpactRule: "PHASE 3 – HOUSE IMPACT: Compass must be driven by house activation. Translate technical house placements into area themes (e.g. House 2 = area keuangan/nilai diri, House 7 = area relasi, House 10 = area karir). If a house is active, you MUST discuss its specific themes without ever using the word 'House'. Example: write 'Mars di area relasi', never 'Mars di House 7'.",
       },
       userContext: {
         user: input.user,
@@ -117,7 +117,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         archetypeApplicationRule:
           "For Refleksi Jiwa (Mirror), select the most relevant Dominant Archetype for today and write from that perspective. Example: 'Sebagai seorang Builder, fokusmu hari ini adalah...' or 'Bagian Sage dalam dirimu mengingatkan bahwa...'.",
         reasonEngineRule:
-          "For the 'reason' field in each category, you must use the provided astroHouseActivations. Map each planet's energy and its active house to the relevant life area according to SECTION 3. Expand the 'reason' to 3-5 sentences explaining the relationship between Transit, Blueprint, and the user's Psychology. Technical terms like 'House 10' or 'Mars di House 7' must remain visible.",
+          "For the 'reason' field in each category, you must use the provided astroHouseActivations. Map each planet's energy and its active house to the relevant life area according to SECTION 3. Expand the 'reason' to 3-5 sentences explaining the relationship between Transit, Blueprint, and the user's Psychology. Technical terms like 'House 10' or 'Mars di House 7' must NOT be visible; instead, translate them into user-friendly area descriptions, such as 'Mars di area relasi' or 'di area karir'.",
         reflectionRule:
           "For the 'reflection' field in each category, provide 2-3 deep reflective questions related to the category's theme and today's cosmic context. Help the user look inward.",
         adviceRule:
@@ -141,31 +141,31 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
           },
           mental: {
             insight: "string (Bahasa Indonesia), cognitive focus and mental clarity status. Title: Mental",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Mercury/House 3 or Ajna Center transits.",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of communication and mind (House 3, Mercury, or Ajna).",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
             advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           finance: {
             insight: "string (Bahasa Indonesia), approach to resources and material stability. Title: Keuangan",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 2 or House 10 transits.",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of resources or career (House 2 or House 10).",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
             advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           love: {
             insight: "string (Bahasa Indonesia), emotional intimacy and romantic tone. Title: Percintaan",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 5, 7 or 11 transits.",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of romance or relationships (House 5, 7, or 11).",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
             advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           relational: {
             insight: "string (Bahasa Indonesia), communication with friends, family, and community. Title: Relasi & Keluarga",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 11 or Mercury transits.",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of community or communication (House 11 or Mercury).",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
             advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },
           spiritual: {
             insight: "string (Bahasa Indonesia), connection to meaning and inner silence. Title: Spiritual",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on House 12 or Neptune transits.",
+            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of spirituality and the subconscious (House 12 or Neptune).",
             reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
             advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
           },

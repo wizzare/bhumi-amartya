@@ -5,6 +5,8 @@
 
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { UnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
+import { JourneyDailyRecord, MonthlyLearningSummary } from "@/lib/types/journeyDailyRecord";
+
 
 export interface GrowthStory {
   stage: {
@@ -77,5 +79,65 @@ export const journeyStoryEngine = {
       attentionAreas,
       nextMilestone
     };
+  },
+
+  calculateMonthlyTheme(records: JourneyDailyRecord[]): MonthlyLearningSummary {
+    const last30 = records.slice(0, 30);
+
+    const issueCounts: Record<string, number> = {};
+    const catCounts: Record<string, number> = {};
+    const compCounts: Record<string, number> = {};
+
+    last30.forEach(rec => {
+      if (rec.dominantIssue) issueCounts[rec.dominantIssue] = (issueCounts[rec.dominantIssue] || 0) + 1;
+      if (rec.issueCategory) catCounts[rec.issueCategory] = (catCounts[rec.issueCategory] || 0) + 1;
+      if (rec.innerworkCompletion?.completed) {
+        const cat = rec.issueCategory || "Keseimbangan";
+        compCounts[cat] = (compCounts[cat] || 0) + 1;
+      }
+    });
+
+    const getTop = (counts: Record<string, number>, fallback: string): string => {
+      const entries = Object.entries(counts);
+      if (entries.length === 0) return fallback;
+      return entries.sort((a, b) => b[1] - a[1])[0][0];
+    };
+
+    const topCategory = getTop(catCounts, "boundaries");
+    const topCompletedCat = getTop(compCounts, topCategory);
+
+    const themeMap: Record<string, string> = {
+      "boundaries": "belajar menjaga batas diri demi kesehatan energimu sendiri.",
+      "responsibility": "belajar membedakan kepedulian dari tanggung jawab.",
+      "nervous system": "menjaga ketenangan tubuh di tengah situasi yang tidak menentu.",
+      "nervous-system": "menjaga ketenangan tubuh di tengah situasi yang tidak menentu.",
+      "low energy": "belajar melambat dan beristirahat tanpa menghakimi diri sendiri.",
+      "low-energy": "belajar melambat dan beristirahat tanpa menghakimi diri sendiri.",
+      "body recovery": "belajar melambat dan beristirahat tanpa menghakimi diri sendiri.",
+      "body-recovery": "belajar melambat dan beristirahat tanpa menghakimi diri sendiri.",
+      "emotional release": "memberi ruang bagi rasa duka dan emosi yang terpendam.",
+      "emotional-release": "memberi ruang bagi rasa duka dan emosi yang terpendam."
+    };
+
+    const monthlyTheme = `Tema utama bulan ini adalah ${themeMap[topCategory.toLowerCase()] || "menemukan keseimbangan batin melalui praktik kesadaran kecil harian."}`;
+    const monthlyPattern = "Selama 30 hari terakhir, kamu perlahan membangun ruang yang lebih utuh untuk hadir bersama dirimu sendiri.";
+    
+    const growthAreaMap: Record<string, string> = {
+      "boundaries": "Keamanan Batas Diri",
+      "responsibility": "Kemandirian Emosional",
+      "nervous system": "Ketenangan Tubuh",
+      "low energy": "Pemulihan Vitalitas Fisik",
+      "emotional release": "Pelepasan Emosi Berat"
+    };
+    const monthlyGrowthArea = growthAreaMap[topCompletedCat.toLowerCase()] || "Kesadaran Batin";
+    const monthlyNarrative = `Dalam 30 hari terakhir, tema ${topCategory.toLowerCase()} beberapa kali hadir. Pengalaman ini mungkin sedang membantumu memilih tindakan yang lebih sesuai dengan tenaga yang tersedia.`;
+
+    return {
+      monthlyTheme,
+      monthlyPattern,
+      monthlyGrowthArea,
+      monthlyNarrative
+    };
   }
 };
+

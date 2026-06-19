@@ -1,4 +1,9 @@
 import type { HumanDesignChart } from "@/lib/humandesign/types";
+import type { WetonBlueprint } from "@/lib/weton/types";
+import type { BaziBlueprint } from "@/lib/bazi/types";
+import type { VedicBlueprint } from "@/lib/vedic/types";
+import type { TzolkinBlueprint } from "@/lib/tzolkin/types";
+import type { CanonicalIdentity } from "@/lib/types/canonical";
 
 export type BlueprintStatus = "missing" | "generating" | "ready" | "stale" | "error";
 
@@ -46,6 +51,12 @@ export type NatalDominance = {
   dominantHouse?: number;
 };
 
+export type BlackMoonLilith = {
+  sign: string;
+  degree: number;
+  house: number;
+};
+
 export interface LifePathBlueprint {
   number: number;
   display?: string;
@@ -81,6 +92,7 @@ export interface NatalChartBlueprint {
   northNode?: string;
   southNode?: string;
   chiron?: string;
+  lilith?: BlackMoonLilith;
   elements?: NatalBalance;
   modalities?: NatalBalance;
   polarities?: NatalBalance;
@@ -153,6 +165,11 @@ export interface Blueprint {
   astrology: NatalChartBlueprint & { calculationStatus: "completed" | "pending" | "error"; };
   humanDesign: HumanDesignBlueprint;
   destinyMatrix: DestinyMatrixBlueprint & { calculationStatus: "completed" | "pending" | "error"; };
+  weton?: WetonBlueprint;
+  bazi?: BaziBlueprint;
+  vedic?: VedicBlueprint;
+  tzolkin?: TzolkinBlueprint;
+  canonicalIdentity?: CanonicalIdentity;
   generatedAt: string;
   updatedAt: string;
 }

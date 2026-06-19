@@ -1,18 +1,21 @@
 import type { DailyGuidance, DailyGuidanceCategory, DailyManifestation } from "@/lib/dailyGuidance/types";
 import type { ProfileEchoV1 } from "@/lib/profile/echo";
 import type { GaiaInsight } from "@/lib/profile/gaia/types";
+import { applyDynamicGreetingPrefix } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 export type DailyShareInsight = {
   id: string;
   label: string;
-  content: string;
+  content: string; // Used for summary
+  reflection?: string;
+  theme?: string;
   chapter: ProfileEchoV1["chapters"][number]["id"];
 };
 
 export type DailyShareCardContent = {
   dateKey: string;
   reflection: string;
-  dailyAdvice: { label: string; content: string };
+  catatanHariIni: { label: string; content: string };
   profileInsight: DailyShareInsight;
   manifestation: { label: string; content: string };
   footerQuote: string;
@@ -51,7 +54,14 @@ function clean(value: string | null | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function buildReflection(guidance?: DailyGuidance | null): string {
+function truncateSentences(text: string, maxSentences: number): string {
+  if (!text || typeof text !== "string") return "";
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
+  if (sentences.length <= maxSentences) return text.trim();
+  return sentences.slice(0, maxSentences).join(" ").trim();
+}
+
+function buildReflection(guidance?: DailyGuidance | null, now: Date = new Date()): string {
   const sources = [
     guidance?.soulReflectionText,
     guidance?.dailyNoteText ?? guidance?.companionReflection?.fullReflection,
@@ -62,7 +72,7 @@ function buildReflection(guidance?: DailyGuidance | null): string {
     return "Hari ini adalah ruang untuk mendengar dirimu dengan lebih jernih. Tidak semua jawaban perlu datang sekaligus; satu langkah yang jujur sudah cukup.";
   }
 
-  return sources.map((source) => source.split(/(?<=[.!?])\s+/).slice(0, 2).join(" ")).join(" ");
+  return applyDynamicGreetingPrefix(truncateSentences(sources.join(" "), 3), "id", now);
 }
 
 function pickDaily<T>(items: T[], seed: string, fallback: T): T {
@@ -70,12 +80,12 @@ function pickDaily<T>(items: T[], seed: string, fallback: T): T {
   return items[hash(seed) % items.length];
 }
 
-function buildDailyAdvice(guidance: DailyGuidance | null | undefined, seed: string) {
-  const categories = Object.values(guidance?.categories ?? {}) as DailyGuidanceCategory[];
-  const advice = categories.map((category) => clean(category.advice)).filter(Boolean);
+function buildCatatanHariIni(guidance: DailyGuidance | null | undefined, seed: string) {
+  const note = clean(guidance?.dailyNoteText ?? guidance?.companionReflection?.fullReflection);
+  const selectedInsight = note || "Setiap langkah kecil yang kamu ambil hari ini memiliki maknanya sendiri.";
   return {
-    label: "Saran Bhumi",
-    content: pickDaily(advice, `${seed}:advice`, FALLBACK_ADVICE),
+    label: "Catatan Hari Ini",
+    content: truncateSentences(selectedInsight, 3),
   };
 }
 
@@ -97,28 +107,34 @@ export function createDailyShareCardContent({
   userSeed,
   guidance,
   gaiaInsights = [],
+  now = new Date(),
 }: {
   echo: ProfileEchoV1;
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
   gaiaInsights?: GaiaInsight[];
+  now?: Date;
 }): DailyShareCardContent {
   const legacyPool = echo.chapters.flatMap((chapter) => chapter.features
     .filter((feature) => feature.status === "READY" && clean(feature.summary))
     .map((feature) => ({
       id: `${chapter.id}:${feature.id}`,
       label: feature.title,
-      content: feature.summary,
+      content: truncateSentences(feature.summary, 3),
+      reflection: "Amati bagian dirimu ini hari ini dengan lebih lembut.",
+      theme: "general",
       chapter: chapter.id,
     })));
   const gaiaPool = gaiaInsights.map((insight) => ({
     id: `gaia:${insight.id}`,
     label: insight.title,
-    content: insight.narrative,
+    content: truncateSentences(insight.summary || insight.narrative, 3),
+    reflection: truncateSentences(insight.guidance?.[0] ?? "Amati bagian dirimu ini hari ini dengan lebih lembut.", 1),
+    theme: insight.theme,
     chapter: "identity" as const,
   }));
-  const pool = gaiaPool.length ? gaiaPool : legacyPool;
+  const pool = [...legacyPool, ...gaiaPool];
 
   const day = dayNumber(dateKey);
   const cycleLength = Math.max(pool.length, 1);
@@ -129,14 +145,16 @@ export function createDailyShareCardContent({
     id: "profile:fallback",
     label: "Cermin Jiwa",
     content: "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.",
+    reflection: "Langkah kecil apa yang bisa kuambil dengan lebih tulus?",
+    theme: "general",
     chapter: "identity" as const,
   };
   const dailySeed = `${userSeed}:${dateKey}`;
 
   return {
     dateKey,
-    reflection: buildReflection(guidance),
-    dailyAdvice: buildDailyAdvice(guidance, dailySeed),
+    reflection: buildReflection(guidance, now),
+    catatanHariIni: buildCatatanHariIni(guidance, dailySeed),
     profileInsight,
     manifestation: buildManifestation(guidance?.manifestation, dailySeed),
     footerQuote: "Ruang Untuk Pulang dan Kenali Diri",

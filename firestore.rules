@@ -69,6 +69,14 @@ service cloud.firestore {
       }
     }
 
+    match /journeyDailyRecords/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+    }
+
     match /blueprints/{userId} {
       allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
@@ -139,6 +147,12 @@ service cloud.firestore {
 
     match /adminAuditLogs/{docId} {
       allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    // PUBLIC CONFIG (Version Checker, etc)
+    match /app_config/{docId} {
+      allow read: if true;
+      allow write: if isFounderOrAdmin();
     }
   }
 }
