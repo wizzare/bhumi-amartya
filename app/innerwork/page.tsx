@@ -23,7 +23,7 @@ import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorSe
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { DailyState } from "@/lib/repositories/dailyStateRepository";
-import { buildInnerworkDailyDecision, mapInnerworkPractice, type InnerworkPractice, type InnerworkSupportPractice } from "@/lib/engines/innerworkIntelligence";
+import { buildInnerworkDailyDecision, type InnerworkPractice, type InnerworkSupportPractice } from "@/lib/engines/innerworkIntelligence";
 import { buildZoneBHref, type ZoneBPracticeCategory } from "@/lib/innerwork/zoneBContext";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
 import { innerworkReflectionRepository } from "@/lib/repositories/innerworkReflectionRepository";
@@ -423,13 +423,15 @@ export default function InnerworkCoachPage() {
           journeySignals: [],
         };
         setCurrentIssue(fallbackIssue);
-        const fallbackPractice = mapInnerworkPractice({
+        const fallbackDecision = buildInnerworkDailyDecision({
           dominantIssue: fallbackIssue.key,
           localDateKey: getLocalDateKey(new Date()),
           navigatorMode: "REFLECTION",
           journeyHistory: [],
         });
+        const fallbackPractice = fallbackDecision.mainPractice;
         setPractice(fallbackPractice);
+        setSupportPractices(fallbackDecision.supportPractices);
         setSourceSignals([`issueSource:${fallbackContext.issueSource}`, ...fallbackPractice.sourceSignals]);
       } finally {
         setLoading(false);
