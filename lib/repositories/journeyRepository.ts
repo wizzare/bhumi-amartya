@@ -20,6 +20,39 @@ const defaultCompletion = {
   reason: "unknown",
 };
 
+function expandPracticeResults(records: JourneyDailyRecord[]): JourneyDailyRecord[] {
+  return records.flatMap((record) => {
+    const practiceResults = record.practiceResults ?? [];
+    if (practiceResults.length === 0) return [record];
+
+    return practiceResults.map((result) => ({
+      ...record,
+      dominantIssue: result.issue || record.dominantIssue,
+      issueCategory: result.issueCategory || record.issueCategory,
+      innerworkRecommendation: {
+        practiceId: result.practiceId,
+        practiceType: result.practiceCategory,
+        practiceTitle: result.practiceTitle,
+        durationMinutes: result.durationMinutes,
+        intensity: record.innerworkRecommendation?.intensity || "",
+        reason: record.innerworkRecommendation?.reason || "",
+        sourceSignals: record.innerworkRecommendation?.sourceSignals || [],
+      },
+      innerworkCompletion: {
+        completed: true,
+        skipped: false,
+        completedAt: result.completedAt,
+        actualPracticeId: result.practiceId,
+        actualPracticeType: result.practiceCategory,
+        actualDuration: result.durationMinutes,
+        reflectionResult: result.reflectionResult,
+        reflectionResponse: result.reflectionResponse,
+        practiceHelped: result.practiceHelped,
+      },
+    }));
+  });
+}
+
 export const journeyRepository = {
   async ensureDailyRecord(
     uid: string,
@@ -103,13 +136,15 @@ export const journeyRepository = {
 
   async getDailyMemory(uid: string): Promise<JourneyDailyMemory> {
     const last30Days = await this.getRecentDailyRecords(uid, 30);
+    const weeklyLearningRecords = expandPracticeResults(last30Days.slice(0, 7));
+    const monthlyLearningRecords = expandPracticeResults(last30Days);
     
     // Calculate V1 Journey Learning Layers
-    const weeklyLearning = reflectionEngine.calculateWeeklyLearning(last30Days);
-    const monthlyLearning = journeyStoryEngine.calculateMonthlyTheme(last30Days);
-    const practiceInsights = calculatePracticeEffectiveness(last30Days);
-    const growthNarrative = growthNarrativeEngine.calculateGrowthNarrative(last30Days);
-    const coachMemory = journeyNarrativeEngine.generateCoachMemory(last30Days);
+    const weeklyLearning = reflectionEngine.calculateWeeklyLearning(weeklyLearningRecords);
+    const monthlyLearning = journeyStoryEngine.calculateMonthlyTheme(monthlyLearningRecords);
+    const practiceInsights = calculatePracticeEffectiveness(monthlyLearningRecords);
+    const growthNarrative = growthNarrativeEngine.calculateGrowthNarrative(monthlyLearningRecords);
+    const coachMemory = journeyNarrativeEngine.generateCoachMemory(monthlyLearningRecords);
 
     return {
       yesterday: last30Days[0] ?? null,

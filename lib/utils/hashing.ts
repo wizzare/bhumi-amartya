@@ -45,8 +45,11 @@ export function generateMemoryHash(context: any): string {
   const meditationIds = (context.previousMeditationEntries || []).map((e: any) => e.id).sort().join(",");
   const emotionalState = context.profile?.emotionalState?.currentMood || "none";
   const themes = (context.profile?.emotionalState?.recurringThemes || []).sort().join(",");
+  const journeyLearning = context.healingMemory
+    ? JSON.stringify(context.healingMemory)
+    : "no-journey-learning";
 
-  return simpleHash(`${journalIds}|${meditationIds}|${emotionalState}|${themes}`);
+  return simpleHash(`${journalIds}|${meditationIds}|${emotionalState}|${themes}|${journeyLearning}`);
 }
 
 /**

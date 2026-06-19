@@ -312,40 +312,40 @@ export const dailyGuidanceEngine = {
       const is429 = String(error).includes("429") || String(error).includes("quota") || String(error).includes("exhausted");
       if (is429) console.log(`[429 HANDLED] Gemini quota reached for ${uid}, seeking recent successful guidance.`);
 
-      // Graceful Fallback (Build 31.3)
-      try {
-        const lastValid = recent.find(g => g.source === "ai" || g.source === "fallback" || g.source === "local-fallback");
-        if (lastValid) {
-          console.log(`[FALLBACK USED] Reusing last successful reflection for ${uid} on ${date}.`);
-          const fallbackGuidance = {
-            ...lastValid,
-            uid,
-            date,
-            localDateKey: date,
-            localDate: date,
-            blueprintHash: bpHash, // Update hashes so it stays cached
-            memoryHash: memHash,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            status: "fallback",
-            fallbackUsed: true,
-            note: is429 ? "Using previous successful reflection due to service limit." : "Using previous successful reflection."
-          } as DailyGuidance;
+      const lastValid = recent.find(g => g.source === "ai" || g.source === "fallback" || g.source === "local-fallback");
+      const previousGuidanceDate = lastValid?.localDateKey || lastValid?.date;
+      const fallbackReason = is429 ? "gemini_quota_reached" : "gemini_generation_failed";
 
-          await dailyGuidanceRepository.saveDailyGuidance(fallbackGuidance).catch(() => {});
-          return fallbackGuidance;
-        }
-      } catch (e) { /* ignore */ }
-
-      console.log(`[FALLBACK USED] Generating new local deterministic fallback for ${uid}.`);
-      const fallback = this.generateFallbackDailyGuidance(uid, date, { ...context, previousGuidance: recent });
+      console.log(`[FALLBACK USED] Generating fresh local deterministic fallback for ${uid}.`);
+      const fallback = this.generateFallbackDailyGuidance(uid, date, {
+        ...context,
+        date,
+        localDateKey: date,
+        // Previous guidance is context for variation and anti-repetition only.
+        previousGuidance: recent,
+      }) as DailyGuidance & {
+        fallbackReason: string;
+        generatedForDate: string;
+        previousGuidanceDate?: string;
+      };
       fallback.blueprintHash = bpHash;
       fallback.memoryHash = memHash;
       fallback.localDate = date;
       fallback.content = fallback.soulReflectionText || fallback.dailyNoteText || "";
       fallback.status = "fallback";
       fallback.fallbackUsed = true;
+      fallback.fallbackReason = fallbackReason;
+      fallback.generatedForDate = date;
+      fallback.previousGuidanceDate = previousGuidanceDate;
       fallback.note = "Refleksi sedang dipersiapkan. Bhumi sedang membaca perjalananmu dengan lebih lembut.";
+
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[DAILY_GUIDANCE_FALLBACK_FRESH]", {
+          todayDate: date,
+          previousGuidanceDate,
+          fallbackReason,
+        });
+      }
 
       await dailyGuidanceRepository.saveDailyGuidance(fallback).catch(() => {});
       return fallback;

@@ -144,6 +144,7 @@ export function DashboardClient() {
     let meditations: any[] = [];
     let audios: any[] = [];
     let activities: any[] = [];
+    let journeyLearning: Record<string, unknown> | null = null;
 
     try {
       const existingDailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
@@ -177,7 +178,7 @@ export function DashboardClient() {
 
       invalidCacheKeys.forEach((key) => window.localStorage.removeItem(key));
 
-      const [recent, j, m, a, act, mapping, safetyCfg, journeyStates, navigator] = await Promise.all([
+      const [recent, j, m, a, act, mapping, safetyCfg, journeyStates, navigator, journeyMemory] = await Promise.all([
         dailyGuidanceRepository.getRecentGuidance(uid, 5).catch(() => []),
         journalRepository.getJournalEntries(uid, 5).catch(() => []),
         meditationRepository.getMeditationEntries(uid, 5).catch(() => []),
@@ -187,6 +188,7 @@ export function DashboardClient() {
         safetyRepository.getSafetyConfig(uid).catch(() => null),
         journeyRepository.getRecentDailyStates(uid, 7).catch(() => []),
         wellnessNavigatorRepository.getNavigatorState(uid).catch(() => null),
+        journeyRepository.getDailyMemory(uid).catch(() => null),
       ]);
       setRecentDailyStates(journeyStates);
       setNavigatorState(navigator);
@@ -206,12 +208,32 @@ export function DashboardClient() {
       }
 
       const previousGuidance = recent.find(g => g.localDateKey !== today);
+      const recentPracticePatterns = journeyMemory?.last30Days
+        .flatMap((record) => record.practiceResults ?? [])
+        .slice(0, 20)
+        .map((result) => ({
+          issue: result.issue,
+          practiceId: result.practiceId,
+          practiceCategory: result.practiceCategory,
+          reflectionResult: result.reflectionResult ?? "",
+          practiceHelped: result.practiceHelped ?? null,
+          completedAt: result.completedAt,
+        })) ?? [];
+      journeyLearning = journeyMemory ? {
+        weeklyLearning: journeyMemory.weeklyLearning,
+        monthlyTheme: journeyMemory.monthlyLearning,
+        growthNarrative: journeyMemory.growthNarrative,
+        coachMemory: journeyMemory.coachMemory,
+        practiceEffectiveness: journeyMemory.practiceInsights,
+        recentPracticePatterns,
+      } : null;
       const memoryContext = {
         ...p,
         previousJournalEntries: journals,
         previousMeditationEntries: meditations,
         previousAudioHealingEntries: audios,
         previousActivityEntries: activities,
+        healingMemory: journeyLearning,
       };
 
       const { calculateCurrentSky } = await import("@/lib/astrology/calculateCurrentSky");
@@ -266,7 +288,7 @@ export function DashboardClient() {
         natalHouses: b.astrology?.houses || null,
         previousJournalEntries: journals, previousMeditationEntries: meditations,
         previousAudioHealingEntries: audios, activityHistory: activities,
-        momentumState: null, healingMemory: null,
+        momentumState: null, healingMemory: journeyLearning,
       };
 
       const response = await fetch("/api/ai/daily-guidance", {
@@ -312,7 +334,7 @@ export function DashboardClient() {
           audioHealingHistory: [],
           activityHistory: [],
           momentumState: null,
-          healingMemory: null,
+          healingMemory: journeyLearning,
           adaptiveContext: {
             dailyVariationSeed: createDailyContentSeed({
               uid,
