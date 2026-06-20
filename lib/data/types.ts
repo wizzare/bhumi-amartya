@@ -78,6 +78,7 @@ export interface WellnessSnapshot {
     energy: number; // 1-10
     emotion: number; // 1-10
     focus: number; // 1-10
+    social: number; // 1-10
   };
   needs: WellnessNeed[];
   checkInCompleted: boolean;

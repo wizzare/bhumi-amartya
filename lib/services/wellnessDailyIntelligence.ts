@@ -8,6 +8,8 @@ import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceReposit
 import { dailyStateRepository, type DailyState } from "@/lib/repositories/dailyStateRepository";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { wellnessNavigatorRepository } from "@/lib/repositories/wellnessNavigatorRepository";
+import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
+import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
 import type { Blueprint } from "@/lib/types/blueprint";
@@ -49,6 +51,7 @@ export type WellnessDailyIntelligence = {
     }>;
   };
   recommendationInput: InnerworkPracticeInput;
+  mapping: WellnessMapping | null;
 };
 
 const EMPTY_MEMORY: JourneyDailyMemory = {
@@ -70,14 +73,42 @@ const ISSUE_TITLES: Record<string, string> = {
   disconnection: "Terlalu Jauh dari Kebutuhan Sendiri",
   anxiety: "Sistem Tubuh yang Sedang Waspada",
   low_energy: "Energi Tubuh yang Sedang Rendah",
+  love_block: "Hambatan dalam Menerima dan Memberi Kasih",
+  grief: "Proses Pelepasan dan Duka yang Mendalam",
+  self_worth: "Menemukan Nilai Diri yang Sejati",
+  burnout: "Kelelahan Fisik dan Emosional yang Berat",
 };
 
-function resolveCurrentIssue(
+const CATEGORY_TO_ISSUE_KEY: Record<string, string> = {
+  BURNOUT: "burnout",
+  ANXIETY: "anxiety",
+  LONELINESS: "love_block",
+  LOSS_AND_GRIEF: "grief",
+  GROWTH_PHASE: "self_worth",
+  LIFE_TRANSITION: "self_worth",
+  LIFE_CRISIS: "burnout",
+  MEANING_CRISIS: "self_worth",
+  SPIRITUAL_AWAKENING: "self_worth",
+  SPIRITUAL_CRISIS: "self_worth",
+};
+
+export function resolveCurrentIssue(
+  mapping: WellnessMapping | null,
   guidance: DailyGuidance | null,
   state: DailyState | null,
   navigator: NavigatorState | null,
   profileSignals: string[],
 ): WellnessCurrentIssue {
+  if (mapping?.results?.[0]?.category) {
+    const category = mapping.results[0].category;
+    const key = CATEGORY_TO_ISSUE_KEY[category] || category.toLowerCase();
+    return {
+      key,
+      title: ISSUE_TITLES[key] || mapping.results[0].label || key,
+      source: "wellness",
+    };
+  }
+
   if (guidance?.dominantIssue?.key) {
     const key = guidance.dominantIssue.key;
     return { key, title: ISSUE_TITLES[key] || guidance.dominantIssue.label || key, source: "daily-guidance" };
@@ -129,13 +160,14 @@ export async function loadWellnessDailyIntelligence(input: {
   previous.setDate(previous.getDate() - 1);
   const previousDate = getLocalDateKey(previous, timezone);
 
-  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState] = await Promise.all([
+  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState, mapping] = await Promise.all([
     dailyGuidanceRepository.getDailyGuidance(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, previousDate).catch(() => null),
     journeyRepository.getRecentDailyStates(input.uid, 7).catch(() => []),
     journeyRepository.getDailyMemory(input.uid).catch(() => EMPTY_MEMORY),
     wellnessNavigatorRepository.getNavigatorState(input.uid).catch(() => null),
+    wellnessMappingRepository.getMapping(input.uid).catch(() => null),
   ]);
 
   if (previousDayState && !previousDayState.consolidatedAt) {
@@ -152,7 +184,7 @@ export async function loadWellnessDailyIntelligence(input: {
     meaning?.shadow?.triggers?.medium,
     meaning?.relationships?.boundaries?.medium,
   ].filter((value): value is string => Boolean(value));
-  const currentIssue = resolveCurrentIssue(dailyGuidance, wellnessState, navigatorState, profileSignals);
+  const currentIssue = resolveCurrentIssue(mapping, dailyGuidance, wellnessState, navigatorState, profileSignals);
   const awareness = astroAwarenessEngine.getAwarenessContext(new Date(`${date}T12:00:00`));
   const astroContext = [
     dailyGuidance?.astrologyToday,
@@ -229,5 +261,6 @@ export async function loadWellnessDailyIntelligence(input: {
         practiceEffectiveness: journeyMemory.practiceInsights,
       },
     },
+    mapping,
   };
 }

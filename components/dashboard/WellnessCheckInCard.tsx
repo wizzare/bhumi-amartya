@@ -8,7 +8,8 @@ import {
   Target,
   CheckCircle2,
   ArrowRight,
-  Zap
+  Zap,
+  Users
 } from "lucide-react";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { WellnessSnapshot, WellnessNeed } from "@/lib/data/types";
@@ -43,6 +44,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
     energy: initialSnapshot?.metrics.energy || 5,
     emotion: initialSnapshot?.metrics.emotion || 5,
     focus: initialSnapshot?.metrics.focus || 5,
+    social: initialSnapshot?.metrics.social || 5,
   });
   const [selectedNeeds, setSelectedNeeds] = useState<WellnessNeed[]>(initialSnapshot?.needs || []);
   const [saving, setSaving] = useState(false);
@@ -149,6 +151,12 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
             value={metrics.focus}
             onChange={(v) => handleMetricChange("focus", v)}
           />
+          <MetricSlider
+            label="Koneksi Sosial"
+            icon={<Users size={18} />}
+            value={metrics.social}
+            onChange={(v) => handleMetricChange("social", v)}
+          />
         </div>
 
         <div className="mb-10">
@@ -192,36 +200,13 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
         <CheckCircle2 className="text-emerald-500" size={28} />
       </header>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-5 gap-2 mb-8">
         <StatusMiniCard label="Tidur" value={metrics.sleep} color="indigo" />
         <StatusMiniCard label="Energi" value={metrics.energy} color="orange" />
         <StatusMiniCard label="Emosi" value={metrics.emotion} color="red" />
         <StatusMiniCard label="Fokus" value={metrics.focus} color="blue" />
+        <StatusMiniCard label="Koneksi" value={metrics.social} color="teal" />
       </div>
-
-      {recommendation && (
-        <div className="bg-white p-6 rounded-[2rem] border border-[#E8E9E5] shadow-sm mb-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#9BB89A] mb-4">Langkah Pendukung</p>
-          <ul className="space-y-3 mb-6">
-            {recommendation.supportingAdvice.map((advice, i) => (
-              <li key={i} className="text-sm text-[#4F6658] font-medium flex items-start gap-2">
-                <span className="text-[#9BB89A]">•</span>
-                {advice}
-              </li>
-            ))}
-          </ul>
-
-          <button
-            className="w-full py-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest shadow-sm active:scale-[0.98]"
-            onClick={() => {
-              // In the future, this will link to the actual action
-              console.log("Action triggered:", recommendation.primaryAction.action);
-            }}
-          >
-            {recommendation.primaryAction.label}
-          </button>
-        </div>
-      )}
 
       <button
         onClick={() => setStep("active")}
@@ -261,6 +246,7 @@ function StatusMiniCard({ label, value, color }: { label: string; value: number;
     orange: "bg-orange-50 text-orange-600",
     red: "bg-red-50 text-red-600",
     blue: "bg-blue-50 text-blue-600",
+    teal: "bg-teal-50 text-teal-600",
   };
   return (
     <div className={`p-3 rounded-2xl text-center ${colors[color]}`}>

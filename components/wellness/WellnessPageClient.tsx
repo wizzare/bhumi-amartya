@@ -26,6 +26,8 @@ import {
   loadWellnessDailyIntelligence,
   type WellnessDailyIntelligence,
 } from "@/lib/services/wellnessDailyIntelligence";
+import { wellnessNavigatorEngine } from "@/lib/engines/wellnessNavigatorEngine";
+import { wellnessSupportEngine } from "@/lib/engines/wellnessSupportEngine";
 import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { WellnessNavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { SupportEngineState } from "@/lib/engines/wellnessSupportEngine";
@@ -183,6 +185,7 @@ export function WellnessPageClient() {
   const [intelligence, setIntelligence] = React.useState<WellnessDailyIntelligence | null>(null);
   const [decision, setDecision] = React.useState<InnerworkDailyDecision | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [checkInCompleted, setCheckInCompleted] = React.useState(false);
 
   // Results & assessment state
   const [assessmentStage, setAssessmentStage] = React.useState<"intro" | "questions" | "results">("intro");
@@ -192,6 +195,8 @@ export function WellnessPageClient() {
   const [results, setResults] = React.useState<AssessmentResult | null>(null);
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
   const [startFresh, setStartFresh] = React.useState(false);
+
+  const isBaselinePending = !auth?.userProfile?.baselineWellnessCompleted && auth?.userProfile?.guardianRole !== 'founder';
 
   React.useEffect(() => {
     async function load() {
@@ -209,6 +214,19 @@ export function WellnessPageClient() {
         });
         setIntelligence(result);
         setDecision(buildInnerworkDailyDecision(result.recommendationInput));
+
+        const completed = result.wellnessState?.wellnessSnapshot?.checkInCompleted || false;
+        setCheckInCompleted(completed);
+
+        if (result.mapping) {
+          setMapping(result.mapping);
+          setResults(result.mapping.assessment);
+          const navState = wellnessNavigatorEngine.calculateNavigator(result.mapping);
+          const supState = wellnessSupportEngine.calculateSupportPath(result.mapping);
+          setNavigator(navState);
+          setSupport(supState);
+          setAssessmentStage("results");
+        }
       } finally {
         setLoading(false);
       }
@@ -241,12 +259,15 @@ export function WellnessPageClient() {
             uid={auth?.user?.uid || ""}
             language={language}
             startFresh={startFresh}
-            onResultsLoaded={(m, n, s, r) => {
+            onResultsLoaded={async (m, n, s, r) => {
               setMapping(m);
               setNavigator(n);
               setSupport(s);
               setResults(r);
               setAssessmentStage("results");
+              if (auth?.refreshUserProfile) {
+                await auth.refreshUserProfile();
+              }
             }}
             onStageChange={setAssessmentStage}
           />
@@ -255,6 +276,71 @@ export function WellnessPageClient() {
     );
   }
 
+  // Baseline Lock Flow
+  if (isBaselinePending) {
+    return (
+      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32 animate-in fade-in duration-500">
+        <AppNav />
+        <div className="mx-auto max-w-lg space-y-12">
+          <BhumiPageHeader />
+          <header className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">{t.wellness.title}</p>
+            <h1 className="mt-2 font-serif text-3xl text-[#4F5E52]">{t.wellness.headerTitle}</h1>
+            <p className="mt-2 text-sm text-[#7B8776]">{t.wellness.subtitle}</p>
+          </header>
+
+          <WellnessSection number="1" title="Baseline Scan">
+            <WellnessAssessmentFlow
+              key="baseline"
+              uid={auth?.user?.uid || ""}
+              language={language}
+              startFresh={true}
+              onResultsLoaded={async (m, n, s, r) => {
+                setMapping(m);
+                setNavigator(n);
+                setSupport(s);
+                setResults(r);
+                setAssessmentStage("results");
+                if (auth?.refreshUserProfile) {
+                  await auth.refreshUserProfile();
+                }
+              }}
+              onStageChange={setAssessmentStage}
+            />
+          </WellnessSection>
+        </div>
+      </main>
+    );
+  }
+
+  // Daily Scan Lock Flow
+  if (!checkInCompleted) {
+    return (
+      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32 animate-in fade-in duration-500">
+        <AppNav />
+        <div className="mx-auto max-w-lg space-y-12">
+          <BhumiPageHeader />
+          <header className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">{t.wellness.title}</p>
+            <h1 className="mt-2 font-serif text-3xl text-[#4F5E52]">{t.wellness.headerTitle}</h1>
+            <p className="mt-2 text-sm text-[#7B8776]">{t.wellness.subtitle}</p>
+          </header>
+
+          <WellnessSection number="1" title={t.wellness.checkIn}>
+            <div className="space-y-4">
+              <WellnessCheckInCard
+                uid={auth?.user?.uid || ""}
+                initialSnapshot={intelligence?.wellnessState?.wellnessSnapshot}
+                onCompleted={() => setCheckInCompleted(true)}
+              />
+            </div>
+          </WellnessSection>
+        </div>
+      </main>
+    );
+  }
+
+  // Fully Unlocked Flow
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32 animate-in fade-in duration-500">
       <AppNav />
@@ -266,12 +352,13 @@ export function WellnessPageClient() {
           <p className="mt-2 text-sm text-[#7B8776]">{t.wellness.subtitle}</p>
         </header>
 
-        {/* Section 1: Check-in Hari Ini */}
+        {/* Section 1: Check-in Hari Ini (Completed state) */}
         <WellnessSection number="1" title={t.wellness.checkIn}>
           <div className="space-y-4">
             <WellnessCheckInCard
               uid={auth?.user?.uid || ""}
               initialSnapshot={intelligence?.wellnessState?.wellnessSnapshot}
+              onCompleted={() => setCheckInCompleted(true)}
             />
             {intelligence?.wellnessState?.emotionalWord && (
               <p className="rounded-2xl bg-white p-4 text-sm text-[#526053] shadow-sm">
@@ -281,18 +368,64 @@ export function WellnessPageClient() {
           </div>
         </WellnessSection>
 
-        {/* Section 2: Summary Mapping or Assessment Intro */}
+        {/* Section 2: Hasil Pemetaan & Collapsible Details */}
         {assessmentStage === "results" && mapping && results ? (
           <WellnessSection number="2" title={t.wellness.summaryMapping}>
-            <WellnessSummaryMapping
-              mapping={mapping}
-              navigator={navigator}
-              results={results}
-              language={language}
-              isExpanded={isDetailsExpanded}
-              onToggleExpand={() => setIsDetailsExpanded(!isDetailsExpanded)}
-              onRepeat={handleRepeat}
-            />
+            <div className="space-y-4">
+              <WellnessSummaryMapping
+                mapping={mapping}
+                navigator={navigator}
+                results={results}
+                language={language}
+                isExpanded={isDetailsExpanded}
+                onToggleExpand={() => setIsDetailsExpanded(!isDetailsExpanded)}
+                onRepeat={handleRepeat}
+              />
+
+              {/* Nested Collapsible Detail Analysis */}
+              {isDetailsExpanded && (
+                <div className="space-y-12 pt-8 border-t border-[#E8E9E5] animate-in fade-in duration-500">
+                  {/* Navigator Steps */}
+                  {navigator && <WellnessNavigatorView state={navigator} language={language} />}
+
+                  {/* 1. Kemungkinan Tema Saat Ini */}
+                  {mapping && <WellnessMappingView mapping={mapping} language={language} />}
+
+                  {/* 2. Pemetaan Dimensi */}
+                  {results && <WellnessMapView results={results} language={language} />}
+
+                  {/* 3. Jalur Aman */}
+                  {support && <WellnessSupportPathView state={support} language={language} />}
+
+                  {/* 4. Pendampingan */}
+                  <div className="space-y-6">
+                    <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-4 border-b border-[#F5F1E8] pb-2">
+                      {t.kenaliDiri.recommendations.title}
+                    </h4>
+
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level1}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                         <RecommendationButton href="/innerwork/journaling" icon={<BookOpen size={16} />} label={t.kenaliDiri.recommendations.journaling} />
+                         <RecommendationButton href="/innerwork/meditation" icon={<Brain size={16} />} label={t.kenaliDiri.recommendations.meditation} />
+                         <RecommendationButton href="/innerwork/audio-healing" icon={<Music size={16} />} label={t.kenaliDiri.recommendations.audio} />
+                         <RecommendationButton href="/innerwork/manifestasi" icon={<Target size={16} />} label={t.kenaliDiri.recommendations.manifestation} />
+                         <RecommendationButton href="/wellness" icon={<Sparkles size={16} />} label={t.kenaliDiri.recommendations.innerwork} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level2}</p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                         <RecommendationButton href={COMMUNITY_CONFIG.whatsappLink} icon={<Users size={16} />} label={language === "id" ? "Gabung Sobat Mistis Bhumi" : "Join Sobat Mistis Bhumi"} disabled={!COMMUNITY_CONFIG.whatsappLink} />
+                         <RecommendationButton href="#" icon={<MessageSquare size={16} />} label={t.kenaliDiri.recommendations.circle} disabled />
+                         <RecommendationButton href="#" icon={<Users size={16} />} label={t.kenaliDiri.recommendations.buddy} disabled />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </WellnessSection>
         ) : (
           <WellnessSection number="2" title={t.wellness.mapping}>
@@ -301,12 +434,15 @@ export function WellnessPageClient() {
               uid={auth?.user?.uid || ""}
               language={language}
               startFresh={startFresh}
-              onResultsLoaded={(m, n, s, r) => {
+              onResultsLoaded={async (m, n, s, r) => {
                 setMapping(m);
                 setNavigator(n);
                 setSupport(s);
                 setResults(r);
                 setAssessmentStage("results");
+                if (auth?.refreshUserProfile) {
+                  await auth.refreshUserProfile();
+                }
               }}
               onStageChange={setAssessmentStage}
             />
@@ -437,66 +573,8 @@ export function WellnessPageClient() {
           </div>
         </WellnessSection>
 
-        {/* Section 4: Detail Analysis (collapsed by default, only shown in results stage) */}
-        {assessmentStage === "results" && (
-          <WellnessSection number="4" title={t.wellness.detailAnalysis}>
-            {isDetailsExpanded ? (
-              <div className="space-y-12 animate-in fade-in duration-500">
-                {/* Navigator Steps */}
-                {navigator && <WellnessNavigatorView state={navigator} language={language} />}
-                
-                {/* 1. Kemungkinan Tema Saat Ini */}
-                {mapping && <WellnessMappingView mapping={mapping} language={language} />}
-                
-                {/* 2. Pemetaan Dimensi */}
-                {results && <WellnessMapView results={results} language={language} />}
-                
-                {/* 3. Jalur Aman */}
-                {support && <WellnessSupportPathView state={support} language={language} />}
-                
-                {/* 4. Pendampingan */}
-                <div className="space-y-6">
-                  <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-4 border-b border-[#F5F1E8] pb-2">
-                    {t.kenaliDiri.recommendations.title}
-                  </h4>
-
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level1}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                       <RecommendationButton href="/innerwork/journaling" icon={<BookOpen size={16} />} label={t.kenaliDiri.recommendations.journaling} />
-                       <RecommendationButton href="/innerwork/meditation" icon={<Brain size={16} />} label={t.kenaliDiri.recommendations.meditation} />
-                       <RecommendationButton href="/innerwork/audio-healing" icon={<Music size={16} />} label={t.kenaliDiri.recommendations.audio} />
-                       <RecommendationButton href="/innerwork/manifestasi" icon={<Target size={16} />} label={t.kenaliDiri.recommendations.manifestation} />
-                       <RecommendationButton href="/wellness" icon={<Sparkles size={16} />} label={t.kenaliDiri.recommendations.innerwork} />
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level2}</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                       <RecommendationButton href={COMMUNITY_CONFIG.whatsappLink} icon={<Users size={16} />} label={language === "id" ? "Gabung Sobat Mistis Bhumi" : "Join Sobat Mistis Bhumi"} disabled={!COMMUNITY_CONFIG.whatsappLink} />
-                       <RecommendationButton href="#" icon={<MessageSquare size={16} />} label={t.kenaliDiri.recommendations.circle} disabled />
-                       <RecommendationButton href="#" icon={<Users size={16} />} label={t.kenaliDiri.recommendations.buddy} disabled />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center p-6 bg-white rounded-3xl border border-[#E8E9E5] shadow-sm">
-                <p className="text-sm text-[#7B8776] mb-3">Detail analisis batinmu tersembunyi.</p>
-                <button
-                  onClick={() => setIsDetailsExpanded(true)}
-                  className="bhumi-button px-6 py-2.5 text-xs font-bold"
-                >
-                  {language === "id" ? "Lihat Detail Analisis" : "View Detail Analysis"}
-                </button>
-              </div>
-            )}
-          </WellnessSection>
-        )}
-
-        {/* Section 5 or 4: Praktik Tambahan */}
-        <WellnessSection number={assessmentStage === "results" ? "5" : "4"} title={t.wellness.additional}>
+        {/* Section 4: Praktik Tambahan */}
+        <WellnessSection number="4" title={t.wellness.additional}>
           <div className="grid grid-cols-2 gap-3">
             {PRACTICES.map(({ label, href, Icon }) => (
               <Link key={label} href={href} className="rounded-2xl border border-[#E8E9E5] bg-white p-5 text-center shadow-sm hover:border-[#4F5E52]/20 transition-all active:scale-[0.98] group">
@@ -507,12 +585,13 @@ export function WellnessPageClient() {
           </div>
         </WellnessSection>
 
-        {/* Section 6 or 5: Dukungan untukmu */}
-        <WellnessSection number={assessmentStage === "results" ? "6" : "5"} title={t.wellness.support}>
+        {/* Section 5: Dukungan untukmu */}
+        <WellnessSection number="5" title={t.wellness.support}>
           <div className="space-y-3">
             <SupportCard title="Sobat Mistis Bhumi Amartya" description="Belajar, bertumbuh, dan berjalan bersama komunitas Bhumi." href={COMMUNITY_CONFIG.whatsappLink} status="ACTIVE" Icon={Users} />
             <SupportCard title="Psikolog Terdekat" description="Temukan layanan psikolog yang tersedia di area terdekatmu." href="https://www.google.com/search?q=psikolog+terdekat" action="Cari Psikolog Terdekat" Icon={BriefcaseMedical} />
             <SupportCard title="Mitra Pendamping Bhumi" description="Jaringan pendamping terkurasi sedang dipersiapkan." status="COMING SOON" locked Icon={HeartHandshake} />
+            <SupportCard title="Lentera Sintas Indonesia" description="Ruang aman untuk belajar, berbagi, dan bertumbuh bersama para penyintas. Berisi edukasi kesehatan mental, dukungan komunitas, dan kegiatan pemulihan berbasis pengalaman penyintas." href="https://www.instagram.com/lentera_id/" status="Trauma Recovery & Survivor Support" Icon={HeartHandshake} />
             <SupportCard title="Sejiwa" description="Akses informasi dan dukungan kesehatan mental dari Sejiwa." href="https://sejiwa.org/" Icon={HeartHandshake} />
             <SupportCard title="JKN Mobile / SATUSEHAT" description="Akses layanan kesehatan nasional dan informasi kesehatanmu." href="https://www.bpjs-kesehatan.go.id/" secondaryHref="https://satusehat.kemkes.go.id/" Icon={BriefcaseMedical} />
           </div>
@@ -538,7 +617,9 @@ function SupportCard(props: {
   title: string; description: string; href?: string; secondaryHref?: string; action?: string;
   status?: string; locked?: boolean; Icon: React.ComponentType<{ size?: number; className?: string }>;
 }) {
-  const content = (
+  const isMultiLink = Boolean(props.secondaryHref);
+
+  const cardContent = (
     <div className="flex items-start gap-4 rounded-3xl border border-[#E8E9E5] bg-white p-5">
       <div className="rounded-2xl bg-[#F5F1E8] p-3 text-[#4F5E52]"><props.Icon size={20} /></div>
       <div className="min-w-0 flex-1">
@@ -547,13 +628,37 @@ function SupportCard(props: {
           {props.status && <span className="rounded-full bg-[#F5F1E8] px-2 py-1 text-[8px] font-bold text-[#7B8776]">{props.status}</span>}
         </div>
         <p className="mt-2 text-xs leading-relaxed text-[#7B8776]">{props.description}</p>
-        {props.action && <p className="mt-3 text-xs font-bold text-[#4F5E52]">{props.action}</p>}
-        {props.secondaryHref && <a href={props.secondaryHref} target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-xs font-bold text-[#4F5E52]">Buka SATUSEHAT <ExternalLink size={11} className="inline" /></a>}
+
+        {isMultiLink ? (
+          <div className="mt-3 flex gap-4">
+            {props.href && (
+              <a href={props.href} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#4F5E52] flex items-center gap-1 hover:underline">
+                Buka JKN Mobile <ExternalLink size={11} className="inline" />
+              </a>
+            )}
+            {props.secondaryHref && (
+              <a href={props.secondaryHref} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-[#4F5E52] flex items-center gap-1 hover:underline">
+                Buka SATUSEHAT <ExternalLink size={11} className="inline" />
+              </a>
+            )}
+          </div>
+        ) : (
+          <>
+            {props.action && <p className="mt-3 text-xs font-bold text-[#4F5E52]">{props.action}</p>}
+          </>
+        )}
       </div>
-      {props.locked ? <Lock size={16} className="text-[#9AA394]" /> : props.href ? <ExternalLink size={16} className="text-[#9AA394]" /> : null}
+      {!isMultiLink && (
+        props.locked ? <Lock size={16} className="text-[#9AA394]" /> : props.href ? <ExternalLink size={16} className="text-[#9AA394]" /> : null
+      )}
     </div>
   );
+
+  if (isMultiLink) {
+    return cardContent;
+  }
+
   return props.href && !props.locked
-    ? <a href={props.href} target="_blank" rel="noopener noreferrer">{content}</a>
-    : content;
+    ? <a href={props.href} target="_blank" rel="noopener noreferrer" className="block">{cardContent}</a>
+    : cardContent;
 }
