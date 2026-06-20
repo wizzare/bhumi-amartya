@@ -47,11 +47,11 @@ export function ProtectedRoute({
       !auth.userProfile.baselineWellnessCompleted &&
       auth.userProfile.guardianRole !== 'founder' &&
       typeof window !== 'undefined' &&
-      window.location.pathname !== '/wellness-assessment' &&
+      window.location.pathname !== '/wellness' &&
       window.location.pathname !== '/setup'
     ) {
-      console.log("[PROTECTED ROUTE] Baseline Pending -> Redirecting to Wellness Assessment");
-      router.replace('/wellness-assessment');
+      console.log("[PROTECTED ROUTE] Baseline Pending -> Redirecting to Wellness");
+      router.replace('/wellness');
     }
   }, [auth?.authStateResolved, auth?.user, router, redirectTo]);
 

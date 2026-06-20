@@ -115,9 +115,9 @@ export default function WorkoutPage() {
         <AppNav />
 
         <div className="mx-auto max-w-lg">
-          <Link href="/innerwork" className="flex items-center gap-2 text-[#7B8776] mb-6 hover:text-[#4F5E52] transition-colors">
+          <Link href="/wellness" className="flex items-center gap-2 text-[#7B8776] mb-6 hover:text-[#4F5E52] transition-colors">
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Kembali ke Hub</span>
+            <span className="text-sm font-medium">Kembali ke Wellness</span>
           </Link>
 
           <header className="mb-8">

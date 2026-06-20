@@ -19,9 +19,9 @@ type NavItem = {
 
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { Icon: Home, labelKey: "home", href: "/dashboard" },
-  { Icon: Sprout, labelKey: "innerwork", label: "Wellness", href: "/wellness" },
-  { Icon: Compass, labelKey: "journey", href: "/journey" },
   { Icon: User, labelKey: "profile", href: "/profile" },
+  { Icon: Sprout, labelKey: "innerwork", href: "/wellness" },
+  { Icon: Compass, labelKey: "journey", href: "/journey" },
 ];
 
 const UTILITY_NAV_ITEMS: NavItem[] = [

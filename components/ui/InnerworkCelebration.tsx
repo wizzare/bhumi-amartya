@@ -55,10 +55,10 @@ export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
 
         <button
           type="button"
-          onClick={() => router.push("/innerwork")}
+          onClick={() => router.push("/wellness")}
           className="bhumi-button mt-8 w-full"
         >
-          Kembali ke Innerwork
+          Kembali ke Wellness
         </button>
       </div>
     </div>

@@ -92,7 +92,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
 
   if (step === "pending") {
     return (
-      <div className="mt-8 bhumi-card p-8 bg-white border-none shadow-sm group">
+      <div className="bhumi-card p-8 bg-white border-none shadow-sm group">
         <header className="mb-6">
           <h3 className="text-[#4F6658] font-bold text-xl italic flex items-center gap-2">
             <Zap size={20} className="text-yellow-500 fill-yellow-500" />
@@ -116,7 +116,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
 
   if (step === "active") {
     return (
-      <div className="mt-8 bhumi-card p-8 bg-white border-none shadow-sm">
+      <div className="bhumi-card p-8 bg-white border-none shadow-sm">
         <header className="mb-8">
           <h3 className="text-[#4F6658] font-bold text-xl italic">Kondisi Saat Ini</h3>
           <div className="h-1 w-full bg-[#F5F1E8] rounded-full mt-2 overflow-hidden">
@@ -183,7 +183,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
   }
 
   return (
-    <div className="mt-8 bhumi-card p-8 bg-[#FCFAF5] border border-[#E8E9E5]/50 shadow-sm">
+    <div className="bhumi-card p-8 bg-[#FCFAF5] border border-[#E8E9E5]/50 shadow-sm">
       <header className="mb-6 flex justify-between items-center">
         <div>
           <h3 className="text-[#4F6658] font-bold text-xl italic">Kondisimu Hari Ini</h3>

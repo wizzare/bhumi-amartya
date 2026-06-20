@@ -71,7 +71,7 @@ export function InnerworkTodayCard({ dailyGuidance, language, labels }: Innerwor
         )}
 
         <Link
-          href="/innerwork"
+          href="/wellness"
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#4F5E52] text-white text-sm font-bold hover:bg-[#3D4A3F] transition-all shadow-md active:scale-[0.98]"
         >
           {ctaText}

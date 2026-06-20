@@ -571,10 +571,10 @@ export default function JournalPage() {
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.tomorrowFocus}</p>
                 </div>
                 <button
-                  onClick={() => router.push("/innerwork")}
+                  onClick={() => router.push("/wellness")}
                   className="w-full py-3 mt-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest"
                 >
-                  Kembali ke Hub
+                  Kembali ke Wellness
                 </button>
               </div>
             )}
@@ -674,10 +674,10 @@ export default function JournalPage() {
                     Journal Again
                   </button>
                   <button
-                    onClick={() => router.push("/innerwork")}
+                    onClick={() => router.push("/wellness")}
                     className="flex-1 py-3 px-4 rounded-xl bg-[#4F5E52] text-white font-medium hover:bg-[#3D4A3F] transition-colors"
                   >
-                    Back to Innerwork Hub
+                    Back to Wellness Hub
                   </button>
                 </div>
               </div>

@@ -32,6 +32,14 @@ import { userRepository, BaselineWellnessProfile } from "@/lib/repositories/user
 interface WellnessAssessmentFlowProps {
   uid: string;
   language: "id" | "en";
+  startFresh?: boolean;
+  onResultsLoaded?: (
+    mapping: WellnessMapping,
+    navigator: WellnessNavigatorState,
+    support: SupportEngineState,
+    results: AssessmentResult
+  ) => void;
+  onStageChange?: (stage: Stage) => void;
 }
 
 type Stage = "intro" | "questions" | "results";
@@ -47,7 +55,7 @@ const QUESTIONS = [
   { id: 25, dimension: "SPIRITUALITY" as const, text: { id: "Saya meluangkan waktu untuk refleksi diri atau kontemplasi harian.", en: "I make time for self-reflection or daily contemplation." } },
 ];
 
-export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlowProps) {
+export function WellnessAssessmentFlow({ uid, language, startFresh = false, onResultsLoaded, onStageChange }: WellnessAssessmentFlowProps) {
   const t = translations[language];
   const auth = useAuth();
   const userProfile = auth?.userProfile;
@@ -69,24 +77,31 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
 
   useEffect(() => {
     const loadExisting = async () => {
-      if (!uid) return;
+      if (!uid || startFresh) return;
       try {
         const existing = await wellnessMappingRepository.getMapping(uid);
         if (existing?.assessment) {
           setMapping(existing);
-          setNavigator(wellnessNavigatorEngine.calculateNavigator(existing));
-          setSupport(wellnessSupportEngine.calculateSupportPath(existing));
+          const navState = wellnessNavigatorEngine.calculateNavigator(existing);
+          const supState = wellnessSupportEngine.calculateSupportPath(existing);
+          setNavigator(navState);
+          setSupport(supState);
           setResults(existing.assessment);
           setStage("results");
+          onResultsLoaded?.(existing, navState, supState, existing.assessment);
+          onStageChange?.("results");
         }
       } catch (loadError) {
         console.error("[Kenali Diri] Failed to load saved reflection", loadError);
       }
     };
     void loadExisting();
-  }, [uid]);
+  }, [uid, startFresh]);
 
-  const handleStart = () => setStage("questions");
+  const handleStart = () => {
+    setStage("questions");
+    onStageChange?.("questions");
+  };
 
   const handleAnswer = (questionId: number, score: number) => {
     setAnswers(prev => ({ ...prev, [questionId]: score }));
@@ -121,6 +136,7 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
           await refreshUserProfile();
         }
         setStage("results");
+        onStageChange?.("results");
         return;
       }
 
@@ -130,10 +146,14 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
       }
 
       setMapping(result);
-      setNavigator(wellnessNavigatorEngine.calculateNavigator(result));
-      setSupport(wellnessSupportEngine.calculateSupportPath(result));
+      const navState = wellnessNavigatorEngine.calculateNavigator(result);
+      const supState = wellnessSupportEngine.calculateSupportPath(result);
+      setNavigator(navState);
+      setSupport(supState);
       setResults(result.assessment);
       setStage("results");
+      onResultsLoaded?.(result, navState, supState, result.assessment);
+      onStageChange?.("results");
 
       try {
         await wellnessMappingRepository.saveMapping(uid, result);
@@ -274,97 +294,13 @@ export function WellnessAssessmentFlow({ uid, language }: WellnessAssessmentFlow
       }
     }
 
-    return (
-      <div className="bhumi-card p-8 bg-white border-none shadow-sm space-y-12">
-        {error && (
-          <p role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-            {error}
-          </p>
-        )}
-        {notice && (
-          <p role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
-            {notice}
-          </p>
-        )}
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-[#4F6658] font-bold text-2xl italic">{t.kenaliDiri.title}</h3>
-            <p className="text-[10px] text-[#7B8776] font-bold uppercase tracking-widest mt-1">
-              {t.kenaliDiri.reviewTitle} - {new Date().toLocaleDateString(language === "id" ? "id-ID" : "en-US", { day: "2-digit", month: "short" })}
-            </p>
-          </div>
-          <button
-            onClick={() => setStage("intro")}
-            className="text-[10px] font-bold text-[#7B8776] uppercase tracking-widest underline"
-          >
-            {language === "id" ? "Ulangi Refleksi" : "Repeat Reflection"}
-          </button>
-        </div>
-
-        <section>
-          <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-6 border-b border-[#F5F1E8] pb-2">{t.kenaliDiri.results.theme}</h4>
-          {navigator ? <WellnessNavigatorView state={navigator} language={language} /> : <p className="text-sm italic text-gray-400">Loading theme...</p>}
-        </section>
-
-        <section>
-          <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-6 border-b border-[#F5F1E8] pb-2">{t.kenaliDiri.results.patterns}</h4>
-          {mapping ? <WellnessMappingView mapping={mapping} language={language} /> : <p className="text-sm italic text-gray-400">Loading patterns...</p>}
-        </section>
-
-        <section>
-          <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-6 border-b border-[#F5F1E8] pb-2">{t.kenaliDiri.results.attention}</h4>
-          {results ? <WellnessMapView results={results} language={language} /> : <p className="text-sm italic text-gray-400">Loading attention areas...</p>}
-        </section>
-
-        <section>
-          <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-6 border-b border-[#F5F1E8] pb-2">{t.kenaliDiri.results.safePath}</h4>
-          {support ? <WellnessSupportPathView state={support} language={language} /> : <p className="text-sm italic text-gray-400">Loading safe path...</p>}
-        </section>
-
-        <div className="space-y-6">
-          <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-4 border-b border-[#F5F1E8] pb-2">
-            {t.kenaliDiri.recommendations.title}
-          </h4>
-
-          <div className="space-y-4">
-            <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level1}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-               <RecommendationButton href="/innerwork/journaling" icon={<BookOpen size={16} />} label={t.kenaliDiri.recommendations.journaling} />
-               <RecommendationButton href="/innerwork/meditation" icon={<Brain size={16} />} label={t.kenaliDiri.recommendations.meditation} />
-               <RecommendationButton href="/innerwork/audio-healing" icon={<Music size={16} />} label={t.kenaliDiri.recommendations.audio} />
-               <RecommendationButton href="/innerwork/manifestasi" icon={<Target size={16} />} label={t.kenaliDiri.recommendations.manifestation} />
-               <RecommendationButton href="/innerwork" icon={<Sparkles size={16} />} label={t.kenaliDiri.recommendations.innerwork} />
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level2}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-               <RecommendationButton href={COMMUNITY_CONFIG.whatsappLink} icon={<Users size={16} />} label={language === "id" ? "Gabung Sobat Mistis Bhumi" : "Join Sobat Mistis Bhumi"} disabled={!COMMUNITY_CONFIG.whatsappLink} />
-               <RecommendationButton href="#" icon={<MessageSquare size={16} />} label={t.kenaliDiri.recommendations.circle} disabled />
-               <RecommendationButton href="#" icon={<Users size={16} />} label={t.kenaliDiri.recommendations.buddy} disabled />
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 rounded-[2rem] bg-[#4F5E52] text-white shadow-lg">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-70 mb-2">
-            {language === "id" ? "Langkah Berikutnya" : "Next Steps"}
-          </p>
-          <p className="text-sm font-medium leading-relaxed">
-            {language === "id"
-              ? "Refleksi ini menjadi landasan bagi Bhumi untuk menyesuaikan saran Bhumi dan pilihan praktik yang paling mendukungmu hari ini."
-              : "This reflection becomes the foundation for Bhumi to tailor mentor advice and practice options that best support you today."}
-          </p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return null;
 }
 
-function RecommendationButton({ href, icon, label, disabled = false }: { href: string; icon: React.ReactNode; label: string; disabled?: boolean }) {
+export function RecommendationButton({ href, icon, label, disabled = false }: { href: string; icon: React.ReactNode; label: string; disabled?: boolean }) {
   if (disabled) {
     return (
       <div className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 opacity-60 cursor-not-allowed">

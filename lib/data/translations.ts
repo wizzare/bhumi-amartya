@@ -74,7 +74,7 @@ export const translations = {
     },
 
     nav: {
-      home: "Dashboard",
+      home: "Beranda",
       journal: "Jurnal",
       meditation: "Meditasi",
       audio: "Audio",
@@ -83,7 +83,7 @@ export const translations = {
       settings: "Pengaturan",
       about: "Tentang Bhumi",
       admin: "Admin Dashboard",
-      innerwork: "Innerwork",
+      innerwork: "Wellness",
       kenaliDiri: "Kenali Diri",
       lainnya: "Lainnya",
     },
@@ -131,6 +131,21 @@ export const translations = {
       yoga: "Yoga",
       herbal: "Makanan Sehat",
       manifestasi: "Manifestasi Hari Ini"
+    },
+
+    wellness: {
+      title: "Wellness",
+      headerTitle: "Ruang untuk Merawat Hari Ini",
+      subtitle: "Periksa keadaanmu, pahami polanya, lalu pilih satu tindakan yang mendukung.",
+      checkIn: "Check-in Hari Ini",
+      recommended: "Rekomendasi Hari Ini",
+      mapping: "Hasil Pemetaan",
+      summaryMapping: "Hasil Pemetaan Ringkas",
+      detailAnalysis: "Detail Analisis",
+      additional: "Praktik Tambahan",
+      support: "Dukungan Untukmu",
+      preparing: "Mempersiapkan Wellness...",
+      recsPreparing: "Rekomendasi sedang disiapkan.",
     },
 
      profile: {
@@ -286,7 +301,7 @@ export const translations = {
     },
 
     nav: {
-      home: "Dashboard",
+      home: "Home",
       journal: "Journal",
       meditation: "Meditation",
       audio: "Audio",
@@ -295,7 +310,7 @@ export const translations = {
       settings: "Settings",
       about: "About Bhumi",
       admin: "Admin Dashboard",
-      innerwork: "Innerwork",
+      innerwork: "Wellness",
       kenaliDiri: "Know Yourself",
       lainnya: "More",
     },
@@ -343,6 +358,21 @@ export const translations = {
       yoga: "Yoga",
       herbal: "Healthy Food",
       manifestasi: "Today's Manifestation"
+    },
+
+    wellness: {
+      title: "Wellness",
+      headerTitle: "A Space to Nurture Today",
+      subtitle: "Check today's condition, understand the patterns, and choose a supporting practice.",
+      checkIn: "Today's Check-in",
+      recommended: "Recommended Today",
+      mapping: "Mapping Results",
+      summaryMapping: "Summary Mapping",
+      detailAnalysis: "Detail Analysis",
+      additional: "Additional Practices",
+      support: "Support for You",
+      preparing: "Preparing Wellness...",
+      recsPreparing: "Recommendations are being prepared.",
     },
 
     profile: {
