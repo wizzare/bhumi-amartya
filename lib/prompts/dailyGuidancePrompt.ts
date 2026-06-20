@@ -189,7 +189,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
           }
         },
 
-        soulReflectionText: "string, (REFLEKSI JIWA / MIRROR) 80-150 words. Write a living daily mirror based on bhumiSoulMirrorTemplate. Answer 'Siapa dirimu hari ini?'. Integrate core blueprint essence with journey memory (journal/meditation/audio/weekly). Follow Mirror-Insight-Invitation flow. NO TRANSITS. Mentor tone.",
+        soulReflectionText: "string, (REFLEKSI JIWA / MIRROR) 80-150 words. Write a living daily mirror based on bhumiSoulMirrorTemplate. Answer 'Siapa dirimu hari ini?'. MUST start with: 'Hai {firstName}, selamat hari {dayName}.' (replace with user's first name and local day name, e.g. Hai Widhi, selamat hari Sabtu). Integrates core blueprint essence with journey memory. No technical labels, Life Path, Arcana, Human Design, Astrology, or system explanations. Must end with: 'Peluk hangat dari Bhumi.' followed by a new paragraph with exactly one short companion sentence (maximum 1 sentence, no motivational speech, no teaching, no prediction).",
         dailyNoteText: "string, (CATATAN HARI INI / COMPASS) 120-220 words. Answer 'Hari ini apa yang sedang mempengaruhi dirimu?'. Formula: Mirror x Transit integrated with Journey Memory. Map transits to Natal Houses. Practical and grounded tone.",
         companionReflection: {
           preview:

@@ -9,12 +9,12 @@ import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Capacitor } from "@capacitor/core";
 import { Toast } from "@capacitor/toast";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
-import type { ProfileEchoV1 } from "@/lib/profile/echo";
+import type { ProfileSection } from "@/lib/types/profileRuntime";
 import { createDailyShareCardContent } from "@/lib/profile/dailyShareCardEngine";
 import type { GaiaInsight } from "@/lib/profile/gaia/types";
 
 interface ShareCardProps {
-  echo: ProfileEchoV1;
+  profileSections: ProfileSection[];
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
@@ -36,19 +36,19 @@ async function waitForCardImages(container: HTMLElement): Promise<void> {
   await document.fonts?.ready;
 }
 
-export function ShareCard({ echo, dateKey, userSeed, guidance, userName, gaiaInsights }: ShareCardProps) {
+export function ShareCard({ profileSections, dateKey, userSeed, guidance, userName, gaiaInsights }: ShareCardProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [now, setNow] = useState(() => new Date());
   const cardRef = useRef<HTMLDivElement>(null);
 
   const content = useMemo(() => createDailyShareCardContent({
-    echo,
+    profileSections,
     dateKey: dateKey || new Date().toISOString().slice(0, 10),
     userSeed,
     guidance,
     gaiaInsights,
     now,
-  }), [dateKey, echo, gaiaInsights, guidance, now, userSeed]);
+  }), [dateKey, profileSections, gaiaInsights, guidance, now, userSeed]);
   const shareDate = useMemo(() => new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     day: "numeric",

@@ -83,7 +83,7 @@ const ADVICE_VARIATIONS: Record<(typeof ADVICE_THEMES)[number], string[]> = {
 
 const THEME_ACTIONS: Record<(typeof ADVICE_THEMES)[number], string[]> = {
   pelepasan: ["Tulis yang ingin kamu lepaskan, lalu tutup catatan itu tanpa menghakimi dirimu.", "Rapikan satu sudut kecil sebagai tanda bahwa kamu siap memberi ruang baru."],
-  komunikasi: ["Pilih waktu yang tenang dan sampaikan kebutuhanmu tanpa menambah penjelasan yang tidak perlu.", "Sebelum berbicara, tarik tiga napas dan tentukan satu pesan utama yang ingin dijaga."],
+  komunikasi: ["Pilih waktu yang tenang dan sampaikan kebutuhanmu tanpa menambah penjelasan yang tidak perlu.", "Sebelum berbicara, tarik tiga napas and tentukan satu pesan utama yang ingin dijaga."],
   "tubuh dan istirahat": ["Sisihkan sepuluh menit tanpa layar agar tubuhmu punya kesempatan kembali tenang.", "Beri dirimu air, peregangan ringan, dan satu jeda sebelum meneruskan aktivitas."],
   "karya dan arah": ["Tetapkan waktu singkat untuk satu tugas utama, lalu akhiri dengan mencatat langkah berikutnya.", "Pilih hasil kecil yang jelas dan selesaikan tanpa membuka pekerjaan baru di tengah jalan."],
   relasi: ["Tanyakan apa yang benar-benar dibutuhkan, lalu dengarkan jawabannya tanpa buru-buru memperbaiki.", "Berikan satu respons hangat sambil tetap menjaga batas yang membuatmu merasa aman."],
@@ -167,7 +167,85 @@ function normalizeCategory(categoryKey: string, category: DailyGuidanceCategory,
   };
 }
 
-export function normalizeUserFacingGuidance(guidance: DailyGuidance): DailyGuidance {
+function getFirstName(profile: any): string {
+  if (!profile) return "Sahabat";
+  const nameVal = profile.fullName || profile.displayName || profile.name || 
+                  profile.profile?.fullName || profile.profile?.displayName || profile.profile?.name;
+  if (typeof nameVal === "string" && nameVal.trim()) {
+    return nameVal.trim().split(/\s+/)[0];
+  }
+  return "Sahabat";
+}
+
+function getIndonesianDayName(dateString?: string): string {
+  const dayNames = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+  if (dateString) {
+    const parts = dateString.split("-");
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const date = new Date(year, month, day);
+      return dayNames[date.getDay()];
+    }
+  }
+  return dayNames[new Date().getDay()];
+}
+
+const COMPANION_SENTENCES = [
+  "Besok kita melangkah lagi, satu langkah kecil pada satu waktu.",
+  "Tidak semua hal harus selesai hari ini.",
+  "Terima kasih sudah hadir untuk dirimu sendiri hari ini."
+];
+
+export function standardizeSoulReflection(
+  text: string | undefined,
+  guidance: DailyGuidance,
+  profile?: any
+): string | undefined {
+  if (!text) return text;
+
+  let bodyText = text.trim();
+
+  // Clean leading greeting patterns
+  const greetingPattern = /^(?:hai|selamat|membaca jiwamu|halo|jiwa)[^.!?]*?[.!?]\s*/i;
+  while (greetingPattern.test(bodyText)) {
+    bodyText = bodyText.replace(greetingPattern, "").trim();
+  }
+
+  const firstName = getFirstName(profile || guidance.profileSnapshot);
+  const dateKey = guidance.localDateKey || guidance.date || new Date().toISOString().slice(0, 10);
+  const dayName = getIndonesianDayName(dateKey);
+
+  const expectedOpening = `Hai ${firstName}, selamat hari ${dayName}.`;
+
+  let paragraphs = bodyText.split(/\r?\n+/).map(p => p.trim()).filter(Boolean);
+
+  while (paragraphs.length > 0) {
+    const lastPara = paragraphs[paragraphs.length - 1].toLowerCase();
+    if (
+      lastPara.includes("peluk hangat") ||
+      lastPara.includes("dari bhumi") ||
+      lastPara.includes("besok kita melangkah") ||
+      lastPara.includes("tidak semua hal harus selesai") ||
+      lastPara.includes("terima kasih sudah hadir")
+    ) {
+      paragraphs.pop();
+    } else {
+      break;
+    }
+  }
+
+  const cleanBody = paragraphs.join("\n\n");
+
+  const seed = `${guidance.uid}|${dateKey}`;
+  const companionIndex = seededIndex(seed, COMPANION_SENTENCES.length);
+  const companionSentence = COMPANION_SENTENCES[companionIndex];
+
+  return `${expectedOpening} ${cleanBody}\n\nPeluk hangat dari Bhumi.\n\n${companionSentence}`;
+}
+
+export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: any): DailyGuidance {
   const adviceCounts = new Map<string, number>();
   Object.values(guidance.categories || {}).forEach((category) => {
     const key = (category.advice || "").trim().toLowerCase();
@@ -182,13 +260,16 @@ export function normalizeUserFacingGuidance(guidance: DailyGuidance): DailyGuida
       ) as DailyGuidance["categories"]
     : undefined;
 
+  const profileData = profile || guidance.profileSnapshot;
+  const rawReflection = normalizeUserFacingText(guidance.soulReflectionText);
+  const soulReflectionText = standardizeSoulReflection(rawReflection, guidance, profileData);
+
   return {
     ...guidance,
     guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
     categories,
-    soulReflectionText: normalizeUserFacingText(guidance.soulReflectionText),
+    soulReflectionText,
     dailyNoteText: normalizeUserFacingText(guidance.dailyNoteText),
-    content: normalizeUserFacingText(guidance.content),
     aiInsight: normalizeUserFacingText(guidance.aiInsight) || FRIENDLY_FALLBACK,
     astrologyToday: normalizeUserFacingText(guidance.astrologyToday) || "Amati ritmemu hari ini dengan lembut.",
     previousProgressSummary: normalizeUserFacingText(guidance.previousProgressSummary) || "",

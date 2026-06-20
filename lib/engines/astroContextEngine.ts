@@ -46,24 +46,25 @@ export const astroContextEngine = {
     let timingFocus = "";
 
     if (isReflective) {
-      timingTheme = isId ? "Pemulihan & Peninjauan" : "Restoration & Review";
+      timingTheme = isId ? "Waktu untuk Jeda" : "Time for Pause";
       timingInsight = isId
-        ? `Hidupmu sedang mengajakmu untuk sedikit melambat. Ini bukan tentang berhenti, melainkan membereskan fondasi ${yearlyTheme.toLowerCase()} agar langkah berikutnya lebih ringan.`
-        : `Life is inviting you to slow down slightly. This isn't about stopping, but tidying up the foundation of your ${yearlyTheme.toLowerCase()} so the next step feels lighter.`;
+        ? "Jika tubuhmu meminta jeda hari ini, tidak apa-apa mendengarkannya. Ini saat yang baik untuk merapikan apa yang ada di depan mata secara tenang."
+        : "If your body asks for a pause today, it is okay to listen. This is a good time to quietly tidy up what is right in front of you.";
     } else if (isHeavyAction) {
-      timingTheme = isId ? "Aksi & Keberanian" : "Action & Courage";
+      timingTheme = isId ? "Langkah Kecil" : "Small Steps";
       timingInsight = isId
-        ? `Momentum saat ini mendukungmu untuk mewujudkan ${integrated.coreNarrative.split("untuk")[1]?.split(".")[0] || "langkah baru"}. Keberanianmu hari ini adalah bentuk nyata dari misi jiwamu.`
-        : `The current momentum supports you in manifesting ${integrated.coreNarrative.split("to")[1]?.split(".")[0] || "a new step"}. Your courage today is a living form of your soul mission.`;
+        ? "Hari ini membawa kesiapan untuk bergerak secara nyata. Mulailah dari satu tindakan paling sederhana yang bisa kamu lakukan sekarang."
+        : "Today brings a readiness to move in a real way. Begin with the simplest action you can take right now.";
     } else {
+      timingTheme = isId ? "Menemani Hari" : "Companioning Today";
       timingInsight = isId
-        ? `Kamu berada di fase ${dmV3?.lifeCycle.ageLesson.toLowerCase() || "pembelajaran baru"}. Cuaca batin hari ini mendukungmu untuk melihat pola ${yearlyTheme.toLowerCase()} dengan lebih jernih.`
-        : `You are in a phase of ${dmV3?.lifeCycle.ageLesson.toLowerCase() || "new learning"}. Today's inner weather supports you in seeing your ${yearlyTheme.toLowerCase()} patterns more clearly.`;
+        ? "Tidak semua hal perlu dipaksa hari ini. Beberapa hal mungkin bekerja lebih baik ketika diberi ruang untuk berkembang secara alami."
+        : "Not everything needs to be forced today. Some things might work better when given space to unfold naturally.";
     }
 
     timingFocus = isId
-      ? `Fokuslah pada satu hal yang paling dekat: caramu ${integrated.lifestyleAdvice.split("prioritaskan")[1]?.split(" ")[1] || "bergerak"} secara jujur.`
-      : `Focus on the nearest thing: how you honestly ${integrated.lifestyleAdvice.split("prioritize")[1]?.split(" ")[1] || "move"}.`;
+      ? "Fokuslah pada hal yang paling dekat dan bisa kamu sentuh hari ini, tanpa membebani dirimu dengan hasil akhir."
+      : "Focus on the nearest thing you can touch today, without placing the burden of the final outcome on yourself.";
 
     return {
       timingTheme,

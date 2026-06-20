@@ -21,7 +21,6 @@ function compareVersions(a: string, b: string) {
 export function VersionChecker() {
   const [updateConfig, setUpdateConfig] = useState<any>(null);
   const [isOptionalOpen, setIsOptionalOpen] = useState(false);
-  const [isForceUpdate, setIsForceUpdate] = useState(false);
 
   useEffect(() => {
     async function checkVersion() {
@@ -31,10 +30,8 @@ export function VersionChecker() {
           const data = snap.data();
           setUpdateConfig(data);
           
-          const force = compareVersions(APP_VERSION, data.minimumVersion) < 0 || data.forceUpdate;
-          if (force) {
-            setIsForceUpdate(true);
-          } else if (compareVersions(APP_VERSION, data.currentVersion) < 0) {
+          const latestVer = data.latestVersion || data.currentVersion || "0.0.0";
+          if (compareVersions(APP_VERSION, latestVer) < 0) {
             setIsOptionalOpen(true);
           }
         }
@@ -48,33 +45,18 @@ export function VersionChecker() {
 
   if (!updateConfig) return null;
 
-  if (isForceUpdate) {
-    return (
-      <div className="fixed inset-0 z-[9999] bg-[#FCFAF5] flex items-center justify-center p-6">
-        <div className="max-w-sm w-full bg-white p-6 rounded-3xl shadow-xl text-center border border-[#E8E9E5]">
-          <h2 className="text-xl font-bold text-[#4F5E52] mb-3">Versi aplikasi sudah tidak didukung.</h2>
-          <p className="text-sm text-[#7B8776] mb-6">Harap perbarui aplikasi ke versi terbaru untuk melanjutkan.</p>
-          <a 
-            href={updateConfig.updateUrl || "#"} 
-            className="block w-full bg-[#4F5E52] text-white rounded-2xl py-3 font-semibold text-sm hover:bg-[#3d4a40] transition-colors"
-          >
-            Perbarui Aplikasi
-          </a>
-        </div>
-      </div>
-    );
-  }
-
   if (isOptionalOpen) {
     return (
       <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-6 backdrop-blur-sm">
         <div className="max-w-sm w-full bg-white p-6 rounded-3xl shadow-xl text-center border border-[#E8E9E5]">
           <h2 className="text-xl font-bold text-[#4F5E52] mb-3">Versi terbaru tersedia</h2>
-          <p className="text-sm text-[#7B8776] mb-6">Versi {updateConfig.currentVersion} telah tersedia. Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
+          <p className="text-sm text-[#7B8776] mb-6">Versi {updateConfig.latestVersion || updateConfig.currentVersion} telah tersedia. Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
           <div className="flex flex-col gap-2">
             <a 
-              href={updateConfig.updateUrl || "#"} 
-              className="block w-full bg-[#4F5E52] text-white rounded-2xl py-3 font-semibold text-sm hover:bg-[#3d4a40] transition-colors"
+              href={updateConfig.updateUrl || "https://play.google.com/store/apps/details?id=com.bhumiamartya.app"} 
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-[#4F5E52] text-white rounded-2xl py-3 font-semibold text-sm hover:bg-[#3d4a40] transition-colors text-center"
             >
               Perbarui Sekarang
             </a>
@@ -92,3 +74,4 @@ export function VersionChecker() {
 
   return null;
 }
+

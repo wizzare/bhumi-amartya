@@ -43,7 +43,7 @@ const ARCANA_KEYWORDS: Record<number, { gift: string; shadow: string; theme: str
   7: { gift: "Kemenangan", shadow: "Agresi", theme: "Kereta Perang" },
   8: { gift: "Keadilan", shadow: "Penghakiman", theme: "Keadilan" },
   9: { gift: "Kebijaksanaan", shadow: "Isolasi", theme: "Sang Pertapa" },
-  10: { gift: "Keberuntungan", shadow: "Fatalisme", theme: "Roda Keberuntungan" },
+  10: { gift: "Keseimbangan Ritme", shadow: "Ketergesaan", theme: "Siklus Hidup" },
   11: { gift: "Kekuatan", shadow: "Kekerasan", theme: "Kekuatan" },
   12: { gift: "Perspektif Baru", shadow: "Pengorbanan Diri", theme: "Sang Tergantung" },
   13: { gift: "Transformasi", shadow: "Ketakutan Berubah", theme: "Kematian \u0026 Kebangkitan" },
@@ -93,7 +93,7 @@ export const destinyMatrixV3Engine = {
 
     const lifeCycle = {
       yearlyTheme: ARCANA_KEYWORDS[yearlyArcana]?.theme || "Pertumbuhan",
-      ageLesson: `Pelajaran di usia ${age} tahun adalah tentang ${ARCANA_KEYWORDS[yearlyArcana]?.gift.toLowerCase()}.`,
+      ageLesson: `menemukan keselarasan lewat ${ARCANA_KEYWORDS[yearlyArcana]?.gift.toLowerCase()}`,
       growthFocus: ARCANA_KEYWORDS[yearlyArcana]?.gift || "Kesadaran",
       currentChallenge: ARCANA_KEYWORDS[yearlyArcana]?.shadow || "Keraguan"
     };

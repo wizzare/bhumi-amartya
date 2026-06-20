@@ -1,15 +1,14 @@
-import type { DailyGuidance, DailyGuidanceCategory, DailyManifestation } from "@/lib/dailyGuidance/types";
-import type { ProfileEchoV1 } from "@/lib/profile/echo";
+import type { DailyGuidance, DailyManifestation } from "@/lib/dailyGuidance/types";
+import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { GaiaInsight } from "@/lib/profile/gaia/types";
-import { applyDynamicGreetingPrefix } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 export type DailyShareInsight = {
   id: string;
   label: string;
-  content: string; // Used for summary
+  content: string;
   reflection?: string;
   theme?: string;
-  chapter: ProfileEchoV1["chapters"][number]["id"];
+  chapter: string;
 };
 
 export type DailyShareCardContent = {
@@ -22,7 +21,6 @@ export type DailyShareCardContent = {
 };
 
 const DAY_MS = 86_400_000;
-const FALLBACK_ADVICE = "Pilih satu langkah kecil yang paling jujur untukmu hari ini, lalu beri ruang agar tubuh dan pikiranmu bergerak dalam ritme yang sama.";
 const FALLBACK_MANIFESTATION = "Hari ini aku memilih hadir sepenuhnya bagi diriku sendiri.";
 
 function hash(value: string): number {
@@ -45,6 +43,7 @@ function seededShuffle<T>(items: T[], seed: string): T[] {
   return shuffled;
 }
 
+// Deterministic weekday rhythmic calculation
 function dayNumber(dateKey: string): number {
   const parsed = Date.parse(`${dateKey}T00:00:00Z`);
   return Number.isFinite(parsed) ? Math.floor(parsed / DAY_MS) : 0;
@@ -54,25 +53,12 @@ function clean(value: string | null | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
-function truncateSentences(text: string, maxSentences: number): string {
-  if (!text || typeof text !== "string") return "";
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  if (sentences.length <= maxSentences) return text.trim();
-  return sentences.slice(0, maxSentences).join(" ").trim();
-}
-
-function buildReflection(guidance?: DailyGuidance | null, now: Date = new Date()): string {
-  const sources = [
-    guidance?.soulReflectionText,
-    guidance?.dailyNoteText ?? guidance?.companionReflection?.fullReflection,
-    guidance?.astrologyToday,
-  ].map(clean).filter(Boolean);
-
-  if (sources.length === 0) {
+function buildReflection(guidance?: DailyGuidance | null): string {
+  const text = clean(guidance?.soulReflectionText);
+  if (!text) {
     return "Hari ini adalah ruang untuk mendengar dirimu dengan lebih jernih. Tidak semua jawaban perlu datang sekaligus; satu langkah yang jujur sudah cukup.";
   }
-
-  return applyDynamicGreetingPrefix(truncateSentences(sources.join(" "), 3), "id", now);
+  return text;
 }
 
 function pickDaily<T>(items: T[], seed: string, fallback: T): T {
@@ -80,12 +66,12 @@ function pickDaily<T>(items: T[], seed: string, fallback: T): T {
   return items[hash(seed) % items.length];
 }
 
-function buildCatatanHariIni(guidance: DailyGuidance | null | undefined, seed: string) {
-  const note = clean(guidance?.dailyNoteText ?? guidance?.companionReflection?.fullReflection);
-  const selectedInsight = note || "Setiap langkah kecil yang kamu ambil hari ini memiliki maknanya sendiri.";
+function buildCatatanHariIni(guidance?: DailyGuidance | null) {
+  const text = clean(guidance?.dailyNoteText);
+  const selectedInsight = text || "Setiap langkah kecil yang kamu ambil hari ini memiliki maknanya sendiri.";
   return {
     label: "Catatan Hari Ini",
-    content: truncateSentences(selectedInsight, 3),
+    content: selectedInsight,
   };
 }
 
@@ -102,37 +88,36 @@ function buildManifestation(manifestation: DailyManifestation | null | undefined
 }
 
 export function createDailyShareCardContent({
-  echo,
+  profileSections,
   dateKey,
   userSeed,
   guidance,
   gaiaInsights = [],
-  now = new Date(),
 }: {
-  echo: ProfileEchoV1;
+  profileSections: ProfileSection[];
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
   gaiaInsights?: GaiaInsight[];
   now?: Date;
 }): DailyShareCardContent {
-  const legacyPool = echo.chapters.flatMap((chapter) => chapter.features
-    .filter((feature) => feature.status === "READY" && clean(feature.summary))
-    .map((feature) => ({
-      id: `${chapter.id}:${feature.id}`,
-      label: feature.title,
-      content: truncateSentences(feature.summary, 3),
-      reflection: "Amati bagian dirimu ini hari ini dengan lebih lembut.",
+  const legacyPool = profileSections.flatMap((section) =>
+    section.cards.map((card) => ({
+      id: `${section.title}:${card.title}`,
+      label: card.title,
+      content: card.shortMeaning,
+      reflection: card.actionableReflection || "Amati bagian dirimu ini hari ini dengan lebih lembut.",
       theme: "general",
-      chapter: chapter.id,
-    })));
+      chapter: section.title,
+    }))
+  );
   const gaiaPool = gaiaInsights.map((insight) => ({
     id: `gaia:${insight.id}`,
     label: insight.title,
-    content: truncateSentences(insight.summary || insight.narrative, 3),
-    reflection: truncateSentences(insight.guidance?.[0] ?? "Amati bagian dirimu ini hari ini dengan lebih lembut.", 1),
+    content: insight.summary || insight.narrative,
+    reflection: insight.guidance?.[0] || "Amati bagian dirimu ini hari ini dengan lebih lembut.",
     theme: insight.theme,
-    chapter: "identity" as const,
+    chapter: "identity",
   }));
   const pool = [...legacyPool, ...gaiaPool];
 
@@ -147,14 +132,14 @@ export function createDailyShareCardContent({
     content: "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.",
     reflection: "Langkah kecil apa yang bisa kuambil dengan lebih tulus?",
     theme: "general",
-    chapter: "identity" as const,
+    chapter: "identity",
   };
   const dailySeed = `${userSeed}:${dateKey}`;
 
   return {
     dateKey,
-    reflection: buildReflection(guidance, now),
-    catatanHariIni: buildCatatanHariIni(guidance, dailySeed),
+    reflection: buildReflection(guidance),
+    catatanHariIni: buildCatatanHariIni(guidance),
     profileInsight,
     manifestation: buildManifestation(guidance?.manifestation, dailySeed),
     footerQuote: "Ruang Untuk Pulang dan Kenali Diri",

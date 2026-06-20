@@ -1,5 +1,6 @@
 import { generateBlueprint } from './lib/engines/generateBlueprint';
 import { dailyGuidanceEngine } from './lib/engines/dailyGuidanceEngine';
+import { dailyIntelligenceEngine } from './lib/engines/dailyIntelligenceEngine';
 import { userRepository } from './lib/repositories/userRepository';
 import { blueprintRepository } from './lib/repositories/blueprintRepository';
 import { journalRepository } from './lib/repositories/journalRepository';
@@ -48,17 +49,27 @@ async function test() {
   // 3. Daily Guidance Generation
   console.log("Step 3: Generating daily guidance...");
   const today = new Date().toISOString().slice(0, 10);
-  const guidance = await dailyGuidanceEngine.getOrCreateDailyGuidance(uid, today, {
+  const context = {
     uid,
     date: today,
     language: "id",
     profile: savedProfile as any,
     blueprint: savedBlueprint as any,
-    currentSky: null, // Engine will calculate
+    currentSky: null,
     previousJournalEntries: [],
     previousMeditationEntries: [],
     previousAudioHealingEntries: []
+  };
+  const brain = await dailyIntelligenceEngine.synthesize({
+    uid,
+    date: today,
+    blueprint: savedBlueprint,
+    journey: null,
+    wellness: null,
+    dailyState: null,
+    astrology: null
   });
+  const guidance = await dailyGuidanceEngine.generateLanguageFace(brain, context);
   if (!guidance.soulReflectionText || !guidance.dailyNoteText) throw new Error("Daily guidance missing text fields");
   console.log("Daily Guidance generated:");
   console.log("- Refleksi Jiwa:", guidance.soulReflectionText.slice(0, 50) + "...");

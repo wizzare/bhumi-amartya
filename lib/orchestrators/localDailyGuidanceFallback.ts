@@ -255,7 +255,7 @@ function buildPersonalDailyNote(params: {
 
   return [
     `Tema saat ini: ${astroContext.timingTheme}. ${astroContext.timingInsight} ${activityNote}`,
-    `${natalPhrase} Pola dasarmu berkembang lewat ${lpTheme}; energimu juga lebih tepat ketika ${hdTheme}${strategy ? `, dimulai dari ${strategy}` : ""}${authority ? ` dan kepekaan ${authority}` : ""}. Di lapisan yang lebih dalam, tema ${arcanaTheme} sedang meminta kamu memilih kendali yang lebih sadar, bukan sekadar menahan semuanya sendiri.`,
+    `Langkah alamimu berkembang lewat ${lpTheme}; energimu juga lebih selaras ketika ${hdTheme}. Di saat yang sama, ada ruang untuk menyapa sisi dirimu yang ingin merawat ${arcanaTheme} dengan lebih lembut.`,
     `Fokus harian:\n${astroContext.timingFocus}`,
     `Pertanyaan refleksi:\n${questionByTransit[dominantTheme]}`,
     isId ? `Insight Gaya Hidup:\n${integrated.lifestyleAdvice}` : `Lifestyle Insight:\n${integrated.lifestyleAdvice}`
@@ -293,8 +293,8 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
 
   const rhythm = weekdayThemes[weekday];
   const rhythmLine = isId
-    ? `Hari ini adalah momen untuk ${rhythm.id}.`
-    : `Today is a moment for ${rhythm.en}.`;
+    ? (rhythm.id === "Pemulihan & Integrasi" ? "Jika tubuhmu meminta jeda hari ini, tidak apa-apa mendengarkannya." : "Hari ini ada ruang untuk menyelaraskan kembali apa yang penting bagimu.")
+    : (rhythm.en === "Recovery & Integration" ? "If your body asks for a pause today, it is okay to listen." : "Today offers space to realign what matters to you.");
 
   const openings = isId
     ? [
@@ -315,17 +315,21 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
   // Identity Insights (Varied by date seed as well)
   const identityInsights: Record<string, string[]> = {
     "Generator": isId
-      ? ["Tunggu respons tubuhmu sebelum memberikan tenaga.", "Pastikan baterai energimu digunakan untuk hal yang kamu cintai."]
-      : ["Wait for your body's response before giving energy.", "Ensure your energy battery is used for what you love."],
+      ? ["Mulailah dari respons sederhana yang kamu rasakan di tubuh sebelum terburu-buru memberikan tenagamu.", "Pastikan baterai energimu digunakan untuk hal yang kamu cintai secara jujur."]
+      : ["Start from the simple responses you feel in your body before rushing to give your energy.", "Ensure your energy is used for what you honestly love."],
     "Projector": isId
-      ? ["Ketajamanmu bersinar saat kamu merasa diundang.", "Kelola energimu dengan bijak, tidak perlu berlari bersama para Generator."]
-      : ["Your sharpness shines when you feel invited.", "Manage your energy wisely, no need to run with the Generators."],
+      ? ["Kepekaan dirimu akan bekerja dengan lebih tenang ketika kamu tidak memaksa semua hal selesai sekaligus.", "Kelola energimu dengan bijak, luangkan waktu untuk melihat sekeliling dengan jernih."]
+      : ["Your inner sensitivity will work more peacefully when you don't force everything to be finished at once.", "Manage your energy wisely, take time to see your surroundings clearly."],
     "Manifestor": isId
-      ? ["Berikan informasi sebelum bergerak agar jalumu jernih.", "Doronganmu untuk memulai adalah kekuatan besar."]
-      : ["Inform before you move to keep your path clear.", "Your urge to initiate is a great strength."],
+      ? ["Dorongan untuk bergerak dari dalam dirimu adalah arah yang nyata; cukup komunikasikan langkahmu dengan lembut.", "Doronganmu untuk memulai adalah kekuatan besar yang bisa disalurkan pelan-pelan."]
+      : ["The urge to move from within is a real direction; simply communicate your steps gently.", "Your urge to initiate is a great strength that can be channeled slowly."],
   };
 
-  const hdInsight = pickDaily(identityInsights[hd] || (isId ? ["Inti dirimu adalah tentang pertumbuhan."] : ["Your core is about growth."]), `${seedSource}|hd-insight`, dateKey);
+  const defaultInsight = isId
+    ? ["Mungkin ada bagian dirimu yang sedang bertumbuh pelan-pelan."]
+    : ["Perhaps there is a part of you growing slowly right now."];
+
+  const hdInsight = pickDaily(identityInsights[hd] || defaultInsight, `${seedSource}|hd-insight`, dateKey);
 
   const reflections: Record<number, string[]> = {
     1: isId
@@ -336,7 +340,7 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
       : ["Which loop are you ready to close?", "Value every effort you've made this week."],
   };
 
-  const dailyReflection = pickDaily(reflections[weekday] || (isId ? ["Hadir dan kenali dirimu lebih dalam hari ini."] : ["Be present and know yourself deeper today."]), `${seedSource}|daily-reflection`, dateKey);
+  const dailyReflection = pickDaily(reflections[weekday] || (isId ? ["Hadir dan rasakan keadaanmu hari ini dengan ramah."] : ["Be present and welcome your state today with gentleness."]), `${seedSource}|daily-reflection`, dateKey);
 
   // BUILD 40B/40C: Deep Synthesis Integration
   const hdStyle = calculateHumanDesignStyle(synthesis.fullBlueprint as any);
@@ -357,7 +361,7 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
     astroContext.timingInsight,
     integrated.coreNarrative,
     dailyReflection,
-    wellnessMapping?.results?.[0] ? `(Mengingat apa yang sedang kamu rasakan)` : ""
+    wellnessMapping?.results?.[0] ? (isId ? "Luangkan sedikit waktu untuk menemani apa yang sedang bergerak di dalam perasaanmu hari ini." : "Take a moment to simply accompany whatever is moving through your feelings today.") : ""
   ].filter(Boolean).join("\n\n");
 }
 

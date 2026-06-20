@@ -255,7 +255,7 @@ export function DashboardClient() {
           previousGuidance
         }) : "parse_error";
         if (parsed && !staleReason) {
-          const normalized = normalizeUserFacingGuidance(parsed);
+          const normalized = normalizeUserFacingGuidance(parsed, p);
           console.log(`[DAILY GUIDANCE CACHE HIT] Local storage hit for ${uid} on ${today}`);
           setDailyGuidance(normalized);
           window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
@@ -277,7 +277,7 @@ export function DashboardClient() {
       });
 
       if (existing && !existingStaleReason) {
-        const normalized = normalizeUserFacingGuidance(existing);
+        const normalized = normalizeUserFacingGuidance(existing, p);
         setDailyGuidance(normalized);
         window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
         await dailyGuidanceRepository.saveDailyGuidance(normalized).catch(() => {});
@@ -306,7 +306,7 @@ export function DashboardClient() {
 
       const result = await response.json() as { ok: true; guidance: DailyGuidance } | { ok: false; reason: string };
       if (!result.ok) throw new Error(result.reason);
-      const dg = normalizeUserFacingGuidance(result.guidance);
+      const dg = normalizeUserFacingGuidance(result.guidance, p);
       const staleReason = getDailyGuidanceStaleReason(dg, {
         uid,
         localDateKey: today,
@@ -417,7 +417,7 @@ export function DashboardClient() {
           previousProgressSummary: "Local fallback",
         };
 
-        setDailyGuidance(normalizeUserFacingGuidance(localGuidance));
+        setDailyGuidance(normalizeUserFacingGuidance(localGuidance, p));
       } catch (fallbackErr) {
         console.error("[DAILY_GUIDANCE_FALLBACK_ERROR]", fallbackErr);
       }
@@ -589,6 +589,10 @@ export function DashboardClient() {
         arcanaCenter={blueprint.destinyMatrix?.center || 0}
         sunSign={blueprint.astrology?.sunSign || ""}
         humanDesign={blueprint.humanDesign}
+        weton={blueprint.weton?.weton}
+        baziDayMaster={blueprint.bazi?.dayMaster ? `${blueprint.bazi.dayMaster.polarity} ${blueprint.bazi.dayMaster.element}` : undefined}
+        vedicMoonSign={blueprint.vedic?.moonSign?.sign ? `${blueprint.vedic.moonSign.sign} Moon` : undefined}
+        tzolkinSignature={blueprint.tzolkin?.kinName}
         labels={{
           title: t.dashboard.coreIdentity,
           lifePath: t.dashboard.lifePath,
@@ -597,6 +601,10 @@ export function DashboardClient() {
           humanDesign: t.dashboard.humanDesign,
           humanDesignPending: t.dashboard.humanDesignPending,
           humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
+          weton: t.dashboard.weton,
+          baziDayMaster: t.dashboard.baziDayMaster,
+          vedicMoonSign: t.dashboard.vedicMoonSign,
+          tzolkinSignature: t.dashboard.tzolkinSignature,
         }}
       />
 

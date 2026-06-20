@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dailyGuidanceEngine } from "@/lib/engines/dailyGuidanceEngine";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
 import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
+import { DailyIntelligenceObject } from "@/lib/types/dailyIntelligence";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -126,9 +127,31 @@ export async function POST(request: Request) {
     const input = normalized.input as DailyGuidanceContext;
     const dateKey = input.localDateKey as string;
 
-    const guidance = await dailyGuidanceEngine.getOrCreateDailyGuidance(
-      input.uid,
-      dateKey,
+    const brain: DailyIntelligenceObject = {
+      uid: input.uid,
+      localDateKey: input.localDateKey as string,
+      seed: "recovery_seed", // Placeholder
+      theme: input.astrologyToday || "recovery_theme", // Using astrologyToday if available, otherwise placeholder
+      focus: "recovery_focus", // Placeholder
+      issueKey: "recovery_issue", // Placeholder
+      navigatorMode: "REFLECTION", // Default to REFLECTION
+      journeyStage: 1, // Placeholder
+      emotion: "neutral", // Placeholder
+      challenge: "recovery_challenge", // Placeholder
+      growth: "recovery_growth", // Placeholder
+      suggestion: "recovery_suggestion", // Placeholder
+      energyLevel: 5, // Placeholder
+      dominantSignal: "recovery_signal", // Placeholder
+      confidence: 5, // Placeholder
+      voiceTone: "steady", // Default to steady
+      reflectionSeed: "recovery_reflection_seed", // Placeholder
+      guidanceSeed: "recovery_guidance_seed", // Placeholder
+      generatedAt: new Date().toISOString(),
+      memoryHash: "recovery_memory_hash", // Placeholder
+    };
+
+    const guidance = await dailyGuidanceEngine.generateLanguageFace(
+      brain,
       input
     );
 

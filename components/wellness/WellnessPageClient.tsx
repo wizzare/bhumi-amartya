@@ -32,6 +32,8 @@ import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { WellnessNavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { SupportEngineState } from "@/lib/engines/wellnessSupportEngine";
 import type { AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
+import { checkAppUpdateStatus, type AppUpdateStatus } from "@/lib/services/appUpdateService";
+import { UpdateRequiredScreen } from "./UpdateRequiredScreen";
 
 
 
@@ -178,6 +180,7 @@ export function WellnessPageClient() {
   const [decision, setDecision] = React.useState<InnerworkDailyDecision | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [checkInCompleted, setCheckInCompleted] = React.useState(false);
+  const [updateStatus, setUpdateStatus] = React.useState<AppUpdateStatus | null>(null);
 
   const PRACTICES = React.useMemo(() => {
     const issue = intelligence?.currentIssue.key;
@@ -221,10 +224,12 @@ export function WellnessPageClient() {
     async function load() {
       if (!auth?.user?.uid) return;
       try {
-        const [profile, blueprint] = await Promise.all([
+        const [profile, blueprint, updateInfo] = await Promise.all([
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
+          checkAppUpdateStatus(),
         ]);
+        setUpdateStatus(updateInfo);
         if (!profile) return;
         const result = await loadWellnessDailyIntelligence({
           uid: auth.user.uid,
@@ -264,6 +269,23 @@ export function WellnessPageClient() {
 
   if (loading) {
     return <main className="min-h-screen bg-[#FCFAF5] grid place-items-center text-[#4F5E52]">{t.wellness.preparing}</main>;
+  }
+
+  // Version lock check
+  if (updateStatus?.isOutdated) {
+    return (
+      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32 animate-in fade-in duration-500">
+        <AppNav />
+        <div className="mx-auto max-w-lg space-y-12">
+          <BhumiPageHeader />
+          <UpdateRequiredScreen
+            updateUrl={updateStatus.updateUrl}
+            currentBuild={updateStatus.currentBuild}
+            minimumBuild={updateStatus.minimumBuild}
+          />
+        </div>
+      </main>
+    );
   }
 
   // Focus layout for answering questions

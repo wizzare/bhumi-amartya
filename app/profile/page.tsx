@@ -6,7 +6,6 @@ import { Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { storageProvider } from "@/lib/storage/storageProvider";
-import { createProfileEcho, ProfileEchoV1 } from "@/lib/profile/echo";
 import { ShareCard } from "@/components/ui/ShareCard";
 import { useAuth } from "@/context/AuthContext";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
@@ -119,7 +118,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dateKey, setDateKey] = useState("");
-  const [echo, setEcho] = useState<ProfileEchoV1 | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -142,7 +140,6 @@ export default function ProfilePage() {
           const meaning = HumanMeaningService.generate(canonical);
           const sections = ProfileRuntimeAdapter.buildProfile(meaning);
           setProfileSections(sections);
-          setEcho(createProfileEcho(blueprint));
         }
       } finally {
         setLoading(false);
@@ -152,7 +149,7 @@ export default function ProfilePage() {
   }, [auth?.user?.uid]);
 
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
-  if (!profileSections.length || !echo) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
+  if (!profileSections.length) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
 
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
@@ -191,7 +188,7 @@ export default function ProfilePage() {
           </header>
           <ShareCard
             userName={name}
-            echo={echo}
+            profileSections={profileSections}
             dateKey={dateKey}
             userSeed={auth?.user?.uid ?? name}
             guidance={dailyGuidance}

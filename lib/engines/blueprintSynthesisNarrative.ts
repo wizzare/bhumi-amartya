@@ -39,28 +39,24 @@ export const blueprintSynthesisNarrative = {
     const arcana = synthesis.identitySignals.arcanaCenter;
 
     // 1. Core Narrative (Identity DNA)
-    // Combines LP Purpose + HD Type Processing + Natal MC Social Role + DM Center Lesson
     const coreNarrative = isId
-      ? `Kamu hadir dengan binar ${sunSign}, membawa kualitas ${hdStyle.creativity.toLowerCase()} Melalui peran sosialmu, kamu sedang belajar menyelaraskan ${dmV3.lifeCycle.growthFocus.toLowerCase()} dengan cara batinmu yang ${hdStyle.communication.toLowerCase()}.`
-      : `You shine with the essence of ${sunSign}, bringing ${hdStyle.creativity.toLowerCase()} through your social role. You are currently learning to align your ${dmV3.lifeCycle.growthFocus.toLowerCase()} with your ${hdStyle.communication.toLowerCase()} inner processing.`;
+      ? `Hari ini ada ruang untuk membawa kenyamanan dalam ${hdStyle.creativity.toLowerCase()}. Coba selaraskan fokus pertumbuhan batinmu dengan ${dmV3.lifeCycle.growthFocus.toLowerCase()} secara perlahan, tanpa harus terburu-buru.`
+      : `Today, there is room to bring comfort to your ${hdStyle.creativity.toLowerCase()}. Gently align your inner growth focus with ${dmV3.lifeCycle.growthFocus.toLowerCase()}, without any rush.`;
 
     // 2. Lifestyle Advice (Actionable Pattern)
-    // HD Variables + Natal Dominant Planet + DM Health Chart + HD Authority
     const lifestyleAdvice = isId
-      ? `Untuk menjaga kejernihan hari ini, prioritaskan ${hdStyle.productivity.toLowerCase()} Mengingat pengaruh batinmu, pastikan area diri mendapatkan perhatian ekstra terutama dalam mengolah ${dmV3.family.familyGift.toLowerCase()}.`
-      : `To maintain clarity today, prioritize ${hdStyle.productivity.toLowerCase()} Given your inner influence, ensure your personal space receives extra attention, especially in nurturing your ${dmV3.family.familyGift.toLowerCase()}.`;
+      ? `Untuk menjaga ketenangan hari ini, cobalah merawat ${hdStyle.productivity.toLowerCase()}. Berikan perhatian ekstra pada ruang kecil di sekitarmu, terutama dalam mengolah ${dmV3.family.familyGift.toLowerCase()}.`
+      : `To maintain peace today, try nurturing your ${hdStyle.productivity.toLowerCase()}. Give extra attention to your immediate surroundings, especially in processing ${dmV3.family.familyGift.toLowerCase()}.`;
 
     // 3. Growth Story (Generational & Life Phase)
-    // DM Family Patterns + Natal Aspects + HD Profile + Journey Streak
     const growthStory = isId
-      ? `Langkahmu saat ini adalah tentang ${dmV3.lifeCycle.ageLesson.toLowerCase()} Ini adalah jembatan untuk ${dmV3.family.generationalLegacy.toLowerCase()} yang didukung oleh ${dmV3.family.fatherPattern.toLowerCase()}`
-      : `Your current step is about ${dmV3.lifeCycle.ageLesson.toLowerCase()} This serves as a bridge to ${dmV3.family.generationalLegacy.toLowerCase()} supported by ${dmV3.family.fatherPattern.toLowerCase()}`;
+      ? `Perjalananmu saat ini adalah tentang ${dmV3.lifeCycle.ageLesson.toLowerCase()}. Ini menjadi bagian penting dalam menyelaraskan ${dmV3.family.generationalLegacy.toLowerCase()}.`
+      : `Your journey right now is about ${dmV3.lifeCycle.ageLesson.toLowerCase()}. This forms an important part of aligning your ${dmV3.family.generationalLegacy.toLowerCase()}.`;
 
     // 4. Interpersonal Dynamic (Relationship DNA)
-    // Natal Relationship DNA + HD Connection Style + DM Love Line
     const interpersonalDynamic = isId
-      ? `Dalam relasi, kamu memiliki kecenderungan ${natal.relationshipDNA.toLowerCase()}. Keharmonisanmu sangat bergantung pada ${hdStyle.relationship.toLowerCase()} serta caramu mengolah ${dmV3.family.motherPattern.toLowerCase()}`
-      : `In relationships, you have a ${natal.relationshipDNA.toLowerCase()} tendency. Your harmony depends on ${hdStyle.relationship.toLowerCase()} and how you process your ${dmV3.family.motherPattern.toLowerCase()}`;
+      ? `Dalam hubungan dengan orang lain, ada dorongan untuk ${natal.relationshipDNA.toLowerCase()}. Kehangatan hari ini dapat dirawat melalui ${hdStyle.relationship.toLowerCase()}.`
+      : `In relationships, there is a natural desire to ${natal.relationshipDNA.toLowerCase()}. Today's warmth can be nurtured through ${hdStyle.relationship.toLowerCase()}.`;
 
     return {
       coreNarrative,

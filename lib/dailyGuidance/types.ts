@@ -58,8 +58,6 @@ export type DailyGuidance = {
     category: string;
     source: "catatan";
   };
-  content?: string;
-  localDate?: string;
 
   // V2 Categories
   categories?: {

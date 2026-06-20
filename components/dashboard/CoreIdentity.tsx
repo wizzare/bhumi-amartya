@@ -14,6 +14,10 @@ interface CoreIdentityProps {
     hdEngineVersion?: string | null;
     calculationQuality?: string | null;
   } | null;
+  weton?: string;
+  baziDayMaster?: string;
+  vedicMoonSign?: string;
+  tzolkinSignature?: string;
   labels: {
     title: string;
     lifePath: string;
@@ -22,6 +26,10 @@ interface CoreIdentityProps {
     humanDesign: string;
     humanDesignPending: string;
     humanDesignNeedsTimezone?: string;
+    weton: string;
+    baziDayMaster: string;
+    vedicMoonSign: string;
+    tzolkinSignature: string;
   };
 }
 
@@ -41,6 +49,10 @@ export function CoreIdentity({
   arcanaCenter,
   sunSign,
   humanDesign,
+  weton,
+  baziDayMaster,
+  vedicMoonSign,
+  tzolkinSignature,
   labels,
 }: CoreIdentityProps) {
   const isVerified = isCanonicalHumanDesign(humanDesign);
@@ -64,6 +76,10 @@ export function CoreIdentity({
         <Stat label={labels.sunSign} value={sunSign} />
         <Stat label={labels.arcanaCenter} value={arcanaCenter} />
         <Stat label={labels.humanDesign} value={humanDesignValue} />
+        <Stat label={labels.weton} value={weton} />
+        <Stat label={labels.baziDayMaster} value={baziDayMaster} />
+        <Stat label={labels.vedicMoonSign} value={vedicMoonSign} />
+        <Stat label={labels.tzolkinSignature} value={tzolkinSignature} />
       </div>
     </div>
   );
