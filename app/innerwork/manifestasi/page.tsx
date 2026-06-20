@@ -33,30 +33,61 @@ export default function ManifestasiPage() {
         const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
         const today = getLocalDateKey(new Date(), timezone);
 
-        const dg = await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today);
-        if (dg?.manifestation) {
-          setManifestation(dg.manifestation);
+        const params = new URLSearchParams(window.location.search);
+        const incomingIssue = params.get("issue");
+        const incomingTheme = params.get("sourceTheme");
+
+        if (incomingIssue && incomingTheme) {
+           // Create input with mocked wellness results for generation
+           const blueprint = await storageProvider.getUserBlueprint();
+
+           // Ensure the category is recognizable by generateLocalManifestation
+           // It maps topWellnessTheme -> category (grounding, expansion, worth, clarity, processing)
+           const mappedCategory = incomingIssue.toUpperCase();
+
+           const input: any = {
+             user: profileToDashboardUser(profile as any),
+             identity: profileToCoreIdentity(profile as any, blueprint as any),
+             blueprint: blueprint as any,
+             emotionalState: (profile as any)?.emotionalState || { currentMood: 5, recurringThemes: [] },
+             emotionalMemory: (profile as any)?.emotionalMemory || { recurringThemes: [], recurringWounds: [] },
+             healingProgress: (profile as any)?.healingProgress || { healingStreak: 0 },
+             astrologyTransits: null,
+             language: (profile as any)?.language || "id",
+             generatedAt: new Date().toISOString(),
+             adaptiveContext: { dailyVariationSeed: today } as any,
+             wellnessMapping: {
+                results: [{ category: mappedCategory }]
+             }
+           };
+           const themed = generateLocalManifestation(input, "zone_b_alignment");
+           setManifestation(themed);
         } else {
-          // Fallback generation if missing in DG
-          console.log("[MANIFESTASI] Missing in DG, using local fallback");
-          const blueprint = await storageProvider.getUserBlueprint();
+          const dg = await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today);
+          if (dg?.manifestation) {
+            setManifestation(dg.manifestation);
+          } else {
+            // Fallback generation if missing in DG
+            console.log("[MANIFESTASI] Missing in DG, using local fallback");
+            const blueprint = await storageProvider.getUserBlueprint();
 
-          // Safety fallback if blueprint is missing or calculation fails
-          const input: any = {
-            user: profileToDashboardUser(profile as any),
-            identity: profileToCoreIdentity(profile as any, blueprint as any),
-            blueprint: blueprint as any,
-            emotionalState: (profile as any)?.emotionalState || { currentMood: 5, recurringThemes: [] },
-            emotionalMemory: (profile as any)?.emotionalMemory || { recurringThemes: [], recurringWounds: [] },
-            healingProgress: (profile as any)?.healingProgress || { healingStreak: 0 },
-            astrologyTransits: null,
-            language: (profile as any)?.language || "id",
-            generatedAt: new Date().toISOString(),
-            adaptiveContext: { dailyVariationSeed: today } as any,
-          };
+            // Safety fallback if blueprint is missing or calculation fails
+            const input: any = {
+              user: profileToDashboardUser(profile as any),
+              identity: profileToCoreIdentity(profile as any, blueprint as any),
+              blueprint: blueprint as any,
+              emotionalState: (profile as any)?.emotionalState || { currentMood: 5, recurringThemes: [] },
+              emotionalMemory: (profile as any)?.emotionalMemory || { recurringThemes: [], recurringWounds: [] },
+              healingProgress: (profile as any)?.healingProgress || { healingStreak: 0 },
+              astrologyTransits: null,
+              language: (profile as any)?.language || "id",
+              generatedAt: new Date().toISOString(),
+              adaptiveContext: { dailyVariationSeed: today } as any,
+            };
 
-          const localFallback = generateLocalManifestation(input, "ui_fallback");
-          setManifestation(localFallback);
+            const localFallback = generateLocalManifestation(input, "ui_fallback");
+            setManifestation(localFallback);
+          }
         }
       } catch (err) {
         console.error("[MANIFESTASI_FETCH_ERROR]", err);

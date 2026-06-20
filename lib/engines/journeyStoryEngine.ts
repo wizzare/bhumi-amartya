@@ -21,7 +21,7 @@ export interface GrowthStory {
 }
 
 export const journeyStoryEngine = {
-  generateStory(states: DailyState[], synthesis: UnifiedBlueprintSynthesis): GrowthStory {
+  generateStory(states: DailyState[], synthesis: UnifiedBlueprintSynthesis | null): GrowthStory {
     const totalDone = states.filter(s => s.journalingDone || s.meditationDone || s.audioHealingDone).length;
     const streak = states.reduce((acc, s, idx) => {
         // Very basic streak estimation from the list
@@ -50,9 +50,11 @@ export const journeyStoryEngine = {
     // 3. Growth Focus
     const journalCount = states.filter(s => s.journalingDone).length;
     const meditationCount = states.filter(s => s.meditationDone).length;
-    const growthFocus = journalCount > meditationCount
-      ? "Beri tubuh ruang untuk tenang sebelum menuliskan isi pikiranmu. Pilih satu prioritas yang benar-benar perlu dirawat hari ini."
-      : "Rapikan satu prioritas dulu. Energi akan terasa lebih ringan saat kamu tidak memaksa semua hal selesai bersamaan.";
+    const growthFocus = totalDone === 0
+      ? "Perjalananmu baru saja dimulai. Bhumi akan membantumu melihat pola batin seiring dengan bertambahnya jejak praktikmu."
+      : journalCount > meditationCount
+        ? "Beri tubuh ruang untuk tenang sebelum menuliskan isi pikiranmu. Pilih satu prioritas yang benar-benar perlu dirawat hari ini."
+        : "Rapikan satu prioritas dulu. Energi akan terasa lebih ringan saat kamu tidak memaksa semua hal selesai bersamaan.";
 
     // 4. Growing Areas
     const growingAreas = totalDone > 0
@@ -60,9 +62,11 @@ export const journeyStoryEngine = {
       : ["Keberanian untuk memulai dari langkah kecil"];
 
     // 5. Attention Areas
-    const attentionAreas = streak < 2
-      ? ["Ada bagian dirimu yang membutuhkan jeda sebelum kembali memenuhi kebutuhan orang lain."]
-      : ["Jaga agar konsistensi tidak berubah menjadi tuntutan untuk selalu sempurna."];
+    const attentionAreas = totalDone === 0
+      ? ["Berikan dirimu izin untuk memulai perlahan tanpa tekanan harus langsung sempurna."]
+      : streak < 2
+        ? ["Ada bagian dirimu yang membutuhkan jeda sebelum kembali memenuhi kebutuhan orang lain."]
+        : ["Jaga agar konsistensi tidak berubah menjadi tuntutan untuk selalu sempurna."];
 
     // 6. Next Milestone
     const nextMilestone = totalDone >= 30

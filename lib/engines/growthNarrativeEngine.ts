@@ -3,7 +3,11 @@ import { JourneyDailyRecord, GrowthNarrativeSummary } from "@/lib/types/journeyD
 export const growthNarrativeEngine = {
   calculateGrowthNarrative(records: JourneyDailyRecord[]): GrowthNarrativeSummary {
     // 1. Sort records chronologically (oldest to newest)
-    const sorted = [...records].sort((a, b) => a.appDate.localeCompare(b.appDate));
+    const sorted = [...records].sort((a, b) => {
+      const dateA = a.appDate || a.date || "";
+      const dateB = b.appDate || b.date || "";
+      return dateA.localeCompare(dateB);
+    });
 
     // 2. Map issues/categories to growth narrative titles
     const categoryMap: Record<string, string> = {
@@ -40,12 +44,9 @@ export const growthNarrativeEngine = {
       }
     });
 
-    // 4. Default mock/seeding if empty to ensure "No Coming Soon"
-    if (growthTransitions.length === 0) {
-      growthTransitions.push("Over Responsibility", "Boundary Issues", "Difficulty Resting", "Self Worth");
-    }
-
-    const growthNarrative = growthTransitions.join(" \n↓\n ");
+    const growthNarrative = growthTransitions.length > 0
+      ? growthTransitions.join(" \n↓\n ")
+      : "Perjalananmu baru saja dimulai. Seiring bertambahnya refleksi dan praktik, Bhumi akan mulai memetakan tema-tema yang paling sering muncul dalam perjalananmu.";
 
     // 5. Lesson and Invitation mapping
     const latestCat = sorted[sorted.length - 1]?.issueCategory?.toLowerCase() || "boundaries";

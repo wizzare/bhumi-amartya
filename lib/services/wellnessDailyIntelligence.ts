@@ -246,12 +246,12 @@ export async function loadWellnessDailyIntelligence(input: {
       astroContext,
       journeyHistory: journeyMemory.last30Days.map((entry) => ({
         date: entry.appDate,
-        practiceId: entry.innerworkCompletion.actualPracticeId || entry.innerworkRecommendation?.practiceId,
-        innerworkType: entry.innerworkCompletion.actualPracticeType || entry.innerworkRecommendation?.practiceType,
+        practiceId: entry.innerworkCompletion?.actualPracticeId || entry.innerworkRecommendation?.practiceId,
+        innerworkType: entry.innerworkCompletion?.actualPracticeType || entry.innerworkRecommendation?.practiceType,
         dominantIssue: entry.dominantIssue,
-        completed: entry.innerworkCompletion.completed,
-        skipped: entry.innerworkCompletion.skipped,
-        reflectionResult: entry.innerworkCompletion.reflectionResult,
+        completed: Boolean(entry.innerworkCompletion?.completed),
+        skipped: Boolean(entry.innerworkCompletion?.skipped),
+        reflectionResult: entry.innerworkCompletion?.reflectionResult,
       })),
       journeyLearning: {
         weeklyLearning: journeyMemory.weeklyLearning,

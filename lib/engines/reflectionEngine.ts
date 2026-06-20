@@ -59,7 +59,7 @@ export const reflectionEngine = {
       if (rec.issueCategory) catCounts[rec.issueCategory] = (catCounts[rec.issueCategory] || 0) + 1;
       if (rec.navigatorMode) modeCounts[rec.navigatorMode] = (modeCounts[rec.navigatorMode] || 0) + 1;
       
-      const comp = rec.innerworkCompletion;
+      const comp = rec.innerworkCompletion ?? { completed: false, skipped: true };
       const recType = rec.innerworkRecommendation?.practiceType || "unknown";
       
       if (comp.completed) {

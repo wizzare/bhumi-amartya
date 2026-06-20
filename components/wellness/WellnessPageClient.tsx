@@ -4,8 +4,8 @@ import React from "react";
 import Link from "next/link";
 import {
   Activity, BookOpen, Brain, BriefcaseMedical, ChevronRight, Dumbbell,
-  ExternalLink, Flower2, HeartHandshake, Lock, Music, Sparkles, Users, Wind,
-  MessageSquare, Target, Clock, Info
+  ExternalLink, Flower2, HeartHandshake, Lock, Music, Sparkles, Users,
+  MessageSquare, Target, Clock, Info, Utensils
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/app/context/LanguageContext";
@@ -33,16 +33,7 @@ import type { WellnessNavigatorState } from "@/lib/engines/wellnessNavigatorEngi
 import type { SupportEngineState } from "@/lib/engines/wellnessSupportEngine";
 import type { AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
 
-const PRACTICES = [
-  { label: "Journaling", href: "/innerwork/journaling", Icon: BookOpen },
-  { label: "Meditasi", href: "/innerwork/meditation", Icon: Brain },
-  { label: "Breathwork", href: "/innerwork/meditation", Icon: Wind },
-  { label: "Mudra", href: "/innerwork/meditation", Icon: Sparkles },
-  { label: "Yoga", href: "/innerwork/yoga", Icon: Flower2 },
-  { label: "Workout", href: "/innerwork/workout", Icon: Dumbbell },
-  { label: "Audio Healing", href: "/innerwork/audio-healing", Icon: Music },
-  { label: "Manifestation", href: "/innerwork/manifestasi", Icon: Activity },
-];
+
 
 function getLowestDimension(assessment: AssessmentResult, language: "id" | "en") {
   const DIMENSIONS = [
@@ -182,10 +173,38 @@ export function WellnessPageClient() {
   const auth = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
+
   const [intelligence, setIntelligence] = React.useState<WellnessDailyIntelligence | null>(null);
   const [decision, setDecision] = React.useState<InnerworkDailyDecision | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [checkInCompleted, setCheckInCompleted] = React.useState(false);
+
+  const PRACTICES = React.useMemo(() => {
+    const issue = intelligence?.currentIssue.key;
+    const theme = intelligence?.currentIssue.title;
+
+    const getThemedHref = (base: string, category: ZoneBPracticeCategory, label: string) => {
+      if (!intelligence || !issue || !theme) return base;
+      return buildZoneBHref(base, {
+        issue,
+        practiceId: `hub-${category}`,
+        practiceCategory: category,
+        sourceTheme: theme,
+        title: `${label}: ${theme}`,
+        durationMinutes: 10,
+      });
+    };
+
+    return [
+      { label: t.innerwork.journaling, href: getThemedHref("/innerwork/journaling", "journaling", t.innerwork.journaling), Icon: BookOpen },
+      { label: t.innerwork.meditation, href: getThemedHref("/innerwork/meditation", "meditation", t.innerwork.meditation), Icon: Brain },
+      { label: t.innerwork.yoga, href: getThemedHref("/innerwork/yoga", "yoga", t.innerwork.yoga), Icon: Flower2 },
+      { label: t.innerwork.workout, href: getThemedHref("/innerwork/workout", "workout", t.innerwork.workout), Icon: Dumbbell },
+      { label: t.innerwork.audio, href: "/innerwork/audio-healing", Icon: Music },
+      { label: t.innerwork.herbal, href: "/innerwork/herbal", Icon: Utensils },
+      { label: t.innerwork.manifestasi, href: getThemedHref("/innerwork/manifestasi", "manifestation" as any, t.innerwork.manifestasi), Icon: Activity },
+    ];
+  }, [intelligence, t, language]);
 
   // Results & assessment state
   const [assessmentStage, setAssessmentStage] = React.useState<"intro" | "questions" | "results">("intro");
@@ -196,7 +215,7 @@ export function WellnessPageClient() {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
   const [startFresh, setStartFresh] = React.useState(false);
 
-  const isBaselinePending = !auth?.userProfile?.baselineWellnessCompleted && auth?.userProfile?.guardianRole !== 'founder';
+  const isBaselinePending = (!auth?.userProfile?.baselineWellnessCompleted || auth?.userProfile?.baselineWellnessProfile?.version !== 'V3_BASELINE');
 
   React.useEffect(() => {
     async function load() {
@@ -259,6 +278,7 @@ export function WellnessPageClient() {
             uid={auth?.user?.uid || ""}
             language={language}
             startFresh={startFresh}
+            initialStage={assessmentStage === "questions" ? "questions" : "intro"}
             onResultsLoaded={async (m, n, s, r) => {
               setMapping(m);
               setNavigator(n);
@@ -305,7 +325,6 @@ export function WellnessPageClient() {
                   await auth.refreshUserProfile();
                 }
               }}
-              onStageChange={setAssessmentStage}
             />
           </WellnessSection>
         </div>
@@ -385,44 +404,11 @@ export function WellnessPageClient() {
               {/* Nested Collapsible Detail Analysis */}
               {isDetailsExpanded && (
                 <div className="space-y-12 pt-8 border-t border-[#E8E9E5] animate-in fade-in duration-500">
-                  {/* Navigator Steps */}
-                  {navigator && <WellnessNavigatorView state={navigator} language={language} />}
-
                   {/* 1. Kemungkinan Tema Saat Ini */}
                   {mapping && <WellnessMappingView mapping={mapping} language={language} />}
 
                   {/* 2. Pemetaan Dimensi */}
                   {results && <WellnessMapView results={results} language={language} />}
-
-                  {/* 3. Jalur Aman */}
-                  {support && <WellnessSupportPathView state={support} language={language} />}
-
-                  {/* 4. Pendampingan */}
-                  <div className="space-y-6">
-                    <h4 className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-4 border-b border-[#F5F1E8] pb-2">
-                      {t.kenaliDiri.recommendations.title}
-                    </h4>
-
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level1}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                         <RecommendationButton href="/innerwork/journaling" icon={<BookOpen size={16} />} label={t.kenaliDiri.recommendations.journaling} />
-                         <RecommendationButton href="/innerwork/meditation" icon={<Brain size={16} />} label={t.kenaliDiri.recommendations.meditation} />
-                         <RecommendationButton href="/innerwork/audio-healing" icon={<Music size={16} />} label={t.kenaliDiri.recommendations.audio} />
-                         <RecommendationButton href="/innerwork/manifestasi" icon={<Target size={16} />} label={t.kenaliDiri.recommendations.manifestation} />
-                         <RecommendationButton href="/wellness" icon={<Sparkles size={16} />} label={t.kenaliDiri.recommendations.innerwork} />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <p className="text-[10px] font-bold text-[#4F5E52] uppercase tracking-wider">{t.kenaliDiri.recommendations.level2}</p>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                         <RecommendationButton href={COMMUNITY_CONFIG.whatsappLink} icon={<Users size={16} />} label={language === "id" ? "Gabung Sobat Mistis Bhumi" : "Join Sobat Mistis Bhumi"} disabled={!COMMUNITY_CONFIG.whatsappLink} />
-                         <RecommendationButton href="#" icon={<MessageSquare size={16} />} label={t.kenaliDiri.recommendations.circle} disabled />
-                         <RecommendationButton href="#" icon={<Users size={16} />} label={t.kenaliDiri.recommendations.buddy} disabled />
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -434,6 +420,7 @@ export function WellnessPageClient() {
               uid={auth?.user?.uid || ""}
               language={language}
               startFresh={startFresh}
+              initialStage="intro"
               onResultsLoaded={async (m, n, s, r) => {
                 setMapping(m);
                 setNavigator(n);

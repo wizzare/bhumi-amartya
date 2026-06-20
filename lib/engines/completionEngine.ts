@@ -76,7 +76,7 @@ export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): P
   const practiceStats: Record<string, { total: number; helpful: number; heavy: number; neutral: number; unknown: number }> = {};
 
   last30.forEach(rec => {
-    const comp = rec.innerworkCompletion;
+    const comp = rec.innerworkCompletion ?? { completed: false, skipped: true };
     if (!comp.completed) return;
 
     // Resolve practice title/type
@@ -123,17 +123,13 @@ export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): P
     }
   });
 
-  // Fallback seed data if no records exist to ensure "No Coming Soon"
+  // Fallback if no records exist to ensure "No Coming Soon"
   if (practiceInsights.length === 0) {
     return {
-      practiceInsights: [
-        { practice: "Body Awareness", helpfulScore: 78 },
-        { practice: "Boundary Journaling", helpfulScore: 72 },
-        { practice: "Long Meditation", helpfulScore: 31 }
-      ],
-      helpfulPractices: ["Body Awareness", "Boundary Journaling"],
+      practiceInsights: [],
+      helpfulPractices: [],
       neutralPractices: [],
-      heavyPractices: ["Long Meditation"],
+      heavyPractices: [],
       unknownPractices: []
     };
   }

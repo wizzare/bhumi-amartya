@@ -20,12 +20,16 @@ service cloud.firestore {
     }
 
     function isFounderOrAdmin() {
-      let data = getUserData();
       return isSignedIn() && (
-        data.guardianRole == 'founder' ||
-        data.guardianRole == 'admin' ||
-        data.role == 'admin' ||
-        request.auth.token.email == 'wizzare@gmail.com'
+        request.auth.token.email == 'wizzare@gmail.com' ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          (
+            getUserData().guardianRole == 'founder' ||
+            getUserData().guardianRole == 'admin' ||
+            getUserData().role == 'admin'
+          )
+        )
       );
     }
 

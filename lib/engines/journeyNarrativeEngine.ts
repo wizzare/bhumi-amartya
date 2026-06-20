@@ -76,7 +76,7 @@ export const journeyNarrativeEngine = {
     let lowSleepTotal = 0;
 
     last30.forEach(rec => {
-      const comp = rec.innerworkCompletion;
+      const comp = rec.innerworkCompletion ?? { completed: false, skipped: true };
       if (!comp.completed) {
         if (rec.wellnessState?.sleep && Number(rec.wellnessState.sleep) < 6) {
           lowSleepTotal++;
@@ -103,6 +103,16 @@ export const journeyNarrativeEngine = {
       }
     });
 
+    if (somaticCompleted === 0 && mentalCompleted === 0) {
+      return {
+        coachMemory: "Bhumi masih belajar mengenali ritmemu. Teruskan praktik dan refleksimu agar Bhumi dapat memberikan catatan yang lebih personal.",
+        bhumiObservations: [
+          "Bhumi masih belajar mengenali ritmemu.",
+          "Teruskan praktik dan refleksimu agar Bhumi dapat memberikan catatan yang lebih personal."
+        ]
+      };
+    }
+
     // Heuristics 1: Somatic vs Mental
     if (somaticCompleted > mentalCompleted) {
       bhumiObservations.push("Kamu cenderung berkembang lebih baik melalui praktik singkat yang langsung melibatkan tubuh dibanding praktik yang terlalu panjang.");
@@ -127,8 +137,8 @@ export const journeyNarrativeEngine = {
     // Fallback seed data if no records exist to ensure "No Coming Soon"
     if (bhumiObservations.length === 0) {
       bhumiObservations.push(
-        "Kamu cenderung berkembang lebih baik melalui praktik singkat yang langsung melibatkan tubuh dibanding praktik yang terlalu panjang.",
-        "Kamu lebih mudah bergerak maju ketika langkahnya sederhana dan tidak terlalu membebani."
+        "Bhumi masih belajar mengenali ritmemu.",
+        "Teruskan praktik dan refleksimu agar Bhumi dapat memberikan catatan yang lebih personal."
       );
     }
 

@@ -27,6 +27,39 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const checkToken = async () => {
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        const accessToken = params.get("accessToken");
+        if (token) {
+          console.log("J0 before custom token sign in");
+          try {
+            const { signInWithCustomToken } = await import("firebase/auth");
+            const { auth: clientAuth } = await import("@/lib/firebase/firebase");
+            await signInWithCustomToken(clientAuth, token);
+            console.log("J0 after custom token sign in success");
+          } catch (err) {
+            console.error("J0 custom token sign in error", err);
+          }
+        } else if (accessToken) {
+          console.log("J0 before google token sign in");
+          try {
+            const { GoogleAuthProvider, signInWithCredential } = await import("firebase/auth");
+            const { auth: clientAuth } = await import("@/lib/firebase/firebase");
+            const credential = GoogleAuthProvider.credential(null, accessToken);
+            await signInWithCredential(clientAuth, credential);
+            console.log("J0 after google token sign in success");
+          } catch (err) {
+            console.error("J0 google token sign in error", err);
+          }
+        }
+      }
+    };
+    checkToken();
+  }, []);
+
+  useEffect(() => {
     const loadData = async () => {
       if (!auth?.user?.uid) return;
 
@@ -35,21 +68,34 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         const profile = auth.userProfile;
         const blueprintData = await storageProvider.getUserBlueprint();
 
+        console.log("J1 before getRecentDailyStates");
         const states = await journeyRepository.getRecentDailyStates(uid);
+        console.log("J2 after getRecentDailyStates", states.length);
         setHistory(states);
 
+        console.log("J3 before getDailyMemory");
         const memory = await journeyRepository.getDailyMemory(uid);
+        console.log("J4 after getDailyMemory", memory);
         setLearning(memory);
 
+        let synthesis = null;
         if (blueprintData) {
-            const synthesis = buildUnifiedBlueprintSynthesis({
+            synthesis = buildUnifiedBlueprintSynthesis({
               language: profile?.language || "id",
               profile: profile as unknown as Record<string, unknown>,
               blueprint: blueprintData as unknown as Record<string, unknown>
             });
-            setStory(journeyStoryEngine.generateStory(states, synthesis));
         }
-      } catch (error) {
+        console.log("J5 before generateStory");
+        const generatedStory = journeyStoryEngine.generateStory(states, synthesis);
+        console.log("J6 after generateStory", generatedStory);
+        console.log("J7 before setStory");
+        setStory(generatedStory);
+        console.log("J8 after setStory");
+      } catch (error: any) {
+        console.error("JOURNEY RUNTIME ERROR");
+        console.error(error);
+        console.error(error?.stack);
         console.error("Failed to load journey details:", error);
       } finally {
         setLoading(false);
@@ -70,7 +116,18 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   }
 
   const renderContent = () => {
-    if (!story) return <p className="text-center text-[#7B8776]">Data tidak ditemukan.</p>;
+    if (!story) {
+      return (
+        <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
+           <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-6 text-[#4F5E52]">
+             <Sparkles size={32} />
+           </div>
+           <p className="text-[#7B8776] leading-relaxed italic">
+             Perjalananmu baru saja dimulai. Bhumi sedang menyiapkan peta perjalanan berdasarkan refleksi dan praktik yang kamu lakukan.
+           </p>
+        </div>
+      );
+    }
 
     switch (id) {
       case "stage":
@@ -163,38 +220,42 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                 </div>
             ))}
 
-            {learning?.practiceInsights?.practiceInsights && learning.practiceInsights.practiceInsights.length > 0 && (
-              <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm space-y-4">
+            <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm space-y-4">
                 <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest">Efektivitas Praktik Harian</p>
-                <div className="space-y-4">
-                  {learning.practiceInsights.practiceInsights.map(({ practice, helpfulScore }) => {
-                    let levelLabel = "Sangat Membantu";
-                    let levelColor = "bg-[#4F5E52]";
-                    if (helpfulScore < 35) {
-                      levelLabel = "Berat / Butuh Penyesuaian";
-                      levelColor = "bg-amber-600";
-                    } else if (helpfulScore < 60) {
-                      levelLabel = "Cukup Membantu";
-                      levelColor = "bg-[#7B8776]";
-                    } else if (helpfulScore < 75) {
-                      levelLabel = "Membantu";
-                      levelColor = "bg-[#4F5E52]/80";
-                    }
-                    return (
-                      <div key={practice} className="space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span className="font-bold text-[#4F5E52]">{practice}</span>
-                          <span className="text-xs text-[#7B8776]">{levelLabel}</span>
+                {learning?.practiceInsights?.practiceInsights && learning.practiceInsights.practiceInsights.length > 0 ? (
+                  <div className="space-y-4">
+                    {learning.practiceInsights.practiceInsights.map(({ practice, helpfulScore }) => {
+                      let levelLabel = "Sangat Membantu";
+                      let levelColor = "bg-[#4F5E52]";
+                      if (helpfulScore < 35) {
+                        levelLabel = "Berat / Butuh Penyesuaian";
+                        levelColor = "bg-amber-600";
+                      } else if (helpfulScore < 60) {
+                        levelLabel = "Cukup Membantu";
+                        levelColor = "bg-[#7B8776]";
+                      } else if (helpfulScore < 75) {
+                        levelLabel = "Membantu";
+                        levelColor = "bg-[#4F5E52]/80";
+                      }
+                      return (
+                        <div key={practice} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="font-bold text-[#4F5E52]">{practice}</span>
+                            <span className="text-xs text-[#7B8776]">{levelLabel}</span>
+                          </div>
+                          <div className="w-full bg-[#F5F1E8] h-2 rounded-full overflow-hidden">
+                            <div className={`${levelColor} h-full rounded-full`} style={{ width: `${helpfulScore}%` }} />
+                          </div>
                         </div>
-                        <div className="w-full bg-[#F5F1E8] h-2 rounded-full overflow-hidden">
-                          <div className={`${levelColor} h-full rounded-full`} style={{ width: `${helpfulScore}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-[#7B8776] leading-relaxed italic">
+                    Belum cukup data untuk mengukur efektivitas praktikmu. Teruskan perjalananmu dan Bhumi akan mulai mengenali praktik yang paling membantu untukmu.
+                  </p>
+                )}
+            </div>
           </div>
         );
       case "milestone":
@@ -216,27 +277,35 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-4">Riwayat Aktivitas</h2>
-            <div className="space-y-3">
-                {history.map((state) => (
-                  <div key={state.date} className="bhumi-card p-5 bg-white border-none shadow-sm flex items-center gap-4">
-                    <div className="text-sm font-bold text-[#4F5E52] w-20 flex items-center gap-2">
-                        <Clock size={14} className="text-[#9AA394]" />
-                        {state.date.slice(5)}
+            {history.length > 0 ? (
+              <div className="space-y-3">
+                  {history.map((state) => (
+                    <div key={state.date} className="bhumi-card p-5 bg-white border-none shadow-sm flex items-center gap-4">
+                      <div className="text-sm font-bold text-[#4F5E52] w-20 flex items-center gap-2">
+                          <Clock size={14} className="text-[#9AA394]" />
+                          {state.date.slice(5)}
+                      </div>
+                      <div className="flex-1 flex gap-1.5">
+                        {getCompletionSummary(state).items.map((item) => (
+                          <div
+                            key={item.id}
+                            className={`w-2 h-2 rounded-full ${item.completed ? 'bg-[#4F5E52]' : 'bg-[#E8E9E5]'}`}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
+                        {state.moodLevel ? `Mood ${state.moodLevel}` : "N/A"}
+                      </div>
                     </div>
-                    <div className="flex-1 flex gap-1.5">
-                      {getCompletionSummary(state).items.map((item) => (
-                        <div
-                          key={item.id}
-                          className={`w-2 h-2 rounded-full ${item.completed ? 'bg-[#4F5E52]' : 'bg-[#E8E9E5]'}`}
-                        />
-                      ))}
-                    </div>
-                    <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
-                      {state.moodLevel ? `Mood ${state.moodLevel}` : "N/A"}
-                    </div>
-                  </div>
-                ))}
-            </div>
+                  ))}
+              </div>
+            ) : (
+              <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
+                 <p className="text-[#7B8776] leading-relaxed italic">
+                   Belum ada aktivitas yang tercatat di perjalananmu. Praktik dan refleksi yang kamu lakukan akan mulai muncul di sini.
+                 </p>
+              </div>
+            )}
           </div>
         );
       default:

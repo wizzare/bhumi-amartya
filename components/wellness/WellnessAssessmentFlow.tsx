@@ -33,6 +33,7 @@ interface WellnessAssessmentFlowProps {
   uid: string;
   language: "id" | "en";
   startFresh?: boolean;
+  initialStage?: Stage;
   onResultsLoaded?: (
     mapping: WellnessMapping,
     navigator: WellnessNavigatorState,
@@ -55,16 +56,16 @@ const QUESTIONS = [
   { id: 25, dimension: "SPIRITUALITY" as const, text: { id: "Saya meluangkan waktu untuk refleksi diri atau kontemplasi harian.", en: "I make time for self-reflection or daily contemplation." } },
 ];
 
-export function WellnessAssessmentFlow({ uid, language, startFresh = false, onResultsLoaded, onStageChange }: WellnessAssessmentFlowProps) {
+export function WellnessAssessmentFlow({ uid, language, startFresh = false, initialStage = "intro", onResultsLoaded, onStageChange }: WellnessAssessmentFlowProps) {
   const t = translations[language];
   const auth = useAuth();
   const userProfile = auth?.userProfile;
   const refreshUserProfile = auth?.refreshUserProfile;
 
-  const isBaselinePending = !userProfile?.baselineWellnessCompleted && userProfile?.guardianRole !== 'founder';
+  const isBaselinePending = (!userProfile?.baselineWellnessCompleted || userProfile?.baselineWellnessProfile?.version !== 'V3_BASELINE');
   const currentQuestions = isBaselinePending ? BASELINE_QUESTIONS : QUESTIONS;
 
-  const [stage, setStage] = useState<Stage>("intro");
+  const [stage, setStage] = useState<Stage>(initialStage);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [calculatedBaseline, setCalculatedBaseline] = useState<BaselineWellnessProfile | null>(null);
   const [mapping, setMapping] = useState<WellnessMapping | null>(null);
