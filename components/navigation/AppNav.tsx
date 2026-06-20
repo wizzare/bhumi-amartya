@@ -3,7 +3,7 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Home, Info, MoreHorizontal, Settings, Shield, Sparkles, Sprout, User } from "lucide-react";
+import { Compass, Home, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/lib/data/translations";
@@ -13,18 +13,18 @@ type NavLabelKey = keyof typeof translations.id.nav;
 type NavItem = {
   Icon: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   labelKey: NavLabelKey;
+  label?: string;
   href: string;
 };
 
 const PRIMARY_NAV_ITEMS: NavItem[] = [
   { Icon: Home, labelKey: "home", href: "/dashboard" },
-  { Icon: Sparkles, labelKey: "kenaliDiri", href: "/wellness-assessment" },
-  { Icon: Sprout, labelKey: "innerwork", href: "/innerwork" },
+  { Icon: Sprout, labelKey: "innerwork", label: "Wellness", href: "/wellness" },
   { Icon: Compass, labelKey: "journey", href: "/journey" },
+  { Icon: User, labelKey: "profile", href: "/profile" },
 ];
 
 const UTILITY_NAV_ITEMS: NavItem[] = [
-  { Icon: User, labelKey: "profile", href: "/profile" },
   { Icon: Settings, labelKey: "settings", href: "/settings" },
 ];
 
@@ -71,7 +71,7 @@ export function AppNav() {
                 }`}
               >
                 <Icon aria-hidden className="h-5 w-5 shrink-0" />
-                <span>{t.nav[item.labelKey]}</span>
+                <span>{item.label || t.nav[item.labelKey]}</span>
               </Link>
             );
           })}
@@ -94,7 +94,7 @@ export function AppNav() {
               }`}
             >
               <Icon aria-hidden className="h-5 w-5" />
-              <span className="mt-1 max-w-full truncate leading-none">{t.nav[item.labelKey]}</span>
+              <span className="mt-1 max-w-full truncate leading-none">{item.label || t.nav[item.labelKey]}</span>
               {isActive && (
                 <span className="mt-2 h-1 w-5 rounded-full bg-[#4F5E52]" />
               )}
@@ -137,7 +137,7 @@ export function AppNav() {
               }`}
             >
               <Icon aria-hidden className="h-5 w-5" />
-              <span className="mt-1 leading-none">{t.nav[item.labelKey]}</span>
+              <span className="mt-1 leading-none">{item.label || t.nav[item.labelKey]}</span>
               {isActive && (
                 <span className="mt-2 h-1 w-5 rounded-full bg-[#4F5E52]" />
               )}
@@ -180,7 +180,7 @@ export function AppNav() {
                   }`}
                 >
                   <Icon aria-hidden className="h-5 w-5 shrink-0" />
-                  <span>{t.nav[item.labelKey]}</span>
+                  <span>{item.label || t.nav[item.labelKey]}</span>
                 </Link>
               );
             })}

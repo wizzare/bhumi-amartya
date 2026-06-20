@@ -55,6 +55,7 @@ import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
 import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { DashboardMirrorRuntimeAdapter } from "@/lib/services/dashboardMirrorRuntimeAdapter";
+import { loadWellnessDailyIntelligence } from "@/lib/services/wellnessDailyIntelligence";
 import type { HumanMeaning } from "@/lib/types/humanMeaning";
 
 export function DashboardClient() {
@@ -179,7 +180,7 @@ export function DashboardClient() {
 
       invalidCacheKeys.forEach((key) => window.localStorage.removeItem(key));
 
-      const [recent, j, m, a, act, mapping, safetyCfg, journeyStates, navigator, journeyMemory] = await Promise.all([
+      const [recent, j, m, a, act, mapping, safetyCfg, wellnessIntelligence] = await Promise.all([
         dailyGuidanceRepository.getRecentGuidance(uid, 5).catch(() => []),
         journalRepository.getJournalEntries(uid, 5).catch(() => []),
         meditationRepository.getMeditationEntries(uid, 5).catch(() => []),
@@ -187,10 +188,11 @@ export function DashboardClient() {
         activityRepository.getRecentActivities(uid, 5).catch(() => []),
         wellnessMappingRepository.getMapping(uid).catch(() => null),
         safetyRepository.getSafetyConfig(uid).catch(() => null),
-        journeyRepository.getRecentDailyStates(uid, 7).catch(() => []),
-        wellnessNavigatorRepository.getNavigatorState(uid).catch(() => null),
-        journeyRepository.getDailyMemory(uid).catch(() => null),
+        loadWellnessDailyIntelligence({ uid, profile: p, blueprint: b, date: today }),
       ]);
+      const journeyStates = wellnessIntelligence.recentDailyStates;
+      const navigator = wellnessIntelligence.navigatorState;
+      const journeyMemory = wellnessIntelligence.journeyMemory;
       setRecentDailyStates(journeyStates);
       setNavigatorState(navigator);
       await journeyRepository.updateDailyRecord(uid, today, {

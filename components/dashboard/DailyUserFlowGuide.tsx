@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Sparkles, Sprout, Compass, ChevronRight } from "lucide-react";
+import { Sprout, Compass, ChevronRight } from "lucide-react";
 
 interface DailyUserFlowGuideProps {
   language: "id" | "en";
@@ -19,22 +19,22 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
     steps: [
       {
         id: "wellness",
-        icon: Sparkles,
-        title: isId ? "Kenali Diri" : "Know Yourself",
+        icon: Sprout,
+        title: "Wellness",
         description: isId
-          ? "Kenali kondisi dan kebutuhanmu hari ini."
-          : "Understand your condition and needs today.",
-        href: "/wellness-assessment",
+          ? "Periksa kondisi, pemetaan, dan praktik hari ini."
+          : "Check today's condition, mapping, and practices.",
+        href: "/wellness",
         color: "bg-orange-50 text-orange-500",
       },
       {
         id: "innerwork",
         icon: Sprout,
-        title: isId ? "Innerwork" : "Innerwork",
+        title: "Recommended Today",
         description: isId
-          ? "Pilih praktik yang paling sesuai untukmu."
-          : "Choose the practice that best suits you.",
-        href: "/innerwork",
+          ? "Lakukan praktik yang disarankan di Wellness."
+          : "Do the recommended practice in Wellness.",
+        href: "/wellness",
         color: "bg-emerald-50 text-emerald-600",
       },
       {
