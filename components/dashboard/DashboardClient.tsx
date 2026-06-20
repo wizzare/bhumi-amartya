@@ -79,6 +79,7 @@ export function DashboardClient() {
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
+  const visibleSoulReflection = dailyGuidance?.soulReflectionText?.trim() || mirrorReflection;
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -599,8 +600,8 @@ export function DashboardClient() {
 
       <SoulReflectionCard
         language={language}
-        reflection={mirrorReflection}
-        loading={!mirrorReflection}
+        reflection={visibleSoulReflection}
+        loading={!visibleSoulReflection}
       />
 
       <AstroTodayCard
