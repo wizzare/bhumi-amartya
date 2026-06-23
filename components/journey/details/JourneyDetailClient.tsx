@@ -159,9 +159,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
 
             {/* Coach Memory */}
             {learning?.coachMemory?.coachMemory && (
-              <div className="bhumi-card p-6 bg-[#4F5E52] text-white border-none shadow-sm">
-                <p className="text-xs font-bold text-white/70 uppercase tracking-widest mb-3">Catatan Pembelajaran Bhumi</p>
-                <p className="text-sm leading-relaxed">{learning.coachMemory.coachMemory}</p>
+              <div className="bhumi-card p-6 bg-[#F5F1E8] text-[#344A38] border border-[#DDE7DB] shadow-sm">
+                <p className="text-xs font-bold text-[#4F5E52]/70 uppercase tracking-widest mb-3">Catatan Pembelajaran Bhumi</p>
+                <p className="text-sm leading-relaxed font-medium">{learning.coachMemory.coachMemory}</p>
               </div>
             )}
 
@@ -260,14 +260,14 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         );
       case "milestone":
         return (
-          <div className="p-8 rounded-[2.5rem] bg-[#4F5E52] text-white shadow-xl text-center">
-            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-white/20">
-                <Flag size={36} />
+          <div className="p-8 rounded-[2.5rem] bg-white text-[#344A38] shadow-md text-center border border-[#E8E9E5]">
+            <div className="w-20 h-20 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-8 border border-[#DDE7DB]">
+                <Flag size={36} className="text-[#4F5E52]" />
             </div>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/60 mb-3">Target Berikutnya</p>
-            <h2 className="text-2xl font-serif mb-6">{story.nextMilestone}</h2>
-            <div className="bg-white/10 p-5 rounded-2xl border border-white/10">
-                <p className="text-sm text-white/80 leading-relaxed">
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7B8776] mb-3">Target Berikutnya</p>
+            <h2 className="text-2xl font-serif mb-6 text-[#4F5E52]">{story.nextMilestone}</h2>
+            <div className="bg-[#FCFAF5] p-5 rounded-2xl border border-[#E8E9E5]">
+                <p className="text-sm text-[#526053] leading-relaxed font-medium">
                     Teruslah melangkah. Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada pencapaian ini.
                 </p>
             </div>

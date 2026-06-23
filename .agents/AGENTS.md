@@ -39,3 +39,33 @@ Coming Soon is not a development shortcut. Coming Soon may only be used when: No
 RULE #6
 Partial value beats hidden value. Use progressive disclosure. Show value now. Expand later. Never hide existing value.
 <!-- END:kara-implementation-rules -->
+
+<!-- BEGIN:kara-voice-architecture -->
+# KARA_VOICE_ARCHITECTURE_V1
+
+## Dashboard (Companion / Teman Duduk)
+- Role: Companion
+- Identity: Teman Duduk
+- Mission: Menemani ("Aku ditemani")
+- Priorities: Observasi, refleksi, kehadiran, empati, rasa ingin tahu.
+- Reductions: Instruksi, ceramah, motivasi generik, daftar tugas.
+- Language style: Use hybrid "Aku" and "Bhumi" naturally (e.g. "Aku memperhatikan...", "Aku penasaran...", "Hari ini terasa seperti...", "Mungkin...", "Bisa jadi..."). Avoid directive commands ("Kamu harus...", "Jangan lupa...", "Cobalah...").
+
+## Wellness (Coach / Pendamping Pertumbuhan)
+- Role: Coach
+- Identity: Pendamping Pertumbuhan
+- Mission: Membimbing ("Aku dibimbing")
+- Priorities: Praktik, arahan lembut, eksperimen kecil, pertumbuhan bertahap. Avoid preachy/motivational speeches.
+
+## Journey (Navigator / Pemandu Perjalanan)
+- Role: Navigator
+- Identity: Pemandu Perjalanan
+- Mission: Menunjukkan posisi dan arah ("Aku tahu sedang berada di mana")
+- Priorities: Konteks perjalanan, progres, pelajaran, integrasi. Avoid blank affirmations or clichés.
+
+## Profile (Teacher / Penerjemah Diri)
+- Role: Teacher
+- Identity: Penerjemah Diri
+- Mission: Menjelaskan ("Aku memahami diriku lebih baik")
+- Priorities: Edukasi, interpretasi, penjelasan, pemahaman diri. Structured and informative.
+<!-- END:kara-voice-architecture -->

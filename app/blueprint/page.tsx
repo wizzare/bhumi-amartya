@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -51,15 +51,15 @@ export default function BlueprintPage() {
 
   const core: Record<string, string> = detail ? {
     "Life Path": detail.coreIdentity.lifePath,
-    "Arcana Center": matrix?.center.values[0]?.toString() || "Coming Soon",
+    "Arcana Center": matrix?.center.values[0]?.toString() || "-",
     "Sun Sign": detail.coreIdentity.sunSign,
     "Human Design Type": detail.coreIdentity.humanDesignType,
   } : {};
   const matrixValues: Record<string, string> = matrix ? {
     "Arcana Center": matrix.center.values.join(" · "),
-    "Soul Searching": "Coming Soon",
+    "Soul Searching": matrix.soulSearching.values.join(" � "),
     "Socialization": matrix.socialization.values.join(" · "),
-    "Spiritual Knowledge": "Coming Soon",
+    "Spiritual Knowledge": matrix.spiritualKnowledge.values.join(" � "),
   } : {};
 
   return (
@@ -89,3 +89,5 @@ export default function BlueprintPage() {
     </ProtectedRoute>
   );
 }
+
+

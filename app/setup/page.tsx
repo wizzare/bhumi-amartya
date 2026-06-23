@@ -234,7 +234,7 @@ export default function SetupPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
         <div className="text-center p-8 bhumi-card max-w-md">
-          <p className="text-[#4F5E52] mb-6">Anda harus login terlebih dahulu.</p>
+          <p className="text-[#4F5E52] mb-6">Kamu harus login terlebih dahulu.</p>
           <button onClick={() => router.push("/login")} className="bhumi-button">Ke Halaman Login</button>
         </div>
       </main>

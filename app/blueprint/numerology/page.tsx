@@ -20,6 +20,42 @@ import {
   personalityData 
 } from "@/lib/data/numerology";
 
+function getLifePathExplanation(num: number): string {
+  const data = lifePathData[num];
+  if (!data) return "";
+  return `Angka ini biasanya muncul pada orang yang dipanggil untuk ${data.coreJourney}. Dalam kehidupan sehari-hari, kekuatan dari peran sebagai ${data.roleId} ini terlihat ${data.dailyExpression}. Pelajaran besar bagi jalan hidupmu adalah ${data.majorLesson}.`;
+}
+
+function getBirthDayExplanation(num: number): string {
+  const data = birthDayData[num];
+  if (!data) return "";
+  return `Angka lahirmu menandai adanya kecenderungan alami berupa ${data.summary}. Bakat bawaan ini menjadi modal alami yang senantiasa menyertai setiap tindakanmu sehari-hari.`;
+}
+
+function getPersonalYearExplanation(num: number): string {
+  const data = personalYearData[num];
+  if (!data) return "";
+  return `Fase siklus waktu yang sedang aktif dalam hidupmu tahun ini menekankan pentingnya ${data.summary}. Tema berjalan ini membimbing perhatian dan ritme hidupmu sepanjang periode berjalan.`;
+}
+
+function getExpressionExplanation(num: number): string {
+  const data = expressionData[num];
+  if (!data) return "";
+  return `Bakat alamimu dan cara potensimu diekspresikan dalam tindakan nyata cenderung muncul ${data.summary}. Dalam kehidupan sehari-hari, hal ini memandu bagaimana kamu menyalurkan kontribusi terbaikmu agar menghasilkan dampak nyata.`;
+}
+
+function getSoulUrgeExplanation(num: number): string {
+  const data = soulUrgeData[num];
+  if (!data) return "";
+  return `Angka ini mewakili dorongan batin dan motivasi terdalam dalam jiwamu, yang biasanya mengarah pada ${data.summary}. Kehadiran energi ini menjelaskan kebutuhan dasar untuk menemukan rasa bermakna di balik setiap pilihan hidup yang kamu ambil.`;
+}
+
+function getPersonalityExplanation(num: number): string {
+  const data = personalityData[num];
+  if (!data) return "";
+  return `Dalam interaksi sosial, dunia luar cenderung melihat kehadiranmu sebagai ${data.summary}. Kesan pertama ini memancar secara spontan sebagai cerminan luar dari caramu membawa diri.`;
+}
+
 export default function NumerologyPage() {
   const auth = useAuth();
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
@@ -62,17 +98,59 @@ export default function NumerologyPage() {
   const finalSoulUrge = getVal("soulUrge");
   const finalPersonality = getVal("personality");
 
-  const meaningLifePath = finalLifePath ? (lifePathData as any)[finalLifePath]?.role : undefined;
-  const meaningBirthDay = finalBirthDay ? (birthDayData as any)[finalBirthDay] : undefined;
-  const meaningPersonalYear = finalPersonalYear ? (personalYearData as any)[finalPersonalYear] : undefined;
-  const meaningExpression = finalExpression ? (expressionData as any)[finalExpression] : undefined;
-  const meaningSoulUrge = finalSoulUrge ? (soulUrgeData as any)[finalSoulUrge] : undefined;
-  const meaningPersonality = finalPersonality ? (personalityData as any)[finalPersonality] : undefined;
+  const roleLifePath = finalLifePath ? (lifePathData as any)[Number(finalLifePath)]?.role : undefined;
+  const meaningLifePath = useMemo(() => finalLifePath ? getLifePathExplanation(Number(finalLifePath)) : undefined, [finalLifePath]);
+  const meaningBirthDay = useMemo(() => finalBirthDay ? getBirthDayExplanation(Number(finalBirthDay)) : undefined, [finalBirthDay]);
+  const meaningPersonalYear = useMemo(() => finalPersonalYear ? getPersonalYearExplanation(Number(finalPersonalYear)) : undefined, [finalPersonalYear]);
+  const meaningExpression = useMemo(() => finalExpression ? getExpressionExplanation(Number(finalExpression)) : undefined, [finalExpression]);
+  const meaningSoulUrge = useMemo(() => finalSoulUrge ? getSoulUrgeExplanation(Number(finalSoulUrge)) : undefined, [finalSoulUrge]);
+  const meaningPersonality = useMemo(() => finalPersonality ? getPersonalityExplanation(Number(finalPersonality)) : undefined, [finalPersonality]);
+
+  const synthesisParagraphs = useMemo(() => {
+    const list: string[] = [];
+
+    if (finalLifePath) {
+      const lp = lifePathData[Number(finalLifePath)];
+      if (lp) {
+        list.push(`Arah perjalanan hidup utamamu menunjukkan panggilan besar untuk ${lp.coreJourney} (Life Path ${finalLifePath}). Ini adalah kompas penunjuk jalan yang menentukan ke mana fokus energi dan pertumbuhan jangka panjangmu diarahkan.`);
+      }
+    }
+
+    if (finalSoulUrge) {
+      const su = soulUrgeData[Number(finalSoulUrge)];
+      if (su) {
+        list.push(`Di balik itu, terdapat dorongan batin kuat yang bersumber dari ${su.summary} (Soul Urge ${finalSoulUrge}). Kebutuhan terdalam inilah yang menyalakan motivasi internalmu dan memberi rasa bermakna pada setiap keputusan penting yang kamu ambil.`);
+      }
+    }
+
+    if (finalExpression) {
+      const expr = expressionData[Number(finalExpression)];
+      if (expr) {
+        list.push(`Menariknya, cara yang paling alami untuk mewujudkan potensi diri tersebut sering kali muncul ${expr.summary} (Expression ${finalExpression}). Bakat bawaan ini berfungsi sebagai saluran utama tempat gagasan dan energimu dikemas menjadi kontribusi yang konkret.`);
+      }
+    }
+
+    if (finalPersonality) {
+      const pers = personalityData[Number(finalPersonality)];
+      if (pers) {
+        list.push(`Dalam interaksi sehari-hari, cara energimu memancar membuat dunia luar cenderung melihat kehadiranmu sebagai ${pers.summary} (Personality ${finalPersonality}). Kesan pertama ini memancar secara spontan dan membantu menjembatani hubunganmu dengan sekeliling.`);
+      }
+    }
+
+    if (finalPersonalYear) {
+      const yr = personalYearData[Number(finalPersonalYear)];
+      if (yr) {
+        list.push(`Sebagai penyelarasan dengan waktu, tahun ini membimbing perhatianmu untuk berfokus pada ${yr.summary} (Personal Year ${finalPersonalYear}). Siklus tahun berjalan ini memberikan ruang latihan yang ideal untuk menyelaraskan ritme tindakanmu dengan dinamika energi saat ini.`);
+      }
+    }
+
+    return list;
+  }, [finalLifePath, finalSoulUrge, finalExpression, finalPersonality, finalPersonalYear]);
 
   // For Founder Debug Only
   const debugFields = [
     { label: "Life Path Number", value: finalLifePath, sourcePath: "numerology.number" },
-    { label: "Life Path Meaning", value: meaningLifePath, sourcePath: "numerology.role" },
+    { label: "Life Path Meaning", value: roleLifePath, sourcePath: "numerology.role" },
     { label: "Birth Day Number", value: finalBirthDay, sourcePath: "numerology.birthDay" },
     { label: "Birth Day Meaning", value: meaningBirthDay, sourcePath: "" },
     { label: "Personal Year", value: finalPersonalYear, sourcePath: "numerology.personalYear" },
@@ -141,11 +219,9 @@ export default function NumerologyPage() {
                   <h2 className="text-lg font-bold">Kesimpulan Numerologi</h2>
                 </div>
                 <div className="space-y-4 text-sm leading-relaxed text-[#D2D8D0]">
-                  {finalLifePath && <p><strong className="text-white">Arah Jiwamu (Life Path {finalLifePath}):</strong> Perjalanan utamamu adalah menjadi <strong>{meaningLifePath?.toLowerCase()}</strong>. Ini adalah misi terbesar dalam hidupmu.</p>}
-                  {finalExpression && <p><strong className="text-white">Cara Bakat Muncul (Birth Day {finalBirthDay} & Expression {finalExpression}):</strong> Kamu mengekspresikan diri secara unik, di mana bakat alamimu ({finalBirthDay}) bersinergi untuk <strong>{meaningExpression?.toLowerCase().replace("mengekspresikan diri melalui ", "").replace("bakat ", "")}</strong>.</p>}
-                  {finalSoulUrge && <p><strong className="text-white">Dorongan Batin (Soul Urge {finalSoulUrge}):</strong> Jauh di dalam lubuk hati, kamu digerakkan oleh <strong>{meaningSoulUrge?.toLowerCase().replace("dorongan batin untuk ", "").replace("kebutuhan jiwa akan ", "").replace("dorongan jiwa untuk ", "").replace("dorongan batin yang ", "").replace("kebutuhan jiwa untuk ", "").replace("kebutuhan mendalam untuk ", "").replace("kebutuhan untuk ", "")}</strong>.</p>}
-                  {finalPersonality && <p><strong className="text-white">Cara Dunia Melihatmu (Personality {finalPersonality}):</strong> Orang lain cenderung melihatmu sebagai <strong>{meaningPersonality?.toLowerCase().replace("terlihat sebagai ", "").replace("dianggap sebagai ", "").replace("dilihat sebagai ", "").replace("terkesan ", "").replace("memancarkan ", "").replace("terlihat ", "")}</strong>.</p>}
-                  {finalPersonalYear && <p><strong className="text-white">Fase Saat Ini (Personal Year {finalPersonalYear}):</strong> Tahun ini adalah momen yang tepat untuk <strong>{meaningPersonalYear?.toLowerCase().replace("tahun awal yang ", "").replace("tahun kemitraan dan ", "").replace("tahun ekspresi diri dan ", "").replace("tahun kerja keras dan ", "").replace("tahun perubahan dan ", "").replace("tahun tanggung jawab dan ", "").replace("tahun evaluasi diri dan ", "").replace("tahun panen dan ", "").replace("tahun penyelesaian dan ", "").replace("tahun pencerahan ", "").replace("tahun perwujudan ", "").replace("tahun pelayanan ", "").split(".")[0]}</strong>. {meaningPersonalYear?.split(". ")[1] || ""}</p>}
+                  {synthesisParagraphs.map((para, idx) => (
+                    <p key={idx}>{para}</p>
+                  ))}
                 </div>
               </div>
 

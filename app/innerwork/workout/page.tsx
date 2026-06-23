@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { WORKOUT_DATABASE } from "@/lib/data/innerworkContent";
 import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
@@ -34,8 +35,30 @@ export default function WorkoutPage() {
     [zoneBSearch],
   );
 
+    // KARA SoT: Workout adalah "area khusus" di dalam Wellness.
+  // Daily Check-In bukan gate untuk Workout — gate hanya berlaku untuk membuka
+  // halaman Hasil Wellness (Zona A) secara keseluruhan sesuai KARA SoT.
+  // LIANA V3: Progress Workout dibaca dari dailyState.workoutDone untuk konsistensi UI.
+  const [workoutDoneToday, setWorkoutDoneToday] = React.useState(false);
+
   React.useEffect(() => {
     trackEvent("open_workout", auth?.user?.uid);
+
+    async function loadPersistedPractice() {
+      if (!auth?.user?.uid) return;
+      try {
+        const profile = auth.userProfile;
+        const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const date = getLocalDateKey(new Date(), timezone);
+        const state = await dailyStateRepository.getDailyState(auth.user.uid, date);
+        if (state?.workoutDone) {
+          setWorkoutDoneToday(true);
+        }
+      } catch (err) {
+        console.warn("[WORKOUT PERSIST NOTE]", err);
+      }
+    }
+    void loadPersistedPractice();
   }, [auth?.user?.uid]);
 
   const toggleSelection = (id: string) => {
@@ -109,6 +132,10 @@ export default function WorkoutPage() {
       }]
     : WORKOUT_ACTIVITIES;
 
+    // KARA SoT Lock Removed: Workout dapat diakses tanpa Daily Check-In.
+  // workoutDoneToday digunakan untuk indikator UI opsional saja — tidak memblokir halaman.
+  void workoutDoneToday;
+
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
@@ -120,12 +147,17 @@ export default function WorkoutPage() {
             <span className="text-sm font-medium">Kembali ke Wellness</span>
           </Link>
 
-          <header className="mb-8">
+                    <header className="mb-8">
             <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6">
               <Dumbbell size={32} />
             </div>
             <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Workout</h1>
             <p className="text-[#7B8776]">Gerakkan tubuhmu untuk melepaskan energi yang tertahan.</p>
+            {workoutDoneToday && (
+              <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                Latihan terakhir kamu tersimpan.
+              </p>
+            )}
           </header>
 
           <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">

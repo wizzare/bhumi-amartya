@@ -2,13 +2,6 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { getRuntimeBuildInfo } from "@/lib/config/buildInfo";
 
-export interface AppVersionConfig {
-  minimumBuild: number;
-  latestVersion: string;
-  forceUpdate: boolean;
-  updateUrl?: string;
-}
-
 export interface AppUpdateStatus {
   currentBuild: number;
   minimumBuild: number;
@@ -17,45 +10,52 @@ export interface AppUpdateStatus {
   updateUrl: string;
 }
 
+/**
+ * Checks for application updates from Firestore.
+ * Stabilized in KARA 53 to support legacy schema and prevent false positives.
+ */
 export async function checkAppUpdateStatus(): Promise<AppUpdateStatus> {
   const buildInfo = await getRuntimeBuildInfo();
   const currentBuild = buildInfo.versionCode;
 
+  // 1. Initial State: Access Granted (Fail-Open for Config)
   let minimumBuild = 0;
   let latestVersion = buildInfo.versionName;
   let updateUrl = "https://play.google.com/store/apps/details?id=com.bhumiamartya.app";
-  let isOutdated = true; // SECURE DEFAULT (Fail-Closed)
+  let isOutdated = false; 
 
   try {
     const snap = await getDoc(doc(db, "app_config", "version"));
     if (snap.exists()) {
       const data = snap.data();
-      if (data && typeof data.minimumBuild !== "undefined") {
-        let parsedMinBuild: number | null = null;
-        if (typeof data.minimumBuild === "number") {
-          parsedMinBuild = data.minimumBuild;
-        } else {
-          const parsed = parseInt(String(data.minimumBuild), 10);
-          if (!isNaN(parsed)) {
-            parsedMinBuild = parsed;
-          }
-        }
+      
+      // 2. Derive Latest Version (Support New and Legacy)
+      latestVersion = data.latestVersion || data.currentVersion || latestVersion;
+      updateUrl = data.updateUrl || updateUrl;
 
-        if (parsedMinBuild !== null && parsedMinBuild > 0) {
-          minimumBuild = parsedMinBuild;
-          isOutdated = currentBuild < minimumBuild;
-        }
+      // 3. Derive Minimum Build (Support New and Legacy)
+      // Logic: If minimumBuild is missing, we check forceUpdate legacy flag.
+      // If forceUpdate is true, we might fallback to a build number if available, 
+      // but usually we prefer explicit build numbers.
+      let remoteMinBuild: number | null = null;
+      
+      if (typeof data.minimumBuild !== "undefined") {
+        remoteMinBuild = parseInt(String(data.minimumBuild), 10);
+      } else if (data.forceUpdate === true) {
+        // Fallback: If legacy forceUpdate is active but no build is specified, 
+        // we keep isOutdated as false to avoid locking everyone without a target.
+        console.warn("[APP UPDATE] Legacy forceUpdate active but minimumBuild missing.");
       }
-      if (data && data.latestVersion) {
-        latestVersion = data.latestVersion;
-      }
-      if (data && data.updateUrl) {
-        updateUrl = data.updateUrl;
+
+      if (remoteMinBuild !== null && !isNaN(remoteMinBuild)) {
+        minimumBuild = remoteMinBuild;
+        // 4. Force Update Condition
+        isOutdated = currentBuild < minimumBuild;
       }
     }
   } catch (error) {
-    console.warn("[APP UPDATE SERVICE] Failed to fetch remote version config:", error);
-    // isOutdated remains true (SECURE DEFAULT)
+    // If Firestore fails, we allow access (isOutdated remains false)
+    console.warn("[APP UPDATE SERVICE] Failed to fetch remote version config. Defaulting to access granted.", error);
   }
 
   return {

@@ -39,38 +39,38 @@ export function AIReflectionHero({
     <div className="mt-8 space-y-6">
       {/* 1. Manifestation Card */}
       {manifestation && (
-        <div className="bhumi-card p-8 bg-[#4F5E52] text-white shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+        <div className="bhumi-card p-8 bg-[#F5F1E8] text-[#344A38] border border-[#DDE7DB] shadow-sm relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none text-[#4F5E52]">
             <Sparkles size={120} />
           </div>
 
           <div className="relative z-10 space-y-8">
             <div>
-              <div className="flex items-center gap-2 mb-3 opacity-80">
-                <Sparkles size={14} className="text-[#9BB89A]" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">Affirmation</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles size={14} className="text-[#4F5E52]" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4F5E52]/70">Affirmation</p>
               </div>
-              <p className="text-lg font-serif italic leading-relaxed">
+              <p className="text-lg font-serif italic leading-relaxed font-bold text-[#4F6658]">
                 "{manifestation.affirmation}"
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-2 mb-3 opacity-80">
-                <Zap size={14} className="text-[#9BB89A]" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">Attraction</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Zap size={14} className="text-[#4F5E52]" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4F5E52]/70">Attraction</p>
               </div>
-              <p className="text-base leading-relaxed font-medium">
+              <p className="text-base leading-relaxed font-semibold text-[#526053]">
                 {manifestation.attraction}
               </p>
             </div>
 
             <div>
-              <div className="flex items-center gap-2 mb-3 opacity-80">
-                <Target size={14} className="text-[#9BB89A]" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">Assumption</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Target size={14} className="text-[#4F5E52]" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#4F5E52]/70">Assumption</p>
               </div>
-              <p className="text-base leading-relaxed font-medium">
+              <p className="text-base leading-relaxed font-semibold text-[#526053]">
                 {manifestation.assumption}
               </p>
             </div>

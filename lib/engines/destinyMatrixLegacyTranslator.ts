@@ -39,11 +39,11 @@ export function translateToLegacyReading(graph: DestinyMatrixGraph): LegacyReadi
   return {
     center: get("BM05"),
     commonEnergy: join("BM05", "BM23", "BM24"),
-    moneyLine: join("BM03", "BM16", "BM11", "BM22", "BM20"),
-    loveLine: join("BM20", "BM21", "BM10"),
+    moneyLine: join("BM05", "BM22", "BM20"),
+    loveLine: join("BM05", "BM21", "BM20"),
     karmicTile: join("BM10", "BM17", "BM04"), // Reversed KARMIC_TAIL order (21-7-13)
-    fatherKarma: join("BM06", "BM05", "BM09"), // Male Diagonal
-    motherKarma: join("BM07", "BM05", "BM08"), // Female Diagonal
+    fatherKarma: join("BM06", "BM25", "BM26", "BM05", "BM31", "BM32", "BM09"), // Male Diagonal
+    motherKarma: join("BM08", "BM29", "BM30", "BM05", "BM27", "BM28", "BM07"), // Female Diagonal
     fatherTalent,
     motherTalent,
     godTalent: join("BM02", "BM15", "BM13"), // Top Branch

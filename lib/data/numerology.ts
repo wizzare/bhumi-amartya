@@ -1,137 +1,199 @@
-export const lifePathData = {
+export interface LifePathDetail {
+  role: string;
+  roleId: string;
+  positiveTraits: string[];
+  negativeTraits: string[];
+  coreJourney: string;
+  majorLesson: string;
+  dailyExpression: string;
+}
+
+export interface NumerologyDetail {
+  summary: string;
+}
+
+export const lifePathData: Record<number, LifePathDetail> = {
   1: {
     role: "The Leader",
+    roleId: "Pemimpin Pelopor",
     positiveTraits: ["Confident", "Independent", "Resourceful", "Creative"],
     negativeTraits: ["Self-centered", "Impatient", "Can be arrogant"],
+    coreJourney: "melangkah secara mandiri dan mempelopori inisiatif baru",
+    majorLesson: "belajar memimpin tanpa harus mendominasi atau menjadi egois",
+    dailyExpression: "ketika kamu mengambil inisiatif tanpa menunggu persetujuan orang lain",
   },
   2: {
     role: "The Mediator",
+    roleId: "Mediator Harmonis",
     positiveTraits: ["Harmonious", "Compassionate", "Good Listener", "Intuitive"],
     negativeTraits: ["Indecisive", "Over-sensitive", "Avoids conflict"],
+    coreJourney: "menciptakan keharmonisan dan menjembatani perbedaan",
+    majorLesson: "belajar menjaga kedamaian tanpa harus mengorbankan batas diri",
+    dailyExpression: "ketika kamu menjadi penengah yang sabar dalam perselisihan di sekitarmu",
   },
   3: {
     role: "The Artist",
+    roleId: "Artis Ekspresif",
     positiveTraits: ["Self-expressive", "Optimistic", "Communicative", "Charismatic"],
     negativeTraits: ["Superficial", "Scattered", "Can hide feelings"],
+    coreJourney: "mengekspresikan kreativitas dan menyebarkan kegembiraan",
+    majorLesson: "belajar menyalurkan ekspresi diri secara fokus dan jujur",
+    dailyExpression: "saat kata-kata atau karyamu mampu menghidupkan suasana di sekitarmu",
   },
   4: {
     role: "The Builder",
+    roleId: "Pembangun Terstruktur",
     positiveTraits: ["Loyal", "Reliable", "Determined", "Disciplined"],
     negativeTraits: ["Stubborn", "Rigid", "Can be overly cautious"],
+    coreJourney: "membangun fondasi kokoh dan hasil nyata yang stabil",
+    majorLesson: "belajar merawat kestabilan tanpa terjebak dalam kekakuan batin",
+    dailyExpression: "ketika kamu berfokus membangun fondasi yang kokoh, baik dalam pekerjaan maupun hubungan",
   },
   5: {
     role: "The Communicator",
+    roleId: "Penjelajah Dinamis",
     positiveTraits: ["Curious", "Adaptable", "Spontaneous", "Versatile"],
     negativeTraits: ["Lacks discipline", "Restless", "Can be inconsistent"],
+    coreJourney: "menjelajahi perubahan dan merangkul kebebasan",
+    majorLesson: "belajar menikmati petualangan tanpa kehilangan komitmen",
+    dailyExpression: "saat kamu dengan cepat menyerap informasi baru dan menyesuaikan diri dengan situasi tak terduga",
   },
   6: {
     role: "The Teacher",
+    roleId: "Pengayom Tulus",
     positiveTraits: ["Generous", "Patient", "Honest", "Helpful"],
     negativeTraits: ["Can be overly critical", "Self-righteous", "Burdened by responsibility"],
+    coreJourney: "merawat keharmonisan keluarga dan melayani sekeliling",
+    majorLesson: "belajar mendukung sesama tanpa harus memaksakan kendali",
+    dailyExpression: "ketika kamu menjadi tempat bersandar dan memberikan perhatian bagi keluarga maupun teman",
   },
   7: {
     role: "The Individualist",
+    roleId: "Pencari Kebijaksanaan",
     positiveTraits: ["Detail-oriented", "Intellectual", "Intuitive", "Analytical"],
     negativeTraits: ["Aloof", "Secretive", "Can be cynical"],
+    coreJourney: "mencari kebenaran dan menganalisis kedalaman kehidupan",
+    majorLesson: "belajar membuka diri pada dunia tanpa rasa takut",
+    dailyExpression: "dari kecenderunganmu untuk mengamati situasi secara tenang sebelum mengambil kesimpulan",
   },
   8: {
     role: "The Goal-Setter",
+    roleId: "Pengatur Otoritas",
     positiveTraits: ["Ambitious", "Goal-oriented", "Materially successful", "Energetic"],
     negativeTraits: ["Obsessed with money and status", "Intolerant", "Can be domineering"],
+    coreJourney: "mengelola kelimpahan dan menggunakan otoritas material secara bijak",
+    majorLesson: "belajar menggunakan kendali tanpa kehilangan integritas batin",
+    dailyExpression: "pada kemampuanmu dalam merancang strategi praktis untuk mewujudkan rencana nyata",
   },
   9: {
     role: "The Humanitarian",
+    roleId: "Kemanusiaan Universal",
     positiveTraits: ["Generous", "Wise", "Spiritual", "Creative"],
     negativeTraits: ["Can be impractical", "Overly emotional", "May struggle with boundaries"],
+    coreJourney: "melayani sesama dan melepaskan masa lalu secara ikhlas",
+    majorLesson: "belajar melepaskan siklus lama yang sudah selesai secara tulus",
+    dailyExpression: "dari ketulusanmu untuk berbagi dan membantu sesama tanpa mengharapkan imbalan langsung",
   },
   11: {
     role: "Master Intuitive",
+    roleId: "Intuisi Spiritual",
     positiveTraits: ["Intuitive", "Visionary", "Charismatic", "Inspirational"],
     negativeTraits: ["Anxious", "Impractical", "Can be overwhelmed by their own gifts"],
+    coreJourney: "menyalurkan visi batin dan intuisi tinggi menjadi inspirasi",
+    majorLesson: "belajar mengelola kecemasan batin dengan tindakan membumi",
+    dailyExpression: "dari pemahaman batin dan intuisi yang sering kali melampaui logika umum",
   },
   22: {
     role: "Master Builder",
+    roleId: "Pembangun Utama",
     positiveTraits: ["Visionary", "Practical", "Powerful manifester", "Disciplined"],
     negativeTraits: ["Can be overwhelmed by the scale of their vision", "Controlling", "Workaholic"],
+    coreJourney: "mewujudkan visi besar yang bermanfaat nyata bagi peradaban",
+    majorLesson: "belajar menghadapi tanggung jawab besar tanpa merasa terbebani",
+    dailyExpression: "dari bakatmu menyusun langkah terperinci untuk mewujudkan rencana berskala besar",
   },
   33: {
     role: "Master Teacher",
+    roleId: "Guru Utama",
     positiveTraits: ["Compassionate", "Nurturing", "Visionary", "Selfless"],
     negativeTraits: ["Can be overly idealistic", "Self-sacrificing", "May neglect their own needs"],
+    coreJourney: "membimbing sesama melalui teladan kasih sayang tanpa syarat",
+    majorLesson: "belajar mengayomi sekeliling tanpa mengabaikan perlindungan diri",
+    dailyExpression: "ketika kehadiranmu memancarkan rasa aman yang membuat orang lain merasa diterima apa adanya",
   },
 };
 
-export const birthDayData: Record<number, string> = {
-  1: "Independen dan memiliki bakat kepemimpinan alami.",
-  2: "Peka, diplomatis, dan pandai bekerja sama.",
-  3: "Kreatif, ekspresif, dan memiliki pesona sosial.",
-  4: "Terstruktur, pekerja keras, dan dapat diandalkan.",
-  5: "Dinamis, menyukai kebebasan, dan mudah beradaptasi.",
-  6: "Penuh kasih sayang, bertanggung jawab, dan mengayomi.",
-  7: "Pemikir mendalam, analitis, dan memiliki intuisi tajam.",
-  8: "Berorientasi pada tujuan, praktis, dan ahli mengatur strategi.",
-  9: "Toleran, idealis, dan memiliki jiwa kemanusiaan tinggi.",
-  11: "Sangat intuitif dan mampu membawa inspirasi besar.",
-  22: "Mampu mewujudkan ide besar menjadi kenyataan praktis.",
-  33: "Memiliki kapasitas empati dan bimbingan spiritual yang tinggi.",
+export const birthDayData: Record<number, NumerologyDetail> = {
+  1: { summary: "kemandirian dan kepemimpinan alami" },
+  2: { summary: "kepekaan rasa dan kemampuan bekerja sama" },
+  3: { summary: "kreativitas dan pesona sosial" },
+  4: { summary: "keteraturan dan kedisiplinan praktis" },
+  5: { summary: "kecepatan beradaptasi dan kecintaan akan kebebasan" },
+  6: { summary: "kasih sayang dan tanggung jawab mengayomi" },
+  7: { summary: "pemikiran mendalam dan intuisi analitis" },
+  8: { summary: "orientasi pada tujuan dan strategi praktis" },
+  9: { summary: "jiwa kemanusiaan dan toleransi sosial" },
+  11: { summary: "kepekaan intuisi spiritual" },
+  22: { summary: "kemampuan merealisasikan visi besar" },
+  33: { summary: "empati tinggi dan bimbingan kasih sayang" },
 };
 
-export const personalYearData: Record<number, string> = {
-  1: "Tahun awal yang baru. Waktu yang tepat untuk memulai proyek dan menanam benih niat.",
-  2: "Tahun kemitraan dan kesabaran. Fokus pada hubungan dan memelihara apa yang telah dimulai.",
-  3: "Tahun ekspresi diri dan kegembiraan. Waktu untuk bersosialisasi dan mengembangkan kreativitas.",
-  4: "Tahun kerja keras dan fondasi. Waktu untuk mengamankan stabilitas dan membangun struktur.",
-  5: "Tahun perubahan dan kebebasan. Eksplorasi hal baru dan bersiap untuk transisi dinamis.",
-  6: "Tahun tanggung jawab dan cinta. Fokus pada keluarga, kesejahteraan, dan pengabdian.",
-  7: "Tahun evaluasi diri dan spiritualitas. Waktu yang baik untuk belajar, merenung, dan menyendiri.",
-  8: "Tahun panen dan pencapaian material. Kesuksesan finansial dan pengakuan profesional ada di depan mata.",
-  9: "Tahun penyelesaian dan pelepasan. Waktu untuk membersihkan ruang hidup dan bersiap untuk siklus baru.",
-  11: "Tahun pencerahan spiritual. Fokus pada intuisi dan membagikan wawasan kepada orang lain.",
-  22: "Tahun perwujudan visi besar. Kesempatan langka untuk membangun proyek berskala luas.",
-  33: "Tahun pelayanan tanpa pamrih. Memberikan cinta dan pengabdian penuh kepada komunitas."
+export const personalYearData: Record<number, NumerologyDetail> = {
+  1: { summary: "memulai awal yang baru dan merintis inisiatif" },
+  2: { summary: "memupuk kerja sama dan menjaga kesabaran" },
+  3: { summary: "mengekspresikan diri dan memperluas kreativitas" },
+  4: { summary: "membangun struktur dan memperkokoh fondasi" },
+  5: { summary: "merangkul transisi dan menjelajahi kebebasan" },
+  6: { summary: "merawat keharmonisan rumah dan memikul tanggung jawab" },
+  7: { summary: "mengevaluasi batin dan mendalami spiritualitas" },
+  8: { summary: "meraih pencapaian material dan kelimpahan finansial" },
+  9: { summary: "menyelesaikan siklus lama dan mengikhlaskan pelepasan" },
+  11: { summary: "mencapai pencerahan spiritual dan ketajaman intuisi" },
+  22: { summary: "merealisasikan rencana besar berskala luas" },
+  33: { summary: "melayani sesama dengan ketulusan kasih sayang" },
 };
 
-export const expressionData: Record<number, string> = {
-  1: "Mengekspresikan diri melalui inovasi dan kemandirian. Dikenal sebagai pelopor.",
-  2: "Mengekspresikan diri melalui diplomasi dan keharmonisan. Sangat baik dalam tim.",
-  3: "Bakat alami dalam komunikasi, seni, dan membawa kebahagiaan bagi orang lain.",
-  4: "Bakat membangun sesuatu yang nyata dan bertahan lama melalui metode yang terstruktur.",
-  5: "Kemampuan beradaptasi dengan cepat dan merangkul petualangan serta perubahan.",
-  6: "Mengekspresikan diri melalui kepedulian, penyembuhan, dan menjaga keharmonisan lingkungan.",
-  7: "Pencari kebenaran. Mengekspresikan diri melalui riset mendalam dan wawasan filosofis.",
-  8: "Bakat kepemimpinan eksekutif dan kemampuan mengelola energi atau sumber daya material.",
-  9: "Ekspresi melalui empati universal dan keinginan untuk menyembuhkan dunia.",
-  11: "Mengekspresikan visi spiritual dan membawa pemahaman yang melampaui logika biasa.",
-  22: "Bakat luar biasa dalam merencanakan dan mengeksekusi proyek berdampak besar.",
-  33: "Mengekspresikan kasih sayang universal dan menjadi guru atau pembimbing sejati."
+export const expressionData: Record<number, NumerologyDetail> = {
+  1: { summary: "melalui kemandirian dan inovasi pelopor" },
+  2: { summary: "melalui diplomasi dan kerja sama harmonis" },
+  3: { summary: "melalui kreativitas seni dan komunikasi sosial" },
+  4: { summary: "melalui ketekunan teratur dan metode praktis" },
+  5: { summary: "melalui kecepatan beradaptasi dan eksplorasi dinamis" },
+  6: { summary: "melalui kepedulian tulus dan pengayoman lingkungan" },
+  7: { summary: "melalui analisis mendalam dan penelitian filosofis" },
+  8: { summary: "melalui pengelolaan strategi dan kepemimpinan taktis" },
+  9: { summary: "melalui empati luas dan kepedulian kemanusiaan" },
+  11: { summary: "melalui pemahaman intuitif dan inspirasi batin" },
+  22: { summary: "melalui perwujudan praktis rencana berskala besar" },
+  33: { summary: "melalui bimbingan kasih sayang universal" },
 };
 
-export const soulUrgeData: Record<number, string> = {
-  1: "Dorongan batin untuk memimpin, mandiri, dan menjadi yang terbaik di bidangnya.",
-  2: "Kebutuhan jiwa akan cinta, keharmonisan, dan pengertian dalam setiap hubungan.",
-  3: "Dorongan batin untuk berekspresi secara bebas, kreatif, dan menikmati hidup.",
-  4: "Kebutuhan akan keteraturan, rasa aman, dan membangun sesuatu yang stabil.",
-  5: "Dorongan batin yang mendambakan kebebasan mutlak, variasi, dan pengalaman baru.",
-  6: "Kebutuhan jiwa untuk dibutuhkan, merawat orang lain, dan menciptakan lingkungan yang indah.",
-  7: "Dorongan batin untuk memahami misteri kehidupan, menyendiri, dan mencari kebijaksanaan.",
-  8: "Kebutuhan jiwa akan kesuksesan, otoritas, dan kemampuan mengendalikan takdir material.",
-  9: "Dorongan batin untuk melayani kemanusiaan dan melihat dunia yang lebih baik.",
-  11: "Kebutuhan untuk mencapai pencerahan dan menyalurkan inspirasi ilahi.",
-  22: "Dorongan jiwa untuk meninggalkan warisan jangka panjang yang berdampak global.",
-  33: "Kebutuhan mendalam untuk menyembuhkan dan memberikan cinta tanpa syarat."
+export const soulUrgeData: Record<number, NumerologyDetail> = {
+  1: { summary: "dorongan kuat untuk berdaulat dan mandiri" },
+  2: { summary: "hasrat batin untuk relasi damai yang harmonis" },
+  3: { summary: "kebutuhan batin untuk berekspresi bebas dan menikmati hidup" },
+  4: { summary: "dorongan batin untuk ketertiban dan rasa aman" },
+  5: { summary: "kebutuhan jiwa akan petualangan dan kebebasan mutlak" },
+  6: { summary: "dorongan batin untuk merawat sekeliling dan dibutuhkan" },
+  7: { summary: "kebutuhan batin akan kesunyian dan pemahaman mendalam" },
+  8: { summary: "hasrat batin untuk berdaya secara material dan mandiri" },
+  9: { summary: "dorongan batin untuk melayani kemanusiaan tanpa pamrih" },
+  11: { summary: "kebutuhan jiwa mencapai pencerahan spiritual" },
+  22: { summary: "hasrat batin meninggalkan warisan jangka panjang yang nyata" },
+  33: { summary: "kebutuhan jiwa menyembuhkan sesama dengan cinta tulus" },
 };
 
-export const personalityData: Record<number, string> = {
-  1: "Terlihat sebagai sosok yang percaya diri, tegas, dan penuh inisiatif.",
-  2: "Dianggap sebagai orang yang ramah, hangat, mudah didekati, dan cinta damai.",
-  3: "Dilihat sebagai pribadi yang menawan, optimis, modis, dan menyenangkan.",
-  4: "Terkesan serius, rapi, dapat diandalkan, dan sangat rasional.",
-  5: "Dilihat sebagai orang yang magnetis, dinamis, cerdas, dan tidak terduga.",
-  6: "Terlihat sangat peduli, protektif, anggun, dan memancarkan aura keibuan/kebapakan.",
-  7: "Dianggap sebagai sosok misterius, intelek, tenang, dan memiliki aura eksklusif.",
-  8: "Terlihat sukses, kuat, profesional, dan memiliki daya tarik otoritas.",
-  9: "Dilihat sebagai orang yang karismatik, toleran, dan memiliki hati yang luas.",
-  11: "Memancarkan aura spiritual, sangat peka, dan sering terlihat 'berada di dunia lain'.",
-  22: "Terkesan sangat tangguh, ahli strategi, dan mampu menangani proyek raksasa.",
-  33: "Dilihat sebagai sosok malaikat atau penyembuh yang memancarkan ketenangan absolut."
+export const personalityData: Record<number, NumerologyDetail> = {
+  1: { summary: "sosok yang percaya diri dan tegas" },
+  2: { summary: "sosok yang ramah dan cinta damai" },
+  3: { summary: "pribadi yang menawan dan penuh optimisme" },
+  4: { summary: "sosok serius yang rapi dan dapat diandalkan" },
+  5: { summary: "orang yang magnetis and penuh kejutan" },
+  6: { summary: "pribadi peduli yang protektif dan anggun" },
+  7: { summary: "sosok misterius yang intelek dan tenang" },
+  8: { summary: "orang kuat yang sukses dan berwibawa" },
+  9: { summary: "sosok karismatik yang berhati luas" },
+  11: { summary: "pribadi spiritual yang sangat peka" },
+  22: { summary: "sosok tangguh dan ahli strategi" },
+  33: { summary: "pribadi penyembuh yang memancarkan ketenangan absolut" },
 };

@@ -4,7 +4,6 @@ import React from "react";
 import { Compass, Brain, Wallet, Heart, Users, Sparkles, ShieldAlert, Sprout } from "lucide-react";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { DailyState } from "@/lib/repositories/dailyStateRepository";
-import type { HumanMeaning } from "@/lib/types/humanMeaning";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { useAuth } from "@/context/AuthContext";
@@ -20,7 +19,6 @@ interface DailyNoteV2Props {
   yesterdayState: DailyState | null;
   recentDailyStates: DailyState[];
   navigatorState: NavigatorState | null;
-  meaning: HumanMeaning | null;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {

@@ -81,11 +81,17 @@ export const activityRepository = {
     );
 
     // 2. Update Daily State (Build 31.35 Hardening)
-    // NOTE: Optional wellness activities no longer trigger mandatory Journey slots.
+    // LIANA V3: Update yogaDone/workoutDone flags for progress tracking
     const updateData: any = {
       completedActivityIds: arrayUnion(fullActivity.id),
       updatedAt: new Date().toISOString(),
     };
+
+    if (activity.category === "yoga") {
+      updateData.yogaDone = true;
+    } else if (activity.category === "workout") {
+      updateData.workoutDone = true;
+    }
 
     await debugFirestoreOperation(
       { operation: "setDoc", path: `dailyStates/${uid}/entries/${date}`, uid },
@@ -136,3 +142,4 @@ export const activityRepository = {
     return snapshot.docs.map(doc => doc.data() as PhysicalActivity);
   }
 };
+// LIANA V3 PATCH

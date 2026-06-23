@@ -287,3 +287,49 @@ button:disabled {
     not-allowed;
 
 }
+
+/* ====================================================
+   BHUMI FOUNDER DASHBOARD - BIRTH DEBUG MODAL STYLES
+   ==================================================== */
+#bhumi-founder-dashboard-wrapper .birth-modal-backdrop {
+  transition: opacity 0.25s ease-out;
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-content {
+  box-shadow: 0 20px 50px rgba(79, 102, 88, 0.15);
+  border: 1px solid rgba(232, 233, 229, 0.6);
+  animation: birthModalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-close-x {
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-close-x:hover {
+  transform: rotate(90deg);
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-close-btn {
+  background: #4F6658;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-close-btn:hover {
+  background: #3D4A3F;
+}
+
+#bhumi-founder-dashboard-wrapper .birth-modal-close-btn:active {
+  transform: scale(0.98);
+}
+
+@keyframes birthModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+

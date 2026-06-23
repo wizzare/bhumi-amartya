@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
+import { WellnessCheckInCard } from "@/components/dashboard/WellnessCheckInCard";
+import { AIReflectionHero } from "@/components/dashboard/AIReflectionHero";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
 import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
@@ -52,11 +54,12 @@ import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFacingGuidance";
 import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
-import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
-import { HumanMeaningService } from "@/lib/services/humanMeaningService";
-import { DashboardMirrorRuntimeAdapter } from "@/lib/services/dashboardMirrorRuntimeAdapter";
 import { loadWellnessDailyIntelligence } from "@/lib/services/wellnessDailyIntelligence";
-import type { HumanMeaning } from "@/lib/types/humanMeaning";
+import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
+import { calculateVedic } from "@/lib/vedic/calculateVedic";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
+import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 
 export function DashboardClient() {
   const router = useRouter();
@@ -66,8 +69,6 @@ export function DashboardClient() {
   const [blueprint, setBlueprint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
-  const [mirrorReflection, setMirrorReflection] = useState("");
-  const [humanMeaning, setHumanMeaning] = useState<HumanMeaning | null>(null);
   const [dailyState, setDailyState] = useState<DailyState | null>(null);
   const [yesterdayState, setYesterdayState] = useState<DailyState | null>(null);
   const [recentDailyStates, setRecentDailyStates] = useState<DailyState[]>([]);
@@ -80,7 +81,7 @@ export function DashboardClient() {
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
-  const visibleSoulReflection = dailyGuidance?.soulReflectionText?.trim() || mirrorReflection;
+  const visibleSoulReflection = dailyGuidance?.soulReflectionText?.trim() || "";
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -90,13 +91,6 @@ export function DashboardClient() {
     const categories = dailyGuidance.categories;
     const dominantIssue = dailyGuidance.dominantIssue?.key || "";
     const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
-    const profileSignals = humanMeaning
-      ? [
-          humanMeaning.shadow.sabotage.medium,
-          humanMeaning.shadow.triggers.medium,
-          humanMeaning.relationships.boundaries.medium,
-        ].filter(Boolean)
-      : [];
 
     void journeyRepository.updateDailyRecord(uid, appDate, {
       dominantIssue,
@@ -108,32 +102,12 @@ export function DashboardClient() {
       catatanOpportunity: categories?.opportunities?.insight || categories?.opportunities?.reason || "",
       astroSummary: dailyGuidance.astrologyToday || awareness.currentMoonPhase.label,
       astroEvents: awareness.activeAwarenessEvents.map((event) => `${event.type}:${event.title}`),
-      profileSignals,
+      profileSignals: [],
       sourceConfidence: dominantIssue ? 0.9 : categories ? 0.75 : 0.5,
     }).catch((error) => console.warn("[JOURNEY_CATATAN_UPDATE_FAILED]", error));
-  }, [auth?.user?.uid, dailyGuidance, humanMeaning, navigatorState?.mode, profile]);
+  }, [auth?.user?.uid, dailyGuidance, navigatorState?.mode, profile]);
 
-  function buildMirrorReflection(p: any, b: any) {
-    try {
-      const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-      const dateKey = getLocalDateKey(new Date(), timezone);
-      const meaning = HumanMeaningService.generate(CanonicalTranslatorService.translate(b));
-      setHumanMeaning(meaning);
-      const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
-      setMirrorReflection(DashboardMirrorRuntimeAdapter.buildReflection(
-        meaning,
-        p?.fullName || "Jiwa",
-        dateKey,
-        awareness,
-      ));
-    } catch (error) {
-      console.warn("[MIRROR V4 FALLBACK]", error);
-      const dayName = new Intl.DateTimeFormat("id-ID", { weekday: "long" }).format(new Date());
-      setMirrorReflection(
-        `Hai ${p?.fullName?.split(" ")[0] || "Jiwa"}, bagaimana keadaanmu di hari ${dayName} ini?\n\nAda bagian dalam dirimu yang mungkin sedang meminta untuk dilihat dengan lebih lembut. Ia tidak membutuhkan penjelasan besar, hanya ruang untuk hadir apa adanya.\n\nPeluk hangat dari Bhumi untukmu.\n\nYuk kita lanjutkan perjalanan mengenal diri, satu langkah kecil pada satu waktu.`,
-      );
-    }
-  }
+
 
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -443,7 +417,6 @@ export function DashboardClient() {
           const b = getMockBlueprint(auditUser);
           setProfile(p);
           setBlueprint(b);
-          buildMirrorReflection(p, b);
           setLoading(false);
           clearTimeout(watchdog);
           void fetchBackgroundData(`${auditUser}_uid`, p, b);
@@ -460,7 +433,7 @@ export function DashboardClient() {
 
       try {
         const p = await storageProvider.getUserProfile();
-        const b = await storageProvider.getUserBlueprint();
+        const b = await storageProvider.getUserBlueprint() as any;
 
         // Human Design stability audit log (Build 31 requirement)
         if (b?.humanDesign) {
@@ -477,9 +450,80 @@ export function DashboardClient() {
           return;
         }
 
+        let updatedBlueprint = { ...b };
+        let needsSave = false;
+        const birthDate = p.birthDate || p.profile?.blueprintInput?.birthDate || b.input?.birthDate;
+        const birthTime = p.birthTime || p.profile?.blueprintInput?.birthTime || b.input?.birthTime || "12:00";
+        const timezone = p.timezone || p.profile?.timezone || b.input?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const birthCity = p.birthCity || p.profile?.birthCity || b.input?.birthCity || "";
+        const latitude = p.latitude ?? p.profile?.latitude ?? b.input?.latitude ?? null;
+        const longitude = p.longitude ?? p.profile?.longitude ?? b.input?.longitude ?? null;
+
+        // 1. Tzolkin Hydration
+        if (b && (!b.tzolkin || !b.tzolkin.oracle || !b.tzolkin.kinName)) {
+          if (birthDate) {
+            try {
+              const calculated = calculateTzolkin({ birthDate });
+              updatedBlueprint.tzolkin = calculated;
+              needsSave = true;
+              console.log("[HYDRATION] Tzolkin computed.");
+            } catch (e) {
+              console.warn("[HYDRATION FAILED] Tzolkin", e);
+            }
+          }
+        }
+
+        // 2. Vedic Hydration
+        if (b && (!b.vedic || !b.vedic.moonSign)) {
+          if (birthDate && birthTime) {
+            try {
+              const calculated = calculateVedic({
+                birthDate,
+                birthTime,
+                birthCity,
+                latitude,
+                longitude,
+                timezone,
+              });
+              updatedBlueprint.vedic = calculated;
+              needsSave = true;
+              console.log("[HYDRATION] Vedic computed.");
+            } catch (e) {
+              console.warn("[HYDRATION FAILED] Vedic", e);
+            }
+          }
+        }
+
+        // 3. Human Design Stability Audit & Repair
+        const isHdCanonical = isCanonicalHumanDesign(b?.humanDesign);
+        if (!isHdCanonical && birthDate) {
+          try {
+            console.log("[HYDRATION] Human Design not canonical, attempting repair...");
+            const calculated = await calculateHumanDesign({
+              birthDate,
+              birthTime,
+              birthCity,
+              latitude,
+              longitude,
+              timezone,
+            });
+            updatedBlueprint.humanDesign = calculated;
+            needsSave = true;
+            console.log("[HYDRATION] Human Design repaired.");
+          } catch (e) {
+            console.warn("[HYDRATION FAILED] Human Design", e);
+          }
+        }
+
+        if (needsSave) {
+          updatedBlueprint.updatedAt = new Date().toISOString();
+          await blueprintRepository.saveUserBlueprint(auth.user.uid, updatedBlueprint);
+          await storageProvider.saveUserBlueprint(updatedBlueprint);
+          console.log("[HYDRATION SUCCESS] Blueprint updated and saved.");
+        }
+
         setProfile(p);
-        setBlueprint(b);
-        buildMirrorReflection(p, b);
+        setBlueprint(updatedBlueprint);
 
         if (auth.user.email) {
           void repairOwnerHumanDesign(auth.user.uid, auth.user.email);
@@ -488,18 +532,7 @@ export function DashboardClient() {
         trackEvent("open_dashboard", auth.user.uid);
         void participationEngine.recordActivity(auth.user.uid, "launch");
 
-        // App Resume Listener (Build 37A Requirement)
-        if (typeof window !== "undefined") {
-          import("@capacitor/app").then(({ App }) => {
-            App.addListener("appStateChange", ({ isActive }) => {
-              if (isActive && auth.user?.uid) {
-                console.log("[APP RESUME] Updating presence...");
-                void participationEngine.recordActivity(auth.user.uid, "launch");
-              }
-            });
-          }).catch(err => console.warn("Capacitor App plugin not available", err));
-        }
-
+        // ... rest of the code
         const daysLeft = getTrialDaysLeft(p as any);
         if (isTrialExpired(p as any)) setTrialMessage("Akses Bhumi kamu perlu diperbarui.");
         else if (daysLeft < 3) setTrialMessage(null);
@@ -507,7 +540,7 @@ export function DashboardClient() {
         setLoading(false);
         clearTimeout(watchdog);
 
-        void fetchBackgroundData(auth.user.uid, p, b);
+        void fetchBackgroundData(auth.user.uid, p, updatedBlueprint);
 
       } catch (err) {
         console.error("[DASHBOARD BOOT ERROR]", err);
@@ -583,6 +616,14 @@ export function DashboardClient() {
         language={language}
       />
 
+      <WellnessCheckInCard
+        uid={profile.uid}
+        initialSnapshot={dailyState?.wellnessSnapshot}
+        onCompleted={(snapshot) => {
+          setDailyState(prev => prev ? { ...prev, wellnessSnapshot: snapshot } : null);
+        }}
+      />
+
       <CoreIdentity
         lifePath={blueprint.lifePath?.display || blueprint.lifePath?.number || 0}
         lifePathRole={blueprint.lifePath?.role || ""}
@@ -592,7 +633,20 @@ export function DashboardClient() {
         weton={blueprint.weton?.weton}
         baziDayMaster={blueprint.bazi?.dayMaster ? `${blueprint.bazi.dayMaster.polarity} ${blueprint.bazi.dayMaster.element}` : undefined}
         vedicMoonSign={blueprint.vedic?.moonSign?.sign ? `${blueprint.vedic.moonSign.sign} Moon` : undefined}
-        tzolkinSignature={blueprint.tzolkin?.kinName}
+        tzolkinSignature={(() => {
+          if (blueprint.tzolkin?.kinName) return blueprint.tzolkin.kinName;
+          const birthDate = profile?.birthDate || profile?.profile?.blueprintInput?.birthDate || blueprint?.input?.birthDate;
+          if (birthDate) {
+            try {
+              return calculateTzolkin({ birthDate }).kinName;
+            } catch (e) {
+              console.warn("Failed to calculate fallback Tzolkin signature:", e);
+            }
+          } else {
+            return language === "en" ? "Complete profile" : "Lengkapi profil";
+          }
+          return "-";
+        })()}
         labels={{
           title: t.dashboard.coreIdentity,
           lifePath: t.dashboard.lifePath,
@@ -614,6 +668,14 @@ export function DashboardClient() {
         loading={!visibleSoulReflection}
       />
 
+      {dailyGuidance?.manifestation && (
+        <AIReflectionHero
+          reflection=""
+          manifestation={dailyGuidance.manifestation}
+          language={language}
+        />
+      )}
+
       <AstroTodayCard
         context={{
           profile, blueprint, birthDate: profile.birthDate,
@@ -633,7 +695,6 @@ export function DashboardClient() {
         yesterdayState={yesterdayState}
         recentDailyStates={recentDailyStates}
         navigatorState={navigatorState}
-        meaning={humanMeaning}
       />
 
       <DailyUserFlowGuide language={language} />

@@ -7,10 +7,11 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { useAuth } from "@/context/AuthContext";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { db } from "@/lib/firebase/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
 import { adminRepository } from "@/lib/repositories/adminRepository";
 import { UserProfile } from "@/lib/repositories/userRepository";
+import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 
 interface UserActivity {
   id: string;
@@ -30,6 +31,7 @@ interface UserActivity {
   createdAt?: any;
   totalActiveDays?: number;
   effectiveRegistrationDate?: number;
+  rawUser?: any;
 }
 
 type SortField = "lastSeen" | "displayName" | "loginCount" | "totalSeconds";
@@ -163,6 +165,60 @@ function getLastSeenTime(user: any): number {
   return 0;
 }
 
+function escapeHtml(val: any): string {
+  if (val === undefined || val === null) return "";
+  const str = String(val);
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function pickFirst(u: any, keys: string[]): any {
+  if (!u) return undefined;
+  for (const key of keys) {
+    if (u[key] !== undefined && u[key] !== null && u[key] !== "") {
+      return u[key];
+    }
+  }
+  if (u.profile?.blueprintInput) {
+    for (const key of keys) {
+      if (u.profile.blueprintInput[key] !== undefined && u.profile.blueprintInput[key] !== null && u.profile.blueprintInput[key] !== "") {
+        return u.profile.blueprintInput[key];
+      }
+    }
+  }
+  if (u.profile) {
+    for (const key of keys) {
+      if (u.profile[key] !== undefined && u.profile[key] !== null && u.profile[key] !== "") {
+        return u.profile[key];
+      }
+    }
+  }
+  return undefined;
+}
+
+function formatWeton(u: any): string {
+  const wetonVal = pickFirst(u, ["weton", "javaneseWeton"]);
+  if (wetonVal) {
+    if (typeof wetonVal === "string") return wetonVal;
+    if (typeof wetonVal === "object") {
+      const d = wetonVal.dayName || wetonVal.day || "";
+      const p = wetonVal.pasaranName || wetonVal.pasaran || "";
+      if (d && p) return `${d} ${p}`;
+      if (d || p) return d || p;
+      return JSON.stringify(wetonVal);
+    }
+  }
+  const day = pickFirst(u, ["dayName"]);
+  const pasaran = pickFirst(u, ["pasaran", "pasaranName"]);
+  if (day && pasaran) return `${day} ${pasaran}`;
+  if (day || pasaran) return String(day || pasaran);
+  return "-";
+}
+
 export default function AdminActivityPage() {
   const auth = useAuth();
   const profile = auth?.userProfile;
@@ -180,6 +236,9 @@ export default function AdminActivityPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedUser, setSelectedUser] = useState<UserActivity | null>(null);
+  const [birthModalUser, setBirthModalUser] = useState<UserActivity | null>(null);
+  const [selectedBlueprint, setSelectedBlueprint] = useState<any>(null);
+  const [blueprintLoading, setBlueprintLoading] = useState(false);
 
   const [sortBy, setSortBy] = useState<SortField>("lastSeen");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -261,6 +320,7 @@ export default function AdminActivityPage() {
           createdAt: userData.createdAt || null,
           totalActiveDays,
           effectiveRegistrationDate,
+          rawUser: userData,
         });
       });
       
@@ -278,6 +338,47 @@ export default function AdminActivityPage() {
       void fetchActivities(date);
     }
   }, [date, isFounder]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setBirthModalUser(null);
+        setSelectedUser(null);
+      }
+    };
+    if (birthModalUser || selectedUser) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [birthModalUser, selectedUser]);
+
+  useEffect(() => {
+    const fetchBlueprint = async () => {
+      const user = birthModalUser || selectedUser;
+      if (!user) {
+        setSelectedBlueprint(null);
+        return;
+      }
+      setBlueprintLoading(true);
+      try {
+        const bpRef = doc(db, "blueprints", user.uid);
+        const bpSnap = await getDoc(bpRef);
+        if (bpSnap.exists()) {
+          setSelectedBlueprint(bpSnap.data());
+        } else {
+          setSelectedBlueprint(null);
+        }
+      } catch (err) {
+        console.error("Failed to load user blueprint for modal:", err);
+        setSelectedBlueprint(null);
+      } finally {
+        setBlueprintLoading(false);
+      }
+    };
+    void fetchBlueprint();
+  }, [birthModalUser, selectedUser]);
 
   // Client-side statistics calculations
   const stats = useMemo(() => {
@@ -412,7 +513,7 @@ export default function AdminActivityPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FCFAF5] text-[#4F5E52] pb-32">
+    <main id="bhumi-founder-dashboard-wrapper" className="min-h-screen bg-[#FCFAF5] text-[#4F6658] pb-32">
       <AppNav />
 
       <header className="pt-12 pb-8 px-6 max-w-4xl mx-auto">
@@ -545,7 +646,14 @@ export default function AdminActivityPage() {
                       onClick={() => setSelectedUser(activity)}
                       className="hover:bg-[#FCFAF5] transition-colors cursor-pointer"
                     >
-                      <td className="px-6 py-4 font-bold text-[#4F6658]">{activity.displayName}</td>
+                      <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setBirthModalUser(activity)}
+                          className="font-bold text-[#4F6658] hover:text-[#7D977B] hover:underline text-left cursor-pointer focus:outline-none focus:ring-0"
+                        >
+                          {activity.displayName}
+                        </button>
+                      </td>
                       <td className="px-6 py-4 text-xs text-[#7B8776]">{activity.email || "-"}</td>
                       <td className="px-6 py-4 text-sm font-semibold">{formatFullDateTime(activity.lastLogin)}</td>
                       <td className="px-6 py-4 text-sm text-[#4F6658] font-medium">{activity.totalActiveDays ? `${activity.totalActiveDays} hari` : "-"}</td>
@@ -564,8 +672,13 @@ export default function AdminActivityPage() {
                   onClick={() => setSelectedUser(activity)}
                   className="p-5 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm flex items-center justify-between cursor-pointer hover:bg-[#FCFAF5]"
                 >
-                  <div>
-                    <h4 className="font-bold text-[#4F6658]">{activity.displayName}</h4>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <button
+                      onClick={() => setBirthModalUser(activity)}
+                      className="font-bold text-[#4F6658] hover:text-[#7D977B] hover:underline text-left cursor-pointer focus:outline-none focus:ring-0"
+                    >
+                      {activity.displayName}
+                    </button>
                     <p className="text-[10px] text-[#7B8776]">{activity.email || "-"}</p>
                   </div>
                   <div className="flex gap-4 text-right">
@@ -667,6 +780,120 @@ export default function AdminActivityPage() {
                 </div>
               </div>
 
+              {/* Data Kelahiran & Spiritual */}
+              <div>
+                <h3 className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-2 px-1">Data Kelahiran & Spiritual</h3>
+                <div className="bg-[#FCFAF5] p-4 rounded-2xl space-y-3 text-sm border border-[#F5F1E8]">
+                  <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                    <span className="text-[#7B8776]">Birth Date</span>
+                    <span className="font-semibold text-[#4F6658]">
+                      {escapeHtml(
+                        pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || 
+                        selectedBlueprint?.input?.birthDate || 
+                        "-"
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                    <span className="text-[#7B8776]">Birth Date Format (Raw)</span>
+                    <span className="font-mono text-xs text-[#4F6658]">
+                      {escapeHtml(
+                        pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || 
+                        selectedBlueprint?.input?.birthDate || 
+                        "-"
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                    <span className="text-[#7B8776]">Birth Time</span>
+                    <span className="font-semibold text-[#4F6658]">
+                      {escapeHtml(
+                        pickFirst(selectedUser.rawUser, ["birthTime", "timeOfBirth"]) || 
+                        selectedBlueprint?.input?.birthTime || 
+                        "-"
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                    <span className="text-[#7B8776]">Birth City</span>
+                    <span className="font-semibold text-[#4F6658]">
+                      {escapeHtml(
+                        [
+                          pickFirst(selectedUser.rawUser, ["birthCity", "cityOfBirth"]),
+                          pickFirst(selectedUser.rawUser, ["birthPlace", "placeOfBirth"])
+                        ]
+                          .filter(Boolean)
+                          .filter((v, i, a) => a.indexOf(v) === i)
+                          .join(" / ") || 
+                        pickFirst(selectedUser.rawUser, ["birthLocation"]) || 
+                        selectedBlueprint?.input?.birthCity || 
+                        "-"
+                      )}
+                    </span>
+                  </div>
+                  {blueprintLoading ? (
+                    <div className="py-2 text-center text-xs text-[#7B8776] italic animate-pulse">
+                      Memuat data spiritual...
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                        <span className="text-[#7B8776]">Stored Weton</span>
+                        <span className="font-bold text-[#4F6658]">
+                          {escapeHtml(selectedBlueprint?.weton?.weton || formatWeton(selectedUser.rawUser))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                        <span className="text-[#7B8776]">Stored Tzolkin</span>
+                        <span className="font-semibold text-[#4F6658]">
+                          {escapeHtml(selectedBlueprint?.tzolkin?.kinName || "-")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                        <span className="text-[#7B8776]">Computed Tzolkin</span>
+                        <span className="font-bold text-[#7D977B]">
+                          {escapeHtml(
+                            (() => {
+                              const bDate = pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || selectedBlueprint?.input?.birthDate;
+                              if (bDate) {
+                                try {
+                                  return calculateTzolkin({ birthDate: bDate })?.kinName;
+                                } catch (e) {
+                                  return `Error: ${e instanceof Error ? e.message : String(e)}`;
+                                }
+                              }
+                              return "-";
+                            })()
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                        <span className="text-[#7B8776]">Life Path</span>
+                        <span className="font-semibold text-[#4F6658]">
+                          {escapeHtml(
+                            selectedBlueprint?.lifePath?.display || 
+                            selectedBlueprint?.lifePath?.number || 
+                            "-"
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center border-b border-[#F5F1E8]/80 pb-2">
+                        <span className="text-[#7B8776]">Arcana</span>
+                        <span className="font-semibold text-[#4F6658]">
+                          {escapeHtml(selectedBlueprint?.destinyMatrix?.center || "-")}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[#7B8776]">Human Design</span>
+                        <span className="font-semibold text-[#4F6658]">
+                          {escapeHtml(selectedBlueprint?.humanDesign?.type || "-")}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
               {/* Activity Today */}
               <div>
                 <h3 className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-2 px-1">Aktivitas Hari Ini ({selectedUser.date})</h3>
@@ -708,6 +935,195 @@ export default function AdminActivityPage() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Birth Data Modal */}
+      {birthModalUser && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm birth-modal-backdrop" 
+          onClick={() => setBirthModalUser(null)}
+        >
+          <div 
+            className="bg-white rounded-[32px] p-6 w-full max-w-lg shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto birth-modal-content" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-bold text-[#4F6658] font-serif">User Birth Data</h2>
+                <p className="text-xs text-[#7B8776] mt-1 font-sans">Detail data kelahiran untuk keperluan debug weton</p>
+              </div>
+              <button 
+                onClick={() => setBirthModalUser(null)} 
+                className="w-8 h-8 flex items-center justify-center bg-[#F5F1E8] rounded-full text-[#4F6658] hover:bg-[#E8E9E5] transition-colors focus:outline-none birth-modal-close-x"
+                aria-label="Close modal"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-[#FCFAF5] p-5 rounded-2xl space-y-3 text-sm border border-[#F5F1E8]">
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">Full Name</span>
+                  <span className="font-bold text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(pickFirst(birthModalUser.rawUser, ["fullName", "name", "displayName"]) || "-")}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">Email</span>
+                  <span className="font-medium text-[#4F6658] break-all mt-0.5 sm:mt-0">
+                    {escapeHtml(pickFirst(birthModalUser.rawUser, ["email"]) || "-")}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">Birth Date</span>
+                  <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(
+                      pickFirst(birthModalUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || 
+                      selectedBlueprint?.input?.birthDate || 
+                      "-"
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">Birth Time</span>
+                  <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(
+                      pickFirst(birthModalUser.rawUser, ["birthTime", "timeOfBirth"]) || 
+                      selectedBlueprint?.input?.birthTime || 
+                      "-"
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">Birth City / Birth Place</span>
+                  <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(
+                      [
+                        pickFirst(birthModalUser.rawUser, ["birthCity", "cityOfBirth"]),
+                        pickFirst(birthModalUser.rawUser, ["birthPlace", "placeOfBirth"])
+                      ]
+                        .filter(Boolean)
+                        .filter((v, i, a) => a.indexOf(v) === i)
+                        .join(" / ") || 
+                      pickFirst(birthModalUser.rawUser, ["birthLocation"]) || 
+                      selectedBlueprint?.input?.birthCity || 
+                      "-"
+                    )}
+                  </span>
+                </div>
+
+                {blueprintLoading ? (
+                  <div className="py-2 text-center text-xs text-[#7B8776] italic animate-pulse">
+                    Memuat data spiritual...
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Birth Date Format (Raw)</span>
+                      <span className="font-mono text-xs text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(
+                          pickFirst(birthModalUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || 
+                          selectedBlueprint?.input?.birthDate || 
+                          "-"
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Stored Weton</span>
+                      <span className="font-bold text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(selectedBlueprint?.weton?.weton || formatWeton(birthModalUser.rawUser))}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Stored Tzolkin</span>
+                      <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(selectedBlueprint?.tzolkin?.kinName || "-")}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Computed Tzolkin</span>
+                      <span className="font-bold text-[#7D977B] mt-0.5 sm:mt-0">
+                        {escapeHtml(
+                          (() => {
+                            const bDate = pickFirst(birthModalUser.rawUser, ["birthDate", "dateOfBirth", "dob"]) || selectedBlueprint?.input?.birthDate;
+                            if (bDate) {
+                              try {
+                                return calculateTzolkin({ birthDate: bDate })?.kinName;
+                              } catch (e) {
+                                return `Error: ${e instanceof Error ? e.message : String(e)}`;
+                              }
+                            }
+                            return "-";
+                          })()
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Life Path</span>
+                      <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(
+                          selectedBlueprint?.lifePath?.display || 
+                          selectedBlueprint?.lifePath?.number || 
+                          "-"
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Arcana</span>
+                      <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(selectedBlueprint?.destinyMatrix?.center || "-")}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                      <span className="text-[#7B8776] text-xs">Human Design</span>
+                      <span className="font-semibold text-[#4F6658] mt-0.5 sm:mt-0">
+                        {escapeHtml(selectedBlueprint?.humanDesign?.type || "-")}
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:justify-between border-b border-[#F5F1E8]/80 pb-2">
+                  <span className="text-[#7B8776] text-xs">App Version</span>
+                  <span className="font-mono text-xs text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(
+                      birthModalUser.appVersion 
+                        ? `v${birthModalUser.appVersion}${birthModalUser.buildNumber ? ` (${birthModalUser.buildNumber})` : ""}` 
+                        : "-"
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:justify-between">
+                  <span className="text-[#7B8776] text-xs">Last Seen</span>
+                  <span className="font-medium text-[#4F6658] mt-0.5 sm:mt-0">
+                    {escapeHtml(formatFullDateTime(birthModalUser.lastSeen))}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={() => setBirthModalUser(null)} 
+                className="px-6 py-2.5 bg-[#4F6658] text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-[#3D4A3F] transition-colors focus:outline-none birth-modal-close-btn"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

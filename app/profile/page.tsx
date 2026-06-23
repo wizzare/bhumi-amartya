@@ -11,11 +11,11 @@ import { useAuth } from "@/context/AuthContext";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
-import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
-import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { Blueprint } from "@/lib/types/blueprint";
+import { HumanMeaningService } from "@/lib/services/humanMeaningService";
+import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
 
 type LocalRecord = Record<string, unknown>;
 

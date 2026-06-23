@@ -12,14 +12,14 @@ function unsupported(id: string): DestinyMatrixProjection {
   return { id, status: "unsupported", nodeIds: [], confidence: 0 };
 }
 
-export const getLoveProjection = (graph: DestinyMatrixGraph) => select(graph, "LOVE", ["BM12", "BM05", "BM13"]);
-export const getMoneyProjection = (graph: DestinyMatrixGraph) => select(graph, "MONEY", ["BM10", "BM05", "BM11"]);
+export const getLoveProjection = (graph: DestinyMatrixGraph) => select(graph, "LOVE", ["BM05", "BM21", "BM20"]);
+export const getMoneyProjection = (graph: DestinyMatrixGraph) => select(graph, "MONEY", ["BM05", "BM22", "BM20"]);
 export const getKarmicProjection = (graph: DestinyMatrixGraph) => select(graph, "KARMIC_TAIL", ["BM04", "BM17", "BM10"]);
-export const getFatherProjection = (graph: DestinyMatrixGraph) => select(graph, "FATHER_LINE", ["BM06", "BM07", "BM03"]);
-export const getMotherProjection = (graph: DestinyMatrixGraph) => select(graph, "MOTHER_LINE", ["BM08", "BM09", "BM04"]);
-export const getSoulProjection = (_graph: DestinyMatrixGraph) => unsupported("SOUL_SEARCHING");
-export const getSpiritualProjection = (_graph: DestinyMatrixGraph) => unsupported("SPIRITUAL_KNOWLEDGE");
-export const getSocialProjection = (graph: DestinyMatrixGraph) => select(graph, "SOCIALIZATION", ["PR-SOCIAL"]);
+export const getFatherProjection = (graph: DestinyMatrixGraph) => select(graph, "FATHER_LINE", ["BM06", "BM25", "BM26", "BM05", "BM31", "BM32", "BM09"]);
+export const getMotherProjection = (graph: DestinyMatrixGraph) => select(graph, "MOTHER_LINE", ["BM08", "BM29", "BM30", "BM05", "BM27", "BM28", "BM07"]);
+export const getSoulProjection = (graph: DestinyMatrixGraph) => select(graph, "SOUL_SEARCHING", ["PR-SKY", "PR-EARTH", "PR-PERSONAL"]);
+export const getSpiritualProjection = (graph: DestinyMatrixGraph) => select(graph, "SPIRITUAL_KNOWLEDGE", ["PR-GENERAL"]);
+export const getSocialProjection = (graph: DestinyMatrixGraph) => select(graph, "SOCIALIZATION", ["PR-MALE", "PR-FEMALE", "PR-SOCIAL"]);
 
 export function getHealthProjection(graph: DestinyMatrixGraph): DestinyMatrixProjection {
   const rows = [

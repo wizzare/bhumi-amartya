@@ -1,13 +1,11 @@
 {
-  "versionName": "3.1.4",
-  "versionCode": 45,
-  "buildTimestamp": "2026-06-15T16:53:08+07:00",
-  "sprint": "BHUMI V3 FANTA",
-  "changelog": [
-    "Astro Engine: Personalized transit narratives with collective theme, personal impact, and grounded action.",
-    "Share Cards: Daily reflection, rotating profile insights, affirmations, botanical ornaments, and PNG export.",
-    "Journey, Kenali Diri, Profile, Founder, and global language refinements for Fanta.",
-    "Tester billing access remains active through July 1, 2026.",
-    "Gentle Night Reminder scheduled once nightly at 21:00."
-  ]
+    "sprint":  "KARA 53 - GATEKEEPER STABILIZATION",
+    "buildTimestamp":  "2026-06-21T10:03:57+07:00",
+    "versionCode":  53,
+    "versionName":  "3.1.12-RC",
+    "changelog":  [
+                      "Gatekeeper Stabilization: Resolved false-positive update locks by allowing fail-open on config fetch.",
+                      "Schema Migration: Added support for both legacy and new Firestore versioning fields.",
+                      "Security: Updated update enforcement to only trigger on explicit build number comparison."
+                  ]
 }

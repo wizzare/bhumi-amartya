@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { YOGA_DATABASE } from "@/lib/data/innerworkContent";
 import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
@@ -30,8 +31,29 @@ export default function YogaPage() {
     [zoneBSearch],
   );
 
+    // KARA SoT: Yoga adalah "area khusus" di dalam Wellness.
+  // Daily Check-In bukan gate untuk Yoga — gate hanya berlaku untuk membuka
+  // halaman Hasil Wellness (Zona A) secara keseluruhan sesuai KARA SoT.
+  // LIANA V3: Progress Yoga dibaca dari dailyState.yogaDone untuk konsistensi UI.
+  const [yogaDoneToday, setYogaDoneToday] = React.useState(false);
+
   React.useEffect(() => {
     trackEvent("open_yoga", auth?.user?.uid);
+    async function loadPersistedPractice() {
+      if (!auth?.user?.uid) return;
+      try {
+        const profile = auth.userProfile;
+        const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const date = getLocalDateKey(new Date(), timezone);
+        const state = await dailyStateRepository.getDailyState(auth.user.uid, date);
+        if (state?.yogaDone) {
+          setYogaDoneToday(true);
+        }
+      } catch (err) {
+        console.warn("[YOGA PERSIST NOTE]", err);
+      }
+    }
+    void loadPersistedPractice();
   }, [auth?.user?.uid]);
 
   const toggleSelection = (id: string) => {
@@ -105,6 +127,10 @@ export default function YogaPage() {
       }]
     : Object.values(YOGA_DATABASE);
 
+    // KARA SoT Lock Removed: Yoga dapat diakses tanpa Daily Check-In.
+  // yogaDoneToday digunakan untuk indikator UI opsional saja — tidak memblokir halaman.
+  void yogaDoneToday;
+
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
@@ -120,8 +146,13 @@ export default function YogaPage() {
             <div className="w-16 h-16 rounded-2xl bg-green-50 text-green-600 flex items-center justify-center mb-6">
               <Flower2 size={32} />
             </div>
-            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Yoga</h1>
+                        <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Yoga</h1>
             <p className="text-[#7B8776]">Penyelarasan tubuh dan napas untuk ketenangan batin.</p>
+            {yogaDoneToday && (
+              <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-green-700 bg-green-50 px-2.5 py-1 rounded-full">
+                Latihan terakhir kamu tersimpan.
+              </p>
+            )}
           </header>
 
           <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">
@@ -199,3 +230,4 @@ export default function YogaPage() {
     </ProtectedRoute>
   );
 }
+

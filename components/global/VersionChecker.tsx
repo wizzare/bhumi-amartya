@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-import { APP_VERSION } from "@/src/lib/version";
+import { checkAppUpdateStatus, type AppUpdateStatus } from "@/lib/services/appUpdateService";
+import { UpdateRequiredScreen } from "./UpdateRequiredScreen";
+import { CURRENT_VERSION_NAME } from "@/lib/config/buildInfo";
+import { useAuth } from "@/context/AuthContext";
+import { isPrivilegedUser } from "@/lib/auth/privilegedUser";
 
 // simple version comparison
 function compareVersions(a: string, b: string) {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
+  const pa = a.split('.').map(v => parseInt(v.replace(/[^0-9]/g, ''), 10) || 0);
+  const pb = b.split('.').map(v => parseInt(v.replace(/[^0-9]/g, ''), 10) || 0);
   for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
     const na = pa[i] || 0;
     const nb = pb[i] || 0;
@@ -19,49 +21,70 @@ function compareVersions(a: string, b: string) {
 }
 
 export function VersionChecker() {
-  const [updateConfig, setUpdateConfig] = useState<any>(null);
+  const auth = useAuth();
+  const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null);
   const [isOptionalOpen, setIsOptionalOpen] = useState(false);
 
   useEffect(() => {
-    async function checkVersion() {
+    async function check() {
       try {
-        const snap = await getDoc(doc(db, "app_config", "version"));
-        if (snap.exists()) {
-          const data = snap.data();
-          setUpdateConfig(data);
-          
-          const latestVer = data.latestVersion || data.currentVersion || "0.0.0";
-          if (compareVersions(APP_VERSION, latestVer) < 0) {
+        const status = await checkAppUpdateStatus();
+        setUpdateStatus(status);
+
+        if (!status.isOutdated) {
+          const latestVer = status.latestVersion || "0.0.0";
+          if (compareVersions(CURRENT_VERSION_NAME, latestVer) < 0) {
             setIsOptionalOpen(true);
           }
         }
       } catch (err) {
-        // Offline Mode or Firestore Read Failure: fail silently, allow app usage
-        console.warn("Could not check for updates:", err);
+        console.warn("[VERSION CHECKER] Failed to check for updates:", err);
       }
     }
-    checkVersion();
+    check();
   }, []);
 
-  if (!updateConfig) return null;
+  // FOUNDER/ADMIN BYPASS
+  // If the user is privileged, we don't show the update screen even if outdated.
+  // This ensures founders can always access the app for debugging/audit.
+  if (isPrivilegedUser((auth?.userProfile || auth?.user) ?? null)) {
+    console.info("[VERSION CHECKER] Privileged user detected, bypassing gate.");
+    return null;
+  }
 
+  if (!updateStatus) return null;
+
+  // 1. FORCED UPDATE (Blocker)
+  if (updateStatus.isOutdated) {
+    return (
+      <div className="fixed inset-0 z-[10000] bg-[#FCFAF5] flex items-center justify-center p-6">
+        <UpdateRequiredScreen
+          updateUrl={updateStatus.updateUrl}
+          currentBuild={updateStatus.currentBuild}
+          minimumBuild={updateStatus.minimumBuild}
+        />
+      </div>
+    );
+  }
+
+  // 2. OPTIONAL UPDATE (Modal)
   if (isOptionalOpen) {
     return (
       <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-6 backdrop-blur-sm">
         <div className="max-w-sm w-full bg-white p-6 rounded-3xl shadow-xl text-center border border-[#E8E9E5]">
           <h2 className="text-xl font-bold text-[#4F5E52] mb-3">Versi terbaru tersedia</h2>
-          <p className="text-sm text-[#7B8776] mb-6">Versi {updateConfig.latestVersion || updateConfig.currentVersion} telah tersedia. Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
+          <p className="text-sm text-[#7B8776] mb-6">Versi {updateStatus.latestVersion} telah tersedia. Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
           <div className="flex flex-col gap-2">
-            <a 
-              href={updateConfig.updateUrl || "https://play.google.com/store/apps/details?id=com.bhumiamartya.app"} 
+            <a
+              href={updateStatus.updateUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-[#4F5E52] text-white rounded-2xl py-3 font-semibold text-sm hover:bg-[#3d4a40] transition-colors text-center"
             >
               Perbarui Sekarang
             </a>
-            <button 
-              onClick={() => setIsOptionalOpen(false)} 
+            <button
+              onClick={() => setIsOptionalOpen(false)}
               className="block w-full text-[#7B8776] py-3 text-sm font-medium hover:bg-black/5 rounded-2xl transition-colors"
             >
               Nanti

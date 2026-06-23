@@ -1,3 +1,4 @@
+import { isPrivilegedUser } from '@/lib/auth/privilegedUser';
 import { UserProfile } from "../repositories/userRepository";
 import { Timestamp } from "firebase/firestore";
 import { getUserRole } from "@/lib/auth/getUserRole";
@@ -6,7 +7,7 @@ import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 export type PremiumFeature = "meditation" | "journaling" | "audio-healing";
 
 export function isTrialActive(profile: UserProfile): boolean {
-  if (isGaiaAccessOverrideActive()) return true;
+  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   const role = getUserRole({ email: profile.email ?? null });
   if (role.isAdmin || role.isDev) return true;
   if (profile.plan === "developer" || profile.plan === "premium" || (profile.plan as unknown) === "pro") return true;
@@ -18,7 +19,7 @@ export function isTrialActive(profile: UserProfile): boolean {
 
 export function canAccessPremiumFeature(profile: UserProfile | null, feature: PremiumFeature): boolean {
   void feature;
-  if (isGaiaAccessOverrideActive()) return true;
+  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (!profile) return false;
   const role = getUserRole({ email: profile.email ?? null });
   if (role.isAdmin || role.isDev) return true;
@@ -28,7 +29,7 @@ export function canAccessPremiumFeature(profile: UserProfile | null, feature: Pr
 }
 
 export function getUserAccess(profile: UserProfile | null) {
-  if (isGaiaAccessOverrideActive()) {
+  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) {
     return {
       plan: profile?.plan ?? "free",
       isPremium: false,
@@ -55,3 +56,5 @@ export function getUserAccess(profile: UserProfile | null) {
     lockedFeatures: (isPremium || active) ? [] : ["meditation", "journaling", "audio-healing"] as PremiumFeature[]
   };
 }
+
+

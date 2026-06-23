@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   description:
     "Ruang untuk pulang dan mengenali diri.",
 
+  other: {
+    "google-adsense-account": "ca-pub-0971666335614952",
+  },
+
 };
 
 export default function RootLayout({

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -99,15 +99,15 @@ export default function DestinyMatrixPage() {
               <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center text-center">
                 <div className="bg-[#F5F1E8] px-4 py-2 rounded-xl flex-1">
                   <p className="text-[10px] font-bold uppercase text-[#8A8175] mb-1">Center Arcana</p>
-                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.center || "Coming Soon"}</p>
+                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.center || "-"}</p>
                 </div>
                 <div className="bg-[#F5F1E8] px-4 py-2 rounded-xl flex-1">
                   <p className="text-[10px] font-bold uppercase text-[#8A8175] mb-1">Common Energy</p>
-                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.commonEnergy || "Coming Soon"}</p>
+                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.commonEnergy || "-"}</p>
                 </div>
                 <div className="bg-[#F5F1E8] px-4 py-2 rounded-xl flex-1">
                   <p className="text-[10px] font-bold uppercase text-[#8A8175] mb-1">Karmic Tail</p>
-                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.karmicTile || "Coming Soon"}</p>
+                  <p className="text-sm font-bold text-[#4F5E52]">{legacy?.karmicTile || "-"}</p>
                 </div>
               </div>
               <div className="mt-4 text-center px-4">
@@ -120,17 +120,17 @@ export default function DestinyMatrixPage() {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-6 flex items-center gap-2"><Sparkles size={20} className="text-[#D4AF37]" /> Soul Architecture</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card title="Soul Searching" subtitle="Mix of male and female. Building relationships. Skills." items={[
-                  { label: "Result", value: matrix.soulSearching?.values?.join(" · ") || "Coming Soon" },
+                  { label: "Result", value: matrix.soulSearching?.values?.join(" · ") || "-" },
                   { label: "Meaning", value: "Pencarian identitas dan fondasi relasi." },
                   { label: "Interpretation", value: "Fase ini berfokus pada pengembangan diri awal." }
                 ]} />
                 <Card title="Socialization" subtitle="Social and family systems. Result and public acceptance." items={[
-                  { label: "Result", value: matrix.socialization?.values?.join(" · ") || "Coming Soon" },
+                  { label: "Result", value: matrix.socialization?.values?.join(" · ") || "-" },
                   { label: "Meaning", value: "Interaksi dengan dunia luar dan masyarakat." },
                   { label: "Interpretation", value: "Fase kematangan sosial di mana karya diakui." }
                 ]} />
                 <Card title="Spiritual Knowledge" subtitle="Spiritual exam. Who am I before God?" items={[
-                  { label: "Arcana", value: matrix.spiritualKnowledge?.values?.join(" · ") || "Coming Soon" },
+                  { label: "Arcana", value: matrix.spiritualKnowledge?.values?.join(" · ") || "-" },
                   { label: "Meaning", value: "Pencapaian spiritual tertinggi." },
                   { label: "Interpretation", value: "Evaluasi perjalanan hidup dan hikmah mendalam." }
                 ]} />
@@ -149,13 +149,13 @@ export default function DestinyMatrixPage() {
                   { label: "Life Lesson", value: "Menerima diri sendiri." }
                 ]} />
                 <Card title="Common Energy" items={[
-                  { label: "Arcana", value: legacy?.commonEnergy || "Coming Soon" },
+                  { label: "Arcana", value: legacy?.commonEnergy || "-" },
                   { label: "Dominant Themes", value: "Tema yang sering muncul." },
                   { label: "Repeated Patterns", value: "Siklus yang terus berulang." },
                   { label: "Natural Tendencies", value: "Kecenderungan alamiah." }
                 ]} />
                 <Card title="Karmic Tail" items={[
-                  { label: "Arcana", value: legacy?.karmicTile || "Coming Soon" },
+                  { label: "Arcana", value: legacy?.karmicTile || "-" },
                   { label: "Life Lesson", value: "Tugas dari masa lalu." },
                   { label: "Shadow Pattern", value: "Pola negatif terpendam." },
                   { label: "Healing Direction", value: "Penerimaan dan pelepasan." }
@@ -168,21 +168,21 @@ export default function DestinyMatrixPage() {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Ancestral Patterns</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card title="Father Line" items={[
-                  { label: "Father Karma", value: legacy?.fatherKarma || "Coming Soon" },
-                  { label: "Father Talent", value: legacy?.fatherTalent || "Coming Soon" },
+                  { label: "Father Karma", value: legacy?.fatherKarma || "-" },
+                  { label: "Father Talent", value: legacy?.fatherTalent || "-" },
                   { label: "Strengths", value: "Perlindungan dan ketegasan." },
                   { label: "Challenges", value: "Kesulitan berekspresi." },
                   { label: "Healing Opportunities", value: "Membangun batas sehat." }
                 ]} />
                 <Card title="Mother Line" items={[
-                  { label: "Mother Karma", value: legacy?.motherKarma || "Coming Soon" },
-                  { label: "Mother Talent", value: legacy?.motherTalent || "Coming Soon" },
+                  { label: "Mother Karma", value: legacy?.motherKarma || "-" },
+                  { label: "Mother Talent", value: legacy?.motherTalent || "-" },
                   { label: "Strengths", value: "Intuisi dan empati." },
                   { label: "Challenges", value: "Kelekatan emosional." },
                   { label: "Healing Opportunities", value: "Mencintai tanpa syarat." }
                 ]} />
                 <Card title="Ancestor Line" items={[
-                  { label: "Arcana", value: matrix.ancestor?.values?.join(" · ") || "Coming Soon" },
+                  { label: "Arcana", value: matrix.ancestor?.values?.join(" · ") || "-" },
                   { label: "Strengths", value: "Kebijaksanaan leluhur." },
                   { label: "Challenges", value: "Pola trauma lintas generasi." },
                   { label: "Healing Opportunities", value: "Memutus rantai karma." }
@@ -195,19 +195,12 @@ export default function DestinyMatrixPage() {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Talents & Gifts</h2>
               <div className="grid grid-cols-1 gap-4">
                 <Card title="God Talent" items={[
-                  { label: "Arcana", value: legacy?.godTalent || "Coming Soon" },
+                  { label: "Arcana", value: legacy?.godTalent || "-" },
                   { label: "Meaning", value: "Bakat spiritual dan koneksi Ilahi." }
                 ]} />
                 <Card title="Personal Qualities" items={[
-                  { label: "Arcana", value: legacy?.personalQualities || "Coming Soon" },
+                  { label: "Arcana", value: legacy?.personalQualities || "-" },
                   { label: "Meaning", value: "Karakter pribadi yang menonjol." }
-                ]} />
-                <Card title="Talent Line" items={[
-                  { label: "Arcana", value: matrix.talent?.values?.join(" · ") || "Coming Soon" },
-                  { label: "Natural Gifts", value: "Potensi bawaan." },
-                  { label: "Potential", value: "Kemungkinan pencapaian." },
-                  { label: "Career Tendencies", value: "Bidang perkembangan." },
-                  { label: "Personal Strengths", value: "Keunikan personal." }
                 ]} />
               </div>
             </section>
@@ -217,13 +210,13 @@ export default function DestinyMatrixPage() {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Money & Love</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Money Channel" items={[
-                  { label: "Money Line", value: legacy?.moneyLine || "Coming Soon" },
+                  { label: "Money Line", value: legacy?.moneyLine || "-" },
                   { label: "Financial Pattern", value: "Cara menarik kelimpahan." },
                   { label: "Potential Block", value: "Pikiran kelangkaan." },
                   { label: "Growth Direction", value: "Membangun sistem." }
                 ]} />
                 <Card title="Love Channel" items={[
-                  { label: "Love Line", value: legacy?.loveLine || "Coming Soon" },
+                  { label: "Love Line", value: legacy?.loveLine || "-" },
                   { label: "Relationship Pattern", value: "Dinamika koneksi intim." },
                   { label: "Challenge", value: "Kesulitan membuka diri." },
                   { label: "Growth Direction", value: "Kerentanan emosional." }
@@ -278,23 +271,6 @@ export default function DestinyMatrixPage() {
               </div>
             </section>
 
-            {/* SECTION 8: LIFE TIMELINE */}
-            <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Life Timeline</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {matrix.timeline?.segments?.slice(0, 7).map((segment, index) => {
-                  const ages = ["0-10", "10-20", "20-30", "30-40", "40-50", "50-60", "60+"];
-                  return (
-                    <div key={index} className="rounded-xl border border-[#E8E1D3] bg-white p-4 text-center">
-                      <p className="text-[10px] font-bold uppercase text-[#8A8175] mb-2">{ages[index] || segment.label}</p>
-                      <p className="text-lg font-bold text-[#4F5E52]">{segment.values[0]}</p>
-                      <p className="text-xs text-[#7B8776] mt-2">Major Arcana</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
             {/* SECTION 9: DESTINY MATRIX SYNTHESIS */}
             <section>
               <div className="rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
@@ -304,13 +280,13 @@ export default function DestinyMatrixPage() {
                 </div>
                 <div className="space-y-4 text-sm leading-relaxed text-[#D2D8D0]">
                   <p>
-                    Pola jiwamu menempatkan Arcana {legacy?.center || "Coming Soon"} di pusat, menandakan bahwa kenyamanan dan inti kekuatanmu berasal dari energi ini. Dikelilingi oleh vibrasi dominan {legacy?.commonEnergy || "Coming Soon"}, jalan hidupmu akan sering berpusat pada penemuan makna di dalam pengulangan tema yang selaras dengan arcana tersebut.
+                    Pola jiwamu menempatkan Arcana {legacy?.center || "-"} di pusat, menandakan bahwa kenyamanan dan inti kekuatanmu berasal dari energi ini. Dikelilingi oleh vibrasi dominan {legacy?.commonEnergy || "-"}, jalan hidupmu akan sering berpusat pada penemuan makna di dalam pengulangan tema yang selaras dengan arcana tersebut.
                   </p>
                   <p>
-                    Sebagai bagian dari pembelajaran karmik ({legacy?.karmicTile || "Coming Soon"}), ada pola dari masa lalu yang perlu diselesaikan. Energi ini tidak dirancang untuk menghukum, melainkan membawamu pada pembebasan batin. Di sisi lain, potensi terbesarmu tercermin dalam garis bakat ({matrix.talent?.values?.join(" · ") || "Coming Soon"}), menanti untuk diekspresikan baik melalui jalan karir maupun sumbangsih pribadi.
+                    Sebagai bagian dari pembelajaran karmik ({legacy?.karmicTile || "-"}), ada pola dari masa lalu yang perlu diselesaikan. Energi ini tidak dirancang untuk menghukum, melainkan membawamu pada pembebasan batin. Di sisi lain, potensi terbesarmu tercermin dalam garis bakat ({matrix.talent?.values?.join(" · ") || "-"}), menanti untuk diekspresikan baik melalui jalan karir maupun sumbangsih pribadi.
                   </p>
                   <p>
-                    Melalui dinamika relasi ({legacy?.loveLine || "Coming Soon"}) dan kelimpahan finansial ({legacy?.moneyLine || "Coming Soon"}), matriks ini mengingatkan bahwa pelajaran terbesarmu adalah menyeimbangkan dorongan material dengan pemahaman spiritual. Melewati fase Soul Searching hingga Spiritual Knowledge, tujuan akhirmu adalah mencapai keselarasan utuh sebagai jiwa.
+                    Melalui dinamika relasi ({legacy?.loveLine || "-"}) dan kelimpahan finansial ({legacy?.moneyLine || "-"}), matriks ini mengingatkan bahwa pelajaran terbesarmu adalah menyeimbangkan dorongan material dengan pemahaman spiritual. Melewati fase Soul Searching hingga Spiritual Knowledge, tujuan akhirmu adalah mencapai keselarasan utuh sebagai jiwa.
                   </p>
                 </div>
               </div>
@@ -322,3 +298,5 @@ export default function DestinyMatrixPage() {
     </ProtectedRoute>
   );
 }
+
+

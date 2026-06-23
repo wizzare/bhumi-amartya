@@ -1,1 +1,0 @@
-export interface DailyIntelligenceObject { uid: string; }

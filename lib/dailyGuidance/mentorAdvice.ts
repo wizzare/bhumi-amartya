@@ -89,10 +89,10 @@ function blueprintContext(input: CompanionAdviceInput): string {
   if (details.length === 0) return "";
 
   if (input.language === "en") {
-    return `The daily direction is personalized by ${details.join("; ")}, so choose advice that fits these specific contours rather than only the broad archetype.`;
+    return "Your daily direction is personalized to match your unique design contours, helping you move with more flow.";
   }
 
-  return `Arah harian dipersonalisasi oleh ${details.join("; ")}, jadi pilih nasihat yang sesuai dengan kontur spesifik ini, bukan hanya arketipe besarnya.`;
+  return "Arah harianmu disesuaikan dengan keunikan rancangan dirimu, membantumu melangkah dengan lebih selaras.";
 }
 
 function weekdayContext(input: CompanionAdviceInput): string {
@@ -180,17 +180,19 @@ export function buildDailyCompanionAdvice(input: CompanionAdviceInput): string {
   const practical = pickDaily(practicalDirections, `${seed}|practical`, input.localDateKey, 7);
   const category = pickDaily(categoryDirections[input.categoryKey] || categoryDirections.general, `${seed}|category`, input.localDateKey, 13);
 
-  // Refleksi Harian (wellnessContext) is now prioritized as primary context if available
   const wellness = wellnessContext(input);
-  const blueprint = blueprintContext(input);
   const otherContext = pickDaily([activityContext(input), skyContext(input)], `${seed}|context`, input.localDateKey, 19);
-  const contextLine = [wellness, blueprint, otherContext].filter(Boolean).join(" ");
+  const contextLine = [wellness, otherContext].filter(Boolean).join(" ");
 
-  const weekdayLine = weekdayContext(input);
   const base = input.baseAdvice.trim();
 
+  // Combine elements naturally to form a tight, cohesive paragraph (max 3-4 sentences) without raw differentiators leak
+  const fallbackAdvice = [opening, category, contextLine, practical]
+    .filter(Boolean)
+    .join(" ");
+
   return [
-    `${opening} ${weekdayLine} ${category} ${contextLine} ${practical}`,
+    fallbackAdvice,
     base,
   ].filter(Boolean).join("\n\n");
 }

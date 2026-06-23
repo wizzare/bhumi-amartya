@@ -2,8 +2,6 @@ import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
 import type { InnerworkPracticeInput } from "@/lib/engines/innerworkIntelligence";
-import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
-import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { dailyStateRepository, type DailyState } from "@/lib/repositories/dailyStateRepository";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
@@ -12,7 +10,6 @@ import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRep
 import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
-import type { Blueprint } from "@/lib/types/blueprint";
 
 export type WellnessCurrentIssue = {
   key: string;
@@ -176,14 +173,7 @@ export async function loadWellnessDailyIntelligence(input: {
     );
   }
 
-  const meaning = input.blueprint
-    ? HumanMeaningService.generate(CanonicalTranslatorService.translate(input.blueprint as unknown as Blueprint))
-    : null;
-  const profileSignals = [
-    meaning?.shadow?.sabotage?.medium,
-    meaning?.shadow?.triggers?.medium,
-    meaning?.relationships?.boundaries?.medium,
-  ].filter((value): value is string => Boolean(value));
+  const profileSignals: string[] = [];
   const currentIssue = resolveCurrentIssue(mapping, dailyGuidance, wellnessState, navigatorState, profileSignals);
   const awareness = astroAwarenessEngine.getAwarenessContext(new Date(`${date}T12:00:00`));
   const astroContext = [

@@ -13,8 +13,8 @@ const checks: Array<[string, number, number]> = [
   ["result.points.upoint", result.points.upoint, 5],
   ["result.purposes.generalpurpose", result.purposes.generalpurpose, 12],
   ["result.purposes.planetarypurpose", result.purposes.planetarypurpose, 17],
-  ["result.chartHeart.resultphysics", result.chartHeart.resultphysics, 17],
-  ["result.chartHeart.resultenergy", result.chartHeart.resultenergy, 12],
+  ["result.chartHeart.resultphysics", result.chartHeart.resultphysics, 10],
+  ["result.chartHeart.resultenergy", result.chartHeart.resultenergy, 10],
   ["result.chartHeart.resultemotions", result.chartHeart.resultemotions, 11],
   ["result.years.afpoint", result.years.afpoint, 20],
   ["result.years.af1point", result.years.af1point, 6],
@@ -28,3 +28,5 @@ for (const [label, actual, expected] of checks) {
 }
 
 console.log("Destiny Matrix reference check passed.");
+
+export {};

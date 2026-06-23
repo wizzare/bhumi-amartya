@@ -119,7 +119,7 @@ JSON: ${JSON.stringify(fullErrorDetail, null, 2)}
         </div>
         <h1 className="text-3xl font-serif text-[#4F5E52]">{t.welcome.title}</h1>
         <p className="mt-4 text-[#7B8776] leading-relaxed">
-          Masuk untuk melanjutkan perjalanan pengenalan diri Anda.
+          Masuk untuk melanjutkan perjalanan pengenalan dirimu.
         </p>
       </div>
 
@@ -156,7 +156,7 @@ JSON: ${JSON.stringify(fullErrorDetail, null, 2)}
       </div>
 
       <p className="text-center text-xs text-[#7B8776] leading-relaxed px-4">
-        Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.
+        Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.
       </p>
     </div>
   );

@@ -58,7 +58,8 @@ function buildReflection(guidance?: DailyGuidance | null): string {
   if (!text) {
     return "Hari ini adalah ruang untuk mendengar dirimu dengan lebih jernih. Tidak semua jawaban perlu datang sekaligus; satu langkah yang jujur sudah cukup.";
   }
-  return text;
+  // Strip opening "Hai {Name}, selamat hari {Day}." for share card aesthetic if present
+  return text.replace(/^Hai [^,]+, selamat hari [^.]+.\s*/i, "");
 }
 
 function pickDaily<T>(items: T[], seed: string, fallback: T): T {
@@ -70,7 +71,7 @@ function buildCatatanHariIni(guidance?: DailyGuidance | null) {
   const text = clean(guidance?.dailyNoteText);
   const selectedInsight = text || "Setiap langkah kecil yang kamu ambil hari ini memiliki maknanya sendiri.";
   return {
-    label: "Catatan Hari Ini",
+    label: "Pesan untuk Jiwamu",
     content: selectedInsight,
   };
 }

@@ -21,7 +21,7 @@ export function DailyHealingFocus({
         <p className="text-[#5F6B60] leading-relaxed">{anchorMessage}</p>
       </div>
       <div className="mt-6 rounded-[24px] border border-[#E8E9E5] bg-white p-5">
-        <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">Fokus Anda</p>
+        <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">Fokus Kamu</p>
         <p className="text-[#4F5E52] font-medium text-lg">{focusArea}</p>
         <p className="mt-4 text-[#6B7B6C] leading-relaxed">{invitation}</p>
       </div>
