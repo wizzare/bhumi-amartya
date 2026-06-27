@@ -7,16 +7,22 @@ interface UpdateRequiredScreenProps {
   updateUrl: string;
   currentBuild: number;
   minimumBuild: number;
+  customMessage?: string;
 }
 
 export function UpdateRequiredScreen({
   updateUrl,
   currentBuild,
   minimumBuild,
+  customMessage,
 }: UpdateRequiredScreenProps) {
   const handleUpdate = () => {
     if (typeof window !== "undefined") {
-      window.open(updateUrl, "_system");
+      try {
+        window.open(updateUrl, "_system");
+      } catch (e) {
+        window.open("https://play.google.com/store/apps/details?id=com.bhumiamartya.app", "_system");
+      }
     }
   };
 
@@ -32,8 +38,7 @@ export function UpdateRequiredScreen({
         </h2>
         
         <p className="text-[#7B8776] text-sm leading-relaxed mb-8">
-          Hai, sudah ada versi baru Bhumi.
-          Yuk update untuk bertumbuh bersama dan mendapatkan pengalaman terbaik dari Bhumi.
+          {customMessage || "Hai, sudah ada versi baru Bhumi. Yuk update untuk bertumbuh bersama dan mendapatkan pengalaman terbaik dari Bhumi."}
         </p>
 
         <button

@@ -56,12 +56,18 @@ export function VersionChecker() {
 
   // 1. FORCED UPDATE (Blocker)
   if (updateStatus.isOutdated) {
+    const isHotfixForceUpdate = updateStatus.minimumBuild === 55;
+    const customMessage = isHotfixForceUpdate
+      ? "Versi aplikasi kamu perlu diperbarui. Kami sudah menyiapkan perbaikan agar fitur Kondisi Lingkungan dan izin lokasi berjalan lebih baik. Silakan update Bhumi Amartya ke versi terbaru di Play Store."
+      : undefined;
+
     return (
       <div className="fixed inset-0 z-[10000] bg-[#FCFAF5] flex items-center justify-center p-6">
         <UpdateRequiredScreen
           updateUrl={updateStatus.updateUrl}
           currentBuild={updateStatus.currentBuild}
           minimumBuild={updateStatus.minimumBuild}
+          customMessage={customMessage}
         />
       </div>
     );

@@ -58,6 +58,14 @@ export async function checkAppUpdateStatus(): Promise<AppUpdateStatus> {
     console.warn("[APP UPDATE SERVICE] Failed to fetch remote version config. Defaulting to access granted.", error);
   }
 
+  // Local Override for Android: Build 54 and below are forced to update due to geolocation issue
+  const MIN_SUPPORTED_ANDROID_VERSION_CODE = 55;
+  if (buildInfo.platform === "android" && currentBuild < MIN_SUPPORTED_ANDROID_VERSION_CODE) {
+    isOutdated = true;
+    minimumBuild = MIN_SUPPORTED_ANDROID_VERSION_CODE;
+    updateUrl = "market://details?id=com.bhumiamartya.app";
+  }
+
   return {
     currentBuild,
     minimumBuild,
