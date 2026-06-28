@@ -33,6 +33,10 @@ export interface UserProfile {
   profile?: {
     language: string;
     onboardingCompleted: boolean;
+    timezone?: string | null;
+    birthCity?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
     blueprintInput: {
       birthDate: string;
       birthTime: string;
@@ -53,9 +57,11 @@ export interface UserProfile {
   // Guardian Identity V3
   guardianRole?: "founder" | "admin" | "user";
   guardianBadge?: "core_guardian" | "guardian";
+  testerBadge?: "Founder" | "Penjaga Bhumi Inti" | "Penjaga Bhumi Alfa" | "Penjaga Bhumi";
   recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "GUARDIAN";
   recognitionDate?: string;
-  membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME";
+  membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME" | "REGULAR" | string | null;
+  membershipExpiryDate?: string | null;
   membershipExpiresAt?: string;
   isFoundingMember?: boolean;
 }

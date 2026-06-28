@@ -29,9 +29,12 @@ export const journeyStoryEngine = {
         return acc;
     }, 0);
 
-    // Keep blueprint data available as internal context without exposing its
-    // technical labels in the user-facing Journey narrative.
-    void synthesis;
+    const blueprintSummary = synthesis?.blueprintSummary?.split(".")[0]?.trim();
+    const reflectionTheme = synthesis?.practiceThemes?.reflection;
+    const actionTheme = synthesis?.practiceThemes?.action;
+    const groundingTheme = synthesis?.practiceThemes?.grounding;
+    const primaryNeed = synthesis?.coreNeeds?.[0];
+    const growthSignal = reflectionTheme || primaryNeed || blueprintSummary;
 
     // 1. Stage Detection
     let stageLabel = "Awal Kesadaran";
@@ -45,35 +48,39 @@ export const journeyStoryEngine = {
     }
 
     // 2. Companion Message
-    const companionMessage = "";
+    const companionMessage = blueprintSummary
+      ? `${blueprintSummary}. Perjalananmu dibaca dari ritme praktik yang benar-benar kamu jalani, bukan dari tuntutan untuk selalu maju.`
+      : "";
 
     // 3. Growth Focus
     const journalCount = states.filter(s => s.journalingDone).length;
     const meditationCount = states.filter(s => s.meditationDone).length;
     const growthFocus = totalDone === 0
-      ? "Perjalananmu baru saja dimulai. Bhumi akan membantumu melihat pola batin seiring dengan bertambahnya jejak praktikmu."
+      ? growthSignal
+        ? `Perjalananmu baru saja dimulai. Fokus awalnya adalah mengenali ${growthSignal} melalui jejak praktik kecil yang kamu bangun.`
+        : "Perjalananmu baru saja dimulai. Bhumi akan membantumu melihat pola batin seiring dengan bertambahnya jejak praktikmu."
       : journalCount > meditationCount
-        ? "Beri tubuh ruang untuk tenang sebelum menuliskan isi pikiranmu. Pilih satu prioritas yang benar-benar perlu dirawat hari ini."
-        : "Rapikan satu prioritas dulu. Energi akan terasa lebih ringan saat kamu tidak memaksa semua hal selesai bersamaan.";
+        ? `Beri tubuh ruang untuk tenang sebelum menuliskan isi pikiranmu. Pilih satu prioritas yang merawat ${reflectionTheme || primaryNeed || "arah batinmu hari ini"}.`
+        : `Rapikan satu prioritas dulu. Energi akan terasa lebih ringan saat kamu mengarahkannya pada ${actionTheme || primaryNeed || "hal yang paling bisa dijalankan hari ini"}.`;
 
     // 4. Growing Areas
     const growingAreas = totalDone > 0
-      ? ["Ritme hadir yang lebih konsisten"]
-      : ["Keberanian untuk memulai dari langkah kecil"];
+      ? [`Ritme hadir yang lebih konsisten${groundingTheme ? `, terutama dalam ${groundingTheme}` : ""}`]
+      : [`Keberanian untuk memulai dari ${actionTheme || "langkah kecil"}`];
 
     // 5. Attention Areas
     const attentionAreas = totalDone === 0
-      ? ["Berikan dirimu izin untuk memulai perlahan tanpa tekanan harus langsung sempurna."]
+      ? [`Berikan dirimu izin untuk memulai dari ${primaryNeed || "ritme yang paling sederhana"} tanpa tekanan harus langsung sempurna.`]
       : streak < 2
-        ? ["Ada bagian dirimu yang membutuhkan jeda sebelum kembali memenuhi kebutuhan orang lain."]
-        : ["Jaga agar konsistensi tidak berubah menjadi tuntutan untuk selalu sempurna."];
+        ? [`Ada bagian dirimu yang membutuhkan jeda untuk menjaga ${groundingTheme || "tenaga batin"} sebelum kembali memenuhi kebutuhan orang lain.`]
+        : [`Jaga agar konsistensi tetap terhubung dengan ${reflectionTheme || "kejujuran batin"}, bukan berubah menjadi tuntutan untuk selalu sempurna.`];
 
     // 6. Next Milestone
     const nextMilestone = totalDone >= 30
-      ? "Jaga satu praktik sederhana selama tujuh hari tanpa menambah target baru."
+      ? `Jaga satu praktik sederhana selama tujuh hari yang mendukung ${groundingTheme || "ritme batinmu"} tanpa menambah target baru.`
       : totalDone >= 7
-        ? "Pilih satu praktik refleksi dan lakukan selama lima hari berturut-turut."
-        : "Lakukan satu praktik refleksi sederhana selama tiga hari berturut-turut untuk membangun ritme pulang ke diri.";
+        ? `Pilih satu praktik refleksi yang membantu ${reflectionTheme || "membaca dirimu"} dan lakukan selama lima hari berturut-turut.`
+        : `Lakukan satu praktik refleksi sederhana selama tiga hari berturut-turut untuk membangun ritme pulang ke ${primaryNeed || "dirimu"}.`;
 
     return {
       stage: { label: stageLabel, description: stageDesc },

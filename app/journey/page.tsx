@@ -32,11 +32,14 @@ export default function JourneyPage() {
 
   useEffect(() => {
     const loadJourney = async () => {
-      if (!auth?.user?.uid) return;
+      const auditUser = process.env.NODE_ENV === "development"
+        ? window.localStorage.getItem("bhumi_audit_user")
+        : null;
+      if (!auth?.user?.uid && !auditUser) return;
 
       try {
-        const uid = auth.user.uid;
-        const profile = auth.userProfile;
+        const uid = auth?.user?.uid || `${auditUser}_uid`;
+        const profile = auth?.userProfile;
         const timezone = profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
         const states = await journeyRepository.getRecentDailyStates(uid);

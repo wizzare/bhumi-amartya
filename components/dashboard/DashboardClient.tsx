@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
-import { WellnessCheckInCard } from "@/components/dashboard/WellnessCheckInCard";
-import { AIReflectionHero } from "@/components/dashboard/AIReflectionHero";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
 import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
+import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
 import { AccuracyUpgradeBanner } from "@/components/dashboard/AccuracyUpgradeBanner";
@@ -55,11 +54,30 @@ import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBluep
 import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFacingGuidance";
 import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
 import { loadWellnessDailyIntelligence } from "@/lib/services/wellnessDailyIntelligence";
+import { generateBlueprintHash, generateMemoryHash } from "@/lib/utils/hashing";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
+import { calculateWeton } from "@/lib/weton/calculateWeton";
+import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
+
+function compactTzolkinSignature(tzolkin: any): string | undefined {
+  const kin = tzolkin?.kin;
+  const kinNumber = typeof kin === "number" && kin > 0 ? kin : undefined;
+  const sealName = tzolkin?.solarSeal?.name || "";
+  const aliasMatch = /\(([^)]+)\)/.exec(String(tzolkin?.kinName || ""));
+  const compactSeal = aliasMatch?.[1] || sealName.split(" ").pop() || String(tzolkin?.kinName || "").split(/\s+/)[0] || "";
+  if (!compactSeal && !kinNumber) return undefined;
+  return [compactSeal, kinNumber].filter(Boolean).join(" ");
+}
+
+function formatBaziDayMaster(bazi: any): string | undefined {
+  const dayMaster = bazi?.dayMaster;
+  if (!dayMaster?.polarity || !dayMaster?.element) return undefined;
+  return `${dayMaster.polarity} ${dayMaster.element}`;
+}
 
 export function DashboardClient() {
   const router = useRouter();
@@ -121,6 +139,7 @@ export function DashboardClient() {
     let audios: any[] = [];
     let activities: any[] = [];
     let journeyLearning: Record<string, unknown> | null = null;
+    let guidanceMemoryContext: Record<string, unknown> | null = null;
 
     try {
       const existingDailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
@@ -204,19 +223,57 @@ export function DashboardClient() {
         practiceEffectiveness: journeyMemory.practiceInsights,
         recentPracticePatterns,
       } : null;
-      const memoryContext = {
+      const memoryContext: Record<string, unknown> = {
         ...p,
+        profile: p,
         previousJournalEntries: journals,
         previousMeditationEntries: meditations,
         previousAudioHealingEntries: audios,
         previousActivityEntries: activities,
         healingMemory: journeyLearning,
+        journeyMemory: journeyLearning,
+        dailyState: existingDailyState,
+        wellnessState: existingDailyState,
+        previousDailyState: yesterdayState,
+        previousDayState: yesterdayState,
+        recentDailyStates: journeyStates,
+        wellnessMapping: mapping,
+        navigatorState: navigator,
+        momentumState: navigator,
+        previousGuidance,
+        guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
+        rendererVersion: DAILY_GUIDANCE_PROMPT_VERSION,
+        groundingVersion: "dashboard-guidance-grounding-v1",
       };
+      guidanceMemoryContext = memoryContext;
 
       const { calculateCurrentSky } = await import("@/lib/astrology/calculateCurrentSky");
       const sky = calculateCurrentSky(new Date(`${today}T12:00:00`));
       const awareness = astroAwarenessEngine.getAwarenessContext(new Date());
       setDailyNoteFocus(awareness.activeAwarenessEvents[0]?.explanation.id || "");
+
+      // Phase 4: Environment Context for AI
+      let envContext = null;
+      try {
+        const { getEnvironmentLocationPermission, requestCurrentEnvironmentLocation, getNormalizedEnvironment } = await import("@/lib/environment/service");
+        const { buildAIEnvironmentContext } = await import("@/lib/environment/context_utils");
+
+        const locPermission = await getEnvironmentLocationPermission();
+        if (locPermission === "granted" || locPermission === "prompt") {
+          const loc = await requestCurrentEnvironmentLocation().catch(() => null);
+          if (loc) {
+            const normEnv = await getNormalizedEnvironment(loc).catch(() => null);
+            if (normEnv) {
+              envContext = buildAIEnvironmentContext(normEnv);
+            }
+          }
+        }
+      } catch (envErr) {
+        console.warn("[DASHBOARD_ENV_CONTEXT_FAILED]", envErr);
+      }
+      memoryContext.currentSky = sky;
+      memoryContext.astroAwareness = awareness;
+      memoryContext.environmentContext = envContext;
 
       const cached = window.localStorage.getItem(localCacheKey);
       if (cached) {
@@ -243,10 +300,10 @@ export function DashboardClient() {
 
       const existing = await dailyGuidanceRepository.getDailyGuidance(uid, today).catch(() => null);
       const existingStaleReason = getDailyGuidanceStaleReason(existing, {
-        uid,
-        localDateKey: today,
-        blueprint: b,
-        context: memoryContext,
+          uid,
+          localDateKey: today,
+          blueprint: b,
+          context: memoryContext,
         previousGuidance
       });
 
@@ -263,9 +320,19 @@ export function DashboardClient() {
         uid, date: today, localDateKey: today, language, profile: p, blueprint: b,
         currentSky: sky as any,
         natalHouses: b.astrology?.houses || null,
+        dailyState: existingDailyState,
+        previousDailyState: yesterdayState,
+        recentDailyStates: journeyStates,
         previousJournalEntries: journals, previousMeditationEntries: meditations,
         previousAudioHealingEntries: audios, activityHistory: activities,
-        momentumState: null, healingMemory: journeyLearning,
+        wellnessMapping: mapping,
+        wellnessState: existingDailyState,
+        navigatorState: navigator,
+        momentumState: navigator,
+        healingMemory: journeyLearning,
+        journeyMemory: journeyLearning,
+        previousGuidance,
+        environmentContext: envContext,
       };
 
       const response = await fetch("/api/ai/daily-guidance", {
@@ -346,6 +413,19 @@ export function DashboardClient() {
           generatedWithPromptVersion: DAILY_GUIDANCE_PROMPT_VERSION,
           guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
           dailyVariationSeed: fallbackSeed,
+          blueprintHash: generateBlueprintHash(b),
+          memoryHash: generateMemoryHash(guidanceMemoryContext ?? {
+            profile: p,
+            previousJournalEntries: journals,
+            previousMeditationEntries: meditations,
+            previousAudioHealingEntries: audios,
+            previousActivityEntries: activities,
+            healingMemory: journeyLearning,
+            journeyMemory: journeyLearning,
+            guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
+            rendererVersion: DAILY_GUIDANCE_PROMPT_VERSION,
+            groundingVersion: "dashboard-guidance-grounding-v1",
+          }),
           source: "local-fallback",
           soulReflectionText: localOutput.soulReflectionText || localOutput.soulReflection.dailyMessage,
           dailyNoteText: localOutput.dailyNoteText || (localOutput.companionReflection?.fullReflection ?? ""),
@@ -473,7 +553,39 @@ export function DashboardClient() {
           }
         }
 
-        // 2. Vedic Hydration
+        // 2. Weton Hydration
+        if (b && (!b.weton || !b.weton.weton)) {
+          if (birthDate) {
+            try {
+              const calculated = calculateWeton({ birthDate, birthTime });
+              updatedBlueprint.weton = calculated;
+              needsSave = true;
+              console.log("[HYDRATION] Weton computed.");
+            } catch (e) {
+              console.warn("[HYDRATION FAILED] Weton", e);
+            }
+          }
+        }
+
+        // 3. BaZi Hydration
+        if (b && (!b.bazi || !b.bazi.dayMaster)) {
+          if (birthDate && birthTime) {
+            try {
+              const calculated = calculateBazi({
+                birthDate,
+                birthTime,
+                timezone,
+              });
+              updatedBlueprint.bazi = calculated;
+              needsSave = true;
+              console.log("[HYDRATION] BaZi computed.");
+            } catch (e) {
+              console.warn("[HYDRATION FAILED] BaZi", e);
+            }
+          }
+        }
+
+        // 4. Vedic Hydration
         if (b && (!b.vedic || !b.vedic.moonSign)) {
           if (birthDate && birthTime) {
             try {
@@ -494,7 +606,7 @@ export function DashboardClient() {
           }
         }
 
-        // 3. Human Design Stability Audit & Repair
+        // 5. Human Design Stability Audit & Repair
         const isHdCanonical = isCanonicalHumanDesign(b?.humanDesign);
         if (!isHdCanonical && birthDate) {
           try {
@@ -616,14 +728,6 @@ export function DashboardClient() {
         language={language}
       />
 
-      <WellnessCheckInCard
-        uid={profile.uid}
-        initialSnapshot={dailyState?.wellnessSnapshot}
-        onCompleted={(snapshot) => {
-          setDailyState(prev => prev ? { ...prev, wellnessSnapshot: snapshot } : null);
-        }}
-      />
-
       <CoreIdentity
         lifePath={blueprint.lifePath?.display || blueprint.lifePath?.number || 0}
         lifePathRole={blueprint.lifePath?.role || ""}
@@ -631,14 +735,15 @@ export function DashboardClient() {
         sunSign={blueprint.astrology?.sunSign || ""}
         humanDesign={blueprint.humanDesign}
         weton={blueprint.weton?.weton}
-        baziDayMaster={blueprint.bazi?.dayMaster ? `${blueprint.bazi.dayMaster.polarity} ${blueprint.bazi.dayMaster.element}` : undefined}
+        baziDayMaster={formatBaziDayMaster(blueprint.bazi)}
         vedicMoonSign={blueprint.vedic?.moonSign?.sign ? `${blueprint.vedic.moonSign.sign} Moon` : undefined}
         tzolkinSignature={(() => {
-          if (blueprint.tzolkin?.kinName) return blueprint.tzolkin.kinName;
+          const stored = compactTzolkinSignature(blueprint.tzolkin);
+          if (stored) return stored;
           const birthDate = profile?.birthDate || profile?.profile?.blueprintInput?.birthDate || blueprint?.input?.birthDate;
           if (birthDate) {
             try {
-              return calculateTzolkin({ birthDate }).kinName;
+              return compactTzolkinSignature(calculateTzolkin({ birthDate }));
             } catch (e) {
               console.warn("Failed to calculate fallback Tzolkin signature:", e);
             }
@@ -668,14 +773,6 @@ export function DashboardClient() {
         loading={!visibleSoulReflection}
       />
 
-      {dailyGuidance?.manifestation && (
-        <AIReflectionHero
-          reflection=""
-          manifestation={dailyGuidance.manifestation}
-          language={language}
-        />
-      )}
-
       <AstroTodayCard
         context={{
           profile, blueprint, birthDate: profile.birthDate,
@@ -696,6 +793,8 @@ export function DashboardClient() {
         recentDailyStates={recentDailyStates}
         navigatorState={navigatorState}
       />
+
+      <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
 
       <DailyUserFlowGuide language={language} />
 

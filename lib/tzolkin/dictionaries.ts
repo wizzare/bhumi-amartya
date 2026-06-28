@@ -301,19 +301,41 @@ export function generateTzolkinArchetype(seal: SolarSeal, tone: GalacticTone, co
   return { strengths, challenges, relationshipStyle, workStyle, growthStyle, lifePurpose };
 }
 
+function cleanSentence(value: string): string {
+  return value.replace(/\s+/g, " ").trim().replace(/[.。]+$/g, "");
+}
+
+function cleanLower(value: string): string {
+  return cleanSentence(value).toLowerCase();
+}
+
+function cleanGrowthDirection(value: string): string {
+  return cleanLower(value).replace(/^menuju\s+/, "");
+}
+
 export function generateTzolkinSummary(kin: number, kinName: string, seal: SolarSeal, tone: GalacticTone, wavespell: Wavespell, castle: Castle, gap: boolean) {
   const paragraphs = [];
+  const toneName = tone.name.split(" - ")[1];
+  const toneFunction = cleanLower(tone.function);
+  const sealKeyword = cleanLower(seal.keyword);
+  const sealGift = cleanLower(seal.gift);
+  const sealPurpose = cleanLower(seal.purpose);
+  const sealChallenge = cleanLower(seal.challenge);
+  const toneShadow = cleanLower(tone.shadow);
+  const wavespellGrowth = cleanGrowthDirection(wavespell.growthDirection);
+  const wavespellMeaning = cleanSentence(wavespell.meaning);
+  const castleTheme = cleanLower(castle.theme);
   
-  paragraphs.push(`Sebagai Kin ${kin} (${kinName}), identitas kosmis Anda berakar dalam harmoni kalender Tzolkin. Anda membawa frekuensi unik yang menggabungkan energi arketipal ${seal.name} dengan irama universal nada ${tone.name.split(" - ")[1]}. Perpaduan ini menjadikan ${seal.keyword.toLowerCase()} sebagai fondasi dari esensi kehidupan Anda, yang Anda proyeksikan ke dunia melalui kekuatan ${tone.function.toLowerCase()}.`);
+  paragraphs.push(`Sebagai Kin ${kin} (${kinName}), identitas kosmismu berakar dalam harmoni kalender Tzolkin. Kamu membawa frekuensi yang menggabungkan energi arketipal ${seal.name} dengan irama universal nada ${toneName}. Perpaduan ini menjadikan ${sealKeyword} sebagai fondasi esensi hidupmu, lalu memancar ke dunia melalui kekuatan ${toneFunction}.`);
   
-  paragraphs.push(`Dalam siklus evolusi jiwa, Anda lahir dalam ${castle.name}, sebuah siklus besar yang ditandai dengan tema ${castle.theme.toLowerCase()}. Di dalam istana ini, Anda berjalan di atas gelombang ${wavespell.name}, di mana periode tiga belas hari penempatan Anda memandu arah pertumbuhan batin menuju ${wavespell.growthDirection.toLowerCase()}. Misi utama Anda dalam gelombang ini adalah menginternalisasi makna: ${wavespell.meaning}`);
+  paragraphs.push(`Dalam siklus evolusi jiwa, kamu lahir dalam ${castle.name}, siklus besar yang ditandai tema ${castleTheme}. Di dalam istana ini, kamu berjalan di atas ${wavespell.name}; periode tiga belas hari ini memandu arah pertumbuhan batinmu menuju ${wavespellGrowth}. Misi utama gelombang ini adalah menghayati makna: ${wavespellMeaning}.`);
   
-  paragraphs.push(`Untuk mencapai realisasi diri tertinggi, Anda ditantang untuk mengatasi bayangan dari ${seal.challenge.split(" ")[0].toLowerCase()} serta melepaskan jebakan ${tone.shadow.toLowerCase()}. Keberhasilan dalam memfasilitasi transformasi ini akan membangkitkan karunia bawaan Anda: ${seal.gift.toLowerCase()} Seiring dengan kedewasaan spiritual, Anda akan mewujudkan tujuan jiwa Anda, yakni ${seal.purpose.toLowerCase()}`);
+  paragraphs.push(`Untuk mencapai realisasi diri yang lebih utuh, kamu diajak menghadapi bayangan ${sealChallenge} sekaligus melepaskan jebakan ${toneShadow}. Saat proses ini matang, karunia bawaanmu ikut bangkit: ${sealGift}. Seiring kedewasaan spiritual, tujuan jiwamu semakin terlihat, yaitu ${sealPurpose}.`);
   
   if (gap) {
-    paragraphs.push(`Anda lahir pada hari Portal Aktivasi Galaktik (GAP). Ini menandakan bahwa jalur hidup Anda diwarnai oleh transformasi yang intens, peningkatan kepekaan spiritual, dan serangkaian sinkronisitas yang luar biasa. Jiwa Anda bertindak sebagai saluran terbuka antara dimensi, menuntut kesadaran yang tinggi namun menjanjikan percepatan evolusi yang melampaui batas normal.`);
+    paragraphs.push(`Kamu lahir pada hari Portal Aktivasi Galaktik (GAP). Jalur hidupmu bisa terasa lebih intens, dengan kepekaan spiritual yang kuat dan sinkronisitas yang sering muncul di momen penting. Jiwamu seperti saluran terbuka antara lapisan pengalaman yang berbeda; ini meminta kesadaran yang jernih, sekaligus membawa peluang percepatan evolusi yang besar.`);
   } else {
-    paragraphs.push(`Jalur pertumbuhan Anda ditandai dengan evolusi yang bertahap namun stabil. Sebagai bagian dari siklus reguler Harmonic Module, Anda diundang untuk mematangkan pondasi batin tanpa harus tergesa-gesa. Ini adalah perjalanan konsistensi, di mana setiap langkah kecil yang diambil dalam kesadaran akan menuntun pada perubahan yang kokoh dan tahan lama.`);
+    paragraphs.push(`Jalur pertumbuhanmu ditandai evolusi yang bertahap namun stabil. Sebagai bagian dari siklus reguler Harmonic Module, kamu diundang mematangkan fondasi batin tanpa perlu tergesa-gesa. Ini adalah perjalanan konsistensi, ketika langkah kecil yang diambil dengan sadar perlahan membentuk perubahan yang kokoh dan tahan lama.`);
   }
   
   return paragraphs;

@@ -22,9 +22,9 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
       repetitionAvoidanceRule:
         "REPETITION AVOIDANCE: You are provided with yesterday's soulReflectionText and dailyNoteText in userContext.previousGuidance. You MUST ensure today's text is significantly different in phrasing, focus, and narrative structure while remaining true to the blueprint. Do not repeat the same analogies or opening hooks.",
       intelligenceChainRule:
-        "STRICT CHAIN RULE: 1. Full Blueprint + Journey Memory → Refleksi Jiwa (No transits). 2. Full Blueprint + Astro Today + Wellness Mapping + Journey Memory → Catatan Hari Ini. 3. Catatan Hari Ini + House Activation + User Progress → Innerwork. 4. Innerwork + Catatan Hari Ini + Wellness Mapping + Full Blueprint → Manifestasi Hari Ini.",
+        "STRICT CHAIN RULE: 1. Full Blueprint + Journey Memory â†’ Refleksi Jiwa (No transits). 2. Full Blueprint + Astro Today + Wellness Mapping + Journey Memory â†’ Catatan Hari Ini. 3. Catatan Hari Ini + House Activation + User Progress â†’ Innerwork. 4. Innerwork + Catatan Hari Ini + Wellness Mapping + Full Blueprint â†’ Manifestasi Hari Ini.",
       blueprintDefinition:
-        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint AND the normalized userContext.unifiedBlueprint.fullBlueprint object: Numerology, Human Design, Natal Chart, Destiny Matrix Core, and Destiny Matrix Intelligence. NEVER use raw technical labels (like 'Money Line', 'Karmic Tail', 'Projector', 'Sacral', 'Variables', 'Digestion') or raw blueprint numbers in the final output. Every piece of data must be translated into warm, descriptive human language.",
+        "BLUEPRINT DATA: Use ALL available data in userContext.blueprint AND the normalized userContext.unifiedBlueprint.fullBlueprint object: Numerology/Life Path, Human Design, Natal Chart, Destiny Matrix Core, Destiny Matrix Intelligence, Vedic, Tzolkin, Weton, and BaZi. NEVER use raw technical labels (like 'Money Line', 'Karmic Tail', 'Projector', 'Sacral', 'Variables', 'Digestion', 'Nakshatra', 'Dharma Focus', 'Moksha Focus', 'Solar Seal', 'Galactic Tone', 'Weton', 'BaZi') or raw blueprint numbers in the final output. Every piece of data must be translated into warm, descriptive human language.",
       strictFilter:
         "CRITICAL NO-CLICHE RULE: Do NOT use generic spiritual cliches or overused dashboard templates. Specifically, NEVER output the following phrases or their close equivalents: 'satu langkah kecil', 'tidak perlu menyelesaikan semuanya' (or 'tidak harus diselesaikan sekaligus' since this is already in the UI header), 'cukup hadir', 'beri ruang', 'pelan-pelan', 'jaga energi', or 'tarik napas'. Translate these concepts into user-specific, grounded observations. Do NOT use directive/coaching language on the Dashboard (e.g. 'kamu harus', 'jangan lupa', 'saatnya untuk', 'cobalah', 'ingatlah').",
       insightIsolationRule:
@@ -35,12 +35,12 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         "This is reflective wellbeing guidance, not medical, legal, or financial advice. Do not make fear-based spiritual claims. Keep language grounded, compassionate, non-diagnostic, practical, and agency-preserving. NEVER mention technical terms: Money Line, Karmic Tail, compatibility, blueprint pattern, isolated system, synthesis, deterministic, Soul Core, generated from, engine, fallback, source, local-fallback, Life Path, Human Design, Arcana, House numbers, or transit angles. Do not mention raw blueprint numbers or internal engine structures.",
       language: input.language,
       architectureV141: {
-        mirrorWeightingRule: "PHASE 4 – BLUEPRINT WEIGHTING: Refleksi Jiwa (Mirror) must prioritize: Life Path (25%), Human Design (25%), Arcana Center (20%), Natal Sun (15%), Natal Moon (15%). Prevent astrology transits from overpowering the identity blueprint.",
-        archetypeRule: "PHASE 5 – CORE ARCHETYPE ENGINE: Use the provided Dominant Archetypes in Refleksi Jiwa. Write from the archetype's perspective (e.g., 'Sebagai seorang Builder...', 'Bagian Pioneer dalam dirimu...'). Avoid generic 'you' statements.",
-        genericFilterRule: "PHASE 6 – GENERIC LANGUAGE FILTER: REDUCE overused phrases: 'dengarkan suara hati', 'beri ruang', 'renungkan perlahan', 'biarkan energi mengalir', 'proses batin', 'kelembutan'. These may only appear when strongly justified by Blueprint or Transit.",
-        mirrorRule: "SECTION 1 – REFLEKSI JIWA (MIRROR): Purpose: Answer 'Siapa dirimu secara mendasar?'. Use ONLY core blueprint + archetypes. Similarity between users MUST be < 30%.",
-        compassRule: "SECTION 2 – CATATAN HARI INI (COMPASS): Purpose: Answer 'Hari ini apa yang sedang mempengaruhi dirimu?'. Formula: Mirror x Transit mapped to Natal Houses.",
-        houseImpactRule: "PHASE 3 – HOUSE IMPACT: Compass must be driven by house activation. Translate technical house placements into area themes (e.g. House 2 = area keuangan/nilai diri, House 7 = area relasi, House 10 = area karir). If a house is active, you MUST discuss its specific themes without ever using the word 'House'. Example: write 'Mars di area relasi', never 'Mars di House 7'.",
+        mirrorWeightingRule: "PHASE 4 â€“ BLUEPRINT WEIGHTING: Refleksi Jiwa (Mirror) must prioritize: Life Path (25%), Human Design (25%), Arcana Center (20%), Natal Sun (15%), Natal Moon (15%). Prevent astrology transits from overpowering the identity blueprint.",
+        archetypeRule: "PHASE 5 â€“ CORE ARCHETYPE ENGINE: Use the provided Dominant Archetypes in Refleksi Jiwa. Write from the archetype's perspective (e.g., 'Sebagai seorang Builder...', 'Bagian Pioneer dalam dirimu...'). Avoid generic 'you' statements.",
+        genericFilterRule: "PHASE 6 â€“ GENERIC LANGUAGE FILTER: REDUCE overused phrases: 'dengarkan suara hati', 'beri ruang', 'renungkan perlahan', 'biarkan energi mengalir', 'proses batin', 'kelembutan'. These may only appear when strongly justified by Blueprint or Transit.",
+        mirrorRule: "SECTION 1 â€“ REFLEKSI JIWA (MIRROR): Purpose: Answer 'Siapa dirimu secara mendasar?'. Use ONLY core blueprint + archetypes. Similarity between users MUST be < 30%.",
+        compassRule: "SECTION 2 â€“ CATATAN HARI INI (COMPASS): Purpose: Answer 'Hari ini apa yang sedang mempengaruhi dirimu?'. Formula: Mirror x Transit mapped to Natal Houses.",
+        houseImpactRule: "PHASE 3 â€“ HOUSE IMPACT: Compass must be driven by house activation. Translate technical house placements into area themes (e.g. House 2 = area keuangan/nilai diri, House 7 = area relasi, House 10 = area karir). If a house is active, you MUST discuss its specific themes without ever using the word 'House'. Example: write 'Mars di area relasi', never 'Mars di House 7'.",
       },
       userContext: {
         user: input.user,
@@ -74,6 +74,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         activityHistory: input.activityHistory ?? null,
         momentumState: input.momentumState ?? null,
         healingMemory: input.healingMemory ?? null,
+        environmentContext: (input as any).environmentContext ?? null,
         previousGuidance: input.previousGuidance ? {
           soulReflectionText: input.previousGuidance.soulReflectionText,
           dailyNoteText: input.previousGuidance.dailyNoteText,
@@ -117,7 +118,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         requiredToneRule:
           "Use adaptiveDailyProgression.adaptiveTone exactly: gentle_encouraging_restart means gentle, encouraging, restart tone; appreciative_growth_oriented means appreciative and growth-oriented tone; steady_supportive means steady, supportive tone. Adapt this tone to fit the context-specific voice role (Companion, Coach, or Navigator).",
         synthesisRule:
-          "Every dashboard field must reflect the V1.4.1 architecture. (MIRROR) Weighting: Life Path 25%, HD 25%, Arcana 20%, Sun 15%, Moon 15%. (COMPASS) Driven by house activation. Use 'kamu' and 'dirimu' instead of 'Anda' or 'pengguna'.",
+          "Every dashboard field must reflect the V1.4.1 architecture and use the expanded 8-system LIANA context when relevant. (MIRROR) Primary weighting: Life Path 20%, HD 20%, Destiny Matrix/Arcana 18%, Natal Sun/Moon/ASC 18%, Vedic/Tzolkin/Weton/BaZi 24% as supporting differentiators. (COMPASS) Driven by house activation and grounded with stored blueprint differentiators. Use 'kamu' and 'dirimu' instead of formal Indonesian pronouns or 'pengguna'.",
         archetypeApplicationRule:
           "For Refleksi Jiwa (Mirror), select the most relevant Dominant Archetype for today and write from that perspective. Example: 'Sebagai seorang Builder, fokusmu hari ini adalah...' or 'Bagian Sage dalam dirimu mengingatkan bahwa...'.",
         reasonEngineRule:
@@ -131,7 +132,7 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         bhumiVoiceArchitectureRule:
           "DASHBOARD NARRATIVE (Mirror, Compass, Manifestation) MUST use the Companion / Teman Duduk archetype: observational, warm, empathetic, curiosity-driven. Target feeling: 'Ditemani'. Prioritize: observation, reflection, presence, empathy, curiosity. Reduce: instructions, lectures, motivation, task lists. Use a natural hybrid of 'Aku' and 'Bhumi' (e.g. 'Aku memperhatikan...', 'Aku penasaran...', 'Ada bagian dari...', 'Mungkin...', 'Bisa jadi...'). Never write 'Kamu harus...', 'Jangan lupa...', 'Cobalah...', 'Ingatlah bahwa...', 'Hari ini pilih satu langkah kecil...'. WELLNESS NARRATIVE (Innerwork, Meditation, journal prompts) MUST use the Coach / Navigator archetype: active practice, gradual growth, navigator guidance. Target feeling: 'Dibimbing'.",
         dailyPracticeRules:
-          "Generate exactly 3 dailyInnerwork.tasks following SECTION 4: Mirror + Compass synthesis. Grounding first, reflection/journaling second, action/real life third. Each must be measurable, personalized, achievable in 5-20 minutes. Meditation MUST be personalized based on the user's current growth focus, today's challenges, and their progress stage. Manifestation MUST be personalized based on their journey phase (Awareness, Release, etc.), growth focus, and their next milestone.",
+          "Generate exactly 3 dailyInnerwork.tasks following SECTION 4: Mirror + Compass synthesis. Grounding first, reflection/journaling second, action/real life third. Each must be measurable, personalized, achievable in 5-20 minutes. Meditation MUST be personalized based on the user's current growth focus, today's challenges, and their progress stage. Manifestation MUST be personalized based on their journey phase (Awareness, Release, etc.), growth focus, next milestone, and available 8-system differentiators from unifiedBlueprint.fullBlueprint.",
         generatedAt: input.generatedAt,
       },
       outputSchema: {

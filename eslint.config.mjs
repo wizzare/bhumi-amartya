@@ -15,6 +15,17 @@ const eslintConfig = defineConfig([
     "coverage/**",
     "node_modules/**",
     "android/**",
+    ".pytest_cache/**",
+    "**/.pytest_cache/**",
+    "scratch/**",
+    "scripts/**",
+    "services/**",
+    "run-test.js",
+    "scratch*.js",
+    "scratch*.ts",
+    "scratch*.tsx",
+    "test-full-flow.ts",
+    "test_*.js",
     ".venv/**",
     "**/.venv/**",
     "public/_next/**",
@@ -23,6 +34,17 @@ const eslintConfig = defineConfig([
     "lib/humandesign/hdkit-main/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "prefer-const": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

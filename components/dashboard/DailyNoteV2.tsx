@@ -77,8 +77,8 @@ export function DailyNoteV2({
           <header className="space-y-4 border-b border-[#F1EEE7] pb-7">
             <p className="font-serif text-xl font-bold text-[#4F6658]">Hai {firstName},</p>
             <p className="text-sm leading-7 text-[#526053]">
-              Hari ini ada beberapa hal yang ingin Bhumi ceritakan padamu. Nggak perlu buru-buru menyelesaikannya kok.
-              Anggap saja tulisan ini sebagai teman duduk yang menemanimu melihat apa yang sedang bergerak hari ini.
+              Bhumi menyiapkan catatan ini sebagai teman duduk untuk membaca arah yang muncul dari perjalananmu.
+              Ambil satu bagian yang paling terasa dekat, lalu jadikan itu bahan menulis atau keputusan kecilmu.
             </p>
           </header>
 

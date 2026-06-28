@@ -13,6 +13,8 @@ import { useAuth } from "@/context/AuthContext";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import {
   AUDIO_HEALING_EMBED_URL,
   AUDIO_HEALING_PLAYLIST_URL,
@@ -49,6 +51,10 @@ const BODY_SIGNALS = [
 function AudioHealingExperience() {
   const router = useRouter();
   const auth = useAuth();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
   const [emotionalState, setEmotionalState] = useState("");
   const [bodySignals, setBodySignals] = useState<string[]>([]);
   const [reflectionText, setReflectionText] = useState("");
@@ -82,14 +88,14 @@ function AudioHealingExperience() {
     });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const generatedReflection = createAudioHealingReflection({
       emotionalState,
       bodySignals,
       reflectionText,
     });
     const createdAt = new Date().toISOString();
-    const dateKey = createdAt.slice(0, 10);
+    const dateKey = getLocalDateKey(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
 
     saveAudioHealingEntry({
       id: `audio-healing-${Date.now()}`,
@@ -103,14 +109,23 @@ function AudioHealingExperience() {
       nextFocus: generatedReflection.nextFocus,
     });
 
-    // Update Daily State for Completion System
-    if (auth?.user?.uid) {
-      void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
-        audioHealingDone: true,
+    if (activeUid) {
+      await logWellnessSection4Practice({
+        uid: activeUid,
+        dateKey,
+        practiceId: "audio-healing",
+        practiceType: "audioHealing",
+        practiceTitle: "Audio Healing",
+        durationMinutes: 15,
+        reflectionResult: emotionalState,
+        reflectionResponse: generatedReflection.insight,
+        dailyStatePatch: {
+          audioHealingDone: true,
+        },
       });
     }
 
-    trackEvent("complete_audio", auth?.user?.uid);
+    trackEvent("complete_audio", activeUid || auth?.user?.uid);
 
     setReflection(generatedReflection);
     setSaved(true);

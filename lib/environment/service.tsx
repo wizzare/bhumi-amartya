@@ -65,6 +65,7 @@ export interface EnvironmentAirQuality {
   no2?: number;
   so2?: number;
   co?: number;
+  uvIndex?: number;
   source: EnvironmentSourceMeta;
 }
 
@@ -186,14 +187,28 @@ export function getCircadianStatus(): { status: string; label: string } {
 
 export function getMoonPhaseLabel(phaseAngle: number): string {
   const normalized = ((phaseAngle % 360) + 360) % 360;
-  if (normalized < 7.5 || normalized >= 352.5) return "New Moon";
-  if (normalized < 82.5) return "Waxing Crescent";
-  if (normalized < 97.5) return "First Quarter";
-  if (normalized < 172.5) return "Waxing Gibbous";
-  if (normalized < 187.5) return "Full Moon";
-  if (normalized < 262.5) return "Waning Gibbous";
-  if (normalized < 277.5) return "Last Quarter";
-  return "Waning Crescent";
+  if (normalized < 7.5 || normalized >= 352.5) return "Bulan Baru";
+  if (normalized < 82.5) return "Sabit Muda";
+  if (normalized < 97.5) return "Kuartal Pertama";
+  if (normalized < 172.5) return "Cembung Awal";
+  if (normalized < 187.5) return "Purnama";
+  if (normalized < 262.5) return "Cembung Akhir";
+  if (normalized < 277.5) return "Kuartal Akhir";
+  return "Sabit Tua";
+}
+
+export function normalizeMoonPhaseLabel(input: string | null | undefined): string {
+  if (!input) return "Belum tersedia";
+  const clean = input.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  if (clean.includes("newmoon") || clean === "bulanbaru") return "Bulan Baru";
+  if (clean.includes("waxingcrescent") || clean === "sabitmuda") return "Sabit Muda";
+  if (clean.includes("firstquarter") || clean === "kuartalpertama") return "Kuartal Pertama";
+  if (clean.includes("waxinggibbous") || clean.includes("benjolmuda") || clean === "cembungawal") return "Cembung Awal";
+  if (clean.includes("fullmoon") || clean === "purnama" || clean === "bulanpurnama") return "Purnama";
+  if (clean.includes("waninggibbous") || clean.includes("benjoltua") || clean === "cembungakhir") return "Cembung Akhir";
+  if (clean.includes("lastquarter") || clean === "kuartalakhir" || clean === "kuartalterakhir") return "Kuartal Akhir";
+  if (clean.includes("waningcrescent") || clean === "sabittua") return "Sabit Tua";
+  return input;
 }
 
 async function fetchReverseGeocode(lat: number, lon: number): Promise<Partial<EnvironmentLocation>> {
@@ -277,6 +292,7 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
       no2: current.nitrogen_dioxide,
       so2: current.sulphur_dioxide,
       co: current.carbon_monoxide,
+      uvIndex: current.uv_index !== undefined && current.uv_index !== null ? current.uv_index : ctx.weather?.uvCurrent,
       source: { source: "air_quality_api", status: "available", observedAt: now.toISOString() },
     };
   }
@@ -308,6 +324,20 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
     label: circadian.label,
     basedOn: "local time",
   };
+
+  // Add Moon data
+  try {
+    const moonPhaseAngle = Astronomy.MoonPhase(now);
+    const illumination = Astronomy.Illumination(Astronomy.Body.Moon, now);
+
+    ctx.moon = {
+      phase: getMoonPhaseLabel(moonPhaseAngle),
+      illuminationPercent: Math.round(illumination.phase_fraction * 100),
+      source: { source: "astronomy_api", status: "available", observedAt: now.toISOString() },
+    };
+  } catch (e) {
+    console.error("Failed to calculate moon phase", e);
+  }
 
   return ctx;
 }

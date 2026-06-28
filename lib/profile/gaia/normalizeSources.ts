@@ -353,6 +353,57 @@ export function normalizeGaiaSources(blueprint: unknown): GaiaSignal[] {
     add(signals, "talents", "humanDesign", "variables", read(hd, [["variables", "advanced", "variable"]]), ["natural-strength", "learning-mode"], 1);
   }
 
+  // --- Vedic, Tzolkin, Weton, BaZi (stored blueprint systems) ---
+  const vedic = record(root.vedic);
+  add(signals, "spirituality", "vedic", "nakshatra", vedic.nakshatra, ["soul-direction", "archetype", "evolution-direction"], 0.9);
+  add(signals, "spirituality", "vedic", "dharmaFocus", vedic.dharmaFocus, ["life-direction", "soul-direction", "value-creation"], 0.9);
+  add(signals, "spirituality", "vedic", "mokshaFocus", vedic.mokshaFocus, ["soul-direction", "integration", "spiritual-longing"], 0.9);
+  add(signals, "spirituality", "vedic", "atmakaraka", vedic.atmakaraka, ["soul-direction", "evolution-direction"], 0.9);
+  add(signals, "relationships", "vedic", "darakaraka", vedic.darakaraka, ["relationship-pattern", "love-style"], 0.85);
+  add(signals, "career", "vedic", "careerStyle", vedic.careerStyle, ["career-direction", "work-style"], 0.85);
+  add(signals, "relationships", "vedic", "relationshipStyle", vedic.relationshipStyle, ["relationship-pattern", "connection-style"], 0.85);
+  add(signals, "talents", "vedic", "strengths", vedic.strengths, ["natural-strength", "gift"], 0.85);
+  add(signals, "shadow", "vedic", "challenges", vedic.challenges, ["growth-edge", "recurring-pattern"], 0.85);
+  add(signals, "talents", "vedic", "majorYogas", vedic.majorYogas, ["gift", "natural-strength", "expansion-zone"], 0.85);
+
+  const tzolkin = record(root.tzolkin);
+  const solarSeal = record(tzolkin.solarSeal);
+  const galacticTone = record(tzolkin.galacticTone);
+  const castle = record(tzolkin.castle);
+  add(signals, "spirituality", "tzolkin", "kinName", tzolkin.kinName, ["archetype", "soul-direction"], 0.9);
+  add(signals, "talents", "tzolkin", "solarSealGift", solarSeal.gift, ["gift", "natural-strength"], 0.9);
+  add(signals, "shadow", "tzolkin", "solarSealShadow", solarSeal.shadow || solarSeal.challenge, ["growth-edge", "recurring-pattern"], 0.9);
+  add(signals, "talents", "tzolkin", "galacticToneGift", galacticTone.gift, ["gift", "natural-strength"], 0.9);
+  add(signals, "spirituality", "tzolkin", "galacticToneLesson", galacticTone.lesson, ["life-direction", "evolution-direction"], 0.9);
+  add(signals, "shadow", "tzolkin", "galacticToneShadow", galacticTone.shadow, ["growth-edge", "integration"], 0.9);
+  add(signals, "spirituality", "tzolkin", "castle", castle.name || castle.theme, ["soul-direction", "evolution-direction"], 0.85);
+  add(signals, "energy", "tzolkin", "color", tzolkin.color, ["energy-rhythm", "archetype"], 0.8);
+  add(signals, "relationships", "tzolkin", "relationshipStyle", tzolkin.relationshipStyle, ["relationship-pattern", "connection-style"], 0.85);
+  add(signals, "career", "tzolkin", "workStyle", tzolkin.workStyle, ["work-style", "value-creation"], 0.85);
+  add(signals, "spirituality", "tzolkin", "lifePurpose", tzolkin.lifePurpose, ["soul-direction", "life-direction"], 0.9);
+  add(signals, "shadow", "tzolkin", "challenges", tzolkin.challenges, ["growth-edge"], 0.85);
+
+  const weton = record(root.weton);
+  add(signals, "spirituality", "weton", "lifeMission", weton.lifeMission, ["life-direction", "ancestry-wisdom"], 0.85);
+  add(signals, "talents", "weton", "strengths", weton.strengths, ["natural-strength", "ancestry-wisdom"], 0.85);
+  add(signals, "shadow", "weton", "challenges", weton.challenges, ["growth-edge", "family-pattern"], 0.85);
+  add(signals, "energy", "weton", "watak", weton.watak, ["energy-rhythm", "archetype"], 0.8);
+  add(signals, "relationships", "weton", "relationshipStyle", weton.relationshipStyle, ["relationship-pattern", "connection-style"], 0.85);
+  add(signals, "career", "weton", "workStyle", weton.workStyle, ["work-style", "value-creation"], 0.85);
+  add(signals, "career", "weton", "moneyStyle", weton.moneyStyle, ["economic-pattern", "value-creation"], 0.85);
+
+  const bazi = record(root.bazi);
+  const dayMaster = record(bazi.dayMaster);
+  add(signals, "energy", "bazi", "dayMaster", dayMaster.element || dayMaster.pinyin || dayMaster.stem, ["energy-rhythm", "elements"], 0.9);
+  add(signals, "talents", "bazi", "strengths", bazi.strengths, ["natural-strength", "elements"], 0.85);
+  add(signals, "shadow", "bazi", "challenges", bazi.challenges, ["growth-edge", "elements"], 0.85);
+  add(signals, "career", "bazi", "careerStyle", bazi.careerStyle, ["career-direction", "work-style"], 0.85);
+  add(signals, "relationships", "bazi", "relationshipStyle", bazi.relationshipStyle, ["relationship-pattern", "connection-style"], 0.85);
+  add(signals, "career", "bazi", "moneyStyle", bazi.moneyStyle, ["economic-pattern", "value-creation"], 0.85);
+  add(signals, "spirituality", "bazi", "lifeMission", bazi.lifeMission, ["life-direction", "soul-direction"], 0.85);
+  add(signals, "talents", "bazi", "tenGods", bazi.tenGods, ["natural-strength", "work-style"], 0.85);
+  add(signals, "energy", "bazi", "fiveElements", bazi.fiveElements, ["elements", "energy-balance"], 0.85);
+
   const extensions = record(root.gaiaSources || root.profileSources || root.intelligence);
   for (const [source, value] of Object.entries(extensions)) {
     const sourceRecord = record(value);

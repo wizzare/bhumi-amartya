@@ -49,6 +49,25 @@ const activitiesCollection = (uid: string) =>
 
 const dailyStateDoc = (uid: string, date: string) =>
   doc(db, "dailyStates", uid, "entries", date);
+const localActivitiesKey = (uid: string) => `moana:activities:${uid}`;
+const localDailyStateKey = (uid: string, date: string) => `moana:dailyStates:${uid}:${date}`;
+
+function canUseLocalAuditStore(uid: string): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV !== "development") return false;
+  const auditUser = window.localStorage.getItem("bhumi_audit_user");
+  return Boolean(auditUser && uid === `${auditUser}_uid`);
+}
+
+function readLocalJson<T>(key: string, fallback: T): T {
+  try {
+    const stored = window.localStorage.getItem(key);
+    return stored ? JSON.parse(stored) as T : fallback;
+  } catch {
+    window.localStorage.removeItem(key);
+    return fallback;
+  }
+}
 
 export const activityRepository = {
   async completeActivity(params: {
@@ -59,6 +78,34 @@ export const activityRepository = {
     memoryHash?: string;
   }): Promise<void> {
     const { uid, date, activity, blueprintHash, memoryHash } = params;
+    if (canUseLocalAuditStore(uid)) {
+      const fullActivity: PhysicalActivity = {
+        ...activity,
+        uid,
+        localDate: date,
+        completedAt: new Date().toISOString(),
+        blueprintHash,
+        memoryHash,
+      };
+      const activities = readLocalJson<PhysicalActivity[]>(localActivitiesKey(uid), []);
+      window.localStorage.setItem(localActivitiesKey(uid), JSON.stringify([fullActivity, ...activities]));
+
+      const previousState = readLocalJson<Record<string, unknown>>(localDailyStateKey(uid, date), {});
+      const completedActivityIds = Array.isArray(previousState.completedActivityIds)
+        ? [...previousState.completedActivityIds, fullActivity.id]
+        : [fullActivity.id];
+      window.localStorage.setItem(localDailyStateKey(uid, date), JSON.stringify({
+        ...previousState,
+        uid,
+        date,
+        completedActivityIds,
+        yogaDone: activity.category === "yoga" ? true : previousState.yogaDone,
+        workoutDone: activity.category === "workout" ? true : previousState.workoutDone,
+        updatedAt: new Date().toISOString(),
+      }));
+      return;
+    }
+
     assertAuthenticatedOwner(uid);
 
     const fullActivity: PhysicalActivity = {
@@ -83,6 +130,8 @@ export const activityRepository = {
     // 2. Update Daily State (Build 31.35 Hardening)
     // LIANA V3: Update yogaDone/workoutDone flags for progress tracking
     const updateData: any = {
+      uid,
+      date,
       completedActivityIds: arrayUnion(fullActivity.id),
       updatedAt: new Date().toISOString(),
     };
@@ -100,6 +149,10 @@ export const activityRepository = {
   },
 
   async getRecentActivities(uid: string, limitCount = 10): Promise<PhysicalActivity[]> {
+    if (canUseLocalAuditStore(uid)) {
+      return readLocalJson<PhysicalActivity[]>(localActivitiesKey(uid), []).slice(0, limitCount);
+    }
+
     assertAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),
@@ -114,6 +167,11 @@ export const activityRepository = {
   },
 
   async getActivitiesByCategory(uid: string, category: PhysicalActivityCategory): Promise<PhysicalActivity[]> {
+    if (canUseLocalAuditStore(uid)) {
+      return readLocalJson<PhysicalActivity[]>(localActivitiesKey(uid), [])
+        .filter((activity) => activity.category === category);
+    }
+
     assertAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),
@@ -128,6 +186,11 @@ export const activityRepository = {
   },
 
   async getActivitiesByDateRange(uid: string, startDate: string, endDate: string): Promise<PhysicalActivity[]> {
+    if (canUseLocalAuditStore(uid)) {
+      return readLocalJson<PhysicalActivity[]>(localActivitiesKey(uid), [])
+        .filter((activity) => activity.localDate >= startDate && activity.localDate <= endDate);
+    }
+
     assertAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),

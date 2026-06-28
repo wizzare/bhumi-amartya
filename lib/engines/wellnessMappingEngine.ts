@@ -120,8 +120,8 @@ export function calculateWellnessMapping(
   if (needs.has("PEACE")) boosters.push("Need: PEACE");
   if (needs.has("CLARITY")) boosters.push("Need: CLARITY");
   if (needs.has("HEALING")) boosters.push("Need: HEALING");
-  if (lowEnergyCount >= 2) boosters.push("Low Energy Pattern");
-  if (lowSleepCount >= 2) boosters.push("Low Sleep Pattern");
+  if (lowEnergyCount >= 1) boosters.push("Low Energy Pattern");
+  if (lowSleepCount >= 1) boosters.push("Low Sleep Pattern");
 
   // 3. Raw Theme Scoring (0-100)
   const scores: Record<WellnessCategory, number> = {
@@ -159,7 +159,7 @@ export function calculateWellnessMapping(
   if (needs.has("HEALING")) scores.LOSS_AND_GRIEF += 15;
   if (needs.has("CLARITY")) scores.LIFE_TRANSITION += 15;
   if (needs.has("PEACE")) scores.ANXIETY += 15;
-  if (lowEnergyCount >= 2) scores.BURNOUT += 15;
+  if (lowEnergyCount >= 1) scores.BURNOUT += 15;
 
   // 5. Conflict Resolution & Filters
   // Awakening Filter: Transition must be significant

@@ -20,7 +20,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
-import type { TzolkinBlueprint } from "@/lib/tzolkin/types";
+import type { GalacticTone, SolarSeal, TzolkinBlueprint } from "@/lib/tzolkin/types";
 
 type DisplayCard = {
   title: string;
@@ -30,6 +30,16 @@ type DisplayCard = {
   color: string;
   background: string;
 };
+
+const LEGACY_FORMAL_PRONOUN_PATTERN = /(^|[^A-Za-z])[Aa]nda([^A-Za-z]|$)/;
+
+function hasLegacyTzolkinSummary(tzolkin: TzolkinBlueprint | null | undefined): boolean {
+  return Boolean(tzolkin?.summary?.some((paragraph) =>
+    LEGACY_FORMAL_PRONOUN_PATTERN.test(paragraph)
+    || /menuju\s+menuju/i.test(paragraph)
+    || /\.\./.test(paragraph)
+  ));
+}
 
 export default function TzolkinPage() {
   const [tzolkin, setTzolkin] = useState<TzolkinBlueprint | null>(null);
@@ -45,13 +55,16 @@ export default function TzolkinPage() {
         if (!storedBlueprint) return;
 
         const blueprint = storedBlueprint as unknown as Blueprint;
-        if (blueprint.tzolkin && blueprint.tzolkin.oracle) {
+        const birthDate = blueprint.input?.birthDate || profile?.birthDate;
+        if (blueprint.tzolkin && blueprint.tzolkin.oracle && !hasLegacyTzolkinSummary(blueprint.tzolkin)) {
           setTzolkin(blueprint.tzolkin);
           return;
         }
 
-        const birthDate = blueprint.input?.birthDate || profile?.birthDate;
-        if (!birthDate) return;
+        if (!birthDate) {
+          setTzolkin(blueprint.tzolkin ?? null);
+          return;
+        }
 
         const calculated = calculateTzolkin({ birthDate });
         const updatedBlueprint = {
@@ -303,7 +316,7 @@ function ToneDotsBars({ toneName }: { toneName: string }) {
   );
 }
 
-function SealNode({ seal, tone, label }: { seal: any; tone?: any; label?: string }) {
+function SealNode({ seal, tone, label }: { seal: SolarSeal; tone?: GalacticTone; label?: string }) {
   return (
     <div className="flex flex-col items-center justify-center relative">
       {tone && (

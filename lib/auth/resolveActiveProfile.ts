@@ -17,11 +17,23 @@ type AuthLike = {
 } | null | undefined;
 
 export async function resolveActiveProfile(auth?: AuthLike): Promise<ResolvedProfileResult> {
+  const authUid = (auth?.user as { uid?: string } | undefined)?.uid;
+  if (!authUid && typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+    const auditUser = window.localStorage.getItem("bhumi_audit_user");
+    if (auditUser) {
+      const { getMockProfile } = await import("@/lib/dailyGuidance/auditMocks");
+      return {
+        profile: getMockProfile(auditUser) as unknown as Record<string, unknown>,
+        isLoading: false,
+        isMissing: false,
+        source: "localStorage",
+      };
+    }
+  }
+
   if (auth?.authLoading || auth?.profileLoading || !auth?.authStateResolved) {
     return { profile: null, isLoading: true, isMissing: false, source: "none" };
   }
-
-  const authUid = (auth?.user as { uid?: string } | undefined)?.uid;
 
   if (auth?.userProfile) {
     const profile = auth.userProfile as unknown as Record<string, unknown>;

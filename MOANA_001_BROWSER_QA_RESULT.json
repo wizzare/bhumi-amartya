@@ -1,0 +1,48 @@
+{
+  "steps": [
+    {
+      "name": "journaling_saved",
+      "successText": true
+    },
+    {
+      "name": "after_journal_reload_storage",
+      "keys": [
+        "moana:dailyStates:moana007_uid:2026-06-28",
+        "moana:journeyDailyRecords:moana007_uid:2026-06-28"
+      ]
+    },
+    {
+      "name": "journey_after_journal",
+      "hasFallback": false,
+      "hasProgress": true,
+      "text": "Beranda\nProfil\nWellness\nJourney\nLainnya\nBHUMI AMARTYA\nJourney\n\nKisah pertumbuhan dan konsistensi dirimu.\n\nPROGRES HARI INI\n\n1/6 Aktivitas Selesai\n\n17%\nTahap Pertumbuhan\nFokus Saat Ini\nYang Meminta Perhatian\nMilestone Berikutnya\nRiwayat Aktivitas\nVERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD"
+    },
+    {
+      "name": "journey_stage_after_journal",
+      "hasFallback": false,
+      "text": "Beranda\nProfil\nWellness\nJourney\nLainnya\nKEMBALI KE JOURNEY\nAwal Kesadaran\n\nKamu sedang mulai mengenali pola kecil yang berulang. Fokusnya bukan menyelesaikan semua hal, tetapi membangun ritme yang bisa kamu jaga.\n\nEVOLUSI TEMA DIRIMU\n\nRepeating Patterns\n\nPelajaran saat ini: “Setiap langkah kecil yang kamu ambil sedang mendekatkanmu pada pemahaman diri.”\n\nUndangan berikutnya: Teruskan satu praktik kesadaran kecil hari ini.\n\nCATATAN PEMBELAJARAN BHUMI\n\nAkhir-akhir ini, Bhumi memperhatikan bahwa kamu cenderung lebih cepat menemukan kejernihan saat menuangkan isi kepala ke dalam tulisan dibanding meditasi hening. Selain itu, Kamu menikmati eksplorasi diri yang mendalam dan memberikan waktu lebih panjang untuk meresapi setiap panduan.\n\nINSIGHT PERTUMBUHAN\n\nTahap ini mencerminkan sejauh mana praktik harianmu telah terintegrasi dalam kesadaranmu. Setiap langkah kecil adalah bagian dari fondasi "
+    },
+    {
+      "name": "journey_after_yoga",
+      "hasFallback": false,
+      "hasProgress": true,
+      "text": "Beranda\nProfil\nWellness\nJourney\nLainnya\nBHUMI AMARTYA\nJourney\n\nKisah pertumbuhan dan konsistensi dirimu.\n\nPROGRES HARI INI\n\n2/6 Aktivitas Selesai\n\n33%\nTahap Pertumbuhan\nFokus Saat Ini\nYang Meminta Perhatian\nMilestone Berikutnya\nRiwayat Aktivitas\nVERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD"
+    },
+    {
+      "name": "journey_stage_after_yoga",
+      "hasFallback": false,
+      "text": "Beranda\nProfil\nWellness\nJourney\nLainnya\nKEMBALI KE JOURNEY\nAwal Kesadaran\n\nKamu sedang mulai mengenali pola kecil yang berulang. Fokusnya bukan menyelesaikan semua hal, tetapi membangun ritme yang bisa kamu jaga.\n\nEVOLUSI TEMA DIRIMU\n\nRepeating Patterns\n↓\nyoga learning\n\nPelajaran saat ini: “Setiap langkah kecil yang kamu ambil sedang mendekatkanmu pada pemahaman diri.”\n\nUndangan berikutnya: Teruskan satu praktik kesadaran kecil hari ini.\n\nCATATAN PEMBELAJARAN BHUMI\n\nAkhir-akhir ini, Bhumi memperhatikan bahwa kamu menyeimbangkan pemrosesan fisik dan mental dengan baik sepanjang perjalananmu. Selain itu, Kamu menikmati eksplorasi diri yang mendalam dan memberikan waktu lebih panjang untuk meresapi setiap panduan.\n\nINSIGHT PERTUMBUHAN\n\nTahap ini mencerminkan sejauh mana praktik harianmu telah terintegrasi dalam kesadaranmu. Setiap langkah kecil adalah bagian dari fondasi yang lebih besar.\n\n"
+    }
+  ],
+  "finalStorageKeys": [
+    "moana:dailyStates:moana007_uid:2026-06-28",
+    "moana:journeyDailyRecords:moana007_uid:2026-06-28",
+    "moana:activities:moana007_uid"
+  ],
+  "finalStorage": {
+    "moana:dailyStates:moana007_uid:2026-06-28": "{\"uid\":\"moana007_uid\",\"date\":\"2026-06-28\",\"updatedAt\":\"2026-06-28T07:16:04.646Z\",\"wellnessSnapshot\":{\"metrics\":{\"sleep\":5,\"energy\":5,\"emotion\":5,\"focus\":5,\"social\":5},\"needs\":[],\"checkInCompleted\":true,\"updatedAt\":\"2026-06-28T07:15:44.365Z\"},\"journalingDone\":true,\"emotionalWord\":\"😌 Lebih tenang\",\"completedActivityIds\":[\"yoga-grounding-earth-1782630964645\"],\"yogaDone\":true}",
+    "moana:journeyDailyRecords:moana007_uid:2026-06-28": "{\"id\":\"moana007_uid_2026-06-28\",\"userId\":\"moana007_uid\",\"date\":\"2026-06-28\",\"appDate\":\"2026-06-28\",\"dayOfWeek\":\"Minggu\",\"createdAt\":\"2026-06-28T07:15:49.557Z\",\"updatedAt\":\"2026-06-28T07:16:04.715Z\",\"dominantIssue\":\"general_innerwork\",\"issueCategory\":\"yoga learning\",\"navigatorMode\":\"REFLECTION\",\"wellnessState\":{},\"dailyScanCompleted\":false,\"dailyScanSummary\":\"\",\"catatanSummary\":\"\",\"catatanMainDirection\":\"\",\"catatanChallenge\":\"\",\"catatanOpportunity\":\"\",\"astroSummary\":\"\",\"astroEvents\":[],\"profileSignals\":[],\"innerworkRecommendation\":{\"practiceId\":\"grounding-earth\",\"practiceType\":\"yoga\",\"practiceTitle\":\"Earth Connection Yoga\",\"durationMinutes\":12,\"intensity\":\"guided\",\"reason\":\"Praktik Zone B untuk tema yoga learning.\",\"sourceSignals\":[\"zoneA:general_innerwork\",\"zoneB:yoga\",\"sourceTheme:yoga learning\"]},\"innerworkCompletion\":{\"completed\":true,\"skipped\":false,\"completedAt\":\"2026-06-28T07:16:04.714Z\",\"actualPracticeId\":\"grounding-earth\",\"actualPracticeType\":\"yoga\",\"actualDuration\":12,\"reflectionResult\":\"Belum Yakin\",\"practiceHelped\":false,\"userFelt\":\"Belum Yakin\"},\"sourceConfidence\":1,\"practiceResults\":[{\"zone\":\"B\",\"issue\":\"general_innerwork\",\"issueCategory\":\"Repeating Patterns\",\"practiceId\":\"journaling-repeating-patterns\",\"practiceCategory\":\"journaling\",\"practiceTitle\":\"Repeating Patterns\",\"durationMinutes\":10,\"completedAt\":\"2026-06-28T07:15:49.557Z\",\"reflectionResult\":\"😌 Lebih tenang\",\"reflectionResponse\":\"Dari tulisanmu, tema Repeating Patterns tampak sedang meminta ruang untuk didengar tanpa dihakimi. Sintesis hari ini mengarah pada honest emotional check-in, held together with discipline with kindness, sehingga kamu mungkin sedang belajar merespons hidup dari kesadaran, bukan dari kebiasaan lama. Tubuhmu memberi sinyal melalui tubuh lebih rileks, jadi proses ini layak didekati dengan lembut.\",\"practiceHelped\":true},{\"zone\":\"B\",\"issue\":\"general_innerwork\",\"issueCategory\":\"yoga learning\",\"practiceId\":\"grounding-earth\",\"practiceCategory\":\"yoga\",\"practiceTitle\":\"Earth Connection Yoga\",\"durationMinutes\":12,\"completedAt\":\"2026-06-28T07:16:04.714Z\",\"reflectionResult\":\"Belum Yakin\",\"practiceHelped\":false}]}",
+    "moana:activities:moana007_uid": "[{\"id\":\"yoga-grounding-earth-1782630964645\",\"category\":\"yoga\",\"contentId\":\"grounding-earth\",\"title\":\"Earth Connection Yoga\",\"duration\":12,\"sourceVersion\":\"1.0\",\"uid\":\"moana007_uid\",\"localDate\":\"2026-06-28\",\"completedAt\":\"2026-06-28T07:16:04.646Z\"}]"
+  },
+  "pass": true
+}

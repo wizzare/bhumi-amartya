@@ -63,12 +63,12 @@ const planetaryInfluences: PlanetaryInfluence[] = [
     emoji: "🔄💫",
     intensity: "medium",
     description:
-      "Review terhadap values dan relationships. Apa benar-benar matters untuk Anda? Renegotiate boundaries.",
+      "Review terhadap values dan relationships. Apa yang benar-benar matters untuk kamu? Renegotiate boundaries.",
     recommendation:
       "Reflect pada relationships existing. Apa yang perlu healed? Renegotiate values dengan diri sendiri.",
     affectedAreas: ["relationships", "finances", "self-worth"],
     psychologicalImpact:
-      "Deeper understanding tentang apa yang Anda value dalam cinta dan resource. Authenticity matters.",
+      "Deeper understanding tentang apa yang kamu value dalam cinta dan resource. Authenticity matters.",
   },
   {
     planet: "Mars Direct",
@@ -77,7 +77,7 @@ const planetaryInfluences: PlanetaryInfluence[] = [
     description:
       "Aksi dan passion mengalir forward. Motivation tinggi. Good time untuk pursue goals dengan focus.",
     recommendation:
-      "Channel energi untuk action aligned dengan values. Pursue apa yang exciting untuk Anda.",
+      "Channel energi untuk action aligned dengan values. Pursue apa yang exciting untuk kamu.",
     affectedAreas: ["action", "passion", "sexuality", "achievement"],
     psychologicalImpact:
       "Will power meningkat. Confidence dalam taking action. Sexual energy vibrant.",
@@ -111,7 +111,7 @@ const planetaryInfluences: PlanetaryInfluence[] = [
     emoji: "⛓️",
     intensity: "high",
     description:
-      "Tes dan boundary-setting. Apa structure Anda yang perlu strengthening? Maturity dipinta.",
+      "Tes dan boundary-setting. Structure apa dalam dirimu yang perlu strengthening? Maturity dipinta.",
     recommendation:
       "Do the work. Strengthen foundations. Accept limitations sebagai teachers, bukan frustrations.",
     affectedAreas: ["structure", "responsibility", "maturity"],

@@ -1,16 +1,20 @@
 import { isPrivilegedUser } from '@/lib/auth/privilegedUser';
 import { UserProfile } from "../repositories/userRepository";
 import { Timestamp } from "firebase/firestore";
-import { getUserRole } from "@/lib/auth/getUserRole";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 
 export type PremiumFeature = "meditation" | "journaling" | "audio-healing";
 
+function hasActivePremiumMembership(profile: UserProfile): boolean {
+  if (profile.membershipType === "LIFETIME") return true;
+  if (profile.membershipType !== "PREMIUM") return false;
+  if (!profile.membershipExpiryDate) return false;
+  return Timestamp.now().seconds < profile.membershipExpiryDate.seconds;
+}
+
 export function isTrialActive(profile: UserProfile): boolean {
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
-  const role = getUserRole({ email: profile.email ?? null });
-  if (role.isAdmin || role.isDev) return true;
-  if (profile.plan === "developer" || profile.plan === "premium" || (profile.plan as unknown) === "pro") return true;
+  if (hasActivePremiumMembership(profile)) return true;
   if (!profile.trialEndsAt) return false;
 
   const now = Timestamp.now();
@@ -21,9 +25,7 @@ export function canAccessPremiumFeature(profile: UserProfile | null, feature: Pr
   void feature;
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (!profile) return false;
-  const role = getUserRole({ email: profile.email ?? null });
-  if (role.isAdmin || role.isDev) return true;
-  if (profile.plan === "developer" || profile.plan === "premium" || (profile.plan as unknown) === "pro") return true;
+  if (hasActivePremiumMembership(profile)) return true;
   
   return isTrialActive(profile);
 }
@@ -47,7 +49,7 @@ export function getUserAccess(profile: UserProfile | null) {
   }
 
   const active = isTrialActive(profile);
-  const isPremium = profile.plan === "premium" || profile.plan === "developer";
+  const isPremium = hasActivePremiumMembership(profile);
 
   return {
     plan: profile.plan,

@@ -1,6 +1,6 @@
 # Play Store Submission Checklist - Bhumi Amartya (Updated)
 
-**Date:** 2026-06-06  
+**Date:** 2026-06-26  
 **Status:** ✅ **READY FOR SUBMISSION**
 
 ---
@@ -38,7 +38,7 @@
 |------|-------|--------|
 | **App Name** | Bhumi Amartya | ✅ PASS |
 | **Package Name** | `com.bhumiamartya.app` | ✅ PASS |
-| **Version** | `1.0` (Code 1) | ✅ PASS |
+| **Version** | `3.1.12-RC` (Code 53) | ✅ PASS |
 | **Privacy Policy URL** | `https://wedhaswara.my.id/privacy-policy-bhumi-amartya` | ✅ PASS |
 | **Contact Email** | `hello@wedhaswara.my.id` | ✅ PASS |
 
@@ -46,5 +46,5 @@
 
 ## Build Result
 - **Next.js Build:** Success
-- **Capacitor Sync:** Success
+- **Capacitor Android Project:** Present
 - **Environment:** Production Preview Ready

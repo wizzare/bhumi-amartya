@@ -10,11 +10,54 @@ import type {
   CanonicalTimingDomain,
   CanonicalHealthDomain,
   CanonicalSpiritualityDomain,
+  CanonicalSoulIdentityDomain,
 } from "@/lib/types/canonical";
 
 export class CanonicalTranslatorService {
   private static text(value: unknown): string {
     return typeof value === "string" ? value : "";
+  }
+
+  private static list(value: unknown): string[] {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+      return value
+        .map((entry) => {
+          if (typeof entry === "string" || typeof entry === "number") return String(entry);
+          if (entry && typeof entry === "object") {
+            const record = entry as Record<string, unknown>;
+            return this.text(record.name)
+              || this.text(record.title)
+              || this.text(record.evidence)
+              || this.text(record.tenGod)
+              || this.text(record.display)
+              || this.text(record.id);
+          }
+          return "";
+        })
+        .filter(Boolean);
+    }
+    if (typeof value === "string" || typeof value === "number") return [String(value)];
+    return [];
+  }
+
+  private static purusharthaFocus(value: unknown): string {
+    if (!value || typeof value !== "object") return "";
+    const focus = value as { rank?: number; score?: number; dominantSigns?: string[] };
+    const signs = Array.isArray(focus.dominantSigns) ? focus.dominantSigns.filter(Boolean).join(", ") : "";
+    const parts = [
+      typeof focus.rank === "number" ? `rank ${focus.rank}` : "",
+      typeof focus.score === "number" ? `score ${focus.score}` : "",
+      signs ? `dominant signs ${signs}` : "",
+    ].filter(Boolean);
+    return parts.join("; ");
+  }
+
+  private static lilithText(value: unknown): string {
+    if (!value || typeof value !== "object") return "";
+    const lilith = value as { sign?: string; degree?: number; house?: number };
+    if (!lilith.sign) return "";
+    return [lilith.sign, typeof lilith.house === "number" ? `rumah ${lilith.house}` : ""].filter(Boolean).join(", ");
   }
 
   public static translate(blueprint: Blueprint): CanonicalIdentity {
@@ -28,6 +71,7 @@ export class CanonicalTranslatorService {
       timing: this.buildTiming(blueprint),
       health: this.buildHealth(blueprint),
       spirituality: this.buildSpirituality(blueprint),
+      soulIdentity: this.buildSoulIdentity(blueprint),
     };
   }
 
@@ -69,6 +113,15 @@ export class CanonicalTranslatorService {
   }
 
   private static buildShadow(blueprint: Blueprint): CanonicalShadowDomain {
+    const natalPatterns = (blueprint.astrology?.patterns || [])
+      .map((pattern) => [
+        pattern.type,
+        pattern.sign,
+        pattern.house ? `house ${pattern.house}` : "",
+        pattern.planets?.join("-"),
+      ].filter(Boolean).join(" "))
+      .filter(Boolean);
+
     return {
       karmicTail: blueprint.destinyMatrix?.karmicTail || [],
       chiron: blueprint.astrology?.chiron || "Unknown",
@@ -76,9 +129,12 @@ export class CanonicalTranslatorService {
       emotionalTriggers: {
         mars: blueprint.astrology?.planets?.Mars?.sign || "",
         pluto: blueprint.astrology?.planets?.Pluto?.sign || "",
-        aspects: (blueprint.astrology?.aspects || [])
-          .filter((aspect) => ["Mars", "Pluto"].includes(aspect.p1) || ["Mars", "Pluto"].includes(aspect.p2))
-          .map((aspect) => `${aspect.p1} ${aspect.type} ${aspect.p2}`),
+        aspects: [
+          ...(blueprint.astrology?.aspects || [])
+            .filter((aspect) => ["Mars", "Pluto"].includes(aspect.p1) || ["Mars", "Pluto"].includes(aspect.p2))
+            .map((aspect) => `${aspect.p1} ${aspect.type} ${aspect.p2}`),
+          ...natalPatterns,
+        ],
         chartHeart: blueprint.destinyMatrix?.chartHeart || {},
       },
       ancestralLegacy: {
@@ -113,7 +169,7 @@ export class CanonicalTranslatorService {
 
   private static buildTalents(blueprint: Blueprint): CanonicalTalentsDomain {
     return {
-      matrixTalents: blueprint.destinyMatrix?.talentsFather || [],
+      matrixTalents: blueprint.destinyMatrix?.talentsGreat || [],
       hdType: blueprint.humanDesign?.type || "Unknown",
       potentialTalents: {
         tenGods: (blueprint.bazi?.tenGods || []).map((entry) => entry.tenGod),
@@ -196,6 +252,100 @@ export class CanonicalTranslatorService {
         spleenDefined: centers?.spleen === true,
         ajnaDefined: centers?.ajna === true,
         solarPlexusDefined: centers?.solarPlexus === true,
+      },
+    };
+  }
+
+  private static buildSoulIdentity(blueprint: Blueprint): CanonicalSoulIdentityDomain {
+    const dm = blueprint.destinyMatrix as Blueprint["destinyMatrix"] & {
+      soulMission?: string;
+      greatestPotential?: string;
+      innerChild?: string;
+      soulSignature?: string;
+    };
+    const hd = blueprint.humanDesign as unknown as Record<string, unknown>;
+    const centers = blueprint.humanDesign?.centers || {};
+    const openCenters = Object.entries(centers)
+      .filter(([, defined]) => defined === false)
+      .map(([center]) => center);
+    const supportiveAspects = (blueprint.astrology?.aspects || [])
+      .filter((aspect) => aspect.type === "Trine" || aspect.type === "Sextile")
+      .map((aspect) => `${aspect.p1} ${aspect.type} ${aspect.p2}`);
+    const natalNodes = [
+      blueprint.astrology?.northNode || blueprint.astrology?.planets?.NorthNode?.sign || "",
+      blueprint.astrology?.southNode || blueprint.astrology?.planets?.SouthNode?.sign || "",
+    ].filter(Boolean);
+
+    return {
+      mission: {
+        lifePath: blueprint.numerology?.number || blueprint.lifePath?.number || 0,
+        lifePathRole: blueprint.lifePath?.role || blueprint.numerology?.role || "",
+        destinyPoint: dm?.destinyPoint || 0,
+        destinySoulMission: this.text(dm?.soulMission),
+        tzolkinLifePurpose: this.text(blueprint.tzolkin?.lifePurpose),
+        vedicDharmaFocus: this.purusharthaFocus(blueprint.vedic?.dharmaFocus),
+        vedicMokshaFocus: this.purusharthaFocus(blueprint.vedic?.mokshaFocus),
+        wetonLifeMission: this.text(blueprint.weton?.lifeMission),
+        baziLifeMission: this.text(blueprint.bazi?.lifeMission),
+      },
+      gifts: {
+        lifePathStrengths: blueprint.lifePath?.positiveTraits || [],
+        destinyTalents: blueprint.destinyMatrix?.talentsFather || [],
+        destinyGreatTalents: blueprint.destinyMatrix?.talentsGreat || [],
+        tzolkinGifts: [
+          blueprint.tzolkin?.solarSeal?.gift,
+          blueprint.tzolkin?.galacticTone?.gift,
+          blueprint.tzolkin?.color ? `Warna ${blueprint.tzolkin.color}` : undefined,
+        ].filter((item): item is string => Boolean(item)),
+        vedicStrengths: blueprint.vedic?.strengths || [],
+        vedicYogas: (blueprint.vedic?.majorYogas || []).map((yoga) => yoga.name),
+        humanDesignChannels: this.list(hd.channels || hd.gates),
+        natalSupportiveAspects: supportiveAspects,
+        wetonStrengths: blueprint.weton?.strengths || [],
+        baziStrengths: blueprint.bazi?.strengths || [],
+      },
+      lessons: {
+        destinyKarmicTail: blueprint.destinyMatrix?.karmicTail || [],
+        tzolkinLessons: [
+          blueprint.tzolkin?.galacticTone?.lesson,
+          blueprint.tzolkin?.castle?.spiritualLesson,
+          blueprint.tzolkin?.growthStyle,
+        ].filter((item): item is string => Boolean(item)),
+        vedicChallenges: blueprint.vedic?.challenges || [],
+        natalNodes,
+        natalChiron: blueprint.astrology?.chiron || blueprint.astrology?.planets?.Chiron?.sign || "",
+        humanDesignNotSelf: this.text(hd.notSelfTheme || hd.notSelf),
+        openCenters,
+        wetonChallenges: blueprint.weton?.challenges || [],
+        baziChallenges: blueprint.bazi?.challenges || [],
+      },
+      shadow: {
+        destinyKarmicTail: blueprint.destinyMatrix?.karmicTail || [],
+        tzolkinShadow: [
+          blueprint.tzolkin?.solarSeal?.challenge,
+          blueprint.tzolkin?.galacticTone?.shadow,
+        ].filter((item): item is string => Boolean(item)),
+        natalChiron: blueprint.astrology?.chiron || blueprint.astrology?.planets?.Chiron?.sign || "",
+        natalLilith: this.lilithText(blueprint.astrology?.lilith),
+        natalPluto: blueprint.astrology?.planets?.Pluto?.sign || "",
+        natalSouthNode: blueprint.astrology?.southNode || blueprint.astrology?.planets?.SouthNode?.sign || "",
+        humanDesignNotSelf: this.text(hd.notSelfTheme || hd.notSelf),
+        openCenters,
+      },
+      archetype: {
+        lifePathRole: blueprint.lifePath?.role || blueprint.numerology?.role || "",
+        humanDesignType: blueprint.humanDesign?.type || "",
+        humanDesignProfile: blueprint.humanDesign?.profile || "",
+        destinyArcana: blueprint.destinyMatrix?.arcanaCenter || blueprint.destinyMatrix?.center || 0,
+        sunSign: blueprint.astrology?.sunSign || "",
+        moonSign: blueprint.astrology?.moonSign || "",
+        ascendant: blueprint.astrology?.risingSign || "",
+        tzolkinKinName: blueprint.tzolkin?.kinName || "",
+        tzolkinSeal: blueprint.tzolkin?.solarSeal?.name || "",
+        tzolkinTone: blueprint.tzolkin?.galacticTone?.name || "",
+        vedicNakshatra: blueprint.vedic?.nakshatra || "",
+        weton: blueprint.weton?.weton || "",
+        baziDayMaster: blueprint.bazi?.dayMaster?.element || "",
       },
     };
   }

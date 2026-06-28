@@ -45,4 +45,11 @@ export interface HumanMeaning {
     aura: HumanNarrative;
     clair: HumanNarrative;
   };
+  soulIdentity: {
+    mission: HumanNarrative;
+    gifts: HumanNarrative;
+    lessons: HumanNarrative;
+    shadow: HumanNarrative;
+    archetype: HumanNarrative;
+  };
 }

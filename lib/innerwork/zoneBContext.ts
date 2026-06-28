@@ -163,6 +163,7 @@ export async function saveZoneBJourneyContext(params: {
   date: string;
   context: ZoneBContext;
   completed?: boolean;
+  source?: string;
   reflectionResult?: string;
   reflectionResponse?: string;
 }): Promise<void> {
@@ -206,6 +207,7 @@ export async function saveZoneBJourneyContext(params: {
     practiceTitle: context.title,
     durationMinutes: context.durationMinutes,
     completedAt: completion.completedAt ?? new Date().toISOString(),
+    source: params.source,
     reflectionResult: params.reflectionResult,
     reflectionResponse: params.reflectionResponse,
     practiceHelped: completion.practiceHelped,

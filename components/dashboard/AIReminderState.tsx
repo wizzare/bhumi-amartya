@@ -17,11 +17,11 @@ export function AIReminderState({
 
   if (!groundingDone && moodLevel < 7) {
     reminderMessage =
-      "🌿 Hari ini kamu belum grounding ya. Ambil 5 menit untuk menghubungkan diri dengan bumi.";
+      "🌿 Kamu belum sempat grounding hari ini. Ambil 5 menit untuk kembali ke tubuh dan napasmu.";
     showReminder = true;
   } else if (!journalingDone && moodLevel < 6) {
     reminderMessage =
-      "📝 Journaling bisa membantu mengeluarkan apa yang ada di hati. Yuk mulai sekarang.";
+      "📝 Kalau hati terasa penuh, journaling bisa jadi tempat menaruhnya pelan-pelan.";
     showReminder = true;
   }
 

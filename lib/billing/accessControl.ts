@@ -1,4 +1,3 @@
-import { getUserRole } from "@/lib/auth/getUserRole";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 
 export type TrialPlan = "trial" | "pro" | "expired";
@@ -11,7 +10,7 @@ export type TrialProfile = {
   createdAt?: string | null;
   isPro?: boolean | null;
   membershipType?: string | null;
-  membershipExpiryDate?: string | null;
+  membershipExpiryDate?: unknown;
 };
 
 export type FeatureKey =
@@ -24,14 +23,25 @@ export type FeatureKey =
 
 const TRIAL_DAYS = 3;
 
-function toDate(value?: string | null): Date | null {
+function toDate(value?: unknown): Date | null {
   if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") return value.toDate();
+  if (typeof value === "object" && "seconds" in value && typeof value.seconds === "number") return new Date(value.seconds * 1000);
+  if (typeof value !== "string" && typeof value !== "number") return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function hasActivePremiumMembership(profile: TrialProfile, now = new Date()): boolean {
+  if (profile.membershipType === "LIFETIME") return true;
+  if (profile.membershipType !== "PREMIUM") return false;
+  const expiry = toDate(profile.membershipExpiryDate);
+  return Boolean(expiry && now.getTime() <= expiry.getTime());
+}
+
 export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
-  if (profile.membershipType === "PENJAGA_BHUMI_INTI" && profile.membershipExpiryDate) {
+  if (profile.membershipType === "PREMIUM" && profile.membershipExpiryDate) {
     const start = toDate(profile.createdAt) || now;
     const end = toDate(profile.membershipExpiryDate) || now;
     return { start, end };
@@ -47,16 +57,7 @@ export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
 
 export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean {
   if (isGaiaAccessOverrideActive(now)) return false;
-  const role = getUserRole({ email: profile.email ?? null });
-  if (role.isAdmin || role.isDev) return false;
-
-  // Penjaga Bhumi Inti check
-  if (profile.membershipType === "PENJAGA_BHUMI_INTI" && profile.membershipExpiryDate) {
-    const expiry = toDate(profile.membershipExpiryDate);
-    if (expiry && now.getTime() <= expiry.getTime()) return false;
-  }
-
-  if (profile.isPro || String(profile.plan).toLowerCase() === "pro") return false;
+  if (hasActivePremiumMembership(profile, now)) return false;
   if (String(profile.plan).toLowerCase() === "expired") return true;
 
   const { end } = computeTrialWindow(profile, now);
@@ -65,10 +66,9 @@ export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean
 
 export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): number {
   if (isGaiaAccessOverrideActive(now)) return 999;
-  const role = getUserRole({ email: profile.email ?? null });
-  if (role.isAdmin || role.isDev || profile.isPro || String(profile.plan).toLowerCase() === "pro") return 999;
+  if (hasActivePremiumMembership(profile, now)) return 999;
 
-  if (profile.membershipType === "PENJAGA_BHUMI_INTI" && profile.membershipExpiryDate) {
+  if (profile.membershipType === "PREMIUM" && profile.membershipExpiryDate) {
     const expiry = toDate(profile.membershipExpiryDate);
     if (expiry) {
       const diff = expiry.getTime() - now.getTime();
@@ -84,8 +84,6 @@ export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): numbe
 export function hasFeatureAccess(profile: TrialProfile, feature: FeatureKey, now = new Date()): boolean {
   void feature;
   if (isGaiaAccessOverrideActive(now)) return true;
-  const role = getUserRole({ email: profile.email ?? null });
-  if (role.isAdmin || role.isDev) return true;
-  if (profile.isPro || String(profile.plan).toLowerCase() === "pro") return true;
+  if (hasActivePremiumMembership(profile, now)) return true;
   return !isTrialExpired(profile, now);
 }

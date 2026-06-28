@@ -17,6 +17,24 @@ const CATEGORY_SPECIFIC_FALLBACK_INSIGHTS: Record<string, string> = {
 
 const TECHNICAL_SIGNAL = /\b(?:money line|love line|karmic tail)\b/i;
 const RAW_NUMBER_PATTERN = /(?:\b(?:money line|love line|karmic tail)\b\s*[:\-]?\s*)?(?:\d+\s*[,/\-]\s*){1,}\d+/i;
+const RAW_RUNTIME_SIGNAL = /\b(?:rank|score|dominant signs|open-meteo|usgs|bigdatacloud|gemini|us_aqi|cautionflags|memoryhash)\b|misi jiwamu|hadiah alami|pelajaran utamamu/i;
+
+function cleanupUserFacingSurface(value: string): string {
+  let hariIniCount = 0;
+  return value
+    .replace(/[“”"]/g, "")
+    .replace(/([.!?]){2,}/g, "$1")
+    .replace(/\s+([,.!?;:])/g, "$1")
+    .replace(/\bhari ini\b/gi, (match) => {
+      hariIniCount += 1;
+      return hariIniCount <= 2 ? match : "sekarang";
+    })
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 export function normalizeUserFacingText(value: string | undefined): string | undefined {
   if (!value) return value;
@@ -35,12 +53,12 @@ export function normalizeUserFacingText(value: string | undefined): string | und
 
   const safeLines = normalized
     .split(/\r?\n/)
-    .filter((line) => !TECHNICAL_SIGNAL.test(line) && !RAW_NUMBER_PATTERN.test(line))
+    .filter((line) => !TECHNICAL_SIGNAL.test(line) && !RAW_NUMBER_PATTERN.test(line) && !RAW_RUNTIME_SIGNAL.test(line))
     .join("\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  return safeLines || undefined;
+  return safeLines ? cleanupUserFacingSurface(safeLines) : undefined;
 }
 
 const ADVICE_THEMES = [
@@ -186,7 +204,7 @@ const BLACKLIST_PATTERNS = [
   { key: "beri_ruang", regex: /beri ruang|memberi ruang/gi, replacement: "sediakan celah" },
   { key: "pelan_pelan", regex: /pelan-pelan|perlahan-lahan/gi, replacement: "tanpa tergesa" },
   { key: "jaga_energi", regex: /(?:jaga|menjaga) energi|batas energi/gi, replacement: "hargai tenagamu" },
-  { key: "tarik_napas", regex: /tarik napas|tarik nafas/gi, replacement: "kembali ke tubuh" }
+  { key: "tarik_napas", regex: /tarik napas|tarik nafas|bernapaslah|bernafaslah/gi, replacement: "kembali ke tubuh" }
 ];
 
 export function deconflictBlacklistPhrases(text: string | undefined, seenCounts: Record<string, number>): string | undefined {
@@ -195,14 +213,12 @@ export function deconflictBlacklistPhrases(text: string | undefined, seenCounts:
   for (const pattern of BLACKLIST_PATTERNS) {
     pattern.regex.lastIndex = 0;
     if (pattern.regex.test(result)) {
-      if ((seenCounts[pattern.key] || 0) > 0) {
-        pattern.regex.lastIndex = 0;
-        result = result.replace(pattern.regex, pattern.replacement);
-      }
+      pattern.regex.lastIndex = 0;
+      result = result.replace(pattern.regex, pattern.replacement);
       seenCounts[pattern.key] = (seenCounts[pattern.key] || 0) + 1;
     }
   }
-  return result;
+  return cleanupUserFacingSurface(result);
 }
 
 function sanitizeAdvice(value: string | undefined, categoryKey: string, guidance: DailyGuidance, forceFallback: boolean): string {
@@ -250,16 +266,16 @@ function getIndonesianDayName(dateString?: string): string {
 }
 
 const COMPANION_SENTENCES = [
-  "Besok kita melangkah lagi, satu langkah kecil pada satu waktu.",
-  "Tidak semua hal harus selesai hari ini.",
+  "Besok kita lanjut dari titik yang sama.",
+  "Tidak semua pertanyaan perlu dijawab sekarang.",
   "Terima kasih sudah hadir untuk dirimu sendiri hari ini.",
   "Ambil jeda sejenak sebelum malam benar-benar larut.",
-  "Aku menemanimu berjalan di hari yang hening ini.",
+  "Aku tetap di sini menemanimu.",
   "Biarkan sisanya selesai dengan sendirinya.",
   "Kamu sudah berjalan cukup jauh hari ini, beristirahatlah.",
   "Simpan beberapa pertanyaan untuk esok hari.",
-  "Hari ini cukup, dan itu sudah lebih dari cukup.",
-  "Bernapaslah perlahan, Aku ada di sini menemanimu."
+  "Apa yang belum selesai bisa kita temui lagi besok.",
+  "Kamu boleh menutup hari tanpa menghakimi diri."
 ];
 
 export function standardizeSoulReflection(
@@ -283,13 +299,13 @@ export function standardizeSoulReflection(
 
   const seed = `${guidance.uid}|${dateKey}`;
   const openings = [
-    `Hai ${firstName}, bagaimana keadaanmu di hari ${dayName} ini?`,
+    `Hai ${firstName}, selamat hari ${dayName}.`,
     `Hai ${firstName}, selamat hari ${dayName}. Mari sejenak mengamati apa yang sedang bergerak di dalam dirimu.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Ada ruang kecil di sini untukmu bersandar sebentar.`,
+    `Hai ${firstName}, selamat hari ${dayName}. Aku menemanimu melihat apa yang sedang terasa dekat.`,
     `Hai ${firstName}, selamat hari ${dayName}. Aku penasaran bagaimana rasa batinmu berjalan hari ini.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Mari tarik napas sejenak sebelum kita melangkah hari ini.`,
-    `Hai ${firstName}, bagaimana perasaanmu menyapa hari ${dayName} ini?`,
-    `Hai ${firstName}, hari ini ada sesuatu yang ingin Aku bagikan padamu di hari ${dayName} ini.`,
+    `Hai ${firstName}, selamat hari ${dayName}. Mari duduk sebentar bersama keadaanmu.`,
+    `Hai ${firstName}, selamat hari ${dayName}. Apa yang paling terasa hidup di dalam dirimu sekarang?`,
+    `Hai ${firstName}, selamat hari ${dayName}. Ada satu hal lembut yang ingin Bhumi pantulkan untukmu.`,
   ];
   const openingIndex = seededIndex(seed, openings.length);
   const expectedOpening = openings[openingIndex];
@@ -323,7 +339,7 @@ export function standardizeSoulReflection(
   const companionIndex = seededIndex(seed, COMPANION_SENTENCES.length);
   const companionSentence = COMPANION_SENTENCES[companionIndex];
 
-  return `${expectedOpening} ${cleanBody}\n\nPeluk hangat dari Bhumi.\n\n${companionSentence}`;
+  return cleanupUserFacingSurface(`${expectedOpening} ${cleanBody}\n\nPeluk hangat dari Bhumi.\n\n${companionSentence}`);
 }
 
 export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: any): DailyGuidance {
@@ -369,7 +385,7 @@ export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: a
     astrologyToday: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.astrologyToday) || "Amati ritmemu hari ini dengan lembut.", seenCounts) || "",
     previousProgressSummary: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.previousProgressSummary), seenCounts) || "",
     journalPrompt: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.journalPrompt) || "Apa satu hal yang paling ingin kamu rawat hari ini?", seenCounts) || "",
-    meditationSuggestion: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.meditationSuggestion) || "Bernapas perlahan selama beberapa menit.", seenCounts) || "",
+    meditationSuggestion: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.meditationSuggestion) || "Duduk tenang selama beberapa menit.", seenCounts) || "",
     audioHealingSuggestion: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.audioHealingSuggestion), seenCounts),
     emotionalFocus: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.emotionalFocus) || "Kehadiran", seenCounts) || "",
     spiritualFocus: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.spiritualFocus) || "Kejernihan", seenCounts) || "",

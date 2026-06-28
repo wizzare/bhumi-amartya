@@ -3,8 +3,8 @@ import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 import { generateBlueprintHash, generateMemoryHash, calculateSimilarity } from "@/lib/utils/hashing";
 
 export const DAILY_GUIDANCE_SCHEMA_VERSION = "dailyGuidance.v11";
-export const DAILY_GUIDANCE_PROMPT_VERSION = "BHUMI_DAILY_COMPANION_ENGINE_V11_WEEKDAY_MENTOR_REFRESH";
-export const DAILY_GUIDANCE_CONTENT_VERSION = "fanta-v2";
+export const DAILY_GUIDANCE_PROMPT_VERSION = "BHUMI_DAILY_COMPANION_ENGINE_V12_GROUNDED_CONTEXT";
+export const DAILY_GUIDANCE_CONTENT_VERSION = "fanta-v4-grounded";
 
 export function getDailyGuidanceStaleReason(
   guidance: DailyGuidance | null,
@@ -34,6 +34,9 @@ export function getDailyGuidanceStaleReason(
   // Build 31.3: Quota-safe hash validation
   if (expected.blueprint) {
     const bpHash = generateBlueprintHash(expected.blueprint);
+    if (!guidance.blueprintHash) {
+      return "missing_blueprint_hash";
+    }
     if (guidance.blueprintHash && guidance.blueprintHash !== bpHash) {
       return "blueprint_hash_mismatch";
     }
@@ -41,6 +44,9 @@ export function getDailyGuidanceStaleReason(
 
   if (expected.context) {
     const memHash = generateMemoryHash(expected.context);
+    if (!guidance.memoryHash) {
+      return "missing_memory_hash";
+    }
     if (guidance.memoryHash && guidance.memoryHash !== memHash) {
       return "memory_hash_mismatch";
     }

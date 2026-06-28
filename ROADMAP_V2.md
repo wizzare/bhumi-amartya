@@ -29,3 +29,35 @@
 - **Objective**: Collect 14 days of data from 20-50 testers.
 - **Goal**: Validate if Daily Guidance V2 feels "personal and mentor-like" rather than a generic horoscope.
 - **Freeze**: No major engine changes until feedback is processed.
+
+## 4. Post-Production / Monetization
+
+### PRIORITY 4 - MONETIZATION & PRODUCTION GROWTH
+
+Item:
+
+Google Play Billing & Monetization Foundation
+
+Status:
+
+BACKLOG / POST-PRODUCTION ACCESS
+
+Execution rule:
+
+Do not implement billing before production access is approved, LIANA stabilization bugs are resolved, the first production release is stable as a free app, and billing has been documented, reviewed, and tested on non-production tracks.
+
+Scope:
+
+Use Google Play Billing only for digital products consumed or unlocked inside the app, including subscriptions, premium in-app features, paid meditation/audio healing content, paid digital reflection/journaling modules, and any in-app digital unlock, token, or premium access.
+
+Outside Play Billing:
+
+Manual PDF blueprint readings, 1:1 WhatsApp/Zoom consultation, human-delivered advisory services outside the app, and off-app donation that does not unlock digital in-app content.
+
+Guardrails:
+
+* Do not redesign the app.
+* Do not alter KARA behavior.
+* Do not add a new payment provider for in-app digital goods.
+* Do not make billing a blocker for the first production release.
+* Keep app free first until production access and stabilization are complete.

@@ -3,6 +3,7 @@ export interface ProfileCard {
   shortMeaning: string;
   expandableInsight: string;
   actionableReflection: string;
+  items?: ProfileCard[];
 }
 
 export interface ProfileSection {

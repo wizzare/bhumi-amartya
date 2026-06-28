@@ -1,12 +1,12 @@
 import type { GaiaInsight, GaiaInsightStrength, GaiaTheme } from "./types";
 
 export const GAIA_THEME_WEIGHTS: Record<GaiaTheme, Record<string, number>> = {
-  career: { humanDesign: 20, natalChart: 20, destinyMatrix: 15, lifePath: 10, numerology: 10, talents: 10, geneKeys: 5, sacredBusiness: 5, dharmaWork: 5 },
-  relationships: { natalChart: 20, destinyMatrix: 15, humanDesign: 15, numerology: 10, innerChild: 15, geneKeys: 10, chakra: 10, elements: 5 },
-  talents: { humanDesign: 20, natalChart: 20, destinyMatrix: 15, numerology: 10, lifePath: 10, geneKeys: 10, archetype: 5, elements: 5, talents: 5 },
-  energy: { chakra: 25, humanDesign: 25, natalChart: 15, destinyHealth: 10, elements: 10, subtleEnergy: 5, lifePath: 5, numerology: 5 },
-  shadow: { destinyMatrix: 20, humanDesign: 15, natalChart: 20, geneKeys: 15, innerChild: 15, lifePath: 5, soulFragment: 5, chakra: 5 },
-  spirituality: { natalChart: 20, humanDesign: 15, lifePath: 10, arcana: 10, numerology: 10, geneKeys: 10, destinyMatrix: 10, dharmaPath: 5, sacredBusiness: 5, futureTimeline: 5 },
+  career: { humanDesign: 18, natalChart: 16, destinyMatrix: 14, lifePath: 8, numerology: 8, vedic: 8, tzolkin: 8, weton: 6, bazi: 8, talents: 6 },
+  relationships: { natalChart: 18, destinyMatrix: 14, humanDesign: 14, numerology: 8, innerChild: 10, vedic: 8, tzolkin: 8, weton: 6, bazi: 6, chakra: 4, elements: 4 },
+  talents: { humanDesign: 16, natalChart: 16, destinyMatrix: 14, numerology: 8, lifePath: 8, vedic: 8, tzolkin: 8, weton: 6, bazi: 6, archetype: 5, elements: 5 },
+  energy: { chakra: 20, humanDesign: 20, natalChart: 14, destinyMatrix: 10, destinyHealth: 8, elements: 8, bazi: 8, tzolkin: 5, weton: 4, lifePath: 3, numerology: 3 },
+  shadow: { destinyMatrix: 18, humanDesign: 14, natalChart: 18, innerChild: 12, lifePath: 5, vedic: 8, tzolkin: 8, weton: 6, bazi: 6, chakra: 5 },
+  spirituality: { natalChart: 16, humanDesign: 12, lifePath: 8, arcana: 8, numerology: 8, destinyMatrix: 10, vedic: 12, tzolkin: 12, weton: 6, bazi: 8 },
 };
 
 export const SENSITIVE_INSIGHT_IDS = new Set([

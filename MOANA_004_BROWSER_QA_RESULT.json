@@ -1,0 +1,94 @@
+{
+  "pass": true,
+  "tests": [
+    {
+      "name": "Test-A",
+      "values": {
+        "tidur": 7,
+        "energi": 4,
+        "emosi": 3,
+        "fokus": 7,
+        "koneksi": 4
+      },
+      "output": {
+        "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Kehilangan & Duka AREA PERHATIAN UTAMA Emosi (22%) ENERGI UMUM Pemulihan (Recovery) Data menunjukkan intensitas emosional yang tinggi berkaitan dengan proses pelepasan atau kehilangan. [Tutup Detail] ULANGI REFLEKSI Kemungkinan Tema Saat Ini POLA BATIN YANG SEDANG AKTIF LOW Kehilangan & Duka DOMINAN Data menunjukkan intensitas emosional yang tinggi berkaitan dengan proses pelepasan atau kehilangan. Kecemasan Terdapat pola ketegangan dan kebutuhan akan rasa aman yang lebih tinggi dari biasanya. Kesepian Dimensi relasi menunjukkan kebutuhan akan koneksi dan dukungan sosial yang lebih mendalam. Burnout Terlihat adanya penurunan signifikan pada energi fisik dan cadangan emosionalmu. LIHAT MENGAPA Pemetaan Dimensi Diri GAMBARAN KONDISIMU SAAT INI TUBUH Cukup 50% EMOSI Perlu Perhatian 22% RELASI Perlu Perhatian 33% MAKNA Cukup 50% SPIRIT Cukup 45% *Ini bukan diagnosis medis. Peta ini adalah gambaran batinmu untuk membantumu mengenali area yang membutuhkan perhatian lebih.",
+        "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Proses Pelepasan dan Duka yang Mendalam PRAKTIK UTAMA Refleksi Kehilangan dan Kasih 9 menit Memberi bahasa pada kehilangan dan kasih yang masih tersimpan. KENAPA INI DIPILIH? \"Refleksi tetap berpusat pada Grief, bukan pengalihan generik.\" CARA MELAKUKAN Tuliskan apa yang hilang. Tuliskan apa yang masih berarti. Izinkan satu emosi utama diberi nama. Pilih bentuk perawatan setelah menulis. FOKUS HARI INI Membantu pemrosesan duka Menghormati ikatan yang berarti Intensitas: Sedang Mulai Praktik → PRAKTIK PENDUKUNG Jurnal: Memberi Izin Tahap 2 untuk Grief: Memberi Izin. Meditasi: Memberi Izin Tahap 2 untuk Grief: Memberi Izin. Napas: Memberi Izin Tahap 2 untuk Grief: Memberi Izin. Mudra: Memberi Izin Tahap 2 untuk Grief: Memberi Izin. Yoga: Memberi Izin Tahap 2 untuk Grief: Memberi Izin. Gerak: Memberi Izin Tahap 2 untuk Grief: Memberi Izin.",
+        "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Proses Pelepasan dan Duka yang Mendalam Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+      },
+      "screenshot": "screenshots/moana-004-test-a-wellness-sections-2-4.png"
+    },
+    {
+      "name": "Test-B",
+      "values": {
+        "tidur": 2,
+        "energi": 2,
+        "emosi": 8,
+        "fokus": 2,
+        "koneksi": 9
+      },
+      "output": {
+        "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Krisis Makna AREA PERHATIAN UTAMA Tubuh (11%) ENERGI UMUM Pemulihan (Recovery) Meskipun aspek lain stabil, kamu sedang mencari arti dan tujuan yang lebih dalam dari aktivitasmu. [Tutup Detail] ULANGI REFLEKSI Kemungkinan Tema Saat Ini POLA BATIN YANG SEDANG AKTIF LOW Krisis Makna DOMINAN Meskipun aspek lain stabil, kamu sedang mencari arti dan tujuan yang lebih dalam dari aktivitasmu. Burnout Terlihat adanya penurunan signifikan pada energi fisik dan cadangan emosionalmu. Krisis Hidup Beberapa aspek mendasar dalam hidupmu sedang mengalami tantangan yang membutuhkan perhatian ekstra. Kecemasan Terdapat pola ketegangan dan kebutuhan akan rasa aman yang lebih tinggi dari biasanya. LIHAT MENGAPA Pemetaan Dimensi Diri GAMBARAN KONDISIMU SAAT INI TUBUH Sangat Perlu Perhatian 11% EMOSI Baik 78% RELASI Sangat Baik 89% MAKNA Sangat Perlu Perhatian 11% SPIRIT Cukup 45% *Ini bukan diagnosis medis. Peta ini adalah gambaran batinmu untuk membantumu mengenali area yang membutuhkan perhatian lebih.",
+        "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Menemukan Nilai Diri yang Sejati PRAKTIK UTAMA Refleksi Jujur: Self Worth 8 menit Mengenali pola, kebutuhan, dan pilihan yang berkaitan dengan nilai diri. KENAPA INI DIPILIH? \"Catatan menyoroti Self Worth, sehingga refleksi tidak dialihkan ke tema lain.\" CARA MELAKUKAN Tuliskan situasi yang mengaktifkan nilai diri. Catat respons otomatis yang muncul. Tuliskan kebutuhan yang sebenarnya. Pilih satu respons yang lebih sehat. FOKUS HARI INI Memperjelas pola Membangun respons sadar Intensitas: Sedang Mulai Praktik → PRAKTIK PENDUKUNG Jurnal: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin. Meditasi: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin. Napas: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin. Mudra: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin. Yoga: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin. Gerak: Memberi Izin Tahap 2 untuk Self Worth: Memberi Izin.",
+        "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Menemukan Nilai Diri yang Sejati Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+      },
+      "screenshot": "screenshots/moana-004-test-b-wellness-sections-2-4.png"
+    },
+    {
+      "name": "Test-C",
+      "values": {
+        "tidur": 9,
+        "energi": 9,
+        "emosi": 9,
+        "fokus": 9,
+        "koneksi": 9
+      },
+      "output": {
+        "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Fase Pertumbuhan AREA PERHATIAN UTAMA Tubuh (89%) ENERGI UMUM Pertumbuhan (Growth) Seluruh dimensimu berada dalam kondisi yang stabil dan mendukung ekspansi dirimu. [Tutup Detail] ULANGI REFLEKSI Kemungkinan Tema Saat Ini POLA BATIN YANG SEDANG AKTIF LOW Fase Pertumbuhan DOMINAN Seluruh dimensimu berada dalam kondisi yang stabil dan mendukung ekspansi dirimu. Transisi Hidup Kamu sedang berada dalam fase perubahan atau babak baru yang membutuhkan penyesuaian internal. Tantangan Spiritual Proses pencarian makna atau pengalaman batinmu sedang berada di titik yang mendesak dan membingungkan. LIHAT MENGAPA Pemetaan Dimensi Diri GAMBARAN KONDISIMU SAAT INI TUBUH Sangat Baik 89% EMOSI Sangat Baik 89% RELASI Sangat Baik 89% MAKNA Sangat Baik 89% SPIRIT Sangat Baik 89% *Ini bukan diagnosis medis. Peta ini adalah gambaran batinmu untuk membantumu mengenali area yang membutuhkan perhatian lebih.",
+        "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Fase Pertumbuhan yang Stabil PRAKTIK UTAMA Refleksi Jujur: Growth Phase 8 menit Mengenali pola, kebutuhan, dan pilihan yang berkaitan dengan growth phase. KENAPA INI DIPILIH? \"Catatan menyoroti Growth Phase, sehingga refleksi tidak dialihkan ke tema lain.\" CARA MELAKUKAN Tuliskan situasi yang mengaktifkan growth phase. Catat respons otomatis yang muncul. Tuliskan kebutuhan yang sebenarnya. Pilih satu respons yang lebih sehat. FOKUS HARI INI Memperjelas pola Membangun respons sadar Intensitas: Sedang Mulai Praktik → PRAKTIK PENDUKUNG Jurnal: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin. Meditasi: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin. Napas: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin. Mudra: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin. Yoga: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin. Gerak: Memberi Izin Tahap 2 untuk Growth Phase: Memberi Izin.",
+        "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Fase Pertumbuhan yang Stabil Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+      },
+      "screenshot": "screenshots/moana-004-test-c-wellness-sections-2-4.png"
+    }
+  ],
+  "compact": [
+    {
+      "name": "Test-A",
+      "values": {
+        "tidur": 7,
+        "energi": 4,
+        "emosi": 3,
+        "fokus": 7,
+        "koneksi": 4
+      },
+      "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Kehilangan & Duka AREA PERHATIAN UTAMA Emosi (22%) ENERGI UMUM Pemulihan (Recovery) Data menunjukkan intensitas emosional yang tinggi berkaitan dengan proses pelepasan atau kehilangan. [Tutup Detail] ULANGI REFLEKS",
+      "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Proses Pelepasan dan Duka yang Mendalam PRAKTIK UTAMA Refleksi Kehilangan dan Kasih 9 menit Memberi bahasa pada kehilangan dan kasih yang masih tersimpan. KENAPA INI DIPILIH? \"Refleksi tetap berpusat pada Grief, bukan pengalihan generik.\" CARA MELAKUKAN Tuliskan apa yang hilang. Tuliskan apa yang masih berarti. Izinkan satu emosi utama diberi nama. Pilih bentuk perawatan setelah menulis. FOKUS HARI INI Membantu pemrosesan duka Menghormati ikatan yang berarti Intensitas: ",
+      "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Proses Pelepasan dan Duka yang Mendalam Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+    },
+    {
+      "name": "Test-B",
+      "values": {
+        "tidur": 2,
+        "energi": 2,
+        "emosi": 8,
+        "fokus": 2,
+        "koneksi": 9
+      },
+      "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Krisis Makna AREA PERHATIAN UTAMA Tubuh (11%) ENERGI UMUM Pemulihan (Recovery) Meskipun aspek lain stabil, kamu sedang mencari arti dan tujuan yang lebih dalam dari aktivitasmu. [Tutup Detail] ULANGI REFLEKSI Kemun",
+      "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Menemukan Nilai Diri yang Sejati PRAKTIK UTAMA Refleksi Jujur: Self Worth 8 menit Mengenali pola, kebutuhan, dan pilihan yang berkaitan dengan nilai diri. KENAPA INI DIPILIH? \"Catatan menyoroti Self Worth, sehingga refleksi tidak dialihkan ke tema lain.\" CARA MELAKUKAN Tuliskan situasi yang mengaktifkan nilai diri. Catat respons otomatis yang muncul. Tuliskan kebutuhan yang sebenarnya. Pilih satu respons yang lebih sehat. FOKUS HARI INI Memperjelas pola Membangun respons",
+      "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Menemukan Nilai Diri yang Sejati Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+    },
+    {
+      "name": "Test-C",
+      "values": {
+        "tidur": 9,
+        "energi": 9,
+        "emosi": 9,
+        "fokus": 9,
+        "koneksi": 9
+      },
+      "section2": "SECTION 2 Hasil Pemetaan Ringkas TEMA DOMINAN Fase Pertumbuhan AREA PERHATIAN UTAMA Tubuh (89%) ENERGI UMUM Pertumbuhan (Growth) Seluruh dimensimu berada dalam kondisi yang stabil dan mendukung ekspansi dirimu. [Tutup Detail] ULANGI REFLEKSI Kemungkinan Tema S",
+      "section3": "SECTION 3 Rekomendasi Hari Ini TEMA SAAT INI Fase Pertumbuhan yang Stabil PRAKTIK UTAMA Refleksi Jujur: Growth Phase 8 menit Mengenali pola, kebutuhan, dan pilihan yang berkaitan dengan growth phase. KENAPA INI DIPILIH? \"Catatan menyoroti Growth Phase, sehingga refleksi tidak dialihkan ke tema lain.\" CARA MELAKUKAN Tuliskan situasi yang mengaktifkan growth phase. Catat respons otomatis yang muncul. Tuliskan kebutuhan yang sebenarnya. Pilih satu respons yang lebih sehat. FOKUS HARI INI Memperjelas pola Membangun res",
+      "section4": "SECTION 4 Praktik Tambahan Fokus praktik saat ini: Fase Pertumbuhan yang Stabil Journaling Meditasi Yoga Olahraga Audio Healing Makanan Sehat Manifestasi Hari Ini"
+    }
+  ]
+}

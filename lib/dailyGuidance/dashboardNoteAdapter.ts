@@ -36,7 +36,6 @@ export const DashboardNoteAdapter = {
     const categories = dailyGuidance.categories;
     const sections: DailyNoteSection[] = [];
 
-    // Map the 8 categories
     for (const config of SECTIONS_CONFIG) {
       const category = categories[config.key];
       if (!category) continue;

@@ -59,7 +59,21 @@ export class HumanMeaningService {
       },
       health: this.generateHealth(canonical.health),
       spirituality: this.generateSpiritualityHuman(canonical.spirituality),
+      soulIdentity: this.generateSoulIdentity(canonical.soulIdentity),
     };
+  }
+
+  private static cleanItems(items: Array<string | number | undefined | null>): string[] {
+    return items
+      .map((item) => String(item ?? "").trim())
+      .filter(Boolean);
+  }
+
+  private static readable(items: Array<string | number | undefined | null>, fallback: string, limit = 4): string {
+    const clean = this.cleanItems(items).slice(0, limit);
+    if (!clean.length) return fallback;
+    if (clean.length === 1) return clean[0];
+    return `${clean.slice(0, -1).join(", ")} dan ${clean[clean.length - 1]}`;
   }
 
   private static composeBodyMechanics(domain: CanonicalIdentity["health"]): HumanNarrative {
@@ -431,6 +445,84 @@ export class HumanMeaningService {
         medium: element.includes("fire") ? "Kamu mudah bersemangat dan menularkan energi, tetapi perlu menjaga agar antusiasme tidak berubah menjadi kelelahan." : element.includes("water") ? "Kamu peka membaca suasana dan mudah menyesuaikan diri, tetapi membutuhkan batas agar tidak larut dalam keadaan sekitar." : element.includes("wood") ? "Kamu hidup ketika merasa berkembang dan bergerak maju, tetapi bisa frustrasi saat terlalu lama terhambat." : element.includes("metal") ? "Kamu kuat dalam ketegasan dan kualitas, tetapi perlu berhati-hati agar standar tinggi tidak menjadi kekakuan." : "Kamu membawa daya menenangkan dan ketahanan, tetapi perlu bergerak saat kenyamanan mulai berubah menjadi stagnasi.",
         long: "Contohnya, saat tertekan, cari penyeimbang: perlambat jika terlalu menyala, bergerak jika terlalu diam, dan minta dukungan jika terlalu lama menahan semuanya sendiri."
       }
+    };
+  }
+
+  private static generateSoulIdentity(domain: CanonicalIdentity["soulIdentity"]): HumanMeaning["soulIdentity"] {
+    const missionSignals = this.readable([
+      domain.mission.destinyPoint ? `Arcana ${domain.mission.destinyPoint}` : "",
+      domain.mission.destinySoulMission,
+      domain.mission.tzolkinLifePurpose,
+      domain.mission.baziLifeMission,
+      domain.mission.wetonLifeMission,
+      domain.mission.vedicDharmaFocus,
+    ], domain.mission.lifePathRole || "arah hidup yang sedang meminta bentuk nyata");
+    const giftSignals = this.readable([
+      ...domain.gifts.lifePathStrengths,
+      ...domain.gifts.tzolkinGifts,
+      ...domain.gifts.vedicStrengths,
+      ...domain.gifts.wetonStrengths,
+      ...domain.gifts.baziStrengths,
+      ...domain.gifts.destinyGreatTalents.map((talent) => `Arcana ${talent}`),
+    ], "kepekaan membaca pola, menjaga ritme, dan mengubah insight menjadi tindakan");
+    const lessonSignals = this.readable([
+      ...domain.lessons.tzolkinLessons,
+      ...domain.lessons.vedicChallenges,
+      ...domain.lessons.wetonChallenges,
+      ...domain.lessons.baziChallenges,
+      domain.lessons.natalChiron,
+      domain.lessons.humanDesignNotSelf,
+      ...domain.lessons.destinyKarmicTail.map((item) => `Arcana ${item}`),
+    ], "memilih respons yang lebih sadar ketika pola lama mulai aktif");
+    const shadowSignals = this.readable([
+      ...domain.shadow.tzolkinShadow,
+      domain.shadow.natalChiron,
+      domain.shadow.natalLilith,
+      domain.shadow.natalPluto,
+      domain.shadow.natalSouthNode,
+      domain.shadow.humanDesignNotSelf,
+      ...domain.shadow.openCenters,
+      ...domain.shadow.destinyKarmicTail.map((item) => `Arcana ${item}`),
+    ], "perlindungan lama yang muncul saat kamu merasa tidak aman");
+    const archetypeSignals = this.readable([
+      domain.archetype.lifePathRole,
+      domain.archetype.humanDesignType,
+      domain.archetype.humanDesignProfile,
+      domain.archetype.destinyArcana ? `Arcana ${domain.archetype.destinyArcana}` : "",
+      domain.archetype.sunSign,
+      domain.archetype.moonSign,
+      domain.archetype.tzolkinKinName,
+      domain.archetype.vedicNakshatra,
+      domain.archetype.weton,
+      domain.archetype.baziDayMaster,
+    ], "pembaca makna yang belajar membumikan kesadaran");
+
+    return {
+      mission: {
+        short: "Misi Jiwa yang Membumi",
+        medium: `Misi jiwamu bergerak di sekitar ${missionSignals}. Ini bukan target kaku, melainkan arah yang makin jelas saat pilihan harianmu terasa jujur dan berguna.`,
+        long: `Dalam hidup sehari-hari, misi ini tampak ketika kamu berhenti mengejar semua kemungkinan dan mulai memberi bentuk pada ${missionSignals}. Tanyakan: kontribusi mana yang membuatmu merasa lebih utuh, bukan sekadar terlihat berhasil?`,
+      },
+      gifts: {
+        short: "Hadiah Jiwa yang Bisa Dilatih",
+        medium: `Hadiah alami yang paling kuat terlihat melalui ${giftSignals}. Kualitas ini menjadi lebih matang saat dipakai untuk menolong, membangun, menerjemahkan, atau menenangkan sesuatu secara nyata.`,
+        long: `Bakat jiwa tidak harus muncul sebagai hal besar. Ia bisa terlihat dari cara kamu membaca situasi, memilih kata, menjaga ritme, atau membantu orang merasa lebih jelas. Latih satu hadiah dari ${giftSignals} dalam konteks kecil yang benar-benar terjadi minggu ini.`,
+      },
+      lessons: {
+        short: "Pelajaran Jiwa yang Berulang",
+        medium: `Pelajaran utamamu berkaitan dengan ${lessonSignals}. Tema ini biasanya muncul saat hidup meminta respons baru, sementara bagian lama dalam dirimu masih ingin memakai cara yang sudah dikenal.`,
+        long: `Saat pelajaran ini muncul, jangan buru-buru menganggapnya sebagai kegagalan. Ia sering datang sebagai kesempatan untuk melihat pola dengan lebih sadar. Perhatikan kapan ${lessonSignals} aktif, lalu pilih satu respons yang lebih dewasa dari biasanya.`,
+      },
+      shadow: {
+        short: "Bayangan Jiwa yang Perlu Dilihat",
+        medium: `Bayangan jiwamu paling mudah muncul melalui ${shadowSignals}. Ini bukan sisi buruk, melainkan mekanisme perlindungan yang pernah membantumu bertahan.`,
+        long: `Bayangan ini mulai melembut ketika kamu dapat mengenalinya sebelum ia mengambil alih keputusan. Saat ${shadowSignals} terasa aktif, hentikan pembuktian diri sebentar dan tanyakan kebutuhan apa yang sebenarnya sedang dilindungi.`,
+      },
+      archetype: {
+        short: "Arketipe Jiwa Gabungan",
+        medium: `Arketipe jiwamu terbentuk dari perpaduan ${archetypeSignals}. Gabungan ini menunjukkan cara khas kamu hadir, belajar, memengaruhi ruang, dan menemukan makna.`,
+        long: `Gunakan arketipe ini sebagai cermin, bukan kotak. Ketika ${archetypeSignals} terasa hidup, kamu biasanya lebih mudah bergerak tanpa meninggalkan dirimu sendiri. Saat terasa jauh, itu tanda untuk kembali pada ritme yang lebih jujur.`,
+      },
     };
   }
 

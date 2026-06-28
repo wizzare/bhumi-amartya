@@ -61,12 +61,20 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
 
   useEffect(() => {
     const loadData = async () => {
-      if (!auth?.user?.uid) return;
+      const auditUser = process.env.NODE_ENV === "development"
+        ? window.localStorage.getItem("bhumi_audit_user")
+        : null;
+      if (!auth?.user?.uid && !auditUser) return;
 
       try {
-        const uid = auth.user.uid;
-        const profile = auth.userProfile;
-        const blueprintData = await storageProvider.getUserBlueprint();
+        const uid = auth?.user?.uid || `${auditUser}_uid`;
+        let profile = auth?.userProfile;
+        let blueprintData = await storageProvider.getUserBlueprint();
+        if (auditUser && (!profile || !blueprintData)) {
+          const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+          profile = profile || getMockProfile(auditUser) as any;
+          blueprintData = blueprintData || getMockBlueprint(auditUser) as any;
+        }
 
         console.log("J1 before getRecentDailyStates");
         const states = await journeyRepository.getRecentDailyStates(uid);

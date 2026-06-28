@@ -12,12 +12,17 @@ import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 
 const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_VARIATION_LIBRARY.healthyFood];
 const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function HealthyFoodPage() {
   const auth = useAuth();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
@@ -37,12 +42,12 @@ export default function HealthyFoodPage() {
   };
 
   const handleSaveAll = async () => {
-    if (selectedIds.size === 0 || !auth?.user?.uid || saving) return;
+    if (selectedIds.size === 0 || !activeUid || saving) return;
 
-    const uid = auth.user.uid;
+    const uid = activeUid;
     setSaving(true);
     try {
-      const profile = auth.userProfile;
+      const profile = auth?.userProfile;
       const nestedProfile = profile?.profile as { timezone?: string } | undefined;
       const timezone = profile?.timezone || nestedProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const date = getLocalDateKey(new Date(), timezone);
@@ -64,6 +69,17 @@ export default function HealthyFoodPage() {
       });
 
       await Promise.all(savePromises);
+      for (const id of Array.from(selectedIds)) {
+        const activity = FOOD_BY_ID[id];
+        await logWellnessSection4Practice({
+          uid,
+          dateKey: date,
+          practiceId: id,
+          practiceType: "healthyFood",
+          practiceTitle: activity.title,
+          durationMinutes: activity.durationMinutes,
+        });
+      }
       trackEvent("complete_healthy_food", uid);
       setSaved(true);
     } catch (err) {

@@ -26,7 +26,7 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
   MERAH: {
     name: "Merah",
     keyword: "Keberanian, Aksi, Ketegasan",
-    summary: "Energi Merah melambangkan kekuatan fisik, vitalitas, keberanian, dan dorongan kuat untuk mengambil tindakan nyata. Anda adalah orang yang praktis, berorientasi pada hasil, dan tidak takut menghadapi tantangan secara langsung.",
+    summary: "Energi Merah melambangkan kekuatan fisik, vitalitas, keberanian, dan dorongan kuat untuk mengambil tindakan nyata. Kamu adalah orang yang praktis, berorientasi pada hasil, dan tidak takut menghadapi tantangan secara langsung.",
     strengths: [
       "Keberanian mengambil keputusan cepat.",
       "Dorongan eksekusi dan aksi nyata.",
@@ -41,12 +41,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Risiko kelelahan fisik karena terus-menerus bergerak.",
       "Kurang mempertimbangkan perasaan orang lain saat mengejar target."
     ],
-    growth: "Anda saat ini sedang belajar untuk menyeimbangkan dorongan aksi Anda dengan kesabaran, memahami bahwa tidak semua hal bisa dipercepat, dan bahwa jeda sebelum bertindak adalah bagian dari strategi pertumbuhan jangka panjang Anda."
+    growth: "Kamu saat ini sedang belajar menyeimbangkan dorongan aksimu dengan kesabaran, memahami bahwa tidak semua hal bisa dipercepat, dan bahwa jeda sebelum bertindak adalah bagian dari strategi pertumbuhan jangka panjangmu."
   },
   JINGGA: {
     name: "Jingga",
     keyword: "Kreativitas, Ekspresi, Antusiasme",
-    summary: "Energi Jingga melambangkan kreativitas yang meluap, ekspresi diri yang bebas, emosi yang kaya, dan antusiasme sosial. Anda membawa keceriaan dan daya cipta ke mana pun Anda pergi, selalu mencari cara baru yang unik untuk mengekspresikan diri.",
+    summary: "Energi Jingga melambangkan kreativitas yang meluap, ekspresi diri yang bebas, emosi yang kaya, dan antusiasme sosial. Kamu membawa keceriaan dan daya cipta ke mana pun kamu pergi, selalu mencari cara baru yang unik untuk mengekspresikan diri.",
     strengths: [
       "Daya imajinasi dan kreativitas tinggi.",
       "Kemampuan berkomunikasi secara ekspresif.",
@@ -61,12 +61,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Kecenderungan menghindari kenyataan atau tanggung jawab serius.",
       "Risiko membagi fokus terlalu tipis ke banyak hal."
     ],
-    growth: "Anda sedang didorong untuk menyalurkan energi kreatif Anda ke dalam bentuk yang lebih terstruktur dan konsisten, belajar untuk berkomitmen menyelesaikan proyek-proyek penting Anda hingga tuntas tanpa kehilangan kegembiraan bermain."
+    growth: "Kamu sedang didorong untuk menyalurkan energi kreatifmu ke dalam bentuk yang lebih terstruktur dan konsisten, belajar berkomitmen menyelesaikan proyek penting hingga tuntas tanpa kehilangan kegembiraan bermain."
   },
   KUNING: {
     name: "Kuning",
     keyword: "Pertumbuhan, Optimisme, Pembelajaran",
-    summary: "Energi Kuning mewakili kecerdasan intelektual, optimisme yang cerah, pembelajaran yang tiada henti, dan hasrat mendalam untuk bertumbuh. Anda memiliki rasa ingin tahu yang besar dan selalu bersemangat untuk menyerap informasi baru.",
+    summary: "Energi Kuning mewakili kecerdasan intelektual, optimisme yang cerah, pembelajaran yang tiada henti, dan hasrat mendalam untuk bertumbuh. Kamu memiliki rasa ingin tahu yang besar dan selalu bersemangat untuk menyerap informasi baru.",
     strengths: [
       "Pikiran yang analitis dan cepat belajar.",
       "Sikap hidup yang optimis dan penuh harapan.",
@@ -81,12 +81,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Merasa tidak pernah cukup tahu atau sindrom penipu (imposter syndrome).",
       "Mudah bosan jika tidak ada stimulus intelektual baru."
     ],
-    growth: "Fokus pertumbuhan Anda saat ini adalah memindahkan pemahaman dari pikiran logis ke dalam tindakan nyata dan kebijaksanaan hati, sehingga pengetahuan yang Anda miliki tidak hanya menjadi tumpukan konsep melainkan panduan hidup yang hidup."
+    growth: "Fokus pertumbuhanmu saat ini adalah memindahkan pemahaman dari pikiran logis ke dalam tindakan nyata dan kebijaksanaan hati, sehingga pengetahuan yang kamu miliki tidak hanya menjadi tumpukan konsep, melainkan panduan hidup yang hidup."
   },
   HIJAU: {
     name: "Hijau",
     keyword: "Empati, Hubungan, Penyembuhan",
-    summary: "Energi Hijau melambangkan kasih sayang, empati yang mendalam, hubungan yang harmonis, dan energi penyembuhan alami. Anda adalah jembatan kedamaian di antara sesama dan memiliki bakat alami untuk menenangkan jiwa yang gelisah.",
+    summary: "Energi Hijau melambangkan kasih sayang, empati yang mendalam, hubungan yang harmonis, dan energi penyembuhan alami. Kamu adalah jembatan kedamaian di antara sesama dan memiliki bakat alami untuk menenangkan jiwa yang gelisah.",
     strengths: [
       "Kemampuan mendengarkan tanpa menghakimi.",
       "Empati tinggi dan rasa welas asih alami.",
@@ -101,12 +101,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Takut akan konflik atau konfrontasi terbuka.",
       "Kecenderungan menjadi martir bagi orang lain."
     ],
-    growth: "Anda saat ini sedang belajar untuk mencintai diri sendiri dengan kadar yang sama dengan Anda mencintai orang lain, mempraktikkan batasan yang jelas agar energi penyembuhan Anda tetap murni tanpa mengorbankan kesejahteraan pribadi Anda."
+    growth: "Kamu saat ini sedang belajar mencintai diri sendiri dengan kadar yang sama seperti kamu mencintai orang lain, mempraktikkan batasan yang jelas agar energi penyembuhanmu tetap murni tanpa mengorbankan kesejahteraan pribadimu."
   },
   BIRU: {
     name: "Biru",
     keyword: "Komunikasi, Inspirasi, Pengetahuan",
-    summary: "Energi Biru melambangkan komunikasi yang jujur, ketenangan batin, pencarian kebenaran, dan kemampuan menjadi inspirasi. Anda berbicara dengan tujuan dan membawa wawasan yang mendalam kepada orang-orang di sekitar Anda.",
+    summary: "Energi Biru melambangkan komunikasi yang jujur, ketenangan batin, pencarian kebenaran, dan kemampuan menjadi inspirasi. Kamu berbicara dengan tujuan dan membawa wawasan yang mendalam kepada orang-orang di sekitarmu.",
     strengths: [
       "Komunikasi yang jelas, tenang, dan efektif.",
       "Integritas tinggi dan cinta pada kebenaran.",
@@ -121,12 +121,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Kaku terhadap aturan atau prinsip yang diyakini.",
       "Kecenderungan memendam unek-unek hingga menjadi beban."
     ],
-    growth: "Anda sedang diarahkan untuk membuka saluran ekspresi yang paling rentan dan jujur, belajar berbicara bukan hanya dari kepala yang penuh pengetahuan, melainkan dari kedalaman hati yang tulus dan apa adanya."
+    growth: "Kamu sedang diarahkan untuk membuka saluran ekspresi yang paling rentan dan jujur, belajar berbicara bukan hanya dari kepala yang penuh pengetahuan, melainkan dari kedalaman hati yang tulus dan apa adanya."
   },
   UNGU: {
     name: "Ungu",
     keyword: "Intuisi, Makna Hidup, Refleksi",
-    summary: "Energi Ungu mewakili koneksi spiritual, intuisi yang tajam, kedalaman refleksi, dan pencarian makna hidup yang mendalam. Anda melihat dunia di balik apa yang tampak secara fisik dan sering kali memiliki visi spiritual yang kuat.",
+    summary: "Energi Ungu mewakili koneksi spiritual, intuisi yang tajam, kedalaman refleksi, dan pencarian makna hidup yang mendalam. Kamu melihat dunia di balik apa yang tampak secara fisik dan sering kali memiliki visi spiritual yang kuat.",
     strengths: [
       "Intuisi yang kuat dan bimbingan batin yang jernih.",
       "Kedalaman refleksi diri dan kesadaran batin.",
@@ -141,12 +141,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Kecenderungan terlalu asyik dalam kesendirian.",
       "Kesulitan mendaratkan ide-ide besar menjadi tindakan konkret."
     ],
-    growth: "Fokus batin Anda saat ini adalah melatih grounding, belajar untuk membawa kebijaksanaan rohani dan intuisi tinggi Anda ke dalam tindakan sehari-hari yang praktis, membumi, dan berguna bagi kehidupan nyata Anda."
+    growth: "Fokus batinmu saat ini adalah melatih grounding, belajar membawa kebijaksanaan rohani dan intuisi tinggimu ke dalam tindakan sehari-hari yang praktis, membumi, dan berguna bagi kehidupan nyatamu."
   },
   EMAS: {
     name: "Emas",
     keyword: "Kepemimpinan, Pengaruh, Manifestasi",
-    summary: "Energi Emas melambangkan kepemimpinan yang berwibawa, daya pengaruh yang besar, kelimpahan, dan kemampuan manifestasi yang kuat. Anda memiliki karisma alami untuk membimbing orang lain dan mewujudkan visi besar menjadi kenyataan materi.",
+    summary: "Energi Emas melambangkan kepemimpinan yang berwibawa, daya pengaruh yang besar, kelimpahan, dan kemampuan manifestasi yang kuat. Kamu memiliki karisma alami untuk membimbing orang lain dan mewujudkan visi besar menjadi kenyataan materi.",
     strengths: [
       "Wibawa dan karisma kepemimpinan alami.",
       "Kemampuan manifestasi dan eksekusi visi besar.",
@@ -161,12 +161,12 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Risiko kesombongan intelektual atau kekuasaan.",
       "Terlalu berfokus pada hasil luar daripada kedamaian dalam."
     ],
-    growth: "Anda saat ini sedang dibimbing untuk melunakkan kepemimpinan Anda dengan kerendahan hati dan kasih sayang, menyadari bahwa kekuatan sejati bukan terletak pada kendali penuh atas keadaan, melainkan pada kemampuan memberdayakan orang lain."
+    growth: "Kamu saat ini sedang dibimbing untuk melunakkan kepemimpinanmu dengan kerendahan hati dan kasih sayang, menyadari bahwa kekuatan sejati bukan terletak pada kendali penuh atas keadaan, melainkan pada kemampuan memberdayakan orang lain."
   },
   PERAK: {
     name: "Perak",
     keyword: "Kebijaksanaan, Pengamatan, Kedewasaan",
-    summary: "Energi Perak melambangkan kedewasaan emosi, kebijaksanaan yang hening, ketenangan dalam pengamatan, dan objektivitas yang tinggi. Anda adalah pengamat yang ulung, bertindak sebagai cermin jernih bagi orang lain untuk berkaca.",
+    summary: "Energi Perak melambangkan kedewasaan emosi, kebijaksanaan yang hening, ketenangan dalam pengamatan, dan objektivitas yang tinggi. Kamu adalah pengamat yang ulung, bertindak sebagai cermin jernih bagi orang lain untuk berkaca.",
     strengths: [
       "Kebijaksanaan tenang dan kestabilan emosi.",
       "Kemampuan mengamati secara objektif tanpa bias.",
@@ -181,7 +181,7 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
       "Ketakutan untuk terlibat secara emosional secara mendalam.",
       "Risiko memendam pemikiran berharga sendirian tanpa dibagi."
     ],
-    growth: "Anda sedang ditantang untuk keluar dari pengamatan hening Anda dan mulai membagikan wawasan berharga Anda secara aktif, melangkah maju ke panggung kehidupan untuk memandu sesama dengan kebijaksanaan perak Anda."
+    growth: "Kamu sedang ditantang untuk keluar dari pengamatan heningmu dan mulai membagikan wawasan berhargamu secara aktif, melangkah maju ke panggung kehidupan untuk memandu sesama dengan kebijaksanaan perakmu."
   }
 };
 
@@ -195,9 +195,9 @@ export function generateAuraResult(
   const secondaryData = AURA_STATIC_RECORDS[secondary] || AURA_STATIC_RECORDS.HIJAU;
   const shadowData = AURA_STATIC_RECORDS[shadow] || AURA_STATIC_RECORDS.PERAK;
 
-  const supportExplanation = `Energi ${secondaryData.name} (${secondaryData.keyword}) Anda bertindak sebagai sistem pendukung yang memperkuat dan menyeimbangkan aura utama ${primaryData.name} Anda (${primaryData.keyword}). Saat Anda memadukan aksi ${primaryData.keyword} dengan kecenderungan ${secondaryData.keyword}, Anda dapat mengekspresikan jati diri Anda secara optimal dengan cara yang stabil dan konstruktif.`;
+  const supportExplanation = `Energi ${secondaryData.name} (${secondaryData.keyword}) dalam dirimu bertindak sebagai sistem pendukung yang memperkuat dan menyeimbangkan aura utama ${primaryData.name} (${primaryData.keyword}). Saat kamu memadukan aksi ${primaryData.keyword} dengan kecenderungan ${secondaryData.keyword}, kamu dapat mengekspresikan jati dirimu secara optimal dengan cara yang stabil dan konstruktif.`;
 
-  const shadowExplanation = `Energi ${shadowData.name} mewakili sisi bayangan (shadow) Anda. Sisi ini cenderung mengemuka saat Anda merasa lelah, stres, tertekan, atau kehilangan keselarasan batin. Ketika keseimbangan Anda goyah, kecenderungan ${shadowData.keyword} Anda dapat terdistorsi menjadi hambatan batin, seperti: ${shadowData.challenges[0]} atau ${shadowData.challenges[1]}. Menyadari sinyal ini membantu Anda segera melatih kesadaran diri (grounding) untuk kembali ke pusat keseimbangan Anda.`;
+  const shadowExplanation = `Energi ${shadowData.name} mewakili sisi bayangan (shadow) dalam dirimu. Sisi ini cenderung mengemuka saat kamu merasa lelah, stres, tertekan, atau kehilangan keselarasan batin. Ketika keseimbanganmu goyah, kecenderungan ${shadowData.keyword} dapat terdistorsi menjadi hambatan batin, seperti: ${shadowData.challenges[0]} atau ${shadowData.challenges[1]}. Menyadari sinyal ini membantumu melatih kesadaran diri (grounding) untuk kembali ke pusat keseimbanganmu.`;
 
   return {
     primaryAura: primary,

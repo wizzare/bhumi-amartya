@@ -2,18 +2,20 @@
 
 This document contains all the necessary information to create the app in Google Play Console and upload the first Internal Testing release.
 
+**Last repository verification:** 2026-06-26
+
 ## 1. AAB File Information
 - **File Name:** `app-release.aab`
 - **Path:** `android/app/build/outputs/bundle/release/app-release.aab`
 - **Exists:** Yes
-- **Size:** 7.03 MB (7,026,654 bytes)
-- **Timestamp:** 2026-06-06 19:03
-- **Sign Status:** Signed with release key (bhumi-amartya-release.jks)
+- **Size:** 9.42 MB (9,421,269 bytes)
+- **Timestamp:** 2026-06-21 10:12
+- **Sign Status:** Existing release bundle present. Release signing is configured through Gradle properties (`BHUMI_RELEASE_STORE_FILE`, `BHUMI_RELEASE_STORE_PASSWORD`, `BHUMI_RELEASE_KEY_ALIAS`, `BHUMI_RELEASE_KEY_PASSWORD`) and must be verified before upload.
 
 ## 2. Version & Package Info (from build.gradle)
 - **Application ID:** `com.bhumiamartya.app`
-- **Version Code:** `1`
-- **Version Name:** `1.0`
+- **Version Code:** `53`
+- **Version Name:** `3.1.12-RC`
 - **Namespace:** `com.bhumiamartya.app`
 
 ## 3. Play Console Create App Values

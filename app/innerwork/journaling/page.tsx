@@ -10,6 +10,7 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { healingRepository } from "@/lib/repositories/healingRepository";
 import type {
   JournalEntry,
@@ -97,6 +98,10 @@ export default function JournalPage() {
   const router = useRouter();
   const auth = useAuth();
   const userProfile = auth?.userProfile;
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
 
   // State
   const [coreIdentity, setCoreIdentity] = useState<CoreIdentity | null>(null);
@@ -151,7 +156,11 @@ export default function JournalPage() {
         const profile = resolved.profile as Record<string, unknown> | null;
         setIsWellnessLocked(!hasFeatureAccess(profile as any, "journal"));
 
-        const blueprint = await storageProvider.getUserBlueprint();
+        let blueprint = await storageProvider.getUserBlueprint();
+        if (auditUser && !blueprint) {
+          const { getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+          blueprint = getMockBlueprint(auditUser) as any;
+        }
         if (!blueprint) {
           router.replace("/setup");
           return;
@@ -279,10 +288,15 @@ export default function JournalPage() {
       context: localContext,
     });
     const createdAt = new Date().toISOString();
+    const profileResult = await resolveActiveProfile(auth);
+    const profileTimezone = getStringValue(profileResult.profile, "timezone")
+      || Intl.DateTimeFormat().resolvedOptions().timeZone
+      || "UTC";
+    const dateKey = getLocalDateKey(new Date(), profileTimezone);
 
     try {
       saveLocalJournalEntry({
-        date: createdAt.slice(0, 10),
+        date: dateKey,
         theme: localPrompt.theme,
         questions: localPrompt.questions,
         journalText: localJournalText,
@@ -299,7 +313,7 @@ export default function JournalPage() {
           previousEntryCount: loadLocalJournalEntries().length,
         },
       });
-      if (auth?.user?.uid) {
+      if (activeUid) {
         const journeyContext = zoneBContext ?? {
           issue: "general_innerwork",
           practiceId: `journaling-${localPrompt.theme.toLowerCase().replaceAll(" ", "-")}`,
@@ -308,10 +322,15 @@ export default function JournalPage() {
           title: localPrompt.theme,
           durationMinutes: 10,
         };
+        await dailyStateRepository.saveDailyState(activeUid, dateKey, {
+          journalingDone: true,
+          emotionalWord: localEmotionalState,
+        });
         await saveZoneBJourneyContext({
-          uid: auth.user.uid,
-          date: createdAt.slice(0, 10),
+          uid: activeUid,
+          date: dateKey,
           context: journeyContext,
+          source: "wellness_section_4",
           reflectionResult: localEmotionalState,
           reflectionResponse: generatedInsight.insight,
         });
@@ -390,6 +409,7 @@ export default function JournalPage() {
           uid,
           date: entry.dateCreated.slice(0, 10),
           context: journeyContext,
+          source: "wellness_section_4",
           reflectionResult: checkIn.emotionalWord,
           reflectionResponse: analysis.gentleInsight,
         });

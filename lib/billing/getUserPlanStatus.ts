@@ -3,7 +3,7 @@ import { getUserRole } from "@/lib/auth/getUserRole";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 
 export const USER_PLAN_STORAGE_KEY = "bhumiUserPlan";
-export const FREE_TRIAL_DAYS = 7;
+export const FREE_TRIAL_DAYS = 3;
 
 const LOCAL_DEVELOPER_PRO_EMAILS = [
   "wizzare@gmail.com",

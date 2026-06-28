@@ -5,6 +5,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { Flower2, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { useAuth } from "@/context/AuthContext";
 import { YOGA_DATABASE } from "@/lib/data/innerworkContent";
@@ -16,7 +17,12 @@ import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 
 export default function YogaPage() {
+  const router = useRouter();
   const auth = useAuth();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
@@ -31,6 +37,12 @@ export default function YogaPage() {
     [zoneBSearch],
   );
 
+  React.useEffect(() => {
+    if (zoneBContext?.practiceId) {
+      setSelectedIds(new Set([zoneBContext.practiceId]));
+    }
+  }, [zoneBContext?.practiceId]);
+
     // KARA SoT: Yoga adalah "area khusus" di dalam Wellness.
   // Daily Check-In bukan gate untuk Yoga — gate hanya berlaku untuk membuka
   // halaman Hasil Wellness (Zona A) secara keseluruhan sesuai KARA SoT.
@@ -40,12 +52,13 @@ export default function YogaPage() {
   React.useEffect(() => {
     trackEvent("open_yoga", auth?.user?.uid);
     async function loadPersistedPractice() {
-      if (!auth?.user?.uid) return;
+      if (!activeUid) return;
       try {
-        const profile = auth.userProfile;
-        const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const profile = auth?.userProfile;
+        const nestedProfile = profile?.profile as { timezone?: string | null } | undefined;
+        const timezone = profile?.timezone || nestedProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
         const date = getLocalDateKey(new Date(), timezone);
-        const state = await dailyStateRepository.getDailyState(auth.user.uid, date);
+        const state = await dailyStateRepository.getDailyState(activeUid, date);
         if (state?.yogaDone) {
           setYogaDoneToday(true);
         }
@@ -54,7 +67,7 @@ export default function YogaPage() {
       }
     }
     void loadPersistedPractice();
-  }, [auth?.user?.uid]);
+  }, [auth?.user?.uid, auth?.userProfile, activeUid]);
 
   const toggleSelection = (id: string) => {
     if (saved) return;
@@ -67,18 +80,26 @@ export default function YogaPage() {
   };
 
   const handleSaveAll = async () => {
-    if (selectedIds.size === 0 || !auth?.user?.uid || saving) return;
+    const activityIdsToSave = selectedIds.size > 0
+      ? Array.from(selectedIds)
+      : activities[0]?.id
+        ? [activities[0].id]
+        : [];
+    if (activityIdsToSave.length === 0 || !activeUid || saving) return;
 
-    const uid = auth.user.uid;
+    const uid = activeUid;
     setSaving(true);
     try {
-      const profile = auth.userProfile;
+      const profile = auth?.userProfile;
       const nestedProfile = profile?.profile as { timezone?: string } | undefined;
       const timezone = profile?.timezone || nestedProfile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const date = getLocalDateKey(new Date(), timezone);
 
-      const savePromises = Array.from(selectedIds).map(id => {
-        const activity = YOGA_DATABASE[id];
+      const savePromises = activityIdsToSave.map(id => {
+        const activity = YOGA_DATABASE[id] ?? activities.find((item) => item.id === id);
+        if (!activity) {
+          throw new Error(`Yoga activity not found: ${id}`);
+        }
         return activityRepository.completeActivity({
           uid,
           date,
@@ -94,8 +115,11 @@ export default function YogaPage() {
       });
 
       await Promise.all(savePromises);
-      for (const id of selectedIds) {
+      for (const id of activityIdsToSave) {
         const activity = YOGA_DATABASE[id] ?? activities.find((item) => item.id === id);
+        if (!activity) {
+          throw new Error(`Yoga activity not found: ${id}`);
+        }
         const context = zoneBContext ?? {
           issue: "general_innerwork",
           practiceId: id,
@@ -104,10 +128,11 @@ export default function YogaPage() {
           title: activity.title,
           durationMinutes: activity.durationMinutes,
         };
-        await saveZoneBJourneyContext({ uid, date, context, reflectionResult: reflectionResult || "Belum Yakin" });
+        await saveZoneBJourneyContext({ uid, date, context, source: "wellness_section_4", reflectionResult: reflectionResult || "Belum Yakin" });
       }
       trackEvent("complete_yoga", uid);
       setSaved(true);
+      router.replace("/wellness");
     } catch (err) {
       console.error("[YOGA_SAVE_ERROR]", err);
     } finally {
@@ -130,6 +155,7 @@ export default function YogaPage() {
     // KARA SoT Lock Removed: Yoga dapat diakses tanpa Daily Check-In.
   // yogaDoneToday digunakan untuk indikator UI opsional saja — tidak memblokir halaman.
   void yogaDoneToday;
+  const canSave = activities.length > 0;
 
   return (
     <ProtectedRoute>
@@ -218,8 +244,8 @@ export default function YogaPage() {
             </p>
             <button
               onClick={handleSaveAll}
-              disabled={selectedIds.size === 0 || saving || saved || Boolean(zoneBContext && !reflectionResult)}
-              className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : selectedIds.size > 0 ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
+              disabled={!canSave || saving || saved}
+              className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : canSave ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
             >
               {saved ? 'Selesai ✨' : saving ? 'Menyimpan...' : 'Save'}
             </button>

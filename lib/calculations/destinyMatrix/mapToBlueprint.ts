@@ -4,6 +4,11 @@ export function calculateDestinyMatrixForBlueprint(birthDate: string) {
   const result = calculateDestinyMatrixEnergy(birthDate);
 
   return {
+    dayPoint: result.base.apoint,
+    monthPoint: result.base.bpoint,
+    yearPoint: result.base.cpoint,
+    destinyPoint: result.points.dpoint,
+    arcanaCenter: result.points.epoint,
     center: result.points.epoint,
     loveLine: [result.points.epoint, result.points.kpoint, result.points.lpoint],
     moneyLine: [result.points.epoint, result.points.mpoint, result.points.lpoint],

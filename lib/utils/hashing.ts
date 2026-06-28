@@ -40,16 +40,74 @@ export function generateBlueprintHash(blueprint: any): string {
 export function generateMemoryHash(context: any): string {
   if (!context) return "no-memory";
 
-  // Hash recent journal and meditation counts + themes
+  // Hash every dynamic input that can change today's guidance.
   const journalIds = (context.previousJournalEntries || []).map((e: any) => e.id).sort().join(",");
   const meditationIds = (context.previousMeditationEntries || []).map((e: any) => e.id).sort().join(",");
+  const audioIds = (context.previousAudioHealingEntries || []).map((e: any) => e.id).sort().join(",");
+  const activityIds = (context.previousActivityEntries || context.activityHistory || []).map((e: any) => e.id).sort().join(",");
   const emotionalState = context.profile?.emotionalState?.currentMood || "none";
   const themes = (context.profile?.emotionalState?.recurringThemes || []).sort().join(",");
   const journeyLearning = context.healingMemory
     ? JSON.stringify(context.healingMemory)
     : "no-journey-learning";
+  const journeyMemory = context.journeyMemory
+    ? JSON.stringify(context.journeyMemory)
+    : "no-journey-memory";
+  const dailyState = context.dailyState || context.wellnessState
+    ? JSON.stringify(context.dailyState || context.wellnessState)
+    : "no-daily-state";
+  const previousDailyState = context.previousDailyState || context.previousDayState
+    ? JSON.stringify(context.previousDailyState || context.previousDayState)
+    : "no-previous-daily-state";
+  const recentDailyStates = Array.isArray(context.recentDailyStates)
+    ? JSON.stringify(context.recentDailyStates)
+    : "no-recent-daily-states";
+  const wellnessMapping = context.wellnessMapping
+    ? JSON.stringify(context.wellnessMapping)
+    : "no-wellness-mapping";
+  const navigatorState = context.navigatorState || context.momentumState
+    ? JSON.stringify(context.navigatorState || context.momentumState)
+    : "no-navigator-state";
+  const previousGuidance = context.previousGuidance
+    ? JSON.stringify(context.previousGuidance)
+    : "no-previous-guidance";
+  const currentSky = context.currentSky
+    ? JSON.stringify(context.currentSky)
+    : "no-current-sky";
+  const astroAwareness = context.astroAwareness || context.astroHouseActivations
+    ? JSON.stringify(context.astroAwareness || context.astroHouseActivations)
+    : "no-astro-awareness";
+  const environmentContext = context.environmentContext
+    ? JSON.stringify(context.environmentContext)
+    : "no-environment-context";
+  const guidanceVersion = context.guidanceVersion || context.rendererVersion || context.groundingVersion
+    ? JSON.stringify({
+        guidanceVersion: context.guidanceVersion || null,
+        rendererVersion: context.rendererVersion || null,
+        groundingVersion: context.groundingVersion || null,
+      })
+    : "no-guidance-renderer-version";
 
-  return simpleHash(`${journalIds}|${meditationIds}|${emotionalState}|${themes}|${journeyLearning}`);
+  return simpleHash([
+    journalIds,
+    meditationIds,
+    audioIds,
+    activityIds,
+    emotionalState,
+    themes,
+    journeyLearning,
+    journeyMemory,
+    dailyState,
+    previousDailyState,
+    recentDailyStates,
+    wellnessMapping,
+    navigatorState,
+    previousGuidance,
+    currentSky,
+    astroAwareness,
+    environmentContext,
+    guidanceVersion,
+  ].join("|"));
 }
 
 /**

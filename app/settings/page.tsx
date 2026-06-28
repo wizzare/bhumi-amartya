@@ -16,6 +16,7 @@ import { getLocalUserSession } from "@/lib/auth/getLocalUserSession";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
 import {
   createDefaultUserPlan,
+  FREE_TRIAL_DAYS,
   getOrCreateLocalUserPlan,
   getUserPlanStatus,
   isDeveloperProEmail,
@@ -34,6 +35,7 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import type { UserProfile as StorageUserProfile, UserBlueprint as StorageUserBlueprint } from "@/lib/firebase/service";
 import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
+import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
 
 const LANGUAGE_STORAGE_KEY = "bhumiLanguage";
 
@@ -52,6 +54,41 @@ const HUMAN_DESIGN_PENDING: LocalHumanDesign = {
   source: "human-design-py",
   note: "Human Design service is not running.",
 };
+
+function toDisplayDate(value: unknown): string | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+  if (value instanceof Date) {
+    return value.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+  if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    return value.toDate().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+  if (typeof value === "object" && "seconds" in value && typeof value.seconds === "number") {
+    return new Date(value.seconds * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  }
+  return null;
+}
+
+function daysUntil(value: unknown): number | null {
+  let date: Date | null = null;
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+    date = Number.isNaN(parsed.getTime()) ? null : parsed;
+  } else if (value instanceof Date) {
+    date = value;
+  } else if (value && typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
+    date = value.toDate();
+  } else if (value && typeof value === "object" && "seconds" in value && typeof value.seconds === "number") {
+    date = new Date(value.seconds * 1000);
+  }
+
+  if (!date) return null;
+  return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
+}
 
 async function fetchHumanDesign(input: {
   fullName: string;
@@ -257,45 +294,113 @@ export default function SettingsPage() {
 
   const statusBadge = useMemo(() => {
     const profile = originalProfile as any;
-    if (!profile) return null;
+    const defaultPolicyApplies = !profile || shouldApplyDefaultRegistrationPolicy(profile.registeredAt || profile.createdAt);
+    if (!profile && !defaultPolicyApplies) return null;
 
-    const email = (profile.email || googleEmail || "").trim().toLowerCase();
-    const isFounder = profile.guardianRole === "founder" || profile.recognitionTier === "FOUNDER" || email === "wizzare@gmail.com";
+    const testerBadge = (profile?.testerBadge as string | undefined) || (defaultPolicyApplies ? "Penjaga Bhumi" : undefined);
+    if (!testerBadge) return null;
 
-    if (isFounder) {
+    if (testerBadge === "Founder") {
       return {
         key: "founder",
+        label: "Founder",
+        description: "Lifetime Premium",
         color: "bg-amber-100 text-amber-800 border-amber-200",
         Icon: ShieldCheck,
       };
     }
-    if (profile.guardianRole === "admin") {
+    if (testerBadge === "Penjaga Bhumi Inti") {
       return {
-        key: "admin",
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        Icon: Shield,
-      };
-    }
-    if (profile.guardianBadge === "core_guardian" || profile.recognitionTier === "CORE_GUARDIAN") {
-      return {
-        key: "core_guardian",
-        color: "bg-emerald-100 text-emerald-800 border-emerald-200",
+        key: "penjaga_bhumi_inti",
+        label: "Penjaga Bhumi Inti",
+        description: "Premium (2 Months)",
+        color: "bg-purple-100 text-purple-800 border-purple-200",
         Icon: ShieldCheck,
       };
     }
-    if (profile.guardianBadge === "guardian" || profile.recognitionTier === "GUARDIAN") {
+    if (testerBadge === "Penjaga Bhumi Alfa") {
       return {
-        key: "guardian",
+        key: "penjaga_bhumi_alfa",
+        label: "Penjaga Bhumi Alfa",
+        description: "Premium (1 Month)",
+        color: "bg-blue-100 text-blue-800 border-blue-200",
+        Icon: ShieldCheck,
+      };
+    }
+    if (testerBadge === "Penjaga Bhumi") {
+      return {
+        key: "penjaga_bhumi",
+        label: "Penjaga Bhumi",
+        description: "Free Trial (3 Days)",
         color: "bg-indigo-100 text-indigo-800 border-indigo-200",
         Icon: Shield,
       };
     }
     return {
       key: "user",
+      label: "Penjaga Bhumi",
+      description: "Free Trial (3 Days)",
       color: "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]",
       Icon: UserIcon,
     };
   }, [originalProfile]);
+
+  const membershipDisplay = useMemo(() => {
+    const profile = originalProfile as any;
+    const defaultPolicyApplies = !profile || shouldApplyDefaultRegistrationPolicy(profile.registeredAt || profile.createdAt);
+    const testerBadge = (profile?.testerBadge as string | undefined) || (defaultPolicyApplies ? "Penjaga Bhumi" : undefined);
+    const expiryDate = profile?.trialEndsAt || profile?.membershipExpiryDate || plan.expiresAt;
+    const remainingDays = daysUntil(expiryDate);
+    const nextBillingDate = toDisplayDate(expiryDate);
+
+    if (testerBadge === "Founder") {
+      return {
+        title: "Lifetime Premium",
+        subtitle: "Billing: Lifetime Premium",
+        remaining: null,
+        nextBilling: null,
+        pro: true,
+      };
+    }
+
+    if (testerBadge === "Penjaga Bhumi Inti") {
+      return {
+        title: "Premium (2 Months)",
+        subtitle: nextBillingDate ? `Expiry: ${nextBillingDate}` : "Premium aktif",
+        remaining: remainingDays,
+        nextBilling: nextBillingDate,
+        pro: true,
+      };
+    }
+
+    if (testerBadge === "Penjaga Bhumi Alfa") {
+      return {
+        title: "Premium (1 Month)",
+        subtitle: nextBillingDate ? `Expiry: ${nextBillingDate}` : "Premium aktif",
+        remaining: remainingDays,
+        nextBilling: nextBillingDate,
+        pro: true,
+      };
+    }
+
+    if (!testerBadge) {
+      return {
+        title: "Membership",
+        subtitle: "Belum ditetapkan",
+        remaining: null,
+        nextBilling: null,
+        pro: false,
+      };
+    }
+
+    return {
+      title: "Free Trial (3 Days)",
+      subtitle: "Billing: Rp50.000/month",
+      remaining: remainingDays ?? planStatus.trialDaysLeft ?? FREE_TRIAL_DAYS,
+      nextBilling: nextBillingDate,
+      pro: false,
+    };
+  }, [originalProfile, plan.expiresAt, planStatus.trialDaysLeft]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
@@ -618,10 +723,10 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[#4F5E52]">
-                  {t.settings.accountStatusBadges[statusBadge.key as keyof typeof t.settings.accountStatusBadges].label}
+                  {statusBadge.label}
                 </h3>
                 <p className="text-sm text-[#7B8776] mt-1 leading-relaxed">
-                  {t.settings.accountStatusBadges[statusBadge.key as keyof typeof t.settings.accountStatusBadges].description}
+                  {statusBadge.description}
                 </p>
               </div>
             </div>
@@ -629,12 +734,12 @@ export default function SettingsPage() {
 
           <div className="pt-4 border-t border-[#F5F1E8]">
             <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Subscription Plan</p>
-            {planStatus.isPro ? (
+            {membershipDisplay.pro ? (
               <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
                 <div>
-                  <p className="text-lg font-bold text-amber-900">Pro Plan Aktif</p>
+                  <p className="text-lg font-bold text-amber-900">{membershipDisplay.title}</p>
                   <p className="text-xs text-amber-700/70 mt-0.5">
-                    {planStatus.isDeveloper ? "Developer Access" : "Langganan Aktif"}
+                    {membershipDisplay.subtitle}
                   </p>
                 </div>
                 <ShieldCheck size={24} className="text-amber-600" />
@@ -642,8 +747,14 @@ export default function SettingsPage() {
             ) : (
               <div className="p-4 rounded-2xl bg-[#FCFAF5] border border-[#E8E9E5] flex items-center justify-between">
                 <div>
-                  <p className="text-lg font-bold text-[#4F5E52]">Beta Access</p>
-                  <p className="text-xs text-[#7B8776] mt-0.5">Nikmati akses penuh selama masa Beta.</p>
+                  <p className="text-lg font-bold text-[#4F5E52]">{membershipDisplay.title}</p>
+                  <p className="text-xs text-[#7B8776] mt-0.5">{membershipDisplay.subtitle}</p>
+                  {membershipDisplay.remaining !== null ? (
+                    <p className="text-xs text-[#7B8776] mt-1">Sisa trial: {membershipDisplay.remaining} hari</p>
+                  ) : null}
+                  {membershipDisplay.nextBilling ? (
+                    <p className="text-xs text-[#7B8776] mt-1">Next billing date: {membershipDisplay.nextBilling}</p>
+                  ) : null}
                 </div>
                 <Info size={24} className="text-[#9BB89A]" />
               </div>

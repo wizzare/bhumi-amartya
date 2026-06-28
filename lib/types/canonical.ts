@@ -85,6 +85,68 @@ export interface CanonicalSpiritualityDomain {
   };
 }
 
+export interface CanonicalSoulIdentityDomain {
+  mission: {
+    lifePath: number;
+    lifePathRole: string;
+    destinyPoint: number;
+    destinySoulMission: string;
+    tzolkinLifePurpose: string;
+    vedicDharmaFocus: string;
+    vedicMokshaFocus: string;
+    wetonLifeMission: string;
+    baziLifeMission: string;
+  };
+  gifts: {
+    lifePathStrengths: string[];
+    destinyTalents: number[];
+    destinyGreatTalents: number[];
+    tzolkinGifts: string[];
+    vedicStrengths: string[];
+    vedicYogas: string[];
+    humanDesignChannels: string[];
+    natalSupportiveAspects: string[];
+    wetonStrengths: string[];
+    baziStrengths: string[];
+  };
+  lessons: {
+    destinyKarmicTail: number[];
+    tzolkinLessons: string[];
+    vedicChallenges: string[];
+    natalNodes: string[];
+    natalChiron: string;
+    humanDesignNotSelf: string;
+    openCenters: string[];
+    wetonChallenges: string[];
+    baziChallenges: string[];
+  };
+  shadow: {
+    destinyKarmicTail: number[];
+    tzolkinShadow: string[];
+    natalChiron: string;
+    natalLilith: string;
+    natalPluto: string;
+    natalSouthNode: string;
+    humanDesignNotSelf: string;
+    openCenters: string[];
+  };
+  archetype: {
+    lifePathRole: string;
+    humanDesignType: string;
+    humanDesignProfile: string;
+    destinyArcana: number;
+    sunSign: string;
+    moonSign: string;
+    ascendant: string;
+    tzolkinKinName: string;
+    tzolkinSeal: string;
+    tzolkinTone: string;
+    vedicNakshatra: string;
+    weton: string;
+    baziDayMaster: string;
+  };
+}
+
 export interface CanonicalIdentity {
   identity: CanonicalIdentityDomain;
   purpose: CanonicalPurposeDomain;
@@ -95,4 +157,5 @@ export interface CanonicalIdentity {
   timing: CanonicalTimingDomain;
   health: CanonicalHealthDomain;
   spirituality: CanonicalSpiritualityDomain;
+  soulIdentity: CanonicalSoulIdentityDomain;
 }

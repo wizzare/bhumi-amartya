@@ -16,22 +16,41 @@ import { generateLocalManifestation } from "@/lib/orchestrators/localDailyGuidan
 import { useRouter } from "next/navigation";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+
+function saveActiveManifestation(uid: string, dateKey: string, manifestation: any): void {
+  if (typeof window === "undefined" || !manifestation?.affirmation) return;
+  const data = JSON.stringify(manifestation);
+  window.localStorage.setItem(`moana:manifestation:${uid}:${dateKey}`, data);
+  if (uid !== "local_user") {
+    window.localStorage.setItem(`moana:manifestation:local_user:${dateKey}`, data);
+  }
+}
 
 export default function ManifestasiPage() {
   const auth = useAuth();
   const router = useRouter();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
   const [manifestation, setManifestation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     const fetchManifestation = async () => {
-      if (!auth?.user?.uid) return;
-
       try {
-        const profile = auth.userProfile;
+        let profile = auth?.userProfile as any;
+        if (!profile) {
+          profile = await storageProvider.getUserProfile();
+        }
+        if (auditUser && (!profile || (profile as any)?.isAuditMock)) {
+          const { getMockProfile } = await import("@/lib/dailyGuidance/auditMocks");
+          profile = getMockProfile(auditUser);
+        }
         const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
         const today = getLocalDateKey(new Date(), timezone);
+        const uid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : (profile?.uid || "local_user"));
 
         const params = new URLSearchParams(window.location.search);
         const incomingIssue = params.get("issue");
@@ -39,7 +58,11 @@ export default function ManifestasiPage() {
 
         if (incomingIssue && incomingTheme) {
            // Create input with mocked wellness results for generation
-           const blueprint = await storageProvider.getUserBlueprint();
+           let blueprint = await storageProvider.getUserBlueprint();
+           if (auditUser && !blueprint) {
+             const { getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+             blueprint = getMockBlueprint(auditUser) as any;
+           }
 
            // Ensure the category is recognizable by generateLocalManifestation
            // It maps topWellnessTheme -> category (grounding, expansion, worth, clarity, processing)
@@ -62,14 +85,20 @@ export default function ManifestasiPage() {
            };
            const themed = generateLocalManifestation(input, "zone_b_alignment");
            setManifestation(themed);
+           saveActiveManifestation(uid, today, themed);
         } else {
-          const dg = await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today);
+          const dg = await dailyGuidanceRepository.getDailyGuidance(uid, today).catch(() => null);
           if (dg?.manifestation) {
             setManifestation(dg.manifestation);
+            saveActiveManifestation(uid, today, dg.manifestation);
           } else {
             // Fallback generation if missing in DG
             console.log("[MANIFESTASI] Missing in DG, using local fallback");
-            const blueprint = await storageProvider.getUserBlueprint();
+            let blueprint = await storageProvider.getUserBlueprint();
+            if (auditUser && !blueprint) {
+              const { getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+              blueprint = getMockBlueprint(auditUser) as any;
+            }
 
             // Safety fallback if blueprint is missing or calculation fails
             const input: any = {
@@ -87,10 +116,10 @@ export default function ManifestasiPage() {
 
             const localFallback = generateLocalManifestation(input, "ui_fallback");
             setManifestation(localFallback);
+            saveActiveManifestation(uid, today, localFallback);
           }
         }
       } catch (err) {
-        console.error("[MANIFESTASI_FETCH_ERROR]", err);
         // Absolute fallback to prevent empty page
         setManifestation({
           affirmation: "Hari ini aku memilih untuk hadir sepenuhnya bagi diriku sendiri.",
@@ -105,20 +134,33 @@ export default function ManifestasiPage() {
     if (auth?.authStateResolved) {
       fetchManifestation();
     }
-  }, [auth]);
+  }, [auth, auditUser]);
 
   const handleComplete = async () => {
-    if (!auth?.user?.uid || saved) return;
+    const uid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : null);
+    if (!uid || saved) return;
 
     setSaved(true);
-    trackEvent("practice_completed", auth.user.uid);
+    trackEvent("practice_completed", uid);
 
-    const profile = auth.userProfile;
+    let profile = auth?.userProfile as any;
+    if (auditUser && !profile) {
+      const { getMockProfile } = await import("@/lib/dailyGuidance/auditMocks");
+      profile = getMockProfile(auditUser);
+    }
     const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const dateKey = getLocalDateKey(new Date(), timezone);
 
-    await dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
-      manifestDone: true,
+    await logWellnessSection4Practice({
+      uid,
+      dateKey,
+      practiceId: "manifestasi-hari-ini",
+      practiceType: "manifestation",
+      practiceTitle: "Manifestasi Hari Ini",
+      durationMinutes: 5,
+      dailyStatePatch: {
+        manifestDone: true,
+      },
     }).catch(err => console.error("[MANIFESTASI_SAVE_ERROR]", err));
   };
 

@@ -33,6 +33,10 @@ export const growthNarrativeEngine = {
       const mapped = categoryMap[cat];
       if (mapped) {
         transitionsRaw.push(mapped);
+      } else if (rec.innerworkCompletion?.completed || (rec.practiceResults?.length ?? 0) > 0) {
+        const practiceTitle = rec.innerworkRecommendation?.practiceTitle || rec.practiceResults?.[0]?.practiceTitle;
+        const readableCategory = rec.issueCategory || rec.dominantIssue || practiceTitle || "Praktik Kesadaran";
+        transitionsRaw.push(readableCategory);
       }
     });
 
@@ -46,7 +50,9 @@ export const growthNarrativeEngine = {
 
     const growthNarrative = growthTransitions.length > 0
       ? growthTransitions.join(" \n↓\n ")
-      : "Perjalananmu baru saja dimulai. Seiring bertambahnya refleksi dan praktik, Bhumi akan mulai memetakan tema-tema yang paling sering muncul dalam perjalananmu.";
+      : records.length > 0
+        ? "Jejak praktikmu sudah tersimpan. Bhumi mulai membaca ritme kecil yang kamu bangun dari refleksi dan praktik harian."
+        : "Perjalananmu baru saja dimulai. Seiring bertambahnya refleksi dan praktik, Bhumi akan mulai memetakan tema-tema yang paling sering muncul dalam perjalananmu.";
 
     // 5. Lesson and Invitation mapping
     const latestCat = sorted[sorted.length - 1]?.issueCategory?.toLowerCase() || "boundaries";

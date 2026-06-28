@@ -1,0 +1,133 @@
+{
+  "steps": [],
+  "progress": [
+    {
+      "name": "after-journal",
+      "expected": 1,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 1/7 Aktivitas Selesai 14% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-journal.png"
+    },
+    {
+      "name": "after-meditation",
+      "expected": 2,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 2/7 Aktivitas Selesai 29% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-meditation.png"
+    },
+    {
+      "name": "after-yoga",
+      "expected": 3,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 3/7 Aktivitas Selesai 43% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-yoga.png"
+    },
+    {
+      "name": "after-workout",
+      "expected": 4,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 4/7 Aktivitas Selesai 57% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-workout.png"
+    },
+    {
+      "name": "after-audio",
+      "expected": 5,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 5/7 Aktivitas Selesai 71% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-audio.png"
+    },
+    {
+      "name": "after-food",
+      "expected": 6,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 6/7 Aktivitas Selesai 86% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-food.png"
+    },
+    {
+      "name": "after-manifest",
+      "expected": 7,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 7/7 Aktivitas Selesai 100% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-manifest.png"
+    },
+    {
+      "name": "after-reload",
+      "expected": 7,
+      "hasExpected": true,
+      "hasFallback": false,
+      "text": "Beranda Profil Wellness Journey Lainnya BHUMI AMARTYA Journey Kisah pertumbuhan dan konsistensi dirimu. PROGRES HARI INI 7/7 Aktivitas Selesai 100% Tahap Pertumbuhan Fokus Saat Ini Yang Meminta Perhatian Milestone Berikutnya Riwayat Aktivitas VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+      "screenshot": "screenshots/moana-005-journey-after-reload.png"
+    }
+  ],
+  "storage": {
+    "moana:journeyDailyRecords:moana007_uid:2026-06-28": "{\"id\":\"moana007_uid_2026-06-28\",\"userId\":\"moana007_uid\",\"date\":\"2026-06-28\",\"appDate\":\"2026-06-28\",\"dayOfWeek\":\"Minggu\",\"createdAt\":\"2026-06-28T07:39:10.501Z\",\"updatedAt\":\"2026-06-28T07:39:49.424Z\",\"dominantIssue\":\"wellness_section_4\",\"issueCategory\":\"manifestation\",\"navigatorMode\":\"REFLECTION\",\"wellnessState\":{},\"dailyScanCompleted\":false,\"dailyScanSummary\":\"\",\"catatanSummary\":\"\",\"catatanMainDirection\":\"\",\"catatanChallenge\":\"\",\"catatanOpportunity\":\"\",\"astroSummary\":\"\",\"astroEvents\":[],\"profileSignals\":[],\"innerworkRecommendation\":{\"practiceId\":\"manifestasi-hari-ini\",\"practiceType\":\"manifestation\",\"practiceTitle\":\"Manifestasi Hari Ini\",\"durationMinutes\":5,\"intensity\":\"self_guided\",\"reason\":\"Praktik dipilih dari Wellness Section 4.\",\"sourceSignals\":[\"wellness_section_4\",\"practice:manifestation\"]},\"innerworkCompletion\":{\"completed\":true,\"skipped\":false,\"completedAt\":\"2026-06-28T07:39:49.424Z\",\"actualPracticeId\":\"manifestasi-hari-ini\",\"actualPracticeType\":\"manifestation\",\"actualDuration\":5,\"practiceHelped\":null},\"sourceConfidence\":1,\"practiceResults\":[{\"zone\":\"B\",\"issue\":\"difficulty_resting\",\"issueCategory\":\"Sulit Beristirahat Tanpa Merasa Bersalah\",\"practiceId\":\"hub-journaling\",\"practiceCategory\":\"journaling\",\"practiceTitle\":\"Journaling: Sulit Beristirahat Tanpa Merasa Bersalah\",\"durationMinutes\":10,\"completedAt\":\"2026-06-28T07:39:10.500Z\",\"source\":\"wellness_section_4\",\"reflectionResult\":\"😌 Lebih tenang\",\"reflectionResponse\":\"Dari tulisanmu, tema Journaling: Sulit Beristirahat Tanpa Merasa Bersalah tampak sedang meminta ruang untuk didengar tanpa dihakimi. Sintesis hari ini mengarah pada honest emotional check-in, held together with discipline with kindness, sehingga kamu mungkin sedang belajar merespons hidup dari kesadaran, bukan dari kebiasaan lama. Tubuhmu memberi sinyal melalui tubuh lebih rileks, jadi proses ini layak didekati dengan lembut.\",\"practiceHelped\":true},{\"zone\":\"B\",\"issue\":\"difficulty_resting\",\"issueCategory\":\"Sulit Beristirahat Tanpa Merasa Bersalah\",\"practiceId\":\"hub-meditation\",\"practiceCategory\":\"meditation\",\"practiceTitle\":\"Meditasi: Sulit Beristirahat Tanpa Merasa Bersalah\",\"durationMinutes\":10,\"completedAt\":\"2026-06-28T07:39:16.716Z\",\"source\":\"wellness_section_4\",\"reflectionResult\":\"😌 Lebih tenang\",\"reflectionResponse\":\"Respons tubuhmu hari ini menunjukkan ada bagian dalam dirimu yang sedang meminta diperlakukan dengan lebih lembut. Hari ini mungkin terasa lebih bisa dijalani saat kamu memberi ruang untuk satu struktur kecil yang membuat hari terasa lebih mudah dipegang, ruang yang lebih lembut untuk emosi tanpa membiarkannya mengambil alih hari, dan one organized completion, held together with one focused step from a multi-step idea. Biarkan harimu tetap sederhana: satu cek-in jujur, satu pilihan yang membumi, satu langkah kecil yang benar-benar dilakukan. Sinyal seperti napas lebih panjang bisa menjadi undangan untuk mendengar tubuhmu lebih pelan.\",\"practiceHelped\":true},{\"zone\":\"B\",\"issue\":\"difficulty_resting\",\"issueCategory\":\"Sulit Beristirahat Tanpa Merasa Bersalah\",\"practiceId\":\"hub-yoga\",\"practiceCategory\":\"yoga\",\"practiceTitle\":\"Yoga: Sulit Beristirahat Tanpa Merasa Bersalah\",\"durationMinutes\":10,\"completedAt\":\"2026-06-28T07:39:22.610Z\",\"source\":\"wellness_section_4\",\"reflectionResult\":\"Belum Yakin\",\"practiceHelped\":false},{\"zone\":\"B\",\"issue\":\"difficulty_resting\",\"issueCategory\":\"Sulit Beristirahat Tanpa Merasa Bersalah\",\"practiceId\":\"hub-workout\",\"practiceCategory\":\"workout\",\"practiceTitle\":\"Olahraga: Sulit Beristirahat Tanpa Merasa Bersalah\",\"durationMinutes\":10,\"completedAt\":\"2026-06-28T07:39:26.512Z\",\"source\":\"wellness_section_4\",\"reflectionResult\":\"Belum Yakin\",\"practiceHelped\":false},{\"zone\":\"B\",\"issue\":\"wellness_section_4\",\"issueCategory\":\"audioHealing\",\"practiceId\":\"audio-healing\",\"practiceCategory\":\"audioHealing\",\"practiceTitle\":\"Audio Healing\",\"durationMinutes\":15,\"completedAt\":\"2026-06-28T07:39:30.428Z\",\"source\":\"wellness_section_4\",\"reflectionResult\":\"🫧 Lebih lega\",\"reflectionResponse\":\"Respons tubuhmu menunjukkan bahwa ada bagian dari dirimu yang mulai memberi ruang untuk tenang, meski belum semuanya selesai. Tubuhmu memberi sinyal lewat kepala lebih ringan, jadi respons itu layak didengar pelan-pelan. Catatanmu menunjukkan ada ruang kecil untuk mengenali apa yang berubah setelah mendengar suara.\",\"practiceHelped\":true},{\"zone\":\"B\",\"issue\":\"wellness_section_4\",\"issueCategory\":\"healthyFood\",\"practiceId\":\"ginger-fire\",\"practiceCategory\":\"healthyFood\",\"practiceTitle\":\"Wedang Jahe Madu\",\"durationMinutes\":5,\"completedAt\":\"2026-06-28T07:39:43.704Z\",\"source\":\"wellness_section_4\",\"practiceHelped\":null},{\"zone\":\"B\",\"issue\":\"wellness_section_4\",\"issueCategory\":\"manifestation\",\"practiceId\":\"manifestasi-hari-ini\",\"practiceCategory\":\"manifestation\",\"practiceTitle\":\"Manifestasi Hari Ini\",\"durationMinutes\":5,\"completedAt\":\"2026-06-28T07:39:49.424Z\",\"source\":\"wellness_section_4\",\"practiceHelped\":null}]}",
+    "moana:dailyStates:moana007_uid:2026-06-28": "{\"uid\":\"moana007_uid\",\"date\":\"2026-06-28\",\"updatedAt\":\"2026-06-28T07:39:49.424Z\",\"wellnessSnapshot\":{\"metrics\":{\"sleep\":5,\"energy\":5,\"emotion\":5,\"focus\":5,\"social\":5},\"needs\":[],\"checkInCompleted\":true,\"updatedAt\":\"2026-06-28T07:39:07.140Z\"},\"journalingDone\":true,\"emotionalWord\":\"😌 Lebih tenang\",\"meditationDone\":true,\"completedActivityIds\":[\"yoga-hub-yoga-1782632362569\",\"workout-hub-workout-1782632366480\",\"food-ginger-fire-1782632383640\"],\"yogaDone\":true,\"workoutDone\":true,\"audioHealingDone\":true,\"herbalDone\":true,\"manifestDone\":true}",
+    "moana:activities:moana007_uid": "[{\"id\":\"food-ginger-fire-1782632383640\",\"category\":\"healthyFood\",\"contentId\":\"ginger-fire\",\"title\":\"Wedang Jahe Madu\",\"duration\":5,\"sourceVersion\":\"1.0\",\"uid\":\"moana007_uid\",\"localDate\":\"2026-06-28\",\"completedAt\":\"2026-06-28T07:39:43.641Z\"},{\"id\":\"workout-hub-workout-1782632366480\",\"category\":\"workout\",\"contentId\":\"hub-workout\",\"title\":\"Olahraga: Sulit Beristirahat Tanpa Merasa Bersalah\",\"duration\":10,\"sourceVersion\":\"1.0\",\"uid\":\"moana007_uid\",\"localDate\":\"2026-06-28\",\"completedAt\":\"2026-06-28T07:39:26.480Z\"},{\"id\":\"yoga-hub-yoga-1782632362569\",\"category\":\"yoga\",\"contentId\":\"hub-yoga\",\"title\":\"Yoga: Sulit Beristirahat Tanpa Merasa Bersalah\",\"duration\":10,\"sourceVersion\":\"1.0\",\"uid\":\"moana007_uid\",\"localDate\":\"2026-06-28\",\"completedAt\":\"2026-06-28T07:39:22.569Z\"}]"
+  },
+  "pass": true,
+  "practiceResults": [
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "journaling",
+      "practiceTitle": "Journaling: Sulit Beristirahat Tanpa Merasa Bersalah",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:10.500Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "meditation",
+      "practiceTitle": "Meditasi: Sulit Beristirahat Tanpa Merasa Bersalah",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:16.716Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "yoga",
+      "practiceTitle": "Yoga: Sulit Beristirahat Tanpa Merasa Bersalah",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:22.610Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "workout",
+      "practiceTitle": "Olahraga: Sulit Beristirahat Tanpa Merasa Bersalah",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:26.512Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "audioHealing",
+      "practiceTitle": "Audio Healing",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:30.428Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "healthyFood",
+      "practiceTitle": "Wedang Jahe Madu",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:43.704Z"
+    },
+    {
+      "userId": "moana007_uid",
+      "dateKey": "2026-06-28",
+      "practiceType": "manifestation",
+      "practiceTitle": "Manifestasi Hari Ini",
+      "source": "wellness_section_4",
+      "completedAt": "2026-06-28T07:39:49.424Z"
+    }
+  ]
+}

@@ -209,7 +209,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       instructions: [
         "Duduk dengan nyaman",
         "Tutup mata",
-        "Hanya perhatikan napas Anda - tidak perlu mengubah",
+        "Hanya perhatikan napasmu - tidak perlu mengubah",
         "Hirup dalam, hembuskan perlahan",
         "Jika pikiran berkeliaran, lembut kembali ke napas",
         "Lakukan selama 5 menit",
@@ -233,7 +233,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       type: "reflection",
       title: "Core Values Clarification",
       description:
-        "Mengidentifikasi nilai-nilai sejati Anda vs nilai-nilai yang Anda kejar untuk orang lain.",
+        "Mengidentifikasi nilai-nilai sejatimu vs nilai-nilai yang kamu kejar untuk orang lain.",
       duration: 20,
       basedOnEmotionalAnalysis: "Inauthenticity or people-pleasing patterns",
       addressesWound: "abandonment fears, self-worth tied to others' approval",
@@ -241,7 +241,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       instructions: [
         "Tulis daftar 10 nilai yang kamu pikir penting (jujur, cinta, kesuksesan, dll)",
         "Untuk setiap, tandai: 'ini milik SAYA' atau 'ini diharapkan ORANG LAIN'",
-        "Circling yang dengan tanda bintang yang paling sejati untuk Anda",
+        "Lingkari yang paling sejati untukmu dengan tanda bintang",
         "Tulis: Bagaimana saya bisa menghidupkan nilai-nilai ini lebih plenamente?",
         "Identifikasi satu langkah kecil minggu ini",
       ],
@@ -253,7 +253,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       frequency: "quarterly review",
       integratesWithPractice: ["journaling", "boundary-work"],
       supportiveReminder:
-        "Hidup autentik dimulai dengan tahu siapa Anda di luar ekspektasi. Itu pemberani.",
+        "Hidup autentik dimulai dengan tahu siapa kamu di luar ekspektasi. Itu pemberani.",
     },
   ],
 
@@ -285,7 +285,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       frequency: "as-needed for new boundaries",
       integratesWithPractice: ["journaling", "authentic-speaking"],
       supportiveReminder:
-        "Batas Anda adalah bentuk cinta - untuk diri sendiri dan untuk orang lain. Mereka membuat hubungan lebih sehat.",
+        "Batasmu adalah bentuk cinta - untuk diri sendiri dan untuk orang lain. Batas membuat hubungan lebih sehat.",
     },
   ],
 };

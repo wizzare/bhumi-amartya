@@ -175,6 +175,9 @@ export function WellnessPageClient() {
   const auth = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
 
   const [intelligence, setIntelligence] = React.useState<WellnessDailyIntelligence | null>(null);
   const [decision, setDecision] = React.useState<InnerworkDailyDecision | null>(null);
@@ -218,21 +221,26 @@ export function WellnessPageClient() {
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
   const [startFresh, setStartFresh] = React.useState(false);
 
-  const isBaselinePending = (!auth?.userProfile?.baselineWellnessCompleted || auth?.userProfile?.baselineWellnessProfile?.version !== 'V3_BASELINE');
+  const isBaselinePending = !auditUser && (!auth?.userProfile?.baselineWellnessCompleted || auth?.userProfile?.baselineWellnessProfile?.version !== 'V3_BASELINE');
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
 
-  React.useEffect(() => {
-    async function load() {
-      if (!auth?.user?.uid) return;
+  const loadDailyIntelligence = React.useCallback(async () => {
+      if (!auth?.user?.uid && !auditUser) return;
       try {
-        const [profile, blueprint] = await Promise.all([
+        let [profile, blueprint] = await Promise.all([
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
           
         ]);
+        if (auditUser && (!profile || !blueprint)) {
+          const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+          profile = profile || getMockProfile(auditUser) as any;
+          blueprint = blueprint || getMockBlueprint(auditUser) as any;
+        }
         
         if (!profile) return;
         const result = await loadWellnessDailyIntelligence({
-          uid: auth.user.uid,
+          uid: activeUid,
           profile,
           blueprint,
         });
@@ -254,9 +262,16 @@ export function WellnessPageClient() {
       } finally {
         setLoading(false);
       }
-    }
-    if (auth?.authStateResolved && auth?.user?.uid) void load();
-  }, [auth?.authStateResolved, auth?.user?.uid]);
+  }, [auth?.user?.uid, auditUser, activeUid]);
+
+  const handleCheckInCompleted = React.useCallback(() => {
+    setCheckInCompleted(true);
+    void loadDailyIntelligence();
+  }, [loadDailyIntelligence]);
+
+  React.useEffect(() => {
+    if (auth?.authStateResolved && (auth?.user?.uid || auditUser)) void loadDailyIntelligence();
+  }, [auth?.authStateResolved, auth?.user?.uid, auditUser, loadDailyIntelligence]);
 
   const handleRepeat = () => {
     setAssessmentStage("intro");
@@ -282,7 +297,7 @@ export function WellnessPageClient() {
           <BhumiPageHeader />
           <WellnessAssessmentFlow 
             key={startFresh ? "fresh" : "saved"}
-            uid={auth?.user?.uid || ""}
+            uid={activeUid}
             language={language}
             startFresh={startFresh}
             initialStage={assessmentStage === "questions" ? "questions" : "intro"}
@@ -319,7 +334,7 @@ export function WellnessPageClient() {
           <WellnessSection number="1" title="Baseline Scan">
             <WellnessAssessmentFlow
               key="baseline"
-              uid={auth?.user?.uid || ""}
+              uid={activeUid}
               language={language}
               startFresh={true}
               onResultsLoaded={async (m, n, s, r) => {
@@ -355,9 +370,9 @@ export function WellnessPageClient() {
           <WellnessSection number="1" title={t.wellness.checkIn}>
             <div className="space-y-4">
               <WellnessCheckInCard
-                uid={auth?.user?.uid || ""}
+                uid={activeUid}
                 initialSnapshot={intelligence?.wellnessState?.wellnessSnapshot}
-                onCompleted={() => setCheckInCompleted(true)}
+                onCompleted={handleCheckInCompleted}
               />
             </div>
           </WellnessSection>
@@ -382,9 +397,9 @@ export function WellnessPageClient() {
         <WellnessSection number="1" title={t.wellness.checkIn}>
           <div className="space-y-4">
             <WellnessCheckInCard
-              uid={auth?.user?.uid || ""}
+              uid={activeUid}
               initialSnapshot={intelligence?.wellnessState?.wellnessSnapshot}
-              onCompleted={() => setCheckInCompleted(true)}
+              onCompleted={handleCheckInCompleted}
             />
             {intelligence?.wellnessState?.emotionalWord && (
               <p className="rounded-2xl bg-white p-4 text-sm text-[#526053] shadow-sm">
@@ -424,7 +439,7 @@ export function WellnessPageClient() {
           <WellnessSection number="2" title={t.wellness.mapping}>
             <WellnessAssessmentFlow 
               key={startFresh ? "fresh" : "saved"}
-              uid={auth?.user?.uid || ""}
+              uid={activeUid}
               language={language}
               startFresh={startFresh}
               initialStage="intro"
@@ -569,6 +584,11 @@ export function WellnessPageClient() {
 
         {/* Section 4: Praktik Tambahan */}
         <WellnessSection number="4" title={t.wellness.additional}>
+          {intelligence?.currentIssue?.title && (
+            <p className="text-xs font-medium leading-relaxed text-[#7B8776]">
+              Fokus praktik saat ini: <span className="font-bold text-[#4F5E52]">{intelligence.currentIssue.title}</span>
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             {PRACTICES.map(({ label, href, Icon }) => (
               <Link key={label} href={href} className="rounded-2xl border border-[#E8E9E5] bg-white p-5 text-center shadow-sm hover:border-[#4F5E52]/20 transition-all active:scale-[0.98] group">

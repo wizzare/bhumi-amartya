@@ -32,6 +32,7 @@ export interface JourneyPracticeResult {
   practiceTitle: string;
   durationMinutes: number;
   completedAt: string;
+  source?: string;
   reflectionResult?: string;
   reflectionResponse?: string;
   practiceHelped?: boolean | null;

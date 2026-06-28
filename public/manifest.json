@@ -1,0 +1,10 @@
+{
+  "name": "Bhumi Amartya",
+  "short_name": "Bhumi",
+  "description": "Ruang untuk Pulang dan Kenali Diri",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F1E8",
+  "theme_color": "#A97955",
+  "orientation": "portrait"
+}

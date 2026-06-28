@@ -12,6 +12,7 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
+import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
 
 type GoogleRedirectProcessingResult = {
   user: User | null;
@@ -49,6 +50,7 @@ export const ensureMinimalUserProfile = async (user: User) => {
   const now = Timestamp.now();
   const threeDaysInSeconds = 3 * 24 * 60 * 60;
   const trialEndsAt = new Timestamp(now.seconds + threeDaysInSeconds, now.nanoseconds);
+  const applyDefaultPolicy = shouldApplyDefaultRegistrationPolicy(now);
 
   const minimalProfile: UserProfile = {
     uid: user.uid,
@@ -69,9 +71,12 @@ export const ensureMinimalUserProfile = async (user: User) => {
     baselineWellnessCompleted: false,
     setupCompleted: false,
     blueprintStatus: "missing",
-    plan: "free",
-    trialStartedAt: now,
-    trialEndsAt,
+    plan: applyDefaultPolicy ? "trial" : "free",
+    planLabel: applyDefaultPolicy ? "Free Trial (3 Days)" : null,
+    membershipType: applyDefaultPolicy ? "REGULAR" : null,
+    membershipStartDate: applyDefaultPolicy ? now : null,
+    trialStartedAt: applyDefaultPolicy ? now : undefined,
+    trialEndsAt: applyDefaultPolicy ? trialEndsAt : undefined,
     isDeveloper: false,
     healingProgress: {
       healingStreak: 0,
@@ -101,6 +106,7 @@ export const ensureMinimalUserProfile = async (user: User) => {
     guardianApproved: false,
     guardianRole: "user",
     guardianBadge: "guardian",
+    testerBadge: applyDefaultPolicy ? "Penjaga Bhumi" : undefined,
     recognitionTier: "GUARDIAN",
     createdAt: now,
     updatedAt: now,

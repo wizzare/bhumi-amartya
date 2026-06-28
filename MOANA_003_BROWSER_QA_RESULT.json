@@ -1,0 +1,35 @@
+{
+  "pass": true,
+  "affirmation": "Aku mengizinkan perasaanku hadir tanpa menjadikannya penguasa seluruh hariku.",
+  "before": {
+    "reflection": "Refleksi Hari IniHai Founder, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu. \"Mungkin ada bagian dirimu yang sedang bertumbuh pelan-pelan.",
+    "catatan": "Pesan untuk JiwamuTema saat ini: Menemani Hari. Tidak semua hal perlu dipaksa hari ini.",
+    "profile": "Profil Hari IniSatu bagian dari dirimu yang layak diamati hari ini.Jejak JiwaLihat DetailTema Lama yang Meminta Cara BaruRefleksi\"Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?\"",
+    "profileContent": "Jejak JiwaTema Lama yang Meminta Cara Baru",
+    "profileReflection": "Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?",
+    "manifestation": "Law of Affirmation\"Aku mengizinkan perasaanku hadir tanpa menjadikannya penguasa seluruh hariku.\"",
+    "cardText": "Bhumi AmartyaFounder TestMinggu, 28 Juni 2026Refleksi Hari IniHai Founder, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu. \"Mungkin ada bagian dirimu yang sedang bertumbuh pelan-pelan.Pesan untuk JiwamuTema saat ini: Menemani Hari. Tidak semua hal perlu dipaksa hari ini.Profil Hari IniSatu bagian dari dirimu yang layak diamati hari ini.Jejak JiwaLihat DetailTema Lama yang Meminta Cara BaruRefleksi\"Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?\"Law of Affirmation\"Aku mengizinkan perasaanku hadir tanpa menjadikannya penguasa seluruh hariku.\"Bhumi Amartya- Ruang Untuk Pulang dan Kenali Diri -"
+  },
+  "after": {
+    "reflection": "Refleksi Hari IniHai Founder, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu. \"Mungkin ada bagian dirimu yang sedang bertumbuh pelan-pelan.",
+    "catatan": "Pesan untuk JiwamuTema saat ini: Menemani Hari. Tidak semua hal perlu dipaksa hari ini.",
+    "profile": "Profil Hari IniSatu bagian dari dirimu yang layak diamati hari ini.Jejak JiwaLihat DetailTema Lama yang Meminta Cara BaruRefleksi\"Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?\"",
+    "profileContent": "Jejak JiwaTema Lama yang Meminta Cara Baru",
+    "profileReflection": "Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?",
+    "manifestation": "Law of Affirmation\"Aku mengizinkan perasaanku hadir tanpa menjadikannya penguasa seluruh hariku.\"",
+    "cardText": "Bhumi AmartyaFounder TestMinggu, 28 Juni 2026Refleksi Hari IniHai Founder, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu. \"Mungkin ada bagian dirimu yang sedang bertumbuh pelan-pelan.Pesan untuk JiwamuTema saat ini: Menemani Hari. Tidak semua hal perlu dipaksa hari ini.Profil Hari IniSatu bagian dari dirimu yang layak diamati hari ini.Jejak JiwaLihat DetailTema Lama yang Meminta Cara BaruRefleksi\"Contohnya, jika konflik serupa terus muncul di relasi atau pekerjaan, jangan hanya bertanya 'mengapa ini terjadi lagi?\"Law of Affirmation\"Aku mengizinkan perasaanku hadir tanpa menjadikannya penguasa seluruh hariku.\"Bhumi Amartya- Ruang Untuk Pulang dan Kenali Diri -"
+  },
+  "screenshots": [
+    "screenshots/moana-003-manifestasi-source.png",
+    "screenshots/moana-003-profile-share-card-before-reload.png",
+    "screenshots/moana-003-profile-share-card-after-reload.png"
+  ],
+  "checks": {
+    "reflectionBound": true,
+    "catatanBound": true,
+    "profileConcise": true,
+    "manifestationBound": true,
+    "noRawMarkdown": true,
+    "persisted": true
+  }
+}

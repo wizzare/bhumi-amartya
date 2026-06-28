@@ -16,6 +16,8 @@ export const metadata: Metadata = {
   description:
     "Ruang untuk pulang dan mengenali diri.",
 
+  manifest: "/manifest.json",
+
   other: {
     "google-adsense-account": "ca-pub-0971666335614952",
   },

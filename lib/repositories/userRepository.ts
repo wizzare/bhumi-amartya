@@ -49,6 +49,7 @@ export type UserProfile = {
   trialEndsAt?: Timestamp;
   isDeveloper?: boolean;
   isFoundingMember?: boolean;
+  testerBadge?: "Founder" | "Penjaga Bhumi Inti" | "Penjaga Bhumi Alfa" | "Penjaga Bhumi";
   guardianRole?: "founder" | "admin" | "user";
   guardianBadge?: "core_guardian" | "guardian";
   recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "CORE_GUARDIAN_CANDIDATE" | "GUARDIAN";
@@ -102,6 +103,10 @@ export type UserProfile = {
   profile: {
     language: "id" | "en";
     onboardingCompleted: boolean;
+    timezone?: string | null;
+    birthCity?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
     blueprintInput?: {
       birthDate?: string;
       birthTime?: string;

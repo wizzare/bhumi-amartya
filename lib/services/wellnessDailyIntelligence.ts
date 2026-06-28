@@ -1,5 +1,9 @@
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import {
+  buildUnifiedBlueprintSynthesis,
+  type UnifiedBlueprintSynthesis,
+} from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
 import type { InnerworkPracticeInput } from "@/lib/engines/innerworkIntelligence";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
@@ -7,9 +11,11 @@ import { dailyStateRepository, type DailyState } from "@/lib/repositories/dailyS
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { wellnessNavigatorRepository } from "@/lib/repositories/wellnessNavigatorRepository";
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
-import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
+import { calculateWellnessMapping, type WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
+import { getLabelForScore, type AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
+import type { WellnessSnapshot } from "@/lib/data/types";
 
 export type WellnessCurrentIssue = {
   key: string;
@@ -74,20 +80,56 @@ const ISSUE_TITLES: Record<string, string> = {
   grief: "Proses Pelepasan dan Duka yang Mendalam",
   self_worth: "Menemukan Nilai Diri yang Sejati",
   burnout: "Kelelahan Fisik dan Emosional yang Berat",
+  growth_phase: "Fase Pertumbuhan yang Stabil",
 };
 
 const CATEGORY_TO_ISSUE_KEY: Record<string, string> = {
+  GROWTH_PHASE: "growth_phase",
   BURNOUT: "burnout",
   ANXIETY: "anxiety",
   LONELINESS: "love_block",
   LOSS_AND_GRIEF: "grief",
-  GROWTH_PHASE: "self_worth",
-  LIFE_TRANSITION: "self_worth",
+  LIFE_TRANSITION: "direction_confusion",
   LIFE_CRISIS: "burnout",
   MEANING_CRISIS: "self_worth",
   SPIRITUAL_AWAKENING: "self_worth",
   SPIRITUAL_CRISIS: "self_worth",
 };
+
+function compactSynthesisSignals(synthesis: UnifiedBlueprintSynthesis | null): string[] {
+  if (!synthesis) return [];
+  return [
+    synthesis.blueprintSummary,
+    ...synthesis.coreNeeds.slice(0, 3),
+    synthesis.practiceThemes.grounding,
+    synthesis.practiceThemes.reflection,
+    synthesis.practiceThemes.action,
+  ].filter((value): value is string => Boolean(value?.trim()));
+}
+
+function scoreMetric(value: number | null | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 50;
+  return Math.max(0, Math.min(100, Math.round(((value - 1) / 9) * 100)));
+}
+
+function assessmentFromCheckIn(snapshot: WellnessSnapshot): AssessmentResult {
+  const sleep = scoreMetric(snapshot.metrics.sleep);
+  const energy = scoreMetric(snapshot.metrics.energy);
+  const emotion = scoreMetric(snapshot.metrics.emotion);
+  const focus = scoreMetric(snapshot.metrics.focus);
+  const social = scoreMetric(snapshot.metrics.social);
+  const body = Math.round((sleep + energy) / 2);
+  const meaning = Math.round((focus + energy) / 2);
+  const spirituality = Math.round((focus + emotion) / 2);
+
+  return {
+    body: { score: body, label: getLabelForScore(body) },
+    emotion: { score: emotion, label: getLabelForScore(emotion) },
+    relationship: { score: social, label: getLabelForScore(social) },
+    meaning: { score: meaning, label: getLabelForScore(meaning) },
+    spirituality: { score: spirituality, label: getLabelForScore(spirituality) },
+  };
+}
 
 export function resolveCurrentIssue(
   mapping: WellnessMapping | null,
@@ -147,6 +189,7 @@ export async function loadWellnessDailyIntelligence(input: {
   profile: Record<string, any>;
   blueprint: Record<string, any> | null;
   date?: string;
+  unifiedBlueprint?: UnifiedBlueprintSynthesis | null;
 }): Promise<WellnessDailyIntelligence> {
   const timezone = input.profile?.timezone
     || input.profile?.profile?.timezone
@@ -157,7 +200,7 @@ export async function loadWellnessDailyIntelligence(input: {
   previous.setDate(previous.getDate() - 1);
   const previousDate = getLocalDateKey(previous, timezone);
 
-  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState, mapping] = await Promise.all([
+  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState, storedMapping] = await Promise.all([
     dailyGuidanceRepository.getDailyGuidance(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, previousDate).catch(() => null),
@@ -173,7 +216,15 @@ export async function loadWellnessDailyIntelligence(input: {
     );
   }
 
-  const profileSignals: string[] = [];
+  const unifiedBlueprint = input.unifiedBlueprint ?? buildUnifiedBlueprintSynthesis({
+    language: input.profile?.language === "en" ? "en" : "id",
+    profile: input.profile,
+    blueprint: input.blueprint,
+  });
+  const profileSignals = compactSynthesisSignals(unifiedBlueprint);
+  const mapping = wellnessState?.wellnessSnapshot
+    ? calculateWellnessMapping(assessmentFromCheckIn(wellnessState.wellnessSnapshot), [wellnessState.wellnessSnapshot])
+    : storedMapping;
   const currentIssue = resolveCurrentIssue(mapping, dailyGuidance, wellnessState, navigatorState, profileSignals);
   const awareness = astroAwarenessEngine.getAwarenessContext(new Date(`${date}T12:00:00`));
   const astroContext = [

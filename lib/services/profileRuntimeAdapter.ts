@@ -14,6 +14,8 @@ export class ProfileRuntimeAdapter {
       this.buildSection6(meaning),
       this.buildSection7(meaning),
       this.buildSection8(meaning),
+      this.buildSoulIdentitySection(meaning),
+      this.buildOriginCivilizationSection(),
     ];
   }
 
@@ -330,6 +332,190 @@ export class ProfileRuntimeAdapter {
           actionableReflection: meaning.timing.growthArea.long,
         },
       ],
+    };
+  }
+
+  private static buildSoulIdentitySection(meaning: HumanMeaning): ProfileSection {
+    return {
+      title: "SOUL IDENTITY",
+      cards: [
+        {
+          title: "Soul Mission",
+          shortMeaning: meaning.soulIdentity.mission.short,
+          expandableInsight: meaning.soulIdentity.mission.medium,
+          actionableReflection: meaning.soulIdentity.mission.long,
+        },
+        {
+          title: "Soul Gifts",
+          shortMeaning: meaning.soulIdentity.gifts.short,
+          expandableInsight: meaning.soulIdentity.gifts.medium,
+          actionableReflection: meaning.soulIdentity.gifts.long,
+        },
+        {
+          title: "Soul Lessons",
+          shortMeaning: meaning.soulIdentity.lessons.short,
+          expandableInsight: meaning.soulIdentity.lessons.medium,
+          actionableReflection: meaning.soulIdentity.lessons.long,
+        },
+        {
+          title: "Soul Shadow",
+          shortMeaning: meaning.soulIdentity.shadow.short,
+          expandableInsight: meaning.soulIdentity.shadow.medium,
+          actionableReflection: meaning.soulIdentity.shadow.long,
+        },
+        {
+          title: "Soul Archetype",
+          shortMeaning: meaning.soulIdentity.archetype.short,
+          expandableInsight: meaning.soulIdentity.archetype.medium,
+          actionableReflection: meaning.soulIdentity.archetype.long,
+        },
+      ],
+    };
+  }
+
+  private static buildOriginCivilizationSection(): ProfileSection {
+    return {
+      title: "ASAL USUL & PERADABAN",
+      cards: [
+        this.buildStarseedInsight(),
+        this.buildCivilizationInsight(),
+      ],
+    };
+  }
+
+  private static buildStarseedInsight() {
+    const sirius = this.buildStarseedReading("Sirius", "🥇");
+    const arcturus = this.buildStarseedReading("Arcturus", "🥈");
+    const pleiades = this.buildStarseedReading("Pleiades", "🥉");
+
+    return {
+      title: "Resonansi Starseed",
+      shortMeaning: "",
+      expandableInsight: "",
+      actionableReflection: "",
+      items: [sirius, arcturus, pleiades],
+    };
+  }
+
+  private static buildCivilizationInsight() {
+    const lemuria = this.buildCivilizationReading("Lemuria", "🥇");
+    const atlantis = this.buildCivilizationReading("Atlantis", "🥈");
+    const mu = this.buildCivilizationReading("Mu", "🥉");
+
+    return {
+      title: "Resonansi Peradaban",
+      shortMeaning: "",
+      expandableInsight: "",
+      actionableReflection: "",
+      items: [lemuria, atlantis, mu],
+    };
+  }
+
+  private static buildStarseedReading(
+    name: "Sirius" | "Pleiades" | "Arcturus",
+    medal: "🥇" | "🥈" | "🥉",
+  ) {
+    const readings = {
+      Sirius: {
+        why: "Pada peta dirimu, lapisan ini terbaca kuat karena ada dorongan untuk membuat hidup terasa lebih tertata, berguna, dan bisa diandalkan.",
+        deep: "Dalam perjalananmu, rasa ingin tahu biasanya tidak berhenti sebagai pikiran. Kamu cenderung mencari pola, memahami akar persoalan, lalu mengubahnya menjadi pegangan yang lebih jelas bagi dirimu dan orang lain.",
+        light: "Saat sedang bertumbuh, kamu tampak jernih, teliti, dan mampu menenangkan keadaan tanpa harus menguasai ruangan.",
+        shadow: "Saat tertekan, kualitas yang sama bisa berubah menjadi kebutuhan untuk mengontrol, terlalu banyak menganalisis, atau menjaga jarak dari rasa rentan.",
+        balanced: "Ketika sehat, kamu memakai pengetahuan untuk membuat hidup lebih jernih dan manusiawi.",
+        unbalanced: "Ketika terluka, kamu bisa tampak kuat, padahal sedang memakai struktur untuk menahan rasa tidak aman.",
+        weave: "Benang merahnya: kamu sedang belajar memakai kejernihan sebagai pelayanan, bukan sebagai benteng.",
+        reflection: "Apa satu pengetahuan yang hari ini bisa kamu ubah menjadi tindakan kecil yang benar-benar membantu?",
+      },
+      Pleiades: {
+        why: "Pada peta dirimu, lapisan ini hadir karena ada kepekaan yang bekerja lewat rasa aman, kehangatan, dan cara merawat yang halus.",
+        deep: "Dalam hidupmu, kepekaan bukan hanya soal merasa banyak hal. Ia menjadi berarti ketika kamu mampu membuat ruang lebih aman, lebih jujur, dan lebih lembut bagi dirimu maupun orang lain.",
+        light: "Saat kamu bertumbuh, kamu tidak memaksa orang untuk berubah. Kamu membantu keadaan melembut dengan hadir lebih utuh.",
+        shadow: "Saat tertekan, kamu bisa terlalu cepat membaca kebutuhan orang lain sampai kebutuhanmu sendiri tertinggal.",
+        balanced: "Ketika sehat, kelembutanmu punya batas sehingga kasih tidak berubah menjadi pengorbanan diri.",
+        unbalanced: "Ketika terluka, kamu bisa menjaga harmoni di luar sambil menahan terlalu banyak hal di dalam.",
+        weave: "Benang merahnya: kelembutanmu menjadi matang ketika ia tetap punya batas.",
+        reflection: "Di mana hari ini kamu bisa tetap lembut tanpa meninggalkan batasmu sendiri?",
+      },
+      Arcturus: {
+        why: "Pada peta dirimu, lapisan ini muncul karena kamu punya kepekaan terhadap pola halus dan kebutuhan untuk merapikan hal yang terasa tercecer.",
+        deep: "Dalam perjalananmu, kamu sering lebih dulu merasakan ketika sesuatu tidak selaras. Kualitas ini menjadi matang ketika tidak dipakai untuk menyelamatkan semua orang, tetapi untuk hadir lebih stabil dan jernih.",
+        light: "Saat kamu bertumbuh, kamu membantu keadaan menjadi lebih tenang karena dirimu sendiri mulai tertata.",
+        shadow: "Saat tertekan, kamu bisa lelah karena terlalu banyak membaca suasana atau merasa harus memperbaiki semuanya.",
+        balanced: "Ketika sehat, sensitivitasmu menjadi kehadiran yang menata ulang ritme tanpa memaksakan apa pun.",
+        unbalanced: "Ketika terluka, kamu bisa kehilangan tubuhmu sendiri karena terlalu sibuk merasakan keadaan sekitar.",
+        weave: "Benang merahnya: kamu tidak harus memperbaiki semuanya untuk tetap membawa ketenangan.",
+        reflection: "Apa satu hal yang bisa kamu rapikan hari ini agar energimu kembali terasa utuh?",
+      },
+    };
+    const reading = readings[name];
+
+    return {
+      title: `${medal} ${name}`,
+      shortMeaning: "",
+      expandableInsight: [
+        `Mengapa Resonansi Ini Muncul\n${reading.why}`,
+        `Makna Mendalam\n${reading.deep}`,
+        `Ekspresi Terang\n${reading.light}`,
+        `Ekspresi Bayangan\n${reading.shadow}`,
+        `Saat Seimbang\n${reading.balanced}`,
+        `Saat Belum Seimbang\n${reading.unbalanced}`,
+        `Benang Merah Bacaan\n${reading.weave}`,
+      ].join("\n\n"),
+      actionableReflection: reading.reflection,
+    };
+  }
+
+  private static buildCivilizationReading(
+    name: "Atlantis" | "Lemuria" | "Mu",
+    medal: "🥇" | "🥈" | "🥉",
+  ) {
+    const readings = {
+      Atlantis: {
+        why: "Pada peta dirimu, lapisan ini muncul karena ada kemampuan untuk membangun, menyusun, dan memberi bentuk pada sesuatu yang sebelumnya masih tersebar.",
+        deep: "Dalam perjalananmu, kapasitas besar perlu selalu ditemani hati. Kamu tidak hanya diminta mencipta atau mengatur, tetapi juga memastikan kekuatanmu benar-benar melayani kehidupan.",
+        light: "Saat kamu bertumbuh, kamu mampu mengubah wawasan menjadi bentuk yang bisa menolong orang lain.",
+        shadow: "Saat tertekan, kapasitas ini bisa berubah menjadi kontrol, standar yang terlalu dingin, atau kebutuhan membuktikan diri lewat hasil.",
+        balanced: "Ketika sehat, kekuatanmu menjadi wadah yang melindungi kehidupan.",
+        unbalanced: "Ketika terluka, kamu bisa terlalu mengejar hasil sampai lupa bahwa kekuatan membutuhkan hati.",
+        weave: "Benang merahnya: kemampuanmu membangun menjadi paling indah ketika tidak kehilangan rasa.",
+        reflection: "Kapasitas apa yang hari ini perlu kamu gunakan dengan lebih rendah hati?",
+      },
+      Lemuria: {
+        why: "Pada peta dirimu, lapisan ini terbaca kuat karena banyak hal dalam hidupmu matang lewat tubuh, relasi, rasa aman, dan kepedulian sehari-hari.",
+        deep: "Dalam perjalananmu, kelembutan tidak cukup hanya dirasakan. Ia perlu menjadi cara hidup yang membumi: cara kamu hadir, merawat, memberi ruang, dan kembali pada ritme yang sehat.",
+        light: "Saat kamu bertumbuh, kehadiranmu terasa merawat tanpa menguasai. Orang bisa merasa lebih diterima karena kamu tidak perlu memaksa apa pun.",
+        shadow: "Saat tertekan, kamu bisa memberi terlalu banyak, menghindari batas, atau berharap orang memahami kebutuhanmu tanpa kamu mengatakannya.",
+        balanced: "Ketika sehat, kelembutanmu punya bentuk sehingga bisa diandalkan.",
+        unbalanced: "Ketika terluka, kamu bisa menjaga orang lain sambil diam-diam mengabaikan dirimu sendiri.",
+        weave: "Benang merahnya: rasa sayangmu perlu punya bentuk agar tidak berubah menjadi kelelahan.",
+        reflection: "Bentuk nyata apa yang bisa kamu berikan pada kelembutanmu hari ini?",
+      },
+      Mu: {
+        why: "Pada peta dirimu, lapisan ini hadir karena ada kebutuhan untuk kembali pada akar, kesederhanaan, dan rasa memiliki yang tidak dibuat-buat.",
+        deep: "Dalam perjalananmu, tidak semua jawaban datang dari hal besar. Sebagian muncul saat kamu kembali pada tubuh, ritme, keluarga batin, dan pengalaman sederhana yang paling jujur.",
+        light: "Saat kamu bertumbuh, kamu membawa stabilitas yang tenang. Kamu bisa menjaga hal penting tetap hidup tanpa banyak suara.",
+        shadow: "Saat tertekan, kamu bisa tertahan oleh nostalgia atau menjadikan masa lalu sebagai tempat berlindung.",
+        balanced: "Ketika sehat, akar menjadi sumber tenaga untuk bergerak.",
+        unbalanced: "Ketika terluka, kamu bisa menyebut sesuatu sebagai kesetiaan, padahal sebenarnya itu ketakutan meninggalkan pola lama.",
+        weave: "Benang merahnya: akar yang sehat menguatkan langkahmu, bukan menahanmu di tempat lama.",
+        reflection: "Akar apa yang masih menguatkanmu, dan apa yang sudah tidak perlu kamu bawa?",
+      },
+    };
+    const reading = readings[name];
+
+    return {
+      title: `${medal} ${name}`,
+      shortMeaning: "",
+      expandableInsight: [
+        `Mengapa Resonansi Ini Muncul\n${reading.why}`,
+        `Makna Mendalam\n${reading.deep}`,
+        `Ekspresi Terang\n${reading.light}`,
+        `Ekspresi Bayangan\n${reading.shadow}`,
+        `Saat Seimbang\n${reading.balanced}`,
+        `Saat Belum Seimbang\n${reading.unbalanced}`,
+        `Benang Merah Bacaan\n${reading.weave}`,
+      ].join("\n\n"),
+      actionableReflection: reading.reflection,
     };
   }
 }

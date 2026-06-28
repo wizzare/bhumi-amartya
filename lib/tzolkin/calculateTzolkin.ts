@@ -32,7 +32,7 @@ export function calculateTzolkin(input: TzolkinInput): TzolkinBlueprint {
 
   // Base Kin for July 26 of the Dreamspell Year
   // July 26, 1987 is Kin 34
-  let yearDiff = dreamspellYear - 1987;
+  const yearDiff = dreamspellYear - 1987;
   let baseKin = (34 + yearDiff * 105) % 260;
   if (baseKin <= 0) {
     baseKin += 260;
@@ -106,7 +106,7 @@ export function calculateTzolkin(input: TzolkinInput): TzolkinBlueprint {
   const wavespell = {
     name: `Gelombang ${wavespellName}`,
     theme: wavespellSeal.keyword,
-    meaning: `Siklus 13 hari untuk mengembangkan ${wavespellSeal.keyword.toLowerCase()} dan mematangkan ${wavespellSeal.purpose.toLowerCase()}`,
+    meaning: `Siklus 13 hari untuk mengembangkan ${wavespellSeal.keyword.toLowerCase()} dan mematangkan arah jiwa: ${wavespellSeal.purpose.toLowerCase()}`,
     growthDirection: `Menuju pemahaman akan ${wavespellSeal.gift.toLowerCase()}`,
   };
 

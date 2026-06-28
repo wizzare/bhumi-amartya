@@ -7,7 +7,8 @@ export type CompletionItemId =
   | "audio"
   | "manifest"
   | "yoga"
-  | "workout";
+  | "workout"
+  | "food";
 
 export interface CompletionItem {
   id: CompletionItemId;
@@ -33,6 +34,7 @@ export function getCompletionItems(state: DailyState | null): CompletionItem[] {
       { id: "manifest", label: "Manifestasi", completed: false },
       { id: "yoga", label: "Yoga", completed: false },
       { id: "workout", label: "Workout", completed: false },
+      { id: "food", label: "Makanan Sehat", completed: false },
     ];
   }
 
@@ -43,6 +45,7 @@ export function getCompletionItems(state: DailyState | null): CompletionItem[] {
     { id: "manifest", label: "Manifestasi", completed: Boolean(state.manifestDone) },
     { id: "yoga", label: "Yoga", completed: Boolean(state.yogaDone) },
     { id: "workout", label: "Workout", completed: Boolean(state.workoutDone) },
+    { id: "food", label: "Makanan Sehat", completed: Boolean(state.herbalDone) },
   ];
 }
 

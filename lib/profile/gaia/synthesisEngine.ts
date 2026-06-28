@@ -91,16 +91,16 @@ function weightedCoverage(theme: GaiaTheme, signals: GaiaSignal[]): number {
 function relevantSignals(definition: InsightDefinition, themeSignals: GaiaSignal[]): GaiaSignal[] {
   const tagged = themeSignals.filter((signal) => signal.tags.some((tag) => definition.tags.includes(tag)));
   const strictSourceByInsight: Record<string, string[]> = {
-    chakraProfile: ["chakra", "destinyMatrix", "lifePath", "numerology", "humanDesign", "natalChart", "elements"], physics: ["chakra"], energy: ["chakra", "humanDesign", "natalChart"], emotion: ["chakra", "natalChart"],
-    elementComposition: ["elements"], topTalents: ["destinyMatrix", "talents", "numerology", "natalChart", "humanDesign"],
-    dominantArchetype: ["archetype", "lifePath", "humanDesign", "numerology"],
+    chakraProfile: ["chakra", "destinyMatrix", "lifePath", "numerology", "humanDesign", "natalChart", "elements", "bazi", "tzolkin", "weton"], physics: ["chakra"], energy: ["chakra", "humanDesign", "natalChart", "bazi", "tzolkin", "weton"], emotion: ["chakra", "natalChart"],
+    elementComposition: ["elements", "bazi"], topTalents: ["destinyMatrix", "talents", "numerology", "natalChart", "humanDesign", "vedic", "tzolkin", "weton", "bazi"],
+    dominantArchetype: ["archetype", "lifePath", "humanDesign", "numerology", "tzolkin", "vedic", "weton", "bazi"],
     giftGeneKeys: ["geneKeys"], dominantGeneKeys: ["geneKeys"],
     sacredBusiness: ["sacredBusiness", "lifePath", "numerology"],
-    strongestEnergyArea: ["chakra", "destinyMatrix", "lifePath", "numerology", "humanDesign", "natalChart", "elements"],
-    moneyBlock: ["destinyMatrix", "natalChart", "lifePath", "numerology", "humanDesign"],
-    loveStyle: ["natalChart", "destinyMatrix", "numerology", "humanDesign"],
-    emotionalNeeds: ["natalChart", "numerology", "humanDesign"],
-    ancestralPattern: ["destinyMatrix", "innerChild", "natalChart"],
+    strongestEnergyArea: ["chakra", "destinyMatrix", "lifePath", "numerology", "humanDesign", "natalChart", "elements", "bazi", "tzolkin", "weton"],
+    moneyBlock: ["destinyMatrix", "natalChart", "lifePath", "numerology", "humanDesign", "bazi", "weton"],
+    loveStyle: ["natalChart", "destinyMatrix", "numerology", "humanDesign", "vedic", "tzolkin", "weton", "bazi"],
+    emotionalNeeds: ["natalChart", "numerology", "humanDesign", "vedic"],
+    ancestralPattern: ["destinyMatrix", "innerChild", "natalChart", "weton"],
   };
   const strictSources = strictSourceByInsight[definition.id];
   if (strictSources) return tagged.filter((signal) => strictSources.includes(signal.source));
@@ -117,6 +117,10 @@ const SOURCE_NARRATIVE_HINTS: Record<string, string> = {
   chakra: "keseimbangan pusat energi dalam dirimu",
   arcana: "tema jiwa yang menjadi pusatmu",
   elements: "komposisi elemen alamimu",
+  vedic: "arah dharma dan pembelajaran jiwamu",
+  tzolkin: "ritme kesadaran dan kode waktumu",
+  weton: "jejak hari kelahiran dan akar tradisimu",
+  bazi: "pola unsur, karya, dan siklus daya hidupmu",
 };
 
 const FIELD_MEANING_HINTS: Record<string, string> = {
@@ -164,6 +168,31 @@ const FIELD_MEANING_HINTS: Record<string, string> = {
   composition: "perpaduan unsur yang membentuk ritme dasar",
   dominant: "unsur dominan yang membentuk warna energi utama",
   modalities: "cara energi bergerak antara memulai, menjaga, dan menyesuaikan",
+  nakshatra: "jejak batin yang memberi warna pada arah dharma",
+  dharmaFocus: "arah kontribusi yang ingin dibumikan dalam hidup",
+  mokshaFocus: "cara jiwa belajar melepaskan dan menemukan kebebasan batin",
+  atmakaraka: "tema ego yang sedang dimatangkan menjadi kebijaksanaan",
+  darakaraka: "cermin relasi yang membantu hati belajar dewasa",
+  careerStyle: "cara karya mengalir paling alami",
+  relationshipStyle: "cara kedekatan dan batas terbentuk dalam relasi",
+  majorYogas: "kombinasi potensi yang dapat menjadi kekuatan nyata",
+  kinName: "nama ritme kesadaran yang mewarnai arah batin",
+  solarSealGift: "hadiah jiwa yang muncul saat kamu selaras",
+  solarSealShadow: "bayangan yang meminta respons lebih sadar",
+  galacticToneGift: "kualitas ritme yang membantu hadiahmu bekerja",
+  galacticToneLesson: "pelajaran ritme yang mematangkan pilihanmu",
+  galacticToneShadow: "pola bayangan yang muncul saat ritme batin tidak seimbang",
+  castle: "fase besar pertumbuhan kesadaran",
+  color: "warna energi yang memberi nuansa pada cara kamu hadir",
+  lifePurpose: "arah makna yang meminta bentuk sehari-hari",
+  workStyle: "cara kerja yang paling sesuai dengan ritme bawaan",
+  moneyStyle: "cara mengelola nilai, rezeki, dan rasa aman",
+  dayMaster: "unsur inti yang membentuk cara daya hidup bergerak",
+  tenGods: "pola bakat dan strategi yang dapat dilatih",
+  fiveElements: "komposisi unsur yang memengaruhi ritme energi",
+  strengths: "kekuatan alami yang bisa menjadi pegangan",
+  challenges: "area belajar yang meminta kesadaran lebih lembut",
+  watak: "warna karakter yang tampak dalam respons sehari-hari",
 };
 
 function meaningForSignal(signal: GaiaSignal): string {
@@ -224,7 +253,8 @@ function personalNarrative(definition: InsightDefinition, signals: GaiaSignal[],
 const SOURCE_LABELS: Record<string, string> = {
   lifePath: "Arah Dasar", destinyMatrix: "Pola Kehidupan", talents: "Bakat", innerChild: "Jejak Emosional",
   chakra: "Energi Tubuh", natalChart: "Pola Personal", humanDesign: "Ritme Diri", arcana: "Tema Jiwa",
-  numerology: "Angka Nama", elements: "Komposisi Elemen",
+  numerology: "Angka Nama", elements: "Komposisi Elemen", vedic: "Dharma Jiwa", tzolkin: "Ritme Kesadaran",
+  weton: "Akar Kelahiran", bazi: "Pola Unsur",
 };
 
 const CHAKRA_LABELS: Record<string, [string, string]> = {

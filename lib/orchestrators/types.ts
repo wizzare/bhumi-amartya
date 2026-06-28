@@ -53,6 +53,7 @@ export type DailyGuidanceInput = {
   weeklyReflections?: Array<Record<string, unknown>>;
   adaptiveContext?: DailyGuidanceAdaptiveContext;
   previousGuidance?: DailyGuidance | null;
+  environmentContext?: any;
   language: "id" | "en";
   generatedAt: string;
 };

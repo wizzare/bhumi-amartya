@@ -36,7 +36,7 @@ interface CoreIdentityProps {
 const Stat = ({ label, value, subValue }: { label: string; value?: string | number; subValue?: string }) => (
   <div className="flex flex-col items-center justify-center p-3 min-h-[110px] border border-[#E8E9E5]/60 rounded-3xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
     <p className="text-base sm:text-lg font-bold text-[#4F6658] leading-tight text-center w-full break-words">
-      {value || "..."}
+      {value || "Belum tersedia"}
     </p>
     {subValue && <p className="text-[10px] text-[#3C3C3C] mt-1.5 text-center leading-tight font-semibold opacity-80">{subValue}</p>}
     <p className="text-[9px] text-[#7B8776] mt-auto pt-3 text-center uppercase tracking-[0.15em] font-bold">{label}</p>
@@ -57,10 +57,11 @@ export function CoreIdentity({
 }: CoreIdentityProps) {
   const isVerified = isCanonicalHumanDesign(humanDesign);
   let humanDesignValue = isVerified ? humanDesign?.type : null;
+  if (humanDesignValue === "Manifesting Generator") humanDesignValue = "ManGen";
 
   if (!humanDesignValue) {
     if (humanDesign?.status === "needs_verified_timezone") {
-      humanDesignValue = labels.humanDesignNeedsTimezone || "Butuh Zona Waktu";
+      humanDesignValue = labels.humanDesignNeedsTimezone || labels.humanDesignPending;
     } else {
       humanDesignValue = labels.humanDesignPending;
     }

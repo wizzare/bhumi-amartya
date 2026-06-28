@@ -13,12 +13,98 @@ import { journeyNarrativeEngine } from "@/lib/engines/journeyNarrativeEngine";
 
 const dailyRecordDoc = (uid: string, appDate: string) =>
   doc(db, "journeyDailyRecords", uid, "entries", appDate);
+const localDailyStatePrefix = (uid: string) => `moana:dailyStates:${uid}:`;
+const localDailyStateKey = (uid: string, date: string) => `${localDailyStatePrefix(uid)}${date}`;
+const localDailyRecordKey = (uid: string, appDate: string) => `moana:journeyDailyRecords:${uid}:${appDate}`;
+const localDailyRecordPrefix = (uid: string) => `moana:journeyDailyRecords:${uid}:`;
 
 const defaultCompletion = {
   completed: false,
   skipped: true,
   reason: "unknown",
 };
+
+function canUseLocalAuditStore(uid: string): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV !== "development") return false;
+  const auditUser = window.localStorage.getItem("bhumi_audit_user");
+  return Boolean(auditUser && uid === `${auditUser}_uid`);
+}
+
+function readLocalJson<T>(key: string, fallback: T): T {
+  try {
+    const stored = window.localStorage.getItem(key);
+    return stored ? JSON.parse(stored) as T : fallback;
+  } catch {
+    window.localStorage.removeItem(key);
+    return fallback;
+  }
+}
+
+function writeLocalDailyRecord(uid: string, appDate: string, record: JourneyDailyRecord): void {
+  window.localStorage.setItem(localDailyRecordKey(uid, appDate), JSON.stringify(record));
+}
+
+function getLocalDailyRecord(uid: string, appDate: string): JourneyDailyRecord | null {
+  return readLocalJson<JourneyDailyRecord | null>(localDailyRecordKey(uid, appDate), null);
+}
+
+function getLocalDailyRecords(uid: string, count: number): JourneyDailyRecord[] {
+  const records: JourneyDailyRecord[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(localDailyRecordPrefix(uid))) continue;
+    const record = readLocalJson<JourneyDailyRecord | null>(key, null);
+    if (record) records.push(record);
+  }
+  return records
+    .sort((a, b) => String(b.appDate || b.date).localeCompare(String(a.appDate || a.date)))
+    .slice(0, count);
+}
+
+function getLocalDailyStates(uid: string, count: number): DailyState[] {
+  const states: DailyState[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(localDailyStatePrefix(uid))) continue;
+    const state = readLocalJson<DailyState | null>(key, null);
+    if (state) states.push(state);
+  }
+  return states
+    .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+    .slice(0, count);
+}
+
+function createLocalDailyRecord(uid: string, appDate: string, initial: Partial<JourneyDailyRecord> = {}): JourneyDailyRecord {
+  const now = new Date().toISOString();
+  return {
+    id: `${uid}_${appDate}`,
+    userId: uid,
+    date: appDate,
+    appDate,
+    dayOfWeek: new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" })
+      .format(new Date(`${appDate}T12:00:00Z`)),
+    createdAt: now,
+    updatedAt: now,
+    dominantIssue: "",
+    issueCategory: "",
+    navigatorMode: "REFLECTION",
+    wellnessState: {},
+    dailyScanCompleted: false,
+    dailyScanSummary: "",
+    catatanSummary: "",
+    catatanMainDirection: "",
+    catatanChallenge: "",
+    catatanOpportunity: "",
+    astroSummary: "",
+    astroEvents: [],
+    profileSignals: [],
+    innerworkRecommendation: null,
+    innerworkCompletion: defaultCompletion,
+    sourceConfidence: 0,
+    ...initial,
+  };
+}
 
 function expandPracticeResults(records: JourneyDailyRecord[]): JourneyDailyRecord[] {
   return records.flatMap((record) => {
@@ -59,6 +145,14 @@ export const journeyRepository = {
     appDate: string,
     initial: Partial<JourneyDailyRecord> = {},
   ): Promise<JourneyDailyRecord> {
+    if (canUseLocalAuditStore(uid)) {
+      const existing = getLocalDailyRecord(uid, appDate);
+      if (existing) return existing;
+      const record = createLocalDailyRecord(uid, appDate, initial);
+      writeLocalDailyRecord(uid, appDate, record);
+      return record;
+    }
+
     const ref = dailyRecordDoc(uid, appDate);
     const snapshot = await getDoc(ref);
     if (snapshot.exists()) return snapshot.data() as JourneyDailyRecord;
@@ -100,6 +194,16 @@ export const journeyRepository = {
     appDate: string,
     patch: Partial<Omit<JourneyDailyRecord, "id" | "userId" | "date" | "appDate" | "createdAt">>,
   ): Promise<void> {
+    if (canUseLocalAuditStore(uid)) {
+      const current = await this.ensureDailyRecord(uid, appDate);
+      writeLocalDailyRecord(uid, appDate, {
+        ...current,
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     await this.ensureDailyRecord(uid, appDate);
     await setDoc(
       dailyRecordDoc(uid, appDate),
@@ -109,6 +213,16 @@ export const journeyRepository = {
   },
 
   async appendPracticeResult(uid: string, appDate: string, result: JourneyPracticeResult): Promise<void> {
+    if (canUseLocalAuditStore(uid)) {
+      const current = await this.ensureDailyRecord(uid, appDate);
+      writeLocalDailyRecord(uid, appDate, {
+        ...current,
+        practiceResults: [...(current.practiceResults ?? []), result],
+        updatedAt: new Date().toISOString(),
+      });
+      return;
+    }
+
     await this.ensureDailyRecord(uid, appDate);
     await setDoc(
       dailyRecordDoc(uid, appDate),
@@ -121,11 +235,19 @@ export const journeyRepository = {
   },
 
   async getDailyRecord(uid: string, appDate: string): Promise<JourneyDailyRecord | null> {
+    if (canUseLocalAuditStore(uid)) {
+      return getLocalDailyRecord(uid, appDate);
+    }
+
     const snapshot = await getDoc(dailyRecordDoc(uid, appDate));
     return snapshot.exists() ? snapshot.data() as JourneyDailyRecord : null;
   },
 
   async getRecentDailyRecords(uid: string, count: number): Promise<JourneyDailyRecord[]> {
+    if (canUseLocalAuditStore(uid)) {
+      return getLocalDailyRecords(uid, count);
+    }
+
     const snapshot = await getDocs(query(
       collection(db, "journeyDailyRecords", uid, "entries"),
       orderBy("appDate", "desc"),
@@ -159,6 +281,10 @@ export const journeyRepository = {
   },
 
   async getRecentDailyStates(uid: string, limitCount: number = 30): Promise<DailyState[]> {
+    if (canUseLocalAuditStore(uid)) {
+      return getLocalDailyStates(uid, limitCount);
+    }
+
     const q = query(
       collection(db, "dailyStates", uid, "entries"),
       orderBy("date", "desc"),

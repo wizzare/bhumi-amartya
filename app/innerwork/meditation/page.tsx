@@ -23,6 +23,7 @@ import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 const EMOTIONAL_STATES = [
   "😊 Lebih ringan",
@@ -47,9 +48,23 @@ const BODY_SIGNALS = [
   "Tidak ada sensasi khusus",
 ];
 
+function resolveMudraFromTitle(title: string) {
+  const normalized = title.trim().toLowerCase();
+  const aliases: Record<string, MudraName> = {
+    "lotus mudra": "Padma Mudra",
+  };
+  const alias = aliases[normalized];
+  if (alias) return getMudraGuide(alias) ?? null;
+  return getMudraGuide(title as MudraName) ?? null;
+}
+
 export default function MeditationPage() {
   const router = useRouter();
   const auth = useAuth();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
+  const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [blueprint, setBlueprint] = useState<Record<string, unknown> | null>(null);
   const [practice, setPractice] = useState<DailyMeditationPractice | null>(null);
@@ -78,7 +93,11 @@ export default function MeditationPage() {
       }
       if (!resolved.profile) return;
       setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "meditation"));
-      const parsedBlueprint = await storageProvider.getUserBlueprint();
+      let parsedBlueprint = await storageProvider.getUserBlueprint();
+      if (auditUser && !parsedBlueprint) {
+        const { getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+        parsedBlueprint = getMockBlueprint(auditUser) as any;
+      }
 
       if (!resolved.profile || !parsedBlueprint) {
         router.replace("/setup");
@@ -107,8 +126,8 @@ export default function MeditationPage() {
       if (incomingContext) {
         const guide = getZoneBGuide(incomingContext);
         const mudra = incomingContext.practiceCategory === "mudra"
-          ? getMudraGuide(incomingContext.title as MudraName) ?? null
-          : null;
+          ? resolveMudraFromTitle(incomingContext.title)
+          : generatedPractice.mudra;
         setPractice({
           theme: incomingContext.title as DailyMeditationPractice["theme"],
           practices: guide.steps,
@@ -156,7 +175,10 @@ export default function MeditationPage() {
     const createdAt = new Date().toISOString();
 
     try {
-      const dateKey = createdAt.slice(0, 10);
+      const profileTimezone = typeof profile?.timezone === "string"
+        ? profile.timezone
+        : Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const dateKey = getLocalDateKey(new Date(), profileTimezone);
       saveMeditationEntry({
         id: `meditation-${Date.now()}`,
         date: dateKey,
@@ -172,8 +194,8 @@ export default function MeditationPage() {
       });
 
       // Update Daily State for Completion System
-      if (auth?.user?.uid) {
-        await dailyStateRepository.saveDailyState(auth.user.uid, dateKey, {
+      if (activeUid) {
+        await dailyStateRepository.saveDailyState(activeUid, dateKey, {
           meditationDone: true,
           moodLevel: undefined, // Don't override if not set
         });
@@ -186,15 +208,16 @@ export default function MeditationPage() {
           durationMinutes: 10,
         };
         await saveZoneBJourneyContext({
-            uid: auth.user.uid,
+            uid: activeUid,
             date: dateKey,
             context: journeyContext,
+            source: "wellness_section_4",
             reflectionResult: emotionalState,
             reflectionResponse: generatedReflection.insight,
         });
       }
 
-      trackEvent("complete_meditation", auth?.user?.uid);
+      trackEvent("complete_meditation", activeUid || auth?.user?.uid);
       trackEvent("meditation_completed");
     } catch (error) {
       console.error("[Meditation Page] Failed to save meditation", error);
@@ -332,7 +355,7 @@ export default function MeditationPage() {
             </>
           ) : (
              <p className="mt-3 text-sm leading-relaxed text-[#7B8776]">
-              Panduan mudra sedang disiapkan.
+              Praktik ini tidak menggunakan panduan mudra khusus.
             </p>
           )}
         </section>

@@ -9,7 +9,9 @@ export function generateStaticParams() {
     { section: "cinta-relasi" },
     { section: "raga-ruang" },
     { section: "spiritualitas-evolusi" },
-    { section: "fase-kehidupan-saat-ini" }
+    { section: "fase-kehidupan-saat-ini" },
+    { section: "soul-identity" },
+    { section: "asal-usul-peradaban" }
   ];
 }
 

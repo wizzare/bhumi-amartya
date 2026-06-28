@@ -45,6 +45,10 @@ export type FullDestinyMatrixSignals = {
   arcanaCenter: string | null;
   commonEnergy: string | null;
   karmicPatterns: string[];
+  soulMission?: BlueprintFieldValue;
+  greatestPotential?: BlueprintFieldValue;
+  innerChild?: BlueprintFieldValue;
+  soulSignature?: BlueprintFieldValue;
   personalQualities?: BlueprintFieldValue;
   moneyLine?: BlueprintFieldValue;
   loveLine?: BlueprintFieldValue;
@@ -97,6 +101,80 @@ export type FullNatalChartSignals = {
   aspects?: Aspect[];
 };
 
+export type FullVedicSignals = {
+  lagna?: string;
+  moonSign?: string;
+  sunSign?: string;
+  nakshatra?: string;
+  pada?: number;
+  atmakaraka?: BlueprintFieldValue;
+  darakaraka?: BlueprintFieldValue;
+  currentMahadasha?: BlueprintFieldValue;
+  currentAntardasha?: BlueprintFieldValue;
+  dharmaFocus?: BlueprintFieldValue;
+  mokshaFocus?: BlueprintFieldValue;
+  strengths?: BlueprintFieldValue;
+  challenges?: BlueprintFieldValue;
+  majorYogas?: BlueprintFieldValue;
+  careerStyle?: string;
+  relationshipStyle?: string;
+  spiritualStyle?: string;
+};
+
+export type FullTzolkinSignals = {
+  kin?: number;
+  kinName?: string;
+  solarSeal?: string;
+  solarSealGift?: string;
+  solarSealShadow?: string;
+  galacticTone?: string;
+  galacticToneGift?: string;
+  galacticToneLesson?: string;
+  galacticToneShadow?: string;
+  castle?: string;
+  color?: string;
+  wavespell?: string;
+  gap?: boolean;
+  kinNarrative?: BlueprintFieldValue;
+  lifePurpose?: string;
+  growthStyle?: string;
+  relationshipStyle?: string;
+  workStyle?: string;
+};
+
+export type FullWetonSignals = {
+  weton?: string;
+  day?: string;
+  pasaran?: string;
+  totalNeptu?: number;
+  wuku?: string;
+  pranataMangsa?: string;
+  watak?: string;
+  strengths?: BlueprintFieldValue;
+  challenges?: BlueprintFieldValue;
+  lifeMission?: string;
+  relationshipStyle?: string;
+  workStyle?: string;
+  moneyStyle?: string;
+};
+
+export type FullBaziSignals = {
+  dayMaster?: string;
+  dayMasterElement?: string;
+  dayMasterPolarity?: string;
+  fiveElements?: BlueprintFieldValue;
+  tenGods?: BlueprintFieldValue;
+  favorableElements?: BlueprintFieldValue;
+  unfavorableElements?: BlueprintFieldValue;
+  currentLuckCycle?: BlueprintFieldValue;
+  strengths?: BlueprintFieldValue;
+  challenges?: BlueprintFieldValue;
+  careerStyle?: string;
+  relationshipStyle?: string;
+  moneyStyle?: string;
+  lifeMission?: string;
+};
+
 export type UnifiedBlueprintSynthesisInput = {
   language: "id" | "en";
   profile: UnknownRecord | null;
@@ -140,6 +218,10 @@ export type UnifiedBlueprintSynthesis = {
     humanDesign: FullHumanDesignSignals;
     destinyMatrix: FullDestinyMatrixSignals;
     natalChart: FullNatalChartSignals;
+    vedic: FullVedicSignals;
+    tzolkin: FullTzolkinSignals;
+    weton: FullWetonSignals;
+    bazi: FullBaziSignals;
   };
   differentiators: string[];
 };
@@ -548,6 +630,10 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     arcanaCenter,
     commonEnergy,
     karmicPatterns,
+    soulMission: readAvailable(blueprint, [["destinyMatrix", "soulMission"], ["destinyMatrix", "purpose", "soulMission"], ["soulMission"]]),
+    greatestPotential: readAvailable(blueprint, [["destinyMatrix", "greatestPotential"], ["destinyMatrix", "potential", "greatestPotential"], ["greatestPotential"]]),
+    innerChild: readAvailable(blueprint, [["destinyMatrix", "innerChild"], ["destinyMatrix", "innerChildNeeds"], ["innerChild"]]),
+    soulSignature: readAvailable(blueprint, [["destinyMatrix", "soulSignature"], ["soulSignature"]]),
     personalQualities: readAvailable(blueprint, [["destinyMatrix", "personalQualities"], ["personalQualities"]]),
     moneyLine: readAvailable(blueprint, [["destinyMatrix", "moneyLine"], ["moneyLine"]]),
     loveLine: readAvailable(blueprint, [["destinyMatrix", "loveLine"], ["loveLine"]]),
@@ -588,6 +674,76 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     patterns: readAvailable(blueprint, [["astrology", "patterns"], ["natalChart", "patterns"]]),
     dominance: readAvailable(blueprint, [["astrology", "dominance"], ["natalChart", "dominance"]]),
   };
+  const fullVedic: FullVedicSignals = {
+    lagna: readOptionalString(blueprint, [["vedic", "lagna", "sign"]]),
+    moonSign: readOptionalString(blueprint, [["vedic", "moonSign", "sign"]]),
+    sunSign: readOptionalString(blueprint, [["vedic", "sunSign", "sign"]]),
+    nakshatra: readOptionalString(blueprint, [["vedic", "nakshatra"]]),
+    pada: readOptionalNumber(blueprint, [["vedic", "pada"]]),
+    atmakaraka: readAvailable(blueprint, [["vedic", "atmakaraka"]]),
+    darakaraka: readAvailable(blueprint, [["vedic", "darakaraka"]]),
+    currentMahadasha: readAvailable(blueprint, [["vedic", "currentMahadasha"]]),
+    currentAntardasha: readAvailable(blueprint, [["vedic", "currentAntardasha"]]),
+    dharmaFocus: readAvailable(blueprint, [["vedic", "dharmaFocus"]]),
+    mokshaFocus: readAvailable(blueprint, [["vedic", "mokshaFocus"]]),
+    strengths: readAvailable(blueprint, [["vedic", "strengths"]]),
+    challenges: readAvailable(blueprint, [["vedic", "challenges"]]),
+    majorYogas: readAvailable(blueprint, [["vedic", "majorYogas"]]),
+    careerStyle: readOptionalString(blueprint, [["vedic", "careerStyle"]]),
+    relationshipStyle: readOptionalString(blueprint, [["vedic", "relationshipStyle"]]),
+    spiritualStyle: readOptionalString(blueprint, [["vedic", "spiritualStyle"]]),
+  };
+  const fullTzolkin: FullTzolkinSignals = {
+    kin: readOptionalNumber(blueprint, [["tzolkin", "kin"]]),
+    kinName: readOptionalString(blueprint, [["tzolkin", "kinName"]]),
+    solarSeal: readOptionalString(blueprint, [["tzolkin", "solarSeal", "name"]]),
+    solarSealGift: readOptionalString(blueprint, [["tzolkin", "solarSeal", "gift"]]),
+    solarSealShadow: readOptionalString(blueprint, [["tzolkin", "solarSeal", "shadow"], ["tzolkin", "solarSeal", "challenge"]]),
+    galacticTone: readOptionalString(blueprint, [["tzolkin", "galacticTone", "name"]]),
+    galacticToneGift: readOptionalString(blueprint, [["tzolkin", "galacticTone", "gift"]]),
+    galacticToneLesson: readOptionalString(blueprint, [["tzolkin", "galacticTone", "lesson"]]),
+    galacticToneShadow: readOptionalString(blueprint, [["tzolkin", "galacticTone", "shadow"]]),
+    castle: readOptionalString(blueprint, [["tzolkin", "castle", "name"]]),
+    color: readOptionalString(blueprint, [["tzolkin", "color"]]),
+    wavespell: readOptionalString(blueprint, [["tzolkin", "wavespell", "name"]]),
+    gap: readValue(blueprint, ["tzolkin", "gap"]) === true,
+    kinNarrative: readAvailable(blueprint, [["tzolkin", "summary"]]),
+    lifePurpose: readOptionalString(blueprint, [["tzolkin", "lifePurpose"]]),
+    growthStyle: readOptionalString(blueprint, [["tzolkin", "growthStyle"]]),
+    relationshipStyle: readOptionalString(blueprint, [["tzolkin", "relationshipStyle"]]),
+    workStyle: readOptionalString(blueprint, [["tzolkin", "workStyle"]]),
+  };
+  const fullWeton: FullWetonSignals = {
+    weton: readOptionalString(blueprint, [["weton", "weton"]]),
+    day: readOptionalString(blueprint, [["weton", "day"]]),
+    pasaran: readOptionalString(blueprint, [["weton", "pasaran"]]),
+    totalNeptu: readOptionalNumber(blueprint, [["weton", "totalNeptu"]]),
+    wuku: readOptionalString(blueprint, [["weton", "wuku", "name"]]),
+    pranataMangsa: readOptionalString(blueprint, [["weton", "pranataMangsa", "name"]]),
+    watak: readOptionalString(blueprint, [["weton", "watak"]]),
+    strengths: readAvailable(blueprint, [["weton", "strengths"]]),
+    challenges: readAvailable(blueprint, [["weton", "challenges"]]),
+    lifeMission: readOptionalString(blueprint, [["weton", "lifeMission"]]),
+    relationshipStyle: readOptionalString(blueprint, [["weton", "relationshipStyle"]]),
+    workStyle: readOptionalString(blueprint, [["weton", "workStyle"]]),
+    moneyStyle: readOptionalString(blueprint, [["weton", "moneyStyle"]]),
+  };
+  const fullBazi: FullBaziSignals = {
+    dayMaster: readOptionalString(blueprint, [["bazi", "dayMaster", "stem"], ["bazi", "dayMaster", "pinyin"]]),
+    dayMasterElement: readOptionalString(blueprint, [["bazi", "dayMaster", "element"]]),
+    dayMasterPolarity: readOptionalString(blueprint, [["bazi", "dayMaster", "polarity"]]),
+    fiveElements: readAvailable(blueprint, [["bazi", "fiveElements"]]),
+    tenGods: readAvailable(blueprint, [["bazi", "tenGods"]]),
+    favorableElements: readAvailable(blueprint, [["bazi", "favorableElements"]]),
+    unfavorableElements: readAvailable(blueprint, [["bazi", "unfavorableElements"]]),
+    currentLuckCycle: readAvailable(blueprint, [["bazi", "currentLuckCycle"]]),
+    strengths: readAvailable(blueprint, [["bazi", "strengths"]]),
+    challenges: readAvailable(blueprint, [["bazi", "challenges"]]),
+    careerStyle: readOptionalString(blueprint, [["bazi", "careerStyle"]]),
+    relationshipStyle: readOptionalString(blueprint, [["bazi", "relationshipStyle"]]),
+    moneyStyle: readOptionalString(blueprint, [["bazi", "moneyStyle"]]),
+    lifeMission: readOptionalString(blueprint, [["bazi", "lifeMission"]]),
+  };
 
   const planetsData = (blueprint as any)?.astrology?.planets || (blueprint as any)?.natalChart?.planets;
   // Apply Natal Intelligence
@@ -626,6 +782,9 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     compactSignal("Money Line", fullDestinyMatrix.moneyLine),
     compactSignal("Love Line", fullDestinyMatrix.loveLine),
     compactSignal("Karmic Tail", fullDestinyMatrix.karmicTail),
+    compactSignal("Greatest Potential", fullDestinyMatrix.greatestPotential),
+    compactSignal("Inner Child", fullDestinyMatrix.innerChild),
+    compactSignal("Soul Signature", fullDestinyMatrix.soulSignature),
     compactSignal("Soul Searching", destinyIntelligence.intelligence.soulSearching),
     compactSignal("Socialization", destinyIntelligence.intelligence.socialization),
     compactSignal("Spiritual Knowledge", destinyIntelligence.intelligence.spiritualKnowledge),
@@ -645,6 +804,21 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     compactSignal("Aspects", fullNatalChart.majorAspects),
     compactSignal("Patterns", fullNatalChart.patterns),
     compactSignal("Natal Dominance", fullNatalChart.dominance),
+    compactSignal("Nakshatra", fullVedic.nakshatra),
+    compactSignal("Dharma Focus", fullVedic.dharmaFocus),
+    compactSignal("Moksha Focus", fullVedic.mokshaFocus),
+    compactSignal("Tzolkin Kin", fullTzolkin.kinName),
+    compactSignal("Solar Seal Gift", fullTzolkin.solarSealGift),
+    compactSignal("Solar Seal Shadow", fullTzolkin.solarSealShadow),
+    compactSignal("Galactic Tone Gift", fullTzolkin.galacticToneGift),
+    compactSignal("Galactic Tone Lesson", fullTzolkin.galacticToneLesson),
+    compactSignal("Tzolkin Castle", fullTzolkin.castle),
+    compactSignal("Tzolkin Color", fullTzolkin.color),
+    compactSignal("Weton Mission", fullWeton.lifeMission),
+    compactSignal("Weton Character", fullWeton.watak),
+    compactSignal("BaZi Day Master", fullBazi.dayMasterElement),
+    compactSignal("BaZi Mission", fullBazi.lifeMission),
+    compactSignal("BaZi Ten Gods", fullBazi.tenGods),
   ].filter((item): item is string => Boolean(item));
 
   const coreNeeds = [
@@ -656,9 +830,10 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
       || "emotional integration",
     mergeThemes(lifePathThemes.action, hdThemes.action, "practical action"),
     input.astrologyToday ? "current sky awareness" : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || "self-awareness",
+    fullTzolkin.lifePurpose || fullVedic.spiritualStyle || fullWeton.lifeMission || fullBazi.lifeMission,
     differentiators[0],
     progressTone.label,
-  ].filter(Boolean);
+  ].filter((need): need is string => Boolean(need));
   const humanNeeds = uniqueNeeds(
     coreNeeds.map((need) => humanizeNeed(String(need), input.language)),
   );
@@ -695,6 +870,10 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
       humanDesign: fullHumanDesign,
       destinyMatrix: fullDestinyMatrix,
       natalChart: fullNatalChart,
+      vedic: fullVedic,
+      tzolkin: fullTzolkin,
+      weton: fullWeton,
+      bazi: fullBazi,
     },
     differentiators,
   };

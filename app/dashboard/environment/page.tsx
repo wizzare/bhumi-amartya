@@ -22,11 +22,13 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
-  environmentContextProvider,
+  getNormalizedEnvironment,
+  getUvLabel,
+  normalizeMoonPhaseLabel,
   type EnvironmentContext,
   type EnvironmentLocation,
   type EnvironmentPermissionState,
-} from "@/lib/environment";
+} from "@/lib/environment/service";
 
 function formatCoord(val: number, isLat: boolean): string {
   const dir = isLat ? (val >= 0 ? "LU" : "LS") : (val >= 0 ? "BT" : "BB");
@@ -84,10 +86,7 @@ export default function EnvironmentDetailPage() {
       }
 
       const location = await requestCurrentEnvironmentLocation();
-      const ctx = await environmentContextProvider.getEnvironmentContext({
-        dateKey: new Date().toISOString().split("T")[0],
-        location,
-      });
+      const ctx = await getNormalizedEnvironment(location);
       setContext(ctx);
       setPermission("granted");
     } catch (err: any) {
@@ -157,14 +156,14 @@ export default function EnvironmentDetailPage() {
                 <DetailItem
                   icon={<CloudSun size={20} />}
                   label="Cuaca"
-                  value={context.weather?.condition || "Belum terbaca"}
-                  subValue={context.weather?.temperatureCelsius ? `${context.weather.temperatureCelsius}°C` : "Menanti data sinkron"}
+                  value={context.weather?.condition || "Belum tersedia"}
+                  subValue={context.weather?.temperatureCelsius !== undefined && context.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Menanti data sinkron"}
                 />
                 <DetailItem
                   icon={<Thermometer size={20} />}
                   label="Suhu"
-                  value={context.weather?.temperatureCelsius ? `${context.weather.temperatureCelsius}°C` : "Belum terbaca"}
-                  subValue={context.weather?.feelsLikeCelsius ? `Terasa seperti ${context.weather.feelsLikeCelsius}°C` : undefined}
+                  value={context.weather?.temperatureCelsius !== undefined && context.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Belum tersedia"}
+                  subValue={context.weather?.feelsLikeCelsius !== undefined && context.weather?.feelsLikeCelsius !== null ? `Terasa seperti ${context.weather.feelsLikeCelsius}°C` : undefined}
                 />
               </div>
 
@@ -172,21 +171,21 @@ export default function EnvironmentDetailPage() {
                 <DetailItem
                   icon={<Sun size={20} />}
                   label="Matahari"
-                  value={context.astronomy?.sunrise ? `Terbit ${context.astronomy.sunrise}` : "Belum terbaca"}
+                  value={context.astronomy?.sunrise ? `Terbit ${context.astronomy.sunrise}` : "Belum tersedia"}
                   subValue={context.astronomy?.sunset ? `Terbenam ${context.astronomy.sunset}` : "Menanti siklus hari"}
                 />
                 <DetailItem
                   icon={<Moon size={20} />}
                   label="Bulan"
-                  value={context.moon?.phase || "Belum terbaca"}
-                  subValue={context.moon?.illuminationPercent ? `${context.moon.illuminationPercent}% cahaya` : "Menanti fase malam"}
+                  value={normalizeMoonPhaseLabel(context.moon?.phase)}
+                  subValue={context.moon?.illuminationPercent !== undefined && context.moon?.illuminationPercent !== null ? `${context.moon.illuminationPercent}% cahaya` : "Menanti fase malam"}
                 />
               </div>
 
               <DetailItem
                 icon={<Leaf size={24} />}
                 label="Kualitas Udara (AQI)"
-                value={context.airQuality?.aqi?.toString() || "Belum terbaca"}
+                value={context.airQuality?.aqi !== undefined && context.airQuality?.aqi !== null ? `${context.airQuality.aqi} — ${context.airQuality.label}` : "Belum tersedia"}
                 subValue="Kualitas udara di sekitarmu saat ini."
               />
 
@@ -194,12 +193,12 @@ export default function EnvironmentDetailPage() {
                 <DetailItem
                   icon={<Wind size={20} />}
                   label="Angin"
-                  value={context.weather?.windSpeedKph ? `${context.weather.windSpeedKph} km/jam` : "Belum terbaca"}
+                  value={context.weather?.windSpeedKph !== undefined && context.weather?.windSpeedKph !== null ? `${context.weather.windSpeedKph} km/jam` : "Belum tersedia"}
                 />
                 <DetailItem
                   icon={<Droplets size={20} />}
                   label="Kelembapan"
-                  value={context.weather?.humidityPercent ? `${context.weather.humidityPercent}%` : "Belum terbaca"}
+                  value={context.weather?.humidityPercent !== undefined && context.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : "Belum tersedia"}
                 />
               </div>
 
@@ -207,20 +206,25 @@ export default function EnvironmentDetailPage() {
                 <DetailItem
                   icon={<Gauge size={20} />}
                   label="Tekanan"
-                  value={context.weather?.pressureHpa ? `${context.weather.pressureHpa} hPa` : "Belum terbaca"}
+                  value={context.weather?.pressureHpa !== undefined && context.weather?.pressureHpa !== null ? `${context.weather.pressureHpa} hPa` : "Belum tersedia"}
                 />
                 <DetailItem
                   icon={<Zap size={20} />}
                   label="Indeks UV"
-                  value={context.airQuality?.uvIndex?.toString() || "Belum terbaca"}
+                  value={(() => {
+                    const uvVal = context.weather?.uvCurrent ?? context.airQuality?.uvIndex;
+                    if (uvVal === undefined || uvVal === null || Number.isNaN(uvVal)) return "Belum tersedia";
+                    const num = Math.round(uvVal);
+                    return `${num} — ${getUvLabel(num)}`;
+                  })()}
                 />
               </div>
 
               <DetailItem
                 icon={<Waves size={24} />}
                 label="Aktivitas Bumi"
-                value={context.earthActivity?.latestEarthquake?.title || "Stabil"}
-                subValue="Memantau getaran dan pergerakan tanah."
+                value={context.earthActivity?.status || "Stabil"}
+                subValue={context.earthActivity?.latestEarthquake?.title || "Memantau getaran dan pergerakan tanah."}
               />
             </div>
           ) : null}

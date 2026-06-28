@@ -138,10 +138,10 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SummaryItem icon={<MapPin size={18} />} label="Lokasi" value={formatLocation(location, permission)} />
-              <SummaryItem icon={<CloudSun size={18} />} label="Cuaca" value={context?.weather?.condition || "Belum terbaca"} />
-              <SummaryItem icon={<Thermometer size={18} />} label="Suhu" value={context?.weather?.temperatureCelsius ? `${context.weather.temperatureCelsius}°C` : "Belum terbaca"} />
-              <SummaryItem icon={<Droplets size={18} />} label="Kelembapan" value={context?.weather?.humidityPercent !== undefined ? `${context.weather.humidityPercent}%` : "Belum terbaca"} />
-              <SummaryItem icon={<Leaf size={18} />} label="AQI" value={context?.airQuality?.aqi ? `${context.airQuality.aqi} — ${context.airQuality.label}` : "Belum terbaca"} />
+              <SummaryItem icon={<CloudSun size={18} />} label="Cuaca" value={context?.weather?.condition || "Belum tersedia"} />
+              <SummaryItem icon={<Thermometer size={18} />} label="Suhu" value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Belum tersedia"} />
+              <SummaryItem icon={<Droplets size={18} />} label="Kelembapan" value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : "Belum tersedia"} />
+              <SummaryItem icon={<Leaf size={18} />} label="AQI" value={context?.airQuality?.aqi !== undefined && context?.airQuality?.aqi !== null ? `${context.airQuality.aqi} — ${context.airQuality.label}` : "Belum tersedia"} />
               <SummaryItem icon={<Activity size={18} />} label="Aktivitas Bumi" value={context?.earthActivity?.status || "Stabil"} />
             </div>
 

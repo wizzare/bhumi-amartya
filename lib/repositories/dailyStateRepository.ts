@@ -62,9 +62,44 @@ function assertAuthenticatedOwner(uid: string): void {
 const dailyStateDoc = (uid: string, date: string) =>
   doc(db, "dailyStates", uid, "entries", date);
 const dailyStatePath = (uid: string, date: string) => `dailyStates/${uid}/entries/${date}`;
+const localDailyStateKey = (uid: string, date: string) => `moana:dailyStates:${uid}:${date}`;
+
+function canUseLocalAuditStore(uid: string): boolean {
+  if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV !== "development") return false;
+  const auditUser = window.localStorage.getItem("bhumi_audit_user");
+  return Boolean(auditUser && uid === `${auditUser}_uid`);
+}
+
+function getLocalDailyState(uid: string, date: string): DailyState | null {
+  const stored = window.localStorage.getItem(localDailyStateKey(uid, date));
+  if (!stored) return null;
+  try {
+    return JSON.parse(stored) as DailyState;
+  } catch {
+    window.localStorage.removeItem(localDailyStateKey(uid, date));
+    return null;
+  }
+}
+
+function saveLocalDailyState(uid: string, date: string, data: Partial<Omit<DailyState, "uid" | "date" | "updatedAt">>): void {
+  const previous = getLocalDailyState(uid, date);
+  const next: DailyState = {
+    ...(previous ?? { uid, date, updatedAt: new Date().toISOString() }),
+    ...data,
+    uid,
+    date,
+    updatedAt: new Date().toISOString(),
+  };
+  window.localStorage.setItem(localDailyStateKey(uid, date), JSON.stringify(next));
+}
 
 export const dailyStateRepository = {
   async getDailyState(uid: string, date: string): Promise<DailyState | null> {
+    if (canUseLocalAuditStore(uid)) {
+      return getLocalDailyState(uid, date);
+    }
+
     assertAuthenticatedOwner(uid);
     const snapshot = await debugFirestoreOperation(
       { operation: "getDoc", path: dailyStatePath(uid, date), uid },
@@ -78,6 +113,11 @@ export const dailyStateRepository = {
     date: string,
     data: Partial<Omit<DailyState, "uid" | "date" | "updatedAt">>,
   ): Promise<void> {
+    if (canUseLocalAuditStore(uid)) {
+      saveLocalDailyState(uid, date, data);
+      return;
+    }
+
     assertAuthenticatedOwner(uid);
     await debugFirestoreOperation(
       { operation: "setDoc", path: dailyStatePath(uid, date), uid },

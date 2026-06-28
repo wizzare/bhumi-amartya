@@ -533,6 +533,10 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         humanDesign: { type: null, strategy: null, authority: null, profile: null },
         destinyMatrix: { arcanaCenter: null, commonEnergy: null, karmicPatterns: [] },
         natalChart: { sun: null, moon: null, ascendant: null },
+        vedic: {},
+        tzolkin: {},
+        weton: {},
+        bazi: {},
       },
       differentiators: [],
     };

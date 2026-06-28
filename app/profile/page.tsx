@@ -11,11 +11,17 @@ import { useAuth } from "@/context/AuthContext";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
+import { generateLocalDailyGuidance } from "@/lib/orchestrators/localDailyGuidanceFallback";
+import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
+import { getShareSafeGaiaInsights } from "@/lib/profile/gaia/selectors";
+import type { GaiaInsight } from "@/lib/profile/gaia/types";
+import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
+import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -29,6 +35,98 @@ function profileName(profile: LocalRecord): string {
 
 function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function readLocalManifestation(uid: string, dateKey: string): DailyGuidance["manifestation"] | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const candidateUids = Array.from(new Set([uid, "local_user", "null_uid", "undefined_uid", "local-user", "guest", ""])).filter((u) => u !== undefined);
+    for (const u of candidateUids) {
+      const stored = window.localStorage.getItem(`moana:manifestation:${u}:${dateKey}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed.affirmation === "string" && parsed.affirmation.trim()) return parsed;
+      }
+    }
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key && key.startsWith("moana:manifestation:") && key.endsWith(`:${dateKey}`)) {
+        const stored = window.localStorage.getItem(key);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed && typeof parsed.affirmation === "string" && parsed.affirmation.trim()) return parsed;
+        }
+      }
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return undefined;
+}
+
+function buildLocalShareGuidance(params: {
+  uid: string;
+  dateKey: string;
+  profile: Record<string, any>;
+  blueprint: Record<string, any>;
+}): DailyGuidance {
+  const output = generateLocalDailyGuidance({
+    user: profileToDashboardUser(params.profile),
+    identity: profileToCoreIdentity(params.profile, params.blueprint as any),
+    blueprint: params.blueprint as any,
+    emotionalState: params.profile?.emotionalState || { currentMood: 5, recurringThemes: [] },
+    emotionalMemory: params.profile?.emotionalMemory || { recurringThemes: [], recurringWounds: [] },
+    healingProgress: params.profile?.healingProgress || { healingStreak: 0 },
+    astrologyTransits: null,
+    adaptiveContext: {
+      dailyVariationSeed: createDailyContentSeed({
+        uid: params.uid,
+        localDateKey: params.dateKey,
+        blueprint: params.blueprint,
+      }),
+      completionRateYesterday: 0,
+      journalCompletedYesterday: false,
+      meditationCompletedYesterday: false,
+      audioCompletedYesterday: false,
+      practiceCompletedCountYesterday: 0,
+      streakDays: 0,
+      adaptiveTone: "steady_supportive",
+      previousProgressSummary: "Share card local fallback",
+      previousGuidanceSummaries: [],
+    },
+    language: params.profile?.language === "en" ? "en" : "id",
+    generatedAt: new Date().toISOString(),
+  } satisfies DailyGuidanceInput);
+
+  return {
+    uid: params.uid,
+    date: params.dateKey,
+    localDateKey: params.dateKey,
+    profileSnapshot: params.profile,
+    blueprintSnapshot: params.blueprint,
+    astrologyToday: "",
+    previousProgressSummary: "",
+    soulReflectionText: output.soulReflectionText || output.soulReflection.dailyMessage,
+    dailyNoteText: output.dailyNoteText || output.companionReflection?.fullReflection || "",
+    companionReflection: output.companionReflection,
+    aiInsight: output.soulReflectionText || output.soulReflection.dailyMessage,
+    journalPrompt: output.journalingPrompt.prompt,
+    meditationSuggestion: output.meditationRecommendation.title,
+    dailyPractices: [],
+    emotionalFocus: output.soulReflection.theme,
+    spiritualFocus: output.soulReflection.theme,
+    groundedAction: output.soulReflection.guidance,
+    manifestation: output.manifestation,
+    categories: output.categories,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    source: "local-fallback",
+  } as DailyGuidance;
+}
+
+function insightCount(section: ProfileSection): number {
+  if (section.title === "ASAL USUL & PERADABAN") return 2;
+  return section.cards.length;
 }
 
 function IdentitasJiwaHub() {
@@ -113,28 +211,61 @@ function IdentitasJiwaHub() {
 
 export default function ProfilePage() {
   const auth = useAuth();
+  const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
+    ? window.localStorage.getItem("bhumi_audit_user")
+    : null;
   const [name, setName] = useState("Penghuni Bhumi");
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dateKey, setDateKey] = useState("");
+  const [gaiaInsights, setGaiaInsights] = useState<GaiaInsight[]>([]);
 
   useEffect(() => {
     async function load() {
       try {
-        const [profile, blueprint] = await Promise.all([
+        let [profile, blueprint] = await Promise.all([
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
         ]);
+        if (auditUser && (!profile || !blueprint)) {
+          const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+          profile = profile || getMockProfile(auditUser) as any;
+          blueprint = blueprint || getMockBlueprint(auditUser) as any;
+        }
         if (profile) {
           setName(profileName(profile as unknown as LocalRecord));
+          setGaiaInsights(profile.gaiaProfile ? getShareSafeGaiaInsights(profile.gaiaProfile) : []);
         }
         const timezone = (profile as LocalRecord | null)?.timezone;
         const today = getLocalDateKey(new Date(), typeof timezone === "string" ? timezone : Intl.DateTimeFormat().resolvedOptions().timeZone);
         setDateKey(today);
-        if (auth?.user?.uid) {
-          setDailyGuidance(await dailyGuidanceRepository.getDailyGuidance(auth.user.uid, today).catch(() => null));
+        const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
+        let guidance: DailyGuidance | null = null;
+        if (activeUid) {
+          guidance = await dailyGuidanceRepository.getDailyGuidance(activeUid, today).catch(() => null);
         }
+        if (!guidance && profile && blueprint) {
+          guidance = buildLocalShareGuidance({
+            uid: activeUid || (profile as any)?.uid || "local_user",
+            dateKey: today,
+            profile: profile as Record<string, any>,
+            blueprint: blueprint as Record<string, any>,
+          });
+        }
+        const effectiveUid = activeUid || (profile as any)?.uid || "local_user";
+        const localManifestation = readLocalManifestation(effectiveUid, today);
+        if (localManifestation) {
+          const baseGuidance = guidance || ({
+            uid: effectiveUid,
+            date: today,
+            localDateKey: today,
+            soulReflectionText: "",
+            dailyNoteText: "",
+          } as DailyGuidance);
+          guidance = { ...baseGuidance, manifestation: localManifestation };
+        }
+        setDailyGuidance(guidance);
         if (blueprint) {
           const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
           const meaning = HumanMeaningService.generate(canonical);
@@ -174,7 +305,7 @@ export default function ProfilePage() {
               <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
                 <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600`}><Sparkles size={24} /></div>
                 <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
-                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{section.cards.length} insight</p>
+                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
               </Link>
             );
           })}
@@ -192,7 +323,7 @@ export default function ProfilePage() {
             dateKey={dateKey}
             userSeed={auth?.user?.uid ?? name}
             guidance={dailyGuidance}
-            gaiaInsights={[]}
+            gaiaInsights={gaiaInsights}
           />
         </section>
 

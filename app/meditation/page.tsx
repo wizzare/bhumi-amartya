@@ -304,7 +304,7 @@ export default function MeditationPage() {
             </>
           ) : (
              <p className="mt-3 text-sm leading-relaxed text-[#7B8776]">
-              Panduan mudra sedang disiapkan.
+              Praktik ini tidak menggunakan panduan mudra khusus.
             </p>
           )}
         </section>

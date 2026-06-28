@@ -81,6 +81,14 @@ service cloud.firestore {
       }
     }
 
+    match /activities/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+    }
+
     match /blueprints/{userId} {
       allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
