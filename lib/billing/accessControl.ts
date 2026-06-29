@@ -1,4 +1,5 @@
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
+import { GOOGLE_PLAY_BILLING_ENABLED } from "@/lib/billing/googlePlayBilling";
 
 export type TrialPlan = "trial" | "pro" | "expired";
 
@@ -56,6 +57,7 @@ export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
 }
 
 export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean {
+  if (!GOOGLE_PLAY_BILLING_ENABLED) return false;
   if (isGaiaAccessOverrideActive(now)) return false;
   if (hasActivePremiumMembership(profile, now)) return false;
   if (String(profile.plan).toLowerCase() === "expired") return true;
@@ -65,6 +67,7 @@ export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean
 }
 
 export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): number {
+  if (!GOOGLE_PLAY_BILLING_ENABLED) return 999;
   if (isGaiaAccessOverrideActive(now)) return 999;
   if (hasActivePremiumMembership(profile, now)) return 999;
 
@@ -83,6 +86,7 @@ export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): numbe
 
 export function hasFeatureAccess(profile: TrialProfile, feature: FeatureKey, now = new Date()): boolean {
   void feature;
+  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
   if (isGaiaAccessOverrideActive(now)) return true;
   if (hasActivePremiumMembership(profile, now)) return true;
   return !isTrialExpired(profile, now);

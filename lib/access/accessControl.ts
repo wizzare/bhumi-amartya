@@ -2,6 +2,7 @@ import { isPrivilegedUser } from '@/lib/auth/privilegedUser';
 import { UserProfile } from "../repositories/userRepository";
 import { Timestamp } from "firebase/firestore";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
+import { GOOGLE_PLAY_BILLING_ENABLED } from "@/lib/billing/googlePlayBilling";
 
 export type PremiumFeature = "meditation" | "journaling" | "audio-healing";
 
@@ -13,6 +14,7 @@ function hasActivePremiumMembership(profile: UserProfile): boolean {
 }
 
 export function isTrialActive(profile: UserProfile): boolean {
+  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (hasActivePremiumMembership(profile)) return true;
   if (!profile.trialEndsAt) return false;
@@ -23,6 +25,7 @@ export function isTrialActive(profile: UserProfile): boolean {
 
 export function canAccessPremiumFeature(profile: UserProfile | null, feature: PremiumFeature): boolean {
   void feature;
+  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (!profile) return false;
   if (hasActivePremiumMembership(profile)) return true;
@@ -31,6 +34,14 @@ export function canAccessPremiumFeature(profile: UserProfile | null, feature: Pr
 }
 
 export function getUserAccess(profile: UserProfile | null) {
+  if (!GOOGLE_PLAY_BILLING_ENABLED) {
+    return {
+      plan: "free",
+      isPremium: false,
+      isTrialActive: true,
+      lockedFeatures: [] as PremiumFeature[],
+    };
+  }
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) {
     return {
       plan: profile?.plan ?? "free",

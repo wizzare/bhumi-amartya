@@ -7,6 +7,59 @@ import type { WetonBlueprint } from '@/lib/weton/types';
 import type { BaziBlueprint } from '@/lib/bazi/types';
 import type { VedicBlueprint } from '@/lib/vedic/types';
 
+const SERVER_OWNED_ACCESS_FIELDS = new Set([
+  'plan',
+  'plans',
+  'planLabel',
+  'tier',
+  'tiers',
+  'role',
+  'roles',
+  'guardianRole',
+  'badge',
+  'badges',
+  'testerBadge',
+  'guardianBadge',
+  'recognitionTier',
+  'isDeveloper',
+  'isFoundingMember',
+  'premium',
+  'isPremium',
+  'subscription',
+  'subscriptionStatus',
+  'entitlement',
+  'entitlements',
+  'membership',
+  'membershipType',
+  'memberType',
+  'membershipStartDate',
+  'membershipExpiryDate',
+  'membershipExpiresAt',
+  'billing',
+  'purchase',
+  'purchases',
+  'productId',
+  'expiryDate',
+  'validUntil',
+  'trial',
+  'trialStartedAt',
+  'trialEndsAt',
+  'quota',
+  'limits',
+  'credits',
+  'founder',
+  'admin',
+  'staff',
+  'paid',
+  'paymentStatus',
+]);
+
+function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => !SERVER_OWNED_ACCESS_FIELDS.has(key)),
+  ) as Partial<T>;
+}
+
 // Type definitions matching the localStorage structures
 export interface UserProfile {
   uid: string;
@@ -25,7 +78,7 @@ export interface UserProfile {
   language: string;
   setupCompleted: boolean;
   authProvider: "google" | "local" | null;
-  plan: UserPlan;
+  plan?: UserPlan;
   createdAt: string;
   updatedAt: string;
   photoURL?: string;
@@ -308,15 +361,14 @@ export class FirebaseService {
         ...profile,
         createdAt: profile.createdAt ? Timestamp.fromDate(new Date(profile.createdAt)) : serverTimestamp(),
         updatedAt: serverTimestamp(),
-        trialStartedAt: profile.trialStartedAt ? Timestamp.fromDate(new Date(profile.trialStartedAt)) : null,
-        trialEndsAt: profile.trialEndsAt ? Timestamp.fromDate(new Date(profile.trialEndsAt)) : null,
         lastActiveAt: profile.lastActiveAt ? Timestamp.fromDate(new Date(profile.lastActiveAt)) : null
       };
       
       // Remove ID from the data since it's the document ID
       delete (userData as any).id;
+      const safeUserData = stripServerOwnedAccessFields(userData);
       
-      await setDoc(userRef, sanitizeForFirestore(userData));
+      await setDoc(userRef, sanitizeForFirestore(safeUserData), { merge: true });
       return true;
     } catch (error) {
       console.error('Error saving user profile:', error);

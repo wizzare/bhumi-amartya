@@ -51,18 +51,95 @@ service cloud.firestore {
       return isSignedIn() && docId.matches(request.auth.uid + "_.*");
     }
 
+    function protectedAccessFields() {
+      return [
+        "plan",
+        "plans",
+        "planLabel",
+        "tier",
+        "tiers",
+        "role",
+        "roles",
+        "guardianRole",
+        "badge",
+        "badges",
+        "testerBadge",
+        "guardianBadge",
+        "recognitionTier",
+        "isDeveloper",
+        "isFoundingMember",
+        "premium",
+        "isPremium",
+        "subscription",
+        "subscriptionStatus",
+        "entitlement",
+        "entitlements",
+        "membership",
+        "membershipType",
+        "memberType",
+        "membershipStartDate",
+        "membershipExpiryDate",
+        "membershipExpiresAt",
+        "billing",
+        "purchase",
+        "purchases",
+        "productId",
+        "expiryDate",
+        "accessUntil",
+        "validUntil",
+        "trial",
+        "trialStartedAt",
+        "trialEndsAt",
+        "quota",
+        "limits",
+        "credits",
+        "founder",
+        "admin",
+        "staff",
+        "paid",
+        "paymentStatus"
+      ];
+    }
+
+    function doesNotChangeProtectedAccessFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(protectedAccessFields()) == false;
+    }
+
+    function doesNotCreateProtectedAccessFields() {
+      return request.resource.data.keys().hasAny(protectedAccessFields()) == false;
+    }
+
     // USERS COLLECTION
     match /users/{userId} {
-      // User can always read/write their own doc
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
+      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
+      allow delete: if isOwner(userId);
 
       // Founder can list and get ALL users
       allow list: if isFounderByEmail() || isFounderOrAdmin();
       allow get: if isFounderByEmail() || isFounderOrAdmin();
+      allow create, update, delete: if isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
         allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
+    }
+
+    match /profiles/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
+      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
+      allow delete: if isOwner(userId);
+      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /userProfiles/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
+      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
+      allow delete: if isOwner(userId);
+      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /dailyStates/{userId} {

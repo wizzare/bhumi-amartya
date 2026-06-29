@@ -12,7 +12,6 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
-import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
 
 type GoogleRedirectProcessingResult = {
   user: User | null;
@@ -48,11 +47,8 @@ export const ensureMinimalUserProfile = async (user: User) => {
   }
 
   const now = Timestamp.now();
-  const threeDaysInSeconds = 3 * 24 * 60 * 60;
-  const trialEndsAt = new Timestamp(now.seconds + threeDaysInSeconds, now.nanoseconds);
-  const applyDefaultPolicy = shouldApplyDefaultRegistrationPolicy(now);
 
-  const minimalProfile: UserProfile = {
+  const minimalProfile = {
     uid: user.uid,
     fullName: user.displayName ?? "",
     displayName: user.displayName ?? "",
@@ -71,13 +67,6 @@ export const ensureMinimalUserProfile = async (user: User) => {
     baselineWellnessCompleted: false,
     setupCompleted: false,
     blueprintStatus: "missing",
-    plan: applyDefaultPolicy ? "trial" : "free",
-    planLabel: applyDefaultPolicy ? "Free Trial (3 Days)" : null,
-    membershipType: applyDefaultPolicy ? "REGULAR" : null,
-    membershipStartDate: applyDefaultPolicy ? now : null,
-    trialStartedAt: applyDefaultPolicy ? now : undefined,
-    trialEndsAt: applyDefaultPolicy ? trialEndsAt : undefined,
-    isDeveloper: false,
     healingProgress: {
       healingStreak: 0,
       totalJournalEntries: 0,
@@ -100,17 +89,10 @@ export const ensureMinimalUserProfile = async (user: User) => {
       },
     },
     settings: {},
-    role: "user",
     registeredAt: now,
-    guardianCandidate: false,
-    guardianApproved: false,
-    guardianRole: "user",
-    guardianBadge: "guardian",
-    testerBadge: applyDefaultPolicy ? "Penjaga Bhumi" : undefined,
-    recognitionTier: "GUARDIAN",
     createdAt: now,
     updatedAt: now,
-  };
+  } as UserProfile;
 
   await userRepository.upsertUserProfile(user.uid, minimalProfile);
   await userRepository.updatePresence(user.uid, {

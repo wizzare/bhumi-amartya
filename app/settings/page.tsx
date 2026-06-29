@@ -16,9 +16,7 @@ import { getLocalUserSession } from "@/lib/auth/getLocalUserSession";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
 import {
   createDefaultUserPlan,
-  FREE_TRIAL_DAYS,
   getOrCreateLocalUserPlan,
-  getUserPlanStatus,
   isDeveloperProEmail,
   USER_PLAN_STORAGE_KEY,
   type UserPlan,
@@ -290,117 +288,26 @@ export default function SettingsPage() {
   }, [googleEmail]);
 
   const effectiveEmail = googleEmail || email;
-  const planStatus = getUserPlanStatus({ ...plan, email: effectiveEmail });
 
   const statusBadge = useMemo(() => {
-    const profile = originalProfile as any;
-    const defaultPolicyApplies = !profile || shouldApplyDefaultRegistrationPolicy(profile.registeredAt || profile.createdAt);
-    if (!profile && !defaultPolicyApplies) return null;
-
-    const testerBadge = (profile?.testerBadge as string | undefined) || (defaultPolicyApplies ? "Penjaga Bhumi" : undefined);
-    if (!testerBadge) return null;
-
-    if (testerBadge === "Founder") {
-      return {
-        key: "founder",
-        label: "Founder",
-        description: "Lifetime Premium",
-        color: "bg-amber-100 text-amber-800 border-amber-200",
-        Icon: ShieldCheck,
-      };
-    }
-    if (testerBadge === "Penjaga Bhumi Inti") {
-      return {
-        key: "penjaga_bhumi_inti",
-        label: "Penjaga Bhumi Inti",
-        description: "Premium (2 Months)",
-        color: "bg-purple-100 text-purple-800 border-purple-200",
-        Icon: ShieldCheck,
-      };
-    }
-    if (testerBadge === "Penjaga Bhumi Alfa") {
-      return {
-        key: "penjaga_bhumi_alfa",
-        label: "Penjaga Bhumi Alfa",
-        description: "Premium (1 Month)",
-        color: "bg-blue-100 text-blue-800 border-blue-200",
-        Icon: ShieldCheck,
-      };
-    }
-    if (testerBadge === "Penjaga Bhumi") {
-      return {
-        key: "penjaga_bhumi",
-        label: "Penjaga Bhumi",
-        description: "Free Trial (3 Days)",
-        color: "bg-indigo-100 text-indigo-800 border-indigo-200",
-        Icon: Shield,
-      };
-    }
     return {
-      key: "user",
-      label: "Penjaga Bhumi",
-      description: "Free Trial (3 Days)",
+      key: "public_access",
+      label: "Penghuni Bhumi",
+      description: "Akses publik aktif",
       color: "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]",
-      Icon: UserIcon,
+      Icon: Shield,
     };
-  }, [originalProfile]);
+  }, []);
 
   const membershipDisplay = useMemo(() => {
-    const profile = originalProfile as any;
-    const defaultPolicyApplies = !profile || shouldApplyDefaultRegistrationPolicy(profile.registeredAt || profile.createdAt);
-    const testerBadge = (profile?.testerBadge as string | undefined) || (defaultPolicyApplies ? "Penjaga Bhumi" : undefined);
-    const expiryDate = profile?.trialEndsAt || profile?.membershipExpiryDate || plan.expiresAt;
-    const remainingDays = daysUntil(expiryDate);
-    const nextBillingDate = toDisplayDate(expiryDate);
-
-    if (testerBadge === "Founder") {
-      return {
-        title: "Lifetime Premium",
-        subtitle: "Billing: Lifetime Premium",
-        remaining: null,
-        nextBilling: null,
-        pro: true,
-      };
-    }
-
-    if (testerBadge === "Penjaga Bhumi Inti") {
-      return {
-        title: "Premium (2 Months)",
-        subtitle: nextBillingDate ? `Expiry: ${nextBillingDate}` : "Premium aktif",
-        remaining: remainingDays,
-        nextBilling: nextBillingDate,
-        pro: true,
-      };
-    }
-
-    if (testerBadge === "Penjaga Bhumi Alfa") {
-      return {
-        title: "Premium (1 Month)",
-        subtitle: nextBillingDate ? `Expiry: ${nextBillingDate}` : "Premium aktif",
-        remaining: remainingDays,
-        nextBilling: nextBillingDate,
-        pro: true,
-      };
-    }
-
-    if (!testerBadge) {
-      return {
-        title: "Membership",
-        subtitle: "Belum ditetapkan",
-        remaining: null,
-        nextBilling: null,
-        pro: false,
-      };
-    }
-
     return {
-      title: "Free Trial (3 Days)",
-      subtitle: "Billing: Rp50.000/month",
-      remaining: remainingDays ?? planStatus.trialDaysLeft ?? FREE_TRIAL_DAYS,
-      nextBilling: nextBillingDate,
+      title: "Akses Publik Bhumi",
+      subtitle: "Fitur inti tersedia. Paket premium sedang disiapkan.",
+      remaining: null,
+      nextBilling: null,
       pro: false,
     };
-  }, [originalProfile, plan.expiresAt, planStatus.trialDaysLeft]);
+  }, []);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
@@ -733,7 +640,7 @@ export default function SettingsPage() {
           )}
 
           <div className="pt-4 border-t border-[#F5F1E8]">
-            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Subscription Plan</p>
+            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Status Akses</p>
             {membershipDisplay.pro ? (
               <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
                 <div>

@@ -42,7 +42,7 @@ export type UserProfile = {
   baselineWellnessProfile?: BaselineWellnessProfile;
   blueprintStatus: BlueprintStatus;
   setupCompleted: boolean;
-  plan: "trial" | "pro" | "expired" | "free" | "premium" | "developer";
+  plan?: "trial" | "pro" | "expired" | "free" | "premium" | "developer";
   planLabel?: string | null;
   membershipStartDate?: Timestamp | null;
   trialStartedAt?: Timestamp;
@@ -118,6 +118,59 @@ export type UserProfile = {
   updatedAt: Timestamp;
 };
 
+const SERVER_OWNED_ACCESS_FIELDS = new Set([
+  "plan",
+  "plans",
+  "planLabel",
+  "tier",
+  "tiers",
+  "role",
+  "roles",
+  "guardianRole",
+  "badge",
+  "badges",
+  "testerBadge",
+  "guardianBadge",
+  "recognitionTier",
+  "isDeveloper",
+  "isFoundingMember",
+  "premium",
+  "isPremium",
+  "subscription",
+  "subscriptionStatus",
+  "entitlement",
+  "entitlements",
+  "membership",
+  "membershipType",
+  "memberType",
+  "membershipStartDate",
+  "membershipExpiryDate",
+  "membershipExpiresAt",
+  "billing",
+  "purchase",
+  "purchases",
+  "productId",
+  "expiryDate",
+  "validUntil",
+  "trial",
+  "trialStartedAt",
+  "trialEndsAt",
+  "quota",
+  "limits",
+  "credits",
+  "founder",
+  "admin",
+  "staff",
+  "paid",
+  "paymentStatus",
+]);
+
+function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(data).filter(([key]) => !SERVER_OWNED_ACCESS_FIELDS.has(key)),
+  ) as Partial<T>;
+}
+
 const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
   const userRef = doc(db, "users", uid);
   const path = `users/${uid}`;
@@ -128,10 +181,11 @@ const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
     uid,
     updatedAt: now,
   };
+  const safePayload = stripServerOwnedAccessFields(payload);
 
   await debugFirestoreOperation(
-    { operation: "setDoc", path, uid, payloadKeys: Object.keys(payload) },
-    () => setDoc(userRef, sanitizeForFirestore(payload), { merge: true }),
+    { operation: "setDoc", path, uid, payloadKeys: Object.keys(safePayload) },
+    () => setDoc(userRef, sanitizeForFirestore(safePayload), { merge: true }),
   );
 };
 
@@ -231,7 +285,6 @@ const updatePresence = async (
     uid,
     email: data.email ?? existingProfile?.email ?? null,
     displayName: data.displayName ?? existingProfile?.displayName ?? existingProfile?.fullName ?? null,
-    role: data.role ?? existingProfile?.guardianRole ?? existingProfile?.role ?? "user",
     lastSeen: serverTimestamp(),
     registeredAt: data.registered && !existingProfile?.registeredAt
       ? serverTimestamp()
