@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -9,6 +9,8 @@ import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateBhumiMatrix } from "@/lib/engines/calculateBhumiMatrix";
 import { buildDestinyMatrixVisualModel, type DestinyMatrixVisualModel } from "@/lib/visual/destinyMatrixVisualModel";
 import { MatrixDiagram, chakraColors } from "@/components/blueprint/DestinyMatrixVisual";
+
+import { synthesizeArcanaMeaning } from "@/lib/engines/destinyMatrixMeaningSynthesis";
 
 function Card({ title, subtitle, items }: { title: string, subtitle?: string, items: { label: string, value: string }[] }) {
   return (
@@ -142,23 +144,16 @@ export default function DestinyMatrixPage() {
               <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Core Patterns</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card title="Center Arcana" items={[
-                  { label: "Arcana", value: legacy?.center ? String(legacy.center) : "Coming Soon" },
-                  { label: "Meaning", value: "Inti kepribadian." },
-                  { label: "Strength", value: "Membawa kestabilan." },
-                  { label: "Shadow", value: "Kecenderungan stagnan." },
-                  { label: "Life Lesson", value: "Menerima diri sendiri." }
+                  { label: "Arcana", value: legacy?.center ? String(legacy.center) : "-" },
+                  { label: "Meaning", value: synthesizeArcanaMeaning(legacy?.center, "center") },
                 ]} />
                 <Card title="Common Energy" items={[
                   { label: "Arcana", value: legacy?.commonEnergy || "-" },
-                  { label: "Dominant Themes", value: "Tema yang sering muncul." },
-                  { label: "Repeated Patterns", value: "Siklus yang terus berulang." },
-                  { label: "Natural Tendencies", value: "Kecenderungan alamiah." }
+                  { label: "Dominant Themes", value: synthesizeArcanaMeaning(legacy?.commonEnergy, "commonEnergy") },
                 ]} />
                 <Card title="Karmic Tail" items={[
                   { label: "Arcana", value: legacy?.karmicTile || "-" },
-                  { label: "Life Lesson", value: "Tugas dari masa lalu." },
-                  { label: "Shadow Pattern", value: "Pola negatif terpendam." },
-                  { label: "Healing Direction", value: "Penerimaan dan pelepasan." }
+                  { label: "Life Lesson", value: synthesizeArcanaMeaning(legacy?.karmicTile, "karmicTail") },
                 ]} />
               </div>
             </section>
@@ -170,22 +165,16 @@ export default function DestinyMatrixPage() {
                 <Card title="Father Line" items={[
                   { label: "Father Karma", value: legacy?.fatherKarma || "-" },
                   { label: "Father Talent", value: legacy?.fatherTalent || "-" },
-                  { label: "Strengths", value: "Perlindungan dan ketegasan." },
-                  { label: "Challenges", value: "Kesulitan berekspresi." },
-                  { label: "Healing Opportunities", value: "Membangun batas sehat." }
+                  { label: "Lineage Wisdom", value: synthesizeArcanaMeaning(legacy?.fatherTalent || legacy?.fatherKarma, "fatherKarma") },
                 ]} />
                 <Card title="Mother Line" items={[
                   { label: "Mother Karma", value: legacy?.motherKarma || "-" },
                   { label: "Mother Talent", value: legacy?.motherTalent || "-" },
-                  { label: "Strengths", value: "Intuisi dan empati." },
-                  { label: "Challenges", value: "Kelekatan emosional." },
-                  { label: "Healing Opportunities", value: "Mencintai tanpa syarat." }
+                  { label: "Lineage Wisdom", value: synthesizeArcanaMeaning(legacy?.motherTalent || legacy?.motherKarma, "motherKarma") },
                 ]} />
                 <Card title="Ancestor Line" items={[
                   { label: "Arcana", value: matrix.ancestor?.values?.join(" · ") || "-" },
-                  { label: "Strengths", value: "Kebijaksanaan leluhur." },
-                  { label: "Challenges", value: "Pola trauma lintas generasi." },
-                  { label: "Healing Opportunities", value: "Memutus rantai karma." }
+                  { label: "Healing Opportunities", value: synthesizeArcanaMeaning(matrix.ancestor?.values, "ancestorLine") },
                 ]} />
               </div>
             </section>
@@ -196,11 +185,11 @@ export default function DestinyMatrixPage() {
               <div className="grid grid-cols-1 gap-4">
                 <Card title="God Talent" items={[
                   { label: "Arcana", value: legacy?.godTalent || "-" },
-                  { label: "Meaning", value: "Bakat spiritual dan koneksi Ilahi." }
+                  { label: "Meaning", value: synthesizeArcanaMeaning(legacy?.godTalent, "godTalent") }
                 ]} />
                 <Card title="Personal Qualities" items={[
                   { label: "Arcana", value: legacy?.personalQualities || "-" },
-                  { label: "Meaning", value: "Karakter pribadi yang menonjol." }
+                  { label: "Meaning", value: synthesizeArcanaMeaning(legacy?.personalQualities, "personalQualities") }
                 ]} />
               </div>
             </section>
@@ -211,15 +200,11 @@ export default function DestinyMatrixPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Money Channel" items={[
                   { label: "Money Line", value: legacy?.moneyLine || "-" },
-                  { label: "Financial Pattern", value: "Cara menarik kelimpahan." },
-                  { label: "Potential Block", value: "Pikiran kelangkaan." },
-                  { label: "Growth Direction", value: "Membangun sistem." }
+                  { label: "Financial Pattern", value: synthesizeArcanaMeaning(legacy?.moneyLine, "moneyLine") }
                 ]} />
                 <Card title="Love Channel" items={[
                   { label: "Love Line", value: legacy?.loveLine || "-" },
-                  { label: "Relationship Pattern", value: "Dinamika koneksi intim." },
-                  { label: "Challenge", value: "Kesulitan membuka diri." },
-                  { label: "Growth Direction", value: "Kerentanan emosional." }
+                  { label: "Relationship Pattern", value: synthesizeArcanaMeaning(legacy?.loveLine, "loveLine") }
                 ]} />
               </div>
             </section>
