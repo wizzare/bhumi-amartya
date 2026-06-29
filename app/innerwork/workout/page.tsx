@@ -159,6 +159,7 @@ export default function WorkoutPage() {
       router.replace("/wellness");
     } catch (err) {
       console.error("[WORKOUT_SAVE_ERROR]", err);
+      alert("Gagal menyimpan praktik olahraga. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }

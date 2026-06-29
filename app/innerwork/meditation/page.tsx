@@ -173,6 +173,10 @@ export default function MeditationPage() {
       hasPractice: Boolean(practice),
     });
     if (!practice) return;
+    if (!activeUid) {
+      alert("Silakan login terlebih dahulu untuk menyimpan praktik.");
+      return;
+    }
 
     const generatedReflection = createMeditationReflection({
       theme: practice.theme,
@@ -203,37 +207,34 @@ export default function MeditationPage() {
       });
 
       // Update Daily State for Completion System
-      if (activeUid) {
-        const journeyContext = zoneBContext ?? {
-          issue: "general_innerwork",
-          practiceId: `meditation-${practice.theme.toLowerCase().replaceAll(" ", "-")}`,
-          practiceCategory: "meditation" as const,
-          sourceTheme: practice.theme,
-          title: practice.theme,
-          durationMinutes: 10,
-        };
-        await logWellnessSection4Practice({
-            uid: activeUid,
-            dateKey,
-            practiceId: journeyContext.practiceId,
-            practiceType: "meditation",
-            practiceTitle: journeyContext.title,
-            durationMinutes: journeyContext.durationMinutes,
-            reflectionResult: emotionalState,
-            reflectionResponse: generatedReflection.insight,
-        });
-      }
+      const journeyContext = zoneBContext ?? {
+        issue: "general_innerwork",
+        practiceId: `meditation-${practice.theme.toLowerCase().replaceAll(" ", "-")}`,
+        practiceCategory: "meditation" as const,
+        sourceTheme: practice.theme,
+        title: practice.theme,
+        durationMinutes: 10,
+      };
+      await logWellnessSection4Practice({
+        uid: activeUid,
+        dateKey,
+        practiceId: journeyContext.practiceId,
+        practiceType: "meditation",
+        practiceTitle: journeyContext.title,
+        durationMinutes: journeyContext.durationMinutes,
+        reflectionResult: emotionalState,
+        reflectionResponse: generatedReflection.insight,
+      });
 
       trackEvent("complete_meditation", activeUid || auth?.user?.uid);
       trackEvent("meditation_completed");
+      setReflection(generatedReflection);
+      setSaved(true);
     } catch (error) {
       console.error("[Meditation Page] Failed to save meditation", error);
       trackError("failed_meditation_save", undefined, "local");
-      return;
+      alert("Gagal menyimpan refleksi meditasi. Silakan coba lagi.");
     }
-
-    setReflection(generatedReflection);
-    setSaved(true);
   };
 
   if (loading) {

@@ -35,6 +35,9 @@ const dailyStateFlagByType: Record<WellnessSection4PracticeType, keyof DailyStat
 };
 
 export async function logWellnessSection4Practice(input: LogWellnessSection4PracticeInput): Promise<void> {
+  if (!input.uid) {
+    throw new Error("User ID is required to log Section 4 practice.");
+  }
   const completedAt = new Date().toISOString();
   const durationMinutes = input.durationMinutes ?? 10;
   const flag = dailyStateFlagByType[input.practiceType];

@@ -147,10 +147,10 @@ export default function ManifestasiPage() {
       profileUid: auth?.userProfile?.uid ?? null,
       hasManifestation: Boolean(manifestation),
     });
-    if (!uid || saved) return;
-
-    setSaved(true);
-    trackEvent("practice_completed", uid);
+    if (!uid || saved) {
+      if (!uid) alert("Silakan login terlebih dahulu untuk menyimpan praktik.");
+      return;
+    }
 
     let profile = auth?.userProfile as any;
     if (auditUser && !profile) {
@@ -160,17 +160,24 @@ export default function ManifestasiPage() {
     const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const dateKey = getLocalDateKey(new Date(), timezone);
 
-    await logWellnessSection4Practice({
-      uid,
-      dateKey,
-      practiceId: "manifestasi-hari-ini",
-      practiceType: "manifestation",
-      practiceTitle: "Manifestasi Hari Ini",
-      durationMinutes: 5,
-      dailyStatePatch: {
-        manifestDone: true,
-      },
-    }).catch(err => console.error("[MANIFESTASI_SAVE_ERROR]", err));
+    try {
+      await logWellnessSection4Practice({
+        uid,
+        dateKey,
+        practiceId: "manifestasi-hari-ini",
+        practiceType: "manifestation",
+        practiceTitle: "Manifestasi Hari Ini",
+        durationMinutes: 5,
+        dailyStatePatch: {
+          manifestDone: true,
+        },
+      });
+      trackEvent("practice_completed", uid);
+      setSaved(true);
+    } catch (err) {
+      console.error("[MANIFESTASI_SAVE_ERROR]", err);
+      alert("Gagal menyimpan manifestasi. Silakan coba lagi.");
+    }
   };
 
   if (loading) {

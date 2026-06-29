@@ -97,13 +97,20 @@ function AudioHealingExperience() {
       authUid: auth?.user?.uid ?? null,
       profileUid: auth?.userProfile?.uid ?? null,
     });
+    if (!activeUid) {
+      alert("Silakan login terlebih dahulu untuk menyimpan praktik.");
+      return;
+    }
+
     const generatedReflection = createAudioHealingReflection({
       emotionalState,
       bodySignals,
       reflectionText,
     });
     const createdAt = new Date().toISOString();
-    const dateKey = getLocalDateKey(new Date(), Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+    const profile = auth?.userProfile as any;
+    const timezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const dateKey = getLocalDateKey(new Date(), timezone);
 
     saveAudioHealingEntry({
       id: `audio-healing-${Date.now()}`,
@@ -117,7 +124,7 @@ function AudioHealingExperience() {
       nextFocus: generatedReflection.nextFocus,
     });
 
-    if (activeUid) {
+    try {
       await logWellnessSection4Practice({
         uid: activeUid,
         dateKey,
@@ -131,12 +138,14 @@ function AudioHealingExperience() {
           audioHealingDone: true,
         },
       });
+
+      trackEvent("complete_audio", activeUid || auth?.user?.uid);
+      setReflection(generatedReflection);
+      setSaved(true);
+    } catch (err) {
+      console.error("[AUDIO_HEALING_SAVE_ERROR]", err);
+      alert("Gagal menyimpan praktik audio healing. Silakan coba lagi.");
     }
-
-    trackEvent("complete_audio", activeUid || auth?.user?.uid);
-
-    setReflection(generatedReflection);
-    setSaved(true);
   };
 
   return (

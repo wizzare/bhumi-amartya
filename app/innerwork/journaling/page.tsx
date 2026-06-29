@@ -408,37 +408,32 @@ export default function JournalPage() {
         lastCheckInAt: entry.dateCompleted,
         recurringThemes: analysis.recurringThemes,
       });
-      await dailyStateRepository.saveDailyState(uid, entry.dateCreated.slice(0, 10), {
-        moodLevel: checkIn.moodLevel,
-        emotionalWord: checkIn.emotionalWord,
-        nervousSystemState: checkIn.nervousSystemState,
-        journalingDone: true,
+
+      const timezone = (userProfile as any)?.timezone || (userProfile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      const dateKey = getLocalDateKey(new Date(), timezone);
+      const journeyContext = zoneBContext ?? {
+        issue: "general_innerwork",
+        practiceId: dailyPrompt.id,
+        practiceCategory: "journaling" as const,
+        sourceTheme: dailyPrompt.theme,
+        title: dailyPrompt.theme,
+        durationMinutes,
+      };
+      await logWellnessSection4Practice({
+        uid,
+        dateKey,
+        practiceId: journeyContext.practiceId,
+        practiceType: "journaling",
+        practiceTitle: journeyContext.title,
+        durationMinutes: journeyContext.durationMinutes,
+        dailyStatePatch: {
+          moodLevel: checkIn.moodLevel,
+          emotionalWord: checkIn.emotionalWord,
+          nervousSystemState: checkIn.nervousSystemState,
+        },
+        reflectionResult: checkIn.emotionalWord,
+        reflectionResponse: analysis.gentleInsight,
       });
-      {
-        const journeyContext = zoneBContext ?? {
-          issue: "general_innerwork",
-          practiceId: dailyPrompt.id,
-          practiceCategory: "journaling" as const,
-          sourceTheme: dailyPrompt.theme,
-          title: dailyPrompt.theme,
-          durationMinutes,
-        };
-        await logWellnessSection4Practice({
-          uid,
-          dateKey: entry.dateCreated.slice(0, 10),
-          practiceId: journeyContext.practiceId,
-          practiceType: "journaling",
-          practiceTitle: journeyContext.title,
-          durationMinutes: journeyContext.durationMinutes,
-          dailyStatePatch: {
-            moodLevel: checkIn.moodLevel,
-            emotionalWord: checkIn.emotionalWord,
-            nervousSystemState: checkIn.nervousSystemState,
-          },
-          reflectionResult: checkIn.emotionalWord,
-          reflectionResponse: analysis.gentleInsight,
-        });
-      }
       await userRepository.recordJournalProgress(uid);
       await healingRepository.saveHealingProgress(uid, {
         totalJournalEntries: (userProfile.healingProgress?.totalJournalEntries || 0) + 1,

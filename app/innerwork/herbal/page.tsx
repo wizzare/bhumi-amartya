@@ -93,6 +93,7 @@ export default function HealthyFoodPage() {
       setSaved(true);
     } catch (err) {
       console.error("[HEALTHY_FOOD_SAVE_ERROR]", err);
+      alert("Gagal menyimpan pilihan Healthy Food. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }

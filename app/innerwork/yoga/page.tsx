@@ -154,6 +154,7 @@ export default function YogaPage() {
       router.replace("/wellness");
     } catch (err) {
       console.error("[YOGA_SAVE_ERROR]", err);
+      alert("Gagal menyimpan praktik yoga. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }

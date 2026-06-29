@@ -15,6 +15,7 @@ import { getCompletionSummary } from "@/lib/engines/completionEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 
 interface JourneyDetailClientProps {
@@ -27,6 +28,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const [story, setStory] = useState<GrowthStory | null>(null);
   const [learning, setLearning] = useState<JourneyDailyMemory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [readError, setReadError] = useState<string | null>(null);
 
   useEffect(() => {
     const checkToken = async () => {
@@ -99,7 +101,8 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         console.log("J5 before generateStory");
         const generatedStory = journeyStoryEngine.generateStory(states, synthesis);
         console.log("J6 after generateStory", generatedStory);
-        const today = new Date().toISOString().slice(0, 10);
+        const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+        const today = getLocalDateKey(new Date(), timezone);
         const section4Records = memory.last30Days.flatMap((record) =>
           (record.practiceResults ?? []).filter((result) => result.source === "wellness_section_4"),
         );
@@ -108,7 +111,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           userId: uid,
           authUid: auth?.user?.uid ?? null,
           profileUid: auth?.userProfile?.uid ?? null,
-          dateKeyApproxUtc: today,
+          dateKeyLocal: today,
           dailyStateReadPath: `dailyStates/${uid}/entries`,
           journeyRecordsReadPath: `journeyDailyRecords/${uid}/entries`,
           dailyStatesFound: states.length,
@@ -126,10 +129,8 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         setStory(generatedStory);
         console.log("J8 after setStory");
       } catch (error: any) {
-        console.error("JOURNEY RUNTIME ERROR");
-        console.error(error);
-        console.error(error?.stack);
-        console.error("Failed to load journey details:", error);
+        console.error("JOURNEY RUNTIME ERROR", error);
+        setReadError(error?.message || "Gagal memuat detail perjalanan.");
       } finally {
         setLoading(false);
       }
@@ -149,6 +150,21 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   }
 
   const renderContent = () => {
+    if (readError) {
+      return (
+        <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center space-y-4">
+           <p className="text-sm text-amber-800 font-medium">Terjadi kendala saat memuat data perjalanan.</p>
+           <button
+             type="button"
+             onClick={() => { setLoading(true); setReadError(null); window.location.reload(); }}
+             className="px-4 py-2 bg-[#4F5E52] text-white text-xs font-bold rounded-xl uppercase tracking-wider"
+           >
+             Coba Lagi
+           </button>
+        </div>
+      );
+    }
+
     if (!story) {
       return (
         <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
