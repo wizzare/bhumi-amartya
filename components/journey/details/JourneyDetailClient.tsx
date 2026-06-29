@@ -13,6 +13,8 @@ import { ArrowLeft, Sparkles, Clock, Heart, Flag } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCompletionSummary } from "@/lib/engines/completionEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 
 interface JourneyDetailClientProps {
@@ -97,6 +99,29 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         console.log("J5 before generateStory");
         const generatedStory = journeyStoryEngine.generateStory(states, synthesis);
         console.log("J6 after generateStory", generatedStory);
+        const today = new Date().toISOString().slice(0, 10);
+        const section4Records = memory.last30Days.flatMap((record) =>
+          (record.practiceResults ?? []).filter((result) => result.source === "wellness_section_4"),
+        );
+        appendMoanaRuntimeDiagnostic("journey_detail_readback", {
+          pageId: id,
+          userId: uid,
+          authUid: auth?.user?.uid ?? null,
+          profileUid: auth?.userProfile?.uid ?? null,
+          dateKeyApproxUtc: today,
+          dailyStateReadPath: `dailyStates/${uid}/entries`,
+          journeyRecordsReadPath: `journeyDailyRecords/${uid}/entries`,
+          dailyStatesFound: states.length,
+          journeyRecordsFound: memory.last30Days.length,
+          wellnessPracticeLogsFound: section4Records.length,
+          rawPracticeTypesFound: section4Records.map((result) => result.practiceCategory),
+          seesSection4Records: section4Records.length > 0,
+          storyGenerated: Boolean(generatedStory),
+          fallbackTriggered: !generatedStory,
+          fallbackReason: !generatedStory
+            ? "story_missing_after_journeyStoryEngine_generateStory"
+            : "not_triggered",
+        });
         console.log("J7 before setStory");
         setStory(generatedStory);
         console.log("J8 after setStory");
@@ -337,6 +362,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
             {renderContent()}
           </div>
+          <MoanaRuntimeDiagnosticsPanel label={`Journey detail readback: ${id}`} />
         </div>
       </main>
     </ProtectedRoute>

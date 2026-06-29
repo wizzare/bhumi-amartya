@@ -20,10 +20,12 @@ import {
 } from "@/lib/meditation/createDailyMeditationPractice";
 import { getMudraGuide, type MudraName } from "@/lib/meditation/mudraGuides";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
-import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
-import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 const EMOTIONAL_STATES = [
   "😊 Lebih ringan",
@@ -163,6 +165,13 @@ export default function MeditationPage() {
   };
 
   const handleSave = async () => {
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "meditation",
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+      hasPractice: Boolean(practice),
+    });
     if (!practice) return;
 
     const generatedReflection = createMeditationReflection({
@@ -195,10 +204,6 @@ export default function MeditationPage() {
 
       // Update Daily State for Completion System
       if (activeUid) {
-        await dailyStateRepository.saveDailyState(activeUid, dateKey, {
-          meditationDone: true,
-          moodLevel: undefined, // Don't override if not set
-        });
         const journeyContext = zoneBContext ?? {
           issue: "general_innerwork",
           practiceId: `meditation-${practice.theme.toLowerCase().replaceAll(" ", "-")}`,
@@ -207,11 +212,13 @@ export default function MeditationPage() {
           title: practice.theme,
           durationMinutes: 10,
         };
-        await saveZoneBJourneyContext({
+        await logWellnessSection4Practice({
             uid: activeUid,
-            date: dateKey,
-            context: journeyContext,
-            source: "wellness_section_4",
+            dateKey,
+            practiceId: journeyContext.practiceId,
+            practiceType: "meditation",
+            practiceTitle: journeyContext.title,
+            durationMinutes: journeyContext.durationMinutes,
             reflectionResult: emotionalState,
             reflectionResponse: generatedReflection.insight,
         });
@@ -451,6 +458,7 @@ export default function MeditationPage() {
             </div>
           )}
         </section>
+        <MoanaRuntimeDiagnosticsPanel label="Meditasi Section 4 save flow" />
       </div>
       <InnerworkCelebration isOpen={saved} />
     </main>

@@ -20,12 +20,24 @@ export interface GrowthStory {
   nextMilestone: string;
 }
 
+function hasSection4Activity(state: DailyState): boolean {
+  return Boolean(
+    state.journalingDone
+      || state.meditationDone
+      || state.audioHealingDone
+      || state.yogaDone
+      || state.workoutDone
+      || state.herbalDone
+      || state.manifestDone,
+  );
+}
+
 export const journeyStoryEngine = {
   generateStory(states: DailyState[], synthesis: UnifiedBlueprintSynthesis | null): GrowthStory {
-    const totalDone = states.filter(s => s.journalingDone || s.meditationDone || s.audioHealingDone).length;
+    const totalDone = states.filter(hasSection4Activity).length;
     const streak = states.reduce((acc, s, idx) => {
         // Very basic streak estimation from the list
-        if (idx < 7 && (s.journalingDone || s.meditationDone || s.audioHealingDone)) return acc + 1;
+        if (idx < 7 && hasSection4Activity(s)) return acc + 1;
         return acc;
     }, 0);
 

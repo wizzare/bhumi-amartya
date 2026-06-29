@@ -20,6 +20,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { getEnvironmentWindowKey } from "@/lib/dailyGuidance/timeOfDayGreeting";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import {
@@ -130,7 +131,8 @@ export function DashboardClient() {
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const today = getLocalDateKey(new Date(), timezone);
-    const localCacheKey = `dailyGuidance:${uid}:${today}`;
+    const envWindowKey = getEnvironmentWindowKey(new Date(), today);
+    const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}`;
     const invalidCacheKeys = ["dailyGuidance", `dailyGuidance:${today}`, "dailyGuidance:today", "globalDailyGuidance", "sharedReflection", "staticReflection"];
 
     setDgLoading(true);

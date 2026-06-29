@@ -9,7 +9,7 @@ import { journalRepository } from "@/lib/repositories/journalRepository";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
-import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { healingRepository } from "@/lib/repositories/healingRepository";
 import type {
@@ -53,6 +53,9 @@ import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 const EMOTIONAL_STATES = [
   "😊 Lebih ringan",
@@ -278,6 +281,13 @@ export default function JournalPage() {
   };
 
   const handleLocalSave = async () => {
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "journaling",
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+      hasPrompt: Boolean(localPrompt),
+    });
     if (!localPrompt) return;
 
     const generatedInsight = generateLocalJournalInsight({
@@ -322,15 +332,16 @@ export default function JournalPage() {
           title: localPrompt.theme,
           durationMinutes: 10,
         };
-        await dailyStateRepository.saveDailyState(activeUid, dateKey, {
-          journalingDone: true,
-          emotionalWord: localEmotionalState,
-        });
-        await saveZoneBJourneyContext({
+        await logWellnessSection4Practice({
           uid: activeUid,
-          date: dateKey,
-          context: journeyContext,
-          source: "wellness_section_4",
+          dateKey,
+          practiceId: journeyContext.practiceId,
+          practiceType: "journaling",
+          practiceTitle: journeyContext.title,
+          durationMinutes: journeyContext.durationMinutes,
+          dailyStatePatch: {
+            emotionalWord: localEmotionalState,
+          },
           reflectionResult: localEmotionalState,
           reflectionResponse: generatedInsight.insight,
         });
@@ -354,6 +365,13 @@ export default function JournalPage() {
 
   // Handle journal submission
   const handleJournalSubmit = async (content: string, durationMinutes: number) => {
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "journaling",
+      userId: userProfile?.uid ?? null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+      mode: "firebase_journal_submit",
+    });
     if (!userProfile || !dailyPrompt || !coreIdentity || !emotionalMemory || !checkIn) return;
     setIsSubmittingJournal(true);
 
@@ -405,11 +423,18 @@ export default function JournalPage() {
           title: dailyPrompt.theme,
           durationMinutes,
         };
-        await saveZoneBJourneyContext({
+        await logWellnessSection4Practice({
           uid,
-          date: entry.dateCreated.slice(0, 10),
-          context: journeyContext,
-          source: "wellness_section_4",
+          dateKey: entry.dateCreated.slice(0, 10),
+          practiceId: journeyContext.practiceId,
+          practiceType: "journaling",
+          practiceTitle: journeyContext.title,
+          durationMinutes: journeyContext.durationMinutes,
+          dailyStatePatch: {
+            moodLevel: checkIn.moodLevel,
+            emotionalWord: checkIn.emotionalWord,
+            nervousSystemState: checkIn.nervousSystemState,
+          },
           reflectionResult: checkIn.emotionalWord,
           reflectionResponse: analysis.gentleInsight,
         });
@@ -599,6 +624,7 @@ export default function JournalPage() {
               </div>
             )}
           </section>
+          <MoanaRuntimeDiagnosticsPanel label="Journaling Section 4 save flow" />
         </div>
         <InnerworkCelebration isOpen={localSaved} />
       </main>

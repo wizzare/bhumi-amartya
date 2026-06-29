@@ -26,6 +26,7 @@ import {
   loadWellnessDailyIntelligence,
   type WellnessDailyIntelligence,
 } from "@/lib/services/wellnessDailyIntelligence";
+import { getTimeWindow } from "@/lib/dailyGuidance/timeOfDayGreeting";
 import { wellnessNavigatorEngine } from "@/lib/engines/wellnessNavigatorEngine";
 import { wellnessSupportEngine } from "@/lib/engines/wellnessSupportEngine";
 import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
@@ -461,12 +462,27 @@ export function WellnessPageClient() {
         {/* Section 3: Recommended Today */}
         <WellnessSection number="3" title={t.wellness.recommended}>
           <div className="space-y-4">
-            {intelligence && (
-              <div className="rounded-3xl bg-[#F5F1E8]/60 p-5">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-[#9BB89A]">Tema Saat Ini</p>
-                <p className="mt-2 font-serif text-xl text-[#4F5E52]">{intelligence.currentIssue.title}</p>
-              </div>
-            )}
+            {intelligence && (() => {
+              const tw = getTimeWindow();
+              const twNote = tw === "morning"
+                ? "Rekomendasi Pagi: Fokus menyelaraskan energi dan membangun orientasi fokus hari ini."
+                : tw === "afternoon"
+                ? "Rekomendasi Siang: Jaga ritme dan hidrasi tubuh, kelola energi agar tetap seimbang."
+                : tw === "evening"
+                ? "Rekomendasi Sore: Saatnya melonggarkan ketegangan tubuh dan melepas aktivitas hari ini."
+                : "Rekomendasi Malam: Istirahatkan pikiran dan tubuh untuk pemulihan malam yang lelap.";
+              return (
+                <div className="rounded-3xl bg-[#F5F1E8]/60 p-5 space-y-2">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#9BB89A]">Tema Saat Ini</p>
+                    <p className="mt-1 font-serif text-xl text-[#4F5E52]">{intelligence.currentIssue.title}</p>
+                  </div>
+                  <div className="pt-2 border-t border-[#4F5E52]/10">
+                    <p className="text-xs text-[#7B8776] leading-relaxed italic">{twNote}</p>
+                  </div>
+                </div>
+              );
+            })()}
             {decision ? (
               <div className="space-y-4">
                 {/* Main Practice Card */}

@@ -32,11 +32,13 @@ export function buildBhumiSoulMirrorPrompt(
       natalChart: context.input.blueprint?.astrology || context.input.blueprint?.natalChart,
     },
     unifiedBlueprint: context.unifiedBlueprint ?? null,
+    environmentContext: (context.input as any).environmentContext ?? null,
 
     requiredEngineBehavior: {
       dailyVariation: "Refleksi Jiwa must change daily based on changing memory context and the current WEEKDAY ATMOSPHERE. Similarity between different users on the same day MUST BE MINIMAL (< 20%).",
       blueprintIntegration: "You MUST integrate ALL blueprint systems simultaneously. Use the specific blueprintDifferentiators provided to create a unique narrative for THIS user.",
       useDifferentiators: "Use the unifiedBlueprint summary, archetypes, coreNeeds, practiceThemes, and differentiators to choose ONE precise emotional lens for this user today. A Widhi and a Bunga should never receive the same reflection.",
+      environmentAtmosphere: "Environment is supporting context, not a weather report or main topic. Use time window (morning/afternoon/evening/night) to frame the daily reflection. If environment signals are present (high heat, rain, cloud, moon phase, UV, air quality), use them subtly to influence body pacing, emotional softness, and inner posture without using raw weather data.",
       weekdayAtmosphere: {
         monday: "New energy, returning to center, honesty in movement.",
         tuesday: "Stability, observing alignment between intention and action.",

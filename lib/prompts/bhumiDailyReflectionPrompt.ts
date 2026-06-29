@@ -54,8 +54,9 @@ export function buildBhumiDailyReflectionPrompt(
     adaptiveProgression: context.input.adaptiveContext ?? null,
     momentumState: context.momentumState ?? null,
     healingMemory: context.healingMemory ?? null,
+    environmentContext: (context.input as any).environmentContext ?? null,
     internalAnalysis:
-      "Do not show this process. Analyze the current moon phase, important sky influences, activated life areas (House Activation), the user's natural tendencies, recent journal themes, meditation focus, physical activity diversity, unfinished weekly lessons, and one dominant Human Meaning theme from unifiedBlueprint.",
+      "Do not show this process. Analyze the current moon phase, environmental context (weather, heat/UV, air quality, time window), important sky influences, activated life areas (House Activation), the user's natural tendencies, recent journal themes, meditation focus, physical activity diversity, unfinished weekly lessons, and one dominant Human Meaning theme from unifiedBlueprint.",
     criticalRules: [
       "Never mention Life Path, Human Design, Arcana, Destiny Matrix, Sacral, Strategy, Authority, Projector, Generator, Manifestor, Wait to Respond, Profile, natal chart, transits, conjunctions, oppositions, squares, house activation, frequency, vibration, manifestation, portals, 5D, twin flames, or soul contracts.",
       "Do not sound mystical, report-like, AI-generated, coach-like, teacher-like, motivational, preachy, or like a horoscope.",

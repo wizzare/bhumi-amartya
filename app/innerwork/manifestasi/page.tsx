@@ -17,6 +17,8 @@ import { useRouter } from "next/navigation";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 function saveActiveManifestation(uid: string, dateKey: string, manifestation: any): void {
   if (typeof window === "undefined" || !manifestation?.affirmation) return;
@@ -138,6 +140,13 @@ export default function ManifestasiPage() {
 
   const handleComplete = async () => {
     const uid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : null);
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "manifestation",
+      userId: uid,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+      hasManifestation: Boolean(manifestation),
+    });
     if (!uid || saved) return;
 
     setSaved(true);
@@ -254,6 +263,7 @@ export default function ManifestasiPage() {
               </button>
             </div>
           </div>
+          <MoanaRuntimeDiagnosticsPanel label="Manifestasi Hari Ini Section 4 save flow" />
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />

@@ -15,6 +15,8 @@ import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import {
   AUDIO_HEALING_EMBED_URL,
   AUDIO_HEALING_PLAYLIST_URL,
@@ -89,6 +91,12 @@ function AudioHealingExperience() {
   };
 
   const handleSave = async () => {
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "audioHealing",
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+    });
     const generatedReflection = createAudioHealingReflection({
       emotionalState,
       bodySignals,
@@ -283,6 +291,7 @@ function AudioHealingExperience() {
             </div>
           )}
         </section>
+        <MoanaRuntimeDiagnosticsPanel label="Audio Healing Section 4 save flow" />
       </div>
       <InnerworkCelebration isOpen={saved} />
     </main>

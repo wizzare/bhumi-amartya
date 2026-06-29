@@ -14,7 +14,10 @@ import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
-import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 export default function YogaPage() {
   const router = useRouter();
@@ -85,6 +88,14 @@ export default function YogaPage() {
       : activities[0]?.id
         ? [activities[0].id]
         : [];
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "yoga",
+      selectedIds: Array.from(selectedIds),
+      activityIdsToSave,
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+    });
     if (activityIdsToSave.length === 0 || !activeUid || saving) return;
 
     const uid = activeUid;
@@ -128,7 +139,15 @@ export default function YogaPage() {
           title: activity.title,
           durationMinutes: activity.durationMinutes,
         };
-        await saveZoneBJourneyContext({ uid, date, context, source: "wellness_section_4", reflectionResult: reflectionResult || "Belum Yakin" });
+        await logWellnessSection4Practice({
+          uid,
+          dateKey: date,
+          practiceId: context.practiceId,
+          practiceType: "yoga",
+          practiceTitle: context.title,
+          durationMinutes: context.durationMinutes,
+          reflectionResult: reflectionResult || "Belum Yakin",
+        });
       }
       trackEvent("complete_yoga", uid);
       setSaved(true);
@@ -250,6 +269,7 @@ export default function YogaPage() {
               {saved ? 'Selesai ✨' : saving ? 'Menyimpan...' : 'Save'}
             </button>
           </div>
+          <MoanaRuntimeDiagnosticsPanel label="Yoga Section 4 save flow" />
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />

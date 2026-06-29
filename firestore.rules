@@ -76,6 +76,10 @@ service cloud.firestore {
     match /journeyDailyRecords/{userId} {
       allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 
+      match /entries/{dateKey} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+
       match /{document=**} {
         allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
       }
@@ -96,7 +100,11 @@ service cloud.firestore {
     match /wellnessMappings/{userId} {
       allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
-    
+
+    match /wellnessAssessments/{docId} {
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+    }
+
     match /healingProgress/{userId} {
       allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 

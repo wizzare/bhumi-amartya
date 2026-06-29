@@ -1,6 +1,7 @@
 import type { DailyGuidance, DailyGuidanceCategory } from "@/lib/dailyGuidance/types";
 import { seededIndex } from "@/lib/dailyGuidance/dailyContentKey";
 import { DAILY_GUIDANCE_CONTENT_VERSION } from "@/lib/dailyGuidance/version";
+import { getTimeAwareGreeting, getTimeAwareClosing } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 
 const CATEGORY_SPECIFIC_FALLBACK_INSIGHTS: Record<string, string> = {
@@ -293,22 +294,13 @@ export function standardizeSoulReflection(
     bodyText = bodyText.replace(greetingPattern, "").trim();
   }
 
-  const firstName = getFirstName(profile || guidance.profileSnapshot);
+  const profileData = profile || guidance.profileSnapshot;
+  const firstName = getFirstName(profileData);
   const dateKey = guidance.localDateKey || guidance.date || new Date().toISOString().slice(0, 10);
   const dayName = getIndonesianDayName(dateKey);
+  const language = profileData?.language === "en" ? "en" : "id";
 
-  const seed = `${guidance.uid}|${dateKey}`;
-  const openings = [
-    `Hai ${firstName}, selamat hari ${dayName}.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Mari sejenak mengamati apa yang sedang bergerak di dalam dirimu.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Aku menemanimu melihat apa yang sedang terasa dekat.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Aku penasaran bagaimana rasa batinmu berjalan hari ini.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Mari duduk sebentar bersama keadaanmu.`,
-    `Hai ${firstName}, selamat hari ${dayName}. Apa yang paling terasa hidup di dalam dirimu sekarang?`,
-    `Hai ${firstName}, selamat hari ${dayName}. Ada satu hal lembut yang ingin Bhumi pantulkan untukmu.`,
-  ];
-  const openingIndex = seededIndex(seed, openings.length);
-  const expectedOpening = openings[openingIndex];
+  const expectedOpening = getTimeAwareGreeting(firstName, dayName, new Date(), language);
 
   let paragraphs = bodyText.split(/\r?\n+/).map(p => p.trim()).filter(Boolean);
 
@@ -326,7 +318,10 @@ export function standardizeSoulReflection(
       lastPara.includes("kamu sudah berjalan") ||
       lastPara.includes("simpan beberapa pertanyaan") ||
       lastPara.includes("hari ini cukup") ||
-      lastPara.includes("bernapaslah perlahan")
+      lastPara.includes("bernapaslah perlahan") ||
+      lastPara.includes("apa yang bisa kamu lepaskan") ||
+      lastPara.includes("pelan-pelan saja") ||
+      lastPara.includes("jaga ritmemu")
     ) {
       paragraphs.pop();
     } else {
@@ -335,11 +330,10 @@ export function standardizeSoulReflection(
   }
 
   const cleanBody = paragraphs.join("\n\n");
+  const companionSentence = getTimeAwareClosing(new Date(), language);
+  const signOff = language === "en" ? "Warm hugs from Bhumi." : "Peluk hangat dari Bhumi.";
 
-  const companionIndex = seededIndex(seed, COMPANION_SENTENCES.length);
-  const companionSentence = COMPANION_SENTENCES[companionIndex];
-
-  return cleanupUserFacingSurface(`${expectedOpening} ${cleanBody}\n\nPeluk hangat dari Bhumi.\n\n${companionSentence}`);
+  return cleanupUserFacingSurface(`${expectedOpening} ${cleanBody}\n\n${signOff}\n\n${companionSentence}`);
 }
 
 export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: any): DailyGuidance {

@@ -13,6 +13,8 @@ import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
 import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_VARIATION_LIBRARY.healthyFood];
 const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
@@ -42,6 +44,13 @@ export default function HealthyFoodPage() {
   };
 
   const handleSaveAll = async () => {
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "healthyFood",
+      selectedIds: Array.from(selectedIds),
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+    });
     if (selectedIds.size === 0 || !activeUid || saving) return;
 
     const uid = activeUid;
@@ -194,6 +203,7 @@ export default function HealthyFoodPage() {
               Jika kamu memiliki kondisi kesehatan tertentu, konsultasikan dengan tenaga profesional.
             </p>
           </div>
+          <MoanaRuntimeDiagnosticsPanel label="Healthy Food Section 4 save flow" />
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />

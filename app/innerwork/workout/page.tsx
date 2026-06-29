@@ -15,7 +15,10 @@ import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
-import { getZoneBGuide, readZoneBContext, saveZoneBJourneyContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 const WORKOUT_ACTIVITIES = [...Object.values(WORKOUT_DATABASE), ...INNERWORK_VARIATION_LIBRARY.workout];
 const WORKOUT_BY_ID = Object.fromEntries(WORKOUT_ACTIVITIES.map((activity) => [activity.id, activity]));
@@ -90,6 +93,14 @@ export default function WorkoutPage() {
       : activities[0]?.id
         ? [activities[0].id]
         : [];
+    appendMoanaRuntimeDiagnostic("section4_save_button_clicked", {
+      practiceType: "workout",
+      selectedIds: Array.from(selectedIds),
+      activityIdsToSave,
+      userId: activeUid || null,
+      authUid: auth?.user?.uid ?? null,
+      profileUid: auth?.userProfile?.uid ?? null,
+    });
     if (activityIdsToSave.length === 0 || !activeUid || saving) return;
 
     const uid = activeUid;
@@ -133,7 +144,15 @@ export default function WorkoutPage() {
           title: activity.title,
           durationMinutes: activity.durationMinutes,
         };
-        await saveZoneBJourneyContext({ uid, date, context, source: "wellness_section_4", reflectionResult: reflectionResult || "Belum Yakin" });
+        await logWellnessSection4Practice({
+          uid,
+          dateKey: date,
+          practiceId: context.practiceId,
+          practiceType: "workout",
+          practiceTitle: context.title,
+          durationMinutes: context.durationMinutes,
+          reflectionResult: reflectionResult || "Belum Yakin",
+        });
       }
       trackEvent("complete_workout", uid);
       setSaved(true);
@@ -255,6 +274,7 @@ export default function WorkoutPage() {
               {saved ? 'Langkah Tersimpan ✨' : saving ? 'Menyimpan...' : 'Save'}
             </button>
           </div>
+          <MoanaRuntimeDiagnosticsPanel label="Workout Section 4 save flow" />
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />

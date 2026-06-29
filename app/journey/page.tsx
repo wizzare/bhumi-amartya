@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
+import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
 export default function JourneyPage() {
   const auth = useAuth();
@@ -46,6 +48,32 @@ export default function JourneyPage() {
 
         const today = getLocalDateKey(new Date(), timezone);
         const todayState = states.find(s => s.date === today) || null;
+        const todayRecord = await journeyRepository.getDailyRecord(uid, today).catch((error) => {
+          appendMoanaRuntimeDiagnostic("journey_today_record_read_failure", {
+            userId: uid,
+            dateKey: today,
+            path: `journeyDailyRecords/${uid}/entries/${today}`,
+            error: toDiagnosticError(error),
+          });
+          return null;
+        });
+        const section4Logs = todayRecord?.practiceResults?.filter((result) => result.source === "wellness_section_4") ?? [];
+        appendMoanaRuntimeDiagnostic("journey_page_readback", {
+          userId: uid,
+          authUid: auth?.user?.uid ?? null,
+          profileUid: auth?.userProfile?.uid ?? null,
+          dateKey: today,
+          dailyStateReadPath: `dailyStates/${uid}/entries`,
+          journeyRecordReadPath: `journeyDailyRecords/${uid}/entries/${today}`,
+          dailyStatesFound: states.length,
+          todayStateExists: Boolean(todayState),
+          todayProgressCount: getCompletionSummary(todayState).count,
+          todayProgressTotal: getCompletionSummary(todayState).total,
+          section4PracticeLogsFound: section4Logs.length,
+          rawPracticeTypesFound: section4Logs.map((result) => result.practiceCategory),
+          seesSection4Records: section4Logs.length > 0,
+          fallbackWouldTrigger: !todayState && section4Logs.length === 0,
+        });
         setTodaySummary(getCompletionSummary(todayState));
 
       } catch (error) {
@@ -123,6 +151,7 @@ export default function JourneyPage() {
               </Link>
             ))}
           </div>
+          <MoanaRuntimeDiagnosticsPanel label="Journey main page readback" />
         </div>
       </main>
     </ProtectedRoute>
