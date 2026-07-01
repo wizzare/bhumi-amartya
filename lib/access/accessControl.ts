@@ -4,7 +4,16 @@ import { Timestamp } from "firebase/firestore";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 import { GOOGLE_PLAY_BILLING_ENABLED } from "@/lib/billing/googlePlayBilling";
 
-export type PremiumFeature = "meditation" | "journaling" | "audio-healing";
+export type PremiumFeature =
+  | "meditation"
+  | "journaling"
+  | "audio-healing"
+  | "journey"
+  | "wellness"
+  | "yoga"
+  | "workout"
+  | "healthy-food"
+  | "manifestasi";
 
 function hasActivePremiumMembership(profile: UserProfile): boolean {
   if (profile.membershipType === "LIFETIME") return true;
