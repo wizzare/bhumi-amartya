@@ -1,8 +1,8 @@
 {
-    "sprint":  "KARA 53 - GATEKEEPER STABILIZATION",
-    "buildTimestamp":  "2026-06-21T10:03:57+07:00",
-    "versionCode":  53,
-    "versionName":  "3.1.12-RC",
+    "sprint":  "MOANA V3 - RELEASE BUILD V64 PREPARATION",
+    "buildTimestamp":  "2026-06-30T00:00:00+07:00",
+    "versionCode":  64,
+    "versionName":  "3.2",
     "changelog":  [
                       "Gatekeeper Stabilization: Resolved false-positive update locks by allowing fail-open on config fetch.",
                       "Schema Migration: Added support for both legacy and new Firestore versioning fields.",

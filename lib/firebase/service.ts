@@ -40,6 +40,7 @@ const SERVER_OWNED_ACCESS_FIELDS = new Set([
   'purchases',
   'productId',
   'expiryDate',
+  'accessStart',
   'validUntil',
   'trial',
   'trialStartedAt',

@@ -72,3 +72,5 @@ next-env.d.ts
 android/gradlew
 android/gradlew.bat
 android/astro-current-screen.png
+.vercel
+.env*

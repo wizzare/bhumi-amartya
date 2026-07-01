@@ -85,6 +85,7 @@ service cloud.firestore {
         "purchases",
         "productId",
         "expiryDate",
+        "accessStart",
         "accessUntil",
         "validUntil",
         "trial",
@@ -107,6 +108,11 @@ service cloud.firestore {
 
     function doesNotCreateProtectedAccessFields() {
       return request.resource.data.keys().hasAny(protectedAccessFields()) == false;
+    }
+
+    match /app_config/{document} {
+      allow read: if document == "version";
+      allow write: if isFounderByEmail() || isFounderOrAdmin();
     }
 
     // USERS COLLECTION
@@ -198,6 +204,22 @@ service cloud.firestore {
       }
     }
 
+    match /meditations/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+    }
+
+    match /audioHealing/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+
+      match /{document=**} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+    }
+
     match /system/astrology/transits/current {
       allow read: if isSignedIn();
     }
@@ -244,6 +266,18 @@ service cloud.firestore {
 
     match /adminAuditLogs/{docId} {
       allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /analytics/{docId} {
+      allow create: if isSignedIn()
+        && (!("uid" in request.resource.data) || request.resource.data.uid == request.auth.uid || request.resource.data.uid == null);
+      allow read, update, delete: if isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /user_activity/{docId} {
+      allow create, update: if isSignedIn()
+        && request.resource.data.uid == request.auth.uid;
+      allow read, delete: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
     // PUBLIC CONFIG (Version Checker, etc)

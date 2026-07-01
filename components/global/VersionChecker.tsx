@@ -4,8 +4,6 @@ import { useEffect, useState } from "react";
 import { checkAppUpdateStatus, type AppUpdateStatus } from "@/lib/services/appUpdateService";
 import { UpdateRequiredScreen } from "./UpdateRequiredScreen";
 import { CURRENT_VERSION_NAME } from "@/lib/config/buildInfo";
-import { useAuth } from "@/context/AuthContext";
-import { isPrivilegedUser } from "@/lib/auth/privilegedUser";
 
 // simple version comparison
 function compareVersions(a: string, b: string) {
@@ -20,8 +18,7 @@ function compareVersions(a: string, b: string) {
   return 0;
 }
 
-export function VersionChecker() {
-  const auth = useAuth();
+export function VersionChecker({ children }: { children: React.ReactNode }) {
   const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null);
   const [isOptionalOpen, setIsOptionalOpen] = useState(false);
 
@@ -44,30 +41,20 @@ export function VersionChecker() {
     check();
   }, []);
 
-  // FOUNDER/ADMIN BYPASS
-  // If the user is privileged, we don't show the update screen even if outdated.
-  // This ensures founders can always access the app for debugging/audit.
-  if (isPrivilegedUser((auth?.userProfile || auth?.user) ?? null)) {
-    console.info("[VERSION CHECKER] Privileged user detected, bypassing gate.");
-    return null;
+  if (!updateStatus) {
+    return (
+      <div className="min-h-screen bg-[#FCFAF5]" />
+    );
   }
-
-  if (!updateStatus) return null;
 
   // 1. FORCED UPDATE (Blocker)
   if (updateStatus.isOutdated) {
-    const isHotfixForceUpdate = updateStatus.minimumBuild === 55;
-    const customMessage = isHotfixForceUpdate
-      ? "Versi aplikasi kamu perlu diperbarui. Kami sudah menyiapkan perbaikan agar fitur Kondisi Lingkungan dan izin lokasi berjalan lebih baik. Silakan update Bhumi Amartya ke versi terbaru di Play Store."
-      : undefined;
-
     return (
-      <div className="fixed inset-0 z-[10000] bg-[#FCFAF5] flex items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FCFAF5] flex items-center justify-center p-6">
         <UpdateRequiredScreen
           updateUrl={updateStatus.updateUrl}
           currentBuild={updateStatus.currentBuild}
           minimumBuild={updateStatus.minimumBuild}
-          customMessage={customMessage}
         />
       </div>
     );
@@ -101,6 +88,6 @@ export function VersionChecker() {
     );
   }
 
-  return null;
+  return <>{children}</>;
 }
 

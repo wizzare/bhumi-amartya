@@ -42,9 +42,11 @@ export type UserProfile = {
   baselineWellnessProfile?: BaselineWellnessProfile;
   blueprintStatus: BlueprintStatus;
   setupCompleted: boolean;
-  plan?: "trial" | "pro" | "expired" | "free" | "premium" | "developer";
+  plan?: "trial" | "pro" | "expired" | "free" | "premium" | "developer" | "lifetime_free" | "free_access" | "free_trial";
   planLabel?: string | null;
   membershipStartDate?: Timestamp | null;
+  accessStart?: Timestamp | string | null;
+  accessUntil?: Timestamp | string | null;
   trialStartedAt?: Timestamp;
   trialEndsAt?: Timestamp;
   isDeveloper?: boolean;
@@ -151,6 +153,8 @@ const SERVER_OWNED_ACCESS_FIELDS = new Set([
   "purchases",
   "productId",
   "expiryDate",
+  "accessStart",
+  "accessUntil",
   "validUntil",
   "trial",
   "trialStartedAt",

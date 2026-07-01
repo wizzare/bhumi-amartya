@@ -2,6 +2,9 @@
 
 Bhumi Amartya is an AI-powered innerwork platform.
 
+Official execution mode:
+All future tasks must refer to and follow [MOANA_V3_EXECUTION_MODE.md](MOANA_V3_EXECUTION_MODE.md). That document is the official MOANA V3 execution rule for production stability, source-of-truth priority, save pipeline validation, server-owned access fields, and release readiness status.
+
 Purpose:
 A safe digital sanctuary for people to return home to themselves through:
 - journaling

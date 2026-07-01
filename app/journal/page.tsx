@@ -38,6 +38,7 @@ import {
 import { JournalHero } from "@/components/journal/JournalHero";
 import { PremiumLock } from "@/components/auth/PremiumLock";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { DailyPromptCard } from "@/components/journal/DailyPromptCard";
 import { EmotionalCheckin } from "@/components/journal/EmotionalCheckin";
 import { JournalInput } from "@/components/journal/JournalInput";
@@ -537,6 +538,7 @@ export default function JournalPage() {
 
   return (
     <ProtectedRoute requireProfile>
+      <AccessGuard feature="journaling">
       <PremiumLock feature="journaling">
         <main className="min-h-screen px-5 py-8 pb-24 bg-[#FCFAF5]">
           <AppNav />
@@ -608,6 +610,7 @@ export default function JournalPage() {
           </div>
         </main>
       </PremiumLock>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

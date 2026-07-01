@@ -36,17 +36,18 @@ export default function RootLayout({
 
       <body>
 
-        <AuthProvider>
-          <ActivityTracker />
-          <VersionChecker />
-          <LanguageProvider>
-            <GentleNightReminderLifecycle />
-            {children}
-            <footer className="border-t border-[#4F5E52]/10 bg-[#FCFAF5] px-6 py-4 text-center text-xs uppercase tracking-[0.18em] text-[#7B8776]">
-              Versi: {APP_VERSION} {RELEASE_NAME}
-            </footer>
-          </LanguageProvider>
-        </AuthProvider>
+        <VersionChecker>
+          <AuthProvider>
+            <ActivityTracker />
+            <LanguageProvider>
+              <GentleNightReminderLifecycle />
+              {children}
+              <footer className="border-t border-[#4F5E52]/10 bg-[#FCFAF5] px-6 py-4 text-center text-xs uppercase tracking-[0.18em] text-[#7B8776]">
+                Versi: {APP_VERSION} {RELEASE_NAME}
+              </footer>
+            </LanguageProvider>
+          </AuthProvider>
+        </VersionChecker>
 
       </body>
 

@@ -35,20 +35,8 @@ type NativeGoogleAuthWithLegacyOptions = typeof FirebaseAuthentication & {
   }): Promise<NativeGoogleSignInResult>;
 };
 
-export const ensureMinimalUserProfile = async (user: User) => {
-  const existingProfile = await userRepository.getUserProfile(user.uid);
-  if (existingProfile) {
-    await userRepository.updatePresence(user.uid, {
-      email: user.email || existingProfile.email || "",
-      displayName: user.displayName ?? existingProfile.displayName ?? existingProfile.fullName ?? "",
-      role: existingProfile.guardianRole || existingProfile.role || "user",
-    });
-    return existingProfile;
-  }
-
-  const now = Timestamp.now();
-
-  const minimalProfile = {
+function buildMinimalUserProfile(user: User, now: Timestamp): UserProfile {
+  return {
     uid: user.uid,
     fullName: user.displayName ?? "",
     displayName: user.displayName ?? "",
@@ -93,6 +81,36 @@ export const ensureMinimalUserProfile = async (user: User) => {
     createdAt: now,
     updatedAt: now,
   } as UserProfile;
+}
+
+function hasMinimalProfileFields(profile: UserProfile): boolean {
+  return (
+    typeof profile.onboardingCompleted === "boolean" &&
+    typeof profile.baselineWellnessCompleted === "boolean" &&
+    typeof profile.setupCompleted === "boolean" &&
+    Boolean(profile.healingProgress) &&
+    Boolean(profile.emotionalState) &&
+    Boolean(profile.profile) &&
+    Boolean(profile.settings)
+  );
+}
+
+export const ensureMinimalUserProfile = async (user: User) => {
+  const existingProfile = await userRepository.getUserProfile(user.uid);
+  const now = Timestamp.now();
+  if (existingProfile) {
+    if (!hasMinimalProfileFields(existingProfile)) {
+      await userRepository.upsertUserProfile(user.uid, buildMinimalUserProfile(user, now));
+    }
+    await userRepository.updatePresence(user.uid, {
+      email: user.email || existingProfile.email || "",
+      displayName: user.displayName ?? existingProfile.displayName ?? existingProfile.fullName ?? "",
+      role: existingProfile.guardianRole || existingProfile.role || "user",
+    });
+    return (await userRepository.getUserProfile(user.uid)) ?? existingProfile;
+  }
+
+  const minimalProfile = buildMinimalUserProfile(user, now);
 
   await userRepository.upsertUserProfile(user.uid, minimalProfile);
   await userRepository.updatePresence(user.uid, {

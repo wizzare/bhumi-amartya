@@ -4,10 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PremiumLock } from "@/components/auth/PremiumLock";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 
 export default function MeditationPage() {
   return (
     <ProtectedRoute>
+      <AccessGuard feature="meditation">
       <PremiumLock feature="meditation">
         <main className="min-h-screen bg-[#FCFAF5] px-6 py-12 pb-32">
           <div className="max-w-md mx-auto">
@@ -33,6 +35,7 @@ export default function MeditationPage() {
           </div>
         </main>
       </PremiumLock>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

@@ -1,15 +1,15 @@
 
-const admin = require("firebase-admin");
-const path = require("path");
+const { initializeApp, cert } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 
 // Use the service account key for admin access
 const serviceAccount = require("../secure/bhumiamartya-adminsdk.json.json");
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+initializeApp({
+  credential: cert(serviceAccount)
 });
 
-const db = admin.firestore();
+const db = getFirestore();
 
 async function activateForceUpdate() {
   console.log("--- ADMIN: ACTIVATING MOANA V64 FORCE UPDATE ---");
@@ -41,7 +41,8 @@ async function activateForceUpdate() {
   } catch (err) {
     console.error("ADMIN_ACTIVATION_FAILED:", err.message);
   } finally {
-    process.exit();
+    // No need to explicitly exit if it's a short script, but good for cleanup
+    // process.exit();
   }
 }
 

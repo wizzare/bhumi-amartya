@@ -1,13 +1,23 @@
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
-import { GOOGLE_PLAY_BILLING_ENABLED } from "@/lib/billing/googlePlayBilling";
+import {
+  getCurrentBadge,
+  hasActiveBadgeAccess,
+  isExpiredUser,
+  isTrialUser,
+  type BadgeAccessProfile,
+} from "@/lib/billing/billingPreparation";
 
 export type TrialPlan = "trial" | "pro" | "expired";
 
 export type TrialProfile = {
   email?: string | null;
+  badge?: string | null;
+  testerBadge?: string | null;
   plan?: TrialPlan | string | null;
   trialStartedAt?: string | null;
   trialEndsAt?: string | null;
+  accessUntil?: unknown;
+  membership?: string | null;
   createdAt?: string | null;
   isPro?: boolean | null;
   membershipType?: string | null;
@@ -20,7 +30,17 @@ export type FeatureKey =
   | "audioHealing"
   | "journey"
   | "weeklyReport"
-  | "healingMemory";
+  | "healingMemory"
+  | "wellness"
+  | "yoga"
+  | "workout"
+  | "healthyFood"
+  | "herbal"
+  | "manifestasi"
+  | "refleksiJiwa"
+  | "catatanHariIni"
+  | "premiumContent"
+  | "dashboard";
 
 const TRIAL_DAYS = 3;
 
@@ -42,6 +62,12 @@ function hasActivePremiumMembership(profile: TrialProfile, now = new Date()): bo
 }
 
 export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
+  const accessUntil = toDate(profile.accessUntil);
+  if (accessUntil) {
+    const start = toDate(profile.trialStartedAt) || toDate(profile.createdAt) || now;
+    return { start, end: accessUntil };
+  }
+
   if (profile.membershipType === "PREMIUM" && profile.membershipExpiryDate) {
     const start = toDate(profile.createdAt) || now;
     const end = toDate(profile.membershipExpiryDate) || now;
@@ -57,27 +83,23 @@ export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
 }
 
 export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean {
-  if (!GOOGLE_PLAY_BILLING_ENABLED) return false;
   if (isGaiaAccessOverrideActive(now)) return false;
   if (hasActivePremiumMembership(profile, now)) return false;
   if (String(profile.plan).toLowerCase() === "expired") return true;
+  return isExpiredUser(profile as BadgeAccessProfile, now);
+}
 
-  const { end } = computeTrialWindow(profile, now);
-  return now.getTime() > end.getTime();
+function hasLifetimeOrActiveAccess(profile: TrialProfile, now = new Date()): boolean {
+  if (isExpiredUser(profile as BadgeAccessProfile, now)) return false;
+  if (hasActivePremiumMembership(profile, now)) return true;
+  return hasActiveBadgeAccess(profile as BadgeAccessProfile, now);
 }
 
 export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): number {
-  if (!GOOGLE_PLAY_BILLING_ENABLED) return 999;
   if (isGaiaAccessOverrideActive(now)) return 999;
   if (hasActivePremiumMembership(profile, now)) return 999;
-
-  if (profile.membershipType === "PREMIUM" && profile.membershipExpiryDate) {
-    const expiry = toDate(profile.membershipExpiryDate);
-    if (expiry) {
-      const diff = expiry.getTime() - now.getTime();
-      return Math.max(0, Math.ceil(diff / 86_400_000));
-    }
-  }
+  if (getCurrentBadge(profile as BadgeAccessProfile) === "Founder") return 999;
+  if (!isTrialUser(profile as BadgeAccessProfile, now)) return 0;
 
   const { end } = computeTrialWindow(profile, now);
   const diff = end.getTime() - now.getTime();
@@ -85,9 +107,7 @@ export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): numbe
 }
 
 export function hasFeatureAccess(profile: TrialProfile, feature: FeatureKey, now = new Date()): boolean {
-  void feature;
-  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
+  if (feature === "dashboard") return true;
   if (isGaiaAccessOverrideActive(now)) return true;
-  if (hasActivePremiumMembership(profile, now)) return true;
-  return !isTrialExpired(profile, now);
+  return hasLifetimeOrActiveAccess(profile, now);
 }

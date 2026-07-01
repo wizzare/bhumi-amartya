@@ -2,7 +2,12 @@ import { isPrivilegedUser } from '@/lib/auth/privilegedUser';
 import { UserProfile } from "../repositories/userRepository";
 import { Timestamp } from "firebase/firestore";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
-import { GOOGLE_PLAY_BILLING_ENABLED } from "@/lib/billing/googlePlayBilling";
+import {
+  getCurrentBadge,
+  hasActiveBadgeAccess,
+  isTrialUser,
+  type BadgeAccessProfile,
+} from "@/lib/billing/billingPreparation";
 
 export type PremiumFeature =
   | "meditation"
@@ -13,7 +18,30 @@ export type PremiumFeature =
   | "yoga"
   | "workout"
   | "healthy-food"
-  | "manifestasi";
+  | "herbal"
+  | "manifestasi"
+  | "refleksi-jiwa"
+  | "catatan-hari-ini"
+  | "ai-memory"
+  | "premium-content"
+  | "dashboard";
+
+const NON_DASHBOARD_FEATURES: PremiumFeature[] = [
+  "meditation",
+  "journaling",
+  "audio-healing",
+  "journey",
+  "wellness",
+  "yoga",
+  "workout",
+  "healthy-food",
+  "herbal",
+  "manifestasi",
+  "refleksi-jiwa",
+  "catatan-hari-ini",
+  "ai-memory",
+  "premium-content",
+];
 
 function hasActivePremiumMembership(profile: UserProfile): boolean {
   if (profile.membershipType === "LIFETIME") return true;
@@ -23,34 +51,20 @@ function hasActivePremiumMembership(profile: UserProfile): boolean {
 }
 
 export function isTrialActive(profile: UserProfile): boolean {
-  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (hasActivePremiumMembership(profile)) return true;
-  if (!profile.trialEndsAt) return false;
-
-  const now = Timestamp.now();
-  return now.seconds < profile.trialEndsAt.seconds;
+  return isTrialUser(profile as BadgeAccessProfile);
 }
 
 export function canAccessPremiumFeature(profile: UserProfile | null, feature: PremiumFeature): boolean {
-  void feature;
-  if (!GOOGLE_PLAY_BILLING_ENABLED) return true;
+  if (feature === "dashboard") return true;
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
   if (!profile) return false;
   if (hasActivePremiumMembership(profile)) return true;
-  
-  return isTrialActive(profile);
+  return hasActiveBadgeAccess(profile as BadgeAccessProfile);
 }
 
 export function getUserAccess(profile: UserProfile | null) {
-  if (!GOOGLE_PLAY_BILLING_ENABLED) {
-    return {
-      plan: "free",
-      isPremium: false,
-      isTrialActive: true,
-      lockedFeatures: [] as PremiumFeature[],
-    };
-  }
   if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) {
     return {
       plan: profile?.plan ?? "free",
@@ -64,18 +78,20 @@ export function getUserAccess(profile: UserProfile | null) {
       plan: "free",
       isPremium: false,
       isTrialActive: false,
-      lockedFeatures: ["meditation", "journaling", "audio-healing"] as PremiumFeature[]
+      lockedFeatures: NON_DASHBOARD_FEATURES,
     };
   }
 
   const active = isTrialActive(profile);
-  const isPremium = hasActivePremiumMembership(profile);
+  const badge = getCurrentBadge(profile as BadgeAccessProfile);
+  const isPremium = hasActivePremiumMembership(profile) || badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
+  const hasAccess = canAccessPremiumFeature(profile, "premium-content");
 
   return {
     plan: profile.plan,
     isPremium,
     isTrialActive: active,
-    lockedFeatures: (isPremium || active) ? [] : ["meditation", "journaling", "audio-healing"] as PremiumFeature[]
+    lockedFeatures: hasAccess ? [] : NON_DASHBOARD_FEATURES
   };
 }
 

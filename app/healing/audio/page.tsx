@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { PremiumLock } from "@/components/auth/PremiumLock";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { AppNav } from "@/components/navigation/AppNav";
 import { APP_MODE } from "@/lib/config/appMode";
 import { safeJsonParse } from "@/lib/storage/safeJson";
@@ -243,14 +244,20 @@ function AudioHealingExperience() {
 
 export default function AudioHealingPage() {
   if (APP_MODE === "local-first") {
-    return <AudioHealingExperience />;
+    return (
+      <AccessGuard feature="audio-healing">
+        <AudioHealingExperience />
+      </AccessGuard>
+    );
   }
 
   return (
     <ProtectedRoute requireProfile>
+      <AccessGuard feature="audio-healing">
       <PremiumLock feature="audio-healing">
         <AudioHealingExperience />
       </PremiumLock>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { useAuth } from "@/context/AuthContext";
 import { profileToCoreIdentity } from "@/lib/mappers/userProfileMapper";
 import { emotionalMemoryRepository } from "@/lib/repositories/emotionalMemoryRepository";
@@ -197,6 +198,7 @@ export default function HealingPage() {
   const focus = healingMemory.suggestedFocus;
 
   return (
+    <AccessGuard feature="ai-memory">
     <main className="min-h-screen px-5 py-8 bg-[#FCFAF5] text-[#33413A]">
       <div className="mx-auto max-w-7xl space-y-8">
         <HealingHero
@@ -306,5 +308,6 @@ export default function HealingPage() {
         </div>
       </div>
     </main>
+    </AccessGuard>
   );
 }

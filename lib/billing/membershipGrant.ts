@@ -1,30 +1,26 @@
-import { PENJAGA_BHUMI_INTI_DIRECT_EMAILS, PENJAGA_BHUMI_INTI_EMAILS } from "@/lib/constants/membership";
+import {
+  buildDefaultNewUserAccessGrant,
+  buildServerOwnedAccessGrant,
+  DEFAULT_USER_POLICY_EFFECTIVE_AT,
+  getFounderTesterRecord,
+  type ServerOwnedAccessGrant,
+} from "@/lib/billing/founderTesterSourceOfTruth";
 
 export type MembershipType = "REGULAR" | "PENJAGA_BHUMI_INTI";
 
-export function getPenjagaBhumiIntiGrant(email?: string | null) {
-  if (!email) return null;
+export type July1AccessGrantInput = {
+  uid?: string | null;
+  email?: string | null;
+  fullName?: string | null;
+  displayName?: string | null;
+  registeredAt?: string | Date | null;
+};
 
-  const normalizedEmail = email.trim().toLowerCase();
-  const isMatch = PENJAGA_BHUMI_INTI_EMAILS.some(e => e.toLowerCase() === normalizedEmail);
+export function getJuly1AccessGrant(input: July1AccessGrantInput): ServerOwnedAccessGrant {
+  const record = getFounderTesterRecord(input);
+  if (record) {
+    return buildServerOwnedAccessGrant(record);
+  }
 
-  if (!isMatch) return null;
-
-  return {
-    membershipType: "PENJAGA_BHUMI_INTI" as const,
-    planType: "FREE" as const,
-    planLabel: "Akses Bhumi Inti",
-    badge: "Penjaga Bhumi Inti",
-  };
-}
-
-export function isPenjagaBhumiInti(email?: string | null): boolean {
-  if (!email) return false;
-  const normalizedEmail = email.trim().toLowerCase();
-  return PENJAGA_BHUMI_INTI_EMAILS.some(e => e.toLowerCase() === normalizedEmail);
-}
-
-export function isDirectPenjagaBhumiInti(email?: string | null): boolean {
-  if (!email) return false;
-  return PENJAGA_BHUMI_INTI_DIRECT_EMAILS.includes(email.trim().toLowerCase() as typeof PENJAGA_BHUMI_INTI_DIRECT_EMAILS[number]);
+  return buildDefaultNewUserAccessGrant(input.registeredAt ?? DEFAULT_USER_POLICY_EFFECTIVE_AT);
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { AppNav } from "@/components/navigation/AppNav";
 import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
 import { safeJsonParse } from "@/lib/storage/safeJson";
@@ -205,6 +206,7 @@ export default function MeditationPage() {
   const firstName = typeof profile?.fullName === "string" ? profile.fullName.split(" ")[0] : "Jiwa";
 
   return (
+    <AccessGuard feature="meditation">
     <main className="min-h-screen px-5 py-8 pb-24 bg-[#FCFAF5]">
       <AppNav />
       <div className="max-w-3xl mx-auto space-y-6">
@@ -395,5 +397,6 @@ export default function MeditationPage() {
       </div>
       <InnerworkCelebration isOpen={saved} />
     </main>
+    </AccessGuard>
   );
 }
