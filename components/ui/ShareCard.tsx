@@ -136,9 +136,8 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
               <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mt-2 h-4 w-36 object-contain" />
             </header>
 
-            <section className="relative mt-3 min-h-40 overflow-hidden rounded-[1.25rem] border border-white bg-white/70 p-4 shadow-sm">
-              <img src={`${ornamentPath}/journal-window.png`} alt="" className="pointer-events-none absolute -bottom-2 -right-5 w-[52%] opacity-95" />
-              <div className="relative z-10 w-[62%]">
+            <section className="relative mt-3 overflow-hidden rounded-[1.25rem] border border-white bg-white/70 p-4 shadow-sm">
+              <div className="relative z-10">
                 <div className="flex items-center gap-1.5 text-[#A66D23]"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4" /><p className="text-[8px] font-bold uppercase tracking-[0.16em]">Refleksi Hari Ini</p></div>
                 <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="my-1 h-3 w-24 object-contain" />
                 <p className="text-[8px] leading-[1.45] text-[#4F5E52]">{content.reflection}</p>

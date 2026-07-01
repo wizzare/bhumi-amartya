@@ -26,17 +26,14 @@ import {
   loadWellnessDailyIntelligence,
   type WellnessDailyIntelligence,
 } from "@/lib/services/wellnessDailyIntelligence";
-import { getTimeWindow } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { APP_TIME_REFRESH_MS, getTimeWindow } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { wellnessNavigatorEngine } from "@/lib/engines/wellnessNavigatorEngine";
 import { wellnessSupportEngine } from "@/lib/engines/wellnessSupportEngine";
 import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { WellnessNavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import type { SupportEngineState } from "@/lib/engines/wellnessSupportEngine";
 import type { AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
-
-
-
-
 
 function getLowestDimension(assessment: AssessmentResult, language: "id" | "en") {
   const DIMENSIONS = [
@@ -96,6 +93,189 @@ function getMainPracticeHref(type: string, category: string): string {
     return "/innerwork/workout";
   }
   return "/innerwork/meditation";
+}
+
+const ENOUGHNESS_ITEMS = [
+  { id: "journaling", label: "Journaling" },
+  { id: "meditation", label: "Meditasi" },
+  { id: "water", label: "Minum Air Putih" },
+  { id: "walk", label: "Jalan Kaki" },
+  { id: "sleep", label: "Tidur sebelum 22.30" },
+] as const;
+
+type EnoughnessState = Record<(typeof ENOUGHNESS_ITEMS)[number]["id"], boolean>;
+
+function createEmptyEnoughnessState(): EnoughnessState {
+  return ENOUGHNESS_ITEMS.reduce((acc, item) => {
+    acc[item.id] = false;
+    return acc;
+  }, {} as EnoughnessState);
+}
+
+function getNavigatorLabel(navigator: WellnessNavigatorState | null): string {
+  if (!navigator) return "-";
+  if (navigator.mode === "RECOVERY") return "Pemulihan";
+  if (navigator.mode === "GROWTH") return "Pertumbuhan";
+  return "Refleksi";
+}
+
+function getMetricLabel(value: number | null | undefined): string {
+  if (typeof value !== "number") return "-";
+  if (value >= 8) return "Stabil";
+  if (value >= 5) return "Cukup";
+  if (value >= 3) return "Perlu dilembutkan";
+  return "Butuh pemulihan";
+}
+
+function WellnessInfoCard({ title, eyebrow, children }: { title: string; eyebrow?: string; children: React.ReactNode }) {
+  return (
+    <article className="rounded-3xl border border-[#E8E9E5] bg-white p-5 shadow-sm">
+      {eyebrow && <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9AA394]">{eyebrow}</p>}
+      <h3 className="mt-1 font-serif text-xl font-bold text-[#4F5E52]">{title}</h3>
+      <div className="mt-3 text-sm leading-relaxed text-[#526053]">{children}</div>
+    </article>
+  );
+}
+
+function WellnessConditionCards({
+  intelligence,
+  mapping,
+  navigator,
+  results,
+  expanded,
+  onToggleExpanded,
+}: {
+  intelligence: WellnessDailyIntelligence | null;
+  mapping: WellnessMapping | null;
+  navigator: WellnessNavigatorState | null;
+  results: AssessmentResult | null;
+  expanded: boolean;
+  onToggleExpanded: () => void;
+}) {
+  const snapshot = intelligence?.wellnessState?.wellnessSnapshot;
+  const lowest = results ? getLowestDimension(results, "id") : null;
+  const dominantTheme = mapping?.results?.[0];
+  const energy = snapshot?.metrics.energy;
+  const dimensionRows = results
+    ? [
+        { label: "Tubuh", value: results.body.score },
+        { label: "Emosi", value: results.emotion.score },
+        { label: "Relasi", value: results.relationship.score },
+        { label: "Makna", value: results.meaning.score },
+        { label: "Spirit", value: results.spirituality.score },
+      ]
+    : [];
+
+  return (
+    <div className="space-y-4">
+      <WellnessInfoCard title="Kondisimu Hari Ini" eyebrow="Ringkasan">
+        <p>{intelligence?.currentIssue.title || "Bhumi sedang membaca sinyal harianmu dengan lembut."}</p>
+        <button
+          type="button"
+          onClick={onToggleExpanded}
+          className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52] underline underline-offset-4"
+        >
+          {expanded ? "Tutup penjelasan" : "Penjelasan lebih"}
+        </button>
+      </WellnessInfoCard>
+
+      {expanded && (
+        <div className="space-y-4">
+          <WellnessInfoCard title="Prioritas Hari Ini" eyebrow="Yang paling perlu dijaga">
+            <p>
+              {lowest
+                ? `${lowest.label} menjadi area yang paling meminta perhatian hari ini (${lowest.score}%).`
+                : "Prioritas akan muncul setelah check-in dan pemetaan harian tersedia."}
+            </p>
+          </WellnessInfoCard>
+
+          <WellnessInfoCard title="Energi Hari Ini" eyebrow="Ritme">
+            <div className="flex items-center justify-between gap-4">
+              <p>Energi tubuhmu terbaca: <strong>{getMetricLabel(energy)}</strong>.</p>
+              {typeof energy === "number" && (
+                <span className="shrink-0 rounded-full bg-[#F5F1E8] px-3 py-1 text-xs font-bold text-[#4F5E52]">{energy}/10</span>
+              )}
+            </div>
+            <p className="mt-2 text-xs text-[#7B8776]">Mode: {getNavigatorLabel(navigator)}</p>
+          </WellnessInfoCard>
+
+          <WellnessInfoCard title="Pemetaan Dimensi" eyebrow="Lima area">
+            {dimensionRows.length ? (
+              <div className="space-y-2">
+                {dimensionRows.map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-3 rounded-2xl bg-[#FCFAF5] px-3 py-2">
+                    <span className="text-xs font-bold text-[#4F5E52]">{row.label}</span>
+                    <span className="text-xs font-bold text-[#7B8776]">{row.value}%</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p>Pemetaan dimensi belum tersedia.</p>
+            )}
+          </WellnessInfoCard>
+
+          <WellnessInfoCard title="Tema yang Sedang Aktif" eyebrow="Pola">
+            <p>{dominantTheme?.label || intelligence?.currentIssue.title || "Tema harian belum tersedia."}</p>
+            {dominantTheme?.explanation && (
+              <p className="mt-2 text-xs italic text-[#7B8776]">{dominantTheme.explanation}</p>
+            )}
+          </WellnessInfoCard>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EnoughnessChecklist({
+  state,
+  onToggle,
+}: {
+  state: EnoughnessState;
+  onToggle: (id: keyof EnoughnessState) => void;
+}) {
+  const completedCount = ENOUGHNESS_ITEMS.filter((item) => state[item.id]).length;
+  const allCompleted = completedCount === ENOUGHNESS_ITEMS.length;
+
+  return (
+    <div className="rounded-3xl border border-[#E8E9E5] bg-white p-5 shadow-sm">
+      <div className="space-y-1">
+        <h3 className="font-serif text-2xl font-bold text-[#4F5E52]">Hari Ini Cukup</h3>
+        <p className="text-sm text-[#7B8776]">Pilih langkah kecil yang sudah kamu lakukan hari ini.</p>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        {ENOUGHNESS_ITEMS.map((item) => {
+          const checked = state[item.id];
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onToggle(item.id)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] p-4 text-left transition-all active:scale-[0.99]"
+            >
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border text-sm font-bold ${
+                checked ? "border-[#4F5E52] bg-[#4F5E52] text-white" : "border-[#9AA394] bg-white text-transparent"
+              }`}>
+                ✓
+              </span>
+              <span className="text-sm font-bold text-[#4F5E52]">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 rounded-2xl bg-[#F5F1E8]/70 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#9AA394]">Progress Hari Ini</p>
+        <p className="mt-1 font-serif text-2xl font-bold text-[#4F5E52]">{completedCount} / {ENOUGHNESS_ITEMS.length}</p>
+        {allCompleted && (
+          <p className="mt-3 text-sm font-semibold leading-relaxed text-[#4F5E52]">
+            Hari ini sudah cukup.<br />
+            Besok kita lanjut lagi.
+          </p>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function WellnessSummaryMapping({
@@ -175,6 +355,7 @@ function WellnessSummaryMapping({
 export function WellnessPageClient() {
   const auth = useAuth();
   const { language } = useLanguage();
+  const [appNow, setAppNow] = React.useState(() => new Date());
   const t = translations[language];
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
@@ -221,8 +402,15 @@ export function WellnessPageClient() {
   const [results, setResults] = React.useState<AssessmentResult | null>(null);
   const [isDetailsExpanded, setIsDetailsExpanded] = React.useState(false);
   const [startFresh, setStartFresh] = React.useState(false);
+  const [enoughnessState, setEnoughnessState] = React.useState<EnoughnessState>(() => createEmptyEnoughnessState());
+  const [conditionExpanded, setConditionExpanded] = React.useState(false);
 
   const isBaselinePending = !auditUser && (!auth?.userProfile?.baselineWellnessCompleted || auth?.userProfile?.baselineWellnessProfile?.version !== 'V3_BASELINE');
+
+  React.useEffect(() => {
+    const interval = window.setInterval(() => setAppNow(new Date()), APP_TIME_REFRESH_MS);
+    return () => window.clearInterval(interval);
+  }, []);
   const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
 
   const loadDailyIntelligence = React.useCallback(async () => {
@@ -282,6 +470,60 @@ export function WellnessPageClient() {
     setSupport(null);
     setResults(null);
   };
+
+  React.useEffect(() => {
+    const todayRecord = intelligence?.journeyMemory.last30Days.find((record) => record.appDate === intelligence.date || record.date === intelligence.date);
+    const savedChecklist = todayRecord?.wellnessState?.enoughnessChecklist;
+    if (!savedChecklist || typeof savedChecklist !== "object") {
+      setEnoughnessState(createEmptyEnoughnessState());
+      return;
+    }
+
+    const savedItems = (savedChecklist as { items?: Record<string, boolean> }).items;
+    if (!savedItems) {
+      setEnoughnessState(createEmptyEnoughnessState());
+      return;
+    }
+
+    setEnoughnessState(ENOUGHNESS_ITEMS.reduce((acc, item) => {
+      acc[item.id] = Boolean(savedItems[item.id]);
+      return acc;
+    }, {} as EnoughnessState));
+  }, [intelligence?.date, intelligence?.journeyMemory.last30Days]);
+
+  const handleEnoughnessToggle = React.useCallback((id: keyof EnoughnessState) => {
+    if (!activeUid || !intelligence?.date) return;
+
+    setEnoughnessState((current) => {
+      const next = { ...current, [id]: !current[id] };
+      const completedCount = ENOUGHNESS_ITEMS.filter((item) => next[item.id]).length;
+      const checklistPayload = {
+        items: next,
+        completedCount,
+        total: ENOUGHNESS_ITEMS.length,
+        completed: completedCount === ENOUGHNESS_ITEMS.length,
+        updatedAt: new Date().toISOString(),
+      };
+
+      void (async () => {
+        const existingRecord = await journeyRepository.getDailyRecord(activeUid, intelligence.date).catch(() => null);
+        await journeyRepository.updateDailyRecord(activeUid, intelligence.date, {
+          dominantIssue: intelligence.currentIssue.key,
+          issueCategory: intelligence.currentIssue.title,
+          navigatorMode: navigator?.mode || "REFLECTION",
+          dailyScanCompleted: true,
+          wellnessState: {
+            ...(existingRecord?.wellnessState ?? {}),
+            enoughnessChecklist: checklistPayload,
+          },
+        }).catch((error) => {
+          console.warn("[WELLNESS_ENOUGHNESS_JOURNEY_UPDATE_FAILED]", error);
+        });
+      })();
+
+      return next;
+    });
+  }, [activeUid, intelligence, navigator?.mode]);
 
   if (loading) {
     return <main className="min-h-screen bg-[#FCFAF5] grid place-items-center text-[#4F5E52]">{t.wellness.preparing}</main>;
@@ -410,192 +652,21 @@ export function WellnessPageClient() {
           </div>
         </WellnessSection>
 
-        {/* Section 2: Hasil Pemetaan & Collapsible Details */}
-        {assessmentStage === "results" && mapping && results ? (
-          <WellnessSection number="2" title={t.wellness.summaryMapping}>
-            <div className="space-y-4">
-              <WellnessSummaryMapping
-                mapping={mapping}
-                navigator={navigator}
-                results={results}
-                language={language}
-                isExpanded={isDetailsExpanded}
-                onToggleExpand={() => setIsDetailsExpanded(!isDetailsExpanded)}
-                onRepeat={handleRepeat}
-              />
+        {/* Section 2: Kondisimu Hari Ini */}
+        <WellnessSection number="2" title="Kondisimu Hari Ini">
+          <WellnessConditionCards
+            intelligence={intelligence}
+            mapping={mapping}
+            navigator={navigator}
+            results={results}
+            expanded={conditionExpanded}
+            onToggleExpanded={() => setConditionExpanded((value) => !value)}
+          />
+        </WellnessSection>
 
-              {/* Nested Collapsible Detail Analysis */}
-              {isDetailsExpanded && (
-                <div className="space-y-12 pt-8 border-t border-[#E8E9E5] animate-in fade-in duration-500">
-                  {/* 1. Kemungkinan Tema Saat Ini */}
-                  {mapping && <WellnessMappingView mapping={mapping} language={language} />}
-
-                  {/* 2. Pemetaan Dimensi */}
-                  {results && <WellnessMapView results={results} language={language} />}
-                </div>
-              )}
-            </div>
-          </WellnessSection>
-        ) : (
-          <WellnessSection number="2" title={t.wellness.mapping}>
-            <WellnessAssessmentFlow 
-              key={startFresh ? "fresh" : "saved"}
-              uid={activeUid}
-              language={language}
-              startFresh={startFresh}
-              initialStage="intro"
-              onResultsLoaded={async (m, n, s, r) => {
-                setMapping(m);
-                setNavigator(n);
-                setSupport(s);
-                setResults(r);
-                setAssessmentStage("results");
-                if (auth?.refreshUserProfile) {
-                  await auth.refreshUserProfile();
-                }
-              }}
-              onStageChange={setAssessmentStage}
-            />
-          </WellnessSection>
-        )}
-
-        {/* Section 3: Recommended Today */}
-        <WellnessSection number="3" title={t.wellness.recommended}>
-          <div className="space-y-4">
-            {intelligence && (() => {
-              const tw = getTimeWindow();
-              const twNote = tw === "morning"
-                ? "Rekomendasi Pagi: Fokus menyelaraskan energi dan membangun orientasi fokus hari ini."
-                : tw === "afternoon"
-                ? "Rekomendasi Siang: Jaga ritme dan hidrasi tubuh, kelola energi agar tetap seimbang."
-                : tw === "evening"
-                ? "Rekomendasi Sore: Saatnya melonggarkan ketegangan tubuh dan melepas aktivitas hari ini."
-                : "Rekomendasi Malam: Istirahatkan pikiran dan tubuh untuk pemulihan malam yang lelap.";
-              return (
-                <div className="rounded-3xl bg-[#F5F1E8]/60 p-5 space-y-2">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[#9BB89A]">Tema Saat Ini</p>
-                    <p className="mt-1 font-serif text-xl text-[#4F5E52]">{intelligence.currentIssue.title}</p>
-                  </div>
-                  <div className="pt-2 border-t border-[#4F5E52]/10">
-                    <p className="text-xs text-[#7B8776] leading-relaxed italic">{twNote}</p>
-                  </div>
-                </div>
-              );
-            })()}
-            {decision ? (
-              <div className="space-y-4">
-                {/* Main Practice Card */}
-                {(() => {
-                  const mainBaseHref = getMainPracticeHref(decision.mainPractice.type, decision.mainPractice.category);
-                  const mainCategoryForParam = (
-                    ["journaling", "meditation", "breathwork", "mudra", "yoga", "workout"].includes(decision.mainPractice.category)
-                      ? decision.mainPractice.category
-                      : (mainBaseHref === "/innerwork/journaling" ? "journaling" : mainBaseHref === "/innerwork/yoga" ? "yoga" : mainBaseHref === "/innerwork/workout" ? "workout" : "meditation")
-                  ) as ZoneBPracticeCategory;
-
-                  const mainPracticeHref = buildZoneBHref(mainBaseHref, {
-                    issue: decision.mainPractice.issueKey || intelligence?.currentIssue.key || "difficulty_resting",
-                    practiceId: decision.mainPractice.practiceId,
-                    practiceCategory: mainCategoryForParam,
-                    sourceTheme: decision.mainPractice.issueCategory || "body recovery",
-                    title: decision.mainPractice.title,
-                    durationMinutes: decision.mainPractice.durationMinutes,
-                  });
-
-                  return (
-                    <div className="bhumi-card border-none bg-white p-6 shadow-sm space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#9BB89A]">Praktik Utama</p>
-                          <h3 className="mt-1 font-serif text-xl font-bold text-[#4F5E52]">{decision.mainPractice.title}</h3>
-                        </div>
-                        <span className="px-2.5 py-1 bg-[#F5F1E8] rounded-full text-[10px] font-bold text-[#7B8776] shrink-0 flex items-center gap-1.5">
-                          <Clock size={10} />
-                          {decision.mainPractice.durationMinutes} menit
-                        </span>
-                      </div>
-                      
-                      <p className="text-xs leading-relaxed text-[#526053]">{decision.mainPractice.description}</p>
-                      
-                      <div className="border-t border-[#F5F1E8] pt-3 space-y-3">
-                        {decision.mainPractice.whyThisPractice && (
-                          <div className="space-y-1">
-                            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-wider flex items-center gap-1">
-                              <Info size={10} />
-                              Kenapa ini dipilih?
-                            </p>
-                            <p className="text-xs text-[#526053] leading-relaxed italic">
-                              "{decision.mainPractice.whyThisPractice}"
-                            </p>
-                          </div>
-                        )}
-
-                        {decision.mainPractice.instructions && decision.mainPractice.instructions.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-wider">Cara melakukan</p>
-                            <ol className="space-y-1 text-xs text-[#526053] leading-relaxed list-decimal pl-4">
-                              {decision.mainPractice.instructions.map((step, idx) => (
-                                <li key={idx}>{step}</li>
-                              ))}
-                            </ol>
-                          </div>
-                        )}
-
-                        {decision.mainPractice.expectedBenefit && decision.mainPractice.expectedBenefit.length > 0 && (
-                          <div className="space-y-1.5">
-                            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-wider">Fokus hari ini</p>
-                            <div className="flex flex-wrap gap-1.5">
-                              {decision.mainPractice.expectedBenefit.map((benefit, idx) => (
-                                <span key={idx} className="px-2.5 py-1 bg-[#F5F1E8] rounded-full text-[10px] font-bold text-[#7B8776]">
-                                  {benefit}
-                                </span>
-                              ))}
-                              <span className="px-2.5 py-1 bg-[#F5F1E8]/50 rounded-full text-[10px] font-bold text-[#7B8776] capitalize">
-                                Intensitas: {decision.mainPractice.intensity === "gentle" ? "Lembut" : decision.mainPractice.intensity === "moderate" ? "Sedang" : "Aktif"}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <Link
-                        href={mainPracticeHref}
-                        className="bhumi-button w-full block text-center py-3.5 text-sm font-bold mt-4"
-                      >
-                        Mulai Praktik →
-                      </Link>
-                    </div>
-                  );
-                })()}
-
-                {/* Supporting Practices */}
-                <div className="space-y-3">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#4F5E52]">Praktik Pendukung</p>
-                  {decision.supportPractices.map((practice) => (
-                    <Link
-                      key={practice.practiceId}
-                      href={buildZoneBHref(practice.href, {
-                        issue: practice.issueKey || intelligence?.currentIssue.key || "difficulty_resting",
-                        practiceId: practice.practiceId,
-                        practiceCategory: practice.category as ZoneBPracticeCategory,
-                        sourceTheme: practice.sourceTheme || decision.mainPractice.issueCategory || "body recovery",
-                        title: practice.title,
-                        durationMinutes: practice.durationMinutes,
-                      })}
-                      className="flex items-center justify-between rounded-2xl border border-[#E8E9E5] bg-white p-4 shadow-sm hover:border-[#4F5E52]/20 transition-all active:scale-[0.99] group"
-                    >
-                      <div>
-                        <p className="text-sm font-bold text-[#4F5E52] group-hover:text-[#4F5E52]/80">{practice.title}</p>
-                        <p className="mt-1 text-xs text-[#7B8776]">{practice.reason}</p>
-                      </div>
-                      <ChevronRight size={16} className="shrink-0 text-[#9BB89A] group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            ) : <p className="text-sm text-[#7B8776]">{t.wellness.recsPreparing}</p>}
-          </div>
+        {/* Section 3: Hari Ini Cukup */}
+        <WellnessSection number="3" title="Hari Ini Cukup">
+          <EnoughnessChecklist state={enoughnessState} onToggle={handleEnoughnessToggle} />
         </WellnessSection>
 
         {/* Section 4: Praktik Tambahan */}
@@ -619,6 +690,7 @@ export function WellnessPageClient() {
         <WellnessSection number="5" title={t.wellness.support}>
           <div className="space-y-3">
             <SupportCard title="Sobat Mistis Bhumi Amartya" description="Belajar, bertumbuh, dan berjalan bersama komunitas Bhumi." href={COMMUNITY_CONFIG.whatsappLink} status="ACTIVE" Icon={Users} />
+            <SupportCard title="Bhumi Amartya" description="Kunjungi ruang web Bhumi untuk informasi, pembaruan, dan pintu masuk pendampingan." href="https://bhumiamartya.my.id/" action="Buka bhumiamartya.my.id" Icon={Sparkles} />
             <SupportCard title="Psikolog Terdekat" description="Temukan layanan psikolog yang tersedia di area terdekatmu." href="https://www.google.com/search?q=psikolog+terdekat" action="Cari Psikolog Terdekat" Icon={BriefcaseMedical} />
             <SupportCard title="Mitra Pendamping Bhumi" description="Jaringan pendamping terkurasi sedang dipersiapkan." status="COMING SOON" locked Icon={HeartHandshake} />
             <SupportCard title="Lentera Sintas Indonesia" description="Ruang aman untuk belajar, berbagi, dan bertumbuh bersama para penyintas. Berisi edukasi kesehatan mental, dukungan komunitas, dan kegiatan pemulihan berbasis pengalaman penyintas." href="https://www.instagram.com/lentera_id/" status="Trauma Recovery & Survivor Support" Icon={HeartHandshake} />

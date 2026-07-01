@@ -3,6 +3,7 @@
 import React from "react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { Utensils, ArrowLeft, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
@@ -12,7 +13,7 @@ import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -92,8 +93,9 @@ export default function HealthyFoodPage() {
       trackEvent("complete_healthy_food", uid);
       setSaved(true);
     } catch (err) {
-      console.error("[HEALTHY_FOOD_SAVE_ERROR]", err);
-      alert("Gagal menyimpan pilihan Healthy Food. Silakan coba lagi.");
+      const detail = formatSection4SaveError(err);
+      console.error("[HEALTHY_FOOD_SAVE_ERROR]", detail, err);
+      alert(`Gagal menyimpan pilihan Healthy Food.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -103,6 +105,7 @@ export default function HealthyFoodPage() {
 
   return (
     <ProtectedRoute>
+      <AccessGuard feature="healthy-food">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
 
@@ -208,6 +211,7 @@ export default function HealthyFoodPage() {
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

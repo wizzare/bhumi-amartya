@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Sparkles, Zap, Target, ArrowLeft, Loader2 } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { useAuth } from "@/context/AuthContext";
 import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
@@ -16,7 +17,7 @@ import { generateLocalManifestation } from "@/lib/orchestrators/localDailyGuidan
 import { useRouter } from "next/navigation";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { storageProvider } from "@/lib/storage/storageProvider";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -175,8 +176,9 @@ export default function ManifestasiPage() {
       trackEvent("practice_completed", uid);
       setSaved(true);
     } catch (err) {
-      console.error("[MANIFESTASI_SAVE_ERROR]", err);
-      alert("Gagal menyimpan manifestasi. Silakan coba lagi.");
+      const detail = formatSection4SaveError(err);
+      console.error("[MANIFESTASI_SAVE_ERROR]", detail, err);
+      alert(`Gagal menyimpan manifestasi.\n${detail}`);
     }
   };
 
@@ -190,6 +192,7 @@ export default function ManifestasiPage() {
 
   return (
     <ProtectedRoute>
+      <AccessGuard feature="manifestasi">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
 
@@ -274,6 +277,7 @@ export default function ManifestasiPage() {
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

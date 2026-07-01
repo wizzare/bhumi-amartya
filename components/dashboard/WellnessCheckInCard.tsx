@@ -7,6 +7,7 @@ import {
   Moon,
   Target,
   CheckCircle2,
+  Check,
   ArrowRight,
   Zap,
   Users
@@ -218,24 +219,79 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
   );
 }
 
+const AGREEMENT_SCALE = [
+  { point: 1, storedValue: 10, tone: "agreement", size: "h-8 w-8 min-[420px]:h-10 min-[420px]:w-10", label: "Sangat baik" },
+  { point: 2, storedValue: 8, tone: "agreement", size: "h-7 w-7 min-[420px]:h-9 min-[420px]:w-9", label: "Baik" },
+  { point: 3, storedValue: 7, tone: "agreement", size: "h-6 w-6 min-[420px]:h-8 min-[420px]:w-8", label: "Cukup baik" },
+  { point: 4, storedValue: 5, tone: "neutral", size: "h-5 w-5 min-[420px]:h-7 min-[420px]:w-7", label: "Netral" },
+  { point: 5, storedValue: 4, tone: "disagreement", size: "h-6 w-6 min-[420px]:h-8 min-[420px]:w-8", label: "Agak tidak baik" },
+  { point: 6, storedValue: 3, tone: "disagreement", size: "h-7 w-7 min-[420px]:h-9 min-[420px]:w-9", label: "Tidak baik" },
+  { point: 7, storedValue: 1, tone: "disagreement", size: "h-8 w-8 min-[420px]:h-10 min-[420px]:w-10", label: "Sangat tidak baik" },
+] as const;
+
+function scalePointFromStoredValue(value: number): (typeof AGREEMENT_SCALE)[number]["point"] {
+  const match = AGREEMENT_SCALE.reduce((nearest, option) => (
+    Math.abs(option.storedValue - value) < Math.abs(nearest.storedValue - value) ? option : nearest
+  ), AGREEMENT_SCALE[0]);
+  return match.point;
+}
+
+function toneClasses(tone: (typeof AGREEMENT_SCALE)[number]["tone"], selected: boolean) {
+  if (tone === "agreement") {
+    return selected
+      ? "border-[#2FA36F] bg-[#2FA36F] text-white"
+      : "border-[#2FA36F] bg-white text-[#2FA36F]";
+  }
+  if (tone === "disagreement") {
+    return selected
+      ? "border-[#8A5B9F] bg-[#8A5B9F] text-white"
+      : "border-[#8A5B9F] bg-white text-[#8A5B9F]";
+  }
+  return selected
+    ? "border-[#9AA1AD] bg-[#9AA1AD] text-white"
+    : "border-[#9AA1AD] bg-white text-[#9AA1AD]";
+}
+
 function MetricSlider({ label, icon, value, onChange }: { label: string; icon: React.ReactNode; value: number; onChange: (v: number) => void }) {
+  const selectedPoint = scalePointFromStoredValue(value);
+  const selectedOption = AGREEMENT_SCALE.find((option) => option.point === selectedPoint) ?? AGREEMENT_SCALE[3];
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex justify-between items-center text-[#4F6658]">
         <div className="flex items-center gap-2">
           <span className="opacity-60">{icon}</span>
           <span className="text-sm font-bold">{label}</span>
         </div>
-        <span className="text-lg font-serif italic font-bold">{value}</span>
+        <span className="text-xs font-bold text-[#7B8776]">{selectedOption.label}</span>
       </div>
-      <input
-        type="range"
-        min="1"
-        max="10"
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-1.5 bg-[#F5F1E8] rounded-full appearance-none cursor-pointer accent-[#4F5E52]"
-      />
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-0.5">
+          <span className="text-[12px] font-semibold text-[#2FA36F] min-[420px]:text-sm">Baik</span>
+          <span className="text-right text-[12px] font-semibold text-[#8A5B9F] min-[420px]:text-sm">Tidak Baik</span>
+        </div>
+        <div className="flex min-w-0 items-center justify-between gap-1 min-[420px]:gap-2">
+          {AGREEMENT_SCALE.map((option) => {
+            const selected = option.point === selectedPoint;
+            return (
+              <button
+                key={option.point}
+                type="button"
+                onClick={() => onChange(option.storedValue)}
+                aria-label={`${label}: ${option.label}`}
+                aria-pressed={selected}
+                className="flex h-9 w-8 shrink-0 items-center justify-center rounded-full min-[420px]:h-11 min-[420px]:w-10"
+              >
+                <span
+                  className={`${option.size} flex items-center justify-center rounded-full border-[2.5px] transition-all ${toneClasses(option.tone, selected)} ${selected ? "shadow-sm" : ""}`}
+                >
+                  {selected && <Check size={15} strokeWidth={2.4} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

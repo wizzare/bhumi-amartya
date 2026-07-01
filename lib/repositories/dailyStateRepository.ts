@@ -4,6 +4,7 @@ import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { WellnessSnapshot } from "@/lib/data/types";
 import { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
+import { waitForFirebaseAuthOwner } from "@/lib/auth/waitForFirebaseAuthOwner";
 
 export type DailyState = {
   uid: string;
@@ -71,6 +72,13 @@ function canUseLocalAuditStore(uid: string): boolean {
   return Boolean(auditUser && uid === `${auditUser}_uid`);
 }
 
+async function ensureAuthenticatedOwner(uid: string): Promise<void> {
+  if (typeof window !== "undefined") {
+    await waitForFirebaseAuthOwner(auth, uid);
+  }
+  assertAuthenticatedOwner(uid);
+}
+
 function getLocalDailyState(uid: string, date: string): DailyState | null {
   const stored = window.localStorage.getItem(localDailyStateKey(uid, date));
   if (!stored) return null;
@@ -100,7 +108,7 @@ export const dailyStateRepository = {
       return getLocalDailyState(uid, date);
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     const snapshot = await debugFirestoreOperation(
       { operation: "getDoc", path: dailyStatePath(uid, date), uid },
       () => getDoc(dailyStateDoc(uid, date)),
@@ -118,7 +126,7 @@ export const dailyStateRepository = {
       return;
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     await debugFirestoreOperation(
       { operation: "setDoc", path: dailyStatePath(uid, date), uid },
       () => setDoc(
@@ -139,7 +147,7 @@ export const dailyStateRepository = {
   },
 
   async consolidateDay(uid: string, date: string): Promise<void> {
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     const state = await this.getDailyState(uid, date);
     if (!state) return;
 

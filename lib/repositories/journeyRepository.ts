@@ -1,8 +1,9 @@
 import { arrayUnion, collection, doc, getDoc, query, getDocs, limit, orderBy, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
+import { auth, db } from "@/lib/firebase/config";
 import { DailyState } from "./dailyStateRepository";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
+import { waitForFirebaseAuthOwner } from "@/lib/auth/waitForFirebaseAuthOwner";
 import type { JourneyDailyMemory, JourneyDailyRecord, JourneyPracticeResult } from "@/lib/types/journeyDailyRecord";
 import { reflectionEngine } from "@/lib/engines/reflectionEngine";
 import { journeyStoryEngine } from "@/lib/engines/journeyStoryEngine";
@@ -13,6 +14,8 @@ import { journeyNarrativeEngine } from "@/lib/engines/journeyNarrativeEngine";
 
 const dailyRecordDoc = (uid: string, appDate: string) =>
   doc(db, "journeyDailyRecords", uid, "entries", appDate);
+const dailyRecordPath = (uid: string, appDate: string) =>
+  `journeyDailyRecords/${uid}/entries/${appDate}`;
 const localDailyStatePrefix = (uid: string) => `moana:dailyStates:${uid}:`;
 const localDailyStateKey = (uid: string, date: string) => `${localDailyStatePrefix(uid)}${date}`;
 const localDailyRecordKey = (uid: string, appDate: string) => `moana:journeyDailyRecords:${uid}:${appDate}`;
@@ -29,6 +32,20 @@ function canUseLocalAuditStore(uid: string): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   const auditUser = window.localStorage.getItem("bhumi_audit_user");
   return Boolean(auditUser && uid === `${auditUser}_uid`);
+}
+
+async function ensureAuthenticatedOwner(uid: string): Promise<void> {
+  if (typeof window !== "undefined") {
+    await waitForFirebaseAuthOwner(auth, uid);
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error(`missing auth: expected uid ${uid}, current auth uid null`);
+  }
+  if (currentUser.uid !== uid) {
+    throw new Error(`auth uid mismatch: expected uid ${uid}, current auth uid ${currentUser.uid}`);
+  }
 }
 
 function readLocalJson<T>(key: string, fallback: T): T {
@@ -106,6 +123,17 @@ function createLocalDailyRecord(uid: string, appDate: string, initial: Partial<J
   };
 }
 
+function createDailyRecordMergeBase(uid: string, appDate: string): Partial<JourneyDailyRecord> {
+  return {
+    id: `${uid}_${appDate}`,
+    userId: uid,
+    date: appDate,
+    appDate,
+    dayOfWeek: new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" })
+      .format(new Date(`${appDate}T12:00:00Z`)),
+  };
+}
+
 function expandPracticeResults(records: JourneyDailyRecord[]): JourneyDailyRecord[] {
   return records.flatMap((record) => {
     const practiceResults = record.practiceResults ?? [];
@@ -153,8 +181,13 @@ export const journeyRepository = {
       return record;
     }
 
+    await ensureAuthenticatedOwner(uid);
+    const path = dailyRecordPath(uid, appDate);
     const ref = dailyRecordDoc(uid, appDate);
-    const snapshot = await getDoc(ref);
+    const snapshot = await debugFirestoreOperation(
+      { operation: "getDoc", path, uid },
+      () => getDoc(ref),
+    );
     if (snapshot.exists()) return snapshot.data() as JourneyDailyRecord;
 
     const now = new Date().toISOString();
@@ -185,7 +218,10 @@ export const journeyRepository = {
       sourceConfidence: 0,
       ...initial,
     };
-    await setDoc(ref, sanitizeForFirestore(record));
+    await debugFirestoreOperation(
+      { operation: "setDoc", path, uid, payloadKeys: Object.keys(record) },
+      () => setDoc(ref, sanitizeForFirestore(record)),
+    );
     return record;
   },
 
@@ -204,11 +240,19 @@ export const journeyRepository = {
       return;
     }
 
-    await this.ensureDailyRecord(uid, appDate);
-    await setDoc(
-      dailyRecordDoc(uid, appDate),
-      sanitizeForFirestore({ ...patch, updatedAt: new Date().toISOString() }),
-      { merge: true },
+    await ensureAuthenticatedOwner(uid);
+    const payload = sanitizeForFirestore({
+      ...createDailyRecordMergeBase(uid, appDate),
+      ...patch,
+      updatedAt: new Date().toISOString(),
+    });
+    await debugFirestoreOperation(
+      { operation: "setDoc", path: dailyRecordPath(uid, appDate), uid, payloadKeys: Object.keys(payload) },
+      () => setDoc(
+        dailyRecordDoc(uid, appDate),
+        payload,
+        { merge: true },
+      ),
     );
   },
 
@@ -223,14 +267,19 @@ export const journeyRepository = {
       return;
     }
 
-    await this.ensureDailyRecord(uid, appDate);
-    await setDoc(
-      dailyRecordDoc(uid, appDate),
-      {
-        practiceResults: arrayUnion(sanitizeForFirestore(result)),
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true },
+    await ensureAuthenticatedOwner(uid);
+    const payload = sanitizeForFirestore({
+      ...createDailyRecordMergeBase(uid, appDate),
+      practiceResults: arrayUnion(sanitizeForFirestore(result)),
+      updatedAt: new Date().toISOString(),
+    });
+    await debugFirestoreOperation(
+      { operation: "setDoc", path: dailyRecordPath(uid, appDate), uid, payloadKeys: Object.keys(payload) },
+      () => setDoc(
+        dailyRecordDoc(uid, appDate),
+        payload,
+        { merge: true },
+      ),
     );
   },
 
@@ -239,7 +288,11 @@ export const journeyRepository = {
       return getLocalDailyRecord(uid, appDate);
     }
 
-    const snapshot = await getDoc(dailyRecordDoc(uid, appDate));
+    await ensureAuthenticatedOwner(uid);
+    const snapshot = await debugFirestoreOperation(
+      { operation: "getDoc", path: dailyRecordPath(uid, appDate), uid },
+      () => getDoc(dailyRecordDoc(uid, appDate)),
+    );
     return snapshot.exists() ? snapshot.data() as JourneyDailyRecord : null;
   },
 
@@ -248,11 +301,15 @@ export const journeyRepository = {
       return getLocalDailyRecords(uid, count);
     }
 
-    const snapshot = await getDocs(query(
-      collection(db, "journeyDailyRecords", uid, "entries"),
-      orderBy("appDate", "desc"),
-      limit(count),
-    ));
+    await ensureAuthenticatedOwner(uid);
+    const snapshot = await debugFirestoreOperation(
+      { operation: "getDocs", path: `journeyDailyRecords/${uid}/entries`, uid },
+      () => getDocs(query(
+        collection(db, "journeyDailyRecords", uid, "entries"),
+        orderBy("appDate", "desc"),
+        limit(count),
+      )),
+    );
     return snapshot.docs.map((entry) => entry.data() as JourneyDailyRecord);
   },
 
@@ -285,6 +342,7 @@ export const journeyRepository = {
       return getLocalDailyStates(uid, limitCount);
     }
 
+    await ensureAuthenticatedOwner(uid);
     const q = query(
       collection(db, "dailyStates", uid, "entries"),
       orderBy("date", "desc"),

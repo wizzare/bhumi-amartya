@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { AppNav } from "@/components/navigation/AppNav";
 import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
 import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
@@ -23,7 +24,7 @@ import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -231,9 +232,10 @@ export default function MeditationPage() {
       setReflection(generatedReflection);
       setSaved(true);
     } catch (error) {
-      console.error("[Meditation Page] Failed to save meditation", error);
+      const detail = formatSection4SaveError(error);
+      console.error("[Meditation Page] Failed to save meditation", detail, error);
       trackError("failed_meditation_save", undefined, "local");
-      alert("Gagal menyimpan refleksi meditasi. Silakan coba lagi.");
+      alert(`Gagal menyimpan refleksi meditasi.\n${detail}`);
     }
   };
 
@@ -273,6 +275,7 @@ export default function MeditationPage() {
   const firstName = typeof profile?.fullName === "string" ? profile.fullName.split(" ")[0] : "Jiwa";
 
   return (
+    <AccessGuard feature="meditation">
     <main className="min-h-screen px-5 py-8 pb-24 bg-[#FCFAF5]">
       <AppNav />
       <div className="max-w-3xl mx-auto space-y-6">
@@ -463,5 +466,6 @@ export default function MeditationPage() {
       </div>
       <InnerworkCelebration isOpen={saved} />
     </main>
+    </AccessGuard>
   );
 }

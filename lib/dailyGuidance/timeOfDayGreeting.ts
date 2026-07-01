@@ -1,12 +1,13 @@
 export type GreetingLanguage = "id" | "en";
 export type TimeWindow = "night" | "morning" | "afternoon" | "evening";
+export const APP_TIME_REFRESH_MS = 30_000;
 
 export function getTimeWindow(date: Date = new Date()): TimeWindow {
   const hour = date.getHours();
-  if (hour >= 0 && hour <= 5) return "night";
-  if (hour >= 6 && hour <= 11) return "morning";
-  if (hour >= 12 && hour <= 17) return "afternoon";
-  return "evening";
+  if (hour >= 5 && hour <= 10) return "morning";
+  if (hour >= 11 && hour <= 14) return "afternoon";
+  if (hour >= 15 && hour <= 17) return "evening";
+  return "night";
 }
 
 export function getEnvironmentWindowKey(date: Date = new Date(), localDateKey?: string): string {

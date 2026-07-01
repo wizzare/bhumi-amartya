@@ -51,18 +51,12 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
             <div className="space-y-4">
               <p className="text-[9px] text-[#7B8776] font-bold uppercase tracking-wider mb-2">
                 {language === "id"
-                  ? "Membaca jiwamu hari ini"
+                  ? "Membaca Jiwamu Hari Ini"
                   : "Reading your soul today"}
               </p>
-              <h2 className={`text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
+              <h2 className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
                 &ldquo;{cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}&rdquo;
               </h2>
-
-              {isExpanded && (
-                <p className="text-[10px] text-[#9BB89A] font-bold italic mt-4 animate-in fade-in duration-700">
-                  {language === "id" ? "Renungkan perlahan." : "Reflect slowly."}
-                </p>
-              )}
 
               {cleanedReflection && cleanedReflection.length > 150 && (
                 <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-widest mt-4">

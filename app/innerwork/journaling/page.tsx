@@ -40,6 +40,7 @@ import {
 import { JournalHero } from "@/components/journal/JournalHero";
 import { PremiumLock } from "@/components/auth/PremiumLock";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { DailyPromptCard } from "@/components/journal/DailyPromptCard";
 import { EmotionalCheckin } from "@/components/journal/EmotionalCheckin";
 import { JournalInput } from "@/components/journal/JournalInput";
@@ -53,7 +54,7 @@ import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -348,8 +349,10 @@ export default function JournalPage() {
       }
       trackEvent("journal_saved");
     } catch (error) {
-      console.error("[Journal Page] Failed to save local journal", error);
+      const detail = formatSection4SaveError(error);
+      console.error("[Journal Page] Failed to save local journal", detail, error);
       trackError("failed_journal_save", undefined, "local");
+      alert(`Gagal menyimpan journaling.\n${detail}`);
       return;
     }
 
@@ -448,8 +451,10 @@ export default function JournalPage() {
       trackEvent("complete_journaling", uid);
       trackEvent("journal_saved", uid);
     } catch (error) {
-      console.error("Error submitting journal:", error);
+      const detail = formatSection4SaveError(error);
+      console.error("Error submitting journal:", detail, error);
       trackError("failed_journal_save", userProfile.uid, "firebase");
+      alert(`Gagal menyimpan journaling.\n${detail}`);
     } finally {
       setIsSubmittingJournal(false);
     }
@@ -655,6 +660,7 @@ export default function JournalPage() {
 
   return (
     <ProtectedRoute requireProfile>
+      <AccessGuard feature="journaling">
       <PremiumLock feature="journaling">
         <main className="min-h-screen px-5 py-8 pb-24 bg-[#FCFAF5]">
           <AppNav />
@@ -726,6 +732,7 @@ export default function JournalPage() {
           </div>
         </main>
       </PremiumLock>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

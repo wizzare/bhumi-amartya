@@ -3,6 +3,7 @@
 import React from "react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { Dumbbell, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -16,7 +17,7 @@ import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrary";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -158,8 +159,9 @@ export default function WorkoutPage() {
       setSaved(true);
       router.replace("/wellness");
     } catch (err) {
-      console.error("[WORKOUT_SAVE_ERROR]", err);
-      alert("Gagal menyimpan praktik olahraga. Silakan coba lagi.");
+      const detail = formatSection4SaveError(err);
+      console.error("[WORKOUT_SAVE_ERROR]", detail, err);
+      alert(`Gagal menyimpan praktik olahraga.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -184,6 +186,7 @@ export default function WorkoutPage() {
 
   return (
     <ProtectedRoute>
+      <AccessGuard feature="workout">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
 
@@ -279,6 +282,7 @@ export default function WorkoutPage() {
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

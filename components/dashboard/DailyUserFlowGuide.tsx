@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Sprout, Compass, ChevronRight } from "lucide-react";
+import { Compass, Sprout, UserRound, ChevronRight } from "lucide-react";
 
 interface DailyUserFlowGuideProps {
   language: "id" | "en";
@@ -13,27 +13,24 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
 
   const content = {
     title: isId ? "Disarankan" : "Recommended",
-    subtitle: isId
-      ? "Setelah membaca Home dari atas sampai Catatan Hari Ini, lanjutkan perjalananmu:"
-      : "After reading Home from top to Today's Note, continue your journey:",
     steps: [
+      {
+        id: "profile",
+        icon: UserRound,
+        title: isId ? "Profil" : "Profile",
+        description: isId
+          ? "Lihat kembali blueprint dan identitasmu."
+          : "Review your blueprint and identity.",
+        href: "/profile",
+        color: "bg-orange-50 text-orange-500",
+      },
       {
         id: "wellness",
         icon: Sprout,
         title: "Wellness",
         description: isId
-          ? "Periksa kondisi, pemetaan, dan praktik hari ini."
-          : "Check today's condition, mapping, and practices.",
-        href: "/wellness",
-        color: "bg-orange-50 text-orange-500",
-      },
-      {
-        id: "innerwork",
-        icon: Sprout,
-        title: "Recommended Today",
-        description: isId
-          ? "Lakukan praktik yang disarankan di Wellness."
-          : "Do the recommended practice in Wellness.",
+          ? "Lanjutkan praktik hari ini."
+          : "Continue today's practice.",
         href: "/wellness",
         color: "bg-emerald-50 text-emerald-600",
       },
@@ -42,8 +39,8 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
         icon: Compass,
         title: isId ? "Journey" : "Journey",
         description: isId
-          ? "Lihat jejak pertumbuhan dan konsistensimu."
-          : "See your growth and consistency tracks.",
+          ? "Lihat perjalanan dan perkembanganmu."
+          : "View your journey and progress.",
         href: "/journey",
         color: "bg-indigo-50 text-indigo-600",
       }
@@ -56,9 +53,6 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
         <h3 className="text-[#4F6658] font-serif text-2xl font-bold italic">
           {content.title}
         </h3>
-        <p className="text-[#7B8776] text-[13px] mt-2 leading-relaxed font-medium">
-          {content.subtitle}
-        </p>
       </div>
 
       <div className="space-y-3">

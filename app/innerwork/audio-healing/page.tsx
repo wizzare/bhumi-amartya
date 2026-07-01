@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { PremiumLock } from "@/components/auth/PremiumLock";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { AppNav } from "@/components/navigation/AppNav";
 import { APP_MODE } from "@/lib/config/appMode";
 import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
@@ -14,7 +15,7 @@ import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import {
@@ -143,8 +144,9 @@ function AudioHealingExperience() {
       setReflection(generatedReflection);
       setSaved(true);
     } catch (err) {
-      console.error("[AUDIO_HEALING_SAVE_ERROR]", err);
-      alert("Gagal menyimpan praktik audio healing. Silakan coba lagi.");
+      const detail = formatSection4SaveError(err);
+      console.error("[AUDIO_HEALING_SAVE_ERROR]", detail, err);
+      alert(`Gagal menyimpan praktik audio healing.\n${detail}`);
     }
   };
 
@@ -315,9 +317,11 @@ export default function AudioHealingPage() {
 
   return (
     <ProtectedRoute requireProfile>
+      <AccessGuard feature="audio-healing">
       <PremiumLock feature="audio-healing">
         <AudioHealingExperience />
       </PremiumLock>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

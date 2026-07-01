@@ -20,7 +20,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
-import { getEnvironmentWindowKey } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { APP_TIME_REFRESH_MS, applyDynamicGreetingPrefix, getEnvironmentWindowKey, getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import {
@@ -80,6 +80,63 @@ function formatBaziDayMaster(bazi: any): string | undefined {
   return `${dayMaster.polarity} ${dayMaster.element}`;
 }
 
+function wordCount(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function limitWords(text: string, maxWords: number): string {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) return text.trim();
+  return `${words.slice(0, maxWords).join(" ").replace(/[,.!?;:]+$/, "")}.`;
+}
+
+function shortenReflectionBody(text: string): string {
+  const clean = text
+    .replace(/[*_`#>]/g, "")
+    .replace(/[“”"]/g, "")
+    .replace(/\bRenungkan perlahan\.?/gi, "")
+    .replace(/\bReflect slowly\.?/gi, "")
+    .replace(/Peluk hangat dari Bhumi\.?/gi, "")
+    .replace(/^\s*(Halo|Hai)\s+[^,\n]+,\s*/i, "")
+    .replace(/^\s*Selamat\s+(pagi|siang|sore|malam)\.?\s*/i, "")
+    .replace(/^\s*Good\s+(morning|afternoon|evening|night)\.?\s*/i, "")
+    .replace(/^Bagaimana\s+hari\s+[^?!.]+[?!.]\s*/i, "")
+    .replace(/Kelola energimu dengan bijak, luangkan waktu untuk melihat sekeliling dengan jernih\./gi, "Kamu sedang diajak mengelola energimu dengan bijak dan melihat sekeliling dengan lebih jernih.")
+    .replace(/Sekarang ada ruang untuk membawa kenyamanan dalam mengekspresikan pertumbuhan melalui tindakan nyata\./gi, "Kenyamananmu bisa hadir lewat tindakan nyata yang sederhana.")
+    .replace(/Coba\s+[^.?!]+[.?!]\s*/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(^|[.!?]\s+)([a-z])/g, (_match, prefix: string, letter: string) => `${prefix}${letter.toUpperCase()}`);
+  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [];
+  if (!sentences.length) return "";
+
+  let body = "";
+  for (const sentence of sentences) {
+    const next = `${body} ${sentence}`.trim();
+    if (wordCount(next) > 84 && body) break;
+    body = next;
+    if (wordCount(body) >= 58) break;
+  }
+
+  return limitWords(body || clean, 84);
+}
+
+function formatSoulReflectionForDashboard(
+  reflection: string,
+  userName: string,
+  language: "id" | "en",
+  date: Date,
+): string {
+  const body = shortenReflectionBody(reflection);
+  if (!body) return "";
+  const firstName = userName?.trim().split(/\s+/)[0] || "Jiwa";
+  const greeting = getTimeOfDayGreeting(date, language);
+  if (language === "en") {
+    return `Hello ${firstName},\n${greeting}. ${body} Warmly from Bhumi.`;
+  }
+  return `Halo ${firstName},\n${greeting}. ${body} Peluk hangat dari Bhumi.`;
+}
+
 export function DashboardClient() {
   const router = useRouter();
   const auth = useAuth();
@@ -97,10 +154,31 @@ export function DashboardClient() {
   const [trustedContact, setTrustedContact] = useState<TrustedContact | undefined>(undefined);
   const [dgLoading, setDgLoading] = useState(false);
   const [trialMessage, setTrialMessage] = useState<string | null>(null);
+  const [appNow, setAppNow] = useState(() => new Date());
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
-  const visibleSoulReflection = dailyGuidance?.soulReflectionText?.trim() || "";
+  const visibleSoulReflection = formatSoulReflectionForDashboard(
+    applyDynamicGreetingPrefix(dailyGuidance?.soulReflectionText?.trim() || "", language, appNow),
+    profile?.fullName || "",
+    language,
+    appNow,
+  );
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setAppNow(new Date()), APP_TIME_REFRESH_MS);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const appDateKey = getLocalDateKey(appNow, appTimezone);
+  const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid || !profile || !blueprint || loading) return;
+    void fetchBackgroundData(uid, profile, blueprint);
+  }, [appEnvironmentWindowKey]);
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -130,8 +208,8 @@ export function DashboardClient() {
 
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const today = getLocalDateKey(new Date(), timezone);
-    const envWindowKey = getEnvironmentWindowKey(new Date(), today);
+    const today = getLocalDateKey(appNow, timezone);
+    const envWindowKey = getEnvironmentWindowKey(appNow, today);
     const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}`;
     const invalidCacheKeys = ["dailyGuidance", `dailyGuidance:${today}`, "dailyGuidance:today", "globalDailyGuidance", "sharedReflection", "staticReflection"];
 
@@ -699,8 +777,6 @@ export function DashboardClient() {
 
       <DashboardHeader userName={profile.fullName} language={language} />
 
-      <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
-
       {safetyState?.isSafetyMode && (
         <SafetyActionCard
           state={safetyState}
@@ -728,6 +804,12 @@ export function DashboardClient() {
         tier={profile.recognitionTier === "FOUNDER" || profile.recognitionTier === "CORE_GUARDIAN" ? profile.recognitionTier : "GUARDIAN"}
         recognitionDate={profile.recognitionDate}
         language={language}
+      />
+
+      <SoulReflectionCard
+        language={language}
+        reflection={visibleSoulReflection}
+        loading={!visibleSoulReflection}
       />
 
       <CoreIdentity
@@ -769,12 +851,6 @@ export function DashboardClient() {
         }}
       />
 
-      <SoulReflectionCard
-        language={language}
-        reflection={visibleSoulReflection}
-        loading={!visibleSoulReflection}
-      />
-
       <AstroTodayCard
         context={{
           profile, blueprint, birthDate: profile.birthDate,
@@ -785,6 +861,8 @@ export function DashboardClient() {
         }}
       />
 
+      <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
+
       <DailyNoteV2
         dailyGuidance={dailyGuidance}
         focus={dailyNoteFocus}
@@ -794,11 +872,12 @@ export function DashboardClient() {
         yesterdayState={yesterdayState}
         recentDailyStates={recentDailyStates}
         navigatorState={navigatorState}
+        appNow={appNow}
       />
 
-      <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
-
       <DailyUserFlowGuide language={language} />
+
+      <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">

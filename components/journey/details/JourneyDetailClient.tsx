@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { useAuth } from "@/context/AuthContext";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
@@ -11,16 +12,27 @@ import { journeyStoryEngine, GrowthStory } from "@/lib/engines/journeyStoryEngin
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import { ArrowLeft, Sparkles, Clock, Heart, Flag } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
-import { getCompletionSummary } from "@/lib/engines/completionEngine";
+import { getCompletionSummary, mergeDailyStatesWithJourneyRecords } from "@/lib/engines/completionEngine";
 import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
-import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 
 interface JourneyDetailClientProps {
   id: string;
 }
+
+const EMPTY_JOURNEY_MEMORY: JourneyDailyMemory = {
+  yesterday: null,
+  last7Days: [],
+  last30Days: [],
+  weeklyLearning: undefined,
+  monthlyLearning: undefined,
+  practiceInsights: undefined,
+  growthNarrative: undefined,
+  coachMemory: undefined,
+};
 
 export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const auth = useAuth();
@@ -86,9 +98,22 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         setHistory(states);
 
         console.log("J3 before getDailyMemory");
-        const memory = await journeyRepository.getDailyMemory(uid);
+        const memory = await journeyRepository.getDailyMemory(uid).catch((error) => {
+          appendMoanaRuntimeDiagnostic("journey_detail_memory_read_failure", {
+            pageId: id,
+            userId: uid,
+            authUid: auth?.user?.uid ?? null,
+            profileUid: auth?.userProfile?.uid ?? null,
+            journeyRecordsReadPath: `journeyDailyRecords/${uid}/entries`,
+            error: toDiagnosticError(error),
+          });
+          console.error("JOURNEY MEMORY READ ERROR", error);
+          return EMPTY_JOURNEY_MEMORY;
+        });
         console.log("J4 after getDailyMemory", memory);
         setLearning(memory);
+        const hydratedStates = mergeDailyStatesWithJourneyRecords(states, memory.last30Days);
+        setHistory(hydratedStates);
 
         let synthesis = null;
         if (blueprintData) {
@@ -99,7 +124,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             });
         }
         console.log("J5 before generateStory");
-        const generatedStory = journeyStoryEngine.generateStory(states, synthesis);
+        const generatedStory = journeyStoryEngine.generateStory(hydratedStates, synthesis);
         console.log("J6 after generateStory", generatedStory);
         const timezone = profile?.timezone || (profile as any)?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
         const today = getLocalDateKey(new Date(), timezone);
@@ -115,11 +140,13 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           dailyStateReadPath: `dailyStates/${uid}/entries`,
           journeyRecordsReadPath: `journeyDailyRecords/${uid}/entries`,
           dailyStatesFound: states.length,
+          hydratedDailyStatesFound: hydratedStates.length,
           journeyRecordsFound: memory.last30Days.length,
           wellnessPracticeLogsFound: section4Records.length,
           rawPracticeTypesFound: section4Records.map((result) => result.practiceCategory),
           seesSection4Records: section4Records.length > 0,
           storyGenerated: Boolean(generatedStory),
+          hydratedFromJourneyRecords: hydratedStates.length > states.length,
           fallbackTriggered: !generatedStory,
           fallbackReason: !generatedStory
             ? "story_missing_after_journeyStoryEngine_generateStory"
@@ -154,6 +181,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
       return (
         <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center space-y-4">
            <p className="text-sm text-amber-800 font-medium">Terjadi kendala saat memuat data perjalanan.</p>
+           {process.env.NODE_ENV !== "production" && (
+             <p className="text-xs text-[#7B8776] break-words">{readError}</p>
+           )}
            <button
              type="button"
              onClick={() => { setLoading(true); setReadError(null); window.location.reload(); }}
@@ -364,6 +394,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
 
   return (
     <ProtectedRoute>
+      <AccessGuard feature="journey">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
         <div className="mx-auto max-w-lg">
@@ -381,6 +412,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           <MoanaRuntimeDiagnosticsPanel label={`Journey detail readback: ${id}`} />
         </div>
       </main>
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

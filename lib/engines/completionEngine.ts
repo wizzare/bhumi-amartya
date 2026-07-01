@@ -1,4 +1,5 @@
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
+import { JourneyDailyRecord, PracticeEffectivenessSummary, PracticeInsightItem } from "@/lib/types/journeyDailyRecord";
 
 export type CompletionStatus = "none" | "daily" | "deep" | "full";
 export type CompletionItemId =
@@ -78,7 +79,70 @@ export function getCompletionSummary(state: DailyState | null): CompletionSummar
   };
 }
 
-import { JourneyDailyRecord, PracticeEffectivenessSummary, PracticeInsightItem } from "@/lib/types/journeyDailyRecord";
+function applyPracticeTypeToDailyState(state: DailyState, practiceType?: string | null): DailyState {
+  switch (practiceType) {
+    case "journaling":
+    case "journal":
+      return { ...state, journalingDone: true };
+    case "meditation":
+      return { ...state, meditationDone: true };
+    case "audioHealing":
+    case "audio-healing":
+      return { ...state, audioHealingDone: true };
+    case "manifestation":
+    case "manifestasi":
+      return { ...state, manifestDone: true };
+    case "yoga":
+      return { ...state, yogaDone: true };
+    case "workout":
+      return { ...state, workoutDone: true };
+    case "healthyFood":
+    case "herbal":
+    case "food":
+      return { ...state, herbalDone: true };
+    default:
+      return state;
+  }
+}
+
+export function mergeDailyStateWithJourneyRecord(
+  state: DailyState | null,
+  record: JourneyDailyRecord | null,
+): DailyState | null {
+  if (!record) return state;
+
+  let merged: DailyState = {
+    ...(state ?? {
+      uid: record.userId,
+      date: record.appDate || record.date,
+      updatedAt: record.updatedAt || new Date().toISOString(),
+    }),
+  };
+
+  const completionType = record.innerworkCompletion?.actualPracticeType
+    || record.innerworkRecommendation?.practiceType;
+  merged = applyPracticeTypeToDailyState(merged, completionType);
+
+  for (const result of record.practiceResults ?? []) {
+    merged = applyPracticeTypeToDailyState(merged, result.practiceCategory);
+  }
+
+  return merged;
+}
+
+export function mergeDailyStatesWithJourneyRecords(
+  states: DailyState[],
+  records: JourneyDailyRecord[],
+): DailyState[] {
+  const byDate = new Map(states.map((state) => [state.date, state]));
+
+  for (const record of records) {
+    const date = record.appDate || record.date;
+    byDate.set(date, mergeDailyStateWithJourneyRecord(byDate.get(date) ?? null, record) as DailyState);
+  }
+
+  return Array.from(byDate.values()).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
 
 export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): PracticeEffectivenessSummary {
   const last30 = records.slice(0, 30);

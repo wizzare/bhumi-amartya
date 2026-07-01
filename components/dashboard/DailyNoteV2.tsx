@@ -9,6 +9,7 @@ import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { useAuth } from "@/context/AuthContext";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { DashboardNoteAdapter } from "@/lib/dailyGuidance/dashboardNoteAdapter";
+import { applyDynamicGreetingPrefix } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 interface DailyNoteV2Props {
   dailyGuidance: DailyGuidance | null;
@@ -19,6 +20,7 @@ interface DailyNoteV2Props {
   yesterdayState: DailyState | null;
   recentDailyStates: DailyState[];
   navigatorState: NavigatorState | null;
+  appNow?: Date;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
@@ -36,6 +38,7 @@ export function DailyNoteV2({
   dailyGuidance,
   language,
   userName,
+  appNow = new Date(),
 }: DailyNoteV2Props) {
   const auth = useAuth();
   const firstName = userName.split(" ")[0] || "Jiwa";
@@ -61,7 +64,11 @@ export function DailyNoteV2({
     void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, { dailyNoteDone: true });
   };
 
-  const sections = DashboardNoteAdapter.adapt(dailyGuidance);
+  const sections = DashboardNoteAdapter.adapt(dailyGuidance).map((section) => ({
+    ...section,
+    main: applyDynamicGreetingPrefix(section.main, language, appNow),
+    advice: section.advice ? applyDynamicGreetingPrefix(section.advice, language, appNow) : undefined,
+  }));
 
   return (
     <section className="mt-10 space-y-4">

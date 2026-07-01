@@ -3,6 +3,7 @@
 import React from "react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { Flower2, ArrowLeft, CheckCircle2, Clock } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -15,7 +16,7 @@ import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { GuidedLearningDetails } from "@/components/ui/GuidedLearningDetails";
 import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
-import { logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
+import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -153,8 +154,9 @@ export default function YogaPage() {
       setSaved(true);
       router.replace("/wellness");
     } catch (err) {
-      console.error("[YOGA_SAVE_ERROR]", err);
-      alert("Gagal menyimpan praktik yoga. Silakan coba lagi.");
+      const detail = formatSection4SaveError(err);
+      console.error("[YOGA_SAVE_ERROR]", detail, err);
+      alert(`Gagal menyimpan praktik yoga.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -179,6 +181,7 @@ export default function YogaPage() {
 
   return (
     <ProtectedRoute>
+      <AccessGuard feature="yoga">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
 
@@ -274,6 +277,7 @@ export default function YogaPage() {
         </div>
       </main>
       <InnerworkCelebration isOpen={saved} />
+      </AccessGuard>
     </ProtectedRoute>
   );
 }

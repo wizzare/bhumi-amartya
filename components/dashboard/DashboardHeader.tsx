@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
-import { getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { APP_TIME_REFRESH_MS, getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
 
 interface DashboardHeaderProps {
   userName: string;
@@ -27,7 +27,7 @@ export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
   const greeting = getTimeOfDayGreeting(now, language);
 
   useEffect(() => {
-    const interval = window.setInterval(() => setNow(new Date()), 30000);
+    const interval = window.setInterval(() => setNow(new Date()), APP_TIME_REFRESH_MS);
     return () => window.clearInterval(interval);
   }, []);
 

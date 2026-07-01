@@ -12,6 +12,7 @@ import {
 import { auth, db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
+import { waitForFirebaseAuthOwner } from "@/lib/auth/waitForFirebaseAuthOwner";
 
 export type PhysicalActivityCategory = "yoga" | "workout" | "healthyFood";
 
@@ -57,6 +58,13 @@ function canUseLocalAuditStore(uid: string): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   const auditUser = window.localStorage.getItem("bhumi_audit_user");
   return Boolean(auditUser && uid === `${auditUser}_uid`);
+}
+
+async function ensureAuthenticatedOwner(uid: string): Promise<void> {
+  if (typeof window !== "undefined") {
+    await waitForFirebaseAuthOwner(auth, uid);
+  }
+  assertAuthenticatedOwner(uid);
 }
 
 function readLocalJson<T>(key: string, fallback: T): T {
@@ -106,7 +114,7 @@ export const activityRepository = {
       return;
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
 
     const fullActivity: PhysicalActivity = {
       ...activity,
@@ -153,7 +161,7 @@ export const activityRepository = {
       return readLocalJson<PhysicalActivity[]>(localActivitiesKey(uid), []).slice(0, limitCount);
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),
       orderBy("completedAt", "desc"),
@@ -172,7 +180,7 @@ export const activityRepository = {
         .filter((activity) => activity.category === category);
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),
       where("category", "==", category),
@@ -191,7 +199,7 @@ export const activityRepository = {
         .filter((activity) => activity.localDate >= startDate && activity.localDate <= endDate);
     }
 
-    assertAuthenticatedOwner(uid);
+    await ensureAuthenticatedOwner(uid);
     const q = query(
       activitiesCollection(uid),
       where("localDate", ">=", startDate),

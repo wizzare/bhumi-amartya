@@ -189,3 +189,33 @@ export async function logWellnessSection4Practice(input: LogWellnessSection4Prac
     throw error;
   }
 }
+
+export function formatSection4SaveError(error: unknown): string {
+  if (typeof error !== "object" || error === null) {
+    return String(error);
+  }
+
+  const record = error as {
+    code?: unknown;
+    message?: unknown;
+    firestoreDebug?: {
+      operation?: string;
+      path?: string;
+      authUid?: string | null;
+      code?: string;
+      message?: string;
+    };
+  };
+  const debug = record.firestoreDebug;
+  const code = typeof record.code === "string" ? record.code : debug?.code;
+  const message = typeof record.message === "string" ? record.message : debug?.message;
+  const details = [
+    code ? `code=${code}` : null,
+    debug?.operation ? `operation=${debug.operation}` : null,
+    debug?.path ? `path=${debug.path}` : null,
+    debug ? `authUid=${debug.authUid ?? "null"}` : null,
+    message ? `message=${message}` : null,
+  ].filter(Boolean);
+
+  return details.length > 0 ? details.join(" | ") : String(error);
+}
