@@ -10,8 +10,8 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, Lock, Unlock, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCurrentBadge, hasActiveBadgeAccess, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
-import { toDate } from "./accessControl_fixed";
-import { BhumiBilling, purchasePremiumSubscription, restorePremiumPurchases } from "./googlePlayBilling_fixed";
+import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
+import { purchasePremiumSubscription, restorePremiumPurchases } from "@/lib/billing/googlePlayBilling";
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
@@ -48,14 +48,10 @@ export default function PremiumBhumiPage() {
   const isPremium = profile ? hasActiveBadgeAccess(profile) : false;
   const isTrial = profile ? isTrialUser(profile) : false;
   const isExpired = profile ? isExpiredUser(profile) : true;
-  const accessUntil = profile ? toDate(profile.accessUntil) : null;
-  const trialEndsAt = profile ? toDate(profile.trialEndsAt) : null;
 
-  const getTrialDaysLeft = () => {
-    if (!trialEndsAt) return 0;
-    const diff = trialEndsAt.getTime() - Date.now();
-    return Math.max(0, Math.ceil(diff / 86400000));
-  };
+  const trialWindow = profile ? computeTrialWindow(profile) : null;
+  const accessUntil = trialWindow?.end || null;
+  const daysLeft = profile ? getTrialDaysLeft(profile) : 0;
 
   const handleSubscribe = async () => {
     setPurchasing(true);
@@ -150,7 +146,7 @@ export default function PremiumBhumiPage() {
                   {isPremium 
                     ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
                     : isTrial
-                      ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${getTrialDaysLeft()} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
+                      ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
                       : isExpired
                         ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
                         : (t.premiumBhumi?.freeAccess || "Akses gratis")}
