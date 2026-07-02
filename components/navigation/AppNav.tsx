@@ -3,7 +3,7 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Home, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
+import { Compass, Crown, Home, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/lib/data/translations";
@@ -22,10 +22,12 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
   { Icon: User, labelKey: "profile", href: "/profile" },
   { Icon: Sprout, labelKey: "innerwork", href: "/wellness" },
   { Icon: Compass, labelKey: "journey", href: "/journey" },
+  { Icon: Crown, labelKey: "profile" as any, label: "Premium", href: "/premium-bhumi" },
 ];
 
 const UTILITY_NAV_ITEMS: NavItem[] = [
   { Icon: Settings, labelKey: "settings", href: "/settings" },
+  { Icon: Crown, labelKey: "profile" as any, label: "Premium", href: "/premium-bhumi" },
 ];
 
 const ADMIN_ITEM: NavItem = { Icon: Shield, labelKey: "admin", href: "/admin/activity" };

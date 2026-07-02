@@ -1,11 +1,14 @@
 {
-    "sprint":  "MOANA V3 - RELEASE BUILD V64 PREPARATION",
-    "buildTimestamp":  "2026-06-30T00:00:00+07:00",
-    "versionCode":  64,
-    "versionName":  "3.2",
-    "changelog":  [
-                      "Gatekeeper Stabilization: Resolved false-positive update locks by allowing fail-open on config fetch.",
-                      "Schema Migration: Added support for both legacy and new Firestore versioning fields.",
-                      "Security: Updated update enforcement to only trigger on explicit build number comparison."
-                  ]
+    "sprint": "MOANA V3 - CLEAN REBUILD BUILD 66",
+    "buildTimestamp": "2026-07-02T00:00:00+07:00",
+    "versionCode": 66,
+    "versionName": "3.2.1",
+    "changelog": [
+        "Clean rebuild from Build 64 UI baseline",
+        "Stabilized Google Play Billing and Purchase Restore flow",
+        "Refined Trial logic to ensure consistent 7-day period",
+        "Implemented Premium Bhumi page for plan management",
+        "Enhanced access control for premium features",
+        "Resolved dashboard update enforcement loops"
+    ]
 }

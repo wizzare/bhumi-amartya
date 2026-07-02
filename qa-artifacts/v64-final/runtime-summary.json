@@ -1,0 +1,68 @@
+[
+  {
+    "route": "/login",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\login.png",
+    "url": "http://localhost:3000/login/",
+    "text": "",
+    "hasAccessGuard": false,
+    "hasLogin": false,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  },
+  {
+    "route": "/dashboard",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\dashboard.png",
+    "url": "http://localhost:3000/login/",
+    "text": "Bhumi Amartya Masuk untuk melanjutkan perjalanan pengenalan dirimu. Lanjutkan dengan Google Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya. VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+    "hasAccessGuard": false,
+    "hasLogin": true,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  },
+  {
+    "route": "/profile",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\profile.png",
+    "url": "http://localhost:3000/profile/",
+    "text": "Beranda Profil Wellness Journey Lainnya Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu. VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+    "hasAccessGuard": false,
+    "hasLogin": false,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  },
+  {
+    "route": "/wellness",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\wellness.png",
+    "url": "http://localhost:3000/login/",
+    "text": "Bhumi Amartya Masuk untuk melanjutkan perjalanan pengenalan dirimu. Lanjutkan dengan Google Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya. VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+    "hasAccessGuard": false,
+    "hasLogin": true,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  },
+  {
+    "route": "/journey",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\journey.png",
+    "url": "http://localhost:3000/journey/",
+    "text": "Membuka riwayat perjalanan... VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+    "hasAccessGuard": false,
+    "hasLogin": false,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  },
+  {
+    "route": "/innerwork/manifestasi",
+    "screenshot": "C:\\Users\\shein\\bhumi-amartya-clean\\qa-artifacts\\v64-final\\manifestasi.png",
+    "url": "http://localhost:3000/login/",
+    "text": "Bhumi Amartya Masuk untuk melanjutkan perjalanan pengenalan dirimu. Lanjutkan dengan Google Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya. VERSI: 3.1.12 BHUMI AMARTYA V3 JOKER RELEASE BUILD",
+    "hasAccessGuard": false,
+    "hasLogin": true,
+    "hasPermissionDenied": false,
+    "hasUndefinedOrNull": false,
+    "overflowX": 0
+  }
+]

@@ -793,9 +793,12 @@ export function DashboardClient() {
       )}
 
       {trialMessage && (
-        <div className="mt-6 p-4 bg-yellow-50/50 text-yellow-800 text-[12px] text-center rounded-2xl font-bold uppercase tracking-widest border border-yellow-100/50">
+        <button
+          onClick={() => router.push("/premium-bhumi")}
+          className="w-full mt-6 p-4 bg-yellow-50/50 text-yellow-800 text-[12px] text-center rounded-2xl font-bold uppercase tracking-widest border border-yellow-100/50 active:scale-[0.98] transition-transform"
+        >
           {trialMessage}
-        </div>
+        </button>
       )}
 
       <GuardianIdentityCard

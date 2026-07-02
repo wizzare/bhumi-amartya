@@ -639,7 +639,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="pt-4 border-t border-[#F5F1E8]">
+                <div className="pt-4 border-t border-[#F5F1E8]">
             <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Status Akses</p>
             {membershipDisplay.pro ? (
               <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
@@ -666,6 +666,13 @@ export default function SettingsPage() {
                 <Info size={24} className="text-[#9BB89A]" />
               </div>
             )}
+
+            <Link
+              href="/premium-bhumi"
+              className="mt-4 w-full rounded-2xl border border-[#E5DCD0] bg-white px-5 py-3 text-[#4F5E52] transition hover:bg-[#F5F1E8] text-center block font-medium"
+            >
+              Kelola Langganan Premium
+            </Link>
           </div>
         </section>
 
