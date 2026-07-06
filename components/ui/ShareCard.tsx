@@ -131,20 +131,13 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
           <div className="relative z-10 flex flex-col p-4">
             <header className="text-center">
               <div className="mx-auto w-fit"><BhumiPageHeader /></div>
-              <p className="mt-2 font-serif text-2xl leading-tight">{userName || "Penghuni Bhumi"}</p>
+              <p className="mt-1 text-[8px] italic text-[#7B8776] opacity-90">Ruang Untuk Pulang dan Kenali Diri</p>
+              <p className="mt-3 font-serif text-2xl leading-tight">{userName || "Penghuni Bhumi"}</p>
               <p className="mt-1 text-[9px] capitalize italic text-[#7B776D]">{shareDate}</p>
               <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mt-2 h-4 w-36 object-contain" />
             </header>
 
-            <section className="relative mt-3 overflow-hidden rounded-[1.25rem] border border-white bg-white/70 p-4 shadow-sm">
-              <div className="relative z-10">
-                <div className="flex items-center gap-1.5 text-[#A66D23]"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4" /><p className="text-[8px] font-bold uppercase tracking-[0.16em]">Refleksi Hari Ini</p></div>
-                <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="my-1 h-3 w-24 object-contain" />
-                <p className="text-[8px] leading-[1.45] text-[#4F5E52]">{content.reflection}</p>
-              </div>
-            </section>
-
-            <div className="mt-3 flex flex-col gap-2.5">
+                        <div className="mt-3 flex flex-col gap-2.5">
               <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
                 <div className="flex items-center gap-1.5"><img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" /><p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.catatanHariIni.label}</p></div>
                 <p className="mt-2 text-[9px] leading-[1.5] text-[#4F5E52]">{content.catatanHariIni.content}</p>
@@ -173,10 +166,12 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
               <p className="mt-3 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">&quot;{content.manifestation.content}&quot;</p>
             </section>
 
-            <footer className="pt-4 text-center">
+            <footer className="pt-5 text-center">
               <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mb-2 h-4 w-44 object-contain" />
-              <p className="font-serif text-[11px] font-semibold uppercase tracking-[0.25em] text-[#4F5E52]">Bhumi Amartya</p>
-              <p className="mt-1 text-[9px] italic text-[#7B8776]">- {content.footerQuote} -</p>
+              <div className="flex flex-col items-center gap-0.5">
+                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#7B8776] opacity-70">Available on Play Store</p>
+                <p className="text-[10px] font-serif italic text-[#4F5E52] opacity-90">Bhumi Amartya</p>
+              </div>
             </footer>
           </div>
         </article>

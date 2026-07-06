@@ -1,5 +1,7 @@
-import { CanonicalTranslatorService } from "../lib/services/canonicalTranslatorService";
-import { HumanMeaningService } from "../lib/services/humanMeaningService";
+// @ts-expect-error
+import { CanonicalTranslatorService } from "../lib/services/canonicalTranslatorService.ts";
+// @ts-expect-error
+import { HumanMeaningService } from "../lib/services/humanMeaningService.ts";
 import type { Blueprint } from "../lib/types/blueprint";
 import * as fs from "fs";
 import * as path from "path";

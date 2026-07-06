@@ -3,6 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { TranslatedProfile } from "@/lib/profile/v2/insightTranslator";
 import { GrowthProfile } from "@/lib/engines/growthEngine";
+import { humanizeDevelopmentSignals, sanitizeNarrative } from "@/lib/profile/narrativeHumanizer";
 
 type DetailCard = {
   id: string;
@@ -226,7 +227,7 @@ function buildCards(data: TranslatedProfile, growth: GrowthProfile | null): Deta
       title: "Area Pengembangan",
       headline: "Area yang sedang paling siap dilatih.",
       summary: `Sinyal pertumbuhan terkuat saat ini berkaitan dengan kesadaran dirimu.`,
-      explanation: growth ? `Skor pertumbuhanmu: kesadaran ${growth.signals.awareness}, konsistensi ${growth.signals.consistency}, kedalaman ${growth.signals.depth}, keseimbangan ${growth.signals.balance}, keberanian ${growth.signals.courage}, penerimaan ${growth.signals.acceptance}.` : "Data pengembangan akan semakin presisi setelah lebih banyak aktivitas harian tercatat.",
+      explanation: growth ? humanizeDevelopmentSignals(growth.signals) : "Data pengembangan akan semakin presisi setelah lebih banyak aktivitas harian tercatat.",
       patterns: ["Area kuat bisa menjadi pijakan.", "Area rendah tidak berarti gagal, hanya butuh dukungan yang lebih sederhana."],
       potential: "Dengan ritme kecil, area ini bisa menjadi bukti bahwa perubahan tidak harus dramatis.",
       reflection: "Area mana yang ingin kamu rawat tanpa menekan dirimu?",
@@ -254,8 +255,8 @@ function CardDetail({ card }: { card: DetailCard }) {
     <section className="bhumi-card p-6 bg-white border-none shadow-sm">
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">{card.section}</p>
       <h3 className="mt-2 text-2xl font-serif font-semibold text-[#4F5E52]">{card.title}</h3>
-      <p className="mt-2 text-base font-semibold text-[#3C3C3C]">{card.headline}</p>
-      <p className="mt-5 text-sm leading-7 text-[#4F5E52]">{card.explanation}</p>
+      <p className="mt-2 text-base font-semibold text-[#3C3C3C]">{sanitizeNarrative(card.headline)}</p>
+      <p className="mt-5 text-sm leading-7 text-[#4F5E52]">{sanitizeNarrative(card.explanation)}</p>
 
       {card.talents && (
         <div className="mt-6">
@@ -280,10 +281,10 @@ function CardDetail({ card }: { card: DetailCard }) {
             <div className="mt-4 rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] p-4">
               <h4 className="font-bold text-[#4F5E52]">{selectedTalent.name}</h4>
               <div className="mt-3 grid gap-3 text-sm text-[#4F5E52]">
-                <p><span className="font-semibold">Makna:</span> {selectedTalent.meaning}</p>
-                <p><span className="font-semibold">Kekuatan:</span> {selectedTalent.strength}</p>
-                <p><span className="font-semibold">Blind spot:</span> {selectedTalent.blindSpot}</p>
-                <p><span className="font-semibold">Cara mengembangkan:</span> {selectedTalent.development}</p>
+                <p><span className="font-semibold">Makna:</span> {sanitizeNarrative(selectedTalent.meaning)}</p>
+                <p><span className="font-semibold">Kekuatan:</span> {sanitizeNarrative(selectedTalent.strength)}</p>
+                <p><span className="font-semibold">Blind spot:</span> {sanitizeNarrative(selectedTalent.blindSpot)}</p>
+                <p><span className="font-semibold">Cara mengembangkan:</span> {sanitizeNarrative(selectedTalent.development)}</p>
                 <p><span className="font-semibold">Source blueprint:</span> {selectedTalent.sources.slice(0, 4).join(", ")}</p>
               </div>
             </div>
@@ -296,19 +297,19 @@ function CardDetail({ card }: { card: DetailCard }) {
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">Pola yang terlihat</p>
           <ul className="mt-3 space-y-2 text-sm text-[#4F5E52]">
             {card.patterns.slice(0, 4).map((pattern) => (
-              <li key={pattern}>{pattern}</li>
+              <li key={pattern}>{sanitizeNarrative(pattern)}</li>
             ))}
           </ul>
         </div>
         <div className="rounded-2xl bg-[#FCFAF5] p-4">
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">Potensi / tantangan</p>
-          <p className="mt-3 text-sm leading-6 text-[#4F5E52]">{card.potential}</p>
+          <p className="mt-3 text-sm leading-6 text-[#4F5E52]">{sanitizeNarrative(card.potential)}</p>
         </div>
       </div>
 
       <div className="mt-5 rounded-2xl border border-[#E8E9E5] p-4">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">Saran refleksi</p>
-        <p className="mt-3 text-sm leading-6 text-[#4F5E52]">{card.reflection}</p>
+        <p className="mt-3 text-sm leading-6 text-[#4F5E52]">{sanitizeNarrative(card.reflection)}</p>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -351,8 +352,8 @@ export function ProfileTabs({ data, growth }: ProfileTabsProps) {
                 >
                   <div className="flex h-full flex-col">
                     <p className="text-lg font-serif font-semibold text-[#4F5E52]">{card.title}</p>
-                    <p className="mt-2 text-sm font-semibold text-[#3C3C3C]">{card.headline}</p>
-                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#7B8776]">{card.summary}</p>
+                    <p className="mt-2 text-sm font-semibold text-[#3C3C3C]">{sanitizeNarrative(card.headline)}</p>
+                    <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#7B8776]">{sanitizeNarrative(card.summary)}</p>
                     <p className="mt-auto pt-4 text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394] group-hover:text-[#4F5E52]">
                       Lihat Detail
                     </p>

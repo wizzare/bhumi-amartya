@@ -128,9 +128,14 @@ export const reflectionEngine = {
     // Construct Weekly Pattern description
     let issueDescription = issueDescMap[topIssue.toLowerCase()] || topIssue || "pola reaksi emosional yang berulang";
     if (!topIssue) {
-      if (topCategory === "boundaries") issueDescription = "kesulitan menjaga batas diri";
-      else if (topCategory === "responsibility") issueDescription = "kecenderungan memikul terlalu banyak tanggung jawab";
-      else issueDescription = `pengelolaan tema ${topCategory.toLowerCase()}`;
+      if (topCategory === "boundaries") {
+        issueDescription = "kesulitan menjaga batas diri";
+      } else if (topCategory === "responsibility") {
+        issueDescription = "kecenderungan memikul terlalu banyak tanggung jawab";
+      } else {
+        const displayCat = themeMap[topCategory.toLowerCase()] || topCategory;
+        issueDescription = `pengelolaan tema ${displayCat.toLowerCase()}`;
+      }
     }
 
     const weeklyPattern = `Minggu ini, kamu beberapa kali berhadapan dengan ${issueDescription}.`;

@@ -114,17 +114,17 @@ function createEmptyEnoughnessState(): EnoughnessState {
 
 function getNavigatorLabel(navigator: WellnessNavigatorState | null): string {
   if (!navigator) return "-";
-  if (navigator.mode === "RECOVERY") return "Pemulihan";
-  if (navigator.mode === "GROWTH") return "Pertumbuhan";
-  return "Refleksi";
+  if (navigator.mode === "RECOVERY") return "Mode Pemulihan";
+  if (navigator.mode === "GROWTH") return "Mode Pertumbuhan";
+  return "Mode Refleksi";
 }
 
 function getMetricLabel(value: number | null | undefined): string {
   if (typeof value !== "number") return "-";
   if (value >= 8) return "Stabil";
   if (value >= 5) return "Cukup";
-  if (value >= 3) return "Perlu dilembutkan";
-  return "Butuh pemulihan";
+  if (value >= 3) return "Perlu Perhatian Lembut";
+  return "Sangat Perlu Perhatian";
 }
 
 function WellnessInfoCard({ title, eyebrow, children }: { title: string; eyebrow?: string; children: React.ReactNode }) {
@@ -175,7 +175,7 @@ function WellnessConditionCards({
           onClick={onToggleExpanded}
           className="mt-4 text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52] underline underline-offset-4"
         >
-          {expanded ? "Tutup penjelasan" : "Penjelasan lebih"}
+          {expanded ? "Tutup Detail" : "Lihat Detail Selengkapnya"}
         </button>
       </WellnessInfoCard>
 
@@ -300,7 +300,7 @@ function WellnessSummaryMapping({
   
   const modeLabel = navigator ? (
     language === "id" 
-      ? (navigator.mode === "RECOVERY" ? "Pemulihan (Recovery)" : navigator.mode === "REFLECTION" ? "Refleksi (Reflection)" : "Pertumbuhan (Growth)")
+      ? (navigator.mode === "RECOVERY" ? "Mode Pemulihan" : navigator.mode === "REFLECTION" ? "Mode Refleksi" : "Mode Pertumbuhan")
       : (navigator.mode === "RECOVERY" ? "Recovery Mode" : navigator.mode === "REFLECTION" ? "Reflection Mode" : "Growth Mode")
   ) : "-";
 
@@ -308,17 +308,17 @@ function WellnessSummaryMapping({
     <div className="bhumi-card p-6 bg-white border-none shadow-sm space-y-4">
       <div className="space-y-3">
         <div>
-          <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">Tema Dominan</p>
+          <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">{language === "id" ? "Tema yang Sedang Aktif" : "Active Theme"}</p>
           <p className="text-sm font-bold text-[#4F5E52] mt-1">{dominantTheme ? dominantTheme.label : "-"}</p>
         </div>
         
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">Area Perhatian Utama</p>
+            <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">{language === "id" ? "Fokus Perhatian" : "Main Focus"}</p>
             <p className="text-sm font-bold text-[#4F5E52] mt-1">{lowest.label} ({lowest.score}%)</p>
           </div>
           <div>
-            <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">Energi Umum</p>
+            <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">{language === "id" ? "Kondisi Energi" : "Energy State"}</p>
             <p className="text-sm font-bold text-[#4F5E52] mt-1">{modeLabel}</p>
           </div>
         </div>
@@ -338,14 +338,14 @@ function WellnessSummaryMapping({
           className="text-xs font-bold text-[#4F5E52] underline hover:text-[#4F5E52]/80 transition-colors"
         >
           {isExpanded 
-            ? (language === "id" ? "[Tutup Detail]" : "[Lihat Detail]")
-            : (language === "id" ? "[Lihat Detail]" : "[View Details]")}
+            ? (language === "id" ? "Tutup Detail" : "Hide Details")
+            : (language === "id" ? "Lihat Detail" : "View Details")}
         </button>
         <button
           onClick={onRepeat}
           className="text-[10px] font-bold text-[#7B8776] uppercase tracking-widest underline hover:text-[#4F5E52] transition-colors"
         >
-          {language === "id" ? "Ulangi Refleksi" : "Repeat Reflection"}
+          {language === "id" ? "Lakukan Refleksi Ulang" : "Repeat Reflection"}
         </button>
       </div>
     </div>
@@ -574,7 +574,7 @@ export function WellnessPageClient() {
             <p className="mt-2 text-sm text-[#7B8776]">{t.wellness.subtitle}</p>
           </header>
 
-          <WellnessSection number="1" title="Baseline Scan">
+          <WellnessSection number="1" title="Pemetaan Awal Dirimu">
             <WellnessAssessmentFlow
               key="baseline"
               uid={activeUid}
@@ -646,7 +646,7 @@ export function WellnessPageClient() {
             />
             {intelligence?.wellnessState?.emotionalWord && (
               <p className="rounded-2xl bg-white p-4 text-sm text-[#526053] shadow-sm">
-                Emosi saat ini: <strong>{intelligence.wellnessState.emotionalWord}</strong>
+                Kondisi emosimu: <strong>{intelligence.wellnessState.emotionalWord}</strong>
               </p>
             )}
           </div>
@@ -673,7 +673,7 @@ export function WellnessPageClient() {
         <WellnessSection number="4" title={t.wellness.additional}>
           {intelligence?.currentIssue?.title && (
             <p className="text-xs font-medium leading-relaxed text-[#7B8776]">
-              Fokus praktik saat ini: <span className="font-bold text-[#4F5E52]">{intelligence.currentIssue.title}</span>
+              Pusat latihanmu saat ini: <span className="font-bold text-[#4F5E52]">{intelligence.currentIssue.title}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-3">
@@ -707,7 +707,7 @@ function WellnessSection({ number, title, children }: { number: string; title: s
   return (
     <section className="space-y-5">
       <header>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">Section {number}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9BB89A]">Bagian {number}</p>
         <h2 className="mt-1 font-serif text-2xl font-bold text-[#4F5E52]">{title}</h2>
       </header>
       {children}

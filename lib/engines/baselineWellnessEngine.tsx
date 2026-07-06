@@ -54,7 +54,7 @@ export function calculateBaselineWellness(uid: string, responses: { questionId: 
     growthDomain,
     attentionDomain,
     completedAt: new Date().toISOString(),
-    confidenceLevel: "HIGH", // 30 questions give high confidence
+    confidenceLevel: "MEDIUM", // 15 questions give medium confidence
     version: "V3_BASELINE"
   };
 }

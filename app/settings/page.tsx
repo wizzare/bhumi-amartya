@@ -34,6 +34,7 @@ import type { UserProfile as StorageUserProfile, UserBlueprint as StorageUserBlu
 import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
 import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
+import { getCurrentBadge, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
 
 const LANGUAGE_STORAGE_KEY = "bhumiLanguage";
 
@@ -289,17 +290,108 @@ export default function SettingsPage() {
 
   const effectiveEmail = googleEmail || email;
 
+  const resolvedBadge = useMemo(() => {
+    return getCurrentBadge(originalProfile as any) || "Penghuni Bhumi";
+  }, [originalProfile]);
+
   const statusBadge = useMemo(() => {
+    const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
+    const isPremium = (originalProfile as any)?.isPremium === true;
+    const isTrial = isTrialUser(originalProfile as any);
+    const isExpired = isExpiredUser(originalProfile as any);
+
+    let label: string = resolvedBadge;
+    let description = "Akses publik aktif";
+    let color = "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]";
+    let Icon = Shield;
+
+    if (isFounder) {
+      label = "Founder Bhumi";
+      description = "Akses Penuh Selamanya";
+      color = "bg-[#FDF6E2] text-[#B7791F] border-[#F6E05E]";
+      Icon = ShieldCheck;
+    } else if (isPremium) {
+      label = resolvedBadge;
+      description = "Akses Premium Aktif";
+      color = "bg-[#E6FFFA] text-[#319795] border-[#81E6D9]";
+      Icon = ShieldCheck;
+    } else if (isTrial) {
+      label = resolvedBadge;
+      description = "Masa Uji Coba Aktif";
+      color = "bg-[#EBF8FF] text-[#2B6CB0] border-[#90CDF4]";
+      Icon = Shield;
+    } else if (isExpired) {
+      label = resolvedBadge;
+      description = "Masa Uji Coba Berakhir";
+      color = "bg-[#FFF5F5] text-[#C53030] border-[#FEB2B2]";
+      Icon = ShieldAlert;
+    }
+
     return {
-      key: "public_access",
-      label: "Penghuni Bhumi",
-      description: "Akses publik aktif",
-      color: "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]",
-      Icon: Shield,
+      key: "status_badge",
+      label,
+      description,
+      color,
+      Icon,
     };
-  }, []);
+  }, [originalProfile, resolvedBadge]);
 
   const membershipDisplay = useMemo(() => {
+    const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
+    const isPremium = (originalProfile as any)?.isPremium === true;
+    const isTrial = isTrialUser(originalProfile as any);
+    const isExpired = isExpiredUser(originalProfile as any);
+
+    if (isFounder) {
+      return {
+        title: "Akses Lifetime Founder",
+        subtitle: "Terima kasih atas kontribusi Anda membangun Bhumi.",
+        remaining: null,
+        nextBilling: null,
+        pro: true,
+      };
+    }
+
+    if (isPremium) {
+      return {
+        title: "Paket Premium Aktif",
+        subtitle: "Akses penuh ke seluruh konten & analisis personal.",
+        remaining: null,
+        nextBilling: null,
+        pro: true,
+      };
+    }
+
+    if (isTrial) {
+      let daysRemaining = 7;
+      if (originalProfile?.trialEndsAt) {
+        const trialEnd = new Date(
+          typeof originalProfile.trialEndsAt === "object" && originalProfile.trialEndsAt && "seconds" in originalProfile.trialEndsAt
+            ? (originalProfile.trialEndsAt as any).seconds * 1000
+            : (originalProfile.trialEndsAt as string)
+        );
+        const diff = trialEnd.getTime() - Date.now();
+        daysRemaining = Math.max(0, Math.ceil(diff / (24 * 60 * 60 * 1000)));
+      }
+      return {
+        title: "Masa Uji Coba Premium",
+        subtitle: `Uji coba premium aktif. Sisa ${daysRemaining} hari lagi.`,
+        remaining: `${daysRemaining} Hari`,
+        nextBilling: null,
+        pro: false,
+      };
+    }
+
+    if (isExpired) {
+      return {
+        title: "Masa Uji Coba Berakhir",
+        subtitle: "Perpanjang akses untuk melanjutkan perjalanan pertumbuhan batinmu.",
+        remaining: "0 Hari",
+        nextBilling: null,
+        pro: false,
+      };
+    }
+
     return {
       title: "Akses Publik Bhumi",
       subtitle: "Fitur inti tersedia. Paket premium sedang disiapkan.",
@@ -307,7 +399,7 @@ export default function SettingsPage() {
       nextBilling: null,
       pro: false,
     };
-  }, []);
+  }, [originalProfile, resolvedBadge]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(

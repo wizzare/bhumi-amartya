@@ -19,19 +19,19 @@ interface WellnessNavigatorViewProps {
 
 const MODE_CONFIG: Record<NavigatorMode, { label: { id: string; en: string }; color: string; bgColor: string; icon: ComponentType<{ size?: number }> }> = {
   RECOVERY: {
-    label: { id: "Recovery Mode", en: "Recovery Mode" },
+    label: { id: "Mode Pemulihan", en: "Recovery Mode" },
     color: "text-orange-600",
     bgColor: "bg-orange-50",
     icon: RotateCcw
   },
   REFLECTION: {
-    label: { id: "Reflection Mode", en: "Reflection Mode" },
+    label: { id: "Mode Refleksi", en: "Reflection Mode" },
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
     icon: MessageSquare
   },
   GROWTH: {
-    label: { id: "Growth Mode", en: "Growth Mode" },
+    label: { id: "Mode Pertumbuhan", en: "Growth Mode" },
     color: "text-emerald-600",
     bgColor: "bg-emerald-50",
     icon: TrendingUp
@@ -68,7 +68,9 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
            <Zap size={60} />
         </div>
 
-        <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.3em] mb-3">Prioritas Hari Ini</p>
+        <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.3em] mb-3">
+          {language === "id" ? "Langkah Utama" : "Primary Action"}
+        </p>
 
         <h5 className="text-sm font-bold text-[#4F6658] mb-1">
           {primaryAction.label[language]}
@@ -79,7 +81,7 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
             {primaryAction.microAction[language]}
           </p>
           <p className="text-[10px] text-[#7B8776] mt-1 font-medium italic opacity-70">
-            {language === "id" ? "Estimasi: < 1 Menit" : "Estimate: < 1 Minute"}
+            {language === "id" ? "Waktu: < 1 Menit" : "Estimate: < 1 Minute"}
           </p>
         </div>
 
@@ -88,7 +90,9 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
       {/* SUPPORTING ACTIONS */}
       {supportingActions.length > 0 && (
         <div className="space-y-3">
-          <p className="text-[10px] font-bold text-[#7B8776] uppercase tracking-[0.2em] ml-2">Coba Juga</p>
+          <p className="text-[10px] font-bold text-[#7B8776] uppercase tracking-[0.2em] ml-2">
+            {language === "id" ? "Langkah Pendukung" : "Supporting Steps"}
+          </p>
           <div className="space-y-2">
             {supportingActions.map((action) => (
               <div key={action.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#E8E9E5]/60 hover:border-[#4F6658]/30 transition-all cursor-pointer group">

@@ -140,7 +140,7 @@ export default function JourneyPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <p className="text-[#4F5E52] animate-pulse">Membuka riwayat perjalanan...</p>
+        <p className="text-[#4F5E52] animate-pulse">Bhumi sedang menyiapkan riwayat perjalananmu...</p>
       </main>
     );
   }
@@ -161,8 +161,8 @@ export default function JourneyPage() {
         <div className="mx-auto max-w-lg space-y-8">
           <BhumiPageHeader />
           <header className="text-center">
-            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Journey</h1>
-            <p className="text-[#7B8776] text-sm">Kisah pertumbuhan dan konsistensi dirimu.</p>
+            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Perjalananmu</h1>
+            <p className="text-[#7B8776] text-sm">Menyimak setiap langkah kecil dan pertumbuhanmu.</p>
           </header>
 
           {/* Today's Plan Progress */}
@@ -173,9 +173,9 @@ export default function JourneyPage() {
                   <Calendar size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest">Rencana Hari Ini</p>
+                  <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-0.5">Langkah Hari Ini</p>
                   <p className="font-bold text-[#4F5E52] text-sm">
-                    {todayPlanSummary.completed}/{todayPlanSummary.total || 0} selesai
+                    {todayPlanSummary.completed}/{todayPlanSummary.total || 0} langkah selesai
                   </p>
                 </div>
               </div>
@@ -195,8 +195,8 @@ export default function JourneyPage() {
                   <Heart size={18} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest">Praktik Tambahan</p>
-                  <p className="font-bold text-[#4F5E52] text-sm">{todaySummary?.count || 0}/{todaySummary?.total || 7} Aktivitas Selesai</p>
+                  <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-0.5">Praktik Tambahan</p>
+                  <p className="font-bold text-[#4F5E52] text-sm">{todaySummary?.count || 0}/{todaySummary?.total || 7} Catatan Tersimpan</p>
                 </div>
               </div>
               <span className="text-xs font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
@@ -217,20 +217,24 @@ export default function JourneyPage() {
               <Link
                 key={item.id}
                 href={`/journey/${item.id}`}
-                className="bhumi-card bg-white p-5 flex items-center justify-between hover:bg-[#F5F1E8] transition-colors border-none shadow-sm"
+                className="bhumi-card bg-white p-5 flex items-center justify-between hover:bg-[#F5F1E8] transition-colors border-none shadow-sm group"
               >
                 <div className="flex items-center gap-4">
-                  <div className="text-[#4F5E52]">
+                  <div className="text-[#4F5E52] group-hover:scale-110 transition-transform">
                     {item.icon}
                   </div>
                   <span className="font-bold text-[#4F5E52]">{item.name}</span>
                 </div>
-                <ChevronRight size={20} className="text-[#9AA394]" />
+                <ChevronRight size={20} className="text-[#9AA394] group-hover:translate-x-1 transition-transform" />
               </Link>
             ))}
           </div>
-          <ProfileShareCardSection title="Bagikan perjalanan kamu di Bhumi." />
-          <MoanaRuntimeDiagnosticsPanel label="Journey main page readback" />
+          <ProfileShareCardSection title="Bagikan perjalananmu di Bhumi Amartya" />
+
+          {/* Debug panel hidden for Build 70 release */}
+          {process.env.NODE_ENV === "development" && (
+            <MoanaRuntimeDiagnosticsPanel label="Journey main page readback" />
+          )}
         </div>
       </main>
       </AccessGuard>

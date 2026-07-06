@@ -305,71 +305,71 @@ export function getHumanDesignPracticeTheme(type: string | null): UnifiedBluepri
 
   if (normalized === "generator") {
     return {
-      grounding: "body signal and sustainable energy",
-      reflection: "what feels available to respond to",
-      action: "one task that has a clear inner yes",
+      grounding: "sinyal tubuh dan energi berkelanjutan",
+      reflection: "apa yang siap kamu tanggapi",
+      action: "satu tugas dengan tanggapan tubuh yang jelas",
     };
   }
 
   if (normalized === "manifestinggenerator") {
     return {
-      grounding: "body response before moving quickly",
-      reflection: "small experiments without overcommitting",
-      action: "one focused step from a multi-step idea",
+      grounding: "tanggapan tubuh sebelum terburu-buru bergerak",
+      reflection: "eksperimen kecil tanpa komitmen berlebih",
+      action: "satu langkah terarah dari ide besar",
     };
   }
 
   if (normalized === "projector") {
     return {
-      grounding: "rest, observation, and energy management",
-      reflection: "clarity before giving attention away",
-      action: "one invited or well-timed contribution",
+      grounding: "istirahat, observasi, dan pengelolaan energi",
+      reflection: "kejernihan sebelum membagikan perhatian",
+      action: "satu kontribusi yang tepat waktu atau diundang",
     };
   }
 
   if (normalized === "manifestor") {
     return {
-      grounding: "conscious initiation and nervous system space",
-      reflection: "the impact of today's energy",
-      action: "one clear step with simple communication",
+      grounding: "inisiasi sadar dan ruang sistem saraf",
+      reflection: "dampak dari energimu hari ini",
+      action: "satu langkah jelas dengan komunikasi sederhana",
     };
   }
 
   if (normalized === "reflector") {
     return {
-      grounding: "environmental sensitivity and spacious pacing",
-      reflection: "what the day mirrors back",
-      action: "one adjustment that makes the environment feel clearer",
+      grounding: "kepekaan lingkungan dan ritme yang lapang",
+      reflection: "apa yang dicerminkan hari ini kepadamu",
+      action: "satu penyesuaian agar lingkungan terasa lebih jernih",
     };
   }
 
   return {
-    grounding: "body steadiness and present-moment regulation",
-    reflection: "honest emotional check-in",
-    action: "one practical step that matches today's capacity",
+    grounding: "ritme tubuh yang membumi dan regulasi diri",
+    reflection: "pemeriksaan emosi yang jujur",
+    action: "satu langkah praktis sesuai kapasitas hari ini",
   };
 }
 
 export function getLifePathPracticeTheme(lifePath: number | null): UnifiedBlueprintSynthesis["practiceThemes"] {
   const themes: Record<number, UnifiedBlueprintSynthesis["practiceThemes"]> = {
-    1: { grounding: "self-trust", reflection: "initiative without self-pressure", action: "one leadership step" },
-    2: { grounding: "emotional sensitivity", reflection: "harmony and cooperation", action: "one relational repair or support step" },
-    3: { grounding: "creative regulation", reflection: "expression and communication", action: "one small act of honest expression" },
-    4: { grounding: "structure and consistency", reflection: "discipline with kindness", action: "one organized completion" },
-    5: { grounding: "freedom with steadiness", reflection: "flexibility without scattering", action: "one exploratory but contained step" },
-    6: { grounding: "responsibility with balance", reflection: "care without carrying everything", action: "one home, family, or community support step" },
-    7: { grounding: "quiet introspection", reflection: "study and spiritual depth", action: "one researched or contemplative next step" },
-    8: { grounding: "power with responsibility", reflection: "leadership, money, and integrity", action: "one clean decision or ownership step" },
-    9: { grounding: "compassionate release", reflection: "closure and service", action: "one act of completion or generosity" },
-    11: { grounding: "emotional regulation", reflection: "intuition and inspiration", action: "one inspired step made practical" },
-    22: { grounding: "long-term steadiness", reflection: "vision grounded in reality", action: "one building block for a larger plan" },
-    33: { grounding: "heart-led steadiness", reflection: "healing and service", action: "one compassionate leadership step" },
+    1: { grounding: "kepercayaan diri", reflection: "inisiatif tanpa tekanan diri", action: "satu langkah kepemimpinan" },
+    2: { grounding: "kepekaan emosional", reflection: "keharmonisan dan kerja sama", action: "satu langkah pemulihan relasi atau dukungan" },
+    3: { grounding: "regulasi kreatif", reflection: "ekspresi dan komunikasi", action: "satu tindakan ekspresi yang jujur" },
+    4: { grounding: "struktur dan konsistensi", reflection: "disiplin dengan kelembutan", action: "satu penyelesaian yang terorganisir" },
+    5: { grounding: "kebebasan dengan ketenangan", reflection: "fleksibilitas tanpa terpencar", action: "satu langkah eksplorasi yang terarah" },
+    6: { grounding: "tanggung jawab dengan keseimbangan", reflection: "kepedulian tanpa memikul segalanya", action: "satu dukungan untuk rumah, keluarga, atau komunitas" },
+    7: { grounding: "keheningan diri", reflection: "pemahaman mendalam dan spiritualitas", action: "satu langkah perenungan atau kajian mendalam" },
+    8: { grounding: "kekuatan dengan tanggung jawab", reflection: "kepemimpinan, nilai diri, dan integritas", action: "satu keputusan bersih atau kepemilikan tanggung jawab" },
+    9: { grounding: "pelepasan dengan belas kasih", reflection: "penyelesaian dan pengabdian", action: "satu tindakan penyelesaian atau kedermawanan" },
+    11: { grounding: "regulasi emosi", reflection: "intuisi dan inspirasi", action: "satu langkah terinspirasi secara praktis" },
+    22: { grounding: "ketenangan jangka panjang", reflection: "visi yang membumi dalam realita", action: "satu pijakan nyata untuk rencana besar" },
+    33: { grounding: "ketenangan dari hati", reflection: "pemulihan dan pengabdian", action: "satu langkah kepemimpinan dengan belas kasih" },
   };
 
   return lifePath ? themes[lifePath] ?? themes[9] : {
-    grounding: "simple steadiness",
-    reflection: "current emotional truth",
-    action: "one doable support step",
+    grounding: "ketenangan sederhana",
+    reflection: "kebenaran emosi saat ini",
+    action: "satu langkah dukungan yang bisa dilakukan",
   };
 }
 
@@ -389,16 +389,23 @@ export function getProgressTone(completionRateYesterday: number, streakDays = 0)
   return { key: "steady", label: "steady, supportive continuation", durationRange: [5, 15], practiceDepth: "steady" };
 }
 
-function mergeThemes(primary: string, secondary: string, fallback: string): string {
+function mergeThemes(primary: string, secondary: string, fallback: string, language: "id" | "en" = "id"): string {
   const parts = [primary, secondary].filter(Boolean);
   if (parts.length === 0) return fallback;
   if (parts.length === 1 || primary === secondary) return parts[0];
-  return `${primary}, held together with ${secondary}`;
+  return language === "en"
+    ? `${primary}, held together with ${secondary}`
+    : `${primary} serta ${secondary}`;
 }
 
 function humanizeNeed(need: string, language: "id" | "en"): string {
   const text = need.toLowerCase();
 
+  if (text.includes("steady") || text.includes("continuation")) {
+    return language === "en"
+      ? "supportive continuation of your current steady rhythm"
+      : "kelanjutan suportif dari ritmemu yang mulai stabil";
+  }
   if (text.includes("structure") || text.includes("discipline") || text.includes("consistency")) {
     return language === "en"
       ? "one clear structure that makes the day feel easier to hold"
@@ -821,15 +828,21 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     compactSignal("BaZi Ten Gods", fullBazi.tenGods),
   ].filter((item): item is string => Boolean(item));
 
+  const groundingFallback = input.language === "en" ? "grounded steadiness" : "ritme yang membumi";
+  const actionFallback = input.language === "en" ? "practical action" : "langkah nyata";
+  const reflectionFallback = input.language === "en" ? "honest reflection" : "refleksi jujur";
+
   const coreNeeds = [
-    mergeThemes(lifePathThemes.grounding, hdThemes.grounding, "grounded steadiness"),
+    mergeThemes(lifePathThemes.grounding, hdThemes.grounding, groundingFallback, input.language),
     compactSignal("Money Line", fullDestinyMatrix.moneyLine)
       || compactSignal("Love Line", fullDestinyMatrix.loveLine)
       || arcanaCenter
       || commonEnergy
-      || "emotional integration",
-    mergeThemes(lifePathThemes.action, hdThemes.action, "practical action"),
-    input.astrologyToday ? "current sky awareness" : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || "self-awareness",
+      || (input.language === "en" ? "emotional integration" : "integrasi emosi"),
+    mergeThemes(lifePathThemes.action, hdThemes.action, actionFallback, input.language),
+    input.astrologyToday 
+      ? (input.language === "en" ? "current sky awareness" : "kesadaran suasana langit") 
+      : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || (input.language === "en" ? "self-awareness" : "kesadaran diri"),
     fullTzolkin.lifePurpose || fullVedic.spiritualStyle || fullWeton.lifeMission || fullBazi.lifeMission,
     differentiators[0],
     progressTone.label,
@@ -846,9 +859,9 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     blueprintSummary,
     coreNeeds,
     practiceThemes: {
-      grounding: mergeThemes(hdThemes.grounding, lifePathThemes.grounding, "grounded steadiness"),
-      reflection: mergeThemes(hdThemes.reflection, lifePathThemes.reflection, "honest reflection"),
-      action: mergeThemes(hdThemes.action, lifePathThemes.action, "one practical step"),
+      grounding: mergeThemes(hdThemes.grounding, lifePathThemes.grounding, groundingFallback, input.language),
+      reflection: mergeThemes(hdThemes.reflection, lifePathThemes.reflection, reflectionFallback, input.language),
+      action: mergeThemes(hdThemes.action, lifePathThemes.action, actionFallback, input.language),
     },
     progressTone,
     archetypes,

@@ -99,10 +99,10 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
         <header className="mb-6">
           <h3 className="text-[#4F6658] font-bold text-xl italic flex items-center gap-2">
             <Zap size={20} className="text-yellow-500 fill-yellow-500" />
-            Mari Berhenti Sejenak
+            Berhenti Sejenak
           </h3>
           <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
-            Hanya butuh 1 menit untuk check-in harimu.
+            Bantu Bhumi memahami kondisimu hari ini dalam 1 menit.
           </p>
         </header>
 
@@ -110,7 +110,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
           onClick={() => setStep("active")}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#4F5E52] text-white text-sm font-bold hover:bg-[#3D4A3F] transition-all shadow-md active:scale-[0.98]"
         >
-          Mulai Check-In
+          Mulai Cek Diri
           <ArrowRight size={18} />
         </button>
       </div>
@@ -121,7 +121,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
     return (
       <div className="bhumi-card p-8 bg-white border-none shadow-sm">
         <header className="mb-8">
-          <h3 className="text-[#4F6658] font-bold text-xl italic">Kondisi Saat Ini</h3>
+          <h3 className="text-[#4F6658] font-bold text-xl italic">Bagaimana Kabarmu?</h3>
           <div className="h-1 w-full bg-[#F5F1E8] rounded-full mt-2 overflow-hidden">
             <div className="h-full bg-[#4F5E52] transition-all duration-500 w-1/2" />
           </div>
@@ -135,7 +135,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
             onChange={(v) => handleMetricChange("sleep", v)}
           />
           <MetricSlider
-            label="Level Energi"
+            label="Kondisi Energi"
             icon={<Battery size={18} />}
             value={metrics.energy}
             onChange={(v) => handleMetricChange("energy", v)}
@@ -161,7 +161,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
         </div>
 
         <div className="mb-10">
-          <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-4">Apa yang kamu butuhkan?</p>
+          <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-4">Apa yang paling jiwamu butuhkan saat ini?</p>
           <div className="grid grid-cols-2 gap-3">
             {STANDARDIZED_NEEDS.map((need) => (
               <button
@@ -185,7 +185,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
           disabled={saving}
           className="w-full py-4 rounded-2xl bg-[#4F5E52] text-white text-sm font-bold shadow-md active:scale-[0.98] disabled:opacity-50"
         >
-          {saving ? "Menyimpan..." : "Selesaikan Check-In"}
+          {saving ? "Menyimpan..." : "Simpan Kabar Hari Ini"}
         </button>
       </div>
     );
@@ -196,7 +196,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
       <header className="mb-6 flex justify-between items-center">
         <div>
           <h3 className="text-[#4F6658] font-bold text-xl italic">Kondisimu Hari Ini</h3>
-          <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Refleksi Selesai</p>
+          <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">Kabar Tersimpan</p>
         </div>
         <CheckCircle2 className="text-emerald-500" size={28} />
       </header>
@@ -213,7 +213,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
         onClick={() => setStep("active")}
         className="text-[10px] text-[#7B8776] font-bold uppercase tracking-widest block mx-auto hover:text-[#4F6658]"
       >
-        Update Kondisi
+        Perbarui Kabar
       </button>
     </div>
   );

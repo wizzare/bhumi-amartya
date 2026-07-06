@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
@@ -137,8 +139,34 @@ export default function ProfilePage() {
           setName(profileName(profile as unknown as LocalRecord));
         }
         if (blueprint) {
+          let soulIdentityAi = (profile as any)?.soulIdentityAi;
+          if (!soulIdentityAi) {
+            try {
+              const res = await fetch("/api/ai/daily-guidance", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  mode: "soul-identity",
+                  uid: blueprint.uid,
+                  blueprint,
+                  profile,
+                  language: profile?.language || "id"
+                })
+              });
+              const data = await res.json();
+              if (data?.ok && data?.soulIdentity) {
+                soulIdentityAi = data.soulIdentity;
+                if (profile) {
+                  (profile as any).soulIdentityAi = soulIdentityAi;
+                  await storageProvider.saveUserProfile(profile);
+                }
+              }
+            } catch (err) {
+              console.warn("Failed to generate stable Soul Identity:", err);
+            }
+          }
           const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
-          const meaning = HumanMeaningService.generate(canonical);
+          const meaning = HumanMeaningService.generate(canonical, soulIdentityAi);
           const sections = ProfileRuntimeAdapter.buildProfile(meaning);
           setProfileSections(sections);
         }
@@ -152,37 +180,41 @@ export default function ProfilePage() {
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
   if (!profileSections.length) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
 
-  return (
-    <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
-      <AppNav />
-      <div className="mx-auto max-w-lg space-y-8">
-        <BhumiPageHeader />
-        <header className="text-center">
-          <h1 className="text-3xl font-serif text-[#4F5E52]">{name}</h1>
-          <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali. Mari melihat dirimu dengan lebih jernih.</p>
-        </header>
+    return (
+    <ProtectedRoute>
+      <AccessGuard feature="profile">
+        <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
+          <AppNav />
+          <div className="mx-auto max-w-lg space-y-8">
+            <BhumiPageHeader />
+            <header className="text-center">
+              <h1 className="text-3xl font-serif text-[#4F5E52]">{name}</h1>
+              <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali di Bhumi. Mari melihat dirimu dengan lebih jernih.</p>
+            </header>
 
-        <IdentitasJiwaHub />
+            <IdentitasJiwaHub />
 
-        <section>
-          <header className="mb-5 px-1">
-            <h2 className="text-xl font-serif text-[#4F5E52]">Gudang Identitas Jiwa</h2>
-            <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
-          </header>
-          <div className="grid grid-cols-2 gap-4">
-          {(profileSections).map((section) => {
-            return (
-              <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
-                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600`}><Sparkles size={24} /></div>
-                <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
-                <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
-              </Link>
-            );
-          })}
+            <section>
+              <header className="mb-5 px-1">
+                <h2 className="text-xl font-serif text-[#4F5E52]">Gudang Identitas Jiwa</h2>
+                <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
+              </header>
+              <div className="grid grid-cols-2 gap-4">
+              {(profileSections).map((section) => {
+                return (
+                  <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
+                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600`}><Sparkles size={24} /></div>
+                    <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
+                    <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
+                  </Link>
+                );
+              })}
+              </div>
+            </section>
+
           </div>
-        </section>
-
-      </div>
-    </main>
+        </main>
+      </AccessGuard>
+    </ProtectedRoute>
   );
 }

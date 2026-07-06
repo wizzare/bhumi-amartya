@@ -1,4 +1,5 @@
-import { CanonicalTranslatorService } from "../lib/services/canonicalTranslatorService";
+// @ts-expect-error
+import { CanonicalTranslatorService } from "../lib/services/canonicalTranslatorService.ts";
 import type { Blueprint } from "../lib/types/blueprint";
 import * as fs from "fs";
 import * as path from "path";

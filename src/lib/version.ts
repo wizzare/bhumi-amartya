@@ -1,8 +1,5 @@
-export const APP_VERSION = "3.1.12";
+export const APP_VERSION = "3.2.4";
 
-export const RELEASE_NAME = "BHUMI AMARTYA V3 JOKER RELEASE BUILD";
+export const RELEASE_NAME = "BHUMI AMARTYA V3 HOTFIX BUILD 70";
 
-export const LAST_UPDATED = "2026-06-18";
-
-
-
+export const LAST_UPDATED = "2026-07-04";

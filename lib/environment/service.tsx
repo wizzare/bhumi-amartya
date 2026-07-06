@@ -211,9 +211,22 @@ export function normalizeMoonPhaseLabel(input: string | null | undefined): strin
   return input;
 }
 
+async function fetchWithTimeout(url: string, timeoutMs = 6000, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
 async function fetchReverseGeocode(lat: number, lon: number): Promise<Partial<EnvironmentLocation>> {
   try {
-    const res = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`);
+    const res = await fetchWithTimeout(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=id`,
+      4000,
+    );
     if (!res.ok) return {};
     const data = await res.json();
     return {
@@ -226,18 +239,42 @@ async function fetchReverseGeocode(lat: number, lon: number): Promise<Partial<En
   }
 }
 
+const ENV_CACHE_PREFIX = "bhumi:env:";
+
+function safeReadEnvCache(key: string): EnvironmentContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(ENV_CACHE_PREFIX + key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.fetchedAt) return null;
+    const ageMs = Date.now() - new Date(parsed.fetchedAt).getTime();
+    if (!Number.isFinite(ageMs) || ageMs > 30 * 60 * 1000) return null;
+    return parsed as EnvironmentContext;
+  } catch {
+    return null;
+  }
+}
+
+function safeWriteEnvCache(key: string, ctx: EnvironmentContext): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(ENV_CACHE_PREFIX + key, JSON.stringify(ctx));
+  } catch {
+    // ignore quota/serialization issues
+  }
+}
+
+export function getCachedEnvironment(latitude: number, longitude: number): EnvironmentContext | null {
+  const key = `${latitude.toFixed(3)}_${longitude.toFixed(3)}`;
+  return safeReadEnvCache(key);
+}
+
 export async function getNormalizedEnvironment(location: EnvironmentLocation): Promise<EnvironmentContext> {
   const { latitude: lat, longitude: lon } = location.coordinates;
   const now = new Date();
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const startTime = yesterday.toISOString();
-
-  const [geoRes, weatherRes, airRes, earthquakeRes] = await Promise.allSettled([
-    fetchReverseGeocode(lat, lon),
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,surface_pressure,wind_speed_10m,precipitation,uv_index,cloud_cover&daily=uv_index_max,sunrise,sunset&timezone=auto`),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`),
-    fetch(`https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&latitude=${lat}&longitude=${lon}&maxradiuskm=150&minmagnitude=2.0&orderby=time`)
-  ]);
 
   const ctx: EnvironmentContext = {
     dateKey: now.toISOString().split("T")[0],
@@ -245,78 +282,142 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
     location: { ...location },
   };
 
-  if (geoRes.status === "fulfilled") {
-    ctx.location = { ...ctx.location, ...geoRes.value };
-  }
+  const metaUnavailable = (source: EnvironmentDataSource, message = "Provider tidak dapat dijangkau saat ini.") =>
+    ({ source, status: "unavailable" as const, observedAt: now.toISOString(), message });
+  const metaAvailable = (source: EnvironmentDataSource) =>
+    ({ source, status: "available" as const, observedAt: now.toISOString() });
 
-  if (weatherRes.status === "fulfilled" && weatherRes.value.ok) {
-    const data = await weatherRes.value.json();
-    const current = data.current;
-    const uvMax = data.daily?.uv_index_max?.[0];
-    const sunrise = data.daily?.sunrise?.[0] ? new Date(data.daily.sunrise[0]).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : undefined;
-    const sunset = data.daily?.sunset?.[0] ? new Date(data.daily.sunset[0]).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : undefined;
+  // Default empty shapes (UI-friendly).
+  ctx.weather = { source: metaUnavailable("weather_api") };
+  ctx.airQuality = { source: metaUnavailable("air_quality_api") };
+  ctx.astronomy = { source: metaUnavailable("weather_api") };
+  ctx.moon = { source: metaUnavailable("astronomy_api") };
+  ctx.earthActivity = {
+    status: "Stabil",
+    fallbackCopy: "Memantau getaran dan pergerakan tanah.",
+    source: metaUnavailable("usgs"),
+  };
 
-    ctx.weather = {
-      condition: WEATHER_CODES[current.weather_code] || "Cerah",
-      temperatureCelsius: current.temperature_2m,
-      feelsLikeCelsius: current.apparent_temperature,
-      humidityPercent: current.relative_humidity_2m,
-      pressureHpa: current.surface_pressure,
-      windSpeedKph: current.wind_speed_10m,
-      cloudCoverPercent: current.cloud_cover,
-      rainProbabilityPercent: current.precipitation > 0 ? 100 : 0,
-      precipitationMm: current.precipitation,
-      uvCurrent: current.uv_index,
-      uvMaxToday: uvMax,
-      uvLabel: getUvLabel(current.uv_index),
-      source: { source: "weather_api", status: "available", observedAt: now.toISOString() },
-    };
+  // Each task is wrapped with a hard timeout so the slowest API never blocks the page.
+  // We fire-and-forget then patch the ctx as each task resolves.
+  const tasks: Array<Promise<void>> = [];
 
-    ctx.astronomy = {
-      sunrise,
-      sunset,
-      subtitle: sunrise ? `Terbit ${sunrise} · Terbenam ${sunset}` : "Siklus matahari hari ini sedang terbaca.",
-      source: { source: "weather_api", status: "available", observedAt: now.toISOString() },
-    };
-  }
+  tasks.push(
+    fetchReverseGeocode(lat, lon).then((geo) => {
+      if (geo) ctx.location = { ...ctx.location, ...geo };
+    }).catch(() => undefined),
+  );
 
-  if (airRes.status === "fulfilled" && airRes.value.ok) {
-    const data = await airRes.value.json();
-    const current = data.current;
-    ctx.airQuality = {
-      aqi: current.us_aqi,
-      label: getAqiLabel(current.us_aqi),
-      pm25: current.pm2_5,
-      pm10: current.pm10,
-      ozone: current.ozone,
-      no2: current.nitrogen_dioxide,
-      so2: current.sulphur_dioxide,
-      co: current.carbon_monoxide,
-      uvIndex: current.uv_index !== undefined && current.uv_index !== null ? current.uv_index : ctx.weather?.uvCurrent,
-      source: { source: "air_quality_api", status: "available", observedAt: now.toISOString() },
-    };
-  }
+  tasks.push(
+    (async () => {
+      const res = await fetchWithTimeout(
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,surface_pressure,wind_speed_10m,precipitation,uv_index,cloud_cover&daily=uv_index_max,sunrise,sunset&timezone=auto`,
+        5000,
+      ).catch(() => null);
+      if (!res || !res.ok) return;
+      try {
+        const data = await res.json();
+        const current = data.current || {};
+        const daily = data.daily || {};
+        const uvMax = Array.isArray(daily.uv_index_max) ? daily.uv_index_max[0] : undefined;
+        const sunrise = Array.isArray(daily.sunrise) && daily.sunrise[0]
+          ? new Date(daily.sunrise[0]).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+          : undefined;
+        const sunset = Array.isArray(daily.sunset) && daily.sunset[0]
+          ? new Date(daily.sunset[0]).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })
+          : undefined;
 
-  if (earthquakeRes.status === "fulfilled" && earthquakeRes.value.ok) {
-    const data = await earthquakeRes.value.json();
-    ctx.earthActivity = {
-      status: data.features?.length > 0 ? "Ada aktivitas terdekat" : "Stabil",
-      eventCount: data.features?.length || 0,
-      fallbackCopy: "Tidak ada aktivitas gempa M2.0+ dalam radius 150 km selama 24 jam terakhir.",
-      source: { source: "usgs", status: "available", observedAt: now.toISOString() },
-    };
-    if (data.features?.length > 0) {
-      const latest = data.features[0];
-      const [eqLon, eqLat, eqDepth] = latest.geometry.coordinates;
-      ctx.earthActivity.latestEarthquake = {
-        title: latest.properties.place,
-        magnitude: latest.properties.mag,
-        depthKm: eqDepth,
-        distanceKm: Math.round(haversineDistance(lat, lon, eqLat, eqLon)),
-        occurredAt: new Date(latest.properties.time).toISOString(),
-      };
-    }
-  }
+        ctx.weather = {
+          condition: current.weather_code !== undefined ? (WEATHER_CODES[current.weather_code] || "Cerah") : "Cerah",
+          temperatureCelsius: current.temperature_2m,
+          feelsLikeCelsius: current.apparent_temperature,
+          humidityPercent: current.relative_humidity_2m,
+          pressureHpa: current.surface_pressure,
+          windSpeedKph: current.wind_speed_10m,
+          cloudCoverPercent: current.cloud_cover,
+          rainProbabilityPercent: current.precipitation > 0 ? 100 : 0,
+          precipitationMm: current.precipitation,
+          uvCurrent: current.uv_index,
+          uvMaxToday: uvMax,
+          uvLabel: typeof current.uv_index === "number" ? getUvLabel(current.uv_index) : undefined,
+          source: metaAvailable("weather_api"),
+        };
+
+        ctx.astronomy = {
+          sunrise,
+          sunset,
+          subtitle: sunrise ? `Terbit ${sunrise} · Terbenam ${sunset}` : "Siklus matahari hari ini sedang terbaca.",
+          source: metaAvailable("weather_api"),
+        };
+      } catch (parseError) {
+        console.warn("[Environment] Weather parse failed:", parseError);
+      }
+    })(),
+  );
+
+  tasks.push(
+    (async () => {
+      const res = await fetchWithTimeout(
+        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`,
+        5000,
+      ).catch(() => null);
+      if (!res || !res.ok) return;
+      try {
+        const data = await res.json();
+        const current = data.current || {};
+        ctx.airQuality = {
+          aqi: current.us_aqi,
+          label: typeof current.us_aqi === "number" ? getAqiLabel(current.us_aqi) : undefined,
+          pm25: current.pm2_5,
+          pm10: current.pm10,
+          ozone: current.ozone,
+          no2: current.nitrogen_dioxide,
+          so2: current.sulphur_dioxide,
+          co: current.carbon_monoxide,
+          uvIndex: current.uv_index !== undefined && current.uv_index !== null ? current.uv_index : ctx.weather?.uvCurrent,
+          source: metaAvailable("air_quality_api"),
+        };
+      } catch (parseError) {
+        console.warn("[Environment] Air-quality parse failed:", parseError);
+      }
+    })(),
+  );
+
+  tasks.push(
+    (async () => {
+      const res = await fetchWithTimeout(
+        `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=${startTime}&latitude=${lat}&longitude=${lon}&maxradiuskm=150&minmagnitude=2.0&orderby=time`,
+        5000,
+      ).catch(() => null);
+      if (!res || !res.ok) return;
+      try {
+        const data = await res.json();
+        const features = Array.isArray(data.features) ? data.features : [];
+        ctx.earthActivity = {
+          status: features.length > 0 ? "Ada aktivitas terdekat" : "Stabil",
+          eventCount: features.length,
+          fallbackCopy: "Tidak ada aktivitas gempa terdeteksi dalam radius terdekat saat ini.",
+          source: metaAvailable("usgs"),
+        };
+        if (features.length > 0) {
+          const latest = features[0];
+          const [eqLon, eqLat, eqDepth] = latest.geometry?.coordinates || [];
+          ctx.earthActivity.latestEarthquake = {
+            title: latest.properties?.place,
+            magnitude: latest.properties?.mag,
+            depthKm: eqDepth,
+            distanceKm: Math.round(haversineDistance(lat, lon, eqLat, eqLon)),
+            occurredAt: latest.properties?.time ? new Date(latest.properties.time).toISOString() : undefined,
+          };
+        }
+      } catch (parseError) {
+        console.warn("[Environment] Earthquake parse failed:", parseError);
+      }
+    })(),
+  );
+
+  // Wait for all tasks but each is bounded by its own timeout — total worst-case ~5s.
+  await Promise.all(tasks);
 
   const circadian = getCircadianStatus();
   ctx.circadian = {
@@ -325,18 +426,22 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
     basedOn: "local time",
   };
 
-  // Add Moon data
+  // Moon data is computed locally via astronomy-engine (offline-friendly).
   try {
     const moonPhaseAngle = Astronomy.MoonPhase(now);
     const illumination = Astronomy.Illumination(Astronomy.Body.Moon, now);
-
     ctx.moon = {
       phase: getMoonPhaseLabel(moonPhaseAngle),
       illuminationPercent: Math.round(illumination.phase_fraction * 100),
-      source: { source: "astronomy_api", status: "available", observedAt: now.toISOString() },
+      source: metaAvailable("astronomy_api"),
     };
   } catch (e) {
     console.error("Failed to calculate moon phase", e);
+  }
+
+  // Cache successful responses (with at least weather or moon data) for fast re-open.
+  if (ctx.weather?.source?.status === "available" || ctx.moon?.source?.status === "available") {
+    safeWriteEnvCache(`${lat.toFixed(3)}_${lon.toFixed(3)}`, ctx);
   }
 
   return ctx;

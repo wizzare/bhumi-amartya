@@ -25,7 +25,7 @@ export function WellnessSupportPathView({ state, language }: WellnessSupportPath
     <div className="space-y-8">
       <header>
         <h4 className="text-[#4F6658] font-bold text-lg italic">
-          {language === "id" ? "Jalur Aman Untukmu" : "Safety Path for You"}
+          {language === "id" ? "Rekomendasi Jalur Dukungan" : "Safety Path for You"}
         </h4>
         <p className="text-[10px] text-[#7B8776] font-bold uppercase tracking-widest mt-1">
           {language === "id" ? "Pilihan dukungan yang paling sesuai" : "Tailored support options"}
@@ -45,7 +45,7 @@ function SupportCard({ recommendation, isPrimary, language }: { recommendation: 
 
   const getConfidenceLabel = (conf: string) => {
     if (language === "id") {
-      return conf === "HIGH" ? "TINGGI" : conf === "MEDIUM" ? "SEDANG" : "RENDAH";
+      return conf === "HIGH" ? "TINGGI" : conf === "MEDIUM" ? "CUKUP" : "RENDAH";
     }
     return conf;
   };
@@ -66,7 +66,9 @@ function SupportCard({ recommendation, isPrimary, language }: { recommendation: 
            </h5>
         </div>
         <div className="text-right">
-           <p className="text-[8px] font-bold text-[#9AA394] uppercase tracking-tighter">Confidence</p>
+           <p className="text-[8px] font-bold text-[#9AA394] uppercase tracking-tighter">
+             {language === "id" ? "Kecocokan" : "Confidence"}
+           </p>
            <p className="text-[10px] font-bold text-[#4F6658]">{getConfidenceLabel(confidence)}</p>
         </div>
       </div>
@@ -74,7 +76,7 @@ function SupportCard({ recommendation, isPrimary, language }: { recommendation: 
       <div className="space-y-4">
         <div>
           <p className="text-[9px] font-bold text-[#9AA394] uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
-            <Info size={10} /> {language === "id" ? "Mengapa?" : "Why?"}
+            <Info size={10} /> {language === "id" ? "Mengapa langkah ini?" : "Why?"}
           </p>
           <p className="text-xs text-[#3C3C3C] leading-relaxed font-medium">
             {why[language]}
@@ -88,7 +90,9 @@ function SupportCard({ recommendation, isPrimary, language }: { recommendation: 
         )}
 
         <div className="space-y-2 pt-2">
-           <p className="text-[9px] font-bold text-[#7B8776] uppercase tracking-[0.2em]">{language === "id" ? "Sumber Daya" : "Resources"}</p>
+           <p className="text-[9px] font-bold text-[#7B8776] uppercase tracking-[0.2em]">
+             {language === "id" ? "Pilihan Pendampingan" : "Resources"}
+           </p>
            <div className="space-y-2">
              {resources.map((res) => (
                <div key={res.id} className="flex items-center justify-between p-3 rounded-xl bg-white border border-[#E8E9E5] hover:border-[#4F6658]/30 transition-all group cursor-pointer"

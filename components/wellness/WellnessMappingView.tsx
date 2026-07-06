@@ -28,12 +28,19 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
     return "bg-amber-50 text-amber-700 border-amber-100";
   };
 
+  const getConfidenceLabel = (level: string) => {
+    if (language === "en") return level;
+    if (level === "HIGH") return "Tinggi";
+    if (level === "MEDIUM") return "Cukup";
+    return "Rendah";
+  };
+
   return (
     <div className="space-y-6">
       <header className="flex justify-between items-start">
         <div>
           <h4 className="text-[#4F6658] font-bold text-lg italic">
-            {language === "id" ? "Kemungkinan Tema Saat Ini" : "Possible Current Themes"}
+            {language === "id" ? "Kemungkinan Tema Dominan" : "Possible Current Themes"}
           </h4>
           <p className="text-[10px] text-[#7B8776] font-bold uppercase tracking-widest mt-1">
             {language === "id" ? "Pola batin yang sedang aktif" : "Inner patterns currently active"}
@@ -42,7 +49,7 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
 
         <div className={`px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${getConfidenceColor()}`}>
           {confidence.level === "HIGH" ? <CheckCircle2 size={10} /> : confidence.level === "MEDIUM" ? <TrendingUp size={10} /> : <AlertCircle size={10} />}
-          {confidence.level}
+          {getConfidenceLabel(confidence.level)}
         </div>
       </header>
 
@@ -86,7 +93,7 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
         >
           <span className="text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
             <Info size={14} />
-            {language === "id" ? "Lihat Mengapa" : "View Why"}
+            {language === "id" ? "Lihat Detail Analisis" : "View Detailed Analysis"}
           </span>
           {showWhy ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
@@ -95,12 +102,14 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
           <div className="mt-4 p-5 rounded-2xl bg-[#FCFAF5] border border-[#E8E9E5]/60 animate-in fade-in slide-in-from-top-2">
             <div className="space-y-4">
               <div>
-                <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-3">Dimensi Penggerak</p>
+                <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-3">
+                  {language === "id" ? "Penggerak Dimensi" : "Dimension Drivers"}
+                </p>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2">
                    {Object.entries(drivers.dimensions).map(([key, val]) => (
                      <div key={key} className="flex justify-between items-center text-[11px] font-bold">
                        <span className="text-[#7B8776] capitalize">{key}</span>
-                       <span className="text-[#4F6658]">{val}%</span>
+                       <span className="text-[#4F5E52]">{val}%</span>
                      </div>
                    ))}
                 </div>
@@ -108,7 +117,9 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
 
               {drivers.boosters.length > 0 && (
                 <div>
-                  <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-2">Sinyal Tambahan</p>
+                  <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.2em] mb-2">
+                    {language === "id" ? "Sinyal Pendukung" : "Supporting Signals"}
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {drivers.boosters.map(b => (
                       <span key={b} className="px-2 py-1 bg-white border border-[#E8E9E5] rounded text-[9px] font-bold text-[#7B8776]">
@@ -120,7 +131,7 @@ export function WellnessMappingView({ mapping, language }: WellnessMappingViewPr
               )}
 
               <p className="text-[9px] text-[#9AA394] italic leading-relaxed">
-                Tingkat akurasi: {confidence.score}% - {confidence.reason}
+                {language === "id" ? "Tingkat Akurasi:" : "Confidence Level:"} {confidence.score}% - {confidence.reason}
               </p>
             </div>
           </div>

@@ -26,9 +26,9 @@ export function BlueprintSummary({
   arcanaCenter,
 }: BlueprintSummaryProps) {
   const items = [
-    ["Birth date", birthDate],
-    ["Birth time", birthTime],
-    ["Birth city", birthCity],
+    ["Tanggal lahir", birthDate],
+    ["Jam lahir", birthTime],
+    ["Kota lahir", birthCity],
     ["Life path", lifePath],
     ["Sun sign", sunSign],
     ["Moon sign", moonSign],

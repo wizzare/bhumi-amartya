@@ -1,14 +1,16 @@
 {
-    "sprint": "MOANA V3 - CLEAN REBUILD BUILD 66",
-    "buildTimestamp": "2026-07-02T00:00:00+07:00",
-    "versionCode": 66,
-    "versionName": "3.2.1",
+    "sprint": "MOANA V3 - HOTFIX BUILD 70",
+    "buildTimestamp": "2026-07-04T12:00:00+07:00",
+    "versionCode": 70,
+    "versionName": "3.2.4",
+    "type": "HOTFIX_BUILD",
+    "scope": "UX and backend critical hotfixes",
     "changelog": [
-        "Clean rebuild from Build 64 UI baseline",
-        "Stabilized Google Play Billing and Purchase Restore flow",
-        "Refined Trial logic to ensure consistent 7-day period",
-        "Implemented Premium Bhumi page for plan management",
-        "Enhanced access control for premium features",
-        "Resolved dashboard update enforcement loops"
+        "Login Safe Mode: Confirm login flow does not block on notification permission",
+        "New User Routing: Comment out auto-redirect to wellness to enforce Dashboard-first routing",
+        "Prevent Double Assessment: Baseline wellness 15Q completion also marks daily check-in complete",
+        "Dashboard Mirror Greeting: Clean up duplicate greetings from reflection engine output",
+        "UX Copy: Verify natural Bahasa Indonesia translations for Journey and Profile cards",
+        "Journey Page: Fix Turbopack parser syntax error (stray duplicate closing JSX)"
     ]
 }

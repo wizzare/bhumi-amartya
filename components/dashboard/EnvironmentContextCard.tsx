@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, CloudSun, Droplets, Leaf, MapPin, Thermometer } from "lucide-react";
+import { Activity, Droplets, MapPin, Thermometer } from "lucide-react";
 import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
   getNormalizedEnvironment,
+  getCachedEnvironment,
   type EnvironmentLocation,
   type EnvironmentPermissionState,
   type EnvironmentContext,
@@ -64,15 +65,21 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
     if (state === "denied" || state === "unsupported") return;
 
     try {
-      const currentLocation = await requestCurrentEnvironmentLocation();
+      const currentLocation = await requestCurrentEnvironmentLocation({ timeoutMs: 6000 });
       setLocation(currentLocation);
 
-      // Use refactored logic from environment layer
+      // Show cached context immediately for fast paint.
+      const cached = getCachedEnvironment(currentLocation.coordinates.latitude, currentLocation.coordinates.longitude);
+      if (cached) {
+        setContext({ ...cached, location: { ...cached.location, coordinates: currentLocation.coordinates, timezone: currentLocation.timezone } });
+        if (cached.location.cityOrRegency) setLocation(cached.location);
+      }
+
+      // Fetch fresh data in background.
       const ctx = await getNormalizedEnvironment(currentLocation);
       setContext(ctx);
       setPermission("granted");
 
-      // Update local location state if service found a city name
       if (ctx.location.cityOrRegency) {
         setLocation(ctx.location);
       }
@@ -91,10 +98,16 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
 
   async function handleRequestLocation() {
     try {
-      const currentLocation = await requestCurrentEnvironmentLocation();
+      const currentLocation = await requestCurrentEnvironmentLocation({ timeoutMs: 6000 });
       setLocation(currentLocation);
       setPermission("granted");
       
+      const cached = getCachedEnvironment(currentLocation.coordinates.latitude, currentLocation.coordinates.longitude);
+      if (cached) {
+        setContext({ ...cached, location: { ...cached.location, coordinates: currentLocation.coordinates, timezone: currentLocation.timezone } });
+        if (cached.location.cityOrRegency) setLocation(cached.location);
+      }
+
       const ctx = await getNormalizedEnvironment(currentLocation);
       setContext(ctx);
       
@@ -138,10 +151,8 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <SummaryItem icon={<MapPin size={18} />} label="Lokasi" value={formatLocation(location, permission)} />
-              <SummaryItem icon={<CloudSun size={18} />} label="Cuaca" value={context?.weather?.condition || "Belum tersedia"} />
               <SummaryItem icon={<Thermometer size={18} />} label="Suhu" value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Belum tersedia"} />
               <SummaryItem icon={<Droplets size={18} />} label="Kelembapan" value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : "Belum tersedia"} />
-              <SummaryItem icon={<Leaf size={18} />} label="AQI" value={context?.airQuality?.aqi !== undefined && context?.airQuality?.aqi !== null ? `${context.airQuality.aqi} — ${context.airQuality.label}` : "Belum tersedia"} />
               <SummaryItem icon={<Activity size={18} />} label="Aktivitas Bumi" value={context?.earthActivity?.status || "Stabil"} />
             </div>
 

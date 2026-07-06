@@ -17,7 +17,7 @@ export function ReflectionCard({ reflection }: ReflectionCardProps) {
 
       <div className="relative z-10 space-y-6">
         <header>
-          <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Weekly Soul Summary</p>
+          <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-[0.2em] mb-2">Ringkasan Perjalanan Jiwa</p>
           <h3 className="text-2xl font-serif font-semibold">{reflection.theme}</h3>
         </header>
 

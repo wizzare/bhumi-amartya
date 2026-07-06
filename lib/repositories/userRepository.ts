@@ -49,6 +49,7 @@ export type UserProfile = {
   accessUntil?: Timestamp | string | null;
   trialStartedAt?: Timestamp;
   trialEndsAt?: Timestamp;
+  isPremium?: boolean;
   isDeveloper?: boolean;
   isFoundingMember?: boolean;
   testerBadge?: "Founder" | "Penjaga Bhumi Inti" | "Penjaga Bhumi Alfa" | "Penjaga Bhumi";

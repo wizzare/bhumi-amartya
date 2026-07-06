@@ -44,14 +44,16 @@ export default function PremiumBhumiPage() {
     loadProfile();
   }, [auth, router]);
 
-  const badge = profile ? getCurrentBadge(profile) : null;
+    const badge = profile ? getCurrentBadge(profile) : null;
   const isPremium = profile ? hasActiveBadgeAccess(profile) : false;
   const isTrial = profile ? isTrialUser(profile) : false;
   const isExpired = profile ? isExpiredUser(profile) : true;
 
-  const trialWindow = profile ? computeTrialWindow(profile) : null;
+  // Founder = Lifetime, No expiry date. Show "Akses hingga" only for actual trial users.
+  const isFounder = badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
+  const trialWindow = profile && isTrial ? computeTrialWindow(profile) : null;
   const accessUntil = trialWindow?.end || null;
-  const daysLeft = profile ? getTrialDaysLeft(profile) : 0;
+  const daysLeft = profile && isTrial ? getTrialDaysLeft(profile) : 0;
 
   const handleSubscribe = async () => {
     setPurchasing(true);
@@ -142,14 +144,16 @@ export default function PremiumBhumiPage() {
                 <h3 className="text-lg font-bold text-[#4F5E52]">
                   {badge || (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)")}
                 </h3>
-                <p className="text-sm text-[#7B8776]">
-                  {isPremium 
-                    ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
-                    : isTrial
-                      ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
-                      : isExpired
-                        ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
-                        : (t.premiumBhumi?.freeAccess || "Akses gratis")}
+                                <p className="text-sm text-[#7B8776]">
+                  {isFounder
+                    ? (t.premiumBhumi?.lifetimeAccess || "Akses selamanya (Lifetime)")
+                    : isPremium 
+                      ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
+                      : isTrial
+                        ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
+                        : isExpired
+                          ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
+                          : (t.premiumBhumi?.freeAccess || "Akses gratis")}
                 </p>
               </div>
             </div>

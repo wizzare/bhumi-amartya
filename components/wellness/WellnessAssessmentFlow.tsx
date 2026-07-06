@@ -28,6 +28,7 @@ import { BASELINE_QUESTIONS } from "@/lib/data/baselineWellnessQuestions";
 import { baselineWellnessEngine } from "@/lib/engines/baselineWellnessEngine";
 import { useAuth } from "@/context/AuthContext";
 import { userRepository, BaselineWellnessProfile } from "@/lib/repositories/userRepository";
+import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 
 interface WellnessAssessmentFlowProps {
   uid: string;
@@ -128,10 +129,37 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
 
       if (isBaselinePending) {
         const baselineProfile = baselineWellnessEngine.calculate(uid, mappingInput);
-        await userRepository.upsertUserProfile(uid, {
-          baselineWellnessCompleted: true,
-          baselineWellnessProfile: baselineProfile
-        });
+
+        // BUILD 70: Prevent Double Assessment
+        // When baseline is completed, we also mark today's check-in as done
+        // using metrics derived from the baseline responses.
+        const { getLocalDateKey } = await import("@/lib/dailyGuidance/dateKey");
+        const dateKey = getLocalDateKey(new Date());
+
+        const derivedMetrics = {
+          sleep: Math.round(baselineProfile.bodyScore / 10) || 5,
+          energy: Math.round(baselineProfile.bodyScore / 10) || 5,
+          emotion: Math.round(baselineProfile.emotionScore / 10) || 5,
+          focus: Math.round(baselineProfile.mindScore / 10) || 5,
+          social: Math.round(baselineProfile.relationshipScore / 10) || 5,
+        };
+
+        await Promise.all([
+          userRepository.upsertUserProfile(uid, {
+            baselineWellnessCompleted: true,
+            baselineWellnessProfile: baselineProfile
+          }),
+          dailyStateRepository.saveDailyState(uid, dateKey, {
+            assessmentDone: true,
+            wellnessSnapshot: {
+              metrics: derivedMetrics,
+              needs: [],
+              checkInCompleted: true,
+              updatedAt: new Date().toISOString()
+            }
+          })
+        ]);
+
         setCalculatedBaseline(baselineProfile);
         if (refreshUserProfile) {
           await refreshUserProfile();
@@ -180,13 +208,13 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
           <h2 className="text-3xl font-serif text-[#4F5E52]">{isBaselinePending ? "Langkah Terakhir Onboarding" : t.kenaliDiri.title}</h2>
           <p className="text-[#7B8776] leading-relaxed max-w-sm mx-auto">
             {isBaselinePending
-              ? "Bhumi sudah mengenal identitasmu. Sekarang bantu Bhumi memahami kondisi dirimu saat ini melalui 30 pertanyaan singkat agar pendampingan menjadi lebih sesuai."
+              ? "Bhumi sudah mengenal identitasmu. Sekarang bantu Bhumi memahami kondisi dirimu saat ini melalui 15 pertanyaan singkat agar pendampingan menjadi lebih sesuai."
               : t.kenaliDiri.subtitle}
           </p>
         </div>
         <div className="pt-4">
           <button onClick={handleStart} className="bhumi-button w-full py-4 text-lg">
-            Mulai Refleksi →
+            Mulai Pemetaan Awal →
           </button>
           <p className="mt-6 text-[10px] text-[#9AA394] italic px-8">
             {t.kenaliDiri.note}
@@ -203,31 +231,31 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="flex justify-between items-end px-2">
             <div>
-                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isBaselinePending ? "Baseline Assessment" : "Refleksi Harian"}</p>
-                <h3 className="text-xl font-serif text-[#4F5E52]">{isBaselinePending ? "Kenali Dirimu" : "Pemetaan Kondisi"}</h3>
+                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isBaselinePending ? "Pemetaan Awal" : "Refleksi Harian"}</p>
+                <h3 className="text-xl font-serif text-[#4F5E52] italic">{isBaselinePending ? "Kenali Dirimu" : "Pemetaan Kondisi"}</h3>
             </div>
             <p className="text-sm font-bold text-[#4F5E52]">{progress}%</p>
         </header>
 
-        <div className="h-1 w-full bg-[#E8E9E5] rounded-full overflow-hidden">
-            <div className="h-full bg-[#4F5E52] transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="h-1.5 w-full bg-[#E8E9E5] rounded-full overflow-hidden shadow-inner">
+            <div className="h-full bg-[#4F5E52] transition-all duration-700 ease-out" style={{ width: `${progress}%` }} />
         </div>
 
-        <div className="space-y-10 py-4">
+        <div className="space-y-6">
           {currentQuestions.map((q) => (
-            <div key={q.id} className="space-y-6">
-              <p className="text-lg font-medium text-[#4F5E52] leading-relaxed">
+            <div key={q.id} className="bhumi-card p-6 bg-white border-none shadow-sm space-y-6">
+              <p className="text-base font-medium text-[#4F5E52] leading-relaxed">
                 {q.text[language]}
               </p>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-2.5">
                 {[1, 2, 3, 4, 5].map((score) => (
                   <button
                     key={score}
                     onClick={() => handleAnswer(q.id, score)}
-                    className={`h-14 rounded-2xl flex items-center justify-center font-bold text-lg transition-all ${
+                    className={`h-12 rounded-xl flex items-center justify-center font-bold text-base transition-all active:scale-90 ${
                       answers[q.id] === score
-                      ? 'bg-[#4F5E52] text-white shadow-md scale-[1.05]'
-                      : 'bg-white text-[#7B8776] border border-[#E8E9E5] hover:border-[#4F5E52]'
+                      ? 'bg-[#4F5E52] text-white shadow-md transform scale-105'
+                      : 'bg-[#FCFAF5] text-[#7B8776] border border-[#E8E9E5] hover:border-[#4F5E52]/40'
                     }`}
                   >
                     {score}
@@ -235,25 +263,25 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
                 ))}
               </div>
               <div className="flex justify-between px-1">
-                <span className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">Tidak Sesuai</span>
-                <span className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest">Sangat Sesuai</span>
+                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{language === "id" ? "Tidak Sesuai" : "Disagree"}</span>
+                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{language === "id" ? "Sangat Sesuai" : "Agree"}</span>
               </div>
             </div>
           ))}
         </div>
 
-        <div className="pt-8 pb-20">
+        <div className="pt-8 pb-20 px-2">
           {error && (
-            <p role="alert" className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            <p role="alert" className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-xs font-medium text-red-800 text-center">
               {error}
             </p>
           )}
           <button
             disabled={Object.keys(answers).length < currentQuestions.length || loading}
             onClick={handleSubmit}
-            className="bhumi-button w-full py-5 text-xl disabled:opacity-30 disabled:cursor-not-allowed"
+            className="bhumi-button w-full py-5 text-lg shadow-lg active:scale-[0.98] disabled:opacity-20 transition-all"
           >
-            {loading ? "Menganalisis..." : "Lihat Hasil Refleksi →"}
+            {loading ? "Menyusun Pemetaan..." : (isBaselinePending ? "Selesaikan Pemetaan →" : "Lihat Hasil Refleksi →")}
           </button>
         </div>
       </div>
@@ -270,24 +298,30 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
                 <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto text-[#4F5E52]">
                    <Sparkles size={32} />
                 </div>
-                <h3 className="text-2xl font-serif text-[#4F5E52]">Baseline Wellness Selesai</h3>
+                <h3 className="text-2xl font-serif text-[#4F5E52]">Pemetaan Selesai</h3>
                 <p className="text-sm text-[#7B8776]">Terima kasih telah membantu Bhumi mengenal kondisimu saat ini. Pendampinganmu kini telah disesuaikan.</p>
              </div>
 
              <section className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
-                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Navigator Mode</p>
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Mode Pendampingan</p>
                    <p className="text-sm font-bold text-[#4F5E52]">{profile.navigatorMode}</p>
                 </div>
                 <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
-                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Strongest Area</p>
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Kekuatan Utama</p>
                    <p className="text-sm font-bold text-[#4F5E52]">{profile.strongestDomain}</p>
                 </div>
              </section>
 
-             <div className="pt-4 pb-2">
-                <Link href="/dashboard" className="bhumi-button w-full py-4 text-center block text-lg">
-                   Masuk ke Dashboard →
+             <div className="pt-4 pb-2 space-y-3">
+                <button
+                   onClick={() => window.location.reload()}
+                   className="bhumi-button w-full py-4 text-center block text-lg"
+                >
+                   Buka Ruang Wellness →
+                </button>
+                <Link href="/dashboard" className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest block text-center hover:text-[#4F5E52] transition-colors">
+                   Kembali ke Dashboard
                 </Link>
              </div>
           </div>

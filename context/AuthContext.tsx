@@ -137,17 +137,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           setProfileLoading(true);
           try {
-            // 1. Try to get profile from high-level storageProvider (which handles local + firebase)
-            let profile = await withProfileTimeout(storageProvider.getUserProfile() as Promise<UserProfile | null>);
+            // 1. Force refresh from Firestore to avoid stale local cache (Critical Hotfix July 5)
+            // This ensure we get the latest trialEndsAt/badge state even if localStorage is old.
+            const freshProfile = await withProfileTimeout(ensureMinimalUserProfile(firebaseUser));
+            let profile = freshProfile;
 
-            // 2. If storageProvider didn't return a full profile, ensure minimal profile (creates in Firestore if missing)
-            if (!profile || !profile.setupCompleted) {
-              const freshProfile = await withProfileTimeout(ensureMinimalUserProfile(firebaseUser));
-              if (freshProfile) {
-                profile = freshProfile;
-                // Sync to local storage
-                await storageProvider.saveUserProfile(profile as unknown as Parameters<typeof storageProvider.saveUserProfile>[0]);
-              }
+            // 2. If fresh fetch succeeded, sync to local storage immediately (Invalidates stale cache)
+            if (profile) {
+              await storageProvider.saveUserProfile(profile as any);
+            } else {
+              // Fallback to cache ONLY if Firestore is unreachable
+              console.warn("[AUTH] Firestore fetch returned null, attempting local cache fallback.");
+              profile = await withProfileTimeout(storageProvider.getUserProfile() as Promise<UserProfile | null>);
             }
 
             if (cancelled) return;

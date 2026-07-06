@@ -80,7 +80,7 @@ export class CanonicalTranslatorService {
       sunSign: blueprint.astrology?.sunSign || "Unknown",
       hdProfile: blueprint.humanDesign?.profile || "Unknown",
       hiddenCharacter: {
-        soulUrge: Number((blueprint.numerology as unknown as { soulUrge?: number })?.soulUrge || 0),
+        soulUrge: this.getSoulUrge(blueprint),
         moonSign: blueprint.astrology?.moonSign || "",
         chartHeart: blueprint.destinyMatrix?.chartHeart || {},
       },
@@ -89,7 +89,7 @@ export class CanonicalTranslatorService {
 
   private static buildPurpose(blueprint: Blueprint): CanonicalPurposeDomain {
     return {
-      lifePath: blueprint.numerology?.number || 0,
+      lifePath: this.getLifePath(blueprint),
       destinyPoint: blueprint.destinyMatrix?.destinyPoint || 0,
     };
   }
@@ -278,8 +278,8 @@ export class CanonicalTranslatorService {
 
     return {
       mission: {
-        lifePath: blueprint.numerology?.number || blueprint.lifePath?.number || 0,
-        lifePathRole: blueprint.lifePath?.role || blueprint.numerology?.role || "",
+        lifePath: this.getLifePath(blueprint),
+        lifePathRole: this.getLifePathRole(blueprint),
         destinyPoint: dm?.destinyPoint || 0,
         destinySoulMission: this.text(dm?.soulMission),
         tzolkinLifePurpose: this.text(blueprint.tzolkin?.lifePurpose),
@@ -289,7 +289,7 @@ export class CanonicalTranslatorService {
         baziLifeMission: this.text(blueprint.bazi?.lifeMission),
       },
       gifts: {
-        lifePathStrengths: blueprint.lifePath?.positiveTraits || [],
+        lifePathStrengths: this.getLifePathStrengths(blueprint),
         destinyTalents: blueprint.destinyMatrix?.talentsFather || [],
         destinyGreatTalents: blueprint.destinyMatrix?.talentsGreat || [],
         tzolkinGifts: [
@@ -348,5 +348,42 @@ export class CanonicalTranslatorService {
         baziDayMaster: blueprint.bazi?.dayMaster?.element || "",
       },
     };
+  }
+
+  private static getLifePath(blueprint: any): number {
+    if (!blueprint) return 0;
+    const lp = blueprint.lifePath;
+    const num = blueprint.numerology;
+    if (typeof lp === "number") return lp;
+    if (typeof lp?.number === "number") return lp.number;
+    if (typeof num?.number === "number") return num.number;
+    if (typeof num?.lifePath === "number") return num.lifePath;
+    if (typeof num?.lifePath?.number === "number") return num.lifePath.number;
+    return 0;
+  }
+
+  private static getLifePathRole(blueprint: any): string {
+    if (!blueprint) return "";
+    const lp = blueprint.lifePath;
+    const num = blueprint.numerology;
+    if (typeof lp?.role === "string") return lp.role;
+    if (typeof num?.role === "string") return num.role;
+    if (typeof num?.lifePath?.role === "string") return num.lifePath.role;
+    return "";
+  }
+
+  private static getLifePathStrengths(blueprint: any): string[] {
+    if (!blueprint) return [];
+    const lp = blueprint.lifePath;
+    const num = blueprint.numerology;
+    const traits = lp?.positiveTraits || num?.positiveTraits || lp?.strengths || num?.strengths || lp?.lifePath?.positiveTraits || num?.lifePath?.positiveTraits || [];
+    return Array.isArray(traits) ? traits : [];
+  }
+
+  private static getSoulUrge(blueprint: any): number {
+    if (!blueprint) return 0;
+    const num = blueprint.numerology;
+    const lp = blueprint.lifePath;
+    return Number(num?.soulUrge || lp?.soulUrge || num?.lifePath?.soulUrge || lp?.lifePath?.soulUrge || 0);
   }
 }

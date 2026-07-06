@@ -17,6 +17,7 @@ import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { sanitizeNarrative } from "@/lib/profile/narrativeHumanizer";
 
 
 interface JourneyDetailClientProps {
@@ -33,6 +34,70 @@ const EMPTY_JOURNEY_MEMORY: JourneyDailyMemory = {
   growthNarrative: undefined,
   coachMemory: undefined,
 };
+
+const NAVIGATOR_MODE_MAP: Record<string, string> = {
+  RECOVERY: "Mode Pemulihan",
+  REFLECTION: "Mode Refleksi",
+  GROWTH: "Mode Pertumbuhan",
+};
+
+const DOMAIN_MAP: Record<string, string> = {
+  BODY: "Tubuh",
+  EMOTION: "Emosi",
+  MIND: "Pikiran",
+  RELATIONSHIP: "Relasi",
+  MEANING: "Makna",
+  REGULATION: "Regulasi Diri",
+};
+
+const PRACTICE_NAME_MAP: Record<string, string> = {
+  journaling: "Jurnal",
+  journal: "Jurnal",
+  meditation: "Meditasi",
+  audioHealing: "Audio Healing",
+  "audio-healing": "Audio Healing",
+  manifestation: "Manifestasi",
+  manifestasi: "Manifestasi",
+  yoga: "Yoga",
+  workout: "Olahraga",
+  "healthy-food": "Makanan Sehat",
+  herbal: "Makanan Sehat",
+  food: "Makanan Sehat",
+};
+
+function indonesianize(text: string): string {
+  if (!text) return "";
+  const replaced = text
+    .replace(/\bboundaries\b/gi, "batas diri")
+    .replace(/\bresponsibility\b/gi, "tanggung jawab")
+    .replace(/\bnervous system\b/gi, "sistem saraf")
+    .replace(/\blow energy\b/gi, "energi rendah")
+    .replace(/\bbody recovery\b/gi, "pemulihan tubuh")
+    .replace(/\bemotional release\b/gi, "pelepasan emosi")
+    .replace(/\bRECOVERY\b/g, "Pemulihan")
+    .replace(/\bREFLECTION\b/g, "Refleksi")
+    .replace(/\bGROWTH\b/g, "Pertumbuhan")
+    .replace(/\bBODY\b/g, "Tubuh")
+    .replace(/\bEMOTION\b/g, "Emosi")
+    .replace(/\bMIND\b/g, "Pikiran")
+    .replace(/\bRELATIONSHIP\b/g, "Relasi")
+    .replace(/\bMEANING\b/g, "Makna")
+    .replace(/\bREGULATION\b/g, "Regulasi Diri")
+    .replace(/\bSelf-trust\b/gi, "Kepercayaan diri")
+    .replace(/\bEmotional sensitivity\b/gi, "Sensitivitas emosional")
+    .replace(/\bCreative regulation\b/gi, "Regulasi kreatif")
+    .replace(/\bStructure and consistency\b/gi, "Struktur dan konsistensi")
+    .replace(/\bFreedom with steadiness\b/gi, "Kebebasan dengan kestabilan")
+    .replace(/\bResponsibility with balance\b/gi, "Tanggung jawab seimbang")
+    .replace(/\bQuiet introspection\b/gi, "Introspeksi tenang")
+    .replace(/\bPower with responsibility\b/gi, "Kekuatan dan tanggung jawab")
+    .replace(/\bCompassionate release\b/gi, "Pelepasan penuh kasih")
+    .replace(/\bEmotional regulation\b/gi, "Regulasi emosional")
+    .replace(/\bLong-term steadiness\b/gi, "Kestabilan jangka panjang")
+    .replace(/\bHeart-led steadiness\b/gi, "Kestabilan berbasis hati");
+
+  return sanitizeNarrative(replaced);
+}
 
 export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const auth = useAuth();
@@ -171,7 +236,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <p className="text-[#4F5E52] animate-pulse">Memuat detail...</p>
+        <p className="text-[#4F5E52] animate-pulse">Bhumi sedang menyiapkan detail perjalananmu...</p>
       </main>
     );
   }
@@ -216,8 +281,8 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
               <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-6 text-[#4F5E52]">
                 <Sparkles size={32} />
               </div>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-4">{story.stage.label}</h2>
-              <p className="text-[#7B8776] leading-relaxed italic">{story.stage.description}</p>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-4">{indonesianize(story.stage.label)}</h2>
+              <p className="text-[#7B8776] leading-relaxed italic">{indonesianize(story.stage.description)}</p>
             </div>
             
             {/* Theme Evolution */}
@@ -225,13 +290,13 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
               <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm">
                 <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-4">Evolusi Tema Dirimu</p>
                 <div className="text-sm text-[#4F5E52] font-semibold space-y-2 whitespace-pre-line text-center bg-[#F5F1E8]/30 py-4 rounded-2xl">
-                  {learning.growthNarrative.growthNarrative}
+                  {indonesianize(learning.growthNarrative.growthNarrative)}
                 </div>
                 {learning.growthNarrative.currentLesson && (
-                  <p className="text-xs text-[#7B8776] mt-4 leading-relaxed text-center">Pelajaran saat ini: “{learning.growthNarrative.currentLesson}”</p>
+                  <p className="text-xs text-[#7B8776] mt-4 leading-relaxed text-center">Pelajaran saat ini: “{indonesianize(learning.growthNarrative.currentLesson)}”</p>
                 )}
                 {learning.growthNarrative.nextInvitation && (
-                  <p className="text-xs text-[#4F5E52] font-bold mt-2 text-center">Undangan berikutnya: {learning.growthNarrative.nextInvitation}</p>
+                  <p className="text-xs text-[#4F5E52] font-bold mt-2 text-center">Undangan berikutnya: {indonesianize(learning.growthNarrative.nextInvitation)}</p>
                 )}
               </div>
             )}
@@ -240,7 +305,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             {learning?.coachMemory?.coachMemory && (
               <div className="bhumi-card p-6 bg-[#F5F1E8] text-[#344A38] border border-[#DDE7DB] shadow-sm">
                 <p className="text-xs font-bold text-[#4F5E52]/70 uppercase tracking-widest mb-3">Catatan Pembelajaran Bhumi</p>
-                <p className="text-sm leading-relaxed font-medium">{learning.coachMemory.coachMemory}</p>
+                <p className="text-sm leading-relaxed font-medium">{indonesianize(learning.coachMemory.coachMemory)}</p>
               </div>
             )}
 
@@ -258,19 +323,19 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm space-y-6">
             <div>
               <h2 className="text-xs font-bold text-[#9AA394] uppercase tracking-[0.2em] mb-4">Fokus Saat Ini</h2>
-              <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{story.growthFocus}</p>
+              <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{indonesianize(story.growthFocus)}</p>
               <div className="mt-6 pt-6 border-t border-[#F5F1E8]">
                 <p className="text-sm font-bold text-[#4F5E52] mb-2">Yang sedang tumbuh</p>
-                <p className="text-sm text-[#7B8776]">{story.growingAreas[0]}</p>
+                <p className="text-sm text-[#7B8776]">{indonesianize(story.growingAreas[0])}</p>
               </div>
             </div>
 
             {learning?.weeklyLearning?.weeklyPattern && (
               <div className="pt-6 border-t border-[#F5F1E8]">
                 <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Pola 7 Hari Terakhir</p>
-                <p className="text-sm text-[#4F5E52] leading-relaxed">{learning.weeklyLearning.weeklyPattern}</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.weeklyLearning.weeklyPattern)}</p>
                 {learning.weeklyLearning.coachObservation && (
-                  <p className="text-xs text-[#7B8776] mt-2 italic">“{learning.weeklyLearning.coachObservation}”</p>
+                  <p className="text-xs text-[#7B8776] mt-2 italic">“{indonesianize(learning.weeklyLearning.coachObservation)}”</p>
                 )}
               </div>
             )}
@@ -278,9 +343,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             {learning?.monthlyLearning?.monthlyTheme && (
               <div className="pt-6 border-t border-[#F5F1E8]">
                 <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Tema 30 Hari Terakhir</p>
-                <p className="text-sm text-[#4F5E52] leading-relaxed">{learning.monthlyLearning.monthlyTheme}</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyTheme)}</p>
                 {learning.monthlyLearning.monthlyNarrative && (
-                  <p className="text-xs text-[#7B8776] mt-2 leading-relaxed">{learning.monthlyLearning.monthlyNarrative}</p>
+                  <p className="text-xs text-[#7B8776] mt-2 leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyNarrative)}</p>
                 )}
               </div>
             )}
@@ -295,7 +360,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                     <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
                         <Heart size={20} />
                     </div>
-                    <span className="font-bold text-[#4F5E52]">{area}</span>
+                    <span className="font-bold text-[#4F5E52]">{indonesianize(area)}</span>
                 </div>
             ))}
 
@@ -319,7 +384,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                       return (
                         <div key={practice} className="space-y-1">
                           <div className="flex justify-between text-sm">
-                            <span className="font-bold text-[#4F5E52]">{practice}</span>
+                            <span className="font-bold text-[#4F5E52]">{indonesianize(PRACTICE_NAME_MAP[practice.toLowerCase()] || practice)}</span>
                             <span className="text-xs text-[#7B8776]">{levelLabel}</span>
                           </div>
                           <div className="w-full bg-[#F5F1E8] h-2 rounded-full overflow-hidden">
@@ -344,7 +409,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                 <Flag size={36} className="text-[#4F5E52]" />
             </div>
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7B8776] mb-3">Target Berikutnya</p>
-            <h2 className="text-2xl font-serif mb-6 text-[#4F5E52]">{story.nextMilestone}</h2>
+            <h2 className="text-2xl font-serif mb-6 text-[#4F5E52]">{indonesianize(story.nextMilestone)}</h2>
             <div className="bg-[#FCFAF5] p-5 rounded-2xl border border-[#E8E9E5]">
                 <p className="text-sm text-[#526053] leading-relaxed font-medium">
                     Teruslah melangkah. Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada pencapaian ini.
@@ -373,7 +438,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                         ))}
                       </div>
                       <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
-                        {state.moodLevel ? `Mood ${state.moodLevel}` : "N/A"}
+                        {state.moodLevel ? `Kondisi ${state.moodLevel}` : "-"}
                       </div>
                     </div>
                   ))}
@@ -381,7 +446,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             ) : (
               <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
                  <p className="text-[#7B8776] leading-relaxed italic">
-                   Belum ada aktivitas yang tercatat di perjalananmu. Praktik dan refleksi yang kamu lakukan akan mulai muncul di sini.
+                   Belum ada catatan aktivitas di perjalananmu. Praktik dan refleksi harianmu akan mulai muncul di sini.
                  </p>
               </div>
             )}
@@ -403,7 +468,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             className="inline-flex items-center gap-2 text-[#7B8776] text-sm font-bold uppercase tracking-widest mb-8 hover:text-[#4F5E52] transition-colors"
           >
             <ArrowLeft size={16} />
-            Kembali ke Journey
+            Kembali ke Perjalanan
           </Link>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">

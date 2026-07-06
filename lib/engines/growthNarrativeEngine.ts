@@ -11,14 +11,14 @@ export const growthNarrativeEngine = {
 
     // 2. Map issues/categories to growth narrative titles
     const categoryMap: Record<string, string> = {
-      "responsibility": "Over Responsibility",
-      "boundaries": "Boundary Issues",
-      "body recovery": "Difficulty Resting",
-      "body-recovery": "Difficulty Resting",
-      "low energy": "Difficulty Resting",
-      "low-energy": "Difficulty Resting",
-      "inner child": "Self Worth",
-      "inner-child": "Self Worth",
+      "responsibility": "Tanggung Jawab Berlebih",
+      "boundaries": "Batas Diri & Perlindungan Energi",
+      "body recovery": "Pemulihan Tubuh & Istirahat",
+      "body-recovery": "Pemulihan Tubuh & Istirahat",
+      "low energy": "Pemulihan Energi Tubuh",
+      "low-energy": "Pemulihan Energi Tubuh",
+      "inner child": "Harga Diri & Luka Batin",
+      "inner-child": "Harga Diri & Luka Batin",
       "nervous system": "Menjaga Ketenangan Tubuh",
       "nervous-system": "Menjaga Ketenangan Tubuh",
       "emotional release": "Memberi Ruang bagi Emosi",

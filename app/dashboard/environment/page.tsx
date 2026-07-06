@@ -23,6 +23,7 @@ import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
   getNormalizedEnvironment,
+  getCachedEnvironment,
   getUvLabel,
   normalizeMoonPhaseLabel,
   type EnvironmentContext,
@@ -62,12 +63,12 @@ function DetailItem({
 
 export default function EnvironmentDetailPage() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function load() {
-    setLoading(true);
     setError(null);
     try {
       const state = await getEnvironmentLocationPermission();
@@ -85,20 +86,33 @@ export default function EnvironmentDetailPage() {
         return;
       }
 
-      const location = await requestCurrentEnvironmentLocation();
-      const ctx = await getNormalizedEnvironment(location);
-      setContext(ctx);
+      // Resolve location quickly with a short GPS timeout.
+      const location = await requestCurrentEnvironmentLocation({ timeoutMs: 6000 });
+
+      // Show cached context immediately (if any) so the page paints fast.
+      const cached = getCachedEnvironment(location.coordinates.latitude, location.coordinates.longitude);
+      if (cached) {
+        setContext({ ...cached, location: { ...cached.location, coordinates: location.coordinates, timezone: location.timezone } });
+        setLoading(false);
+        setRefreshing(true);
+      }
+
+      // Fetch fresh data (each provider is bounded by its own timeout).
+      const fresh = await getNormalizedEnvironment(location);
+      setContext(fresh);
       setPermission("granted");
     } catch (err: any) {
-      setError(err.message || "Gagal memuat data lingkungan.");
+      // If we already showed cache, keep showing it but flag the error.
+      setError(err?.message || "Gagal memuat data lingkungan.");
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [])
 
   return (
     <ProtectedRoute>
@@ -121,10 +135,16 @@ export default function EnvironmentDetailPage() {
             </p>
           </header>
 
-          {loading ? (
+                    {loading && !context ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#4F6658] border-t-transparent" />
               <p className="mt-4 text-sm font-medium text-[#7B8776]">Membaca sinyal alam...</p>
+              <p className="mt-1 text-xs text-[#9AA394]">Mohon tunggu sebentar.</p>
+            </div>
+          ) : refreshing && context ? (
+            <div className="mb-4 flex items-center gap-2 text-xs text-[#7B8776]">
+              <div className="h-3 w-3 animate-spin rounded-full border-2 border-[#4F6658] border-t-transparent" />
+              <span>Menyegarkan data...</span>
             </div>
           ) : error ? (
             <div className="rounded-3xl bg-white p-8 text-center shadow-sm">

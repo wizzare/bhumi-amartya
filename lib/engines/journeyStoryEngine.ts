@@ -153,7 +153,8 @@ export const journeyStoryEngine = {
       "emotional release": "Pelepasan Emosi Berat"
     };
     const monthlyGrowthArea = growthAreaMap[topCompletedCat.toLowerCase()] || "Kesadaran Batin";
-    const monthlyNarrative = `Dalam 30 hari terakhir, tema ${topCategory.toLowerCase()} beberapa kali hadir. Pengalaman ini mungkin sedang membantumu memilih tindakan yang lebih sesuai dengan tenaga yang tersedia.`;
+    const displayCategory = growthAreaMap[topCategory.toLowerCase()] || topCategory;
+    const monthlyNarrative = `Dalam 30 hari terakhir, tema ${displayCategory.toLowerCase()} beberapa kali hadir. Pengalaman ini mungkin sedang membantumu memilih tindakan yang lebih sesuai dengan tenaga yang tersedia.`;
 
     return {
       monthlyTheme,
@@ -163,4 +164,3 @@ export const journeyStoryEngine = {
     };
   }
 };
-

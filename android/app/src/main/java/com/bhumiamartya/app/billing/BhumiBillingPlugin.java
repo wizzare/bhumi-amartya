@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 
 @CapacitorPlugin(name = "BhumiBilling")
 public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListener {
-    private static final String PREMIUM_PRODUCT_ID = "bhumi_premium";
+    private static final String PREMIUM_PRODUCT_ID = "bhumi_premium_monthly";
     private static final String PREMIUM_BASE_PLAN_ID = "monthly";
 
     private BillingClient billingClient;
@@ -173,7 +173,7 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
 
             List<ProductDetails> productsResult = queryProductDetailsResult.getProductDetailsList();
             if (productsResult == null || productsResult.isEmpty()) {
-                call.reject("Subscription product bhumi_premium was not returned by Google Play.", "PRODUCT_NOT_FOUND");
+                call.reject("Subscription product bhumi_premium_monthly was not returned by Google Play.", "PRODUCT_NOT_FOUND");
                 return;
             }
 

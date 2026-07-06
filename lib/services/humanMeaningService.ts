@@ -2,7 +2,7 @@ import type { CanonicalIdentity } from "@/lib/types/canonical";
 import type { HumanMeaning, HumanNarrative } from "@/lib/types/humanMeaning";
 
 export class HumanMeaningService {
-  public static generate(canonical: CanonicalIdentity): HumanMeaning {
+  public static generate(canonical: CanonicalIdentity, soulIdentityAi?: any): HumanMeaning {
     const identity = this.generateIdentity(canonical.identity);
     const energy = this.generateEnergy(canonical.energy);
     const shadow = this.generateShadow(canonical.shadow);
@@ -12,10 +12,22 @@ export class HumanMeaningService {
     return {
       identity: {
         ...identity,
-        archetype: identity,
+        archetype: soulIdentityAi?.archetype ? {
+          short: soulIdentityAi.archetype.short,
+          medium: soulIdentityAi.archetype.medium,
+          long: soulIdentityAi.archetype.long,
+        } : identity,
         hiddenCharacter: this.hiddenCharacterMeaning(canonical.identity.hiddenCharacter),
       },
-      purpose: this.generatePurpose(canonical.purpose),
+      purpose: soulIdentityAi?.purpose ? {
+        short: soulIdentityAi.purpose.short,
+        medium: soulIdentityAi.purpose.medium,
+        long: soulIdentityAi.purpose.long,
+      } : (soulIdentityAi?.mission ? {
+        short: soulIdentityAi.mission.short,
+        medium: soulIdentityAi.mission.medium,
+        long: soulIdentityAi.mission.long,
+      } : this.generatePurpose(canonical.purpose)),
       energy: {
         ...energy,
         authority: this.authorityMeaning(canonical.energy.authority),
@@ -59,7 +71,33 @@ export class HumanMeaningService {
       },
       health: this.generateHealth(canonical.health),
       spirituality: this.generateSpiritualityHuman(canonical.spirituality),
-      soulIdentity: this.generateSoulIdentity(canonical.soulIdentity),
+      soulIdentity: soulIdentityAi ? {
+        mission: {
+          short: soulIdentityAi.mission.short,
+          medium: soulIdentityAi.mission.medium,
+          long: soulIdentityAi.mission.long,
+        },
+        gifts: {
+          short: soulIdentityAi.gifts.short,
+          medium: soulIdentityAi.gifts.medium,
+          long: soulIdentityAi.gifts.long,
+        },
+        lessons: {
+          short: soulIdentityAi.lessons.short,
+          medium: soulIdentityAi.lessons.medium,
+          long: soulIdentityAi.lessons.long,
+        },
+        shadow: {
+          short: soulIdentityAi.shadow.short,
+          medium: soulIdentityAi.shadow.medium,
+          long: soulIdentityAi.shadow.long,
+        },
+        archetype: {
+          short: soulIdentityAi.archetype.short,
+          medium: soulIdentityAi.archetype.medium,
+          long: soulIdentityAi.archetype.long,
+        },
+      } : this.generateSoulIdentity(canonical.soulIdentity),
     };
   }
 

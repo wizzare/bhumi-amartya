@@ -40,7 +40,6 @@ import { meditationRepository } from "@/lib/repositories/meditationRepository";
 import { audioHealingRepository } from "@/lib/repositories/audioHealingRepository";
 import { activityRepository } from "@/lib/repositories/activityRepository";
 import { getCompletionSummary } from "@/lib/engines/completionEngine";
-import { getTrialDaysLeft, isTrialExpired } from "@/lib/billing/accessControl";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { repairOwnerHumanDesign } from "@/lib/humandesign/ownerOverride";
 import { generateLocalDailyGuidance } from "@/lib/orchestrators/localDailyGuidanceFallback";
@@ -129,12 +128,9 @@ function formatSoulReflectionForDashboard(
 ): string {
   const body = shortenReflectionBody(reflection);
   if (!body) return "";
-  const firstName = userName?.trim().split(/\s+/)[0] || "Jiwa";
-  const greeting = getTimeOfDayGreeting(date, language);
-  if (language === "en") {
-    return `Hello ${firstName},\n${greeting}. ${body} Warmly from Bhumi.`;
-  }
-  return `Halo ${firstName},\n${greeting}. ${body} Peluk hangat dari Bhumi.`;
+  // BUILD 70: DashboardHeader already handles greeting.
+  // Reflection starts directly with narrative.
+  return body;
 }
 
 export function DashboardClient() {
@@ -153,8 +149,7 @@ export function DashboardClient() {
   const [safetyState, setSafetyState] = useState<SafetyState | null>(null);
   const [trustedContact, setTrustedContact] = useState<TrustedContact | undefined>(undefined);
   const [dgLoading, setDgLoading] = useState(false);
-  const [trialMessage, setTrialMessage] = useState<string | null>(null);
-  const [appNow, setAppNow] = useState(() => new Date());
+    const [appNow, setAppNow] = useState(() => new Date());
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
@@ -164,6 +159,8 @@ export function DashboardClient() {
     language,
     appNow,
   );
+  // TEST CHANGE
+
 
   useEffect(() => {
     const interval = window.setInterval(() => setAppNow(new Date()), APP_TIME_REFRESH_MS);
@@ -725,9 +722,6 @@ export function DashboardClient() {
         void participationEngine.recordActivity(auth.user.uid, "launch");
 
         // ... rest of the code
-        const daysLeft = getTrialDaysLeft(p as any);
-        if (isTrialExpired(p as any)) setTrialMessage("Akses Bhumi kamu perlu diperbarui.");
-        else if (daysLeft < 3) setTrialMessage(null);
 
         setLoading(false);
         clearTimeout(watchdog);
@@ -775,6 +769,8 @@ export function DashboardClient() {
     <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
       <AppNav />
 
+// ...existing code...
+
       <DashboardHeader userName={profile.fullName} language={language} />
 
       {safetyState?.isSafetyMode && (
@@ -790,15 +786,6 @@ export function DashboardClient() {
             }
           }}
         />
-      )}
-
-      {trialMessage && (
-        <button
-          onClick={() => router.push("/premium-bhumi")}
-          className="w-full mt-6 p-4 bg-yellow-50/50 text-yellow-800 text-[12px] text-center rounded-2xl font-bold uppercase tracking-widest border border-yellow-100/50 active:scale-[0.98] transition-transform"
-        >
-          {trialMessage}
-        </button>
       )}
 
       <GuardianIdentityCard

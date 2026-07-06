@@ -2,7 +2,7 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "@/lib/firebase/firebase";
 
-export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium";
+export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
 export const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
 export const GOOGLE_PLAY_BILLING_ENABLED = true;
