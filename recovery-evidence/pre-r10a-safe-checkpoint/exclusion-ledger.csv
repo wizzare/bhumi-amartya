@@ -1,0 +1,200 @@
+path,reason,risk,disposition
+# Phase 7 mandatory exclusions
+.idea/caches/deviceStreaming.xml,IDE cache,LOCAL_ONLY,Excluded
+.audit/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+audit/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+phase-a-audit/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+phase-b-validation/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+test-results/,Phase 7 mandatory,GENERATED,Excluded
+snapshots/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+recovery_backups/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+aab_check/,Phase 7 mandatory,LOCAL_ONLY,Excluded
+v4_dev/,Phase 7 mandatory,SCRATCH,Excluded
+tsconfig.tsbuildinfo,Phase 7 mandatory,GENERATED,Excluded
+response.html,Phase 7 mandatory,RESPONSE_CAPTURE,Excluded
+
+# _dump.xml files (Phase 7)
+chooser_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+dashboard_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+journey_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+landing_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+location_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+login_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+profile_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+settings_sheet_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+window_dump.xml,Phase 7,DEBUG_DUMP,Excluded
+
+# _copy.* files
+auditMocks_copy.txt,Phase 7,SCRATCH,Excluded
+normalize_copy.txt,Phase 7,SCRATCH,Excluded
+normalize_v2.txt,Phase 7,SCRATCH,Excluded
+time_copy.txt,Phase 7,SCRATCH,Excluded
+translations_copy.txt,Phase 7,SCRATCH,Excluded
+version_copy.txt,Phase 7,SCRATCH,Excluded
+lib/types/journeyDailyRecord_copy.ts,DUPLICATE_SOURCE,SCRATCH,Excluded
+
+# _read.* files
+components/dashboard/SoulReflectionCard_read.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/normalize_read.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/normalize_read_v2.txt,Phase 7,SCRATCH,Excluded
+lib/engines/dailyGuidanceEngine_read.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/normalize_check.txt,Phase 7,SCRATCH,Excluded
+lib/prompts/bhumiSoulMirrorPrompt_read.txt,Phase 7,SCRATCH,Excluded
+lib/prompts/dailyGuidancePrompt_read.txt,Phase 7,SCRATCH,Excluded
+lib/prompts/dailyGuidancePrompt_verify.txt,Phase 7,SCRATCH,Excluded
+
+# _clean.* files
+lib/dailyGuidanceEngine_clean.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidancePrompt_clean.txt,Phase 7,SCRATCH,Excluded
+
+# _backup.* files
+lib/firebase/service_backup.ts,Phase 7,TEMP_BACKUP,Excluded
+lib/services/dailyGuidanceService.ts.tmp,Phase 7,TEMP_BACKUP,Excluded
+
+# *.tmp files
+lib/prompts/dailyGuidancePrompt.ts.txt,Phase 7,SCRATCH,Excluded
+
+# Scratch / root test files
+R1A_TEST.txt,Phase 7,SCRATCH,Excluded
+test.txt,Phase 7,SCRATCH,Excluded
+test_perm.txt,Phase 7,SCRATCH,Excluded
+simple.txt,Phase 7,SCRATCH,Excluded
+v4_presentation_audit.txt,Phase 7,SCRATCH,Excluded
+v4_refactor_test.txt,Phase 7,SCRATCH,Excluded
+android/test.java,Phase 7,SCRATCH,Excluded
+android/test.txt,Phase 7,SCRATCH,Excluded
+android/test_write.txt,Phase 7,SCRATCH,Excluded
+android/v4_test.txt,Phase 7,SCRATCH,Excluded
+app/test.txt,Phase 7,SCRATCH,Excluded
+lib/test.txt,Phase 7,SCRATCH,Excluded
+lib/test_2.txt,Phase 7,SCRATCH,Excluded
+lib/test_language.txt,Phase 7,SCRATCH,Excluded
+lib/test_new.txt,Phase 7,SCRATCH,Excluded
+lib/test_new_2.txt,Phase 7,SCRATCH,Excluded
+lib/test_write.txt,Phase 7,SCRATCH,Excluded
+lib/access/test.txt,Phase 7,SCRATCH,Excluded
+lib/access/fix.txt,Phase 7,SCRATCH,Excluded
+lib/access/temp_test.txt,Phase 7,SCRATCH,Excluded
+lib/access/dummy.tsx,Phase 7,SCRATCH,Excluded
+lib/config/test.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/test_write_2.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/test_write_tool.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/test_write_v4.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/timeOfDayGreeting.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/v4_refactor_test.txt,Phase 7,SCRATCH,Excluded
+lib/dailyGuidance/v4_write_test.txt,Phase 7,SCRATCH,Excluded
+lib/firebase/test.txt,Phase 7,SCRATCH,Excluded
+lib/services/test.txt,Phase 7,SCRATCH,Excluded
+lib/services/test_file.txt,Phase 7,SCRATCH,Excluded
+lib/services/test_audit_runtime.ts,Phase 7,SCRATCH,Excluded
+lib/services/dailyGuidanceService.r1b.test.ts,Phase 7,UNFINISHED,Excluded
+lib/services/dailyGuidanceServiceCore.ts,Phase 7,UNFINISHED,Excluded
+lib/services/dailyGuidanceServiceV4.ts,Phase 7,UNFINISHED,Excluded
+lib/dailyGuidance/normalize_restore.ts,Phase 7,UNFINISHED,Excluded
+lib/dailyGuidance/normalize_v4.ts,Phase 7,UNFINISHED,Excluded
+lib/bazi/test_echo.ts,Phase 7,SCRATCH,Excluded
+lib/engines/test.js,Phase 7,SCRATCH,Excluded
+lib/v4_prompts/test.txt,Phase 7,SCRATCH,Excluded
+lib/v4_prompts/test_write.txt,Phase 7,SCRATCH,Excluded
+lib/orchestrators/hotfix_test.txt,Phase 7,SCRATCH,Excluded
+app/blueprint/bazi/page_new.tsx,Phase 7,UNFINISHED,Excluded
+
+# Local log captures
+build_log.txt,Phase 7,GENERATED_LOG,Excluded
+gradle_build_log.txt,Phase 7,GENERATED_LOG,Excluded
+cap_sync_log.txt,Phase 7,GENERATED_LOG,Excluded
+
+# Debug / dump output
+summary_debug.txt,Phase 7,DEBUG_DUMP,Excluded
+summary_debug_utf8.txt,Phase 7,DEBUG_DUMP,Excluded
+temp_audit.txt,Phase 7,DEBUG_DUMP,Excluded
+temp_audit_utf8.txt,Phase 7,DEBUG_DUMP,Excluded
+temp_audit_utf8_v2.txt,Phase 7,DEBUG_DUMP,Excluded
+temp_final_audit.txt,Phase 7,DEBUG_DUMP,Excluded
+
+# Generated build output / test output
+test-results/,Phase 7,GENERATED,Excluded
+tests/,Phase 7,GENERATED,Excluded
+snapshots/,Phase 7,GENERATED,Excluded
+
+# Local browser output (already covered by _dump.xml)
+
+# Ad-hoc runtime-proof scripts
+run-real-proof.js,Phase 7,SCRIPT_SCRATCH,Excluded
+run-real-runtime-proof.ts,Phase 7,SCRIPT_SCRATCH,Excluded
+run-runtime-verification.js,Phase 7,SCRIPT_SCRATCH,Excluded
+scratch_run_verification.ts,Phase 7,SCRIPT_SCRATCH,Excluded
+test-runtime-verification.ts,Phase 7,SCRIPT_SCRATCH,Excluded
+test-wellness-verification.spec.ts,Phase 7,SCRIPT_SCRATCH,Excluded
+
+# Phase 6 mandatory area exclusions
+app/inbox/error.tsx,Phase 6 Communication/Inbox,UNRELATED,Excluded
+app/inbox/loading.tsx,Phase 6 Communication/Inbox,UNRELATED,Excluded
+app/inbox/page.tsx,Phase 6 Communication/Inbox,UNRELATED,Excluded
+app/admin/debug-hd/page.tsx,Phase 6 Admin,UNRELATED,Excluded
+app/admin/insights/page.tsx,Phase 6 Admin,UNRELATED,Excluded
+app/admin/metrics/page.tsx,Phase 6 Admin,UNRELATED,Excluded
+components/admin/CoreGuardianValidation.tsx,Phase 6 Admin,UNRELATED,Excluded
+components/admin/FounderDebugHD.tsx,Phase 6 Admin/Debug,UNRELATED,Excluded
+components/WeeklyFix.tsx,Phase 6 Admin experimental,UNFINISHED,Excluded
+lib/orchestrators/communicationIntegration.tsx,Phase 6 Communication,UNRELATED,Excluded
+lib/types/communication.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/types/communication.tsx,Phase 6 Communication,UNRELATED,Excluded
+lib/utils/communicationSimulation.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/services/communicationCenterService.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/repositories/communicationRepository.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/repositories/behaviorMemoryRepository.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/repositories/feedbackRepository.ts,Phase 6 Communication,UNRELATED,Excluded
+lib/firebase/behaviorSyncLogger.ts,Phase 6 Communication,UNRELATED,Excluded
+
+# Governance scaffolding excluded from feature commits
+docs/ADR/ADR_TEMPLATE.md,Phase 6 scaffolding,UNFINISHED,Excluded
+docs/RFC/RFC_TEMPLATE.md,Phase 6 scaffolding,UNFINISHED,Excluded
+
+# Unrelated subsystems
+components/rating/,Phase 6 unrelated,UNRELATED,Excluded
+lib/rating/reviewTriggerService.ts,Phase 6 unrelated,UNRELATED,Excluded
+lib/billing/entitlementService.ts,Phase 6 unrelated,UNRELATED,Excluded
+lib/analytics/analyticsFilter.ts,Phase 6 unrelated,UNRELATED,Excluded
+playwright.r3.config.ts,Phase 6 unrelated,UNRELATED,Excluded
+playwright.wellness.config.ts,Phase 6 unrelated,UNRELATED,Excluded
+
+# Android packaging experiments (Phase 6)
+android/app/src/main/java/com/bhumiamartya/app/ReviewPlugin.java,Phase 6 Android,UNFINISHED,Excluded
+android/app/src/main/java/com/bhumiamartya/app/Test.java,Phase 6 Android,SCRATCH,Excluded
+android/PROFILE_V4_RUNTIME_REPORT.md,Phase 6 Android doc,UNFINISHED,Excluded
+
+# AAB verification artifacts (Phase 6)
+aab_check/,Phase 6 AAB,LOCAL_ONLY,Excluded
+build_aab.bat,Phase 6 AAB,LOCAL_ONLY,Excluded
+verify_aab.ps1,Phase 6 AAB,LOCAL_ONLY,Excluded
+BHUMI_BUILD68_AAB_BUILD_GUIDE.md,Phase 6 AAB,UNFINISHED,Excluded
+BHUMI_BUILD68_FINAL_VERIFICATION.md,Phase 6 AAB,UNFINISHED,Excluded
+BHUMI_V3_BUILD68_FINAL_REPORT.md,Phase 6 AAB,UNFINISHED,Excluded
+
+# Phase 8 default: destructive deletions remain UNSTAGED
+src/app/founder/page.tsx,Phase 8 default,UNPROVEN_DESTRUCTIVE_CHANGE,EXCLUDED (Founder default)
+app/api/humandesign/calculate/route.ts,Phase 8 default,UNPROVEN_DESTRUCTIVE_CHANGE,EXCLUDED (Founder default)
+lib/founder/founderMetrics.ts,Phase 8 default,UNPROVEN_DESTRUCTIVE_CHANGE,EXCLUDED (Founder default)
+secure/bhumiamartya-adminsdk.json.json,Phase 8 default,UNPROVEN_DESTRUCTIVE_CHANGE,EXCLUDED from feature commits (could be isolated security commit)
+
+# Deferred (not auto-included)
+lib/data/types.ts,Shared type,DEFER,Classified in GROUP1 if Blueprint-related
+lib/access/accessControl.ts,Profile gates,GROUP4,Confirmed GROUP4
+app/innerwork/herbal/page.tsx,Innerwork subsidiary,DEFER,Founder decision
+lib/services/audit.ts,Audit runner,DEFER,Verify classification
+lib/services/audit_runtime.ts,Audit runner,DEFER,Verify classification
+app/blueprint/bazi/page_new.tsx,UNFINISHED,Excluded
+components/dashboard/IntelligenceCard.tsx,DEFER,Verify dashboard vs admin
+android/app/build.gradle,Phase 6 Android,CONFIGURATION,Excluded
+package.json,Phase 10 LOCK_FILE policy,CONFIGURATION,Excluded
+package-lock.json,Phase 10 LOCK_FILE policy,LOCK_FILE,Excluded
+tsconfig.json,Phase 10 CONFIG,CONFIGURATION,Excluded
+tsconfig.tooling.json,Phase 10 CONFIG,CONFIGURATION,Excluded
+tsconfig.tsbuildinfo,Phase 7 mandatory,GENERATED,Excluded
+scripts/enforce-build.js,Build enforcer,UNFINISHED,Excluded
+services/humandesign-api/,Large service subtree,DEFER,Verify re-tracking intent
+recovery-evidence/,Recovery evidence,DEFER,Verify inclusion intent (will be reviewed for separate commit)
+evidence.js,Scratch,Excluded
+events.ts,Scratch,Excluded
+docs/V4_D1_IMPLEMENTATION_REPORT.md,DEFER,Verify content

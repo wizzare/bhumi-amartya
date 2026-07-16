@@ -1,0 +1,124 @@
+path,proposed_group,classification,owner,note
+# GROUP 1: Eleven Blueprint Systems
+lib/numerology/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Numerology calculation module
+lib/humandesign/presentation.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,HD presentation
+lib/astrology/presentation.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Astrology presentation
+lib/astrology/fixtures.ts,GROUP1,FIXTURE,GROUP1,Astrology fixtures
+lib/weton/presentation.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Weton presentation
+lib/weton/presentation.fixtures.ts,GROUP1,FIXTURE,GROUP1,Weton fixtures
+lib/bazi/baziMeaning.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,BaZi meaning
+lib/vedic/presentation.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Vedic presentation
+lib/vedic/presentation.fixtures.ts,GROUP1,FIXTURE,GROUP1,Vedic fixtures
+lib/vedic/calculateVedic.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Vedic calculation
+lib/vedic/types.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Vedic types
+lib/tzolkin/presentation.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Tzolkin presentation
+lib/tzolkin/presentation.fixtures.ts,GROUP1,FIXTURE,GROUP1,Tzolkin fixtures
+lib/destiny-matrix/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Destiny Matrix module
+lib/astrocartography/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Astrocartography module
+lib/whole-sign/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Whole Sign module
+lib/zi-wei/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Zi Wei module
+lib/calculations/destinyMatrix/energy.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM energy calc
+lib/engines/destinyMatrixGraph.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM graph engine
+lib/engines/destinyMatrixProjection.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM projection
+lib/engines/destinyMatrixBlueprintAdapter.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM blueprint adapter
+lib/engines/destinyMatrixHumanIntelligence.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM human intelligence
+lib/engines/generateBlueprint.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Blueprint generation
+lib/visual/destinyMatrixVisualModel.ts,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM visual model
+lib/types/blueprint.ts,GROUP1,TYPES,GROUP1,Blueprint types
+lib/data/types.ts,GROUP1,TYPES (shared),GROUP1,Data types (Blueprint-related)
+app/blueprint/numerology/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Numerology route
+app/blueprint/human-design/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,HD route
+app/blueprint/natal-chart/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Natal route
+app/blueprint/destiny-matrix/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM route
+app/blueprint/tzolkin/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Tzolkin route
+app/blueprint/vedic/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Vedic route
+app/blueprint/weton/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Weton route
+app/blueprint/bazi/page.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,BaZi route
+app/blueprint/astrocartography/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Astrocartography route
+app/blueprint/whole-sign/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Whole Sign route
+app/blueprint/zi-wei/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Zi Wei route
+components/blueprint/DestinyMatrixVisual.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,DM visual component
+components/blueprint/AstrocartographyMap.tsx,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Astrocartography map
+components/zi-wei/**,GROUP1,BLUEPRINT_SYSTEM,GROUP1,Zi Wei components
+scripts/validateAstrocartography*.ts,GROUP1,VALIDATOR,GROUP1,Astrocartography validators (58/58)
+scripts/auditAstrocartographyForensic.ts,GROUP1,VALIDATOR,GROUP1,Astrocartography forensic audit
+scripts/audit_astrocartography_independent.py,GROUP1,VALIDATOR,GROUP1,Astrocartography independent audit
+scripts/validateWholeSignR7A.ts,GROUP1,VALIDATOR,GROUP1,Whole Sign validator (54/54)
+scripts/checkZiWei.ts,GROUP1,VALIDATOR,GROUP1,Zi Wei validator (80/80)
+scripts/validateTzolkinR5.ts,GROUP1,VALIDATOR,GROUP1,Tzolkin R5 validator
+scripts/validateVedicR5.ts,GROUP1,VALIDATOR,GROUP1,Vedic R5 validator (63/63)
+scripts/validateWetonR5.ts,GROUP1,VALIDATOR,GROUP1,Weton R5 validator
+scripts/validateWetonSprint1.js,GROUP1,VALIDATOR,GROUP1,Weton sprint 1
+scripts/wetonFounderAcceptance.js,GROUP1,VALIDATOR,GROUP1,Weton founder acceptance
+scripts/wetonSprint1Verify.js,GROUP1,VALIDATOR,GROUP1,Weton sprint 1 verify
+scripts/validateDestinyMatrixR5.ts,GROUP1,VALIDATOR,GROUP1,DM R5 validator
+scripts/validateDestinyMatrixAncestralProjection.ts,GROUP1,VALIDATOR,GROUP1,DM ancestral projection
+scripts/validateDestinyMatrixAnnualArcana.ts,GROUP1,VALIDATOR,GROUP1,DM annual arcana
+scripts/validateDestinyMatrixHealthInterpretation.ts,GROUP1,VALIDATOR,GROUP1,DM health interpretation
+scripts/auditDestinyMatrixHealthOrigins.ts,GROUP1,VALIDATOR,GROUP1,DM health origins audit
+scripts/verifyBaziSimilarity.ts,GROUP1,VALIDATOR,GROUP1,BaZi similarity
+scripts/simulateSameLifePathUniqueness.ts,GROUP1,VALIDATOR,GROUP1,Life path uniqueness
+
+# GROUP 2: Wellness V4
+lib/engines/wellnessRecommendationEngine.ts,GROUP2,WELLNESS_V4,GROUP2,Wellness recommendation engine
+lib/engines/longitudinalWellnessEngine.ts,GROUP2,WELLNESS_V4,GROUP2,Longitudinal wellness engine
+lib/engines/longitudinalWellnessEngine.test.ts,GROUP2,FIXTURE (test),GROUP2,Longitudinal wellness test
+lib/engines/canonicalResonanceEngine.ts,GROUP2,WELLNESS_V4,GROUP2,Canonical resonance engine
+lib/data/wellnessRecommendationLibrary.ts,GROUP2,WELLNESS_V4,GROUP2,Wellness recommendation library
+lib/services/wellnessCurationService.ts,GROUP2,WELLNESS_V4,GROUP2,Wellness curation service
+lib/services/wellnessDailyIntelligence.ts,GROUP2,WELLNESS_V4,GROUP2,Wellness daily intelligence
+lib/repositories/longitudinalWellnessRepository.ts,GROUP2,WELLNESS_V4,GROUP2,Longitudinal wellness repository
+lib/innerwork/wellnessSection4Logging.ts,GROUP2,WELLNESS_V4,GROUP2,Wellness section 4 logging
+lib/innerwork/zoneBContext.ts,GROUP2,WELLNESS_V4,GROUP2,Zone B context
+lib/types/longitudinalWellness.ts,GROUP2,WELLNESS_V4 (types),GROUP2,Longitudinal wellness types
+components/wellness/WellnessPageClient.tsx,GROUP2,WELLNESS_V4,GROUP2,Wellness page client
+components/dashboard/WellnessCheckInCard.tsx,GROUP2,WELLNESS_V4,GROUP2,Wellness check-in card
+
+# GROUP 3: Journey V2
+lib/repositories/journeyRepository_v2.ts,GROUP3,JOURNEY_V2,GROUP3,Journey repository v2
+lib/services/journeyReadAdapter.ts,GROUP3,JOURNEY_V2,GROUP3,Journey read adapter
+app/journey/page.tsx,GROUP3,JOURNEY_V2,GROUP3,Journey route
+lib/v4_prompts/JourneyPrompt.tsx,GROUP3,JOURNEY_V2,GROUP3,Journey prompt
+
+# GROUP 4: Human Meaning, Profile, Daily Note, Mirror
+lib/humanMeaningRuntime/**,GROUP4,HUMAN_MEANING_V4,GROUP4,Human Meaning Runtime
+lib/services/canonicalHumanMeaningService.ts,GROUP4,HUMAN_MEANING_V4,GROUP4,Canonical human meaning service
+lib/intelligence/**,GROUP4,HUMAN_MEANING_V4,GROUP4,Intelligence subsystem
+lib/livingIntelligence/**,GROUP4,HUMAN_MEANING_V4,GROUP4,Living intelligence subsystem
+lib/profile/dailyShareCardEngineV2.tsx,GROUP4,PROFILE_V4 (share-card),GROUP4,Daily share-card engine V2
+lib/engines/dailyGuidanceEngine.ts,GROUP4,DAILY_NOTE_V4,GROUP4,Daily guidance engine
+lib/services/dailyGuidanceService.ts,GROUP4,DAILY_NOTE_V4,GROUP4,Canonical daily guidance service
+lib/firebase/service.ts,GROUP4,PROFILE_V4,GROUP4,Firebase service
+lib/repositories/dailyStateRepository.ts,GROUP4,DAILY_NOTE_V4,GROUP4,Daily state repository
+lib/access/accessControl.ts,GROUP4,PROFILE_V4,GROUP4,Access control
+lib/dailyGuidance/dashboardNoteAdapter.v4.ts,GROUP4,DAILY_NOTE_V4,GROUP4,Dashboard note adapter v4
+lib/dailyGuidance/greetingSanitizer.ts,GROUP4,DAILY_NOTE_V4,GROUP4,Greeting sanitizer
+components/dashboard/DailyNoteV2.tsx,GROUP4,DAILY_NOTE_V4,GROUP4,Daily Note V2 component
+components/dashboard/DashboardClient.tsx,GROUP4,DAILY_NOTE_V4 (cards),GROUP4,Dashboard client
+app/profile/page.tsx,GROUP4,PROFILE_V4,GROUP4,Profile route
+app/profile/[section]/page.tsx,GROUP4,PROFILE_V4,GROUP4,Profile section route
+lib/v4_prompts/MirrorPrompt.tsx,GROUP4,HUMAN_MEANING_V4 (Mirror),GROUP4,Mirror prompt
+
+# GROUP 5: AI Gateway, Weekly Guidance, Identity Intelligence
+lib/ai/config.ts,GROUP5,AI_GATEWAY,GROUP5,AI gateway config
+lib/ai/gateway.ts,GROUP5,AI_GATEWAY,GROUP5,AI gateway implementation
+lib/ai/errors.ts,GROUP5,AI_GATEWAY,GROUP5,AI errors
+lib/ai/types.ts,GROUP5,AI_GATEWAY,GROUP5,AI types
+lib/ai/provider.ts,GROUP5,AI_GATEWAY,GROUP5,Provider abstraction
+lib/ai/providerCascade.ts,GROUP5,AI_GATEWAY,GROUP5,Provider cascade
+lib/ai/providerHealth.ts,GROUP5,AI_GATEWAY,GROUP5,Provider health
+lib/ai/geminiProvider.ts,GROUP5,AI_GATEWAY,GROUP5,Gemini provider
+lib/ai/minimaxProvider.ts,GROUP5,AI_GATEWAY,GROUP5,minimax provider
+lib/ai/nvidia.ts,GROUP5,AI_GATEWAY,GROUP5,NVIDIA provider
+lib/ai/openrouterProvider.ts,GROUP5,AI_GATEWAY,GROUP5,OpenRouter provider
+lib/ai/identitySnapshot.ts,GROUP5,IDENTITY_INTELLIGENCE,GROUP5,Identity snapshot
+lib/ai/dailyGuidanceForensics.ts,GROUP5,AI_GATEWAY,GROUP5,Daily guidance forensics
+lib/ai/prompts/**,GROUP5,AI_GATEWAY,GROUP5,AI prompt library
+lib/services/weeklyRecommendationService.ts,GROUP5,WEEKLY_GUIDANCE,GROUP5,Weekly recommendation service
+lib/repositories/weeklyRecommendationRepository.ts,GROUP5,WEEKLY_GUIDANCE,GROUP5,Weekly recommendation repo
+lib/types/weeklyRecommendation.ts,GROUP5,WEEKLY_GUIDANCE,GROUP5,Weekly recommendation types
+lib/prompts/soulIdentityPrompt.ts,GROUP5,IDENTITY_INTELLIGENCE,GROUP5,Soul identity prompt
+lib/v4_prompts/CompassPrompt.tsx,GROUP5,AI_GATEWAY (Compass),GROUP5,Compass prompt
+lib/v4_prompts/WeeklyPrompt.tsx,GROUP5,WEEKLY_GUIDANCE,GROUP5,Weekly prompt
+app/api/ai/daily-guidance/route.ts,GROUP5,AI_GATEWAY,GROUP5,AI daily-guidance route
+components/dashboard/WeeklyGuidanceCard.tsx,GROUP5,WEEKLY_GUIDANCE,GROUP5,Weekly guidance card

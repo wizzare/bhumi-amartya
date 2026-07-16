@@ -1,0 +1,47 @@
+file,groups_affected,separable,partial_staging_required,safest_owning_commit,validation_impact
+lib/types/blueprint.ts,GROUP1 (Blueprint types) | GROUP4 (Profile/HumanMeaning types via re-exports),YES (interface additions only),NO,GROUP1,low
+lib/data/types.ts,GROUP1 | GROUP2,NO (single-line additions, inseparable),NO,GROUP1,low
+lib/firebase/service.ts,GROUP4 (Profile runtime) | GROUP5 (AI Gateway via Firebase Admin/Functions ref),YES (modified init),NO,GROUP4,low
+lib/engines/dailyGuidanceEngine.ts,GROUP4 (Daily Note / Mirror feed) | GROUP5 (AI Gateway downstream),YES (engine core change),NO,GROUP4,medium
+lib/engines/generateBlueprint.ts,GROUP1 (Blueprint generation entry) | GROUP4 (Profile presentation),YES (single export changed),NO,GROUP1,low
+lib/repositories/dailyStateRepository.ts,GROUP4 (Daily Note V2) | GROUP5 (Weekly Guidance reads daily state),YES,NO,GROUP4,medium
+lib/vedic/calculateVedic.ts,GROUP1 (Vedic system),NO,NO,GROUP1,medium
+lib/vedic/types.ts,GROUP1 (Vedic types),NO,NO,GROUP1,low
+lib/visual/destinyMatrixVisualModel.ts,GROUP1 (Destiny Matrix visualization model),NO,NO,GROUP1,low
+lib/calculations/destinyMatrix/energy.ts,GROUP1 (Destiny Matrix calculations),NO,NO,GROUP1,medium
+lib/engines/destinyMatrixGraph.ts,GROUP1,NO,NO,GROUP1,low
+lib/engines/destinyMatrixProjection.ts,GROUP1,NO,NO,GROUP1,medium
+lib/access/accessControl.ts,GROUP4 (Profile gates) | GROUP5 (entitlement-dependent features),YES (additive),NO,GROUP4,medium
+lib/innerwork/wellnessSection4Logging.ts,GROUP2 (Wellness),NO,NO,GROUP2,low
+lib/innerwork/zoneBContext.ts,GROUP2 (Wellness),NO,NO,GROUP2,low
+lib/services/wellnessDailyIntelligence.ts,GROUP2 (Wellness intelligence),NO,NO,GROUP2,medium
+lib/engines/wellnessRecommendationEngine.ts,GROUP2 (Wellness),NO,NO,GROUP2,medium
+app/profile/page.tsx,GROUP4,NO,NO,GROUP4,medium
+app/profile/[section]/page.tsx,GROUP4,NO,NO,GROUP4,low
+components/wellness/WellnessPageClient.tsx,GROUP2 (Wellness),NO,NO,GROUP2,medium
+components/dashboard/DashboardClient.tsx,GROUP4 (Daily Note) | GROUP2 (Wellness card) | GROUP5 (Weekly Guidance card),YES (multiple cards affected),NO,GROUP4,medium
+components/dashboard/DailyNoteV2.tsx,GROUP4 (Daily Note V2),NO,NO,GROUP4,medium
+components/dashboard/WellnessCheckInCard.tsx,GROUP2 (Wellness),NO,NO,GROUP2,low
+components/blueprint/DestinyMatrixVisual.tsx,GROUP1,NO,NO,GROUP1,medium
+app/api/ai/daily-guidance/route.ts,GROUP5 (AI Gateway),NO,NO,GROUP5,medium
+app/journey/page.tsx,GROUP3 (Journey V2),NO,NO,GROUP3,medium
+app/blueprint/{numerology,human-design,natal-chart,destiny-matrix,tzolkin,vedic,weton,bazi}/page.tsx,GROUP1 (Blueprints),NO,NO,GROUP1,high
+app/blueprint/astrocartography/,app/blueprint/whole-sign/,app/blueprint/zi-wei/,GROUP1 (Blueprints — new routes),NO,NO,GROUP1,high
+lib/astrocartography/,lib/whole-sign/,lib/zi-wei/,GROUP1 (Blueprints — new modules),NO,NO,GROUP1,high
+lib/numerology/,lib/humandesign/presentation.ts,lib/weton/{presentation,presentation.fixtures}.ts,lib/vedic/{presentation,presentation.fixtures}.ts,lib/tzolkin/{presentation,presentation.fixtures}.ts,lib/astrology/{presentation,fixtures}.ts,lib/destiny-matrix/,GROUP1 (Blueprints),NO,NO,GROUP1,high
+lib/humanMeaningRuntime/,lib/services/canonicalHumanMeaningService.ts,lib/intelligence/,lib/livingIntelligence/,GROUP4 (Human Meaning),NO,NO,GROUP4,medium
+lib/profile/dailyShareCardEngineV2.tsx,GROUP4 (Profile share-card V2),NO,NO,GROUP4,low
+lib/engines/canonicalResonanceEngine.ts,lib/engines/longitudinalWellnessEngine.ts,lib/data/wellnessRecommendationLibrary.ts,lib/repositories/longitudinalWellnessRepository.ts,GROUP2 (Wellness),NO,NO,GROUP2,medium
+lib/engines/longitudinalWellnessEngine.test.ts,GROUP2 (Wellness tests),NO,NO,GROUP2,medium
+lib/repositories/journeyRepository_v2.ts,lib/services/journeyReadAdapter.ts,lib/types/longitudinalWellness.ts,lib/types/weeklyRecommendation.ts,GROUP3 (Journey),NO,NO,GROUP3,medium
+lib/types/journeyDailyRecord_copy.ts,GROUP3 (duplicate source),NO,NO,N/A (exclude),N/A
+lib/ai/* (gateway, providers, errors, types, prompts/, config, identitySnapshot, providerCascade, providerHealth),GROUP5 (AI Gateway),NO,NO,GROUP5,high
+lib/services/{audit,audit_runtime,canonicalHumanMeaningService,communicationCenterService,dailyGuidanceService*,weeklyRecommendationService,wellnessCurationService}.ts(x),GROUP4+5+EXCLUDE,LIMITED,NO,GROUP5 (audit/weekly),low
+lib/services/communicationCenterService.ts,EXCLUDE (Communication/Inbox excluded by Founder Phase 6),NO,NO,N/A (exclude),N/A
+lib/utils/communicationSimulation.ts,EXCLUDE,NO,NO,N/A (exclude),N/A
+lib/v4_prompts/{Compass,Journey,Weekly,Mirror}Prompt.tsx,GROUP4+GROUP5+GROUP3,NO,NO,N/A (deferred),low
+lib/analytics/analyticsFilter.ts,UNRELATED,NO,NO,N/A (exclude),N/A
+lib/rating/reviewTriggerService.ts,UNRELATED (rating/review subsystem),NO,NO,N/A (exclude),N/A
+lib/billing/entitlementService.ts,UNRELATED (billing),NO,NO,N/A (exclude),N/A
+lib/repositories/{behaviorMemoryRepository,communicationRepository,feedbackRepository}.ts,EXCLUDE (Communication),NO,NO,N/A (exclude),N/A
+lib/firebase/{behaviorSyncLogger.ts,service_backup.ts},EXCLUDE,NO,NO,N/A (exclude),N/A

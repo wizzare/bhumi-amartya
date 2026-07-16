@@ -1,0 +1,244 @@
+path,git_status,tracked,subsystem,owner,completion_evidence,classification,proposed_group,include,reason,risk,validation_owner
+.idea/caches/deviceStreaming.xml,M,tracked,IDE_CACHE,LOCAL_ONLY,EXCLUDED,LOCAL_ONLY,NONE,NO,IDE-specific local cache,LOW,
+R1A_TEST.txt,M+A,tracked,V4_SCRATCH,Founder_legacy,EXCLUDED,SCRATCH,NONE,NO,R1A test artifact,LOW,
+android/app/build.gradle,M,tracked,ANDROID_BUILD,Android,EXCLUDED,CONFIGURATION (deferred),NONE,NO,Android packaging experiment,LOW,
+android/app/src/main/java/com/bhumiamartya/app/ReviewPlugin.java,A,untracked,ANDROID,Android,EXCLUDED,UNFINISHED,NONE,NO,Android packaging experiment,LOW,
+android/app/src/main/java/com/bhumiamartya/app/Test.java,A,untracked,ANDROID,Android,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+android/test.java,A,untracked,ANDROID,Android,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+android/test.txt,A,untracked,ANDROID,Android,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+android/test_write.txt,A,untracked,ANDROID,Android,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+android/v4_test.txt,A,untracked,ANDROID,Android,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+android/PROFILE_V4_RUNTIME_REPORT.md,?,untracked,DOC,Android/V4,EXCLUDED,UNFINISHED,NONE,NO,Android doc; not in V4 source-of-truth cycle,LOW,
+app/admin/debug-hd/page.tsx,A,untracked,ADMIN,V4,EXCLUDED,UNRELATED (Admin Phase 6),NONE,NO,Admin page excluded by Founder,LOW,
+app/admin/insights/page.tsx,A,untracked,ADMIN,V4,EXCLUDED,UNRELATED (Admin Phase 6),NONE,NO,Admin page excluded by Founder,LOW,
+app/admin/metrics/page.tsx,A,untracked,ADMIN,V4,EXCLUDED,UNRELATED (Admin Phase 6),NONE,NO,Admin page excluded by Founder,LOW,
+app/api/ai/daily-guidance/route.ts,M,tracked,AI_GATEWAY,GROUP5,DELTA +48 lines,AI_GATEWAY,GROUP5,YES (after package review),V4 AI gateway hardening,LOW,
+app/api/humandesign/calculate/route.ts,D,tracked,WEB_CLEANUP,Build70,DELTA -451 lines,DESTRUCTIVE_UNPROVEN (web-cleanup approved but Founder default EXCLUDE),NONE (isolated),NO by default,Web-only fallback route; Android uses Cloud Run HTTPS via env var; deletion APPROVED but default EXCLUDE for safety,LOW,Founder
+app/blueprint/astrocartography/,?,untracked,BLUEPRINT_10,GROUP1,NEW ROUTE,BLUEPRINT_SYSTEM,GROUP1,YES,Astrocartography system route,LOW,GROUP1
+app/blueprint/bazi/page.tsx,M,tracked,BLUEPRINT_6,GROUP1,DELTA 44 lines,BLUEPRINT_SYSTEM,GROUP1,YES,BaZi system route update,LOW,GROUP1
+app/blueprint/bazi/page_new.tsx,A,untracked,BLUEPRINT_6_SCRATCH,V4,EXCLUDED,UNFINISHED,NONE,NO,Scratch alternate page,LOW,
+app/blueprint/destiny-matrix/page.tsx,M,tracked,BLUEPRINT_4,GROUP1,DELTA 258 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Destiny Matrix route recovery,LOW,GROUP1
+app/blueprint/human-design/page.tsx,M,tracked,BLUEPRINT_2,GROUP1,DELTA 350 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Human Design route recovery,LOW,GROUP1
+app/blueprint/natal-chart/page.tsx,M,tracked,BLUEPRINT_3,GROUP1,DELTA 74 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Natal Chart route recovery,LOW,GROUP1
+app/blueprint/numerology/page.tsx,M,tracked,BLUEPRINT_1,GROUP1,DELTA 160 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Numerology route recovery,LOW,GROUP1
+app/blueprint/tzolkin/page.tsx,M,tracked,BLUEPRINT_8,GROUP1,DELTA 445 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Tzolkin route recovery,LOW,GROUP1
+app/blueprint/vedic/page.tsx,M,tracked,BLUEPRINT_7,GROUP1,DELTA 246 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Vedic route recovery,LOW,GROUP1
+app/blueprint/weton/page.tsx,M,tracked,BLUEPRINT_5,GROUP1,DELTA 274 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Weton route recovery,LOW,GROUP1
+app/blueprint/whole-sign/,?,untracked,BLUEPRINT_9,GROUP1,NEW ROUTE,BLUEPRINT_SYSTEM,GROUP1,YES,Whole Sign Birth Chart route,LOW,GROUP1
+app/blueprint/zi-wei/,?,untracked,BLUEPRINT_11,GROUP1,NEW ROUTE,BLUEPRINT_SYSTEM,GROUP1,YES,Zi Wei Dou Shu route,LOW,GROUP1
+app/inbox/error.tsx,A,untracked,INBOX,V4,EXCLUDED,UNRELATED (Communication/Inbox Phase 6),NONE,NO,Inbox excluded by Founder,LOW,
+app/inbox/loading.tsx,A,untracked,INBOX,V4,EXCLUDED,UNRELATED (Communication/Inbox Phase 6),NONE,NO,Inbox excluded by Founder,LOW,
+app/inbox/page.tsx,A,untracked,INBOX,V4,EXCLUDED,UNRELATED (Communication/Inbox Phase 6),NONE,NO,Inbox excluded by Founder,LOW,
+app/innerwork/herbal/page.tsx,M,tracked,INNERWORK_HERBAL,GROUP2 (Innerwork subsidiary),DELTA +12 lines,INNERWORK_HERBAL (V4 subsidiary; classify under GROUP2 if proven),DEFER,DEFER,Innerwork herbal change; verify subsystem first,LOW,Founder
+app/journey/page.tsx,M,tracked,JOURNEY_V2,GROUP3,DELTA 208 lines,JOURNEY_V2,GROUP3,YES,Journey V2 route recovery,LOW,GROUP3
+app/profile/page.tsx,M,tracked,PROFILE_V4,GROUP4,DELTA 101 lines,PROFILE_V4,GROUP4,YES,Profile route recovery,LOW,GROUP4
+app/profile/[section]/page.tsx,M,tracked,PROFILE_V4,GROUP4,DELTA 2 lines,PROFILE_V4,GROUP4,YES,Profile section page tweak,LOW,GROUP4
+app/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Test artifact,LOW,
+components/WeeklyFix.tsx,A,untracked,ADMIN_EXPERIMENTAL,V4,EXCLUDED,UNFINISHED,NONE,NO,Admin weekly fix experiment,LOW,
+components/admin/CoreGuardianValidation.tsx,A,untracked,ADMIN,V4,EXCLUDED,UNRELATED (Admin Phase 6),NONE,NO,Admin excluded by Founder,LOW,
+components/admin/FounderDebugHD.tsx,A,untracked,ADMIN_DEBUG,V4,EXCLUDED,UNRELATED (Admin/Debug Phase 6),NONE,NO,Admin debug excluded by Founder,LOW,
+components/blueprint/AstrocartographyMap.tsx,?,untracked,BLUEPRINT_10,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Astrocartography map component,LOW,GROUP1
+components/blueprint/DestinyMatrixVisual.tsx,M,tracked,BLUEPRINT_4,GROUP1,DELTA 301 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Destiny Matrix visual component,LOW,GROUP1
+components/dashboard/DailyNoteV2.tsx,M,tracked,DAILY_NOTE_V2,GROUP4,DELTA 164 lines,DAILY_NOTE_V4,GROUP4,YES,Daily Note V2 component,LOW,GROUP4
+components/dashboard/DashboardClient.tsx,M,tracked,DASHBOARD,GROUP4,DELTA -13 lines,DAILY_NOTE_V4 (touches cards),GROUP4,YES,Dashboard client tweak,LOW,GROUP4
+components/dashboard/IntelligenceCard.tsx,A,untracked,DASHBOARD,GROUP4,EXCLUDED (admin or dashboard?),DEFER,DEFER,Verify ownership,LOW,Founder
+components/dashboard/SoulReflectionCard_read.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch read copy,LOW,
+components/dashboard/WellnessCheckInCard.tsx,M,tracked,WELLNESS,GROUP2,DELTA 79 lines,WELLNESS_V4,GROUP2,YES,Wellness check-in card,LOW,GROUP2
+components/dashboard/WeeklyGuidanceCard.tsx,?,untracked,WEEKLY_GUIDANCE,GROUP5,NEW,WEEKLY_GUIDANCE,GROUP5,YES,Weekly guidance card,LOW,GROUP5
+components/rating/,?,untracked,RATING,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Rating subsystem not in V4 cycle,LOW,
+components/wellness/WellnessPageClient.tsx,M,tracked,WELLNESS,GROUP2,DELTA 184 lines,WELLNESS_V4,GROUP2,YES,Wellness page client recovery,LOW,GROUP2
+components/zi-wei/,?,untracked,BLUEPRINT_11,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Zi Wei Dou Shu components,LOW,GROUP1
+docs/ADR/ADR_TEMPLATE.md,A,untracked,DOC_TEMPLATE,V4,EXCLUDED (template only),UNFINISHED,NONE,DEFER,Empty template; not V4 source-of-truth,LOW,Founder
+docs/RFC/RFC_TEMPLATE.md,A,untracked,DOC_TEMPLATE,V4,EXCLUDED (template only),UNFINISHED,NONE,DEFER,Empty template,LOW,Founder
+docs/V4_D1_IMPLEMENTATION_REPORT.md,A,untracked,DOC,V4,EXCLUDED (verify content),DEFER,DEFER,V4 D1 implementation report; verify before inclusion,LOW,Founder
+events.js,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,JS evidence stub,LOW,
+evidence.ts,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Evidence TS,LOW,
+lib/access/accessControl.ts,M,tracked,ACCESS_CONTROL,GROUP4 (Profile gates),DELTA 84 lines,PROFILE_V4,GROUP4,YES,Profile access control update,LOW,GROUP4
+lib/access/dummy.tsx,A,untracked,ACCESS_SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Dummy access file,LOW,
+lib/access/fix.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch fix note,LOW,
+lib/access/temp_test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/access/test.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/ai/config.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,AI gateway config,LOW,GROUP5
+lib/ai/dailyGuidanceForensics.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,Daily guidance forensics,LOW,GROUP5
+lib/ai/errors.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,AI error types,LOW,GROUP5
+lib/ai/gateway.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,AI gateway implementation,LOW,GROUP5
+lib/ai/geminiProvider.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,Gemini provider,LOW,GROUP5
+lib/ai/identitySnapshot.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,IDENTITY_INTELLIGENCE,GROUP5,YES,Identity snapshot,LOW,GROUP5
+lib/ai/minimaxProvider.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,minimax provider,LOW,GROUP5
+lib/ai/nvidia.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,NVIDIA provider,LOW,GROUP5
+lib/ai/openrouterProvider.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,OpenRouter provider,LOW,GROUP5
+lib/ai/prompts/,?,untracked,AI_GATEWAY,GROUP5,NEW DIRECTORY,AI_GATEWAY,GROUP5,YES,AI prompt library,LOW,GROUP5
+lib/ai/provider.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,Provider abstraction,LOW,GROUP5
+lib/ai/providerCascade.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,Provider cascade logic,LOW,GROUP5
+lib/ai/providerHealth.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,Provider health checks,LOW,GROUP5
+lib/ai/types.ts,?,untracked,AI_GATEWAY,GROUP5,NEW,AI_GATEWAY,GROUP5,YES,AI types,LOW,GROUP5
+lib/analytics/analyticsFilter.ts,?,untracked,ANALYTICS,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Analytics not in V4 cycle,LOW,
+lib/astrocartography/,?,untracked,BLUEPRINT_10,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Astrocartography calculation module,LOW,GROUP1
+lib/astrology/fixtures.ts,?,untracked,ASTROLOGY_FIXTURES,GROUP1,NEW,FIXTURE,GROUP1,YES,Astrology test fixtures,LOW,GROUP1
+lib/astrology/presentation.ts,?,untracked,ASTROLOGY,GROUP1,NEW,BLUEPRINT_SYSTEM (Natal/Astrocartography),GROUP1,YES,Astrology presentation module,LOW,GROUP1
+lib/bazi/baziMeaning.ts,?,untracked,BLUEPRINT_6,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,BaZi meaning module,LOW,GROUP1
+lib/bazi/test_echo.ts,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch echo test,LOW,
+lib/billing/entitlementService.ts,?,untracked,BILLING,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Billing not in V4 cycle,LOW,
+lib/calculations/destinyMatrix/energy.ts,M,tracked,BLUEPRINT_4,GROUP1,DELTA 8 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Destiny Matrix energy calc,LOW,GROUP1
+lib/config/hdApiUrl.ts,EXISTS_IN_HEAD_ONLY,tracked,CONFIG,GROUP1 (unchanged),PRESERVED,CONFIGURATION (not modified),N/A,N/A,Canonical HD URL config; not changed,LOW,
+lib/config/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/dailyGuidance/dashboardNoteAdapter.v4.ts,?,untracked,DAILY_NOTE,GROUP4,NEW,DAILY_NOTE_V4,GROUP4,YES,Daily note adapter v4,LOW,GROUP4
+lib/dailyGuidance/greetingSanitizer.ts,?,untracked,DAILY_NOTE,GROUP4,NEW,DAILY_NOTE_V4,GROUP4,YES,Greeting sanitizer,LOW,GROUP4
+lib/dailyGuidance/normalize_check.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch normalize check,LOW,
+lib/dailyGuidance/normalize_read.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch read copy,LOW,
+lib/dailyGuidance/normalize_read_v2.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch read v2,LOW,
+lib/dailyGuidance/normalize_restore.ts,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch restore,LOW,
+lib/dailyGuidance/normalize_v4.ts,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch v4 normalize,LOW,
+lib/dailyGuidance/test_write_v4.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch v4 test,LOW,
+lib/dailyGuidance/timeOfDayGreeting.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch greeting,LOW,
+lib/dailyGuidance/v4_refactor_test.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch refactor,LOW,
+lib/dailyGuidance/v4_write_test.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch write test,LOW,
+lib/dailyGuidance/test_write_2.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/dailyGuidance/test_write_tool.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/data/types.ts,M,tracked,TYPES,GROUP1+2,DELTA 3 lines,TYPES (shared),DEFER,DEFER,Shared type addition; classify into GROUP1,LOW,Founder
+lib/data/wellnessRecommendationLibrary.ts,?,untracked,WELLNESS,GROUP2,NEW,WELLNESS_V4,GROUP2,YES,Wellness recommendation library,LOW,GROUP2
+lib/destiny-matrix/,?,untracked,BLUEPRINT_4,GROUP1,NEW DIRECTORY,BLUEPRINT_SYSTEM,GROUP1,YES,Destiny Matrix module,LOW,GROUP1
+lib/engines/canonicalResonanceEngine.ts,?,untracked,WELLNESS,GROUP2,NEW,WELLNESS_V4,GROUP2,YES,Canonical resonance engine,LOW,GROUP2
+lib/engines/dailyGuidanceEngine.ts,M,tracked,DAILY_GUIDANCE,GROUP4,DELTA 64 lines,DAILY_NOTE_V4 (engine change),GROUP4,YES,Daily guidance engine update,LOW,GROUP4
+lib/engines/destinyMatrixBlueprintAdapter.ts,?,untracked,BLUEPRINT_4,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,DM blueprint adapter,LOW,GROUP1
+lib/engines/destinyMatrixGraph.ts,M,tracked,BLUEPRINT_4,GROUP1,DELTA 8 lines,BLUEPRINT_SYSTEM,GROUP1,YES,DM graph engine,LOW,GROUP1
+lib/engines/destinyMatrixHumanIntelligence.ts,?,untracked,BLUEPRINT_4,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,DM human intelligence,LOW,GROUP1
+lib/engines/destinyMatrixProjection.ts,M,tracked,BLUEPRINT_4,GROUP1,DELTA 40 lines,BLUEPRINT_SYSTEM,GROUP1,YES,DM projection engine,LOW,GROUP1
+lib/engines/generateBlueprint.ts,M,tracked,BLUEPRINT,GROUP1,DELTA 2 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Blueprint generation tweak,LOW,GROUP1
+lib/engines/longitudinalWellnessEngine.test.ts,?,untracked,WELLNESS_TEST,GROUP2,NEW,FIXTURE (test),GROUP2,YES,Longitudinal wellness engine test,LOW,GROUP2
+lib/engines/longitudinalWellnessEngine.ts,?,untracked,WELLNESS,GROUP2,NEW,WELLNESS_V4,GROUP2,YES,Longitudinal wellness engine,LOW,GROUP2
+lib/engines/wellnessRecommendationEngine.ts,M,tracked,WELLNESS,GROUP2,DELTA 326 lines,WELLNESS_V4,GROUP2,YES,Wellness recommendation engine recovery,LOW,GROUP2
+lib/engines/test.js,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/firebase/behaviorSyncLogger.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/firebase/service.ts,M,tracked,FIREBASE_SERVICE,GROUP4,DELTA 29 lines,PROFILE_V4,GROUP4,YES,Firebase service update,LOW,GROUP4
+lib/firebase/service_backup.ts,?,untracked,FIREBASE_BACKUP,EXCLUDED,TEMP_BACKUP,NONE,NO,Backup module,LOW,
+lib/firebase/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/founder/founderMetrics.ts,D,tracked,WEB_CLEANUP,Build70,DELTA -1 line,DESTRUCTIVE_UNPROVEN,ISOLATED (Founder default EXCLUDE),NO by default,Web-only founder metrics; deletion APPROVED but default EXCLUDE for safety,LOW,Founder
+lib/humanMeaningRuntime/,?,untracked,HUMAN_MEANING,GROUP4,NEW DIRECTORY,HUMAN_MEANING_V4,GROUP4,YES,Human Meaning Runtime recovery,LOW,GROUP4
+lib/humandesign/presentation.ts,?,untracked,BLUEPRINT_2,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,HD presentation module,LOW,GROUP1
+lib/innerwork/wellnessSection4Logging.ts,M,tracked,WELLNESS,GROUP2,DELTA 45 lines,WELLNESS_V4,GROUP2,YES,Wellness section 4 logging,LOW,GROUP2
+lib/innerwork/zoneBContext.ts,M,tracked,WELLNESS,GROUP2,DELTA 16 lines,WELLNESS_V4,GROUP2,YES,Zone B context,LOW,GROUP2
+lib/intelligence/,?,untracked,HUMAN_MEANING,GROUP4,NEW,HUMAN_MEANING_V4,GROUP4,YES,Intelligence subsystem,LOW,GROUP4
+lib/livingIntelligence/,?,untracked,HUMAN_MEANING,GROUP4,NEW,HUMAN_MEANING_V4,GROUP4,YES,Living intelligence subsystem,LOW,GROUP4
+lib/numerology/,?,untracked,BLUEPRINT_1,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Numerology calculation module,LOW,GROUP1
+lib/orchestrators/communicationIntegration.tsx,A,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/orchestrators/hotfix_test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch hotfix test,LOW,
+lib/orchestrators/localDailyGuidanceFallback.ts,EXISTS_IN_HEAD_ONLY,tracked,LOCAL_DAILY_GUIDANCE,GROUP4,PRESERVED (not modified),DAILY_NOTE_V4 (unchanged),N/A,N/A,Local daily guidance fallback; not modified,LOW,
+lib/profile/dailyShareCardEngineV2.tsx,A,untracked,SHARE_CARD_V2,GROUP4,NEW,PROFILE_V4 (share-card),GROUP4,YES,Daily share-card engine V2,LOW,GROUP4
+lib/prompts/bhumiSoulMirrorPrompt_read.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch mirror prompt,LOW,
+lib/prompts/dailyGuidancePrompt_read.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch read prompt,LOW,
+lib/prompts/dailyGuidancePrompt_verify.txt,?,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch verify prompt,LOW,
+lib/prompts/dailyGuidancePrompt.ts.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch prompt variant,LOW,
+lib/prompts/soulIdentityPrompt.ts,?,untracked,IDENTITY_INTELLIGENCE,GROUP5,NEW,IDENTITY_INTELLIGENCE,GROUP5,YES,Soul identity prompt,LOW,GROUP5
+lib/rating/reviewTriggerService.ts,?,untracked,RATING,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Rating subsystem not in V4 cycle,LOW,
+lib/repositories/behaviorMemoryRepository.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/repositories/communicationRepository.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/repositories/dailyStateRepository.ts,M,tracked,DAILY_STATE,GROUP4,DELTA 17 lines,DAILY_NOTE_V4,GROUP4,YES,Daily state repository update,LOW,GROUP4
+lib/repositories/feedbackRepository.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/repositories/journeyRepository_v2.ts,?,untracked,JOURNEY,GROUP3,NEW,JOURNEY_V2,GROUP3,YES,Journey repository v2,LOW,GROUP3
+lib/repositories/longitudinalWellnessRepository.ts,?,untracked,WELLNESS,GROUP2,NEW,WELLNESS_V4,GROUP2,YES,Longitudinal wellness repo,LOW,GROUP2
+lib/repositories/weeklyRecommendationRepository.ts,?,untracked,WEEKLY_GUIDANCE,GROUP5,NEW,WEEKLY_GUIDANCE,GROUP5,YES,Weekly recommendation repo,LOW,GROUP5
+lib/services/audit.ts,?,untracked,AUDIT,GROUP5,NEW,VALIDATOR,AUDIT_RUNNER,DEFER (likely audit-runner; verify),LOW,Founder
+lib/services/audit_runtime.ts,?,untracked,AUDIT_RUNTIME,GROUP5,NEW,VALIDATOR,AUDIT_RUNNER,DEFER (verify),LOW,Founder
+lib/services/canonicalHumanMeaningService.ts,?,untracked,HUMAN_MEANING,GROUP4,NEW,HUMAN_MEANING_V4,GROUP4,YES,Canonical human meaning service,LOW,GROUP4
+lib/services/communicationCenterService.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/services/dailyGuidanceService.r1b.test.ts,?,untracked,DAILY_GUIDANCE_TEST,DEFER,EXCLUDED,UNFINISHED,NONE,NO,R1B test variant; UNFINISHED,LOW,
+lib/services/dailyGuidanceService.ts,?,untracked,DAILY_GUIDANCE,GROUP4,NEW (canonical),DAILY_NOTE_V4 (canonical),GROUP4,YES,Canonical daily guidance service,LOW,GROUP4
+lib/services/dailyGuidanceService.ts.tmp,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Temp file,LOW,
+lib/services/dailyGuidanceServiceCore.ts,?,untracked,DAILY_GUIDANCE_CORE,EXCLUDED,UNFINISHED,NONE,NO,Parallel variant; UNFINISHED,LOW,
+lib/services/dailyGuidanceServiceV4.ts,?,untracked,DAILY_GUIDANCE_V4,EXCLUDED,UNFINISHED,NONE,NO,Parallel variant; UNFINISHED,LOW,
+lib/services/journeyReadAdapter.ts,?,untracked,JOURNEY,GROUP3,NEW,JOURNEY_V2,GROUP3,YES,Journey read adapter,LOW,GROUP3
+lib/services/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/services/test_file.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/services/test_audit_runtime.ts,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch audit,LOW,
+lib/services/weeklyRecommendationService.ts,?,untracked,WEEKLY_GUIDANCE,GROUP5,NEW,WEEKLY_GUIDANCE,GROUP5,YES,Weekly recommendation service,LOW,GROUP5
+lib/services/wellnessCurationService.ts,?,untracked,WELLNESS,GROUP2,NEW,WELLNESS_V4,GROUP2,YES,Wellness curation service,LOW,GROUP2
+lib/services/wellnessDailyIntelligence.ts,M,tracked,WELLNESS,GROUP2,DELTA 9 lines,WELLNESS_V4,GROUP2,YES,Wellness daily intelligence,LOW,GROUP2
+lib/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/test_2.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/test_language.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/test_new.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/test_new_2.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/test_write.txt,A+M,untracked+SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/types/blueprint.ts,M,tracked,TYPES,GROUP1,DELTA lines,TYPES,GROUP1,YES,Blueprint types update,LOW,GROUP1
+lib/types/communication.ts,A,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/types/communication.tsx,A,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/types/journeyDailyRecord_copy.ts,?,untracked,DUPLICATE,EXCLUDED,DUPLICATE_SOURCE,NONE,NO,Duplicate of journeyDailyRecord.ts,LOW,
+lib/types/longitudinalWellness.ts,?,untracked,WELLNESS_TYPES,GROUP2,NEW,WELLNESS_V4 (types),GROUP2,YES,Longitudinal wellness types,LOW,GROUP2
+lib/types/weeklyRecommendation.ts,?,untracked,WEEKLY_GUIDANCE,GROUP5,NEW,WEEKLY_GUIDANCE,GROUP5,YES,Weekly recommendation types,LOW,GROUP5
+lib/tzolkin/presentation.fixtures.ts,?,untracked,BLUEPRINT_8_FIXTURES,GROUP1,NEW,FIXTURE,GROUP1,YES,Tzolkin fixtures,LOW,GROUP1
+lib/tzolkin/presentation.ts,?,untracked,BLUEPRINT_8,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Tzolkin presentation,LOW,GROUP1
+lib/utils/communicationSimulation.ts,?,untracked,COMM,EXCLUDED,UNRELATED (Communication),NONE,NO,Communication excluded,LOW,
+lib/v4_prompts/CompassPrompt.tsx,A,untracked,V4_PROMPTS,GROUP5,NEW,AI_GATEWAY (or V4),GROUP5,YES,Compass prompt,LOW,GROUP5
+lib/v4_prompts/JourneyPrompt.tsx,A,untracked,V4_PROMPTS,GROUP3,NEW,JOURNEY_V2,GROUP3,YES,Journey prompt,LOW,GROUP3
+lib/v4_prompts/MirrorPrompt.tsx,?,untracked,V4_PROMPTS,GROUP4,NEW,HUMAN_MEANING_V4 (Mirror),GROUP4,YES,Mirror prompt,LOW,GROUP4
+lib/v4_prompts/WeeklyPrompt.tsx,A,untracked,V4_PROMPTS,GROUP5,NEW,WEEKLY_GUIDANCE,GROUP5,YES,Weekly prompt,LOW,GROUP5
+lib/v4_prompts/test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/v4_prompts/test_write.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+lib/vedic/calculateVedic.ts,M,tracked,BLUEPRINT_7,GROUP1,DELTA 21 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Vedic calculation tweak,LOW,GROUP1
+lib/vedic/presentation.fixtures.ts,?,untracked,BLUEPRINT_7_FIXTURES,GROUP1,NEW,FIXTURE,GROUP1,YES,Vedic fixtures,LOW,GROUP1
+lib/vedic/presentation.ts,?,untracked,BLUEPRINT_7,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Vedic presentation,LOW,GROUP1
+lib/vedic/types.ts,M,tracked,BLUEPRINT_7,GROUP1,DELTA 19 lines,BLUEPRINT_SYSTEM,GROUP1,YES,Vedic types tweak,LOW,GROUP1
+lib/visual/destinyMatrixVisualModel.ts,M,tracked,BLUEPRINT_4,GROUP1,DELTA 5 lines,BLUEPRINT_SYSTEM,GROUP1,YES,DM visual model tweak,LOW,GROUP1
+lib/weton/presentation.fixtures.ts,?,untracked,BLUEPRINT_5_FIXTURES,GROUP1,NEW,FIXTURE,GROUP1,YES,Weton fixtures,LOW,GROUP1
+lib/weton/presentation.ts,?,untracked,BLUEPRINT_5,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Weton presentation,LOW,GROUP1
+lib/whole-sign/,?,untracked,BLUEPRINT_9,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Whole Sign module,LOW,GROUP1
+lib/zi-wei/,?,untracked,BLUEPRINT_11,GROUP1,NEW,BLUEPRINT_SYSTEM,GROUP1,YES,Zi Wei Dou Shu module,LOW,GROUP1
+package-lock.json,M,tracked,LOCK_FILE,DEFER,DELTA 70 lines,LOCK_FILE,NONE (deferred),DEFER,Lock file; defer until package.json classified,LOW,Founder
+package.json,M,tracked,CONFIG,DEFER,DELTA 4 lines,CONFIGURATION,NONE (deferred),DEFER,Package.json; defer until classified,LOW,Founder
+playwright.r3.config.ts,?,untracked,TEST_CONFIG,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Playwright config not in V4 cycle,LOW,
+playwright.wellness.config.ts,?,untracked,TEST_CONFIG,UNRELATED,EXCLUDED,UNRELATED,NONE,NO,Playwright config not in V4 cycle,LOW,
+r4_presentation_audit.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Presentation audit scratch,LOW,
+recovery-evidence/,?,untracked,RECOVERY_EVIDENCE,EXCLUDED (per Founder),EXCLUDED (will be reviewed for separate commit),NONE,DEFER,Recovery evidence base directory; verify before inclusion,LOW,Founder
+r4_refactor_test.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Refactor scratch,LOW,
+r4_dev/,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,V4 dev scratch,LOW,
+r4_dev/Test.java,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch Java test,LOW,
+r4_dev/test.tsx,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch TSX test,LOW,
+r4_dev/test.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+run-real-proof.js,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Ad-hoc runtime proof,LOW,
+run-real-runtime-proof.ts,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Ad-hoc runtime proof,LOW,
+run-runtime-verification.js,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Ad-hoc runtime verification,LOW,
+scripts/auditAstrocartographyForensic.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Astrocartography forensic audit,LOW,GROUP1
+scripts/auditDestinyMatrixHealthOrigins.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,DM health origins audit,LOW,GROUP1
+scripts/audit_astrocartography_independent.py,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Astrocartography independent audit,LOW,GROUP1
+scripts/checkZiWei.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Zi Wei check,LOW,GROUP1
+scripts/simulateSameLifePathUniqueness.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Life path uniqueness simulation,LOW,GROUP1
+scripts/validateAstrocartography*.ts (7 files),?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Astrocartography validators (target 58/58),LOW,GROUP1
+scripts/validateDestinyMatrixAncestralProjection.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,DM ancestral projection validator,LOW,GROUP1
+scripts/validateDestinyMatrixAnnualArcana.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,DM annual arcana validator,LOW,GROUP1
+scripts/validateDestinyMatrixHealthInterpretation.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,DM health interpretation validator,LOW,GROUP1
+scripts/validateDestinyMatrixR5.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,DM R5 validator,LOW,GROUP1
+scripts/validateTzolkinR5.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Tzolkin R5 validator,LOW,GROUP1
+scripts/validateVedicR5.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Vedic R5 validator (target 63/63),LOW,GROUP1
+scripts/validateWetonR5.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Weton R5 validator,LOW,GROUP1
+scripts/validateWetonSprint1.js,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Weton sprint 1 validator,LOW,GROUP1
+scripts/validateWholeSignR7A.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Whole Sign R7A validator (target 54/54),LOW,GROUP1
+scripts/verifyBaziSimilarity.ts,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,BaZi similarity verifier,LOW,GROUP1
+scripts/wetonFounderAcceptance.js,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Weton founder acceptance,LOW,GROUP1
+scripts/wetonSprint1Verify.js,?,untracked,VALIDATOR,GROUP1,NEW,VALIDATOR,GROUP1,YES,Weton sprint 1 verify,LOW,GROUP1
+scripts/enforce-build.js,A,untracked,SCRIPT,V4,EXCLUDED,UNFINISHED (build enforcer),NONE,DEFER,Build enforcement script; defer,LOW,Founder
+secure/bhumiamartya-adminsdk.json.json,D,tracked,SECRET,Build70,DELTA -13 lines,SECRET_REMOVAL,ISOLATED (Founder default EXCLUDE from feature commits),NO by default,Firebase admin SDK; removal APPROVED but isolated for security commit,LOW,Founder
+services/humandesign-api/,?,untracked,HUMAN_DESIGN_SERVICE,GROUP1 (canonical FastAPI),NEW (entire directory in working tree),HUMAN_DESIGN_SERVICE,DEFER,DEFER,Canonical FastAPI service; inclusion depends on whether service is to be re-tracked,LOW,Founder
+simple.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch file,LOW,
+snapshots/,?,untracked,SNAPSHOTS,EXCLUDED,LOCAL_ONLY,NONE,NO,Local snapshots,LOW,
+src/app/founder/page.tsx,D,tracked,WEB_CLEANUP,Build70,DELTA -11 lines,DESTRUCTIVE_UNPROVEN,ISOLATED (Founder default EXCLUDE),NO by default,Web-only founder page; deletion APPROVED but default EXCLUDE for safety,LOW,Founder
+summary_debug.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch debug,LOW,
+summary_debug_utf8.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch debug,LOW,
+temp_audit.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch audit,LOW,
+temp_audit_utf8.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch audit,LOW,
+temp_audit_utf8_v2.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch audit,LOW,
+temp_final_audit.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch audit,LOW,
+test-runtime-verification.ts,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Ad-hoc verification,LOW,
+test-wellness-verification.spec.ts,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Ad-hoc verification,LOW,
+test.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+test_perm.txt,A,untracked,SCRATCH,V4,EXCLUDED,SCRATCH,NONE,NO,Scratch test,LOW,
+test-results/,?,untracked,TEST_RESULTS,EXCLUDED,GENERATED,NONE,NO,Playwright test results,LOW,
+tests/,?,untracked,TESTS,EXCLUDED,GENERATED,NONE,NO,Test artifacts,LOW,
+time_copy.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch copy,LOW,
+translations_copy.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch copy,LOW,
+tsconfig.json,M,tracked,CONFIG,DEFER,DELTA 3 lines,CONFIGURATION,NONE (deferred),DEFER,Tsconfig; defer,LOW,Founder
+tsconfig.tooling.json,?,untracked,CONFIG,DEFER,NEW,CONFIGURATION,NONE (deferred),DEFER,Tooling tsconfig; defer,LOW,Founder
+tsconfig.tsbuildinfo,M,tracked,GENERATED,EXCLUDED,GENERATED,NONE,NO,Generated build info,LOW,
+verify_aab.ps1,?,untracked,SCRIPT_SCRATCH,EXCLUDED,SCRATCH,NONE,NO,AAB verify script,LOW,
+version_copy.txt,?,untracked,SCRATCH,EXCLUDED,SCRATCH,NONE,NO,Scratch copy,LOW,
+window_dump.xml,?,untracked,DUMP,EXCLUDED,DEBUG_DUMP,NONE,NO,UI hierarchy dump,LOW,
