@@ -86,13 +86,13 @@ export function buildDestinyMatrixGraph(dateOfBirth: string): DestinyMatrixGraph
   add("BM22", "derived", ["BM20", "BM11"], "R(BM20+BM11)", sum("BM20", "BM11"));
   add("BM23", "derived", ["BM06", "BM07", "BM08", "BM09"], "R(BM06+BM07+BM08+BM09)", sum("BM06", "BM07", "BM08", "BM09"));
   add("BM24", "derived", ["BM05", "BM23"], "R(BM05+BM23)", sum("BM05", "BM23"));
-  add("BM25", "derived", ["BM06", "BM05"], "R(BM06+BM05)", sum("BM06", "BM05"));
+  add("BM25", "derived", ["BM06", "BM23"], "R(BM06+BM23)", sum("BM06", "BM23"));
   add("BM26", "derived", ["BM06", "BM25"], "R(BM06+BM25)", sum("BM06", "BM25"));
-  add("BM27", "derived", ["BM07", "BM05"], "R(BM07+BM05)", sum("BM07", "BM05"));
+  add("BM27", "derived", ["BM07", "BM23"], "R(BM07+BM23)", sum("BM07", "BM23"));
   add("BM28", "derived", ["BM07", "BM27"], "R(BM07+BM27)", sum("BM07", "BM27"));
-  add("BM29", "derived", ["BM08", "BM05"], "R(BM08+BM05)", sum("BM08", "BM05"));
+  add("BM29", "derived", ["BM08", "BM23"], "R(BM08+BM23)", sum("BM08", "BM23"));
   add("BM30", "derived", ["BM08", "BM29"], "R(BM08+BM29)", sum("BM08", "BM29"));
-  add("BM31", "derived", ["BM09", "BM05"], "R(BM09+BM05)", sum("BM09", "BM05"));
+  add("BM31", "derived", ["BM09", "BM23"], "R(BM09+BM23)", sum("BM09", "BM23"));
   add("BM32", "derived", ["BM09", "BM31"], "R(BM09+BM31)", sum("BM09", "BM31"));
 
   add("PR-SKY", "projection", ["BM02", "BM04"], "R(BM02+BM04)", sum("BM02", "BM04"));

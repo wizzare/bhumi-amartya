@@ -136,13 +136,13 @@ export function calculateFromBase(apoint: number, bpoint: number, cpoint: number
   const wpoint = r(spoint + epoint);
   const xpoint = r(tpoint + epoint);
 
-  const f2point = r(fpoint + epoint);
+  const f2point = r(fpoint + upoint);
   const f1point = r(fpoint + f2point);
-  const g2point = r(gpoint + epoint);
+  const g2point = r(gpoint + upoint);
   const g1point = r(gpoint + g2point);
-  const i2point = r(ipoint + epoint);
+  const i2point = r(ipoint + upoint);
   const i1point = r(ipoint + i2point);
-  const h2point = r(hpoint + epoint);
+  const h2point = r(hpoint + upoint);
   const h1point = r(hpoint + h2point);
 
   const afpoint = r(apoint + fpoint);

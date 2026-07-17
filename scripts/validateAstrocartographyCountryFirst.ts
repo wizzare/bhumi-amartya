@@ -1,0 +1,52 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { calculateAstrocartography } from "../lib/astrocartography/calculateAstrocartography";
+import { buildAutomaticAstrocartographyPresentation } from "../lib/astrocartography/automaticPresentation";
+import { resolveBirthCountryCode } from "../lib/astrocartography/cityReferences";
+
+const root = process.cwd();
+const read = (file: string) => fs.readFileSync(path.join(root, file), "utf8");
+const founderInput = { birthDate: "1985-05-03", birthTime: "23:45", timezone: "+07:00", latitude: -6.2088, longitude: 106.8456, birthCity: "Jakarta" };
+const result = calculateAstrocartography(founderInput);
+const indonesia = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "ID" })!;
+const usa = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "US" })!;
+const singapore = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "SG" })!;
+const noDomestic = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "NZ" })!;
+const missing = buildAutomaticAstrocartographyPresentation(result)!;
+const source = read("lib/astrocartography/automaticPresentation.ts");
+const citySource = read("lib/astrocartography/cityReferences.ts");
+const profileSource = read("app/profile/page.tsx");
+const mapSource = read("components/blueprint/AstrocartographyMap.tsx");
+const calculationSource = read("lib/astrocartography/calculateAstrocartography.ts");
+const checks: Array<[string, () => void]> = [];
+const check = (name: string, fn: () => void) => checks.push([name, fn]);
+
+check("01 Indonesian birth country", () => assert.equal(resolveBirthCountryCode(null, "Indonesia"), "ID"));
+check("02 two primary Indonesian references", () => assert.ok(indonesia.categories.some((category) => !category.domesticAvailabilityMessage && category.domesticReferences.length === 2 && category.domesticReferences.every((city) => city.countryCode === "ID"))));
+check("03 one global reference", () => assert.ok(indonesia.categories.every((category) => category.globalReferences.length >= 1 && category.globalReferences.every((city) => city.countryCode !== "ID"))));
+check("04 non-Indonesian birth country", () => assert.ok(usa.categories.every((category) => category.domesticCountryName === "United States of America")));
+check("05 two primary domestic references another country", () => assert.ok(usa.categories.some((category) => !category.domesticAvailabilityMessage && category.domesticReferences.length === 2 && category.domesticReferences.every((city) => city.countryCode === "US"))));
+check("06 global reference another country", () => assert.ok(usa.categories.every((category) => category.globalReferences.every((city) => city.countryCode !== "US"))));
+check("07 only one valid domestic result", () => assert.ok(singapore.categories.some((category) => category.domesticReferences.length === 1 && category.globalReferences.length === 2)));
+check("08 no domestic dataset result", () => assert.ok(noDomestic.categories.every((category) => category.domesticReferences.length === 0 && category.globalReferences.length <= 3 && category.domesticAvailabilityMessage?.includes("Belum ada wilayah NZ"))));
+check("09 missing birth-country metadata", () => assert.ok(missing.categories.every((category) => category.domesticReferences.length === 0 && category.domesticAvailabilityMessage?.includes("belum tersedia"))));
+check("10 domestic global split", () => assert.ok(indonesia.categories.every((category) => category.referenceCities.length <= 3 && category.referenceCities.every((city) => city.domesticOrGlobal === (city.countryCode === "ID" ? "domestic" : "global")))));
+check("11 deterministic category ordering", () => assert.deepEqual(indonesia, buildAutomaticAstrocartographyPresentation(calculateAstrocartography(founderInput), { birthCountryCode: "ID" })));
+check("12 geographic diversity tiebreaker", () => assert.match(source, /city\.region === firstDomestic\.city\.region/));
+check("13 distance remains primary", () => assert.match(source, /left\.distance - right\.distance \|\| left\.priority/));
+check("14 no forced weak domestic city", () => assert.match(source, /MAX_REFERENCE_DISTANCE_KM[\s\S]*candidate\.distance <= MAX_REFERENCE_DISTANCE_KM/));
+check("15 duplicate-city handling", () => assert.match(source, /cityUsage[\s\S]*preferUnusedExactTie[\s\S]*supportingLines/));
+check("16 Profile card remains generic", () => { assert.match(profileSource, /Astrocartography[\s\S]*Peta dunia yang menunjukkan wilayah tempat tema planet kelahiranmu lebih menonjol/); assert.ok(!/Wilayah domestik:|Referensi global:|Lihat peta selengkapnya/.test(profileSource)); });
+check("17 overall summary 2+1 format", () => { const ids = new Set(indonesia.overallRegions.map((item) => item.locationId)); const cities = indonesia.referenceCities.filter((city) => ids.has(city.cityId)); assert.ok(cities.filter((city) => city.domesticOrGlobal === "domestic").length <= 2 && cities.filter((city) => city.domesticOrGlobal === "global").length <= 1); });
+check("18 no IP-country inference", () => assert.ok(!/ipapi|ipinfo|geoip/.test(source + mapSource)));
+check("19 no locale-country inference", () => assert.ok(!/navigator\.language|accountLocale|phoneNumber/.test(source + citySource)));
+check("20 no device-location inference", () => assert.ok(!/geolocation|getCurrentPosition|currentLocation/.test(source + mapSource)));
+check("21 Founder Indonesia verification", () => assert.ok(indonesia.categories.every((category) => category.referenceCities.every((city) => city.nearestLines.length > 0 && city.rankingReason.includes("Jarak")))));
+check("22 cross-user country isolation", () => assert.notDeepEqual(indonesia.categories.map((category) => category.referenceCities), usa.categories.map((category) => category.referenceCities)));
+check("23 no hardcoded Founder cities", () => assert.ok(!/Sumedang|Yogyakarta|Bali|Perth/.test(source)));
+check("24 formulas unchanged", () => { assert.match(calculationSource, /Math\.acos/); assert.match(calculationSource, /raDegrees - gastDegrees/); assert.match(calculationSource, /splitAntimeridian/); });
+
+let passed = 0;
+for (const [name, fn] of checks) { try { fn(); passed += 1; console.log(`PASS ${name}`); } catch (error) { console.error(`FAIL ${name}`); throw error; } }
+console.log(`Astrocartography country-first: ${passed}/${checks.length} checks passed`);

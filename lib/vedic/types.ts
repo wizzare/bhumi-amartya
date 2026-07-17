@@ -89,9 +89,26 @@ export interface VedicBlueprint {
   };
 }
 
+export type VedicPartialBlueprint = {
+  status: "PARTIAL_BIRTH_TIME_REQUIRED";
+  availableSections: string[];
+  unavailableSections: Array<"Lagna" | "houses" | "exact time-dependent chart" | "time-sensitive interpretations">;
+  message: "Waktu lahir diperlukan untuk menghitung Lagna, rumah astrologi, dan bagian Vedic yang bergantung pada posisi langit secara tepat.";
+  meta: {
+    schemaVersion: "1.0.0";
+    engineVersion: "vedic-engine-1.0.0";
+    calculationSource: "input-safety-guard";
+    accuracy: "partial";
+    calculatedAt: string;
+    asOf: string;
+  };
+};
+
+export type VedicCalculationResult = VedicBlueprint | VedicPartialBlueprint;
+
 export type VedicCalculationInput = {
   birthDate: string;
-  birthTime: string;
+  birthTime?: string | null;
   birthCity?: string | null;
   latitude?: number | null;
   longitude?: number | null;

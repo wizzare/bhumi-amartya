@@ -1,0 +1,55 @@
+import { readFileSync } from "node:fs";
+import { buildDestinyMatrixPresentation } from "../lib/destiny-matrix/presentation";
+import { calculateBhumiMatrix } from "../lib/engines/calculateBhumiMatrix";
+
+type Result = { name: string; passed: boolean; detail: string };
+const results: Result[] = [];
+const check = (name: string, passed: boolean, detail: string) => results.push({ name, passed, detail });
+const sentenceCount = (text: string) => text.split(/[.!?]+(?=\s|$)/).map((item) => item.trim()).filter(Boolean).length;
+const founderMatrix = calculateBhumiMatrix("1985-05-03");
+const founder = buildDestinyMatrixPresentation(founderMatrix);
+const health = founder.energyMatrix;
+if (!health) throw new Error("Founder Health Matrix presentation is unavailable.");
+const expected = [[3,5,8],[14,18,5],[11,13,6],[19,21,4],[8,8,16],[13,21,7],[5,13,18]];
+
+check("all seven chakra rows", health.rows.length === 7, `${health.rows.length}/7 rows`);
+health.rows.forEach((row, index) => {
+  check(`${row.chakra} Founder fixture`, JSON.stringify([row.physical, row.energy, row.emotion]) === JSON.stringify(expected[index]), `${row.physical}/${row.energy}/${row.emotion}`);
+});
+check("Physics explanation per chakra", health.rows.every((row) => row.physicsExplanation && sentenceCount(row.physicsExplanation) >= 1 && sentenceCount(row.physicsExplanation) <= 2), "7/7 concise explanations");
+check("Energy explanation per chakra", health.rows.every((row) => row.energyExplanation && sentenceCount(row.energyExplanation) >= 1 && sentenceCount(row.energyExplanation) <= 2), "7/7 concise explanations");
+check("Emotions explanation per chakra", health.rows.every((row) => row.emotionsExplanation && sentenceCount(row.emotionsExplanation) >= 1 && sentenceCount(row.emotionsExplanation) <= 2), "7/7 concise explanations");
+check("integrated explanation per chakra", health.rows.every((row) => sentenceCount(row.integratedExplanation) >= 2 && sentenceCount(row.integratedExplanation) <= 3), "7/7 integrated explanations");
+check("Total explanation", health.totalExplanation.includes("bukan skor kesehatan") && health.totalExplanation.includes("peringkat spiritual"), "non-diagnostic total context");
+const sahasrara8 = health.rows[0].emotionsExplanation;
+const manipura8Physics = health.rows[4].physicsExplanation;
+const manipura8Energy = health.rows[4].energyExplanation;
+check("same Arcana different positions", Boolean(sahasrara8 && manipura8Physics && manipura8Energy && new Set([sahasrara8, manipura8Physics, manipura8Energy]).size === 3), "Arcana 8 has three position-aware narratives");
+check("position-aware narrative differentiation", new Set(health.rows.map((row) => row.integratedExplanation)).size === 7, "7 unique chakra integrations");
+check("Symbolic Context completeness", health.shortExplanation.includes("Kolom Fisik") && health.shortExplanation.includes("kolom Energi") && health.shortExplanation.includes("kolom Emosi") && health.shortExplanation.includes("angka yang sama"), "column and position rules present");
+check("Safety Context completeness", health.safetyNotice.includes("tidak mengukur kondisi organ") && health.safetyNotice.includes("bukan tanda bahaya") && health.safetyNotice.includes("keputusan medis"), "symbolic limitations present");
+const pageSource = readFileSync("app/blueprint/destiny-matrix/page.tsx", "utf8");
+check("no blank Status-only cards", !/label:\s*["']Status["']/.test(pageSource) && pageSource.includes("Keterangan selengkapnya"), "expandable detail replaces Status cards");
+const rowNarratives = health.rows.flatMap((row) => [row.physicsExplanation, row.energyExplanation, row.emotionsExplanation, row.integratedExplanation]).filter((value): value is string => Boolean(value));
+check("no medical diagnosis", rowNarratives.every((text) => !/diagnosis|kondisi organ|gangguan mental|penyakit/i.test(text)), "row narratives are non-medical");
+check("no health ranking", !/lebih sehat|skor kesehatan|persentase kesehatan/i.test(rowNarratives.join(" ")), "no health ranking in row narratives");
+check("no spiritual ranking", !/lebih spiritual|tingkat spiritual|skor spiritual/i.test(rowNarratives.join(" ")), "no spiritual ranking in row narratives");
+check("no keyword concatenation", !/arcanaKeywords\.join|keywords\.join/.test(readFileSync("lib/destiny-matrix/presentation.ts", "utf8")), "narratives use grammatical templates");
+check("summary paragraph validation", health.summary.length === 3 && health.summary.every((paragraph) => paragraph.trim().length > 0), "3 non-empty paragraphs");
+check("summary sentence validation", health.summary.every((paragraph) => sentenceCount(paragraph) >= 3 && sentenceCount(paragraph) <= 4), health.summary.map(sentenceCount).join("/"));
+const partialMatrix = calculateBhumiMatrix("1985-05-03");
+partialMatrix.graph.nodes = partialMatrix.graph.nodes.filter((node) => node.id !== "H02-EMOTION");
+const partial = buildDestinyMatrixPresentation(partialMatrix).energyMatrix;
+check("partial cell handling", Boolean(partial && partial.rows[1].emotion === null && partial.rows[1].emotionsExplanation === null && partial.rows[1].physicsExplanation && partial.rows[2].emotionsExplanation), "missing Ajna emotion omitted without false zero");
+const refresh = buildDestinyMatrixPresentation(calculateBhumiMatrix("1985-05-03")).energyMatrix;
+check("deterministic refresh", JSON.stringify(health) === JSON.stringify(refresh), "identical Health input produces identical presentation");
+const userSummaries = ["1985-05-03", "2012-06-16", "1988-10-17", "1989-01-06"].map((date) => buildDestinyMatrixPresentation(calculateBhumiMatrix(date)).energyMatrix?.summary.join("\n"));
+check("cross-user differentiation", new Set(userSummaries).size === 4, "4/4 summaries distinct");
+const graphSource = readFileSync("lib/engines/destinyMatrixGraph.ts", "utf8");
+check("no formula changes", graphSource.includes('["H06", "BM11", "BM10"]') && graphSource.includes('add("HEALTH-PHYSICAL-TOTAL"'), "Health formulas retained");
+check("V3 Build 72 table preservation", pageSource.includes("presentation.energyMatrix.rows.map") && pageSource.includes("Physics") && pageSource.includes("Energy") && pageSource.includes("Emotions") && pageSource.includes("Total"), "table structure retained");
+check("mobile expandable-content safety", pageSource.includes("sm:grid-cols-2") && pageSource.includes("overflow-x-auto") && pageSource.includes("<details"), "responsive expandable content present");
+
+const failed = results.filter((result) => !result.passed);
+console.log(JSON.stringify({ status: failed.length ? "failed" : "passed", summary: { passed: results.length - failed.length, failed: failed.length }, failures: failed, results }, null, 2));
+if (failed.length) process.exitCode = 1;

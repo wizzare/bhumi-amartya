@@ -1,49 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
+  Activity,
   ArrowLeft,
   BriefcaseBusiness,
   Compass,
-  Flower2,
   Heart,
   Layers3,
   MoonStar,
+  Orbit,
   Sparkles,
   Sprout,
   Sun,
-  Activity,
 } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
-import type { GalacticTone, SolarSeal, TzolkinBlueprint } from "@/lib/tzolkin/types";
+import {
+  buildTzolkinPresentation,
+  type TzolkinIdentityReadContract,
+  type TzolkinPresentation,
+  type TzolkinPresentationInput,
+  type TzolkinSectionContract,
+} from "@/lib/tzolkin/presentation";
 
-type DisplayCard = {
-  title: string;
-  value: string;
-  detail?: string;
-  icon: typeof Compass;
-  color: string;
-  background: string;
+const GROUP_ICONS: Record<string, typeof Sparkles> = {
+  "galactic-identity": Sparkles,
+  "journey-rhythm": Layers3,
+  "energy-directions": Orbit,
+  "gifts-challenges": MoonStar,
+  "relation-work-growth": Heart,
 };
 
-const LEGACY_FORMAL_PRONOUN_PATTERN = /(^|[^A-Za-z])[Aa]nda([^A-Za-z]|$)/;
-
-function hasLegacyTzolkinSummary(tzolkin: TzolkinBlueprint | null | undefined): boolean {
-  return Boolean(tzolkin?.summary?.some((paragraph) =>
-    LEGACY_FORMAL_PRONOUN_PATTERN.test(paragraph)
-    || /menuju\s+menuju/i.test(paragraph)
-    || /\.\./.test(paragraph)
-  ));
-}
-
 export default function TzolkinPage() {
-  const [tzolkin, setTzolkin] = useState<TzolkinBlueprint | null>(null);
+  const [tzolkin, setTzolkin] = useState<TzolkinPresentationInput | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -56,24 +52,21 @@ export default function TzolkinPage() {
 
         const blueprint = storedBlueprint as unknown as Blueprint;
         const birthDate = blueprint.input?.birthDate || profile?.birthDate;
-        if (blueprint.tzolkin && blueprint.tzolkin.oracle && !hasLegacyTzolkinSummary(blueprint.tzolkin)) {
-          setTzolkin(blueprint.tzolkin);
-          return;
+        if (birthDate) {
+          try {
+            setTzolkin(calculateTzolkin({ birthDate }));
+            return;
+          } catch {
+            if (!blueprint.tzolkin) {
+              setLoadFailed(true);
+              return;
+            }
+          }
         }
 
-        if (!birthDate) {
-          setTzolkin(blueprint.tzolkin ?? null);
-          return;
-        }
-
-        const calculated = calculateTzolkin({ birthDate });
-        const updatedBlueprint = {
-          ...storedBlueprint,
-          tzolkin: calculated,
-          updatedAt: new Date().toISOString(),
-        };
-        await storageProvider.saveUserBlueprint(updatedBlueprint);
-        setTzolkin(calculated);
+        if (blueprint.tzolkin) setTzolkin(blueprint.tzolkin);
+      } catch {
+        setLoadFailed(true);
       } finally {
         setLoading(false);
       }
@@ -82,61 +75,13 @@ export default function TzolkinPage() {
     void load();
   }, []);
 
-  const cards: DisplayCard[] = tzolkin ? [
-    {
-      title: "Kin Identity",
-      value: `Kin ${tzolkin.kin}`,
-      detail: tzolkin.kinName,
-      icon: Sparkles,
-      color: "text-amber-600",
-      background: "bg-amber-50",
-    },
-    {
-      title: "Solar Seal",
-      value: tzolkin.solarSeal.name,
-      detail: tzolkin.solarSeal.keyword,
-      icon: Sun,
-      color: "text-orange-600",
-      background: "bg-orange-50",
-    },
-    {
-      title: "Galactic Tone",
-      value: tzolkin.galacticTone.name,
-      detail: tzolkin.galacticTone.function,
-      icon: MoonStar,
-      color: "text-blue-600",
-      background: "bg-blue-50",
-    },
-    {
-      title: "Wavespell",
-      value: tzolkin.wavespell.name,
-      detail: tzolkin.wavespell.theme,
-      icon: Layers3,
-      color: "text-emerald-600",
-      background: "bg-emerald-50",
-    },
-    {
-      title: "Castle",
-      value: tzolkin.castle.name,
-      detail: tzolkin.castle.theme,
-      icon: Compass,
-      color: "text-rose-600",
-      background: "bg-rose-50",
-    },
-    {
-      title: "Color",
-      value: tzolkin.color,
-      icon: Flower2,
-      color: "text-purple-600",
-      background: "bg-purple-50",
-    },
-  ] : [];
+  const presentation = useMemo(() => buildTzolkinPresentation(tzolkin), [tzolkin]);
 
   return (
     <ProtectedRoute>
-      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
+      <main className="min-h-screen overflow-x-hidden bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
             <ArrowLeft size={16} />
             Kembali ke Profil
@@ -146,112 +91,28 @@ export default function TzolkinPage() {
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F5E52] text-white">
               <Sprout size={25} />
             </div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">Tzolkin</p>
-            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">Kalender Kesadaran Maya</h1>
-            <p className="mt-3 leading-7 text-[#7B8776]">
-              Peta evolusi jiwa berdasarkan siklus 260 Kin yang terbentuk dari Solar Seal dan Galactic Tone.
-            </p>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">{presentation.canonicalName}</p>
+            <h1 className="mt-2 font-serif text-4xl text-[#4F5E52]">{presentation.hero.title}</h1>
+            {!loading && presentation.status !== "unavailable" && (
+              <>
+                <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold text-[#4F5E52]">
+                  {presentation.hero.kin && <span className="max-w-full rounded-full bg-white px-3 py-2 shadow-sm">{presentation.hero.kin}</span>}
+                  {presentation.hero.tone && <span className="max-w-full rounded-full bg-white px-3 py-2 shadow-sm">Galactic Tone · {presentation.hero.tone}</span>}
+                  {presentation.hero.seal && <span className="max-w-full rounded-full bg-white px-3 py-2 shadow-sm">Solar Seal · {presentation.hero.seal}</span>}
+                </div>
+                <p className="mt-4 max-w-xl leading-7 text-[#7B8776]">{presentation.hero.insight}</p>
+              </>
+            )}
           </header>
 
           {loading ? (
-            <p className="py-16 text-center text-[#7B8776]">Membaca energi waktu...</p>
-          ) : tzolkin ? (
-            <div className="space-y-8">
-              {tzolkin.oracle && <OracleGraphic tzolkin={tzolkin} />}
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Kin Identity</h2>
-                <div className="grid gap-4">
-                  {cards.map(({ title, value, detail, icon: Icon, color, background }) => (
-                    <section key={title} className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
-                      <div className="flex items-start gap-3">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${background} ${color}`}>
-                          <Icon size={20} />
-                        </div>
-                        <div>
-                          <h2 className="text-sm font-bold uppercase tracking-wider text-[#9AA394]">{title}</h2>
-                          <p className="mt-1 text-xl font-serif font-bold leading-relaxed text-[#4F5E52]">{value}</p>
-                        </div>
-                      </div>
-                      {detail && <p className="mt-4 border-t border-[#F5F1E8] pt-4 text-sm leading-relaxed text-[#7B8776]">{detail}</p>}
-                    </section>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Solar Seal</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={Sun} title="Keyword" text={tzolkin.solarSeal.keyword} />
-                  <InsightCard icon={Sparkles} title="Gift" text={tzolkin.solarSeal.gift} />
-                  <InsightCard icon={Layers3} title="Challenge" text={tzolkin.solarSeal.challenge} />
-                  <InsightCard icon={Compass} title="Purpose" text={tzolkin.solarSeal.purpose} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Galactic Tone</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={MoonStar} title="Function" text={tzolkin.galacticTone.function} />
-                  <InsightCard icon={Sparkles} title="Gift" text={tzolkin.galacticTone.gift} />
-                  <InsightCard icon={Layers3} title="Shadow" text={tzolkin.galacticTone.shadow} />
-                  <InsightCard icon={Compass} title="Life Lesson" text={tzolkin.galacticTone.lesson} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Wavespell</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={Layers3} title="Theme" text={tzolkin.wavespell.theme} />
-                  <InsightCard icon={Compass} title="Meaning" text={tzolkin.wavespell.meaning} />
-                  <InsightCard icon={Sparkles} title="Growth Direction" text={tzolkin.wavespell.growthDirection} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Castle</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={Compass} title="Theme" text={tzolkin.castle.theme} />
-                  <InsightCard icon={Layers3} title="Meaning" text={tzolkin.castle.meaning} />
-                  <InsightCard icon={Sparkles} title="Spiritual Lesson" text={tzolkin.castle.spiritualLesson} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Galactic Activation Portal</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={Activity} title="Portal Status" text={tzolkin.gap ? "Galactic Activation Portal" : "Non-Portal Kin"} />
-                  <InsightCard icon={Compass} title="Interpretation" text={tzolkin.gap ? "Heightened transformation dan intensitas tinggi" : "Pertumbuhan bertahap dan mantap"} />
-                  <InsightCard icon={Sparkles} title="Growth Pattern" text={tzolkin.gap ? "Percepatan evolusi dan sinkronisitas kuat" : "Perkembangan yang konsisten dan stabil"} />
-                </div>
-              </section>
-
-              <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Tzolkin Archetype</h2>
-                <div className="grid gap-4">
-                  <InsightCard icon={Sparkles} title="Kekuatan" items={tzolkin.strengths} />
-                  <InsightCard icon={Layers3} title="Tantangan" items={tzolkin.challenges} />
-                  <InsightCard icon={Heart} title="Gaya Relasi" text={tzolkin.relationshipStyle} />
-                  <InsightCard icon={BriefcaseBusiness} title="Gaya Kerja" text={tzolkin.workStyle} />
-                  <InsightCard icon={Compass} title="Gaya Pertumbuhan" text={tzolkin.growthStyle} />
-                  <InsightCard icon={Sun} title="Misi Kehidupan" text={tzolkin.lifePurpose} />
-                </div>
-              </section>
-
-              <section className="rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
-                <div className="mb-5 flex items-center gap-2">
-                  <Sparkles size={18} className="text-[#D4AF37]" />
-                  <h2 className="text-xl font-serif font-bold">Tzolkin Synthesis</h2>
-                </div>
-                <div className="space-y-4 text-sm leading-relaxed text-[#D2D8D0]">
-                  {tzolkin.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-                </div>
-              </section>
-            </div>
+            <p className="py-16 text-center text-[#7B8776]">Membaca siklus 260 Kin...</p>
+          ) : loadFailed ? (
+            <EmptyState message="Perhitungan Tzolkin belum dapat dibuka. Periksa kembali tanggal kelahiranmu." />
+          ) : presentation.status === "unavailable" ? (
+            <EmptyState message="Tanggal kelahiran belum tersedia untuk menghitung Tzolkin." />
           ) : (
-            <p className="py-16 text-center text-[#7B8776]">
-              Data kelahiran belum tersedia untuk menghitung Tzolkin.
-            </p>
+            <TzolkinContent presentation={presentation} />
           )}
         </div>
       </main>
@@ -259,144 +120,102 @@ export default function TzolkinPage() {
   );
 }
 
-function InsightCard({
-  icon: Icon,
-  title,
-  text,
-  items,
-}: {
-  icon: typeof Sparkles;
-  title: string;
-  text?: string;
-  items?: string[];
-}) {
+function EmptyState({ message }: { message: string }) {
+  return <p className="py-16 text-center leading-7 text-[#7B8776]">{message}</p>;
+}
+
+function TzolkinContent({ presentation }: { presentation: TzolkinPresentation }) {
   return (
-    <div className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
-        <Icon size={18} className="text-[#9AA394]" />
-        <h3 className="font-serif text-lg font-bold text-[#4F5E52]">{title}</h3>
-      </div>
-      {items ? (
-        <ul className="space-y-2 text-sm leading-relaxed text-[#7B8776]">
-          {items.map((item) => <li key={item}>• {item}</li>)}
-        </ul>
-      ) : (
-        <p className="text-sm leading-relaxed text-[#7B8776]">{text}</p>
+    <div id="detail-tzolkin" className="space-y-10 scroll-mt-6">
+      {presentation.status === "partial" && (
+        <p className="rounded-2xl border border-[#E8E1D3] bg-white p-5 text-sm leading-7 text-[#7B8776]">
+          Pembacaan ini hanya menampilkan bagian yang tersedia dari data Tzolkin tersimpan. Relasi simbolik atau siklus yang tidak didukung disembunyikan.
+        </p>
+      )}
+
+      <OracleGraphic contract={presentation.readContract} />
+
+      {presentation.groups.map((group) => {
+        const Icon = GROUP_ICONS[group.groupId] || Compass;
+        return (
+          <section key={group.groupId} aria-labelledby={`${group.groupId}-title`}>
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#EEF1EA] text-[#4F5E52]">
+                <Icon size={19} />
+              </div>
+              <h2 id={`${group.groupId}-title`} className="min-w-0 text-sm font-bold uppercase tracking-[0.16em] text-[#7B8776]">
+                {group.title}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {group.sections.map((section) => <TzolkinSectionCard key={section.sectionId} section={section} />)}
+            </div>
+          </section>
+        );
+      })}
+
+      {presentation.summary.length > 0 && (
+        <section className="mx-auto max-w-xl rounded-3xl bg-[#4F5E52] p-6 text-white shadow-md">
+          <div className="mb-5 flex items-center gap-2">
+            <Sparkles size={18} className="text-[#D4AF37]" />
+            <h2 className="font-serif text-xl font-bold">Kesimpulan Dirimu</h2>
+          </div>
+          <div className="space-y-4 text-sm leading-7 text-[#D2D8D0]">
+            {presentation.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          </div>
+        </section>
       )}
     </div>
   );
 }
 
-function getSealBgColor(sealName: string) {
-  if (sealName.includes("Merah") || sealName.includes("Red") || ["Naga", "Ular", "Bulan", "Nabi", "Bumi"].some(x => sealName.includes(x))) return "bg-[#e76f51] text-white border-transparent";
-  if (sealName.includes("Putih") || sealName.includes("White") || ["Angin", "Penghubung", "Anjing", "Penyihir", "Cermin"].some(x => sealName.includes(x))) return "bg-[#f8f9fa] text-gray-800 border-gray-800";
-  if (sealName.includes("Biru") || sealName.includes("Blue") || ["Malam", "Tangan", "Monyet", "Elang", "Badai"].some(x => sealName.includes(x))) return "bg-[#457b9d] text-white border-transparent";
-  if (sealName.includes("Kuning") || sealName.includes("Yellow") || ["Benih", "Bintang", "Manusia", "Prajurit", "Matahari"].some(x => sealName.includes(x))) return "bg-[#e9c46a] text-gray-900 border-gray-900";
-  return "bg-gray-200 text-gray-800 border-transparent";
-}
-
-function ToneDotsBars({ toneName }: { toneName: string }) {
-  const numMatch = toneName.match(/^(\d+)/);
-  if (!numMatch) return null;
-  const num = parseInt(numMatch[1], 10);
-  const bars = Math.floor(num / 5);
-  const dots = num % 5;
-
+function TzolkinSectionCard({ section }: { section: TzolkinSectionContract }) {
   return (
-    <div className="flex flex-col items-center gap-1 mb-1">
-      <div className="flex gap-1 h-1.5 items-center justify-center">
-        {Array.from({ length: dots }).map((_, i) => (
-          <div key={i} className="h-1.5 w-1.5 rounded-full bg-gray-800" />
-        ))}
-      </div>
-      {Array.from({ length: bars }).map((_, i) => (
-        <div key={i} className="h-1 w-6 rounded-full bg-gray-800" />
-      ))}
-    </div>
+    <article className="min-w-0 rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
+      <p className="break-words text-xs font-bold uppercase tracking-[0.14em] text-[#9AA394]">{section.label}</p>
+      <p className="mt-2 break-words font-serif text-xl font-bold text-[#4F5E52]">{section.displayValue}</p>
+      <details className="group mt-3 border-t border-[#F3EFE6] pt-3">
+        <summary className="cursor-pointer list-none text-sm font-bold text-[#4F5E52] marker:content-none">
+          <span className="group-open:hidden">Lihat selengkapnya</span>
+          <span className="hidden group-open:inline">Tutup penjelasan</span>
+        </summary>
+        <p className="mt-3 text-sm leading-7 text-[#7B8776]">{section.fullExplanation}</p>
+      </details>
+    </article>
   );
 }
 
-function SealNode({ seal, tone, label }: { seal: SolarSeal; tone?: GalacticTone; label?: string }) {
+function OracleGraphic({ contract }: { contract: TzolkinIdentityReadContract }) {
+  if (!contract.kin || !contract.guide || !contract.analog || !contract.antipode || !contract.occult || !contract.seal) return null;
   return (
-    <div className="flex flex-col items-center justify-center relative">
-      {tone && (
-        <div className="absolute -top-6">
-          <ToneDotsBars toneName={tone.name} />
-        </div>
-      )}
-      <div className={`flex h-16 w-16 items-center justify-center rounded-2xl border-2 p-1 text-center text-[9px] font-bold leading-tight shadow-sm ${getSealBgColor(seal.name)}`}>
-        {seal.name.split(" ")[0]}
-        <br />
-        {seal.name.split(" ")[1]}
+    <section aria-label="Galactic Signature Oracle" className="rounded-3xl border border-[#E8E1D3] bg-white p-5 shadow-sm sm:p-7">
+      <div className="mb-6 text-center">
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">Galactic Signature</p>
+        <h2 className="mt-2 break-words font-serif text-xl font-bold text-[#4F5E52]">{contract.galacticSignature?.displayValue}</h2>
       </div>
-      {label && <span className="mt-1 text-[10px] font-bold uppercase text-gray-500">{label}</span>}
-    </div>
+      <div className="mx-auto grid max-w-sm grid-cols-3 items-center gap-3 text-center">
+        <div />
+        <OracleNode section={contract.guide} icon={Compass} />
+        <div />
+        <OracleNode section={contract.antipode} icon={Activity} />
+        <OracleNode section={contract.seal} icon={Sun} label={`Kin ${contract.kinNumber}`} />
+        <OracleNode section={contract.analog} icon={Heart} />
+        <div />
+        <OracleNode section={contract.occult} icon={BriefcaseBusiness} />
+        <div />
+      </div>
+    </section>
   );
 }
 
-function OracleGraphic({ tzolkin }: { tzolkin: TzolkinBlueprint }) {
-  const { oracle } = tzolkin;
-  
+function OracleNode({ section, icon: Icon, label }: { section: TzolkinSectionContract; icon: typeof Sparkles; label?: string }) {
   return (
-    <div className="rounded-2xl border border-[#E8E1D3] bg-[#fbf9f4] p-8 shadow-sm">
-      <div className="mb-8 text-center flex flex-col items-center gap-1">
-        <span className="text-xs font-bold tracking-[0.2em] uppercase text-gray-500">Destiny Oracle</span>
-        <h2 className="text-xl font-serif font-bold text-[#4F5E52] uppercase tracking-wider">{tzolkin.kinName}</h2>
+    <div className="min-w-0">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EEF1EA] text-[#4F5E52]">
+        <Icon size={20} />
       </div>
-
-      <div className="relative mx-auto flex w-full max-w-[280px] flex-col items-center gap-4">
-        {/* Connecting Lines (Cross) */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
-          <div className="absolute h-[160px] w-0.5 bg-gray-800 mt-6" />
-          <div className="absolute h-0.5 w-[160px] bg-gray-800" />
-        </div>
-
-        {/* Guide */}
-        <div className="z-10 mt-6 bg-[#fbf9f4] p-1 rounded-3xl">
-          <SealNode seal={oracle.guide.seal} tone={oracle.guide.tone} label="Guide" />
-        </div>
-
-        {/* Middle Row: Antipode, Destiny, Analog */}
-        <div className="flex items-center justify-center gap-2 z-10 w-full">
-          <div className="flex-1 flex justify-end bg-[#fbf9f4] p-1 rounded-3xl">
-             <SealNode seal={oracle.antipode.seal} label="Antipode" />
-          </div>
-          <div className="relative mx-2 bg-[#fbf9f4] p-1 rounded-3xl">
-            <SealNode seal={oracle.destiny.seal} label="Destiny" />
-            <div className="absolute -right-12 bottom-2 text-xs font-bold text-[#4F5E52]">
-              KIN<br />{tzolkin.kin}
-            </div>
-          </div>
-          <div className="flex-1 flex justify-start bg-[#fbf9f4] p-1 rounded-3xl">
-            <SealNode seal={oracle.analog.seal} label="Analog" />
-          </div>
-        </div>
-
-        {/* Occult */}
-        <div className="z-10 bg-[#fbf9f4] p-1 rounded-3xl">
-          <SealNode seal={oracle.occult.seal} label="Occult" />
-        </div>
-      </div>
-
-      <div className="mt-10 flex justify-center gap-8">
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f8f9fa] border-2 border-gray-800 text-gray-800">
-            <div className="grid grid-cols-2 gap-0.5 p-1">
-               <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-               <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-               <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-               <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
-            </div>
-          </div>
-          <span className="text-[10px] font-bold uppercase text-gray-800 tracking-widest">WS</span>
-        </div>
-        <div className="flex flex-col items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f8f9fa] border-2 border-gray-800 text-gray-800">
-            <Compass size={18} strokeWidth={2.5} />
-          </div>
-          <span className="text-[10px] font-bold uppercase text-gray-800 tracking-widest">Kastil</span>
-        </div>
-      </div>
+      <p className="mt-2 break-words text-[10px] font-bold uppercase tracking-wider text-[#9AA394]">{label || section.label}</p>
+      <p className="mt-1 break-words text-xs font-semibold text-[#4F5E52]">{section.sealName}</p>
     </div>
   );
 }

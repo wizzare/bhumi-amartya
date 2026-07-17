@@ -2,59 +2,15 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Compass, Sparkles, User, Heart, Brain, Calendar, Target, Globe } from "lucide-react";
+import { ArrowLeft, Compass, Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { Blueprint } from "@/lib/types/blueprint";
 import { useAuth } from "@/context/AuthContext";
-import { AuditSection } from "../components/AuditSection";
 import { calculateNumerology } from "@/lib/calculations/calculateNumerology";
 import { calculateBirthDayNumber, calculatePersonalYear } from "@/lib/calculations/calculateLifePath";
-import { 
-  lifePathData, 
-  birthDayData, 
-  personalYearData, 
-  expressionData, 
-  soulUrgeData, 
-  personalityData 
-} from "@/lib/data/numerology";
-
-function getLifePathExplanation(num: number): string {
-  const data = lifePathData[num];
-  if (!data) return "";
-  return `Angka ini biasanya muncul pada orang yang dipanggil untuk ${data.coreJourney}. Dalam kehidupan sehari-hari, kekuatan dari peran sebagai ${data.roleId} ini terlihat ${data.dailyExpression}. Pelajaran besar bagi jalan hidupmu adalah ${data.majorLesson}.`;
-}
-
-function getBirthDayExplanation(num: number): string {
-  const data = birthDayData[num];
-  if (!data) return "";
-  return `Angka lahirmu menandai adanya kecenderungan alami berupa ${data.summary}. Bakat bawaan ini menjadi modal alami yang senantiasa menyertai setiap tindakanmu sehari-hari.`;
-}
-
-function getPersonalYearExplanation(num: number): string {
-  const data = personalYearData[num];
-  if (!data) return "";
-  return `Fase siklus waktu yang sedang aktif dalam hidupmu tahun ini menekankan pentingnya ${data.summary}. Tema berjalan ini membimbing perhatian dan ritme hidupmu sepanjang periode berjalan.`;
-}
-
-function getExpressionExplanation(num: number): string {
-  const data = expressionData[num];
-  if (!data) return "";
-  return `Bakat alamimu dan cara potensimu diekspresikan dalam tindakan nyata cenderung muncul ${data.summary}. Dalam kehidupan sehari-hari, hal ini memandu bagaimana kamu menyalurkan kontribusi terbaikmu agar menghasilkan dampak nyata.`;
-}
-
-function getSoulUrgeExplanation(num: number): string {
-  const data = soulUrgeData[num];
-  if (!data) return "";
-  return `Angka ini mewakili dorongan batin dan motivasi terdalam dalam jiwamu, yang biasanya mengarah pada ${data.summary}. Kehadiran energi ini menjelaskan kebutuhan dasar untuk menemukan rasa bermakna di balik setiap pilihan hidup yang kamu ambil.`;
-}
-
-function getPersonalityExplanation(num: number): string {
-  const data = personalityData[num];
-  if (!data) return "";
-  return `Dalam interaksi sosial, dunia luar cenderung melihat kehadiranmu sebagai ${data.summary}. Kesan pertama ini memancar secara spontan sebagai cerminan luar dari caramu membawa diri.`;
-}
+import { buildNumerologyPresentation } from "@/lib/numerology/presentation";
 
 export default function NumerologyPage() {
   const auth = useAuth();
@@ -72,8 +28,6 @@ export default function NumerologyPage() {
     }
     void load();
   }, []);
-
-  const isFounder = auth?.userProfile?.guardianRole === "founder" || auth?.userProfile?.role === "founder" || auth?.userProfile?.isDeveloper === true;
 
   const numerology = (blueprint?.numerology as any) || {};
   const core = (blueprint?.lifePath as any) || {}; 
@@ -98,79 +52,16 @@ export default function NumerologyPage() {
   const finalSoulUrge = getVal("soulUrge");
   const finalPersonality = getVal("personality");
 
-  const roleLifePath = finalLifePath ? (lifePathData as any)[Number(finalLifePath)]?.role : undefined;
-  const meaningLifePath = useMemo(() => finalLifePath ? getLifePathExplanation(Number(finalLifePath)) : undefined, [finalLifePath]);
-  const meaningBirthDay = useMemo(() => finalBirthDay ? getBirthDayExplanation(Number(finalBirthDay)) : undefined, [finalBirthDay]);
-  const meaningPersonalYear = useMemo(() => finalPersonalYear ? getPersonalYearExplanation(Number(finalPersonalYear)) : undefined, [finalPersonalYear]);
-  const meaningExpression = useMemo(() => finalExpression ? getExpressionExplanation(Number(finalExpression)) : undefined, [finalExpression]);
-  const meaningSoulUrge = useMemo(() => finalSoulUrge ? getSoulUrgeExplanation(Number(finalSoulUrge)) : undefined, [finalSoulUrge]);
-  const meaningPersonality = useMemo(() => finalPersonality ? getPersonalityExplanation(Number(finalPersonality)) : undefined, [finalPersonality]);
+  const presentation = useMemo(() => buildNumerologyPresentation({
+    lifePath: finalLifePath === undefined ? undefined : Number(finalLifePath),
+    expression: finalExpression === undefined ? undefined : Number(finalExpression),
+    soulUrge: finalSoulUrge === undefined ? undefined : Number(finalSoulUrge),
+    personality: finalPersonality === undefined ? undefined : Number(finalPersonality),
+    birthday: finalBirthDay === undefined ? undefined : Number(finalBirthDay),
+    personalYear: finalPersonalYear === undefined ? undefined : Number(finalPersonalYear),
+  }), [finalLifePath, finalExpression, finalSoulUrge, finalPersonality, finalBirthDay, finalPersonalYear]);
 
-  const synthesisParagraphs = useMemo(() => {
-    const list: string[] = [];
-
-    if (finalLifePath) {
-      const lp = lifePathData[Number(finalLifePath)];
-      if (lp) {
-        list.push(`Arah perjalanan hidup utamamu menunjukkan panggilan besar untuk ${lp.coreJourney} (Life Path ${finalLifePath}). Ini adalah kompas penunjuk jalan yang menentukan ke mana fokus energi dan pertumbuhan jangka panjangmu diarahkan.`);
-      }
-    }
-
-    if (finalSoulUrge) {
-      const su = soulUrgeData[Number(finalSoulUrge)];
-      if (su) {
-        list.push(`Di balik itu, terdapat dorongan batin kuat yang bersumber dari ${su.summary} (Soul Urge ${finalSoulUrge}). Kebutuhan terdalam inilah yang menyalakan motivasi internalmu dan memberi rasa bermakna pada setiap keputusan penting yang kamu ambil.`);
-      }
-    }
-
-    if (finalExpression) {
-      const expr = expressionData[Number(finalExpression)];
-      if (expr) {
-        list.push(`Menariknya, cara yang paling alami untuk mewujudkan potensi diri tersebut sering kali muncul ${expr.summary} (Expression ${finalExpression}). Bakat bawaan ini berfungsi sebagai saluran utama tempat gagasan dan energimu dikemas menjadi kontribusi yang konkret.`);
-      }
-    }
-
-    if (finalPersonality) {
-      const pers = personalityData[Number(finalPersonality)];
-      if (pers) {
-        list.push(`Dalam interaksi sehari-hari, cara energimu memancar membuat dunia luar cenderung melihat kehadiranmu sebagai ${pers.summary} (Personality ${finalPersonality}). Kesan pertama ini memancar secara spontan dan membantu menjembatani hubunganmu dengan sekeliling.`);
-      }
-    }
-
-    if (finalPersonalYear) {
-      const yr = personalYearData[Number(finalPersonalYear)];
-      if (yr) {
-        list.push(`Sebagai penyelarasan dengan waktu, tahun ini membimbing perhatianmu untuk berfokus pada ${yr.summary} (Personal Year ${finalPersonalYear}). Siklus tahun berjalan ini memberikan ruang latihan yang ideal untuk menyelaraskan ritme tindakanmu dengan dinamika energi saat ini.`);
-      }
-    }
-
-    return list;
-  }, [finalLifePath, finalSoulUrge, finalExpression, finalPersonality, finalPersonalYear]);
-
-  // For Founder Debug Only
-  const debugFields = [
-    { label: "Life Path Number", value: finalLifePath, sourcePath: "numerology.number" },
-    { label: "Life Path Meaning", value: roleLifePath, sourcePath: "numerology.role" },
-    { label: "Birth Day Number", value: finalBirthDay, sourcePath: "numerology.birthDay" },
-    { label: "Birth Day Meaning", value: meaningBirthDay, sourcePath: "" },
-    { label: "Personal Year", value: finalPersonalYear, sourcePath: "numerology.personalYear" },
-    { label: "Personal Year Meaning", value: meaningPersonalYear, sourcePath: "" },
-    { label: "Expression Number", value: finalExpression, sourcePath: "numerology.expression" },
-    { label: "Expression Meaning", value: meaningExpression, sourcePath: "" },
-    { label: "Soul Urge Number", value: finalSoulUrge, sourcePath: "numerology.soulUrge" },
-    { label: "Soul Urge Meaning", value: meaningSoulUrge, sourcePath: "" },
-    { label: "Personality Number", value: finalPersonality, sourcePath: "numerology.personality" },
-    { label: "Personality Meaning", value: meaningPersonality, sourcePath: "" },
-  ];
-
-  const cards = [
-    { title: "Life Path", num: finalLifePath, text: meaningLifePath, icon: Compass, color: "text-amber-600", bg: "bg-amber-50" },
-    { title: "Birth Day", num: finalBirthDay, text: meaningBirthDay, icon: Target, color: "text-blue-600", bg: "bg-blue-50" },
-    { title: "Expression", num: finalExpression, text: meaningExpression, icon: Globe, color: "text-emerald-600", bg: "bg-emerald-50" },
-    { title: "Soul Urge", num: finalSoulUrge, text: meaningSoulUrge, icon: Heart, color: "text-rose-600", bg: "bg-rose-50" },
-    { title: "Personality", num: finalPersonality, text: meaningPersonality, icon: User, color: "text-purple-600", bg: "bg-purple-50" },
-    { title: "Personal Year", num: finalPersonalYear, text: meaningPersonalYear, icon: Calendar, color: "text-orange-600", bg: "bg-orange-50" },
-  ];
+  const cards = presentation.sections.filter((section) => section.availabilityStatus === "available");
 
   return (
     <ProtectedRoute>
@@ -190,22 +81,23 @@ export default function NumerologyPage() {
               
               {/* User View Cards */}
               <div className="grid gap-4">
-                {cards.map((card, idx) => (
-                  <div key={idx} className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
+                {cards.map((card) => (
+                  <div key={card.sectionId} className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.bg} ${card.color}`}>
-                          <card.icon size={20} />
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                          <Compass size={20} />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold uppercase tracking-wider text-[#9AA394]">{card.title}</h3>
-                          <p className="text-2xl font-serif font-bold text-[#4F5E52]">{card.num || "-"}</p>
+                          <h3 className="text-sm font-bold uppercase tracking-wider text-[#9AA394]">{card.label}</h3>
+                          <p className="text-2xl font-serif font-bold text-[#4F5E52]">{card.displayValue || "-"}</p>
                         </div>
                       </div>
                     </div>
-                    {card.text && (
+                    {card.shortExplanation && (
                       <div className="mt-4 border-t border-[#F5F1E8] pt-4">
-                        <p className="text-sm leading-relaxed text-[#7B8776]">{card.text}</p>
+                        <p className="text-sm leading-relaxed text-[#7B8776]">{card.shortExplanation}</p>
+                        {card.fullExplanation && <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold text-[#4F5E52]">Lihat detail selengkapnya</summary><p className="mt-3 text-sm leading-relaxed text-[#7B8776]">{card.fullExplanation}</p></details>}
                       </div>
                     )}
                   </div>
@@ -216,22 +108,14 @@ export default function NumerologyPage() {
               <div className="mt-10 rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles size={18} className="text-[#D4AF37]" />
-                  <h2 className="text-lg font-bold">Kesimpulan Numerologi</h2>
+                  <h2 className="text-lg font-bold">Kesimpulan Dirimu</h2>
                 </div>
                 <div className="space-y-4 text-sm leading-relaxed text-[#D2D8D0]">
-                  {synthesisParagraphs.map((para, idx) => (
+                  {presentation.identity.summary.map((para, idx) => (
                     <p key={idx}>{para}</p>
                   ))}
                 </div>
               </div>
-
-              {/* Founder Debug */}
-              {isFounder && (
-                <div className="mt-12 pt-8 border-t border-dashed border-[#E8E1D3]">
-                  <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#9AA394]">Audit & Debug (Founder Only)</h3>
-                  <AuditSection title="Numerology Data" fields={debugFields} isFounder={true} />
-                </div>
-              )}
 
             </div>
           ) : <p className="text-center text-[#7B8776]">Data belum tersedia.</p>}

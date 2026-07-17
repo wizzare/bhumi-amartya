@@ -1,5 +1,6 @@
 import type { CanonicalDestinyMatrix, DestinyMatrixProjection } from "@/lib/types/destinyMatrix";
 import { translateToLegacyReading, type LegacyReading } from "@/lib/engines/destinyMatrixLegacyTranslator";
+import { buildDestinyMatrixAncestralProjection, type DestinyMatrixAncestralProjection } from "@/lib/destiny-matrix/ancestralProjection";
 
 export type VisualStatus = "ready" | "coming_soon";
 
@@ -42,6 +43,7 @@ export type DestinyMatrixVisualModel = {
   };
   nodeMap: Record<string, number>;
   legacyReading: LegacyReading;
+  ancestral: DestinyMatrixAncestralProjection;
 };
 
 const HEALTH_NAMES: DestinyMatrixHealthRow["name"][] = [
@@ -101,7 +103,8 @@ export function buildDestinyMatrixVisualModel(matrix: CanonicalDestinyMatrix): D
       segments: timelineSegments,
     },
     nodeMap: Object.fromEntries(values),
-    legacyReading: translateToLegacyReading(matrix.graph)
+    legacyReading: translateToLegacyReading(matrix.graph),
+    ancestral: buildDestinyMatrixAncestralProjection(matrix.graph),
   };
 }
 

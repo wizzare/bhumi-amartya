@@ -81,6 +81,9 @@ export interface WellnessSnapshot {
     social: number; // 1-10
   };
   needs: WellnessNeed[];
+  /** Canonical V4 daily context. Legacy snapshots may omit these fields. */
+  lifeSituation?: string[];
+  healthCondition?: "normal" | "kurang_fit" | "ringan" | "sedang" | "berat" | "Healthy" | "Less Fit" | "Mild Illness" | "Moderate Illness" | "Severe Illness";
   checkInCompleted: boolean;
   updatedAt: string; // ISO timestamp
 }

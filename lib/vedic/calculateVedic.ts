@@ -1,6 +1,6 @@
 import * as Astronomy from "astronomy-engine";
 import type {
-  PlanetaryStrength, PurusharthaFocus, VedicBlueprint, VedicCalculationInput,
+  PlanetaryStrength, PurusharthaFocus, VedicBlueprint, VedicCalculationInput, VedicPartialBlueprint,
   VedicDashaPeriod, VedicGraha, VedicKaraka, VedicPlacement, VedicYoga,
 } from "./types";
 
@@ -53,7 +53,7 @@ function resolveInput(input: VedicCalculationInput) {
     throw new Error("Vedic calculation requires birth coordinates and timezone.");
   }
   const [year, month, day] = input.birthDate.split("-").map(Number);
-  const [hour, minute] = input.birthTime.split(":").map(Number);
+  const [hour, minute] = input.birthTime!.split(":").map(Number);
   const wallClock = new Date(Date.UTC(year, month - 1, day, hour, minute));
   const offset = timezoneOffsetMinutes(timezone) ?? namedTimezoneOffset(timezone, wallClock);
   if (offset === null || ![year, month, day, hour, minute].every(Number.isFinite)) throw new Error("Invalid Vedic birth date, time, or timezone.");
@@ -189,7 +189,24 @@ const LAGNA_TEXT: Record<string, [string, string]> = {
   Aquarius: ["independen, sistemik, dan berpihak pada masa depan", "tetap hadir secara emosional"], Pisces: ["imajinatif, welas asih, dan intuitif", "menjaga batas agar tidak menyerap semuanya"],
 };
 
+const validBirthTime = (value?: string | null): value is string => {
+  const match = /^(\d{2}):(\d{2})$/.exec(value || "");
+  return Boolean(match && Number(match[1]) <= 23 && Number(match[2]) <= 59);
+};
+
+function partialBirthTimeResult(input: VedicCalculationInput): VedicPartialBlueprint {
+  const asOf = input.asOf instanceof Date ? input.asOf : input.asOf ? new Date(input.asOf) : new Date();
+  return {
+    status: "PARTIAL_BIRTH_TIME_REQUIRED",
+    availableSections: [],
+    unavailableSections: ["Lagna", "houses", "exact time-dependent chart", "time-sensitive interpretations"],
+    message: "Waktu lahir diperlukan untuk menghitung Lagna, rumah astrologi, dan bagian Vedic yang bergantung pada posisi langit secara tepat.",
+    meta: { schemaVersion: "1.0.0", engineVersion: "vedic-engine-1.0.0", calculationSource: "input-safety-guard", accuracy: "partial", calculatedAt: new Date().toISOString(), asOf: asOf.toISOString() },
+  };
+}
+
 export function calculateVedic(input: VedicCalculationInput): VedicBlueprint {
+  if (!validBirthTime(input.birthTime)) return partialBirthTimeResult(input) as unknown as VedicBlueprint;
   const { date, latitude, longitude } = resolveInput(input);
   const asOf = input.asOf instanceof Date ? input.asOf : input.asOf ? new Date(input.asOf) : new Date();
   const ayanamsha = lahiriAyanamsha(date);

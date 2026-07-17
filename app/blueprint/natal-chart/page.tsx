@@ -7,13 +7,10 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { Blueprint } from "@/lib/types/blueprint";
-import { useAuth } from "@/context/AuthContext";
-import { composePlanetMeaning, getTopHouses, getTopAspects } from "@/lib/astrology/natalIntelligence";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
-
-import { generateDeterministicSynthesis } from "@/lib/engines/NatalSummaryEngine";
 import { LILITH_SIGN_MEANINGS } from "@/lib/data/astrologyDictionaries";
 import { NatalWheelLite } from "@/components/blueprint/NatalWheelLite";
+import { buildNatalPresentation } from "@/lib/astrology/presentation";
 
 const ZODIAC_ELEMENT_MAP: Record<string, string> = {
   Aries: "Fire", Taurus: "Earth", Gemini: "Air", Cancer: "Water",
@@ -22,10 +19,8 @@ const ZODIAC_ELEMENT_MAP: Record<string, string> = {
 };
 
 export default function NatalChartPage() {
-  const auth = useAuth();
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [loading, setLoading] = useState(true);
-  const [synthesis, setSynthesis] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -48,11 +43,11 @@ export default function NatalChartPage() {
         const longitude = input.longitude || profile?.longitude;
 
         const hasPlanets = astrology.planets && Object.keys(astrology.planets).length > 0;
-        if (!hasPlanets && birthDate) {
+        if (!hasPlanets && birthDate && birthTime) {
           try {
             const recalculated = calculateNatalBasics({
               birthDate,
-              birthTime: birthTime || "12:00",
+              birthTime,
               birthCity,
               timezone,
               latitude,
@@ -79,8 +74,6 @@ export default function NatalChartPage() {
 
         if (activeBlueprint) {
           setBlueprint(activeBlueprint);
-          const deterministicSynthesis = generateDeterministicSynthesis(astrology);
-          setSynthesis(deterministicSynthesis);
         }
       } finally {
         setLoading(false);
@@ -90,6 +83,8 @@ export default function NatalChartPage() {
   }, []);
 
   const nc = (blueprint?.astrology as any) || (blueprint?.natalChart as any) || {};
+  const natalPresentation = buildNatalPresentation(nc);
+  const synthesis = natalPresentation.identity.summary.join("\n\n");
 
   const getPlanetSign = (name: string): string | undefined => {
     if (!nc) return undefined;
@@ -161,23 +156,22 @@ export default function NatalChartPage() {
   const dominantElementEntry = Object.entries(elementCounts).sort((a, b) => b[1] - a[1])[0];
   const dominantElement = (dominantElementEntry && totalElements > 0) ? dominantElementEntry[0] : "Belum tersedia";
 
-  const topHouses = getTopHouses(nc.planets);
-  const topAspects = getTopAspects(nc.aspects);
+  const topHouses = natalPresentation.identity.houseEmphasis;
   const lilith = nc.lilith;
   const lilithMeaning = lilith?.sign ? LILITH_SIGN_MEANINGS[lilith.sign] : undefined;
 
   const groups = [
     {
-      title: "1. Identity Layer",
+      title: "Lapisan Utama Dirimu",
       items: [
         { label: "Sun", sign: sunSign, icon: Sun, bg: "bg-amber-50", color: "text-amber-500" },
         { label: "Moon", sign: moonSign, icon: Moon, bg: "bg-slate-100", color: "text-slate-500" },
         { label: "Ascendant", sign: ascendantSign, icon: ArrowUpCircle, bg: "bg-rose-50", color: "text-rose-500" },
-        { label: "MC", sign: mcSign, icon: Mountain, bg: "bg-stone-50", color: "text-stone-500" },
+        { label: "Midheaven", sign: mcSign, icon: Mountain, bg: "bg-stone-50", color: "text-stone-500" },
       ]
     },
     {
-      title: "2. Personal Planets",
+      title: "Cara Dirimu Berpikir, Mencintai, dan Bertindak",
       items: [
         { label: "Mercury", sign: getPlanetSign("Mercury"), icon: MessageCircle, bg: "bg-blue-50", color: "text-blue-500" },
         { label: "Venus", sign: getPlanetSign("Venus"), icon: Heart, bg: "bg-pink-50", color: "text-pink-500" },
@@ -185,14 +179,14 @@ export default function NatalChartPage() {
       ]
     },
     {
-      title: "3. Social Planets",
+      title: "Pertumbuhan dan Pendewasaan",
       items: [
         { label: "Jupiter", sign: getPlanetSign("Jupiter"), icon: Sparkles, bg: "bg-yellow-50", color: "text-yellow-600" },
         { label: "Saturn", sign: getPlanetSign("Saturn"), icon: Shield, bg: "bg-zinc-100", color: "text-zinc-600" },
       ]
     },
     {
-      title: "4. Generational Planets",
+      title: "Perubahan dan Kedalaman Batin",
       items: [
         { label: "Uranus", sign: getPlanetSign("Uranus"), icon: Radio, bg: "bg-cyan-50", color: "text-cyan-500" },
         { label: "Neptune", sign: getPlanetSign("Neptune"), icon: Droplet, bg: "bg-indigo-50", color: "text-indigo-400" },
@@ -200,10 +194,10 @@ export default function NatalChartPage() {
       ]
     },
     {
-      title: "5. Soul Evolution",
+      title: "Arah Pertumbuhan Jiwa",
       items: [
-        { label: "NorthNode", sign: northNodeSign, icon: InfinityIcon, bg: "bg-emerald-50", color: "text-emerald-500" },
-        { label: "SouthNode", sign: southNodeSign, icon: InfinityIcon, bg: "bg-stone-50", color: "text-stone-400" },
+        { label: "Arah Utara", sign: northNodeSign, icon: InfinityIcon, bg: "bg-emerald-50", color: "text-emerald-500" },
+        { label: "Pola Lama", sign: southNodeSign, icon: InfinityIcon, bg: "bg-stone-50", color: "text-stone-400" },
         { label: "Chiron", sign: chironSign, icon: Heart, bg: "bg-teal-50", color: "text-teal-500" },
       ]
     }
@@ -243,7 +237,7 @@ export default function NatalChartPage() {
                         </div>
                         {item.sign && (
                           <div className="border-t border-[#F5F1E8] pt-3">
-                            <p className="text-sm leading-relaxed text-[#7B8776]">{composePlanetMeaning(item.label, item.sign)}</p>
+                            {(() => { const key = item.label === "Arah Utara" ? "NorthNode" : item.label === "Pola Lama" ? "SouthNode" : item.label; const section = natalPresentation.sections.find((candidate) => candidate.planet === key); return section?.fullExplanation ? <><p className="text-sm leading-relaxed text-[#7B8776]">{section.shortExplanation}</p><details className="mt-3"><summary className="cursor-pointer text-xs font-semibold text-[#4F5E52]">Lihat detail selengkapnya</summary><p className="mt-3 text-sm leading-relaxed text-[#7B8776]">{section.fullExplanation}</p></details></> : <p className="text-sm leading-relaxed text-[#7B8776]">Pembacaan bagian ini belum tersedia.</p>; })()}
                           </div>
                         )}
                       </div>
@@ -255,20 +249,20 @@ export default function NatalChartPage() {
               {/* Element Composition */}
               {lilith && lilithMeaning && (
                 <div>
-                  <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">🌑 Black Moon Lilith</h2>
+                  <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">🌑 Tema Lilith</h2>
                   <div className="rounded-2xl border border-[#D8D0E3] bg-[#F8F5FB] p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between gap-4">
                       <div>
                         <p className="text-xs font-bold uppercase tracking-wider text-[#8C7C99]">Mean Black Moon Lilith</p>
                         <p className="mt-1 text-sm font-semibold text-[#6F6577]">Degree {Number(lilith.degree).toFixed(2)}{"\u00b0"}</p>
-                        <p className="mt-1 text-xl font-serif font-bold text-[#4F4359]">{lilith.sign} · House {lilith.house}</p>
+                        <p className="mt-1 text-xl font-serif font-bold text-[#4F4359]">{lilith.sign} · Rumah {lilith.house}</p>
                       </div>
                       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#4F4359] text-xl text-white">🌑</div>
                     </div>
                     <div className="space-y-3 border-t border-[#E7E0EC] pt-4 text-sm leading-relaxed text-[#6F6577]">
-                      <p><span className="font-bold text-[#4F4359]">Meaning:</span> {lilithMeaning.meaning}</p>
-                      <p><span className="font-bold text-[#4F4359]">Shadow Theme:</span> {lilithMeaning.shadowTheme}</p>
-                      <p><span className="font-bold text-[#4F4359]">Growth Invitation:</span> {lilithMeaning.growthInvitation}</p>
+                      <p><span className="font-bold text-[#4F4359]">Makna:</span> {lilithMeaning.meaning}</p>
+                      <p><span className="font-bold text-[#4F4359]">Bayangan:</span> {lilithMeaning.shadowTheme}</p>
+                      <p><span className="font-bold text-[#4F4359]">Arah pertumbuhan:</span> {lilithMeaning.growthInvitation}</p>
                     </div>
                   </div>
                 </div>
@@ -276,7 +270,7 @@ export default function NatalChartPage() {
 
               {/* Element Composition */}
               <div>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">6. Element Composition</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Komposisi Elemen</h2>
                 <div className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div className="flex items-center gap-2"><Flame size={16} className="text-red-500" /><span className="text-sm font-bold text-[#4F5E52]">Fire {getElementPct("Fire")}%</span></div>
@@ -286,21 +280,33 @@ export default function NatalChartPage() {
                   </div>
                   <div className="border-t border-[#F5F1E8] pt-3">
                     <p className="text-sm text-[#7B8776]"><span className="font-bold text-[#4F5E52]">Elemen Dominan: {dominantElement}</span>. Keseimbangan elemen adalah peta dasar caramu merespons kehidupan.</p>
+                    <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold text-[#4F5E52]">Lihat detail selengkapnya</summary><p className="mt-3 text-sm leading-relaxed text-[#7B8776]">{natalPresentation.identity.elementNarrative}</p></details>
                   </div>
                 </div>
               </div>
 
+              <div>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Pola Modalitas</h2>
+                <div className="grid grid-cols-3 gap-2 rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">
+                  {Object.entries(nc.modalities || natalPresentation.identity.dominantModalities.reduce((result, key) => ({ ...result, [key]: 1 }), {})).map(([modality, value]) => (
+                    <div key={modality} className="text-center"><p className="text-xs font-bold text-[#4F5E52]">{modality}</p><p className="mt-1 text-lg font-serif text-[#7B8776]">{String(value)}</p></div>
+                  ))}
+                </div>
+                <details className="mt-3"><summary className="cursor-pointer text-xs font-semibold text-[#4F5E52]">Lihat detail selengkapnya</summary><p className="mt-3 text-sm leading-relaxed text-[#7B8776]">{natalPresentation.identity.modalityNarrative}</p></details>
+              </div>
+
               {/* Life Areas */}
               <div>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">7. Life Areas</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Area Kehidupan yang Menonjol</h2>
                 <p className="mb-4 text-sm text-[#7B8776]">Top 3 area kehidupan dengan konsentrasi energi terbesar:</p>
                 <div className="grid gap-3">
                   {topHouses.map((h, i) => (
                     <div key={i} className="flex items-center gap-4 rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-50 text-orange-500"><Home size={18} /></div>
                       <div>
-                        <p className="font-serif font-bold text-[#4F5E52]">{h.title} (House {h.house})</p>
-                        <p className="text-xs text-[#9AA394]">{h.desc}</p>
+                        <p className="font-serif font-bold text-[#4F5E52]">{natalPresentation.identity.houseEmphasis[i]?.title || h.title} (Rumah {h.house})</p>
+                        <p className="text-xs text-[#9AA394]">{natalPresentation.identity.houseEmphasis[i]?.desc || h.desc}</p>
+                        {natalPresentation.identity.houseEmphasis[i]?.explanation && <details className="mt-2"><summary className="cursor-pointer text-xs font-semibold text-[#4F5E52]">Lihat detail selengkapnya</summary><p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{natalPresentation.identity.houseEmphasis[i].explanation}</p></details>}
                       </div>
                     </div>
                   ))}
@@ -310,15 +316,15 @@ export default function NatalChartPage() {
 
               {/* Major Aspects */}
               <div>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">8. Major Aspects</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Dinamika Utama dalam Dirimu</h2>
                 <div className="grid gap-3">
-                  {topAspects.map((a, i) => (
+                  {natalPresentation.aspects.map((a, i) => (
                     <div key={i} className="rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">
                       <p className="font-serif font-bold text-[#4F5E52]">{a.title}</p>
                       <p className="mt-1 text-sm text-[#7B8776]">{a.meaning}</p>
                     </div>
                   ))}
-                  {topAspects.length === 0 && <p className="text-sm text-[#7B8776]">Data belum tersedia.</p>}
+                  {natalPresentation.aspects.length === 0 && <p className="text-sm text-[#7B8776]">Data belum tersedia.</p>}
                 </div>
               </div>
 
@@ -326,7 +332,7 @@ export default function NatalChartPage() {
               <div className="mt-10 rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
                 <div className="mb-4 flex items-center gap-2">
                   <Sparkles size={18} className="text-[#D4AF37]" />
-                  <h3 className="font-serif text-xl">9. Sintesis Peta Langit</h3>
+                  <h3 className="font-serif text-xl">Kesimpulan Dirimu</h3>
                 </div>
                 {synthesis ? (
                   <div className="prose prose-sm prose-invert max-w-none text-[#D2D8D0] leading-relaxed">

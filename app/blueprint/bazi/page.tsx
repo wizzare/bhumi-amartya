@@ -17,10 +17,11 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
-import type { BaziBlueprint, BaziPillar } from "@/lib/bazi/types";
+import type { BaziPillar } from "@/lib/bazi/types";
+import { BaziMeaningService, type EnrichedBaziBlueprint } from "@/lib/bazi/baziMeaning";
 
 export default function BaziPage() {
-  const [bazi, setBazi] = useState<BaziBlueprint | null>(null);
+  const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function BaziPage() {
         if (!storedBlueprint) return;
         const blueprint = storedBlueprint as unknown as Blueprint;
         if (blueprint.bazi) {
-          setBazi(blueprint.bazi);
+          setBazi(BaziMeaningService.enrich(blueprint.bazi));
           return;
         }
         const birthDate = blueprint.input?.birthDate || profile?.birthDate;
@@ -44,12 +45,7 @@ export default function BaziPage() {
           birthTime,
           timezone: blueprint.input?.timezone || profile?.timezone,
         });
-        await storageProvider.saveUserBlueprint({
-          ...storedBlueprint,
-          bazi: calculated,
-          updatedAt: new Date().toISOString(),
-        });
-        setBazi(calculated);
+        setBazi(BaziMeaningService.enrich(calculated));
       } finally {
         setLoading(false);
       }
@@ -71,7 +67,7 @@ export default function BaziPage() {
             </div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">BaZi</p>
             <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">Empat Pilar Takdirmu</h1>
-            <p className="mt-3 leading-7 text-[#7B8776]">Peta kalender kelahiran melalui Batang Langit, Cabang Bumi, Lima Elemen, dan ritme keberuntungan.</p>
+            <p className="mt-3 leading-7 text-[#7B8776]">Peta kelahiran yang membantu melihat sifat dasar, keseimbangan tenaga, dan musim perjalanan hidupmu dengan bahasa yang lebih dekat.</p>
           </header>
 
           {loading ? (
@@ -79,12 +75,12 @@ export default function BaziPage() {
           ) : bazi ? (
             <div className="space-y-8">
               <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Empat Pilar</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Four Pillars</h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <PillarCard title="Pilar Tahun" pillar={bazi.yearPillar} />
-                  <PillarCard title="Pilar Bulan" pillar={bazi.monthPillar} />
-                  <PillarCard title="Pilar Hari" pillar={bazi.dayPillar} />
-                  <PillarCard title="Pilar Jam" pillar={bazi.hourPillar} />
+                  <PillarCard title="Year Pillar" pillar={bazi.yearPillar} />
+                  <PillarCard title="Month Pillar" pillar={bazi.monthPillar} />
+                  <PillarCard title="Day Pillar" pillar={bazi.dayPillar} />
+                  <PillarCard title="Hour Pillar" pillar={bazi.hourPillar} />
                 </div>
               </section>
 
@@ -101,7 +97,7 @@ export default function BaziPage() {
               </section>
 
               <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Lima Elemen</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Five Elements</h2>
                 <div className="rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
                   <div className="space-y-3">
                     {Object.entries(bazi.fiveElements).map(([element, value]) => (
@@ -112,9 +108,13 @@ export default function BaziPage() {
                     ))}
                   </div>
                   <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#F5F1E8] pt-4 text-sm">
-                    <div><p className="font-bold text-emerald-700">Pendukung</p><p className="text-[#7B8776]">{bazi.favorableElements.join(", ")}</p></div>
-                    <div><p className="font-bold text-rose-700">Perlu Dijaga</p><p className="text-[#7B8776]">{bazi.unfavorableElements.join(", ")}</p></div>
+                    {bazi.leastPresentElements.length === 5 ? <div className="col-span-2"><p className="font-bold text-[#4F5E52]">Sebaran Elemen Relatif Seimbang</p></div> : <>
+                      <div><p className="font-bold text-[#4F5E52]">Elemen Paling Sedikit</p><p className="text-[#7B8776]">{bazi.leastPresentElements.join(", ")}</p></div>
+                      <div><p className="font-bold text-[#4F5E52]">Elemen yang Lebih Dominan</p><p className="text-[#7B8776]">{bazi.mostPresentElements.join(", ")}</p></div>
+                    </>}
                   </div>
+                  <p className="mt-4 text-xs leading-5 text-[#8A9489]">Bagian ini menunjukkan sebaran elemen yang terlihat pada empat pilar kelahiranmu. Angka ini belum menentukan elemen yang paling mendukung atau perlu dihindari, karena pembacaan tersebut membutuhkan analisis kekuatan energi, musim kelahiran, dan hubungan antarelemen.</p>
+                  <p className="mt-4 border-t border-[#F5F1E8] pt-4 text-sm leading-6 text-[#7B8776]">{bazi.fiveElementsDescription}</p>
                 </div>
               </section>
 
@@ -122,16 +122,16 @@ export default function BaziPage() {
                 <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Ten Gods</h2>
                 <div className="grid gap-3">
                   {bazi.tenGods.map((item) => (
-                    <div key={item.pillar} className="flex items-center justify-between rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">
-                      <span className="text-sm font-bold capitalize text-[#4F5E52]">{item.pillar} stem · {item.stem}</span>
-                      <span className="rounded-full bg-[#F5F1E8] px-3 py-1 text-xs font-semibold text-[#7B8776]">{item.tenGod}</span>
+                    <div key={item.pillar} className="rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-3"><span className="text-sm font-bold capitalize text-[#4F5E52]">{item.pillar} · {item.stem}</span><span className="rounded-full bg-[#F5F1E8] px-3 py-1 text-xs font-semibold text-[#7B8776]">{item.tenGod}</span></div>
+                      <p className="mt-3 text-sm leading-6 text-[#7B8776]">{item.description}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section>
-                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Siklus Keberuntungan</h2>
+                <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Luck Pillar</h2>
                 <div className="rounded-2xl border border-[#D8D0C3] bg-[#F5F1E8] p-5">
                   <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Siklus Saat Ini</p>
                   <p className="mt-1 text-2xl font-serif font-bold text-[#4F5E52]">{bazi.currentLuckCycle.pillar.display}</p>

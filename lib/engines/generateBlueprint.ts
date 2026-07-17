@@ -39,7 +39,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
   });
   const vedic = calculateVedic({
     birthDate,
-    birthTime: birthTime || "12:00",
+    birthTime,
     birthCity,
     latitude,
     longitude,

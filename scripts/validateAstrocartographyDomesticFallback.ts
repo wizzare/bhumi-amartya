@@ -1,0 +1,50 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { calculateAstrocartography } from "../lib/astrocartography/calculateAstrocartography";
+import { buildAutomaticAstrocartographyPresentation } from "../lib/astrocartography/automaticPresentation";
+import { ASTROCARTOGRAPHY_REFERENCE_CITIES } from "../lib/astrocartography/cityReferences";
+
+const founder = { birthDate: "1985-05-03", birthTime: "23:45", timezone: "+07:00", latitude: -6.2088, longitude: 106.8456, birthCity: "Jakarta" };
+const result = calculateAstrocartography(founder);
+const indonesia = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "ID" })!;
+const singapore = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "SG" })!;
+const missingCountry = buildAutomaticAstrocartographyPresentation(result)!;
+const missingDataset = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "ID", cityDataset: [] })!;
+const invalidDomestic = { ...ASTROCARTOGRAPHY_REFERENCE_CITIES.find((city) => city.countryCode === "ID")!, id: "invalid-domestic", latitude: Number.NaN };
+const validGlobal = ASTROCARTOGRAPHY_REFERENCE_CITIES.find((city) => city.countryCode !== "ID")!;
+const failedDistance = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "ID", cityDataset: [invalidDomestic, validGlobal] })!;
+const relationship = indonesia.categories.find((category) => category.categoryName === "Relasi dan Kolaborasi")!;
+const primaryDomestic = indonesia.categories.find((category) => !category.domesticAvailabilityMessage && category.domesticReferences.length === 2)!;
+const onePrimaryDomestic = singapore.categories.find((category) => category.domesticReferences.length === 1 && category.domesticAvailabilityMessage?.startsWith("Satu wilayah"))!;
+const fallback = relationship.domesticReferences;
+const fallbackIds = new Set(fallback.map((city) => city.cityId));
+const uiSource = fs.readFileSync(path.join(process.cwd(), "components/blueprint/AstrocartographyMap.tsx"), "utf8");
+const profileSource = fs.readFileSync(path.join(process.cwd(), "app/profile/page.tsx"), "utf8");
+const checks: Array<[string, () => void]> = [];
+const check = (name: string, fn: () => void) => checks.push([name, fn]);
+
+check("01 two primary domestic references", () => assert.equal(primaryDomestic.domesticReferences.length, 2));
+check("02 one primary domestic reference", () => assert.equal(onePrimaryDomestic.domesticReferences.length, 1));
+check("03 no primary domestic references", () => assert.equal(relationship.referenceCities.filter((city) => city.domesticOrGlobal === "domestic").length, 0));
+check("04 two domestic fallback references", () => assert.equal(fallback.length, 2));
+check("05 fallback sorted by distance", () => assert.ok(fallback[0].nearestLines[0].approximateDistanceKm <= fallback[1].nearestLines[0].approximateDistanceKm));
+check("06 fallback status shown", () => assert.ok(fallback.every((city) => city.rankingReason.startsWith("DISTANT_REFERENCE")) && /Status: Referensi terdekat, pengaruh lebih halus/.test(uiSource)));
+check("07 fallback distance shown", () => assert.ok(fallback.every((city) => Number.isFinite(city.nearestLines[0].approximateDistanceKm) && city.nearestLines[0].approximateDistanceKm > 1500) && /approximateDistanceKm/.test(uiSource)));
+check("08 fallback excluded from category score", () => assert.ok(fallback.every((city) => !relationship.referenceCities.some((reference) => reference.cityId === city.cityId))));
+check("09 fallback excluded from dominant-line count", () => { const primaryLineIds = Array.from(new Set(relationship.referenceCities.flatMap((city) => city.nearestLines.map((line) => line.lineId)))).slice(0, 3); assert.deepEqual(relationship.dominantLineIds, primaryLineIds); });
+check("10 fallback excluded from Profile card", () => assert.ok(!fallback.some((city) => profileSource.includes(city.cityName)) && !/domesticReferences|fallback/.test(profileSource)));
+check("11 fallback excluded from primary overall ranking", () => assert.ok(indonesia.overallRegions.every((region) => !fallbackIds.has(region.locationId))));
+check("12 global primary references preserved", () => assert.deepEqual(relationship.globalReferences.map((city) => city.cityName), ["Washington, D.C.", "Istanbul", "Moscow"]));
+check("13 no false strong-influence wording", () => { const narrative = fallback.flatMap((city) => [...city.lineInterpretations.map((line) => line.narrative), city.integratedSummary]).join(" "); assert.match(narrative, /lebih halus/); assert.ok(!/(lokasi utama|wilayah kuat|sangat selaras|tempat terbaik|titik aktivasi)/i.test(narrative)); });
+check("14 missing birth-country handling", () => assert.ok(missingCountry.categories.every((category) => category.domesticReferences.length === 0 && category.domesticAvailabilityMessage?.includes("belum tersedia"))));
+check("15 missing city dataset handling", () => assert.ok(missingDataset.categories.every((category) => category.domesticReferences.length === 0 && category.globalReferences.length === 0 && category.domesticAvailabilityMessage?.includes("belum dapat dihitung"))));
+check("16 failed distance calculation handling", () => assert.ok(failedDistance.categories.every((category) => category.domesticReferences.length === 0 && category.domesticAvailabilityMessage?.includes("belum dapat dihitung"))));
+check("17 deterministic fallback ordering", () => assert.deepEqual(indonesia, buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "ID" })));
+check("18 cross-user country isolation", () => { const usa = buildAutomaticAstrocartographyPresentation(result, { birthCountryCode: "US" })!; assert.ok(usa.categories.every((category) => category.domesticReferences.every((city) => city.countryCode === "US"))); assert.notDeepEqual(indonesia.categories.map((category) => category.domesticReferences), usa.categories.map((category) => category.domesticReferences)); });
+check("19 fallback message uses country", () => assert.match(relationship.domesticAvailabilityMessage || "", /wilayah Indonesia/));
+check("20 fallback groups visually separated", () => assert.match(uiSource, /Referensi domestik terdekat[\s\S]*Wilayah utama global/));
+
+let passed = 0;
+for (const [name, fn] of checks) { try { fn(); passed += 1; console.log(`PASS ${name}`); } catch (error) { console.error(`FAIL ${name}`); throw error; } }
+console.log(`Astrocartography domestic fallback: ${passed}/${checks.length} checks passed`);
