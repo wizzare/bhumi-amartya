@@ -1,6 +1,6 @@
 import ProfileSectionClient from "@/components/profile/details/ProfileSectionClient";
 
-export function generateStaticParams() {
+export async function generateStaticParams() {
   return [
     { section: "siapa-dirimu" },
     { section: "energi-mekanika" },

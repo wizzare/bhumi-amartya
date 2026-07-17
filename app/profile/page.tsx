@@ -1,5 +1,6 @@
 "use client";
 
+// P0 HOTFIX ATTEMPT
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
@@ -13,6 +14,11 @@ import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
+import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
+import { getExistingDailyGuidance } from "@/lib/services/dailyGuidanceService";
+import type { DailyGuidance } from "@/lib/dailyGuidance/types";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { BaziMeaningService, type EnrichedBaziBlueprint } from "@/lib/bazi/baziMeaning";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -33,8 +39,16 @@ function insightCount(section: ProfileSection): number {
   return section.cards.length;
 }
 
-function IdentitasJiwaHub() {
-  const cards = [
+type BlueprintCard = {
+  title: string;
+  icon: string;
+  desc: string;
+  href: string;
+};
+
+function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
+  void bazi;
+  const cards: BlueprintCard[] = [
     {
       title: "Life Path",
       icon: "🔢",
@@ -82,6 +96,24 @@ function IdentitasJiwaHub() {
       icon: "☀️",
       desc: "Kode waktu dan ritme kesadaran dari kalender sakral Maya.",
       href: "/blueprint/tzolkin"
+    },
+    {
+      title: "Whole Sign Birth Chart",
+      icon: "♈",
+      desc: "Rumah kehidupan melalui astrologi tropical dengan sistem Whole Sign.",
+      href: "/blueprint/whole-sign"
+    },
+    {
+      title: "Astrocartography",
+      icon: "🌍",
+      desc: "Peta dunia yang menunjukkan wilayah tempat tema planet kelahiranmu lebih menonjol.",
+      href: "/blueprint/astrocartography"
+    },
+    {
+      title: "Zi Wei Dou Shu",
+      icon: "✦",
+      desc: "Peta dua belas istana dan bintang yang membentuk perjalanan hidupmu.",
+      href: "/blueprint/zi-wei"
     }
   ];
 
@@ -90,8 +122,8 @@ function IdentitasJiwaHub() {
       <div className="mb-2 flex items-center gap-2">
         <Sparkles size={20} className="text-[#9AA394]" />
         <div>
-          <h2 className="text-xl font-serif text-[#4F5E52]">Identitas Jiwa</h2>
-          <p className="text-sm text-[#7B8776] mt-1">Delapan cermin utama untuk mengenal dirimu lebih dalam.</p>
+          <h2 className="text-xl font-serif text-[#4F5E52]">Cetak Biru Jiwa</h2>
+          <p className="text-sm text-[#7B8776] mt-1">Sebelas cermin utama untuk mengenal dirimu lebih dalam.</p>
         </div>
       </div>
       
@@ -102,7 +134,7 @@ function IdentitasJiwaHub() {
               <div className="shrink-0 pt-0.5 text-2xl">{c.icon}</div>
               <div className="min-w-0">
                 <h3 className="font-semibold text-[#4F5E52]">{c.title}</h3>
-                <p className="text-xs text-[#7B8776] mt-1">{c.desc}</p>
+                <p className="mt-1 text-xs text-[#7B8776]">{c.desc}</p>
               </div>
             </div>
           </Link>
@@ -121,6 +153,9 @@ export default function ProfilePage() {
     : null;
   const [name, setName] = useState("Penghuni Bhumi");
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
+  const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
+  const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -137,38 +172,28 @@ export default function ProfilePage() {
         }
         if (profile) {
           setName(profileName(profile as unknown as LocalRecord));
+          setLanguage((profile as any).language === "en" ? "en" : "id");
         }
         if (blueprint) {
-          let soulIdentityAi = (profile as any)?.soulIdentityAi;
-          if (!soulIdentityAi) {
-            try {
-              const res = await fetch("/api/ai/daily-guidance", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  mode: "soul-identity",
-                  uid: blueprint.uid,
-                  blueprint,
-                  profile,
-                  language: profile?.language || "id"
-                })
-              });
-              const data = await res.json();
-              if (data?.ok && data?.soulIdentity) {
-                soulIdentityAi = data.soulIdentity;
-                if (profile) {
-                  (profile as any).soulIdentityAi = soulIdentityAi;
-                  await storageProvider.saveUserProfile(profile);
-                }
-              }
-            } catch (err) {
-              console.warn("Failed to generate stable Soul Identity:", err);
-            }
-          }
+          const canonicalBlueprint = blueprint as unknown as Blueprint;
+          if (canonicalBlueprint.bazi) setBazi(BaziMeaningService.enrich(canonicalBlueprint.bazi));
+          const soulIdentityAi = (profile as any)?.soulIdentityAi;
           const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
           const meaning = HumanMeaningService.generate(canonical, soulIdentityAi);
           const sections = ProfileRuntimeAdapter.buildProfile(meaning);
           setProfileSections(sections);
+
+          const timezone = (profile as any)?.timezone || (profile as any)?.profile?.timezone || "UTC";
+          const date = getLocalDateKey(new Date(), timezone);
+          const dgResult = await getExistingDailyGuidance({
+            uid: blueprint.uid,
+            profile,
+            blueprint,
+            date,
+          });
+          if (dgResult.status === "success" && dgResult.guidance) {
+            setDailyGuidance(dgResult.guidance);
+          }
         }
       } finally {
         setLoading(false);
@@ -192,11 +217,11 @@ export default function ProfilePage() {
               <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali di Bhumi. Mari melihat dirimu dengan lebih jernih.</p>
             </header>
 
-            <IdentitasJiwaHub />
+            <IdentitasJiwaHub bazi={bazi} />
 
             <section>
               <header className="mb-5 px-1">
-                <h2 className="text-xl font-serif text-[#4F5E52]">Gudang Identitas Jiwa</h2>
+                <h2 className="text-xl font-serif text-[#4F5E52]">Arsip Akashi</h2>
                 <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
               </header>
               <div className="grid grid-cols-2 gap-4">
@@ -211,6 +236,16 @@ export default function ProfilePage() {
               })}
               </div>
             </section>
+
+            <DailyNoteV2
+              dailyGuidance={dailyGuidance}
+              language={language}
+              userName={name}
+              dailyState={null}
+              yesterdayState={null}
+              recentDailyStates={[]}
+              navigatorState={null}
+            />
 
           </div>
         </main>

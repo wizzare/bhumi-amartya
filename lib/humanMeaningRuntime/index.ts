@@ -1,0 +1,16 @@
+export { humanMeaningRuntime } from "@/lib/humanMeaningRuntime/humanMeaningRuntime";
+export type { HumanMeaningRuntimeOptions } from "@/lib/humanMeaningRuntime/humanMeaningRuntime";
+export { executeHumanMeaningRuntime } from "@/lib/humanMeaningRuntime/publicInterface";
+export { knowledgeExtractionEngine } from "@/lib/humanMeaningRuntime/knowledgeExtractionEngine";
+export { characteristicEngine } from "@/lib/humanMeaningRuntime/characteristicEngine";
+export { traitEngine } from "@/lib/humanMeaningRuntime/traitEngine";
+export { patternEngine } from "@/lib/humanMeaningRuntime/patternEngine";
+export { conflictEngine } from "@/lib/humanMeaningRuntime/conflictEngine";
+export { humanMeaningEngine } from "@/lib/humanMeaningRuntime/humanMeaningEngine";
+export { needEngine } from "@/lib/humanMeaningRuntime/needEngine";
+export { growthEngine } from "@/lib/humanMeaningRuntime/growthEngine";
+export { humanMeaningRuntimeCache } from "@/lib/humanMeaningRuntime/runtimeCache";
+export { normalizeBlueprintInput, validateBlueprintInput, HumanMeaningInputValidationError } from "@/lib/humanMeaningRuntime/inputValidator";
+export { HUMAN_MEANING_BEHAVIOR_VERSION, HUMAN_MEANING_KNOWLEDGE_VERSION, HUMAN_MEANING_RUNTIME_VERSION, HUMAN_MEANING_VERSIONS } from "@/lib/humanMeaningRuntime/versions";
+export { assertValidHumanMeaningRuntime, validateHumanMeaningRuntime, HumanMeaningRuntimeValidationError } from "@/lib/humanMeaningRuntime/runtimeValidator";
+export * from "@/lib/humanMeaningRuntime/types";

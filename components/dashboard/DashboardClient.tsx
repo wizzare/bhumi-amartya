@@ -6,7 +6,6 @@ import { useAuth } from "@/context/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
-import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
 import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
@@ -769,7 +768,7 @@ export function DashboardClient() {
     <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
       <AppNav />
 
-// ...existing code...
+      {/* ...existing code... */}
 
       <DashboardHeader userName={profile.fullName} language={language} />
 
@@ -852,18 +851,6 @@ export function DashboardClient() {
       />
 
       <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
-
-      <DailyNoteV2
-        dailyGuidance={dailyGuidance}
-        focus={dailyNoteFocus}
-        language={language}
-        userName={profile.fullName}
-        dailyState={dailyState}
-        yesterdayState={yesterdayState}
-        recentDailyStates={recentDailyStates}
-        navigatorState={navigatorState}
-        appNow={appNow}
-      />
 
       <DailyUserFlowGuide language={language} />
 

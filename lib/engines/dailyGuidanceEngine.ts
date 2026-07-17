@@ -1,5 +1,11 @@
-import { generateGeminiJson } from "@/lib/ai/gemini";
-import { buildDailyGuidancePrompt } from "@/lib/prompts/dailyGuidancePrompt";
+import { AIGateway } from "@/lib/ai/gateway";
+import { buildIdentitySnapshot } from "@/lib/ai/identitySnapshot";
+import { MemoryCompiler } from "@/lib/livingIntelligence/memoryCompiler";
+import { buildCircadianContext } from "@/lib/livingIntelligence/circadianEngine";
+import { ReflectionEngine } from "@/lib/livingIntelligence/reflectionEngine";
+import { JourneyEngine } from "@/lib/livingIntelligence/journeyEngine";
+import { WellnessEngine } from "@/lib/livingIntelligence/wellnessEngine";
+import { PotentialEngine } from "@/lib/livingIntelligence/potentialEngine";
 import { DailyIntelligenceObject } from "@/lib/types/dailyIntelligence";
 import {
   DAILY_GUIDANCE_CONTENT_VERSION,
@@ -11,13 +17,44 @@ import { generateBlueprintHash, generateMemoryHash } from "@/lib/utils/hashing";
 
 export const dailyGuidanceEngine = {
   async generateLanguageFace(brain: DailyIntelligenceObject, context: any): Promise<any> {
-    const prompt = buildDailyGuidancePrompt({ ...context, brain });
-    try {
-      const aiOutput = await generateGeminiJson(prompt);
-      return this.mapToGuidance(brain, aiOutput, context);
-    } catch (e) {
-      return this.generateFallbackFace(brain, context);
+    const identity = buildIdentitySnapshot(context.profile || context.user, context.blueprint);
+    const memory = await MemoryCompiler.compile(
+      brain.uid || context.uid || context.user?.uid || "",
+      brain.localDateKey || context.localDateKey || "",
+      identity,
+    );
+    const language = context.language === "en" ? "en" : "id";
+    const circadian = buildCircadianContext(new Date(), language);
+    const reflection = ReflectionEngine.calculate(memory, identity, circadian);
+    const journey = JourneyEngine.calculate(memory, reflection, identity, circadian);
+    const wellness = WellnessEngine.calculate(memory, reflection, journey, identity, circadian, { language });
+    const potential = PotentialEngine.calculate(identity, memory, reflection, journey, wellness, circadian);
+
+    const response = await AIGateway.generateStructuredJson<Record<string, any>>({
+      promptKey: "daily-guidance",
+      language,
+      identity,
+      memory,
+      reflection,
+      journey,
+      wellness,
+      potential,
+      circadian,
+      validateResponse: isDailyGuidanceProviderOutput,
+      additionalContext: {
+        ...context,
+        brain,
+        reflectionContext: reflection,
+        journeyContext: journey,
+        wellnessContext: wellness,
+        potentialContext: potential,
+      },
+    });
+
+    if (response.ok && response.data) {
+      return this.mapToGuidance(brain, response.data, context);
     }
+    return this.generateFallbackFace(brain, context);
   },
 
   mapToGuidance(brain: DailyIntelligenceObject, output: any, context?: any): any {
@@ -113,6 +150,17 @@ export const dailyGuidanceEngine = {
     }, context);
   }
 };
+
+export function isDailyGuidanceProviderOutput(value: unknown): value is Record<string, any> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const output = value as Record<string, any>;
+  const hasText = (candidate: unknown) => typeof candidate === "string" && candidate.trim().length > 0;
+  return hasText(output.soulReflectionText ?? output.soulReflection?.dailyMessage)
+    && hasText(output.dailyNoteText ?? output.companionReflection?.preview)
+    && hasText(output.astroEnergy?.currentEnergy)
+    && hasText(output.journalingPrompt?.prompt)
+    && hasText(output.meditationRecommendation?.title);
+}
 
 function text(value: unknown): string {
   if (value === null || value === undefined) return "";

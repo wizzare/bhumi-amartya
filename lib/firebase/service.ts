@@ -1,6 +1,27 @@
 import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, limit, getDocs, updateDoc, deleteDoc, serverTimestamp, documentId } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
+
+/**
+ * P0 HOTFIX: Safely converts various date formats to Firestore Timestamp.
+ * Prevents "Invalid time value" RangeError by avoiding new Date(timestampObject).
+ */
+function toValidTimestamp(value: unknown, fallback: any): any {
+  if (value instanceof Timestamp) {
+    return value;
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? fallback : Timestamp.fromDate(value);
+  }
+
+  if (typeof value === "string" || typeof value === "number") {
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? fallback : Timestamp.fromDate(parsed);
+  }
+
+  return fallback;
+}
 import type { GaiaProfile } from '@/lib/profile/gaia/types';
 import { sanitizeForFirestore } from '@/lib/firebase/sanitizeForFirestore';
 import type { WetonBlueprint } from '@/lib/weton/types';
@@ -360,9 +381,9 @@ export class FirebaseService {
       const userRef = doc(db, 'users', profile.uid);
       const userData = {
         ...profile,
-        createdAt: profile.createdAt ? Timestamp.fromDate(new Date(profile.createdAt)) : serverTimestamp(),
+        createdAt: toValidTimestamp(profile.createdAt, serverTimestamp()),
         updatedAt: serverTimestamp(),
-        lastActiveAt: profile.lastActiveAt ? Timestamp.fromDate(new Date(profile.lastActiveAt)) : null
+        lastActiveAt: toValidTimestamp(profile.lastActiveAt, null)
       };
       
       // Remove ID from the data since it's the document ID
@@ -403,7 +424,7 @@ export class FirebaseService {
       const blueprintRef = doc(db, 'blueprints', blueprint.uid);
       const blueprintData = {
         ...blueprint,
-        createdAt: blueprint.createdAt ? Timestamp.fromDate(new Date(blueprint.createdAt)) : serverTimestamp(),
+        createdAt: toValidTimestamp(blueprint.createdAt, serverTimestamp()),
         updatedAt: serverTimestamp()
       };
       
@@ -783,7 +804,7 @@ export class FirebaseService {
       const prefsRef = doc(db, 'notifications', prefs.uid);
       const prefsData = {
         ...prefs,
-        createdAt: prefs.createdAt ? Timestamp.fromDate(new Date(prefs.createdAt)) : serverTimestamp(),
+        createdAt: toValidTimestamp(prefs.createdAt, serverTimestamp()),
         updatedAt: serverTimestamp()
       };
       

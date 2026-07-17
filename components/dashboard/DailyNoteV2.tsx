@@ -9,7 +9,8 @@ import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { useAuth } from "@/context/AuthContext";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { DashboardNoteAdapter } from "@/lib/dailyGuidance/dashboardNoteAdapter";
-import { applyDynamicGreetingPrefix } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { IntelligenceCard } from "./IntelligenceCard";
 
 interface DailyNoteV2Props {
   dailyGuidance: DailyGuidance | null;
@@ -41,7 +42,6 @@ export function DailyNoteV2({
   appNow = new Date(),
 }: DailyNoteV2Props) {
   const auth = useAuth();
-  const firstName = userName.split(" ")[0] || "Jiwa";
 
   React.useEffect(() => {
     if (dailyGuidance) trackEvent("open_daily_note", auth?.user?.uid);
@@ -64,66 +64,120 @@ export function DailyNoteV2({
     void dailyStateRepository.saveDailyState(auth.user.uid, dateKey, { dailyNoteDone: true });
   };
 
-  const sections = DashboardNoteAdapter.adapt(dailyGuidance).map((section) => ({
-    ...section,
-    main: applyDynamicGreetingPrefix(section.main, language, appNow),
-    advice: section.advice ? applyDynamicGreetingPrefix(section.advice, language, appNow) : undefined,
-  }));
+  /**
+   * P0 HOTFIX: Presentation Safeguard
+   * Removes internal orchestration tokens and debug strings.
+   */
+  const humanize = (text: string): string => {
+    if (!text) return "";
+
+    const INTERNAL_TOKENS = [
+      "steady-integration", "stable-reflection", "deep-healing",
+      "rising-growth", "gentle-support", "volatile-rhythm",
+      "fragile-momentum", "expanding-potential", "steady-assimilation",
+      "focus-integration", "stable-integration", "steady-growth"
+    ];
+
+    let cleaned = text.replace(/\s+/g, " ").trim();
+
+    // Remove specific blacklisted tokens
+    const tokenRegex = new RegExp(`\\b(${INTERNAL_TOKENS.join('|')})\\b`, 'gi');
+    cleaned = cleaned.replace(tokenRegex, "");
+
+    // Fix punctuation spacing after token removal
+    return cleaned
+      .replace(/\s+/g, " ")
+      .replace(/\s+([.,!?])/g, "$1")
+      .trim();
+  };
+
+  /**
+   * P0 HOTFIX: Finance Limiter & Advice Duplication Prevention
+   */
+  const sections = DashboardNoteAdapter.adapt(dailyGuidance).map((section) => {
+    let main = humanize(section.main);
+    let advice = section.advice ? humanize(section.advice) : undefined;
+
+    // Issue 2: Ekonomi & Rezeki limiter (Max 2 sentences)
+    if (section.key === "finance") {
+      const sentences = main.split(/(?<=[.!?])\s+/).filter(Boolean);
+      if (sentences.length > 2) {
+        main = sentences.slice(0, 2).join(" ");
+      }
+    }
+
+    // Issue 3: Advice Duplication Prevention
+    // If advice repeats the insight or concept too closely, suppress it in presentation.
+    if (advice && main.toLowerCase().includes(advice.toLowerCase().substring(0, Math.min(20, advice.length)))) {
+      advice = undefined;
+    }
+
+    return {
+      ...section,
+      main,
+      advice,
+    };
+  });
+
+  const greeting = getTimeOfDayGreeting(appNow, language);
+  const cleanName = userName?.trim() || (language === "id" ? "Sahabat" : "Friend");
 
   return (
-    <section className="mt-10 space-y-4">
+    <section className="mt-10 space-y-6">
       <div className="px-1">
-        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">Catatan Hari Ini</h3>
+        <p className="mt-1 text-sm font-semibold text-[#4F6658]">{greeting}, {cleanName}.</p>
+        <p className="text-sm font-medium text-[#7B8776] mt-1">{appNow.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })}</p>
+        <p className="text-xs text-[#9AA394] mt-2 opacity-80 italic">Sebuah catatan kecil dari Bhumi untuk kamu.</p>
       </div>
 
-      <article
-        onMouseEnter={markRead}
-        className="bhumi-card max-h-[72vh] overflow-y-auto border-none bg-white p-7 shadow-sm sm:p-8"
-      >
-        <div className="space-y-9">
-          <header className="space-y-4 border-b border-[#F1EEE7] pb-7">
-            <p className="font-serif text-xl font-bold text-[#4F6658]">Hai {firstName},</p>
-            <p className="text-sm leading-7 text-[#526053]">
-              Bhumi menyiapkan catatan ini sebagai teman duduk untuk membaca arah yang muncul dari perjalananmu.
-              Ambil satu bagian yang paling terasa dekat, lalu jadikan itu bahan menulis atau keputusan kecilmu.
+      <div className="grid grid-cols-1 gap-5">
+        {sections.map((section) => {
+          const Icon = section.icon ? ICON_MAP[section.icon] : null;
+          if (!Icon || section.isClosing) return null;
+
+          const sectionTitle = section.key === "finance" ? "Ekonomi & Rezeki" :
+                               section.key === "love" ? "Asmara & Percintaan" :
+                               section.title;
+
+          const sectionColor = section.key === "challenges" ? "orange" :
+                               section.key === "opportunities" ? "blue" :
+                               section.key === "finance" ? "amber" :
+                               section.key === "love" ? "rose" :
+                               section.key === "spiritual" ? "purple" :
+                               section.key === "mental" ? "indigo" :
+                               "emerald";
+
+          return (
+            <div key={section.key} onMouseEnter={section.key === "general" ? markRead : undefined}>
+              <IntelligenceCard
+                title={sectionTitle}
+                icon={Icon}
+                content={section.main}
+                advice={section.advice}
+                color={sectionColor}
+              />
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Dedicated Personal Closing */}
+      {dailyGuidance.dailyNoteText && (
+        <div className="mt-8 px-1">
+          <div className="p-6 rounded-[2rem] bg-[#FCFAF5] border border-[#F1EEE7] shadow-sm relative overflow-hidden">
+            <p className="text-sm leading-7 text-[#526053] italic">
+              &ldquo;{humanize(dailyGuidance.dailyNoteText)}&rdquo;
             </p>
-          </header>
-
-          {sections.map((section) => {
-            const Icon = section.icon ? ICON_MAP[section.icon] : null;
-
-            if (section.isClosing) {
-              return (
-                <section key={section.key || "closing"} className="space-y-4 border-t border-[#F1EEE7] pt-8">
-                  <div className="flex items-center gap-3 text-[#4F6658]">
-                    {Icon && <Icon size={20} />}
-                    <h4 className="font-serif text-lg font-bold">{section.title}</h4>
-                  </div>
-                  <p className="text-sm leading-7 text-[#3C3C3C]">{section.main}</p>
-                </section>
-              );
-            }
-
-            return (
-              <section key={section.key} className="space-y-4">
-                <div className="flex items-center gap-3 text-[#4F6658]">
-                  <span className="rounded-2xl bg-[#FCFAF5] p-2.5">
-                    {Icon && <Icon size={19} />}
-                  </span>
-                  <h4 className="font-serif text-lg font-bold">{section.title}</h4>
-                </div>
-                <p className="text-sm leading-7 text-[#3C3C3C]">{section.main}</p>
-                {section.advice && (
-                  <div className="rounded-2xl bg-[#F5F1E8]/55 p-4">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.2em] text-[#7B8776]">Saran dari Bhumi</p>
-                    <p className="text-sm leading-6 text-[#526053]">{section.advice}</p>
-                  </div>
-                )}
-              </section>
-            );
-          })}
+            <p className="mt-4 text-xs font-bold text-[#4F6658] text-center">- Bhumi -</p>
+          </div>
         </div>
-      </article>
+      )}
     </section>
   );
 }

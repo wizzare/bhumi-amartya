@@ -41,6 +41,23 @@ export type DailyState = {
   yogaDone?: boolean;
   herbalDone?: boolean;
   completedActivityIds?: string[]; // Build 31.35 Upgrade
+  checkInRevision?: number;
+  checkInFingerprint?: string;
+  beliefPreferenceRevision?: number;
+  wellnessRecommendationPackage?: {
+    generatedForLocalDate: string;
+    generatedForCheckInRevision: number;
+    generatedForBeliefPreferenceRevision?: number;
+    eligibilityVersion?: string;
+    worldviewPreferenceRevision?: number;
+    generatedAt?: string;
+    invalidationReason?: string;
+    environmentContextRevision?: string;
+    astroContextRevision?: string;
+    akashiContextRevision?: string;
+    environment?: unknown;
+    packages: unknown;
+  };
   wellnessSnapshot?: WellnessSnapshot; // V3 Addition
   wellnessMapping?: WellnessMapping; // V3.0.2 Consolidation
   dailySummary?: string; // V3.0.2 Summary
