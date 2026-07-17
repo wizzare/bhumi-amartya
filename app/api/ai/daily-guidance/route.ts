@@ -1,8 +1,10 @@
-import { NextResponse } from "next/server";
-import { dailyGuidanceEngine } from "@/lib/engines/dailyGuidanceEngine";
+﻿import { NextResponse } from "next/server";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
 import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
-import { DailyIntelligenceObject } from "@/lib/types/dailyIntelligence";
+import {
+  generateDailyGuidanceForRequest,
+  getOrGenerateDailyGuidance,
+} from "@/lib/services/dailyGuidanceService";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -166,6 +168,7 @@ export async function POST(request: Request) {
   try {
     console.log("[DAILY_GUIDANCE_API_START]");
     const body = (await request.json().catch(() => null)) as DailyGuidanceRequestBody | null;
+
     const normalized = normalizeDailyGuidanceRequest(body);
 
     console.log("[DAILY_GUIDANCE_REQUEST_SUMMARY]", getDailyGuidanceLogSummary(body, normalized));
@@ -179,34 +182,21 @@ export async function POST(request: Request) {
     }
 
     const input = normalized.input as DailyGuidanceContext;
+    const localDateKey = input.localDateKey as string;
 
-    const brain: DailyIntelligenceObject = {
+    const result = await getOrGenerateDailyGuidance({
       uid: input.uid,
-      localDateKey: input.localDateKey as string,
-      seed: "recovery_seed", // Placeholder
-      theme: input.astrologyToday || "recovery_theme", // Using astrologyToday if available, otherwise placeholder
-      focus: "recovery_focus", // Placeholder
-      issueKey: "recovery_issue", // Placeholder
-      navigatorMode: "REFLECTION", // Default to REFLECTION
-      journeyStage: 1, // Placeholder
-      emotion: "neutral", // Placeholder
-      challenge: "recovery_challenge", // Placeholder
-      growth: "recovery_growth", // Placeholder
-      suggestion: "recovery_suggestion", // Placeholder
-      energyLevel: 5, // Placeholder
-      dominantSignal: "recovery_signal", // Placeholder
-      confidence: 5, // Placeholder
-      voiceTone: "steady", // Default to steady
-      reflectionSeed: "recovery_reflection_seed", // Placeholder
-      guidanceSeed: "recovery_guidance_seed", // Placeholder
-      generatedAt: new Date().toISOString(),
-      memoryHash: "recovery_memory_hash", // Placeholder
-    };
+      profile: input.profile,
+      blueprint: input.blueprint,
+      date: localDateKey,
+      generate: () => generateDailyGuidanceForRequest(input),
+    });
 
-    const guidance = await dailyGuidanceEngine.generateLanguageFace(
-      brain,
-      input
-    );
+    if (result.status !== "success" || !result.guidance) {
+      throw new Error(result.error || "DAILY_GUIDANCE_GENERATION_FAILED");
+    }
+
+    const guidance = result.guidance;
 
     const apiResponse = { ok: true, guidance };
     console.log("[DAILY_GUIDANCE_RESPONSE_SUMMARY]", {
