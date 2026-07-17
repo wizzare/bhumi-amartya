@@ -1,5 +1,6 @@
 import { dailyStateRepository, type DailyState } from "@/lib/repositories/dailyStateRepository";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
+import { behaviorMemoryRepository } from "@/lib/repositories/behaviorMemoryRepository";
 import { getCompletionSummary } from "@/lib/engines/completionEngine";
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
@@ -99,6 +100,22 @@ export async function logWellnessSection4Practice(input: LogWellnessSection4Prac
       path: journeyRecordPath,
       payload: journeyRecordPayload,
     });
+    const existingJourneyRecord = await journeyRepository.getDailyRecord(input.uid, input.dateKey).catch(() => null);
+    const existingWellnessV4 = (existingJourneyRecord?.wellnessState?.wellnessV4 || {}) as Record<string, unknown>;
+    const existingPractices = Array.isArray(existingWellnessV4.practices) ? existingWellnessV4.practices : [];
+    const practiceMemory = {
+      practiceId: input.practiceId,
+      practiceType: input.practiceType,
+      practiceTitle: input.practiceTitle,
+      opened: true,
+      started: true,
+      completed: true,
+      skipped: false,
+      contextualRelevance: null,
+      highlighted: null,
+      completedAt,
+      factualResult: input.reflectionResult || input.reflectionResponse || null,
+    };
     await journeyRepository.updateDailyRecord(input.uid, input.dateKey, {
       dominantIssue: "wellness_section_4",
       issueCategory: input.practiceType,
@@ -123,6 +140,14 @@ export async function logWellnessSection4Practice(input: LogWellnessSection4Prac
         practiceHelped: practiceResultPayload.practiceHelped,
         userFelt: input.reflectionResult,
       },
+      wellnessState: {
+        ...(existingJourneyRecord?.wellnessState || {}),
+        wellnessV4: {
+          ...existingWellnessV4,
+          practices: [...existingPractices.filter((entry: any) => entry?.practiceId !== input.practiceId), practiceMemory],
+          updatedAt: completedAt,
+        },
+      },
       sourceConfidence: 1,
     });
     appendMoanaRuntimeDiagnostic("section4_journey_record_write_success", {
@@ -130,14 +155,18 @@ export async function logWellnessSection4Practice(input: LogWellnessSection4Prac
       practiceType: input.practiceType,
     });
 
-    appendMoanaRuntimeDiagnostic("section4_practice_result_append_attempt", {
-      path: `${journeyRecordPath}.practiceResults`,
-      payload: practiceResultPayload,
-    });
-    await journeyRepository.appendPracticeResult(input.uid, input.dateKey, practiceResultPayload);
-    appendMoanaRuntimeDiagnostic("section4_practice_result_append_success", {
-      path: `${journeyRecordPath}.practiceResults`,
-      practiceType: input.practiceType,
+    // Journey's innerworkCompletion is the single canonical factual event.
+    // Do not append the same completion again to practiceResults.
+    const stateForMemory = await dailyStateRepository.getDailyState(input.uid, input.dateKey).catch(() => null);
+    await behaviorMemoryRepository.recordCompleted(
+      input.uid,
+      input.practiceId,
+      durationMinutes,
+      stateForMemory?.wellnessSnapshot?.metrics.energy ?? 5,
+      stateForMemory?.wellnessSnapshot?.lifeSituation ?? [],
+      input.dateKey,
+    ).catch((error) => {
+      appendMoanaRuntimeDiagnostic("section4_behavior_memory_write_failure", { error: toDiagnosticError(error), practiceId: input.practiceId });
     });
 
     const [dailyStateReadback, journeyRecordReadback] = await Promise.all([

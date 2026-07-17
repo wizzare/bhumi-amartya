@@ -36,6 +36,39 @@ const STANDARDIZED_NEEDS: { value: WellnessNeed; label: string; emoji: string }[
   { value: "HEALING", label: "Pemulihan", emoji: "🩹" },
 ];
 
+const HEALTH_OPTIONS = [
+  { value: "normal", label: "Normal" },
+  { value: "kurang_fit", label: "Kurang Fit" },
+  { value: "ringan", label: "Ringan" },
+  { value: "sedang", label: "Sedang" },
+  { value: "berat", label: "Berat" },
+] as const;
+
+const LIFE_SITUATION_OPTIONS = [
+  { value: "wf_none", label: "Normal atau baik-baik saja", group: "Ekonomi & Kerja" },
+  { value: "wf_job_hunting", label: "Sedang mencari pekerjaan", group: "Ekonomi & Kerja" },
+  { value: "wf_economic_strain", label: "Tekanan ekonomi", group: "Ekonomi & Kerja" },
+  { value: "wf_high_workload", label: "Tekanan atau tuntutan kantor", group: "Ekonomi & Kerja" },
+  { value: "wf_work_conflict", label: "Konflik pekerjaan", group: "Ekonomi & Kerja" },
+  { value: "rel_none", label: "Normal atau baik-baik saja", group: "Cinta & Rumah Tangga" },
+  { value: "rel_partner_conflict", label: "Konflik pasangan", group: "Cinta & Rumah Tangga" },
+  { value: "rel_family_conflict", label: "Konflik keluarga", group: "Cinta & Rumah Tangga" },
+  { value: "rel_divorce", label: "Dalam proses perceraian", group: "Cinta & Rumah Tangga" },
+  { value: "rel_heartbreak", label: "Perpisahan atau putus hubungan", group: "Cinta & Rumah Tangga" },
+  { value: "fam_parent_care", label: "Merawat keluarga", group: "Kondisi Lain" },
+  { value: "fam_major_transition", label: "Masa transisi", group: "Kondisi Lain" },
+  { value: "soc_lonely", label: "Tekanan sosial atau kesepian", group: "Kondisi Lain" },
+] as const;
+
+function checkInFingerprint(input: Pick<WellnessSnapshot, "metrics" | "needs" | "lifeSituation" | "healthCondition">): string {
+  return JSON.stringify({
+    metrics: input.metrics,
+    needs: [...input.needs].sort(),
+    lifeSituation: [...(input.lifeSituation || [])].sort(),
+    healthCondition: input.healthCondition || "normal",
+  });
+}
+
 export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: WellnessCheckInCardProps) {
   const [step, setStep] = useState<"pending" | "active" | "completed">(
     initialSnapshot?.checkInCompleted ? "completed" : "pending"
@@ -48,6 +81,11 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
     social: initialSnapshot?.metrics.social || 5,
   });
   const [selectedNeeds, setSelectedNeeds] = useState<WellnessNeed[]>(initialSnapshot?.needs || []);
+  const legacyHealthMap: Record<string, typeof HEALTH_OPTIONS[number]["value"]> = { Healthy: "normal", "Less Fit": "kurang_fit", "Mild Illness": "ringan", "Moderate Illness": "sedang", "Severe Illness": "berat" };
+  const [healthCondition, setHealthCondition] = useState<typeof HEALTH_OPTIONS[number]["value"]>(
+    legacyHealthMap[initialSnapshot?.healthCondition || ""] || (initialSnapshot?.healthCondition as typeof HEALTH_OPTIONS[number]["value"]) || "normal"
+  );
+  const [lifeSituation, setLifeSituation] = useState<string[]>(initialSnapshot?.lifeSituation || []);
   const [saving, setSaving] = useState(false);
   const [recommendation, setRecommendation] = useState<WellnessRecommendation | null>(
     initialSnapshot ? getWellnessRecommendation(initialSnapshot) : null
@@ -74,12 +112,20 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
       const snapshot: WellnessSnapshot = {
         metrics,
         needs: selectedNeeds,
+        lifeSituation,
+        healthCondition,
         checkInCompleted: true,
         updatedAt: new Date().toISOString(),
       };
-
+      const existingState = await dailyStateRepository.getDailyState(uid, dateKey).catch(() => null);
+      const fingerprint = checkInFingerprint(snapshot);
+      const checkInRevision = existingState?.checkInFingerprint === fingerprint
+        ? existingState.checkInRevision || 1
+        : (existingState?.checkInRevision || 0) + 1;
       await dailyStateRepository.saveDailyState(uid, dateKey, {
         wellnessSnapshot: snapshot,
+        checkInRevision,
+        checkInFingerprint: fingerprint,
       });
       setRecommendation(getWellnessRecommendation(snapshot));
       setStep("completed");
@@ -177,6 +223,37 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted }: Welln
                 {need.label}
               </button>
             ))}
+          </div>
+        </div>
+
+        <div className="mb-10 space-y-5">
+          <div>
+            <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Kondisi kesehatan hari ini</p>
+            <div className="grid grid-cols-5 gap-2">
+              {HEALTH_OPTIONS.map((option) => (
+                <button key={option.value} type="button" onClick={() => setHealthCondition(option.value)}
+                  className={`rounded-xl border px-2 py-3 text-[11px] font-bold ${healthCondition === option.value ? "border-[#4F5E52] bg-[#4F5E52] text-white" : "border-[#E8E9E5] bg-[#FCFAF5] text-[#7B8776]"}`}>
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-3">Hal yang sedang memenuhi ruangmu (opsional)</p>
+            <div className="space-y-3">
+              {["Ekonomi & Kerja", "Cinta & Rumah Tangga", "Kondisi Lain"].map((group) => (
+                <div key={group}>
+                  <p className="mb-2 text-xs font-semibold text-[#526053]">{group}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {LIFE_SITUATION_OPTIONS.filter((option) => option.group === group).map((option) => {
+                      const selected = lifeSituation.includes(option.value);
+                      return <button key={option.value} type="button" onClick={() => setLifeSituation((current) => selected ? current.filter((id) => id !== option.value) : [...current, option.value])}
+                        className={`rounded-full border px-3 py-2 text-[11px] font-semibold ${selected ? "border-[#4F5E52] bg-[#4F5E52] text-white" : "border-[#E8E9E5] bg-white text-[#7B8776]"}`}>{option.label}</button>;
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 

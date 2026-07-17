@@ -11,6 +11,8 @@ import { dailyStateRepository, type DailyState } from "@/lib/repositories/dailyS
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { wellnessNavigatorRepository } from "@/lib/repositories/wellnessNavigatorRepository";
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
+import { emptyLongitudinalWellnessDocument, longitudinalWellnessRepository } from "@/lib/repositories/longitudinalWellnessRepository";
+import type { LongitudinalWellnessDocument } from "@/lib/types/longitudinalWellness";
 import { calculateWellnessMapping, type WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import { getLabelForScore, type AssessmentResult } from "@/lib/engines/assessmentScoringEngine";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
@@ -52,9 +54,11 @@ export type WellnessDailyIntelligence = {
       practiceHelped: boolean | null;
       completedAt: string;
     }>;
+    longitudinalSnapshot: LongitudinalWellnessDocument["snapshot"];
   };
   recommendationInput: InnerworkPracticeInput;
   mapping: WellnessMapping | null;
+  longitudinalWellness: LongitudinalWellnessDocument;
 };
 
 const EMPTY_MEMORY: JourneyDailyMemory = {
@@ -200,7 +204,7 @@ export async function loadWellnessDailyIntelligence(input: {
   previous.setDate(previous.getDate() - 1);
   const previousDate = getLocalDateKey(previous, timezone);
 
-  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState, storedMapping] = await Promise.all([
+  const [dailyGuidance, wellnessState, previousDayState, recentDailyStates, journeyMemory, navigatorState, storedMapping, longitudinalWellness] = await Promise.all([
     dailyGuidanceRepository.getDailyGuidance(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, date).catch(() => null),
     dailyStateRepository.getDailyState(input.uid, previousDate).catch(() => null),
@@ -208,6 +212,7 @@ export async function loadWellnessDailyIntelligence(input: {
     journeyRepository.getDailyMemory(input.uid).catch(() => EMPTY_MEMORY),
     wellnessNavigatorRepository.getNavigatorState(input.uid).catch(() => null),
     wellnessMappingRepository.getMapping(input.uid).catch(() => null),
+    longitudinalWellnessRepository.get(input.uid).catch(() => emptyLongitudinalWellnessDocument(input.uid)),
   ]);
 
   if (previousDayState && !previousDayState.consolidatedAt) {
@@ -269,6 +274,7 @@ export async function loadWellnessDailyIntelligence(input: {
       coachMemory: journeyMemory.coachMemory,
       practiceEffectiveness: journeyMemory.practiceInsights,
       recentPracticePatterns,
+      longitudinalSnapshot: longitudinalWellness.snapshot,
     },
     recommendationInput: {
       dominantIssue: currentIssue.key,
@@ -303,5 +309,6 @@ export async function loadWellnessDailyIntelligence(input: {
       },
     },
     mapping,
+    longitudinalWellness,
   };
 }

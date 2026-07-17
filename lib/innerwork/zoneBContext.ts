@@ -1,7 +1,7 @@
 import type { JourneyInnerworkCompletion, JourneyInnerworkRecommendation } from "@/lib/types/journeyDailyRecord";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
 
-export type ZoneBPracticeCategory = "journaling" | "meditation" | "breathwork" | "mudra" | "yoga" | "workout";
+export type ZoneBPracticeCategory = "journaling" | "meditation" | "breathwork" | "mudra" | "yoga" | "workout" | "manifestation" | "healthyFood";
 
 export type ZoneBContext = {
   issue: string;
@@ -42,7 +42,7 @@ export function readZoneBContext(search: string): ZoneBContext | null {
   const title = params.get("title");
   const durationMinutes = Number(params.get("duration"));
   if (!issue || !practiceId || !practiceCategory || !sourceTheme || !title) return null;
-  if (!["journaling", "meditation", "breathwork", "mudra", "yoga", "workout"].includes(practiceCategory)) return null;
+  if (!["journaling", "meditation", "breathwork", "mudra", "yoga", "workout", "manifestation", "healthyFood"].includes(practiceCategory)) return null;
   return {
     issue,
     practiceId,
@@ -154,6 +154,18 @@ export function getZoneBGuide(context: ZoneBContext): ZoneBGuide {
         ...shared,
         description: `Gerak tubuh terukur yang tetap menjaga tema ${language.focus}.`,
         steps: ["Mulai dengan pemanasan ringan.", "Lakukan gerakan dengan ritme yang masih memungkinkan bernapas nyaman.", "Kurangi intensitas bila tubuh menegang.", language.action],
+      };
+    case "manifestation":
+      return {
+        ...shared,
+        description: `Arah refleksi dan niat yang disusun dengan membumi untuk ${language.focus}.`,
+        steps: ["Akui keadaan yang sedang berlangsung.", "Pilih satu niat yang realistis untuk hari ini.", "Tuliskan satu langkah kecil yang berada dalam kendalimu.", language.action],
+      };
+    case "healthyFood":
+      return {
+        ...shared,
+        description: `Pilihan asupan sederhana yang mendukung ${language.focus} tanpa tuntutan perfeksionisme.`,
+        steps: ["Pilih satu pilihan yang tersedia dan sesuai kebutuhan tubuh.", "Nikmati perlahan tanpa menghakimi diri.", "Berhenti bila tubuh sudah cukup.", language.action],
       };
   }
 }
