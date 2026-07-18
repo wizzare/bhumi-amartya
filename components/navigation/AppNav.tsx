@@ -3,7 +3,7 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Crown, Home, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
+import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/lib/data/translations";
@@ -26,6 +26,7 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 
 const UTILITY_NAV_ITEMS: NavItem[] = [
   { Icon: Settings, labelKey: "settings", href: "/settings" },
+  { Icon: MessageSquare, labelKey: "profile" as any, label: "Inbox", href: "/inbox" },
   { Icon: Crown, labelKey: "profile" as any, label: "Premium Bhumi", href: "/premium-bhumi" },
 ];
 
@@ -39,7 +40,7 @@ export function AppNav() {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
   const localProfile = getLocalUserSession().profile;
   const activeProfile = auth?.userProfile ?? localProfile ?? null;
-  const isAdmin = isFounderAccount(activeProfile);
+  const isAdmin = isFounderOrAdminAccount(activeProfile);
 
   const moreItems = useMemo(() => {
     return isAdmin ? [...UTILITY_NAV_ITEMS, ADMIN_ITEM] : UTILITY_NAV_ITEMS;
@@ -194,8 +195,13 @@ export function AppNav() {
 
 function isFounderAccount(profile: any): boolean {
   if (!profile) return false;
-  if (profile.guardianRole === "founder") return true;
+  if (profile.guardianRole === "founder" || profile.role === "founder") return true;
 
   const email = profile.email?.trim().toLowerCase();
   return email === "wizzare@gmail.com";
+}
+
+function isFounderOrAdminAccount(profile: any): boolean {
+  if (!profile) return false;
+  return isFounderAccount(profile) || profile.guardianRole === "admin" || profile.role === "admin";
 }
