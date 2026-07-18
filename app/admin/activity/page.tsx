@@ -1217,6 +1217,9 @@ export default function AdminActivityPage() {
                 ["Nama", selectedUser.displayName],
                 ["Email", selectedUser.email],
                 ["UID", selectedUser.uid],
+                ["Tanggal Lahir", pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "tanggalLahir"]) || "No data"],
+                ["Jam Lahir", pickFirst(selectedUser.rawUser, ["birthTime", "timeOfBirth", "jamLahir"]) || "No data"],
+                ["Kota Lahir", pickFirst(selectedUser.rawUser, ["birthCity", "birthPlace", "city", "kotaLahir"]) || "No data"],
                 ["Device", pickFirst(selectedUser.rawUser, ["deviceModel", "device", "androidVersion", "osVersion"]) || "No data"],
                 ["Versi App", selectedUser.appVersion],
               ]} />
