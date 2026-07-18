@@ -163,6 +163,14 @@ export interface WeeklyRecommendation {
   weekId: string; // YYYY-Wxx
   startDate: string;
   endDate: string;
+  kabarMingguIni: string;
+  pikiran: string;
+  ekonomi: string;
+  asmara: string;
+  orangTerdekat: string;
+  maknaBatin: string;
+  yangLagiBerat: string;
+  ruangBaru: string;
   tema: string;
   peluang: string;
   perluDijaga: string;
