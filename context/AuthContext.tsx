@@ -10,6 +10,7 @@ import { storageProvider } from '@/lib/storage/storageProvider';
 import { processMembershipGrant } from '@/lib/billing/membershipLogic';
 import { participationEngine } from '@/lib/engines/participationEngine';
 import { migrateUserToGaia } from '@/lib/profile/gaia/migration';
+import { CommunicationCenterService } from '@/lib/services/communicationCenterService';
 
 interface AuthContextType {
   user: User | null;
@@ -176,6 +177,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 console.warn("[GAIA MIGRATION DEFERRED]", error);
                 return grantedProfile;
               });
+              await CommunicationCenterService.ensureBirthdayMessage({
+                uid: firebaseUser.uid,
+                birthDate: (migratedProfile as any).birthDate || (migratedProfile as any).dateOfBirth,
+                timezone: (migratedProfile as any).timezone,
+                displayName: firebaseUser.displayName || (migratedProfile as any).displayName,
+                fullName: (migratedProfile as any).fullName,
+              }).catch((error) => console.warn('[BIRTHDAY MESSAGE CHECK FAILED]', error));
               await participationEngine.recordActivity(firebaseUser.uid, "login", {
                 ...migratedProfile,
                 email: firebaseUser.email || migratedProfile.email || "",

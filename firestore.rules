@@ -71,6 +71,17 @@ service cloud.firestore {
         && request.resource.data.source == 'admin';
     }
 
+    function validSystemBirthday(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ownerUserId == request.auth.uid
+        && request.resource.data.senderUid == 'bhumi'
+        && request.resource.data.senderRole == 'system'
+        && request.resource.data.recipientRole == 'user'
+        && request.resource.data.source == 'system'
+        && request.resource.data.type == 'system-birthday';
+    }
+
     function immutableThreadFields() {
       return request.resource.data.ownerUserId == resource.data.ownerUserId
         && request.resource.data.threadId == resource.data.threadId
@@ -174,7 +185,7 @@ service cloud.firestore {
 
       match /communications/{messageId} {
         allow read: if isOwner(userId) || isAdminActor();
-        allow create: if validSupportCreate(userId) || validUserReply(userId) || validAdminReply(userId);
+        allow create: if validSupportCreate(userId) || validUserReply(userId) || validAdminReply(userId) || validSystemBirthday(userId);
         allow update: if (isOwner(userId)
           && immutableThreadFields()
           && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isRead', 'isArchived', 'isDismissed', 'updatedAt', 'deliveryAttempts', 'lastDeliveredAt']))

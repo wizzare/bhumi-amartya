@@ -26,6 +26,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
+import { birthdayYearKey, buildBirthdayMessage, type BirthdayProfile } from "@/lib/birthday/birthdayMessage";
 
 /**
  * BHUMI V4 COMMUNICATION CENTER SERVICE
@@ -65,11 +66,36 @@ export class CommunicationCenterService {
       metadata: { ownerUserId: params.authenticatedUid, recipientRole: "admin", category: params.category, userName: params.userName },
     });
   }
+
+  public static async ensureBirthdayMessage(profile: BirthdayProfile, now = new Date()): Promise<boolean> {
+    const year = birthdayYearKey(profile, now);
+    if (!year) return false;
+    const message = buildBirthdayMessage(profile, year);
+    const existing = await this.getInbox(profile.uid);
+    if (existing.some((item) => item.id === message.id)) return false;
+    await this.dispatch({
+      id: message.id,
+      uid: profile.uid,
+      senderUid: 'bhumi',
+      type: 'system-birthday',
+      priority: 'normal',
+      source: 'system',
+      title: message.title,
+      summary: 'Pesan ulang tahun dari Bhumi Amartya.',
+      content: message.content,
+      ownerUserId: profile.uid,
+      senderRole: 'system',
+      recipientRole: 'user',
+      metadata: { birthdayYear: year, systemMessage: true },
+    });
+    return true;
+  }
   /**
    * Dispatch a message through the lifecycle.
    */
   public static async dispatch(params: {
     uid: string;
+    id?: string;
     senderUid?: string;
     type: CommunicationType;
     priority: CommunicationPriority;
@@ -89,7 +115,7 @@ export class CommunicationCenterService {
     recipientRole?: 'user' | 'admin' | 'system';
     category?: 'SUGGESTION' | 'BUG_REPORT' | 'GENERAL_FEEDBACK' | 'ACCOUNT_SUPPORT';
   }): Promise<string> {
-    const id = `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = params.id || `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
     const expiresAt = params.expiresInDays
       ? new Date(Date.now() + params.expiresInDays * 24 * 60 * 60 * 1000).toISOString()

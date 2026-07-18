@@ -32,7 +32,8 @@ export type CommunicationType =
   | 'user-question'
   | 'user-message'
   | 'admin-reply'
-  | 'user-reply';
+  | 'user-reply'
+  | 'system-birthday';
 
 export type CommunicationSource =
   | 'daily-guidance'
