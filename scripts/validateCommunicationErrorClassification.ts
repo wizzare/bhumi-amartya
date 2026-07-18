@@ -1,0 +1,3 @@
+const classifyCommunicationError = (error: any, online: boolean) => { const code = String(error?.code || ''); if (!online || code === 'unavailable') return 'offline'; if (code === 'permission-denied') return 'permission'; if (code === 'unauthenticated') return 'auth'; return 'error'; };
+if (classifyCommunicationError({ code: 'permission-denied' }, true) !== 'permission' || classifyCommunicationError({ code: 'unauthenticated' }, true) !== 'auth' || classifyCommunicationError({ code: 'unavailable' }, true) !== 'offline' || classifyCommunicationError({ code: 'failed-precondition' }, true) === 'offline' || classifyCommunicationError({}, false) !== 'offline') throw new Error('COMMUNICATION_ERROR_CLASSIFICATION_FAIL');
+console.log('COMMUNICATION_ERROR_CLASSIFICATION_PASS');

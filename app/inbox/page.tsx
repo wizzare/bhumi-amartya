@@ -25,6 +25,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { useAuth } from "@/context/AuthContext";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
+import { classifyCommunicationError, communicationErrorMessage, type CommunicationErrorKind } from "@/lib/services/communicationError";
 import { CommunicationMessage, CommunicationType } from "@/lib/types/communication";
 
 const SUPPORT_CATEGORIES = [
@@ -64,6 +65,7 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [offline, setOffline] = useState(false);
+  const [loadErrorKind, setLoadErrorKind] = useState<CommunicationErrorKind | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [composeOpen, setComposeOpen] = useState(false);
   const [category, setCategory] = useState<(typeof SUPPORT_CATEGORIES)[number][0]>("SUGGESTION");
@@ -75,6 +77,7 @@ export default function InboxPage() {
     if (!uid) return;
     setLoading(true);
     setLoadError(false);
+    setLoadErrorKind(null);
     if (typeof navigator !== "undefined" && !navigator.onLine) { setOffline(true); setLoading(false); return; }
     try {
       const data = await CommunicationCenterService.getInbox(uid!);
@@ -82,9 +85,10 @@ export default function InboxPage() {
       setOffline(false);
     } catch (error) {
       console.error("[Inbox] Failed to load messages:", error);
-      const code = (error as { code?: string })?.code;
-      setOffline(code === "unavailable" || code === "failed-precondition" || (typeof navigator !== "undefined" && !navigator.onLine));
-      setLoadError(!(code === "unavailable" || code === "failed-precondition" || (typeof navigator !== "undefined" && !navigator.onLine)));
+      const kind = classifyCommunicationError(error, typeof navigator === "undefined" ? true : navigator.onLine);
+      setLoadErrorKind(kind);
+      setOffline(kind === 'offline');
+      setLoadError(kind !== 'offline');
     } finally {
       setLoading(false);
     }
@@ -240,7 +244,7 @@ export default function InboxPage() {
         {loading ? (
           <div className="py-20 text-center text-[#7B8776]">Memuat pesan...</div>
         ) : loadError ? (
-          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">Inbox tidak dapat dimuat.</p><button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">Coba lagi</button></div>
+          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">{loadErrorKind ? communicationErrorMessage(loadErrorKind) : 'Inbox tidak dapat dimuat.'}</p><button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">Coba lagi</button></div>
         ) : groupedMessages.length === 0 ? (
           <div className="bhumi-card p-12 text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center">
