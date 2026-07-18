@@ -31,6 +31,7 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase/firebase";
 import { adminRepository } from "@/lib/repositories/adminRepository";
+import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -902,6 +903,7 @@ export default function AdminActivityPage() {
   return (
     <main id="bhumi-founder-dashboard-wrapper" className="min-h-screen bg-[#F7F4ED] pb-24 text-[#2F3C34]">
       <AppNav />
+      <AdminInboxWorkspace />
       <header className="border-b border-[#E3E0D7] bg-[#FBFAF6] px-5 py-7 shadow-[0_12px_40px_rgba(61,54,43,0.05)]">
         <div className="mx-auto max-w-7xl">
           <BhumiPageHeader className="mb-5 justify-start" />
