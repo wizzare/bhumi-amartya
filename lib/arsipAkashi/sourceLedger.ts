@@ -198,7 +198,43 @@ export const ARSIP_AKASHI_SOURCE_LEDGER: Record<ArsipAkashiSectionId, ArsipAkash
     classification: "cross-system-synthesis",
     fallbackPolicy: "reduce-confidence",
   },
+  "soul-letters": {
+    sectionId: "soul-letters",
+    eligibleSystems: ALL_SYSTEMS,
+    contributionPriority: ALL_SYSTEMS,
+    allowedDomains: [
+      "identity", "shadow", "relationships", "karma",
+      "growth", "spirituality", "timing", "talents",
+      "health", "resources",
+    ],
+    required: true,
+    birthTimeSensitive: false,
+    classification: "cross-system-synthesis",
+    fallbackPolicy: "reduce-confidence",
+  },
 };
+
+// Canonical domain policy from the Founder source-grounding rule. The legacy
+// ledger entries above remain readable, while this map is the authoritative
+// system eligibility used by reading definitions and runtime filtering.
+const POLICY_SYSTEMS: Record<ArsipAkashiSectionId, CanonicalSystemId[]> = {
+  "soul-identity": ["numerology", "human-design", "natal-chart", "whole-sign", "destiny-matrix", "bazi", "vedic-astrology", "tzolkin", "weton", "zi-wei-dou-shu"],
+  "energy-mechanics": ["human-design", "bazi", "natal-chart", "vedic-astrology", "tzolkin", "weton", "zi-wei-dou-shu", "numerology", "destiny-matrix"],
+  "wounds-shadow-lineage": ["natal-chart", "whole-sign", "vedic-astrology", "destiny-matrix", "human-design", "bazi", "weton", "zi-wei-dou-shu", "numerology", "tzolkin"],
+  "work-talents": ALL_SYSTEMS,
+  "love-relationships": ["natal-chart", "whole-sign", "vedic-astrology", "human-design", "destiny-matrix", "numerology", "bazi", "weton", "zi-wei-dou-shu", "tzolkin", "astrocartography"],
+  "body-environment": ALL_SYSTEMS,
+  "spirituality-evolution": ALL_SYSTEMS,
+  "current-life-phase": ALL_SYSTEMS,
+  "symbolic-origin": ALL_SYSTEMS,
+  "growth-potential": ALL_SYSTEMS,
+  "soul-letters": ALL_SYSTEMS,
+};
+
+for (const [sectionId, systems] of Object.entries(POLICY_SYSTEMS) as [ArsipAkashiSectionId, CanonicalSystemId[]][]) {
+  ARSIP_AKASHI_SOURCE_LEDGER[sectionId].eligibleSystems = systems;
+  ARSIP_AKASHI_SOURCE_LEDGER[sectionId].contributionPriority = systems;
+}
 
 export const ELIGIBLE_SYSTEMS_PER_SECTION: Record<ArsipAkashiSectionId, number> =
   Object.fromEntries(

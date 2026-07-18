@@ -100,10 +100,61 @@ export type ArsipAkashiSynthesisType =
   | "symbolic-resonance"
   | "approved-spiritual-narrative";
 
+export type ArsipAkashiSoulLetterId =
+  | "letter-to-past-self"
+  | "letter-to-present-self"
+  | "letter-from-future-self";
+
+export const ARSIP_AKASHI_SOUL_LETTER_IDS: readonly ArsipAkashiSoulLetterId[] = [
+  "letter-to-past-self",
+  "letter-to-present-self",
+  "letter-from-future-self",
+];
+
+export type ArsipAkashiSoulTheme =
+  | "recurring-patterns"
+  | "emotional-wounds"
+  | "inner-child"
+  | "self-sabotage"
+  | "karmic-lessons"
+  | "healing"
+  | "growth"
+  | "returning-to-self"
+  | "forgiveness"
+  | "future-direction";
+
+export interface ArsipAkashiPresentLetterPlan {
+  currentPhaseThemes: string[];
+  currentTransitThemes: string[];
+  currentIdentityThemes: string[];
+  activePatternThemes: string[];
+  presentTensionThemes: string[];
+  presentCareDirection: string;
+  presentGrowthDirection: string;
+  referenceDate: string;
+  contributingFactIds: string[];
+  contributingSystems: CanonicalSystemId[];
+  timingLimitations: string[];
+}
+
+export interface ArsipAkashiSoulLetter {
+  letterId: ArsipAkashiSoulLetterId;
+  title: string;
+  paragraphs: string[];
+  sourceSystemIds: CanonicalSystemId[];
+  supportingFactIds: string[];
+  themes: ArsipAkashiSoulTheme[];
+  limitations: string[];
+  presentPlan?: ArsipAkashiPresentLetterPlan;
+  generatedAt: string;
+  contentVersion: string;
+}
+
 export interface ArsipAkashiNarrativeBlock {
   blockId: string;
   title: string;
   text: string;
+  paragraphs?: string[];
   sourceSystemIds: CanonicalSystemId[];
   supportingFactIds: string[];
   synthesisType: ArsipAkashiSynthesisType;

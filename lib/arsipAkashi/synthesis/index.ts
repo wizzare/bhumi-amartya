@@ -1,0 +1,11 @@
+export { analyzeGlobalCoverage, analyzeSectionCoverage } from "./coverage";
+export { selectFactsForSection } from "./factSelector";
+export { clusterThemes } from "./themeCluster";
+export { resolveTensions, findRecurringPatterns } from "./contradictionResolver";
+export { buildInsightModel } from "./insightEngine";
+export { renderNarratives } from "./narrativeRenderer";
+export { sanitizeNarrative } from "./narrativeSanitizer";
+export { renderSoulLetters } from "./soulLetterRenderer";
+export { sanitizeSoulLetterParagraph } from "./soulLetterSanitizer";
+export type * from "./types";
+export { INSIGHT_SYNTHESIS_VERSION } from "./types";

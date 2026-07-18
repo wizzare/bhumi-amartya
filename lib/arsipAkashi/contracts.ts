@@ -10,7 +10,8 @@ export type ArsipAkashiSectionId =
   | "spirituality-evolution"
   | "current-life-phase"
   | "symbolic-origin"
-  | "growth-potential";
+  | "growth-potential"
+  | "soul-letters";
 
 export const ARSIP_AKASHI_SECTION_IDS: readonly ArsipAkashiSectionId[] = [
   "soul-identity",
@@ -23,6 +24,7 @@ export const ARSIP_AKASHI_SECTION_IDS: readonly ArsipAkashiSectionId[] = [
   "current-life-phase",
   "symbolic-origin",
   "growth-potential",
+  "soul-letters",
 ];
 
 export const SECTION_DISPLAY_TITLES: Record<ArsipAkashiSectionId, string> = {
@@ -36,6 +38,7 @@ export const SECTION_DISPLAY_TITLES: Record<ArsipAkashiSectionId, string> = {
   "current-life-phase": "Current Life Phase",
   "symbolic-origin": "Symbolic Origin",
   "growth-potential": "Growth Potential",
+  "soul-letters": "Surat Jiwa",
 };
 
 export interface ArsipAkashiSectionContract {
@@ -47,6 +50,15 @@ export interface ArsipAkashiSectionContract {
   birthTimeSensitive: boolean;
   classification: "calculated" | "symbolic" | "cross-system-synthesis";
   fallbackPolicy: "omit-section" | "reduce-confidence" | "static-placeholder";
+  primarySourceDomains?: string[];
+  supportingSourceDomains?: string[];
+  forbiddenSystemUsage?: CanonicalSystemId[];
+  minimumCrossSystemSupport?: number;
+  timingEligibility?: boolean;
+  locationEligibility?: boolean;
+  symbolicEligibility?: boolean;
+  bodySafetyClassification?: "general" | "non-clinical" | "symbolic";
+  provenanceRequirement?: "required" | "preferred";
 }
 
 export const ARSIP_AKASHI_VERSION = "1.0.0";

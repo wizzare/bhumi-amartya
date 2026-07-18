@@ -19,6 +19,10 @@ import { getExistingDailyGuidance } from "@/lib/services/dailyGuidanceService";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { BaziMeaningService, type EnrichedBaziBlueprint } from "@/lib/bazi/baziMeaning";
+import { buildArsipAkashiInputFromProfile } from "@/lib/arsipAkashi/profile/inputBuilder";
+import { buildArsipAkashiProfileViewModel } from "@/lib/arsipAkashi/profile/viewModel";
+import { applyArsipAkashiContentToV3Section, buildSoulLettersV3Section } from "@/lib/arsipAkashi/profile/v3ContentBridge";
+import { classifyProfileReadiness, type ProfileReadiness } from "@/lib/arsipAkashi/profile/readiness";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -157,6 +161,7 @@ export default function ProfilePage() {
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
+  const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
 
   useEffect(() => {
     async function load() {
@@ -171,6 +176,7 @@ export default function ProfilePage() {
           blueprint = blueprint || getMockBlueprint(auditUser) as any;
         }
         if (profile) {
+          setReadiness(classifyProfileReadiness(profile as unknown as Record<string, unknown>));
           setName(profileName(profile as unknown as LocalRecord));
           setLanguage((profile as any).language === "en" ? "en" : "id");
         }
@@ -180,7 +186,17 @@ export default function ProfilePage() {
           const soulIdentityAi = (profile as any)?.soulIdentityAi;
           const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
           const meaning = HumanMeaningService.generate(canonical, soulIdentityAi);
-          const sections = ProfileRuntimeAdapter.buildProfile(meaning);
+          const legacySections = ProfileRuntimeAdapter.buildProfile(meaning);
+          const arsipInput = buildArsipAkashiInputFromProfile(
+            profile ? { uid: blueprint.uid, timezone: (profile as any)?.timezone, birthDate: (profile as any)?.birthDate, birthTime: (profile as any)?.birthTime } : null,
+            canonicalBlueprint,
+          );
+          const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+          const sections = legacySections
+            .map((section) => applyArsipAkashiContentToV3Section(section, arsipViewModel))
+            .filter((section): section is ProfileSection => Boolean(section));
+          const soulSection = buildSoulLettersV3Section(arsipViewModel);
+          if (soulSection) sections.push(soulSection);
           setProfileSections(sections);
 
           const timezone = (profile as any)?.timezone || (profile as any)?.profile?.timezone || "UTC";
@@ -203,7 +219,8 @@ export default function ProfilePage() {
   }, [auditUser]);
 
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
-  if (!profileSections.length) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
+  if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
+  if (!profileSections.length) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profil tersedia, tetapi Blueprint Arsip Akashi belum tersedia. Pembacaan akan muncul setelah data sistem selesai dihitung.</p></main>;
 
     return (
     <ProtectedRoute>
@@ -219,6 +236,7 @@ export default function ProfilePage() {
 
             <IdentitasJiwaHub bazi={bazi} />
 
+            {/* Arsip Akashi — section grid (original UI + Surat Jiwa) */}
             <section>
               <header className="mb-5 px-1">
                 <h2 className="text-xl font-serif text-[#4F5E52]">Arsip Akashi</h2>
@@ -228,7 +246,7 @@ export default function ProfilePage() {
               {(profileSections).map((section) => {
                 return (
                   <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
-                    <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600`}><Sparkles size={24} /></div>
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Sparkles size={24} /></div>
                     <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
                     <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
                   </Link>

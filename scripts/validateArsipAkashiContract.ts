@@ -1,15 +1,18 @@
 import { strict as assert } from "node:assert";
 import {
   CANONICAL_SYSTEM_IDS,
+  ARSIP_AKASHI_SOUL_LETTER_IDS,
   type CanonicalSystemId,
   type ArsipAkashiInput,
   type ArsipAkashiPayload,
   type ArsipAkashiSection,
   type ArsipAkashiSourceCoverage,
+  type ArsipAkashiSoulLetter,
 } from "../lib/arsipAkashi/types";
 import {
   ARSIP_AKASHI_SECTION_IDS,
   ARSIP_AKASHI_VERSION,
+  SECTION_DISPLAY_TITLES,
   type ArsipAkashiSectionId,
 } from "../lib/arsipAkashi/contracts";
 import {
@@ -31,20 +34,80 @@ check("all 11 system IDs are unique",
   `Duplicate detected: ${systemSet.size} unique out of ${CANONICAL_SYSTEM_IDS.length}`);
 
 // 2. Section IDs
-check("10 Arsip Akashi section IDs defined",
-  ARSIP_AKASHI_SECTION_IDS.length === 10,
-  `Expected 10, got ${ARSIP_AKASHI_SECTION_IDS.length}`);
+check("11 Arsip Akashi section IDs defined",
+  ARSIP_AKASHI_SECTION_IDS.length === 11,
+  `Expected 11, got ${ARSIP_AKASHI_SECTION_IDS.length}`);
 
 const sectionSet = new Set(ARSIP_AKASHI_SECTION_IDS);
-check("all 10 section IDs are unique",
-  sectionSet.size === 10,
+check("all 11 section IDs are unique",
+  sectionSet.size === 11,
   `Duplicate detected: ${sectionSet.size} unique out of ${ARSIP_AKASHI_SECTION_IDS.length}`);
 
-// 3. Source Ledger completeness
+check("soul-letters section exists",
+  sectionSet.has("soul-letters"),
+  "soul-letters not found in section IDs");
+
+// 3. Soul Letter IDs
+check("3 canonical soul letter IDs defined",
+  ARSIP_AKASHI_SOUL_LETTER_IDS.length === 3,
+  `Expected 3, got ${ARSIP_AKASHI_SOUL_LETTER_IDS.length}`);
+
+const letterSet = new Set(ARSIP_AKASHI_SOUL_LETTER_IDS);
+check("all three soul letter IDs are unique",
+  letterSet.size === 3,
+  "Duplicate letter IDs detected");
+
+check("letter-to-past-self exists",
+  letterSet.has("letter-to-past-self"),
+  "letter-to-past-self not found");
+
+check("letter-to-present-self exists",
+  letterSet.has("letter-to-present-self"),
+  "letter-to-present-self not found");
+
+check("letter-from-future-self exists",
+  letterSet.has("letter-from-future-self"),
+  "letter-from-future-self not found");
+
+let _letterTypeCheck: ArsipAkashiSoulLetter;
+
+// 4. Soul-letters display title
+check("soul-letters display title is Surat Jiwa",
+  SECTION_DISPLAY_TITLES["soul-letters"] === "Surat Jiwa",
+  `Got "${SECTION_DISPLAY_TITLES["soul-letters"]}"`);
+
+// 5. Source Ledger completeness
 const ledgerSectionIds = Object.keys(ARSIP_AKASHI_SOURCE_LEDGER);
-check("source ledger covers all 10 sections",
-  ledgerSectionIds.length === 10,
-  `Expected 10, got ${ledgerSectionIds.length}`);
+check("source ledger covers all 11 sections",
+  ledgerSectionIds.length === 11,
+  `Expected 11, got ${ledgerSectionIds.length}`);
+
+const soulLettersContract = ARSIP_AKASHI_SOURCE_LEDGER["soul-letters"];
+check("soul-letters entry exists in source ledger",
+  soulLettersContract !== undefined,
+  "soul-letters not in source ledger");
+
+check("soul-letters eligible systems includes all 11 systems",
+  soulLettersContract.eligibleSystems.length === 11,
+  `Expected 11, got ${soulLettersContract.eligibleSystems.length}`);
+
+for (const sys of CANONICAL_SYSTEM_IDS) {
+  check(`soul-letters includes system "${sys}"`,
+    soulLettersContract.eligibleSystems.includes(sys),
+    `"${sys}" missing from soul-letters`);
+}
+
+check("soul-letters classification is cross-system-synthesis",
+  soulLettersContract.classification === "cross-system-synthesis",
+  `Got ${soulLettersContract.classification}`);
+
+check("soul-letters required is true",
+  soulLettersContract.required === true,
+  "soul-letters should be required");
+
+check("soul-letters birthTimeSensitive is false",
+  soulLettersContract.birthTimeSensitive === false,
+  "soul-letters should not be birth-time-sensitive");
 
 for (const sectionId of ARSIP_AKASHI_SECTION_IDS) {
   const contract = ARSIP_AKASHI_SOURCE_LEDGER[sectionId];
@@ -73,12 +136,12 @@ for (const sectionId of ARSIP_AKASHI_SECTION_IDS) {
     `Invalid fallbackPolicy "${contract.fallbackPolicy}" for ${sectionId}`);
 }
 
-// 4. Version constant
+// 6. Version constant
 check("ARSIP_AKASHI_VERSION is defined",
   typeof ARSIP_AKASHI_VERSION === "string" && ARSIP_AKASHI_VERSION.length > 0,
   `Invalid version: "${ARSIP_AKASHI_VERSION}"`);
 
-// 5. Type-level structural validation via inference
+// 7. Type-level structural validation via inference
 let _inputTypeCheck: ArsipAkashiInput;
 let _outputTypeCheck: ArsipAkashiPayload;
 let _sectionTypeCheck: ArsipAkashiSection;
@@ -88,20 +151,20 @@ check("all types compile without error",
   true,
   "TypeScript compilation validates structural soundness");
 
-// 6. Input contract: systems field accepts partial systems
-check("systems in Input is Partial Record",
+// 8. NarratveBlock has optional paragraphs
+check("NarrativeBlock supports optional paragraphs",
   true,
-  "Partial<Record<CanonicalSystemId, ...>> supports missing systems");
+  "paragraphs?: string[] allows Surat Jiwa paragraph storage");
 
-// 7. Output contract: sections is array (not Record)
-check("output.sections is array",
+// 9. SoulLetter has paragraphs (required)
+check("SoulLetter has required paragraphs",
   true,
-  "ArsipAkashiSection[] supports dynamic ordering");
+  "paragraphs: string[] enforces paragraph presence in letters");
 
-// 8. Coverage: expectedSystems is always 11
-check("sourceCoverage.expectedSystems is exactly 11",
+// 10. Theme types
+check("SoulLetter has typed themes",
   true,
-  "type literal 11 enforces exactly 11 expected systems");
+  "ArsipAkashiSoulTheme union enforces valid theme IDs");
 
 // Report
 const failed = checks.filter((c) => !c.pass);

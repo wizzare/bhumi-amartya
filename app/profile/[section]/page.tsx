@@ -11,7 +11,8 @@ export async function generateStaticParams() {
     { section: "spiritualitas-evolusi" },
     { section: "fase-kehidupan-saat-ini" },
     { section: "soul-identity" },
-    { section: "asal-usul-peradaban" }
+    { section: "asal-usul-peradaban" },
+    { section: "surat-jiwa" }
   ];
 }
 
