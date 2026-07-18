@@ -1,0 +1,20 @@
+{
+  "name": "bhumi-billing-verifier",
+  "private": true,
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "lint": "eslint api lib"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.0.0",
+    "google-auth-library": "^10.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vercel/node": "^5.3.0",
+    "typescript": "^5.0.0",
+    "eslint": "^9.0.0"
+  }
+}

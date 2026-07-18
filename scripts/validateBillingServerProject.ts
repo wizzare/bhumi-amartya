@@ -1,0 +1,17 @@
+import fs from "node:fs";
+const service = fs.readFileSync("services/billing-verifier/package.json", "utf8");
+const route = fs.readFileSync("services/billing-verifier/api/billing/google-play/verify.ts", "utf8");
+const entitlement = fs.readFileSync("services/billing-verifier/lib/entitlement.ts", "utf8");
+const security = fs.readFileSync("services/billing-verifier/lib/security.ts", "utf8");
+const vercel = fs.readFileSync("services/billing-verifier/vercel.json", "utf8");
+const client = fs.readFileSync("lib/billing/googlePlayBilling.ts", "utf8");
+const next = fs.readFileSync("next.config.ts", "utf8");
+if (!service.includes("firebase-admin") || !service.includes("google-auth-library")) throw new Error("server dependencies incomplete");
+for (const item of ['runtime: "nodejs20.x"', "verifyIdToken", "TOKEN_OWNERSHIP_CONFLICT"]) if (!route.includes(item) && !entitlement.includes(item)) throw new Error(`server contract missing: ${item}`);
+if (!entitlement.includes("runTransaction") || !security.includes("bhumi_premium_monthly")) throw new Error("server ownership contract incomplete");
+if (!vercel.includes('"sin1"')) throw new Error("server region missing");
+if (!client.includes("NEXT_PUBLIC_BILLING_VERIFIER_URL") || client.includes("httpsCallable") || client.includes('fetch("/api/billing')) throw new Error("client verifier ownership invalid");
+if (!next.includes("output: 'export'")) throw new Error("static export removed");
+if (fs.existsSync("app/api/billing/google-play/verify/route.ts")) throw new Error("dynamic app route remains");
+console.log("BILLING_SERVER_PROJECT_PASS");
+export {};
