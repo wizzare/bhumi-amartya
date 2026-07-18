@@ -1,11 +1,12 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { getAuth } from "firebase/auth";
 import { app } from "@/lib/firebase/firebase";
 
 export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
 export const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
 export const GOOGLE_PLAY_BILLING_ENABLED = true;
+export const BILLING_VERIFIER_URL = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || "";
 
 export type GooglePlayProduct = {
   productId: string;
@@ -73,16 +74,24 @@ export async function verifyGooglePlayPurchase(purchase: GooglePlayPurchase) {
     throw new Error("Purchase token tidak tersedia.");
   }
 
-  const functions = getFunctions(app, "asia-southeast2");
-  const verifyPurchase = httpsCallable(functions, "verifyGooglePlayPurchase");
-  const result = await verifyPurchase({
-    packageName: purchase.packageName || GOOGLE_PLAY_PACKAGE_NAME,
+  const currentUser = getAuth(app).currentUser;
+  const idToken = await currentUser?.getIdToken();
+  if (!idToken) throw new Error("AUTH_MISSING");
+  if (!BILLING_VERIFIER_URL) throw new Error("BILLING_VERIFIER_URL_MISSING");
+  const response = await fetch(`${BILLING_VERIFIER_URL.replace(/\/$/, "")}/api/billing/google-play/verify`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ productId: GOOGLE_PLAY_PRODUCT_ID, purchaseToken: purchase.purchaseToken }),
+    cache: "no-store",
+  });
+  const result = await response.json().catch(() => null) as { error?: string; ok?: boolean; active?: boolean; status?: string; plan?: "premium"; productId?: string; basePlanId?: string; accessUntil?: string } | null;
+  if (!response.ok || !result?.ok) throw new Error(result?.error || "GOOGLE_API_FAILURE");
+  return {
+    ...result,
+    plan: "premium" as const,
     productId: GOOGLE_PLAY_PRODUCT_ID,
     basePlanId: GOOGLE_PLAY_BASE_PLAN_ID,
-    purchaseToken: purchase.purchaseToken,
-  });
-
-  return result.data as {
+  } as {
     ok: boolean;
     active: boolean;
     plan: "premium";
