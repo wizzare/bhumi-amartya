@@ -33,6 +33,51 @@ service cloud.firestore {
       );
     }
 
+    function isAdminActor() {
+      return isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    function validSupportCreate(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ownerUserId == request.auth.uid
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.senderRole == 'user'
+        && request.resource.data.recipientRole == 'admin'
+        && request.resource.data.source == 'user'
+        && !('parentMessageId' in request.resource.data);
+    }
+
+    function validUserReply(userId) {
+      return isOwner(userId)
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.ownerUserId == request.auth.uid
+        && request.resource.data.senderUid == request.auth.uid
+        && request.resource.data.senderRole == 'user'
+        && request.resource.data.recipientRole == 'admin'
+        && request.resource.data.source == 'user'
+        && ('parentMessageId' in request.resource.data)
+        && exists(/databases/$(database)/documents/users/$(userId)/communications/$(request.resource.data.parentMessageId))
+        && get(/databases/$(database)/documents/users/$(userId)/communications/$(request.resource.data.parentMessageId)).data.threadId == request.resource.data.threadId
+        && get(/databases/$(database)/documents/users/$(userId)/communications/$(request.resource.data.parentMessageId)).data.ownerUserId == request.auth.uid;
+    }
+
+    function validAdminReply(userId) {
+      return isAdminActor()
+        && request.resource.data.uid == userId
+        && request.resource.data.ownerUserId == userId
+        && request.resource.data.senderRole == 'admin'
+        && request.resource.data.recipientRole == 'user'
+        && request.resource.data.source == 'admin';
+    }
+
+    function immutableThreadFields() {
+      return request.resource.data.ownerUserId == resource.data.ownerUserId
+        && request.resource.data.threadId == resource.data.threadId
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.senderUid == resource.data.senderUid;
+    }
+
     function uidMatches(fieldName) {
       return isSignedIn()
         && (
@@ -127,8 +172,19 @@ service cloud.firestore {
       allow get: if isFounderByEmail() || isFounderOrAdmin();
       allow create, update, delete: if isFounderByEmail() || isFounderOrAdmin();
 
+      match /communications/{messageId} {
+        allow read: if isOwner(userId) || isAdminActor();
+        allow create: if validSupportCreate(userId) || validUserReply(userId) || validAdminReply(userId);
+        allow update: if (isOwner(userId)
+          && immutableThreadFields()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isRead', 'isArchived', 'isDismissed', 'updatedAt', 'deliveryAttempts', 'lastDeliveredAt']))
+          || (isAdminActor() && immutableThreadFields());
+        allow delete: if false;
+      }
+
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if !document.matches('communications/.*')
+          && (isOwner(userId) || isFounderByEmail() || isFounderOrAdmin());
       }
     }
 
