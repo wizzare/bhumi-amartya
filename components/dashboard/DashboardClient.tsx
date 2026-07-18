@@ -61,6 +61,7 @@ import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
+import { DashboardReviewPrompt } from "@/components/rating/DashboardReviewPrompt";
 
 function compactTzolkinSignature(tzolkin: any): string | undefined {
   const kin = tzolkin?.kin;
@@ -767,6 +768,8 @@ export function DashboardClient() {
   return (
     <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
       <AppNav />
+
+      <DashboardReviewPrompt profile={profile} dashboardReady={!loading && Boolean(profile && blueprint)} blockedByModal={Boolean(safetyState?.isSafetyMode)} />
 
       {/* ...existing code... */}
 

@@ -8,6 +8,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(BhumiBillingPlugin.class);
+        registerPlugin(ReviewPlugin.class);
         super.onCreate(savedInstanceState);
     }
 }
