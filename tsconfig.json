@@ -33,6 +33,12 @@
   ],
   "exclude": [
     "node_modules",
+    "recovery-evidence",
+    "audit",
+    "scratch_run_verification.ts",
+    "playwright*.config.ts",
+    "tests",
+    "test-wellness-verification.spec.ts",
     "lib/humandesign/hdkit",
     "lib/humandesign/hdkit-main"
   ]
