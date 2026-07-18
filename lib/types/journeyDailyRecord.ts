@@ -78,6 +78,28 @@ export interface CoachMemorySummary {
   bhumiObservations: string[];
 }
 
+export interface JourneyEventMetadata {
+  repository: string;
+  originId: string;
+  type: string;
+  timestamp: string;
+  period?: string;
+}
+
+export interface JourneyUnifiedEvent {
+  id: string;
+  originId: string;
+  originSource: string;
+  dateKey: string;
+  timestamp: string;
+  title: string;
+  summary?: string;
+  category: string;
+  significance: "ordinary" | "meaningful";
+  originVersion: "legacy" | "v4";
+  rawReference?: JourneyEventMetadata;
+}
+
 export interface JourneyDailyRecord {
   id: string;
   userId: string;
