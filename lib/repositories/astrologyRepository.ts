@@ -18,4 +18,11 @@ export const astrologyRepository = {
 
     return snapshot.data() as AstrologyTransitContext;
   },
+
+  // Compatibility name for weekly consumers. The repository currently owns
+  // one current-transit document, so this delegates without changing data or
+  // transit semantics.
+  async getWeeklyTransits(): Promise<AstrologyTransitContext | null> {
+    return this.getCurrentTransits();
+  },
 };
