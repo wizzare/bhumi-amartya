@@ -25,7 +25,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { useAuth } from "@/context/AuthContext";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
-import { classifyCommunicationError, communicationErrorMessage, type CommunicationErrorKind } from "@/lib/services/communicationError";
+import { classifyCommunicationError, communicationErrorCode, communicationErrorMessage, type CommunicationErrorKind } from "@/lib/services/communicationError";
 import { CommunicationMessage, CommunicationType } from "@/lib/types/communication";
 
 const SUPPORT_CATEGORIES = [
@@ -66,6 +66,7 @@ export default function InboxPage() {
   const [loadError, setLoadError] = useState(false);
   const [offline, setOffline] = useState(false);
   const [loadErrorKind, setLoadErrorKind] = useState<CommunicationErrorKind | null>(null);
+  const [sendErrorCode, setSendErrorCode] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [composeOpen, setComposeOpen] = useState(false);
   const [category, setCategory] = useState<(typeof SUPPORT_CATEGORIES)[number][0]>("SUGGESTION");
@@ -113,10 +114,11 @@ export default function InboxPage() {
     event.preventDefault();
     if (!uid || !subject.trim() || !body.trim() || offline) return;
     setSendState("sending");
+    setSendErrorCode(null);
     try {
       await CommunicationCenterService.submitUserSupportMessage({ authenticatedUid: uid, userName: auth?.user?.displayName || "Sahabat Bhumi", category, subject: subject.trim(), content: body.trim() });
       setSubject(""); setBody(""); setSendState("sent"); setComposeOpen(false); await loadInbox();
-    } catch { setSendState("error"); }
+    } catch (error) { setSendState("error"); setSendErrorCode(communicationErrorCode(error)); }
   };
 
   const handleMessageClick = async (msg: CommunicationMessage) => {
@@ -219,7 +221,7 @@ export default function InboxPage() {
             <label className="block text-xs font-bold text-[#7B8776]">Pesan<textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={4000} rows={5} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
             <button disabled={sendState === "sending"} className="rounded-xl bg-[#4F5E52] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{sendState === "sending" ? "Mengirim..." : "Kirim"}</button>
             {sendState === "sent" && <p className="text-xs text-emerald-700">Pesan terkirim.</p>}
-            {sendState === "error" && <p className="text-xs text-red-700">Pesan gagal dikirim. Silakan coba lagi.</p>}
+            {sendState === "error" && <p className="text-xs text-red-700">Pesan gagal dikirim. Silakan coba lagi.{process.env.NODE_ENV !== "production" && ` Kode: ${sendErrorCode || "unknown"}`}</p>}
           </form>}
         </section>
 
