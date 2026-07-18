@@ -1,0 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
+const root = process.cwd();
+const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8");
+const update = read("lib/services/appUpdateService.ts") + read("components/global/VersionChecker.tsx") + read("android/app/src/main/java/com/bhumiamartya/app/AppUpdatePlugin.java");
+const reminder = read("lib/notifications/gentleNightReminder.ts") + read("components/notifications/GentleNightReminderLifecycle.tsx");
+const settings = read("app/settings/page.tsx");
+const fail = (m: string): never => { throw new Error(`[ENGAGEMENT_VALIDATION] ${m}`); };
+if (!update.includes("startFlexibleUpdate") || !update.includes("completeFlexibleUpdate")) fail("flexible update bridge missing");
+if (!update.includes("app_config") || !update.includes("version")) fail("canonical version policy missing");
+if (!reminder.includes("21, 0") || !reminder.includes("GENTLE_NIGHT_REMINDER_ID")) fail("daily reminder scheduling missing");
+if (!reminder.includes("cancelDailyReminders") || !reminder.includes("useAuth")) fail("auth cancellation guard missing");
+if (!settings.includes("Pengingat Harian") || !settings.includes("role=\"switch\"")) fail("settings toggle missing");
+if (/Beri Rating|Review/i.test(settings)) fail("rating entry leaked into Settings");
+if (update.includes("REQUEST_INSTALL_PACKAGES") || update.includes("SCHEDULE_EXACT_ALARM")) fail("unsafe permission introduced");
+console.log("ENGAGEMENT_FEATURES_VALIDATION_PASS");

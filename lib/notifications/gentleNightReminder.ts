@@ -19,6 +19,7 @@ const STORAGE_KEYS = {
   permissionPrompted: "bhumiNightReminderPermissionPrompted",
   permissionStatus: "bhumiNightReminderPermissionStatus",
   scheduledAt: "bhumiNightReminderScheduledAt",
+  enabled: "bhumiDailyReminderEnabled",
   reengagement3dSentAt: "bhumiReengagement3dSentAt",
   reengagement7dSentAt: "bhumiReengagement7dSentAt",
 } as const;
@@ -63,6 +64,20 @@ async function getPreference(key: string): Promise<string | null> {
   const nativeValue = await Preferences.get({ key });
   if (nativeValue.value !== null) return nativeValue.value;
   return typeof window !== "undefined" ? window.localStorage.getItem(key) : null;
+}
+
+export async function cancelDailyReminders(): Promise<void> {
+  await Promise.all([cancelNotification(GENTLE_NIGHT_REMINDER_ID), cancelNotification(REENGAGEMENT_3D_ID), cancelNotification(REENGAGEMENT_7D_ID)]);
+}
+
+export async function getDailyReminderEnabled(): Promise<boolean> {
+  const value = await getPreference(STORAGE_KEYS.enabled);
+  return value !== "false";
+}
+
+export async function setDailyReminderEnabled(enabled: boolean): Promise<void> {
+  await savePreference(STORAGE_KEYS.enabled, String(enabled));
+  if (!enabled) await cancelDailyReminders();
 }
 
 async function recordAppOpened(now: Date): Promise<void> {
@@ -136,10 +151,12 @@ async function sendReengagementOnce(
 
 export async function refreshGentleNightReminder(now = new Date()): Promise<GentleNightReminderResult> {
   try {
-    await recordAppOpened(now);
-
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") {
       return { status: "unavailable" };
+    }
+    if (!(await getDailyReminderEnabled())) {
+      await cancelDailyReminders();
+      return { status: "skipped-opened-today" };
     }
 
     const permission = await ensureNotificationPermission();
@@ -188,6 +205,7 @@ export async function refreshGentleNightReminder(now = new Date()): Promise<Gent
     });
 
     await savePreference(STORAGE_KEYS.scheduledAt, scheduledAt.toISOString());
+    await recordAppOpened(now);
     const pending = await LocalNotifications.getPending();
     const scheduledReminder = pending.notifications.find(
       (notification) => notification.id === GENTLE_NIGHT_REMINDER_ID,

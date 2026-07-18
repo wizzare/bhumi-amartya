@@ -35,6 +35,8 @@ import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
 import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getCurrentBadge, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
+import { cancelDailyReminders, getDailyReminderEnabled, refreshGentleNightReminder, setDailyReminderEnabled } from "@/lib/notifications/gentleNightReminder";
+import { Capacitor } from "@capacitor/core";
 
 const LANGUAGE_STORAGE_KEY = "bhumiLanguage";
 
@@ -208,6 +210,21 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
+  const [dailyReminderEnabled, setDailyReminderEnabledState] = useState(true);
+  const [notificationState, setNotificationState] = useState("checking");
+
+  useEffect(() => {
+    void getDailyReminderEnabled().then((enabled) => setDailyReminderEnabledState(enabled));
+  }, []);
+
+  const toggleDailyReminder = async (enabled: boolean) => {
+    setDailyReminderEnabledState(enabled);
+    await setDailyReminderEnabled(enabled);
+    if (!enabled) { setNotificationState("disabled"); return; }
+    if (!Capacitor.isNativePlatform()) { setNotificationState("web"); return; }
+    const result = await refreshGentleNightReminder();
+    setNotificationState(result.status === "permission-denied" ? "denied" : result.status);
+  };
 
   useEffect(() => {
     const loadSettingsProfile = async () => {
@@ -444,6 +461,7 @@ export default function SettingsPage() {
         await auth.logout();
       } else {
         // Fallback if context is not ready
+        await cancelDailyReminders();
         await firebaseAuth.signOut();
         clearBhumiSessionForSignOut();
       }
@@ -488,6 +506,7 @@ export default function SettingsPage() {
             if (auth?.logout) {
               await auth.logout();
             } else {
+              await cancelDailyReminders();
               await firebaseAuth.signOut();
               clearBhumiSessionForSignOut();
             }
@@ -710,6 +729,14 @@ export default function SettingsPage() {
             Preferensi bahasa akan disimpan untuk sistem terjemahan yang sudah tersedia.
           </p>
           {/* TODO: apply language preference globally across all app text */}
+        </section>
+
+        <section className="bhumi-card space-y-4 p-6">
+          <h2 className="text-xl font-semibold text-[#4F5E52]">Dukungan Bhumi</h2>
+          <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E8E9E5] bg-white px-5 py-4">
+            <div><p className="text-sm font-semibold text-[#4F5E52]">Pengingat Harian</p><p className="mt-1 text-xs text-[#7B8776]">Sapa ruangmu sekitar pukul 21.00 waktu perangkat.</p>{notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">Izin notifikasi ditolak di perangkat.</p>}</div>
+            <button type="button" role="switch" aria-checked={dailyReminderEnabled} aria-label="Pengingat Harian" onClick={() => void toggleDailyReminder(!dailyReminderEnabled)} className={`relative h-7 w-12 rounded-full transition ${dailyReminderEnabled ? "bg-[#4F5E52]" : "bg-[#D6D8D2]"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${dailyReminderEnabled ? "left-6" : "left-1"}`} /></button>
+          </div>
         </section>
 
         <section className="bhumi-card space-y-6 p-6">
