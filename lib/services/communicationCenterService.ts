@@ -146,15 +146,19 @@ export class CommunicationCenterService {
     content: string;
     priority: CommunicationPriority;
   }): Promise<string> {
+    if (!params.adminUid || !params.targetUid || !params.title.trim() || !params.content.trim()) throw new Error('Invalid personal message');
     return await this.dispatch({
       uid: params.targetUid,
-      senderUid: 'admin',
+      senderUid: params.adminUid,
       type: 'user-message',
       priority: params.priority,
       source: 'admin',
       title: params.title,
       summary: params.content.substring(0, 100),
       content: params.content,
+      ownerUserId: params.targetUid,
+      senderRole: 'admin',
+      recipientRole: 'user',
       metadata: { adminUid: params.adminUid }
     });
   }
@@ -170,6 +174,8 @@ export class CommunicationCenterService {
     category: BroadcastCategory;
     priority: CommunicationPriority;
   }): Promise<void> {
+    const allowedGroups = new Set(['all', 'premium', 'beta-tester']);
+    if (!params.adminUid || !params.title.trim() || !params.content.trim() || params.targetGroups.some((group) => !allowedGroups.has(group))) throw new Error('Invalid broadcast audience');
     const broadcastId = `bc_${Date.now()}`;
 
     // 1. Fetch target users
@@ -187,14 +193,17 @@ export class CommunicationCenterService {
     const promises = targets.map(user =>
       this.dispatch({
         uid: user.uid,
-        senderUid: 'bhumi',
+        senderUid: params.adminUid,
         type: 'system-announcement',
         priority: params.priority,
-        source: 'system',
+        source: 'admin',
         title: params.title,
         summary: params.content.substring(0, 100),
         content: params.content,
-        metadata: { broadcastId, category: params.category }
+        ownerUserId: user.uid,
+        senderRole: 'admin',
+        recipientRole: 'user',
+        metadata: { broadcastId, category: params.category, broadcast: true }
       })
     );
 

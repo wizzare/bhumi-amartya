@@ -32,6 +32,7 @@ import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase/firebase";
 import { adminRepository } from "@/lib/repositories/adminRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
+import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -484,6 +485,9 @@ export default function AdminActivityPage() {
   const [sortBy, setSortBy] = useState<SortField>("lastLogin");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [userPage, setUserPage] = useState(1);
+  const [personalSubject, setPersonalSubject] = useState("");
+  const [personalBody, setPersonalBody] = useState("");
+  const [personalState, setPersonalState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sourceStatus, setSourceStatus] = useState<DataSourceStatus>({
@@ -492,7 +496,20 @@ export default function AdminActivityPage() {
     analytics: "Not loaded",
   });
 
-  const isFounder = profile?.guardianRole === "founder" || profile?.email?.trim().toLowerCase() === "wizzare@gmail.com";
+  const isFounder = profile?.guardianRole === "founder" || profile?.guardianRole === "admin" || profile?.role === "admin" || profile?.email?.trim().toLowerCase() === "wizzare@gmail.com";
+
+  const sendPersonalMessage = async () => {
+    if (!selectedUser || !auth?.user?.uid || !personalSubject.trim() || !personalBody.trim()) return;
+    setPersonalState("sending");
+    try {
+      await CommunicationCenterService.sendPersonalMessage({ adminUid: auth.user.uid, targetUid: selectedUser.uid, title: personalSubject.trim(), content: personalBody.trim(), priority: "normal" });
+      setPersonalSubject("");
+      setPersonalBody("");
+      setPersonalState("sent");
+    } catch {
+      setPersonalState("error");
+    }
+  };
 
   const rangeDates = useMemo(() => {
     const end = new Date(`${today}T00:00:00`);
@@ -1181,6 +1198,18 @@ export default function AdminActivityPage() {
               </div>
               <button onClick={() => setSelectedUser(null)} className="rounded-md border border-[#D9D6CC] px-3 py-2 text-sm font-semibold hover:bg-[#F7F4ED]">Close</button>
             </div>
+
+            <section className="mb-6 rounded-[8px] border border-[#E3E0D7] bg-[#FBFAF6] p-4">
+              <h3 className="text-sm font-bold text-[#344139]">Kirim Pesan Personal</h3>
+              <p className="mt-1 text-xs text-[#6D786F]">Penerima: {selectedUser.displayName}</p>
+              <div className="mt-3 grid gap-3">
+                <input value={personalSubject} onChange={(event) => setPersonalSubject(event.target.value)} maxLength={140} placeholder="Subjek" className="rounded-md border border-[#D9D6CC] bg-white p-3 text-sm" />
+                <textarea value={personalBody} onChange={(event) => setPersonalBody(event.target.value)} maxLength={4000} rows={4} placeholder="Tulis pesan..." className="rounded-md border border-[#D9D6CC] bg-white p-3 text-sm" />
+                <button type="button" onClick={() => void sendPersonalMessage()} disabled={personalState === "sending"} className="w-fit rounded-md bg-[#344139] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{personalState === "sending" ? "Mengirim..." : "Kirim Pesan Personal"}</button>
+                {personalState === "sent" && <p className="text-xs text-emerald-700">Pesan terkirim.</p>}
+                {personalState === "error" && <p className="text-xs text-red-700">Pesan gagal dikirim. Silakan coba lagi.</p>}
+              </div>
+            </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
               {/* IDENTITY */}
