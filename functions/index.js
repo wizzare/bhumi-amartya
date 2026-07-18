@@ -11,7 +11,8 @@ if (!admin.apps.length) {
 
 const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
 const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
-const GOOGLE_PLAY_PREMIUM_PRODUCT_ID = "bhumi_premium";
+// Must remain aligned with the product shipped by the Android client.
+const GOOGLE_PLAY_PREMIUM_PRODUCT_ID = "bhumi_premium_monthly";
 const GOOGLE_PLAY_PREMIUM_BASE_PLAN_ID = "monthly";
 const GOOGLE_PLAY_ACTIVE_STATES = new Set([
   "SUBSCRIPTION_STATE_ACTIVE",
@@ -348,6 +349,16 @@ exports.verifyGooglePlayPurchase = functions
 
       const snap = await transaction.get(userRef);
       const existing = snap.exists ? snap.data() || {} : {};
+      const nextBadge = existing.badge === "Founder"
+        ? existing.badge
+        : decision.active
+          ? "Penghuni Bhumi"
+          : existing.badge || "Penjaga Bhumi";
+      const nextTesterBadge = existing.testerBadge === "Founder"
+        ? existing.testerBadge
+        : decision.active
+          ? "Penghuni Bhumi"
+          : existing.testerBadge || "Penjaga Bhumi";
       const existingEntitlements = existing.entitlements || {};
       const nextEntitlements = decision.active
         ? {
@@ -392,7 +403,10 @@ exports.verifyGooglePlayPurchase = functions
         accessUntil: accessUntilIso,
         subscriptionStatus: decision.entitlementStatus,
         isPremium: decision.active,
-        badge: existing.badge || "Penjaga Bhumi",
+        badge: nextBadge,
+        testerBadge: nextTesterBadge,
+        entitlementSource: "google_play",
+        entitlementUpdatedAt: nowIso,
         entitlements: nextEntitlements,
         purchase: {
           provider: "google_play",
