@@ -53,3 +53,47 @@ export interface HumanMeaning {
     archetype: HumanNarrative;
   };
 }
+
+export interface HumanMeaningPayload {
+  identity: {
+    psychologicalMeaning: string;
+    behavioralMeaning: string;
+    emotionalMeaning: string;
+    archetypeMeaning: string;
+  };
+  daily: {
+    atmosphericMeaning: string;
+    focusMeaning: string;
+    challengeMeaning: string;
+    opportunityMeaning: string;
+  };
+  relationships: {
+    intimacyMeaning: string;
+    socialMeaning: string;
+    familyMeaning: string;
+    boundaryMeaning: string;
+  };
+  economics: {
+    stabilityMeaning: string;
+    careerMeaning: string;
+    talentMeaning: string;
+    resourceMeaning: string;
+  };
+  wellness: {
+    physicalMeaning: string;
+    mentalMeaning: string;
+    spiritualMeaning: string;
+    circadianMeaning: string;
+  };
+  growth: {
+    currentLessonMeaning: string;
+    milestoneMeaning: string;
+    transformationMeaning: string;
+    journeyStageMeaning: string;
+  };
+  companion: {
+    presenceMeaning: string;
+    observationMeaning: string;
+    narrativeDirectionMeaning: string;
+  };
+}
