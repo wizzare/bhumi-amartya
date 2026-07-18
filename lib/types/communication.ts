@@ -68,6 +68,7 @@ export interface CommunicationMessage {
   id: string;
   uid: string; // Target Recipient (User UID or 'admin')
   senderUid: string; // Sender (User UID or 'admin' or 'bhumi')
+  senderName?: string;
   type: CommunicationType;
   priority: CommunicationPriority;
   title: string;

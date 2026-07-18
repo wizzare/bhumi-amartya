@@ -171,6 +171,17 @@ service cloud.firestore {
       allow write: if isFounderByEmail() || isFounderOrAdmin();
     }
 
+    // Broadcast metadata is admin-owned; user delivery is fanned out into
+    // the existing users/{uid}/communications path and follows its rules.
+    match /broadcasts/{broadcastId} {
+      allow read: if isAdminActor();
+      allow create: if isAdminActor()
+        && request.resource.data.id == broadcastId
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.targetGroups is list;
+      allow update, delete: if false;
+    }
+
     // USERS COLLECTION
     match /users/{userId} {
       allow read: if isOwner(userId);
@@ -197,6 +208,13 @@ service cloud.firestore {
         allow read, write: if !document.matches('communications/.*')
           && (isOwner(userId) || isFounderByEmail() || isFounderOrAdmin());
       }
+    }
+
+    // Collection-group reads require an explicit recursive match in Rules v2.
+    // Keep this path admin-only; user reads remain restricted to their own
+    // users/{uid}/communications subcollection above.
+    match /{path=**}/communications/{messageId} {
+      allow read: if isAdminActor();
     }
 
     match /profiles/{userId} {

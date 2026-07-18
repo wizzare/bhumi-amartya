@@ -9,7 +9,8 @@ import {
   orderBy,
   addDoc,
   serverTimestamp,
-  collectionGroup
+  collectionGroup,
+  getDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
@@ -25,6 +26,39 @@ import {
  * Handles durable storage of communication objects in Firestore.
  */
 export class CommunicationRepository {
+  private static normalizeAdminMessage(raw: Record<string, any>, id: string): CommunicationMessage {
+    const iso = (value: any) => {
+      if (value && typeof value.toDate === "function") return value.toDate().toISOString();
+      if (value instanceof Date) return value.toISOString();
+      if (typeof value === "string" && value) return value;
+      return new Date(0).toISOString();
+    };
+    return {
+      id,
+      uid: typeof raw.uid === "string" ? raw.uid : "admin",
+      senderUid: typeof raw.senderUid === "string" ? raw.senderUid : "unknown",
+      senderName: typeof raw.senderName === "string" ? raw.senderName : undefined,
+      type: raw.type || "user-message",
+      priority: raw.priority || "normal",
+      title: typeof raw.title === "string" ? raw.title : "Pesan pengguna",
+      summary: typeof raw.summary === "string" ? raw.summary : "",
+      content: typeof raw.content === "string" ? raw.content : "",
+      createdAt: iso(raw.createdAt),
+      updatedAt: iso(raw.updatedAt || raw.createdAt),
+      status: raw.status || "queued",
+      source: raw.source || "user",
+      threadId: typeof raw.threadId === "string" ? raw.threadId : id,
+      isRead: raw.isRead === true,
+      isArchived: raw.isArchived === true,
+      isDismissed: raw.isDismissed === true,
+      deliveryChannels: Array.isArray(raw.deliveryChannels) ? raw.deliveryChannels : ["inbox"],
+      deliveryAttempts: typeof raw.deliveryAttempts === "number" ? raw.deliveryAttempts : 0,
+      ownerUserId: typeof raw.ownerUserId === "string" ? raw.ownerUserId : undefined,
+      senderRole: raw.senderRole,
+      recipientRole: raw.recipientRole,
+      metadata: raw.metadata,
+    } as CommunicationMessage;
+  }
   /**
    * Save a new message or update existing.
    * Always saves to the user-scoped collection to ensure consolidated history.
@@ -167,11 +201,30 @@ export class CommunicationRepository {
     try {
       const commsQuery = query(
         collectionGroup(db, "communications"),
-        where("source", "==", "user"),
         orderBy("createdAt", "desc")
       );
       const snapshot = await getDocs(commsQuery);
-      return snapshot.docs.map(doc => doc.data() as CommunicationMessage);
+      const messages = snapshot.docs
+        .map((entry) => CommunicationRepository.normalizeAdminMessage(entry.data(), entry.id))
+        .filter((message) => message.source === "user");
+      const ownerIds = [...new Set(messages.map((message) => message.ownerUserId || message.uid).filter((uid) => uid && uid !== "admin" && uid !== "bhumi"))];
+      const profiles = await Promise.all(ownerIds.map(async (uid) => {
+        try {
+          const profile = await getDoc(doc(db, "users", uid));
+          if (!profile.exists()) return [uid, undefined] as const;
+          const data = profile.data() as Record<string, any>;
+          const candidates = [data.fullName, data.displayName, data.name, data.nama, data.profile?.fullName, data.profile?.displayName, data.profile?.name];
+          const name = candidates.find((value) => typeof value === "string" && value.trim())?.trim();
+          return [uid, name] as const;
+        } catch {
+          return [uid, undefined] as const;
+        }
+      }));
+      const names = new Map(profiles);
+      return messages.map((message) => ({
+        ...message,
+        senderName: names.get(message.ownerUserId || message.uid) || message.senderName || message.metadata?.userName || undefined,
+      }));
     } catch (error: any) {
       console.error("[CommunicationRepository] Admin getAll failed:", error);
       throw error;
