@@ -29,8 +29,14 @@ export function ProtectedRoute({
   useEffect(() => {
     // P1 AUDIT BYPASS (Dev Only)
     if (process.env.NODE_ENV === "development") {
-      const isAudit = typeof window !== 'undefined' && localStorage.getItem("bhumi_audit_user");
-      if (isAudit) return;
+      const auditUser = typeof window !== 'undefined' && localStorage.getItem("bhumi_audit_user");
+      if (auditUser) {
+        // BUILD 31: Ensure active UID is set for storageProvider fallback
+        if (typeof window !== 'undefined' && !localStorage.getItem("bhumi_active_uid")) {
+          localStorage.setItem("bhumi_active_uid", `${auditUser}_uid`);
+        }
+        return;
+      }
     }
 
     if (auth?.authStateResolved && !auth.user) {
