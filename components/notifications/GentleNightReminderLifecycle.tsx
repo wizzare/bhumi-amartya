@@ -7,32 +7,39 @@ import { refreshGentleNightReminder } from "@/lib/notifications/gentleNightRemin
 import { cancelDailyReminders } from "@/lib/notifications/gentleNightReminder";
 import { useAuth } from "@/context/AuthContext";
 
+function openDailyNote() {
+  try {
+    window.location.href = "/profile";
+  } catch {
+    window.location.href = "/dashboard";
+  }
+}
+
 export function GentleNightReminderLifecycle() {
   const auth = useAuth();
+  const hasUser = Boolean(auth?.user);
   useEffect(() => {
     let listener: PluginListenerHandle | undefined;
     let notificationListener: PluginListenerHandle | undefined;
     let disposed = false;
 
-    if (auth?.user) void refreshGentleNightReminder();
+    if (hasUser) void refreshGentleNightReminder();
     else void cancelDailyReminders();
-    void LocalNotifications.addListener("localNotificationActionPerformed", () => {
-      window.location.href = "/dashboard";
-    }).then((handle) => { notificationListener = handle; });
+    void LocalNotifications.addListener("localNotificationActionPerformed", openDailyNote).then((handle) => { notificationListener = handle; });
 
     void import("@capacitor/app").then(async ({ App }) => {
       const action = await App.addListener("appUrlOpen", ({ url }) => {
-        if (url.includes("/dashboard") || url.includes("/catatan")) window.location.href = "/dashboard";
+        if (url.includes("/dashboard") || url.includes("/catatan") || url.includes("/profile")) openDailyNote();
       });
       const handle = await App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive && auth?.user) void refreshGentleNightReminder();
+        if (isActive && hasUser) void refreshGentleNightReminder();
       });
       if (disposed) { await handle.remove(); await action.remove(); }
       else listener = handle;
     });
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && auth?.user) void refreshGentleNightReminder();
+      if (document.visibilityState === "visible" && hasUser) void refreshGentleNightReminder();
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -42,7 +49,7 @@ export function GentleNightReminderLifecycle() {
       void listener?.remove();
       void notificationListener?.remove();
     };
-  }, [auth?.user?.uid]);
+  }, [auth?.user?.uid, hasUser]);
 
   return null;
 }
