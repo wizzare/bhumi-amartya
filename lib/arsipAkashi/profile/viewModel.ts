@@ -1,5 +1,5 @@
 import type { ArsipAkashiInput } from "../types";
-import { buildInsightModel, renderSoulLetters } from "../synthesis";
+import { buildInsightModel, renderSoulLetters, sanitizeNarrative } from "../synthesis";
 import { renderReadings } from "../readings/readingEngine";
 import { READING_COUNTS } from "../readings/definitions";
 
@@ -101,10 +101,10 @@ export function buildArsipAkashiProfileViewModel(input: ArsipAkashiInput): Arsip
         roomId: r.sectionId,
         roomTitle: r.roomTitle,
         title: r.title,
-        shortMeaning: r.shortMeaning,
-        narrative: r.narrative,
-        deepExplanation: r.deepExplanation,
-        practicalReflection: r.practicalReflection,
+        shortMeaning: r.shortMeaning ? sanitizeNarrative(r.shortMeaning).cleaned : undefined,
+        narrative: sanitizeNarrative(r.narrative).cleaned,
+        deepExplanation: sanitizeNarrative(r.deepExplanation).cleaned,
+        practicalReflection: sanitizeNarrative(r.practicalReflection).cleaned,
         items: r.items,
         recommendations: r.recommendations,
         detailSections: r.detailSections,

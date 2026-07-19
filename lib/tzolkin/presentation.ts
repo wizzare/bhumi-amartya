@@ -144,7 +144,7 @@ const isText = (value: unknown): value is string => typeof value === "string" &&
 const validKin = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 260;
 
 function clean(value: unknown): string {
-  return isText(value) ? value.replace(/\s+/g, " ").trim().replace(/[.。]+$/g, "") : "";
+  return isText(value) ? value.replace(/\s*\((?:OC|Cauac|Ahau|Akbal|GAP)\)/gi, "").replace(/\s+/g, " ").trim().replace(/[.。]+$/g, "") : "";
 }
 
 function lower(value: unknown): string {

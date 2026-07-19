@@ -50,13 +50,13 @@ export function runTzolkinPresentationFixtures(): TzolkinFixtureResult[] {
     runFixture("Founder canonical consistency", () => {
       requireCondition(founder.kin === 260, `Founder Kin changed to ${founder.kin}`);
       requireCondition(founder.galacticTone.name === "13 - Cosmic", "Founder Tone changed");
-      requireCondition(founder.solarSeal.name === "Matahari Kuning (Ahau)", "Founder Seal changed");
+      requireCondition(founder.solarSeal.name === "Matahari Kuning", "Founder Seal changed");
       requireCondition(founder.wavespell.name === "Gelombang Bintang Kuning" && founder.castle.name === "Kastil Tengah Hijau", "Founder cycle changed");
       requireCondition(founder.gap === true, "Founder GAP changed");
-      requireCondition(founder.oracle.guide.seal.name === "Benih Kuning (Kan)", "Founder Guide changed");
-      requireCondition(founder.oracle.analog.seal.name === "Badai Biru (Cauac)", "Founder Analog changed");
-      requireCondition(founder.oracle.antipode.seal.name === "Anjing Putih (Oc)", "Founder Antipode changed");
-      requireCondition(founder.oracle.occult.seal.name === "Naga Merah (Imix)", "Founder Occult changed");
+      requireCondition(founder.oracle.guide.seal.name === "Benih Kuning", "Founder Guide changed");
+      requireCondition(founder.oracle.analog.seal.name === "Badai Biru", "Founder Analog changed");
+      requireCondition(founder.oracle.antipode.seal.name === "Anjing Putih", "Founder Antipode changed");
+      requireCondition(founder.oracle.occult.seal.name === "Naga Merah", "Founder Occult changed");
     }),
     runFixture("complete record", () => requireCondition(complete.status === "complete" && complete.groups.length === 5, "Complete hierarchy failed")),
   );

@@ -152,19 +152,19 @@ function distanceHouses(a: VedicPlacement, b: VedicPlacement) { return mod(signI
 function yogas(planets: Record<VedicGraha, VedicPlacement>, lagnaIndex: number): VedicYoga[] {
   const found: VedicYoga[] = [];
   const sunMercury = Math.min(mod(planets.Sun.longitude - planets.Mercury.longitude), mod(planets.Mercury.longitude - planets.Sun.longitude));
-  if (sunMercury <= 12) found.push({ name: "Budha Aditya Yoga", planets: ["Sun", "Mercury"], evidence: `Sun and Mercury are conjunct within ${sunMercury.toFixed(2)}°.` });
+  if (sunMercury <= 12) found.push({ name: "Budha Aditya Yoga", planets: ["Sun", "Mercury"], evidence: `Matahari dan Merkurius berada dalam konjungsi (${sunMercury.toFixed(2)}°).` });
   const moonJupiter = distanceHouses(planets.Jupiter, planets.Moon);
-  if ([1, 4, 7, 10].includes(moonJupiter)) found.push({ name: "Gaja Kesari Yoga", planets: ["Moon", "Jupiter"], evidence: `Jupiter is ${moonJupiter === 1 ? "conjunct" : `${moonJupiter}th`} from the Moon.` });
+  if ([1, 4, 7, 10].includes(moonJupiter)) found.push({ name: "Gaja Kesari Yoga", planets: ["Moon", "Jupiter"], evidence: `Jupiter dan Bulan berada ${moonJupiter === 1 ? "dalam satu rumah (konjungsi)" : `dalam jarak ${moonJupiter} rumah`}.` });
   const lords = (houses: number[]) => houses.map((house) => SIGN_LORDS[mod(lagnaIndex + house - 1, 12)]);
   const kendraLords = lords([1, 4, 7, 10]);
   const trikonaLords = lords([1, 5, 9]);
   for (const k of kendraLords) for (const t of trikonaLords) {
-    if (k !== t && planets[k].sign === planets[t].sign && !found.some((y) => y.name === "Raja Yoga")) found.push({ name: "Raja Yoga", planets: [k, t], evidence: `${k} and ${t}, lords of angular/trinal houses, conjoin in ${planets[k].sign}.` });
+    if (k !== t && planets[k].sign === planets[t].sign && !found.some((y) => y.name === "Raja Yoga")) found.push({ name: "Raja Yoga", planets: [k, t], evidence: `${k} dan ${t}, penguasa rumah angular dan trinal, berkonjungsi di ${planets[k].sign}.` });
   }
   const wealthLords = lords([2, 5, 9, 11]);
   for (let i = 0; i < wealthLords.length; i++) for (let j = i + 1; j < wealthLords.length; j++) {
     const a = wealthLords[i], b = wealthLords[j];
-    if (a !== b && planets[a].sign === planets[b].sign && !found.some((y) => y.name === "Dhana Yoga")) found.push({ name: "Dhana Yoga", planets: [a, b], evidence: `${a} and ${b}, wealth-house lords, conjoin in ${planets[a].sign}.` });
+    if (a !== b && planets[a].sign === planets[b].sign && !found.some((y) => y.name === "Dhana Yoga")) found.push({ name: "Dhana Yoga", planets: [a, b], evidence: `${a} dan ${b}, penguasa rumah kekayaan, berkonjungsi di ${planets[a].sign}.` });
   }
   return found;
 }

@@ -1,5 +1,6 @@
 export interface SolarSeal {
   name: string;
+  code?: string;
   keyword: string;
   gift: string;
   challenge: string;
