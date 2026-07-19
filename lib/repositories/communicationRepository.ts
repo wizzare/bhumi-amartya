@@ -10,7 +10,8 @@ import {
   addDoc,
   serverTimestamp,
   collectionGroup,
-  getDoc
+  getDoc,
+  limit
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
@@ -90,18 +91,27 @@ export class CommunicationRepository {
       const commsRef = collection(db, "users", uid, "communications");
       const q = query(
         commsRef,
-        where("isArchived", "==", false),
-        where("status", "!=", "expired"),
-        orderBy("createdAt", "desc")
+        orderBy("createdAt", "desc"),
+        limit(200)
       );
 
       const snapshot = await getDocs(q);
       let messages = snapshot.docs.map(doc => doc.data() as CommunicationMessage);
-      messages = messages.filter(m => !m.parentMessageId);
+      
+      // Filter out archived, expired, and reply messages in memory
+      messages = messages.filter(
+        (m) => !m.isArchived && m.status !== "expired" && !m.parentMessageId
+      );
+
+      const safeTime = (msg: CommunicationMessage) => {
+        if (!msg.createdAt) return 0;
+        const t = new Date(msg.createdAt).getTime();
+        return Number.isFinite(t) ? t : 0;
+      };
 
       return messages.sort((a, b) => {
         if (a.isRead === b.isRead) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return safeTime(b) - safeTime(a);
         }
         return a.isRead ? 1 : -1;
       });
@@ -120,10 +130,18 @@ export class CommunicationRepository {
       const q = query(
         commsRef,
         where("threadId", "==", threadId),
-        orderBy("createdAt", "asc")
+        limit(200)
       );
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => doc.data() as CommunicationMessage);
+      const messages = snapshot.docs.map(doc => doc.data() as CommunicationMessage);
+      
+      const safeTime = (msg: CommunicationMessage) => {
+        if (!msg.createdAt) return 0;
+        const t = new Date(msg.createdAt).getTime();
+        return Number.isFinite(t) ? t : 0;
+      };
+
+      return messages.sort((a, b) => safeTime(a) - safeTime(b));
     } catch (error: any) {
       console.error("[CommunicationRepository] Error fetching thread:", error);
       throw error;
