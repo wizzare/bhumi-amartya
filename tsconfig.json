@@ -40,6 +40,7 @@
     "tests",
     "test-wellness-verification.spec.ts",
     "lib/humandesign/hdkit",
-    "lib/humandesign/hdkit-main"
+    "lib/humandesign/hdkit-main",
+    "lib/humandesign/hdRootCause.test.ts"
   ]
 }

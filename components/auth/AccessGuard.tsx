@@ -42,9 +42,16 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
         <button
           type="button"
           onClick={() => router.replace("/dashboard")}
-          className="w-full rounded-2xl bg-[#4F5E52] px-5 py-4 text-sm font-bold text-white transition-colors hover:bg-[#3D4A3F]"
+          className="w-full rounded-2xl bg-[#4F5E52] px-5 py-4 text-sm font-bold text-white transition-colors hover:bg-[#3D4A3F] mb-3"
         >
           Kembali ke Dashboard
+        </button>
+        <button
+          type="button"
+          onClick={() => router.replace("/premium-bhumi")}
+          className="w-full rounded-2xl border border-[#4F5E52] px-5 py-4 text-sm font-bold text-[#4F5E52] bg-white transition-colors hover:bg-[#F2F4F0]"
+        >
+          Buka Premium Bhumi
         </button>
       </section>
     </main>

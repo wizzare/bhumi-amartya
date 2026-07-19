@@ -32,8 +32,8 @@ const RAW_REPLACEMENTS: Array<[RegExp, string]> = [
   [/Jupiter\s+(?:is|berada)\s+4th\s+from\s+the\s+Moon/gi, "dorongan menemukan rasa aman melalui keluarga, rumah, dan ruang batin"],
   [/Sun\s+and\s+Mercury\s+are\s+conjunct(?:\s+within\s+[\d.]+°)?/gi, "sinergi erat antara tujuan hidup utama dan cara berpikir komunikatif"],
   [/Venus\s+and\s+Mercury/gi, "keharmonisan dalam mencintai dan berkomunikasi"],
-  [/wealth-house\s+lords/gi, "pengelola tema rezeki"],
-  [/lords\s+(?:of\s+)?angular(?:\/|\s+)trinal\s+houses/gi, "pengelola tema tindakan dan wawasan spiritual"],
+  [/wealth-house\s+lords?/gi, "pengelola tema rezeki"],
+  [/lords?\s+(?:of\s+)?angular(?:\/|\s+)trinal\s+houses?/gi, "pengelola tema tindakan dan wawasan spiritual"],
   [/conjoin(?:ed)?\s+in\s+([A-Za-z]+)/gi, "menyatu erat dalam kualitas $1"],
   [/conjoin(?:ed)?\s+([A-Za-z]+)/gi, "menyatu erat dalam kualitas $1"],
   [/\b(?:4th\s+from\s+the\s+Moon|from\s+the\s+Moon)\b/gi, "dalam kaitannya dengan rasa aman dan ruang batin"],
@@ -191,9 +191,9 @@ const RAW_REPLACEMENTS: Array<[RegExp, string]> = [
   [/\bAtmakaraka\b/gi, "penunjuk arah evolusi jiwa"],
   [/\bDarakaraka\b/gi, "penunjuk karakter relasi terdekat"],
   [/\byoga\b/gi, "kombinasi kekuatan batin"],
-  [/\bwealth-house lords\b/gi, "pengelola tema rezeki"],
-  [/\bangular houses\b/gi, "rumah-rumah tindakan nyata"],
-  [/\btrinal houses\b/gi, "rumah-rumah wawasan spiritual"],
+  [/\bwealth-house lords?\b/gi, "pengelola tema rezeki"],
+  [/\bangular houses?\b/gi, "rumah-rumah tindakan nyata"],
+  [/\btrinal houses?\b/gi, "rumah-rumah wawasan spiritual"],
 
   // Zi Wei Dou Shu
   [/\bLife Palace\b/gi, "pusat kepribadian diri"],
@@ -231,7 +231,7 @@ const FORBIDDEN_KEYWORDS = [
   "life path", "soul urge", "destiny number", "personal year", "master number", "expression number",
   "sabtu legi", "neptu", "pancawara", "pasaran", "watak weton", "laku", "padu", "topo", "tinari",
   "day master", "ren water", "yang water", "metal", "wood", "fire", "earth", "water", "heavenly stem", "earthly branch", "ten gods", "luck pillar",
-  "lagna", "rashi", "mahadasha", "antardasha", "atmakaraka", "darakaraka", "yoga", "wealth-house lords", "angular houses", "trinal houses",
+  "lagna", "rashi", "mahadasha", "antardasha", "atmakaraka", "darakaraka", "yoga", "wealth-house lord", "wealth-house lords", "angular house", "angular houses", "trinal house", "trinal houses",
   "life palace", "body palace", "life master", "body master",
   "planetary line", "venus line", "jupiter line", "mc line", "ic line", "asc line", "dsc line", "relocation chart"
 ];

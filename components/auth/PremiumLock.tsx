@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { PremiumFeature, canAccessPremiumFeature } from "@/lib/access/accessControl";
 import { useAuth } from "@/context/AuthContext";
 
@@ -11,6 +12,7 @@ interface PremiumLockProps {
 
 export function PremiumLock({ children, feature }: PremiumLockProps) {
   const auth = useAuth();
+  const router = useRouter();
 
   if (!auth || auth.loading) return children;
 
@@ -36,12 +38,20 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
           <p className="text-sm text-[#7B8776] mb-8 leading-relaxed">
             Akses Bhumi kamu perlu diperbarui. Kami sedang menyiapkan langkah berikutnya agar perjalananmu tetap terasa nyaman.
           </p>
-          <button
-            onClick={() => window.location.href = '/dashboard'}
-            className="block w-full py-4 px-6 bg-[#4F5E52] text-white rounded-2xl font-medium shadow-lg hover:bg-[#3D4A3F] transition-all"
-          >
-            Kembali ke Dashboard
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => router.replace('/dashboard')}
+              className="block w-full py-4 px-6 bg-[#4F5E52] text-white rounded-2xl font-medium shadow-md hover:bg-[#3D4A3F] transition-all"
+            >
+              Kembali ke Dashboard
+            </button>
+            <button
+              onClick={() => router.replace('/premium-bhumi')}
+              className="block w-full py-4 px-6 border border-[#4F5E52] text-[#4F5E52] bg-white rounded-2xl font-medium shadow-sm hover:bg-[#F2F4F0] transition-all"
+            >
+              Buka Premium Bhumi
+            </button>
+          </div>
         </div>
       </div>
     </div>
