@@ -1,6 +1,6 @@
 {
   "name": "bhumi-amartya-clean",
-  "version": "3.2.4",
+  "version": "4.4",
   "private": true,
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint app components lib src",
     "check:destiny": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkDestinyMatrix.ts",
+    "check:zi-wei": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkZiWei.ts",
     "android:sync": ".\\node_modules\\.bin\\cap.cmd sync android",
     "android:open": ".\\node_modules\\.bin\\cap.cmd open android"
   },
@@ -33,6 +34,7 @@
     "firebase": "^12.13.0",
     "firebase-admin": "^14.0.0",
     "html-to-image": "^1.11.13",
+    "iztro": "^2.5.8",
     "lucide-react": "^1.17.0",
     "luxon": "^3.7.2",
     "next": "16.2.6",
@@ -43,6 +45,7 @@
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
