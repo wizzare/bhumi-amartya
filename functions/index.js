@@ -9,7 +9,7 @@ if (!admin.apps.length) {
   admin.initializeApp();
 }
 
-const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
 // Must remain aligned with the product shipped by the Android client.
 const GOOGLE_PLAY_PREMIUM_PRODUCT_ID = "bhumi_premium_monthly";
@@ -34,7 +34,7 @@ function toValidDate(value) {
 function buildNewUserGrant(user) {
   const createdAt = toValidDate(user.metadata && user.metadata.creationTime);
   const accessStart = createdAt;
-  const accessUntil = new Date(accessStart.getTime() + THREE_DAYS_MS);
+  const accessUntil = new Date(accessStart.getTime() + SEVEN_DAYS_MS);
 
   return {
     uid: user.uid,
