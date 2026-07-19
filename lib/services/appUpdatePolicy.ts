@@ -7,6 +7,8 @@ export interface AppUpdateStatus {
   isOutdated: boolean;
   updateUrl: string;
   configSource: "firestore" | "local-failsafe" | "default";
+  nativeState?: "unavailable" | "no_update" | "available" | "downloading" | "downloaded" | "immediate_required" | "immediate_in_progress" | "failed";
+  policy: "no_update" | "flexible_available" | "immediate_required";
 }
 
 export type RemoteVersionConfig = Record<string, unknown>;
@@ -22,10 +24,12 @@ export function evaluateAppUpdateStatus(
   let latestVersion = buildInfo.versionName;
   let updateUrl = defaultUpdateUrl;
   let configSource: AppUpdateStatus["configSource"] = buildInfo.platform === "android" ? "local-failsafe" : "default";
+  let forceUpdate = false;
 
   if (remoteConfig) {
     latestVersion = String(remoteConfig.latestVersion || remoteConfig.currentVersion || latestVersion);
     updateUrl = String(remoteConfig.updateUrl || updateUrl);
+    forceUpdate = remoteConfig.forceUpdate === true;
 
     let remoteMinBuild: number | null = null;
     if (typeof remoteConfig.minimumSupportedVersionCode !== "undefined") {
@@ -42,12 +46,19 @@ export function evaluateAppUpdateStatus(
     }
   }
 
+  // A global force flag must not strand a build that already meets the
+  // supported minimum. It only has meaning for an actually unsupported
+  // installed build; web/PWA builds therefore remain accessible.
+  const isBelowMinimum = currentBuild < minimumBuild;
+  const forceUpdateApplies = forceUpdate && isBelowMinimum;
+  const isOutdated = isBelowMinimum || forceUpdateApplies;
   return {
     currentBuild,
     minimumBuild,
     latestVersion,
-    isOutdated: currentBuild < minimumBuild,
+    isOutdated,
     updateUrl,
     configSource,
+    policy: isOutdated ? "immediate_required" : latestVersion !== buildInfo.versionName ? "flexible_available" : "no_update",
   };
 }
