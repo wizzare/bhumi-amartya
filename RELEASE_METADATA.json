@@ -1,9 +1,9 @@
 {
-    "sprint": "MOANA V3 - HOTFIX BUILD 70",
-    "buildTimestamp": "2026-07-04T12:00:00+07:00",
-    "versionCode": 70,
-    "versionName": "3.2.4",
-    "type": "HOTFIX_BUILD",
+    "sprint": "MOANA V4 - BUILD 77",
+    "buildTimestamp": "2026-07-19T22:50:00+07:00",
+    "versionCode": 77,
+    "versionName": "4.4",
+    "type": "RELEASE",
     "scope": "UX and backend critical hotfixes",
     "changelog": [
         "Login Safe Mode: Confirm login flow does not block on notification permission",
