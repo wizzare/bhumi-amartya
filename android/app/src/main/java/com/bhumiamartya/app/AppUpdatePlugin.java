@@ -10,6 +10,7 @@ import com.google.android.play.core.appupdate.AppUpdateManager;
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
 import com.google.android.play.core.install.model.AppUpdateType;
 import com.google.android.play.core.install.model.UpdateAvailability;
+import com.google.android.play.core.install.model.InstallStatus;
 
 @CapacitorPlugin(name = "AppUpdate")
 public class AppUpdatePlugin extends Plugin {
@@ -25,7 +26,8 @@ public class AppUpdatePlugin extends Plugin {
     public void check(PluginCall call) {
         if (manager == null) { call.resolve(); return; }
         manager.getAppUpdateInfo().addOnSuccessListener(info -> {
-            boolean available = info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE;
+            boolean inProgress = info.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS;
+            boolean available = info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE || inProgress;
             boolean flexible = available && info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE);
             boolean immediate = available && info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE);
             com.getcapacitor.JSObject result = new com.getcapacitor.JSObject();
@@ -33,7 +35,9 @@ public class AppUpdatePlugin extends Plugin {
             result.put("flexibleAllowed", flexible);
             result.put("immediateAllowed", immediate);
             result.put("downloading", info.installStatus() == 2);
-            result.put("downloaded", info.installStatus() == 11);
+            result.put("downloaded", info.installStatus() == InstallStatus.DOWNLOADED);
+            result.put("immediateInProgress", inProgress);
+            result.put("state", inProgress ? "immediate_in_progress" : info.installStatus() == InstallStatus.DOWNLOADING ? "downloading" : info.installStatus() == InstallStatus.DOWNLOADED ? "downloaded" : immediate ? "immediate_required" : flexible ? "available" : "no_update");
             call.resolve(result);
         }).addOnFailureListener(error -> call.resolve());
     }
@@ -50,6 +54,30 @@ public class AppUpdatePlugin extends Plugin {
                 call.resolve();
             }
         }).addOnFailureListener(error -> call.resolve());
+    }
+
+    @PluginMethod
+    public void startImmediate(PluginCall call) {
+        if (manager == null) { call.reject("unavailable"); return; }
+        manager.getAppUpdateInfo().addOnSuccessListener(info -> {
+            if (!info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) { call.reject("unavailable"); return; }
+            try {
+                manager.startUpdateFlowForResult(info, AppUpdateType.IMMEDIATE, getActivity(), UPDATE_REQUEST_CODE);
+                call.resolve();
+            } catch (Exception error) { call.reject("failed"); }
+        }).addOnFailureListener(error -> call.reject("unavailable"));
+    }
+
+    @PluginMethod
+    public void resumeImmediate(PluginCall call) {
+        if (manager == null) { call.reject("unavailable"); return; }
+        manager.getAppUpdateInfo().addOnSuccessListener(info -> {
+            if (info.updateAvailability() != UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) { call.resolve(); return; }
+            try {
+                manager.startUpdateFlowForResult(info, AppUpdateType.IMMEDIATE, getActivity(), UPDATE_REQUEST_CODE);
+                call.resolve();
+            } catch (Exception error) { call.reject("failed"); }
+        }).addOnFailureListener(error -> call.reject("unavailable"));
     }
 
     @PluginMethod
