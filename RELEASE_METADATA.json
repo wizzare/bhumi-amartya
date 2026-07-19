@@ -1,16 +1,12 @@
 {
-    "sprint": "MOANA V4 - BUILD 77",
-    "buildTimestamp": "2026-07-19T22:50:00+07:00",
-    "versionCode": 77,
-    "versionName": "4.4",
+    "sprint": "MOANA V4 - BUILD 78",
+    "buildTimestamp": "2026-07-20T01:10:00+07:00",
+    "versionCode": 78,
+    "versionName": "4.4.1",
     "type": "RELEASE",
-    "scope": "UX and backend critical hotfixes",
+    "scope": "Inbox Firestore query hotfix",
     "changelog": [
-        "Login Safe Mode: Confirm login flow does not block on notification permission",
-        "New User Routing: Comment out auto-redirect to wellness to enforce Dashboard-first routing",
-        "Prevent Double Assessment: Baseline wellness 15Q completion also marks daily check-in complete",
-        "Dashboard Mirror Greeting: Clean up duplicate greetings from reflection engine output",
-        "UX Copy: Verify natural Bahasa Indonesia translations for Journey and Profile cards",
-        "Journey Page: Fix Turbopack parser syntax error (stray duplicate closing JSX)"
+        "Fix Inbox: Correct Firestore query ordering and constraints for client-side stability",
+        "Version update to 4.4.1 Build 78"
     ]
 }
