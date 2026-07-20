@@ -1262,13 +1262,7 @@ export default function AdminActivityPage() {
 
               {/* MEMBERSHIP */}
               <div className="lg:col-span-2">
-                <DetailBox title="Membership" rows={[
-                  ["Badge", pickFirst(selectedUser.rawUser, ["testerBadge", "guardianBadge", "badge", "recognitionTier"]) || "No data"],
-                  ["Plan", selectedUser.isPremium ? "Premium" : "Free"],
-                  ["Access Until", formatDateTime(selectedUser.rawUser?.accessUntil ?? selectedUser.rawUser?.expiresAt ?? selectedUser.rawUser?.subscriptionExpiresAt)],
-                  ["Subscription Status", String(selectedUser.rawUser?.subscriptionStatus ?? selectedUser.rawUser?.membershipStatus ?? selectedUser.rawUser?.membershipType ?? "-")],
-                  ["Entitlement", String(selectedUser.rawUser?.entitlement ?? selectedUser.rawUser?.entitlements ?? "-")],
-                ]} />
+                <DetailBox title="Membership" rows={formatEntitlementDisplay(selectedUser.rawUser)} />
               </div>
             </div>
           </div>
@@ -1382,21 +1376,111 @@ function userCompletion(user: FounderUser, detail: UserDetailData | null, events
   return `${Math.round((checks.filter(Boolean).length / checks.length) * 100)}%`;
 }
 
+function formatEntitlementDisplay(rawUser: Record<string, unknown> | null | undefined): Array<[string, string]> {
+  if (!rawUser) return [["Entitlement Status", "No data"]];
+
+  const rawEnt = rawUser.entitlement ?? rawUser.entitlements;
+  
+  let effectiveTier = "Free";
+  let source = "-";
+  let status = "-";
+  let reason = "-";
+  let accessUntilStr = formatDateTime(rawUser.accessUntil ?? rawUser.expiresAt ?? rawUser.subscriptionExpiresAt);
+  let trialLoginsRemaining = "-";
+  let safeBillingState = "-";
+
+  if (typeof rawEnt === "string" && rawEnt.trim()) {
+    effectiveTier = rawEnt.trim();
+    source = "Legacy Field";
+  } else if (rawEnt && typeof rawEnt === "object") {
+    const ent = rawEnt as Record<string, unknown>;
+    effectiveTier = String(ent.tier || ent.effectiveTier || ent.membershipType || ent.type || "Free");
+    source = String(ent.source || ent.grantedBy || ent.type || "-");
+    status = String(ent.status || ent.state || "-");
+    reason = String(ent.reason || ent.description || "-");
+    if (ent.accessUntil || ent.expiresAt) {
+      accessUntilStr = formatDateTime(ent.accessUntil || ent.expiresAt);
+    }
+    if (ent.trialLoginsRemaining !== undefined || ent.remainingLogins !== undefined) {
+      trialLoginsRemaining = String(ent.trialLoginsRemaining ?? ent.remainingLogins);
+    }
+    if (ent.billingState || ent.billingStatus) {
+      safeBillingState = String(ent.billingState || ent.billingStatus);
+    }
+  }
+
+  const badge = String(rawUser.testerBadge || rawUser.guardianBadge || rawUser.badge || rawUser.recognitionTier || "").trim();
+  const email = String(rawUser.email || "").trim().toLowerCase();
+  const isFounder = email === "wizzare@gmail.com" || badge.toLowerCase().includes("founder") || rawUser.role === "founder";
+  const loginCount = typeof rawUser.trialLoginCount === "number" ? rawUser.trialLoginCount : (typeof rawUser.loginCount === "number" ? rawUser.loginCount : 0);
+
+  if (isFounder) {
+    effectiveTier = "Founder (Lifetime)";
+    source = "Founder Privileged";
+    status = "Active";
+  } else if (badge.includes("Inti")) {
+    effectiveTier = "Penjaga Bhumi Inti";
+    if (source === "-") source = "Explicit Grant";
+    status = "Active";
+  } else if (badge.includes("Alfa")) {
+    effectiveTier = "Penjaga Bhumi Alfa";
+    if (source === "-") source = "Explicit Grant";
+    status = "Active";
+  } else if (rawUser.isPremium === true || String(rawUser.membershipType).toUpperCase().includes("PREMIUM")) {
+    if (effectiveTier === "Free") effectiveTier = "Paid Premium";
+    if (source === "-") source = "Google Play Billing";
+    if (status === "-") status = "Active";
+  } else if (loginCount <= 7 && loginCount > 0) {
+    if (effectiveTier === "Free") effectiveTier = "Internal Login-Count Trial";
+    if (source === "-") source = "7-Login Trial";
+    status = "Active";
+    trialLoginsRemaining = `${Math.max(0, 7 - loginCount)} logins left (${loginCount}/7 used)`;
+  } else if (loginCount > 7) {
+    if (effectiveTier === "Free") effectiveTier = "Free (Trial Exhausted)";
+    trialLoginsRemaining = "0 logins left (Trial exhausted)";
+  }
+
+  const rows: Array<[string, string]> = [
+    ["Badge", badge || "No data"],
+    ["Effective Tier", effectiveTier],
+    ["Source", source],
+    ["Status", status],
+  ];
+
+  if (reason !== "-") rows.push(["Reason", reason]);
+  rows.push(["Access Until", accessUntilStr]);
+  if (trialLoginsRemaining !== "-") rows.push(["Trial Logins Remaining", trialLoginsRemaining]);
+  if (safeBillingState !== "-") rows.push(["Safe Billing State", safeBillingState]);
+
+  return rows;
+}
+
 function buildFlowRows(user: FounderUser, detail: UserDetailData | null, events: AnalyticsDoc[], date: string): string[][] {
   const dashboard = activeToday(user, detail, date) || userHasEvent(user.uid, events, date, ["dashboard_view", "open_dashboard"]);
   const profile = userHasEvent(user.uid, events, date, ["profile_view"]) || textHasAny(detail?.activity?.lastScreen, ["profile"]);
   const wellness = userJourneyValue(user, detail, events, date, "wellness") !== "No data";
   const journey = userJourneyValue(user, detail, events, date, "journey") !== "No data";
   const lastScreen = detail?.activity?.lastScreen || "";
-  const rows = [
-    ["Dashboard", dashboard ? "Yes" : "No data"],
-    ["Profile", profile ? "Yes" : "No data"],
-    ["Wellness", wellness ? "Yes" : "No data"],
-    ["Journey", journey ? "Yes" : "No data"],
-    ["Exit", lastScreen ? `Last screen: ${lastScreen}` : formatDateTime(user.lastSeen)],
+  
+  const rawStages = [
+    { label: "Dashboard", hit: dashboard },
+    { label: "Profile", hit: profile },
+    { label: "Wellness", hit: wellness },
+    { label: "Journey", hit: journey },
   ];
-  const firstDrop = rows.find(([label, value]) => !["Exit"].includes(label) && value === "No data")?.[0] || "No data";
-  return [...rows, ["Drop-off Point", firstDrop]];
+
+  const processedRows: string[][] = rawStages.map((stage, idx) => {
+    if (stage.hit) return [stage.label, "Yes"];
+    const hasLaterHit = rawStages.slice(idx + 1).some((s) => s.hit);
+    if (hasLaterHit) return [stage.label, "Telemetry gap"];
+    return [stage.label, "No data"];
+  });
+
+  const exitRow = ["Exit", lastScreen ? `Last screen: ${lastScreen}` : formatDateTime(user.lastSeen)];
+  const firstDropStage = processedRows.find(([, value]) => value === "No data")?.[0];
+  const dropOffPoint = firstDropStage || (lastScreen ? `Exit (${lastScreen})` : "Exit");
+
+  return [...processedRows, exitRow, ["Drop-off Point", dropOffPoint]];
 }
 
 function buildTimelineRows(user: FounderUser, detail: UserDetailData | null, events: AnalyticsDoc[], date: string): string[][] {

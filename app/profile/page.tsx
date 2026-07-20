@@ -1,13 +1,16 @@
 "use client";
 
 // P0 HOTFIX ATTEMPT
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AccessGuard } from "@/components/auth/AccessGuard";
+import { useAuth } from "@/context/AuthContext";
+import { canAccessPremiumFeature } from "@/lib/access/accessControl";
+import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
@@ -152,6 +155,8 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
 }
 
 export default function ProfilePage() {
+  const auth = useAuth();
+  const trackedRef = useRef(false);
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
     : null;
@@ -162,6 +167,16 @@ export default function ProfilePage() {
   const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
   const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
+
+  useEffect(() => {
+    if (!trackedRef.current) {
+      const isAuthorized = auditUser || (auth?.authStateResolved && auth?.userProfile && canAccessPremiumFeature(auth.userProfile, "profile"));
+      if (isAuthorized) {
+        trackedRef.current = true;
+        trackEvent("profile_view", auth?.user?.uid);
+      }
+    }
+  }, [auditUser, auth?.authStateResolved, auth?.userProfile, auth?.user?.uid]);
 
   useEffect(() => {
     async function load() {
