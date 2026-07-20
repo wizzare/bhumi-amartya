@@ -105,29 +105,41 @@ export class CommunicationRepository {
    * Fetch active inbox for a user.
    */
   public static async getInbox(uid: string): Promise<CommunicationMessage[]> {
+    const stage = (label: string) => {
+      if (process.env.NODE_ENV === "development") console.debug(`[InboxStage] ${label}`);
+    };
+    stage("QUERY_STARTED");
     try {
       const commsRef = collection(db, "users", uid, "communications");
+      stage("QUERY_CREATED");
       const q = query(
         commsRef,
         orderBy("createdAt", "desc"),
         limit(200)
       );
 
+      stage("FETCHING");
       const snapshot = await getDocs(q);
+      stage("DOCUMENTS_RECEIVED");
+      const rawCount = snapshot.docs.length;
       const messages: CommunicationMessage[] = [];
+      let skippedCount = 0;
 
       for (const docSnap of snapshot.docs) {
         try {
           const raw = docSnap.data();
-          if (!raw) continue;
+          if (!raw) { skippedCount++; continue; }
+          stage("NORMALIZING");
           const normalized = this.normalizeCommunicationMessage(raw, docSnap.id);
           if (!normalized.isArchived && normalized.status !== "expired") {
             messages.push(normalized);
           }
         } catch (err) {
-          console.warn(`[CommunicationRepository] Skipped malformed message ${docSnap.id}:`, err);
+          skippedCount++;
+          if (process.env.NODE_ENV === "development") console.debug(`[InboxStage] SKIPPED_MALFORMED ${docSnap.id}:`, err);
         }
       }
+      stage("NORMALIZATION_COMPLETED");
       
       const safeTime = (msg: CommunicationMessage) => {
         if (!msg.createdAt) return 0;
@@ -135,13 +147,21 @@ export class CommunicationRepository {
         return Number.isFinite(t) ? t : 0;
       };
 
-      return messages.sort((a, b) => {
+      const sorted = messages.sort((a, b) => {
         if (a.isRead === b.isRead) {
           return safeTime(b) - safeTime(a);
         }
         return a.isRead ? 1 : -1;
       });
+      stage("SORT_COMPLETED");
+      if (process.env.NODE_ENV === "development") {
+        console.debug(`[InboxStage] raw=${rawCount} normalized=${messages.length} skipped=${skippedCount} returned=${sorted.length}`);
+      }
+      return sorted;
     } catch (error: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug(`[InboxStage] CATCH error=${error?.code || error?.message || error}`);
+      }
       console.error("[CommunicationRepository] Error fetching inbox:", error);
       throw error;
     }
