@@ -199,31 +199,43 @@ export default function ProfilePage() {
           const canonicalBlueprint = blueprint as unknown as Blueprint;
           if (canonicalBlueprint.bazi) setBazi(BaziMeaningService.enrich(canonicalBlueprint.bazi));
           const soulIdentityAi = (profile as any)?.soulIdentityAi;
-          const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
-          const meaning = HumanMeaningService.generate(canonical, soulIdentityAi);
-          const legacySections = ProfileRuntimeAdapter.buildProfile(meaning);
-          const arsipInput = buildArsipAkashiInputFromProfile(
-            profile ? { uid: blueprint.uid, timezone: (profile as any)?.timezone, birthDate: (profile as any)?.birthDate, birthTime: (profile as any)?.birthTime } : null,
-            canonicalBlueprint,
-          );
-          const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
-          const sections = legacySections
-            .map((section) => applyArsipAkashiContentToV3Section(section, arsipViewModel))
-            .filter((section): section is ProfileSection => Boolean(section));
-          const soulSection = buildSoulLettersV3Section(arsipViewModel);
-          if (soulSection) sections.push(soulSection);
-          setProfileSections(sections);
+          try {
+            const canonical = CanonicalTranslatorService.translate(blueprint as unknown as Blueprint);
+            const meaning = HumanMeaningService.generate(canonical, soulIdentityAi);
+            const legacySections = ProfileRuntimeAdapter.buildProfile(meaning);
+            try {
+              const arsipInput = buildArsipAkashiInputFromProfile(
+                profile ? { uid: blueprint.uid, timezone: (profile as any)?.timezone, birthDate: (profile as any)?.birthDate, birthTime: (profile as any)?.birthTime } : null,
+                canonicalBlueprint,
+              );
+              const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+              const sections = legacySections
+                .map((section) => applyArsipAkashiContentToV3Section(section, arsipViewModel))
+                .filter((section): section is ProfileSection => Boolean(section));
+              const soulSection = buildSoulLettersV3Section(arsipViewModel);
+              if (soulSection) sections.push(soulSection);
+              setProfileSections(sections);
+            } catch (arsipError) {
+              console.warn("[Profile] Arsip Akashi builder failed — showing available systems only:", arsipError);
+            }
+          } catch (translateError) {
+            console.warn("[Profile] Canonical translation failed — Blueprint cards may be limited:", translateError);
+          }
 
-          const timezone = (profile as any)?.timezone || (profile as any)?.profile?.timezone || "UTC";
-          const date = getLocalDateKey(new Date(), timezone);
-          const dgResult = await getExistingDailyGuidance({
-            uid: blueprint.uid,
-            profile,
-            blueprint,
-            date,
-          });
-          if (dgResult.status === "success" && dgResult.guidance) {
-            setDailyGuidance(dgResult.guidance);
+          try {
+            const timezone = (profile as any)?.timezone || (profile as any)?.profile?.timezone || "UTC";
+            const date = getLocalDateKey(new Date(), timezone);
+            const dgResult = await getExistingDailyGuidance({
+              uid: blueprint.uid,
+              profile,
+              blueprint,
+              date,
+            });
+            if (dgResult.status === "success" && dgResult.guidance) {
+              setDailyGuidance(dgResult.guidance);
+            }
+          } catch (guidanceError) {
+            console.warn("[Profile] Daily guidance load failed — not blocking profile:", guidanceError);
           }
         }
       } finally {
@@ -235,7 +247,6 @@ export default function ProfilePage() {
 
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
   if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
-  if (!profileSections.length) return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profil tersedia, tetapi Blueprint Arsip Akashi belum tersedia. Pembacaan akan muncul setelah data sistem selesai dihitung.</p></main>;
 
     return (
     <ProtectedRoute>
@@ -257,17 +268,23 @@ export default function ProfilePage() {
                 <h2 className="text-xl font-serif text-[#4F5E52]">Arsip Akashi</h2>
                 <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
               </header>
-              <div className="grid grid-cols-2 gap-4">
-              {(profileSections).map((section) => {
-                return (
-                  <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
-                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Sparkles size={24} /></div>
-                    <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
-                    <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
-                  </Link>
-                );
-              })}
-              </div>
+              {profileSections.length === 0 ? (
+                <div className="rounded-2xl border border-[#E8E9E5] bg-white p-8 text-center">
+                  <p className="text-sm text-[#7B8776]">Arsip Akashi sedang disiapkan. Bagian profil lainnya tetap dapat kamu jelajahi.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                {profileSections.map((section) => {
+                  return (
+                    <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Sparkles size={24} /></div>
+                      <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
+                      <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
+                    </Link>
+                  );
+                })}
+                </div>
+              )}
             </section>
 
             <DailyNoteV2
