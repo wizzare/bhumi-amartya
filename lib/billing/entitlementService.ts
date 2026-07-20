@@ -63,11 +63,30 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
   if (effectiveBadge === "Founder") {
     return { isPremium: true, reason: "founder", expiresAt: null, daysRemaining: null };
   }
-  if (effectiveBadge === "Penjaga Bhumi Inti") {
-    return { isPremium: true, reason: "inti_badge", expiresAt: null, daysRemaining: null };
-  }
-  if (effectiveBadge === "Penjaga Bhumi Alfa") {
-    return { isPremium: true, reason: "alfa_badge", expiresAt: null, daysRemaining: null };
+  if (effectiveBadge === "Penjaga Bhumi Inti" || effectiveBadge === "Penjaga Bhumi Alfa") {
+    const isInti = effectiveBadge === "Penjaga Bhumi Inti";
+    const startStr = "2026-06-29T00:00:00+07:00";
+    const untilStr = profile.accessUntil ? String(profile.accessUntil) : (isInti ? "2026-08-30T00:00:00+07:00" : "2026-07-30T00:00:00+07:00");
+    const startDate = new Date(startStr);
+    const untilDate = new Date(untilStr);
+
+    if (now >= startDate && now < untilDate) {
+      const daysRemaining = Math.max(0, Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+      return {
+        isPremium: true,
+        reason: isInti ? "inti_badge" : "alfa_badge",
+        expiresAt: untilDate,
+        daysRemaining,
+      };
+    }
+    if (now >= untilDate) {
+      return {
+        isPremium: false,
+        reason: "none",
+        expiresAt: untilDate,
+        daysRemaining: 0,
+      };
+    }
   }
   if (effectiveBadge === "Penjaga Bhumi" && testerRecord) {
     return { isPremium: true, reason: "subscriber", expiresAt: null, daysRemaining: null };

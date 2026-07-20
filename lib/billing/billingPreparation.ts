@@ -132,9 +132,19 @@ export function isExpiredUser(profile?: BadgeAccessProfile | null, now = new Dat
   if (!profile) return true;
   const badge = getCurrentBadge(profile);
   if (badge === "Founder") return false;
+  if (badge === "Penjaga Bhumi Inti") {
+    const accessUntil = toDate(profile.accessUntil) || new Date("2026-08-30T00:00:00+07:00");
+    const start = new Date("2026-06-29T00:00:00+07:00");
+    return now.getTime() < start.getTime() || now.getTime() >= accessUntil.getTime();
+  }
+  if (badge === "Penjaga Bhumi Alfa") {
+    const accessUntil = toDate(profile.accessUntil) || new Date("2026-07-30T00:00:00+07:00");
+    const start = new Date("2026-06-29T00:00:00+07:00");
+    return now.getTime() < start.getTime() || now.getTime() >= accessUntil.getTime();
+  }
   const accessUntil = toDate(profile.accessUntil);
   if (!accessUntil) return true;
-  if (now.getTime() > accessUntil.getTime()) return true;
+  if (now.getTime() >= accessUntil.getTime()) return true;
   const membership = String(profile.membership ?? profile.membershipType ?? profile.plan ?? "").toLowerCase();
   if (membership === "expired") return true;
   return String(profile.subscriptionStatus ?? "").toLowerCase() === "expired";

@@ -1672,11 +1672,23 @@ function formatEntitlementDisplay(rawUser: Record<string, unknown> | null | unde
   } else if (badge.includes("Inti")) {
     effectiveTier = "Penjaga Bhumi Inti";
     if (source === "-") source = "Explicit Grant";
-    status = "Active";
+    const start = new Date("2026-06-29T00:00:00+07:00");
+    const until = new Date(rawUser.accessUntil ? String(rawUser.accessUntil) : "2026-08-30T00:00:00+07:00");
+    accessUntilStr = formatDateTime(until);
+    const now = new Date();
+    if (now < start) status = "Scheduled";
+    else if (now >= until) status = "Expired";
+    else status = "Active";
   } else if (badge.includes("Alfa")) {
     effectiveTier = "Penjaga Bhumi Alfa";
     if (source === "-") source = "Explicit Grant";
-    status = "Active";
+    const start = new Date("2026-06-29T00:00:00+07:00");
+    const until = new Date(rawUser.accessUntil ? String(rawUser.accessUntil) : "2026-07-30T00:00:00+07:00");
+    accessUntilStr = formatDateTime(until);
+    const now = new Date();
+    if (now < start) status = "Scheduled";
+    else if (now >= until) status = "Expired";
+    else status = "Active";
   } else if (rawUser.isPremium === true || String(rawUser.membershipType).toUpperCase().includes("PREMIUM")) {
     if (effectiveTier === "Free") effectiveTier = "Paid Premium";
     if (source === "-") source = "Google Play Billing";

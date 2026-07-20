@@ -24,7 +24,7 @@ export type FounderTesterRecord = {
 };
 
 export const DEFAULT_USER_POLICY_EFFECTIVE_AT = new Date("2026-07-01T00:00:00+07:00");
-const POLICY_TIMEZONE_OFFSET_MS = 7 * 60 * 60 * 1000;
+
 
 export const FOUNDER_TESTER_SOURCE_OF_TRUTH: FounderTesterRecord[] = [
   { name: "Widhi Wedhaswara", email: "wizzare@gmail.com", uid: "vybyLLFpBxhF1L1m9liGHm5chgG2", registeredAt: "2026-06-09", activeDays: 8, badge: "Founder", sourceBadge: "Founder", membership: "LIFETIME_PREMIUM", premiumMonths: null, trialDays: null },
@@ -91,7 +91,7 @@ export type ServerOwnedAccessGrant = {
   accessUntil: string | null;
   trialStartedAt?: string;
   trialEndsAt?: string;
-  subscriptionStatus: "active" | "trialing";
+  subscriptionStatus: "active" | "trialing" | "expired";
   isPremium: boolean;
   entitlements: {
     dashboard: true;
@@ -99,26 +99,13 @@ export type ServerOwnedAccessGrant = {
   };
 };
 
-function addDays(date: Date, days: number): Date {
-  const next = new Date(date.getTime() + POLICY_TIMEZONE_OFFSET_MS);
-  next.setUTCDate(next.getUTCDate() + days);
-  return new Date(next.getTime() - POLICY_TIMEZONE_OFFSET_MS);
-}
 
-function addMonths(date: Date, months: number): Date {
-  const next = new Date(date.getTime() + POLICY_TIMEZONE_OFFSET_MS);
-  next.setUTCMonth(next.getUTCMonth() + months);
-  return new Date(next.getTime() - POLICY_TIMEZONE_OFFSET_MS);
-}
 
-function toAccessDate(value: string | Date): Date {
-  if (value instanceof Date) return value;
-  return new Date(`${value}T00:00:00.000Z`);
-}
+export const INTI_GRANT_STARTS_AT = "2026-06-29T00:00:00+07:00";
+export const INTI_ACCESS_UNTIL = "2026-08-30T00:00:00+07:00";
 
-function laterDate(a: Date, b: Date): Date {
-  return a.getTime() >= b.getTime() ? a : b;
-}
+export const ALFA_GRANT_STARTS_AT = "2026-06-29T00:00:00+07:00";
+export const ALFA_ACCESS_UNTIL = "2026-07-30T00:00:00+07:00";
 
 export function buildServerOwnedAccessGrant(
   record: FounderTesterRecord,
@@ -138,35 +125,34 @@ export function buildServerOwnedAccessGrant(
     };
   }
 
-  const registrationDate = toAccessDate(record.registeredAt || now);
-  const baseDate = record.trialDays
-    ? laterDate(registrationDate, DEFAULT_USER_POLICY_EFFECTIVE_AT)
-    : DEFAULT_USER_POLICY_EFFECTIVE_AT;
-  const accessUntil = record.premiumMonths
-    ? addMonths(baseDate, record.premiumMonths)
-    : addDays(baseDate, record.trialDays ?? 3);
+  const isInti = record.badge === "Penjaga Bhumi Inti" || record.sourceBadge === "Inti";
+  const startStr = isInti ? INTI_GRANT_STARTS_AT : ALFA_GRANT_STARTS_AT;
+  const untilStr = isInti ? INTI_ACCESS_UNTIL : ALFA_ACCESS_UNTIL;
+
+  const startDate = new Date(startStr);
+  const untilDate = new Date(untilStr);
+  const isActive = now >= startDate && now < untilDate;
 
   return {
     badge: record.badge,
-    plan: record.trialDays ? "free_trial" : "free_access",
+    plan: "free_access",
     membership: record.membership,
-    membershipType: record.trialDays ? "TRIAL" : "PREMIUM",
-    accessStart: baseDate.toISOString(),
-    accessUntil: accessUntil.toISOString(),
-    trialStartedAt: record.trialDays ? baseDate.toISOString() : undefined,
-    trialEndsAt: record.trialDays ? accessUntil.toISOString() : undefined,
-    subscriptionStatus: record.trialDays ? "trialing" : "active",
-    isPremium: true,
-    entitlements: { dashboard: true, premiumFeatures: true },
+    membershipType: "PREMIUM",
+    accessStart: startDate.toISOString(),
+    accessUntil: untilDate.toISOString(),
+    subscriptionStatus: isActive ? "active" : "expired",
+    isPremium: isActive,
+    entitlements: { dashboard: true, premiumFeatures: isActive },
   };
 }
 
 export function buildDefaultNewUserAccessGrant(
   registeredAt: string | Date,
 ): ServerOwnedAccessGrant {
-  const registrationDate = toAccessDate(registeredAt);
-  const start = laterDate(registrationDate, DEFAULT_USER_POLICY_EFFECTIVE_AT);
-  const end = addDays(start, 3);
+  const regMs = registeredAt instanceof Date ? registeredAt.getTime() : new Date(`${registeredAt}T00:00:00.000Z`).getTime();
+  const startMs = Math.max(regMs, DEFAULT_USER_POLICY_EFFECTIVE_AT.getTime());
+  const start = new Date(startMs);
+  const end = new Date(startMs + 3 * 24 * 60 * 60 * 1000);
   return {
     badge: "Penjaga Bhumi",
     plan: "free_trial",
