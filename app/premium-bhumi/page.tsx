@@ -11,7 +11,7 @@ import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, Lock, Unlock
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCurrentBadge, hasActiveBadgeAccess, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
 import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
-import { purchasePremiumSubscription, restorePremiumPurchases } from "@/lib/billing/googlePlayBilling";
+import { purchasePremiumSubscription, restorePremiumPurchases, verifyGooglePlayPurchase } from "@/lib/billing/googlePlayBilling";
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
