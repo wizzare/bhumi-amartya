@@ -119,25 +119,19 @@ type AlertItem = {
 
 const FEATURE_EVENTS: Array<{ label: string; events: string[]; screens: string[] }> = [
   { label: "Dashboard", events: ["dashboard_view", "open_dashboard"], screens: ["dashboard", "home"] },
-  { label: "Journey", events: ["open_journey", "practice_completed", "daily_completion_reached"], screens: ["journey"] },
-  { label: "Wellness", events: ["wellness_checkin_completed", "wellness_assessment_completed", "open_innerwork"], screens: ["wellness", "wellness-assessment", "kenali_diri", "innerwork"] },
   { label: "Profile", events: ["profile_view"], screens: ["profile", "settings"] },
-  { label: "Manifestasi", events: ["open_manifestasi", "complete_manifestasi"], screens: ["manifestasi", "manifestation"] },
-  { label: "Meditasi", events: ["meditation_open", "meditation_completed", "complete_meditation"], screens: ["meditation", "meditasi"] },
-  { label: "Journaling", events: ["journal_open", "journal_saved", "complete_journaling"], screens: ["journal", "journaling"] },
-  { label: "Workout", events: ["open_workout", "complete_workout", "complete_workout_item"], screens: ["workout"] },
-  { label: "Audio Healing", events: ["audio_open", "audio_completed", "complete_audio"], screens: ["audio", "audio-healing", "healing"] },
-  { label: "Healthy Food", events: ["open_healthy_food", "complete_healthy_food", "complete_healthy_food_item"], screens: ["healthy-food", "healthy_food", "herbal"] },
+  { label: "Wellness", events: ["wellness_checkin_completed", "wellness_assessment_completed", "open_innerwork"], screens: ["wellness", "wellness-assessment", "kenali_diri", "innerwork"] },
+  { label: "Journey", events: ["open_journey", "practice_completed", "daily_completion_reached"], screens: ["journey"] },
 ];
 
 const FUNNEL_STEPS: Array<{ label: string; events: string[]; source?: "users" | "activity" }> = [
-  { label: "New Install", events: [], source: "users" },
-  { label: "First Login", events: ["login_success", "app_open"], source: "activity" },
-  { label: "Complete Onboarding", events: ["setup_completed"] },
+  { label: "Registered / First Seen", events: [], source: "users" },
+  { label: "Interactive Login", events: ["login_success", "app_open"], source: "activity" },
   { label: "Open Dashboard", events: ["dashboard_view", "open_dashboard"] },
+  { label: "Open Profile", events: ["profile_view"] },
   { label: "Open Wellness", events: ["wellness_checkin_completed", "wellness_assessment_completed", "open_innerwork"] },
   { label: "Open Journey", events: ["open_journey"] },
-  { label: "Finish Daily Practice", events: ["practice_completed", "daily_completion_reached"] },
+  { label: "Complete Daily Practice", events: ["practice_completed", "daily_completion_reached"] },
 ];
 
 const DATE_RANGE_OPTIONS: Array<{ key: DateRangeKey; label: string }> = [
@@ -147,6 +141,40 @@ const DATE_RANGE_OPTIONS: Array<{ key: DateRangeKey; label: string }> = [
   { key: "30d", label: "Last 30 Days" },
   { key: "custom", label: "Custom" },
 ];
+
+function classifyUserPremiumSource(user: FounderUser): "GOOGLE_PLAY_PAID" | "FOUNDER_LIFETIME" | "PENJAGA_INTI" | "PENJAGA_ALFA" | "INTERNAL_TRIAL" | "FREE" | "UNKNOWN_LEGACY" {
+  const badge = String(user.rawUser?.testerBadge || user.rawUser?.guardianBadge || user.rawUser?.badge || user.blueprint || "").trim();
+  const email = String(user.email || "").trim().toLowerCase();
+  const isFounder = email === "wizzare@gmail.com" || badge.toLowerCase().includes("founder") || user.rawUser?.role === "founder";
+  const ent = user.rawUser?.entitlement ?? user.rawUser?.entitlements;
+  const source = typeof ent === "object" ? String((ent as any)?.source || "") : "";
+  const purchaseToken = user.rawUser?.purchaseToken || user.rawUser?.googlePlayPurchaseToken;
+  const loginCount = typeof user.rawUser?.trialLoginCount === "number" ? user.rawUser?.trialLoginCount : (typeof user.rawUser?.loginCount === "number" ? user.rawUser?.loginCount : 0);
+
+  if (isFounder) return "FOUNDER_LIFETIME";
+  if (badge.includes("Inti")) return "PENJAGA_INTI";
+  if (badge.includes("Alfa")) return "PENJAGA_ALFA";
+  if (user.isPremium && (source === "google_play" || purchaseToken || String(user.rawUser?.membershipType).toUpperCase().includes("PREMIUM"))) {
+    return "GOOGLE_PLAY_PAID";
+  }
+  if (user.isPremium) return "UNKNOWN_LEGACY";
+  if (loginCount <= 7 && loginCount > 0) return "INTERNAL_TRIAL";
+  return "FREE";
+}
+
+function normalizeCityName(city: string): string {
+  const c = city.trim().toLowerCase();
+  if (!c || c === "no data" || c === "unknown" || c === "-") return "No data";
+  if (c.includes("jakarta")) return "Jakarta";
+  if (c.includes("bandung")) return "Bandung";
+  if (c.includes("surabaya")) return "Surabaya";
+  if (c.includes("yogyakarta") || c.includes("jogja")) return "Yogyakarta";
+  if (c.includes("bali") || c.includes("denpasar")) return "Denpasar";
+  if (c.includes("medan")) return "Medan";
+  if (c.includes("semarang")) return "Semarang";
+  if (c.includes("makassar")) return "Makassar";
+  return city.trim();
+}
 
 const USER_TABLE_PAGE_SIZE = 10;
 
@@ -683,7 +711,9 @@ export default function AdminActivityPage() {
     const selectedDay = rangeDates.end;
     const todayActive = new Set<string>();
     const yesterdayActive = new Set<string>();
+    const wau = new Set<string>();
     const mau = new Set<string>();
+
     const dailyActiveSeries = Array.from({ length: 7 }, (_, index) => addDays(selectedDay, -6 + index)).map((day) => {
       let count = 0;
       eventDatesByUid.forEach((dates) => {
@@ -691,13 +721,39 @@ export default function AdminActivityPage() {
       });
       return { day, count };
     });
+
     eventDatesByUid.forEach((dates, uid) => {
       if (dates.has(selectedDay)) todayActive.add(uid);
       if (dates.has(addDays(selectedDay, -1))) yesterdayActive.add(uid);
       dates.forEach((d) => {
+        if (d >= addDays(selectedDay, -6) && d <= selectedDay) wau.add(uid);
         if (d >= addDays(selectedDay, -29) && d <= selectedDay) mau.add(uid);
       });
     });
+
+    // Premium Source Segmentation
+    let googlePlayPaid = 0;
+    let founderLifetime = 0;
+    let penjagaInti = 0;
+    let penjagaAlfa = 0;
+    let internalTrial = 0;
+    let freeUsers = 0;
+    let unknownLegacy = 0;
+
+    users.forEach((user) => {
+      const cat = classifyUserPremiumSource(user);
+      if (cat === "GOOGLE_PLAY_PAID") googlePlayPaid += 1;
+      else if (cat === "FOUNDER_LIFETIME") founderLifetime += 1;
+      else if (cat === "PENJAGA_INTI") penjagaInti += 1;
+      else if (cat === "PENJAGA_ALFA") penjagaAlfa += 1;
+      else if (cat === "INTERNAL_TRIAL") internalTrial += 1;
+      else if (cat === "UNKNOWN_LEGACY") unknownLegacy += 1;
+      else freeUsers += 1;
+    });
+
+    const totalPremiumAccess = googlePlayPaid + founderLifetime + penjagaInti + penjagaAlfa + unknownLegacy;
+    const eligibleUsers = Math.max(1, users.length - founderLifetime);
+    const paidConversion = pct(googlePlayPaid, eligibleUsers);
 
     const retentionFor = (day: number) => {
       let eligible = 0;
@@ -711,21 +767,32 @@ export default function AdminActivityPage() {
       return { eligible, retained, value: pct(retained, eligible) };
     };
 
-    const funnel = FUNNEL_STEPS.map((step, index) => {
-      let count = 0;
+    const rawFunnelCounts = FUNNEL_STEPS.map((step) => {
+      let rawCount = 0;
       if (step.source === "users") {
-        count = users.filter((user) => user.registeredAt && dateKey(new Date(user.registeredAt)) === selectedDay).length;
+        rawCount = users.filter((user) => user.registeredAt && dateKey(new Date(user.registeredAt)) === selectedDay).length;
       } else if (step.source === "activity") {
-        count = new Set(activities.filter((item) => item.date === selectedDay && item.uid).map((item) => item.uid)).size;
+        rawCount = new Set(activities.filter((item) => item.date === selectedDay && item.uid).map((item) => item.uid)).size;
       } else {
-        count = new Set(analytics.filter((event) => event.date === selectedDay && step.events.includes(String(event.eventName))).map(uniqueUid).filter(Boolean)).size;
+        rawCount = new Set(analytics.filter((event) => event.date === selectedDay && step.events.includes(String(event.eventName))).map(uniqueUid).filter(Boolean)).size;
       }
-      const previous = index === 0 ? count : 0;
-      return { ...step, count, previous };
-    }).map((step, index, all) => {
-      const previous = index === 0 ? step.count : all[index - 1].count;
-      const conversion = index === 0 ? null : pct(step.count, previous);
-      return { label: step.label, count: step.count, conversion, drop: conversion === null ? null : Math.max(0, 100 - conversion) };
+      return { step, rawCount };
+    });
+
+    const funnelCounts: number[] = [];
+    rawFunnelCounts.forEach(({ rawCount }, idx) => {
+      if (idx === 0) {
+        funnelCounts.push(rawCount);
+      } else {
+        funnelCounts.push(Math.min(rawCount, funnelCounts[idx - 1]));
+      }
+    });
+
+    const funnel = rawFunnelCounts.map(({ step }, index) => {
+      const count = funnelCounts[index];
+      const previous = index === 0 ? count : funnelCounts[index - 1];
+      const conversion = index === 0 ? null : pct(count, Math.max(1, previous));
+      return { label: step.label, count, conversion, drop: conversion === null ? null : Math.max(0, 100 - conversion) };
     });
 
     const cohorts = Array.from({ length: 7 }, (_, i) => addDays(selectedDay, -6 + i)).reverse().map((cohort) => {
@@ -745,13 +812,32 @@ export default function AdminActivityPage() {
       }).length,
     }));
 
-    const locationRows = users.reduce<Record<string, { country: string; province: string; city: string; timezone: string; count: number }>>((acc, user) => {
-      if (user.city === "No data" && user.country === "No data" && user.timezone === "No data") return acc;
-      const key = [user.country, user.province, user.city, user.timezone].join("|");
-      acc[key] = acc[key] || { country: user.country, province: user.province, city: user.city, timezone: user.timezone, count: 0 };
-      acc[key].count += 1;
-      return acc;
-    }, {});
+    // City & Country aggregation
+    const cityCounts: Record<string, { city: string; province: string; country: string; count: number }> = {};
+    const countryCounts: Record<string, { country: string; count: number; topCity: string }> = {};
+
+    users.forEach((u) => {
+      const normCity = normalizeCityName(u.city);
+      const country = u.country && u.country !== "No data" ? u.country : (u.city.includes("Indonesia") || normCity !== "No data" ? "Indonesia" : "No data");
+
+      if (normCity !== "No data") {
+        const cityKey = `${normCity}_${country}`;
+        if (!cityCounts[cityKey]) {
+          cityCounts[cityKey] = { city: normCity, province: u.province !== "No data" ? u.province : "-", country, count: 0 };
+        }
+        cityCounts[cityKey].count += 1;
+      }
+
+      if (country !== "No data") {
+        if (!countryCounts[country]) {
+          countryCounts[country] = { country, count: 0, topCity: normCity };
+        }
+        countryCounts[country].count += 1;
+      }
+    });
+
+    const top5Cities = Object.values(cityCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+    const countryTable = Object.values(countryCounts).sort((a, b) => b.count - a.count);
 
     const topFeatures = FEATURE_EVENTS.map((feature) => {
       const matchedEvents = analytics
@@ -765,63 +851,66 @@ export default function AdminActivityPage() {
         ...matchedScreens.map((activity) => activity.uid).filter(Boolean),
         ...matchedUsers.map((user) => user.uid),
       ]);
-      const completionSignals = matchedEvents.filter((event) => String(event.eventName || "").toLowerCase().includes("complete")).length;
       const totalSeconds = matchedScreens.reduce((sum, activity) => sum + (Number(activity.totalSeconds) || 0), 0);
       const avgDuration = matchedScreens.length ? Math.round(totalSeconds / matchedScreens.length) : 0;
-      const completion = pct(completionSignals, Math.max(1, matchedEvents.length));
+      const reachPct = pct(userSet.size, Math.max(1, users.length));
       return {
         label: feature.label,
         users: userSet.size,
-        count: userSet.size,
         avgDuration,
-        completion,
-        bounce: completion === null ? null : Math.max(0, 100 - completion),
+        reachPct,
       };
-    }).sort((a, b) => b.count - a.count);
+    });
 
     const d1 = retentionFor(1);
     const d7 = retentionFor(7);
     const dashboardUsers = funnel.find((f) => f.label === "Open Dashboard")?.count ?? 0;
+    const profileUsers = funnel.find((f) => f.label === "Open Profile")?.count ?? 0;
     const wellnessUsers = funnel.find((f) => f.label === "Open Wellness")?.count ?? 0;
     const journeyUsers = funnel.find((f) => f.label === "Open Journey")?.count ?? 0;
-    const onboardingUsers = funnel.find((f) => f.label === "Complete Onboarding")?.count ?? 0;
-    const firstLoginUsers = funnel.find((f) => f.label === "First Login")?.count ?? 0;
-    const journeyErrors = analytics.filter((event) => event.date === selectedDay && String(event.eventName).toLowerCase().includes("journey") && String(event.eventName).toLowerCase().includes("error")).length;
+
     const alerts: AlertItem[] = [];
-    if (journeyErrors > 0) alerts.push({ level: "critical", title: "Journey error", detail: `Journey error tercatat ${journeyErrors} kali.` });
-    if (todayActive.size < yesterdayActive.size) alerts.push({ level: "warning", title: "DAU turun", detail: `DAU turun dibanding kemarin (${yesterdayActive.size} ke ${todayActive.size}).` });
-    if (d1.value !== null && d1.value < 50) alerts.push({ level: "warning", title: "Retention D1", detail: `Retention D1 rendah: ${d1.value}%.` });
-    if (firstLoginUsers > onboardingUsers) alerts.push({ level: "warning", title: "Onboarding", detail: `${firstLoginUsers - onboardingUsers} user belum complete onboarding.` });
-    if (dashboardUsers > wellnessUsers) alerts.push({ level: "warning", title: "Dashboard → Wellness", detail: `${dashboardUsers - wellnessUsers} user berhenti sebelum Wellness.` });
-    if ((topFeatures.find((f) => f.label === "Journaling")?.count ?? 0) === 0 && analytics.some((event) => event.date === selectedDay)) alerts.push({ level: "info", title: "Refleksi Jiwa", detail: "Refleksi/Journaling tidak tercatat dibaca hari ini." });
-    if (users.filter((u) => u.isPremium).length > 0) alerts.push({ level: "info", title: "Premium", detail: `${users.filter((u) => u.isPremium).length} premium member terdeteksi.` });
+    if (todayActive.size < yesterdayActive.size) alerts.push({ level: "warning", title: "DAU Turun", detail: `DAU hari ini (${todayActive.size}) turun dibanding kemarin (${yesterdayActive.size}).` });
+    if (d1.value !== null && d1.value < 50) alerts.push({ level: "warning", title: "Retention D1 Rendah", detail: `Retention D1 saat ini ${d1.value}% (${d1.retained}/${d1.eligible} user).` });
+    if (dashboardUsers > profileUsers && dashboardUsers > 0) alerts.push({ level: "info", title: "Rendahnya Jangkauan Profile", detail: `${dashboardUsers - profileUsers} user tidak membuka Profile setelah Dashboard.` });
+    if (dashboardUsers > wellnessUsers && dashboardUsers > 0) alerts.push({ level: "info", title: "Drop-off Dashboard → Wellness", detail: `${dashboardUsers - wellnessUsers} user belum berpindah ke Wellness.` });
+    if (totalPremiumAccess > 0) alerts.push({ level: "info", title: "Total Akses Premium", detail: `${totalPremiumAccess} user memiliki akses premium (Google Play Paid: ${googlePlayPaid}, Inti: ${penjagaInti}, Alfa: ${penjagaAlfa}).` });
 
     const insightParts = [
-      `Hari ini terdapat ${todayActive.size} pengguna aktif dari ${users.length} total user.`,
-      d1.value === null ? "Retention D1 belum punya data cohort matang." : `Retention D1 berada di ${d1.value}% (${d1.retained}/${d1.eligible}).`,
-      dashboardUsers > wellnessUsers ? `${dashboardUsers - wellnessUsers} pengguna berhenti setelah Dashboard.` : "Drop-off Dashboard ke Wellness tidak terlihat dari data hari ini.",
-      journeyUsers > 0 ? `${journeyUsers} pengguna membuka Journey.` : "Belum ada aktivitas Journey tercatat hari ini.",
-      churn.find((item) => item.day === 3)?.count ? `Disarankan mengirim reminder kepada ${churn.find((item) => item.day === 3)?.count} pengguna yang belum kembali selama 3 hari.` : "Reminder 3 hari belum memiliki target dari data aktif.",
+      `Hari ini terdapat ${todayActive.size} pengguna aktif (DAU), ${wau.size} (WAU 7 hari), dan ${mau.size} (MAU 30 hari) dari ${users.length} total user valid.`,
+      d1.value === null ? "Retention D1 belum memiliki cohort yang cukup." : `Retention D1 tercatat ${d1.value}% (${d1.retained}/${d1.eligible} user retained).`,
+      `Verified Google Play Paid berjumlah ${googlePlayPaid} user (Paid Conversion: ${paidConversion ?? 0}%). Total Akses Premium: ${totalPremiumAccess} user.`,
+      journeyUsers > 0 ? `${journeyUsers} pengguna membuka Journey.` : "Aktivitas Journey hari ini belum tercatat.",
     ];
 
     return {
       totalUsers: users.length,
       dau: todayActive.size,
+      wau: wau.size,
       mau: mau.size,
-      premium: users.filter((u) => u.isPremium).length,
+      premiumAccess: totalPremiumAccess,
+      googlePlayPaid,
+      penjagaInti,
+      penjagaAlfa,
+      founderLifetime,
+      unknownLegacy,
+      internalTrial,
+      freeUsers,
+      eligibleUsers,
+      paidConversion,
       d1,
       d7,
       dauTrend: pct(todayActive.size - yesterdayActive.size, Math.max(1, yesterdayActive.size)),
       totalUserTrend: pct(users.filter((user) => isDateInRange(readDateKey(user.registeredAt), addDays(selectedDay, -6), selectedDay)).length, Math.max(1, users.length)),
-      premiumShare: pct(users.filter((u) => u.isPremium).length, users.length),
+      premiumAccessShare: pct(totalPremiumAccess, Math.max(1, users.length)),
       sparkline: dailyActiveSeries.map((item) => item.count),
-      conversion: pct(users.filter((u) => u.isPremium).length, users.length),
       funnel,
       cohorts,
       churn,
       alerts: alerts.sort((a, b) => alertRank(a.level) - alertRank(b.level)),
       insight: insightParts.join(" "),
-      topLocations: Object.values(locationRows).sort((a, b) => b.count - a.count).slice(0, 8),
+      top5Cities,
+      countryTable,
       topFeatures,
     };
   }, [activities, analytics, rangeDates.end, users]);
@@ -972,14 +1061,17 @@ export default function AdminActivityPage() {
         </section>
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={<Users size={18} />} label="Total User" value={metrics.totalUsers} sub="+ user base" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
+          <MetricCard icon={<Users size={18} />} label="Total User" value={metrics.totalUsers} sub="unique valid UIDs" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
           <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={metrics.dau} sub={formatDateKey(rangeDates.end)} comparison={`kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}`} trend={trendLabel(metrics.dauTrend)} sparkline={metrics.sparkline} tone="sage" />
-          <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="last 30 days" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" sparkline={metrics.sparkline} tone="cream" />
-          <MetricCard icon={<TrendingUp size={18} />} label="Retention D1" value={metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`} sub={`${metrics.d1.retained}/${metrics.d1.eligible} retained`} comparison="cohort day 1" trend={metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch"} sparkline={[metrics.d1.retained, metrics.d1.eligible]} tone="sage" />
-          <MetricCard icon={<TrendingDown size={18} />} label="Retention D7" value={metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`} sub={`${metrics.d7.retained}/${metrics.d7.eligible} retained`} comparison="cohort day 7" trend={metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch"} sparkline={[metrics.d7.retained, metrics.d7.eligible]} tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Premium Member" value={metrics.premium} sub={`${metrics.premiumShare ?? 0}% of users`} comparison="server-owned plan" trend={metrics.premium > 0 ? "▲ Live" : "No data"} sparkline={[metrics.premium, metrics.totalUsers]} tone="cream" />
-          <MetricCard icon={<Heart size={18} />} label="Conversion" value={metrics.conversion === null ? "No data" : `${metrics.conversion}%`} sub="Free to Premium" comparison="existing plan fields" trend={metrics.conversion ? "▲ tracked" : "No data"} sparkline={[metrics.premium, metrics.totalUsers]} tone="sage" />
-          <MetricCard icon={<Star size={18} />} label="Play Store Rating" value="No data" sub="future-ready" comparison="No rating collection" trend="Prepared" sparkline={[0, 0, 0]} tone="gold" />
+          <MetricCard icon={<Calendar size={18} />} label="WAU" value={metrics.wau} sub="rolling 7 days" comparison={`${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="7d active" tone="cream" />
+          <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="rolling 30 days" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" tone="cream" />
+          <MetricCard icon={<TrendingUp size={18} />} label="Retention D1" value={metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`} sub={`${metrics.d1.retained}/${metrics.d1.eligible} retained`} comparison="cohort day 1" trend={metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch"} tone="sage" />
+          <MetricCard icon={<TrendingDown size={18} />} label="Retention D7" value={metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`} sub={`${metrics.d7.retained}/${metrics.d7.eligible} retained`} comparison="cohort day 7" trend={metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch"} tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub={`${metrics.premiumAccessShare ?? 0}% of users`} comparison="all premium sources" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
+          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="verified billing proof" comparison="paid subscribers" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="explicit grant" comparison="community Inti" trend="Inti Tier" tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="explicit grant" comparison="community Alfa" trend="Alfa Tier" tone="gold" />
+          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub={`${metrics.googlePlayPaid}/${metrics.eligibleUsers} eligible users`} comparison="Google Play Paid / Eligible" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
         </section>
 
         <Panel title="Founder Insight" action="executive summary">
@@ -1004,7 +1096,7 @@ export default function AdminActivityPage() {
                 const width = Math.max(8, Math.round((step.count / max) * 100));
                 return (
                   <div key={step.label}>
-                    <div className="grid gap-3 sm:grid-cols-[150px_1fr_120px] sm:items-center">
+                    <div className="grid gap-3 sm:grid-cols-[180px_1fr_120px] sm:items-center">
                       <span className="text-sm font-semibold">{step.label}</span>
                       <div className="h-5 overflow-hidden rounded-full bg-[#E8E1D5]">
                         <div className="h-full rounded-full bg-[#557264]" style={{ width: `${width}%` }} />
@@ -1058,12 +1150,12 @@ export default function AdminActivityPage() {
             </div>
           </Panel>
 
-          <Panel title="Churn Dashboard" action="inactive users">
+          <Panel title="Churn Dashboard" action="inactive at least N days">
             <div className="space-y-3">
               {metrics.churn.map((row) => (
                 <div key={row.day} className={row.count === Math.max(...metrics.churn.map((item) => item.count)) && row.count > 0 ? "rounded-[8px] border border-[#D8C7A1] bg-[#FFF8E8] p-3" : ""}>
                   <div className="mb-1 flex items-center justify-between text-sm">
-                    <span>{row.day} day{row.day > 1 ? "s" : ""} inactive</span>
+                    <span>Inactive at least {row.day} day{row.day > 1 ? "s" : ""}</span>
                     <span className="font-semibold">{row.count} · {pct(row.count, metrics.totalUsers) ?? 0}%</span>
                   </div>
                   <div className="h-2 rounded-full bg-[#E3E0D7]"><div className="h-2 rounded-full bg-[#8B5F4D]" style={{ width: `${Math.min(100, pct(row.count, metrics.totalUsers) ?? 0)}%` }} /></div>
@@ -1073,34 +1165,54 @@ export default function AdminActivityPage() {
           </Panel>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-          <Panel title="Location Analytics" action="aggregated only">
-            {metrics.topLocations.length ? (
-              <div className="grid gap-3">
-                {metrics.topLocations.map((row) => (
-                  <div key={`${row.country}-${row.province}-${row.city}-${row.timezone}`} className="rounded-[8px] border border-[#E3E0D7] bg-white p-3 text-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="flex items-center gap-2 font-semibold"><MapPin size={15} /> {row.city}</span>
-                      <span className="text-[#6D786F]">{row.count} users</span>
-                    </div>
-                    <p className="mt-1 text-xs text-[#6D786F]">{row.province}, {row.country} · {row.timezone}</p>
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Panel title="Location Analytics" action="Top 5 Cities & Countries">
+            <div className="space-y-4">
+              <div>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6D786F]">Top 5 User Cities</h4>
+                {metrics.top5Cities.length ? (
+                  <div className="space-y-2">
+                    {metrics.top5Cities.map((row) => (
+                      <div key={`${row.city}_${row.country}`} className="flex items-center justify-between rounded-md border border-[#E3E0D7] bg-white px-3 py-2 text-sm">
+                        <span className="flex items-center gap-2 font-semibold"><MapPin size={14} className="text-[#557264]" /> {row.city}</span>
+                        <span className="text-[#6D786F]">{row.count} users ({pct(row.count, metrics.totalUsers) ?? 0}%)</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : <NoData label="No city data available" />}
               </div>
-            ) : <NoData label="No data" />}
+
+              <div>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6D786F]">User Countries Table</h4>
+                {metrics.countryTable.length ? (
+                  <div className="space-y-2">
+                    {metrics.countryTable.map((row) => (
+                      <div key={row.country} className="flex items-center justify-between rounded-md border border-[#E3E0D7] bg-white px-3 py-2 text-sm">
+                        <span className="font-semibold">{row.country}</span>
+                        <span className="text-[#6D786F]">{row.count} users ({pct(row.count, metrics.totalUsers) ?? 0}%)</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : <NoData label="No country data available" />}
+              </div>
+            </div>
           </Panel>
 
-          <Panel title="Top Features" action={formatDateKey(rangeDates.end)}>
+          <Panel title="Top Features V4" action={formatDateKey(rangeDates.end)}>
             <div className="grid gap-3 sm:grid-cols-2">
               {metrics.topFeatures.map((feature) => (
-                <div key={feature.label} className="rounded-[8px] border border-[#E3E0D7] bg-white p-3">
-                  <div className="flex items-center justify-between text-sm"><span className="font-semibold">{feature.label}</span><span>{feature.users} users</span></div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-[#6D786F]">
-                    <span>Avg {feature.avgDuration ? `${Math.round(feature.avgDuration / 60)}m` : "-"}</span>
-                    <span>Done {feature.completion ?? 0}%</span>
-                    <span>Bounce {feature.bounce ?? 0}%</span>
+                <div key={feature.label} className="rounded-[8px] border border-[#E3E0D7] bg-white p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-bold text-[#2F3C34]">{feature.label}</span>
+                    <span className="font-semibold text-[#557264]">{feature.users} users</span>
                   </div>
-                  <div className="mt-2 h-1.5 rounded-full bg-[#E3E0D7]"><div className="h-1.5 rounded-full bg-[#557264]" style={{ width: `${Math.min(100, pct(feature.count, Math.max(1, metrics.topFeatures[0]?.count || 1)) ?? 0)}%` }} /></div>
+                  <div className="mt-3 flex items-center justify-between text-xs text-[#6D786F]">
+                    <span>Avg {feature.avgDuration ? `${Math.round(feature.avgDuration / 60)}m` : "-"}</span>
+                    <span>Reach {feature.reachPct ?? 0}%</span>
+                  </div>
+                  <div className="mt-2 h-1.5 rounded-full bg-[#E3E0D7]">
+                    <div className="h-1.5 rounded-full bg-[#557264]" style={{ width: `${Math.min(100, feature.reachPct ?? 0)}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
