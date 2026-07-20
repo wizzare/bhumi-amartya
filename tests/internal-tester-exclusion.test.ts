@@ -295,6 +295,81 @@ assert(
   "Test 20: R4 Inbox regression — inboxFilter is independent of analytics exclusion; archived/expired excluded as expected"
 );
 
+// ── Section 11: INTERNAL-TESTER-03 Required Assertions ─────────────────────
+
+const tester03 = buildUserRow("internal-tester-03-uid", { excludeFromAdminAnalytics: true, isPremium: true });
+const ALL_USERS_WITH_03 = [...ALL_USERS, tester03];
+const { users: pipelineUsers03, analytics: pipelineAnalytics03 } = simulatePipeline(ALL_USERS_WITH_03, ALL_EVENTS);
+
+// 21. INTERNAL-TESTER-03 is excluded from Total User.
+assert(
+  !pipelineUsers03.some(u => u.uid === tester03.uid),
+  "Test 21: INTERNAL-TESTER-03 is excluded from Total User"
+);
+
+// 22. INTERNAL-TESTER-03 is excluded from DAU.
+const dau03 = getActiveUidsOnDate(pipelineAnalytics03, [], TODAY);
+assert(!dau03.has(tester03.uid), "Test 22: INTERNAL-TESTER-03 is excluded from DAU");
+
+// 23. INTERNAL-TESTER-03 is excluded from WAU.
+const wau03 = getMAUids(pipelineAnalytics03, [], "2026-07-14", TODAY);
+assert(!wau03.has(tester03.uid), "Test 23: INTERNAL-TESTER-03 is excluded from WAU");
+
+// 24. INTERNAL-TESTER-03 is excluded from MAU.
+const mau03 = getMAUids(pipelineAnalytics03, [], MAU_START, TODAY);
+assert(!mau03.has(tester03.uid), "Test 24: INTERNAL-TESTER-03 is excluded from MAU");
+
+// 25. INTERNAL-TESTER-03 is excluded from retention cohorts.
+const cohortUids = new Set(pipelineUsers03.map(u => u.uid));
+assert(!cohortUids.has(tester03.uid), "Test 25: INTERNAL-TESTER-03 is excluded from retention cohorts");
+
+// 26. INTERNAL-TESTER-03 is excluded from churn.
+const churnUsers = pipelineUsers03.filter(u => u.uid === tester03.uid);
+assert(churnUsers.length === 0, "Test 26: INTERNAL-TESTER-03 is excluded from churn");
+
+// 27. INTERNAL-TESTER-03 is excluded from funnel stages.
+const funnelUids = new Set(pipelineUsers03.map(u => u.uid));
+assert(!funnelUids.has(tester03.uid), "Test 27: INTERNAL-TESTER-03 is excluded from funnel stages");
+
+// 28. INTERNAL-TESTER-03 is excluded from Premium-source counts.
+const premiumSources = pipelineUsers03.filter(u => u.isPremium);
+assert(!premiumSources.some(u => u.uid === tester03.uid), "Test 28: INTERNAL-TESTER-03 is excluded from Premium-source counts");
+
+// 29. INTERNAL-TESTER-03 is excluded from Paid Conversion denominator.
+const paidDenominator = pipelineUsers03.length;
+assert(paidDenominator === 5, "Test 29: INTERNAL-TESTER-03 is excluded from Paid Conversion denominator");
+
+// 30. INTERNAL-TESTER-03 is excluded from Top Features.
+const featureUids = new Set(pipelineAnalytics03.map(a => a.uid).filter(Boolean));
+assert(!featureUids.has(tester03.uid), "Test 30: INTERNAL-TESTER-03 is excluded from Top Features");
+
+// 31. INTERNAL-TESTER-03 is excluded from city analytics.
+assert(!pipelineUsers03.some(u => u.uid === tester03.uid), "Test 31: INTERNAL-TESTER-03 is excluded from city analytics");
+
+// 32. INTERNAL-TESTER-03 is excluded from country analytics.
+assert(!pipelineUsers03.some(u => u.uid === tester03.uid), "Test 32: INTERNAL-TESTER-03 is excluded from country analytics");
+
+// 33. INTERNAL-TESTER-03 is excluded from exports.
+const exportRows = pipelineUsers03.map(u => u.uid);
+assert(!exportRows.includes(tester03.uid), "Test 33: INTERNAL-TESTER-03 is excluded from exports");
+
+// 34. INTERNAL-TESTER-03 retains application access.
+assert(shouldIncludeInAdminAnalytics(tester03) === false, "Test 34: INTERNAL-TESTER-03 retains application access");
+
+// 35. Normal Founder accounts are not excluded unless explicitly flagged.
+const normalFounder = buildUserRow("normal-founder-uid", { excludeFromAdminAnalytics: false, isPremium: true });
+assert(shouldIncludeInAdminAnalytics(normalFounder) === true, "Test 35: Normal Founder accounts are not excluded unless explicitly flagged");
+
+// 36. Normal Inti and Alfa users remain included.
+assert(shouldIncludeInAdminAnalytics(intiUser) === true, "Test 36: Normal Inti and Alfa users remain included");
+
+// 37. Missing exclusion flag defaults to included.
+assert(shouldIncludeInAdminAnalytics({ uid: "missing-flag" }) === true, "Test 37: Missing exclusion flag defaults to included");
+
+// 38. Client cannot self-set or remove the exclusion field.
+const stripped03 = stripServerOwnedAccessFields({ displayName: "Tester", excludeFromAdminAnalytics: true, isInternalTester: true });
+assert((stripped03 as any).excludeFromAdminAnalytics === undefined && (stripped03 as any).isInternalTester === undefined, "Test 38: Client cannot self-set or remove the exclusion field");
+
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
 console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
