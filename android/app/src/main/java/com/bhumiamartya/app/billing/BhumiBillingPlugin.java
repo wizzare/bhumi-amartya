@@ -1,6 +1,5 @@
 package com.bhumiamartya.app.billing;
 
-import com.android.billingclient.api.AcknowledgePurchaseParams;
 import com.android.billingclient.api.BillingClient;
 import com.android.billingclient.api.BillingClientStateListener;
 import com.android.billingclient.api.BillingFlowParams;
@@ -88,10 +87,6 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
                 JSObject result = new JSObject();
                 result.put("purchases", purchasesToJson(purchases));
                 call.resolve(result);
-
-                for (Purchase purchase : purchases) {
-                    acknowledgeIfNeeded(purchase);
-                }
             });
         });
     }
@@ -108,9 +103,6 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
 
         int responseCode = billingResult.getResponseCode();
         if (responseCode == BillingClient.BillingResponseCode.OK && purchases != null && !purchases.isEmpty()) {
-            for (Purchase purchase : purchases) {
-                acknowledgeIfNeeded(purchase);
-            }
             JSObject result = new JSObject();
             result.put("purchases", purchasesToJson(purchases));
             call.resolve(result);
@@ -123,9 +115,6 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
                 .build();
             billingClient.queryPurchasesAsync(params, (queryResult, existingPurchases) -> {
                 if (queryResult.getResponseCode() == BillingClient.BillingResponseCode.OK && existingPurchases != null) {
-                    for (Purchase purchase : existingPurchases) {
-                        acknowledgeIfNeeded(purchase);
-                    }
                     JSObject result = new JSObject();
                     result.put("alreadyOwned", true);
                     result.put("purchases", purchasesToJson(existingPurchases));
@@ -240,24 +229,6 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
         }
 
         return offers.get(0).getOfferToken();
-    }
-
-    private void acknowledgeIfNeeded(Purchase purchase) {
-        if (purchase.getPurchaseState() != Purchase.PurchaseState.PURCHASED || purchase.isAcknowledged()) {
-            return;
-        }
-
-        AcknowledgePurchaseParams params = AcknowledgePurchaseParams.newBuilder()
-            .setPurchaseToken(purchase.getPurchaseToken())
-            .build();
-
-        billingClient.acknowledgePurchase(params, billingResult -> {
-            JSObject payload = new JSObject();
-            payload.put("responseCode", billingResult.getResponseCode());
-            payload.put("debugMessage", billingResult.getDebugMessage());
-            payload.put("purchaseToken", purchase.getPurchaseToken());
-            notifyListeners("purchaseAcknowledged", payload);
-        });
     }
 
     private JSObject productDetailsToJson(ProductDetails productDetails) {
