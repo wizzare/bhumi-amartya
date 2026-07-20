@@ -114,7 +114,8 @@ function dailySeed(uid: string, dateKey: string, domain: string): string {
 }
 
 function buildSoulMessage(guidance?: DailyGuidance | null): SoulMessageSection {
-  const summary = snippet(guidance?.dailyConclusion?.text, FALLBACK_SOUL_MESSAGE, 2);
+  const text = guidance?.dailyConclusion?.text || guidance?.dailyNoteText || guidance?.soulReflectionText || "";
+  const summary = snippet(text, FALLBACK_SOUL_MESSAGE, 2);
   return {
     title: "Pesan untuk Jiwamu",
     themeLabel: "Tema saat ini",
