@@ -155,7 +155,7 @@ function classifyUserPremiumSource(user: FounderUser): "GOOGLE_PLAY_PAID" | "FOU
   if (isFounder) return "FOUNDER_LIFETIME";
   if (badge.includes("Inti")) return "PENJAGA_INTI";
   if (badge.includes("Alfa")) return "PENJAGA_ALFA";
-  if (user.isPremium && (source === "google_play" || purchaseToken || String(user.rawUser?.membershipType).toUpperCase().includes("PREMIUM"))) {
+  if (user.isPremium && (source === "google_play" || purchaseToken || user.rawUser?.billingVerified === true)) {
     return "GOOGLE_PLAY_PAID";
   }
   if (user.isPremium) return "UNKNOWN_LEGACY";
@@ -907,7 +907,26 @@ export default function AdminActivityPage() {
     });
 
     const top5Cities = Object.values(cityCounts).sort((a, b) => b.count - a.count).slice(0, 5);
+    const top5CitiesSum = top5Cities.reduce((a, b) => a + b.count, 0);
+    const allRecognizedCitySum = Object.values(cityCounts).reduce((a, b) => a + b.count, 0);
+    const otherRecognizedCitiesCount = Math.max(0, allRecognizedCitySum - top5CitiesSum);
+    const unknownCityCount = users.filter((u) => normalizeCityName(u.city) === "No data").length;
     const countryTable = Object.values(countryCounts).sort((a, b) => b.count - a.count);
+
+    const dailyFeatureReach = FEATURE_EVENTS.map((feature) => {
+      const matchedEvents = analytics.filter((event) => event.date === selectedDay && feature.events.includes(String(event.eventName)));
+      const matchedScreens = activities.filter((activity) => activity.date === selectedDay && textHasAny(activity.lastScreen, feature.screens));
+      const userSet = new Set([
+        ...matchedEvents.map(uniqueUid).filter(Boolean),
+        ...matchedScreens.map((a) => a.uid).filter(Boolean),
+      ]);
+      const activeUids = new Set([...userSet].filter((uid) => todayActive.has(uid)));
+      return {
+        label: feature.label,
+        count: activeUids.size,
+        reachPct: pct(activeUids.size, Math.max(1, todayActive.size)),
+      };
+    });
 
     const topFeatures = FEATURE_EVENTS.map((feature) => {
       const matchedEvents = analytics
@@ -984,8 +1003,12 @@ export default function AdminActivityPage() {
       alerts: alerts.sort((a, b) => alertRank(a.level) - alertRank(b.level)),
       insight: insightParts.join(" "),
       top5Cities,
+      top5CitiesSum,
+      otherRecognizedCitiesCount,
+      unknownCityCount,
       countryTable,
       topFeatures,
+      dailyFeatureReach,
     };
   }, [activities, analytics, rangeDates.end, users]);
 
@@ -1192,54 +1215,17 @@ export default function AdminActivityPage() {
             </div>
           </Panel>
 
-          <Panel title="Founder Alert" action="real data only">
-            {metrics.alerts.length ? (
-              <div className="space-y-3">
-                {metrics.alerts.map((alert) => (
-                  <AlertCard key={`${alert.level}-${alert.title}`} alert={alert} />
-                ))}
-              </div>
-            ) : (
-              <NoData label={analytics.length || activities.length ? "Tidak ada alert dari data range ini." : "No data"} />
-            )}
-          </Panel>
-        </section>
-
-        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <Panel title="Cohort Retention" action="daily cohort">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[680px] border-separate border-spacing-1 text-left text-sm">
-                <thead className="text-xs uppercase text-[#6D786F]">
-                  <tr><th className="py-2">Registration</th><th>Users</th><th>D1</th><th>D3</th><th>D7</th><th>D14</th><th>D30</th></tr>
-                </thead>
-                <tbody>
-                  {metrics.cohorts.map((row) => (
-                    <tr key={row.cohort}>
-                      <td className="py-3 font-semibold">{formatDateKey(row.cohort)}</td>
-                      <td>{row.users}</td>
-                      {[row.d1, row.d3, row.d7, row.d14, row.d30].map((value, index) => (
-                        <td key={`${row.cohort}-${index}`}>
-                          <span className={`inline-flex min-w-14 justify-center rounded-[6px] px-2 py-1.5 text-xs font-bold ${heatmapClass(value)}`}>
-                            {value === null ? "-" : `${value}%`}
-                          </span>
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
-
-          <Panel title="Churn Dashboard" action="inactive at least N days">
-            <div className="space-y-3">
-              {metrics.churn.map((row) => (
-                <div key={row.day} className={row.count === Math.max(...metrics.churn.map((item) => item.count)) && row.count > 0 ? "rounded-[8px] border border-[#D8C7A1] bg-[#FFF8E8] p-3" : ""}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span>Inactive at least {row.day} day{row.day > 1 ? "s" : ""}</span>
-                    <span className="font-semibold">{row.count} · {pct(row.count, metrics.totalUsers) ?? 0}%</span>
+          <Panel title="Daily Feature Reach" action={`DAU: ${metrics.dau}`}>
+            <div className="space-y-4">
+              {metrics.dailyFeatureReach.map((feature) => (
+                <div key={feature.label} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm font-semibold">
+                    <span>{feature.label}</span>
+                    <span className="text-[#2F3C34]">{feature.count} users ({feature.reachPct ?? 0}% DAU)</span>
                   </div>
-                  <div className="h-2 rounded-full bg-[#E3E0D7]"><div className="h-2 rounded-full bg-[#8B5F4D]" style={{ width: `${Math.min(100, pct(row.count, metrics.totalUsers) ?? 0)}%` }} /></div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[#E8E1D5]">
+                    <div className="h-full rounded-full bg-[#557264]" style={{ width: `${feature.reachPct ?? 0}%` }} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -1250,7 +1236,7 @@ export default function AdminActivityPage() {
           <Panel title="Location Analytics" action="Top 5 Cities & Countries">
             <div className="space-y-4">
               <div>
-                <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6D786F]">Top 5 User Cities</h4>
+                <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6D786F]">Top 5 Birth Cities</h4>
                 {metrics.top5Cities.length ? (
                   <div className="space-y-2">
                     {metrics.top5Cities.map((row) => (
@@ -1259,6 +1245,12 @@ export default function AdminActivityPage() {
                         <span className="text-[#6D786F]">{row.count} users ({pct(row.count, metrics.totalUsers) ?? 0}%)</span>
                       </div>
                     ))}
+                    <div className="mt-2 flex items-center justify-between rounded-md bg-[#F4F2EB] px-3 py-2 text-xs text-[#6D786F]">
+                      <span>Top 5 Sum: <strong>{metrics.top5CitiesSum}</strong></span>
+                      <span>Other Recognized: <strong>{metrics.otherRecognizedCitiesCount}</strong></span>
+                      <span>Unknown: <strong>{metrics.unknownCityCount}</strong></span>
+                      <span>Total: <strong>{metrics.totalUsers}</strong></span>
+                    </div>
                   </div>
                 ) : <NoData label="No city data available" />}
               </div>
