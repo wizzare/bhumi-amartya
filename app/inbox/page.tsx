@@ -66,6 +66,7 @@ export default function InboxPage() {
   const [offline, setOffline] = useState(false);
   const [loadErrorKind, setLoadErrorKind] = useState<CommunicationErrorKind | null>(null);
   const [sendErrorCode, setSendErrorCode] = useState<string | null>(null);
+  const [rawErrorDetail, setRawErrorDetail] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<string>("all");
   const [composeOpen, setComposeOpen] = useState(false);
   const [category, setCategory] = useState<(typeof SUPPORT_CATEGORIES)[number][0]>("SUGGESTION");
@@ -84,10 +85,11 @@ export default function InboxPage() {
       const data = await CommunicationCenterService.getInbox(uid!);
       setMessages(data);
       setOffline(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[Inbox] Failed to load messages:", error);
       const kind = classifyCommunicationError(error, typeof navigator === "undefined" ? true : navigator.onLine);
       setLoadErrorKind(kind);
+      setRawErrorDetail(`code=${error?.code || 'none'} name=${error?.name || 'none'} msg=${error?.message?.substring(0, 200) || 'none'}`);
       setOffline(kind === 'offline');
       setLoadError(kind !== 'offline');
     } finally {
@@ -242,7 +244,7 @@ export default function InboxPage() {
         {loading ? (
           <div className="py-20 text-center text-[#7B8776]">Memuat pesan...</div>
         ) : loadError ? (
-          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">{loadErrorKind ? communicationErrorMessage(loadErrorKind) : 'Inbox tidak dapat dimuat.'}</p><button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">Coba lagi</button></div>
+          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">{loadErrorKind ? communicationErrorMessage(loadErrorKind) : 'Inbox tidak dapat dimuat.'}</p>{process.env.NODE_ENV !== 'production' && rawErrorDetail && <p className="text-[10px] text-red-400 font-mono break-all mt-2">[DEV] {rawErrorDetail}</p>}<button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">Coba lagi</button></div>
         ) : groupedMessages.length === 0 ? (
           <div className="bhumi-card p-12 text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center">
