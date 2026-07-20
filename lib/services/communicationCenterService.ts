@@ -14,6 +14,7 @@ import {
 import { CommunicationRepository } from "../repositories/communicationRepository";
 import { FeedbackRepository } from "../repositories/feedbackRepository";
 import { adminRepository } from "../repositories/adminRepository";
+import { UserProfile } from "../repositories/userRepository";
 import {
   collection,
   doc,
