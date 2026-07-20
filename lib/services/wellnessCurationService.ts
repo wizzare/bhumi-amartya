@@ -293,17 +293,40 @@ async function markJourneyRecommendationCompleted(uid: string, date: string, act
   const wellnessV4 = (wellnessState.wellnessV4 || {}) as Record<string, unknown>;
   const recommendations = { ...((wellnessV4.recommendations || {}) as Record<string, WellnessJourneyRecommendationMemory>) };
   const previous = recommendations[activityId];
-  if (!previous) return;
-  recommendations[activityId] = {
-    ...previous,
-    acknowledged: true,
-    completed: true,
-    opened: true,
-    acknowledgedAt: previous.acknowledgedAt || new Date().toISOString(),
-    completedAt: previous.completedAt || new Date().toISOString(),
-  };
+  const now = new Date().toISOString();
+
+  if (!previous) {
+    const libEntry = WELLNESS_RECOMMENDATION_LIBRARY.find((r) => r.id === activityId);
+    recommendations[activityId] = {
+      id: activityId,
+      title: libEntry?.title || activityId,
+      period: "morning",
+      reason: libEntry?.reason || "Rekomendasi harian",
+      intensity: libEntry?.intensity || "LOW",
+      duration: libEntry?.estimatedDuration || 5,
+      safetyAdjustment: libEntry?.safetyAdjustment || "Ringan",
+      sourceContext: "Section 3 Recommendation",
+      displayed: true,
+      acknowledged: true,
+      completed: true,
+      skipped: false,
+      opened: true,
+      acknowledgedAt: now,
+      completedAt: now,
+    };
+  } else {
+    recommendations[activityId] = {
+      ...previous,
+      acknowledged: true,
+      completed: true,
+      opened: true,
+      acknowledgedAt: previous.acknowledgedAt || now,
+      completedAt: previous.completedAt || now,
+    };
+  }
+
   await journeyRepository.updateDailyRecord(uid, date, {
-    wellnessState: { ...wellnessState, wellnessV4: { ...wellnessV4, recommendations, updatedAt: new Date().toISOString() } },
+    wellnessState: { ...wellnessState, wellnessV4: { ...wellnessV4, recommendations, updatedAt: now } },
   });
 }
 
