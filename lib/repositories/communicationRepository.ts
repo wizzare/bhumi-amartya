@@ -98,9 +98,9 @@ export class CommunicationRepository {
       const snapshot = await getDocs(q);
       let messages = snapshot.docs.map(doc => doc.data() as CommunicationMessage);
       
-      // Filter out archived, expired, and reply messages in memory
+      // Filter out archived and expired messages in memory
       messages = messages.filter(
-        (m) => !m.isArchived && m.status !== "expired" && !m.parentMessageId
+        (m) => !m.isArchived && m.status !== "expired"
       );
 
       const safeTime = (msg: CommunicationMessage) => {

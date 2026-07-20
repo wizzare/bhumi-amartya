@@ -14,8 +14,6 @@ import {
   Clock,
   ArrowRight,
   CheckCheck,
-  Filter,
-  CheckCircle2,
   Circle
 } from "lucide-react";
 import { DateTime } from "luxon";
@@ -41,7 +39,6 @@ export default function InboxPage() {
   const auth = useAuth();
   const uid = auth?.user?.uid;
 
-  // Note: We'll add 'inbox' to translations later, using fallbacks for now
   const t = (translations[language] as any);
   const it = t.inbox || {
     title: "Inbox",
@@ -73,6 +70,7 @@ export default function InboxPage() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sendState, setSendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [selectedMessage, setSelectedMessage] = useState<CommunicationMessage | null>(null);
 
   const loadInbox = useCallback(async () => {
     if (!uid) return;
@@ -124,14 +122,15 @@ export default function InboxPage() {
   const handleMessageClick = async (msg: CommunicationMessage) => {
     if (!uid) return;
 
+    setSelectedMessage(msg);
+
     // 1. Mark as Read
     if (!msg.isRead) {
-      await CommunicationCenterService.updateState(uid, msg.id, 'opened');
-      // Update local state for immediate feedback
+      await CommunicationCenterService.updateState(uid, msg.id, 'opened').catch(() => null);
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
     }
 
-    // 2. Follow Deep Link
+    // 2. Follow Deep Link if specified
     if (msg.deepLink) {
       router.push(msg.deepLink);
     }
@@ -216,7 +215,7 @@ export default function InboxPage() {
         <section className="bhumi-card p-5">
           <button type="button" onClick={() => setComposeOpen((value) => !value)} className="w-full text-left text-sm font-bold text-[#4F5E52]">{composeOpen ? "Tutup Kirim Pesan" : "Kirim Pesan ke Bhumi"}</button>
           {composeOpen && <form onSubmit={handleSend} className="mt-4 space-y-3">
-            <label className="block text-xs font-bold text-[#7B8776]">Kategori<select value={category} onChange={(event) => setCategory(event.target.value as typeof category)} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm">{SUPPORT_CATEGORIES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="block text-xs font-bold text-[#7B8776]">Kategori<select value={category} onChange={(event) => setCategory(event.target.value as typeof category)} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm">{SUPPORT_CATEGORIES.map(([val, label]) => <option key={val} value={val}>{label}</option>)}</select></label>
             <label className="block text-xs font-bold text-[#7B8776]">Subjek<input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={140} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
             <label className="block text-xs font-bold text-[#7B8776]">Pesan<textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={4000} rows={5} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
             <button disabled={sendState === "sending"} className="rounded-xl bg-[#4F5E52] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{sendState === "sending" ? "Mengirim..." : "Kirim"}</button>
@@ -227,19 +226,12 @@ export default function InboxPage() {
 
         {/* Filters */}
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 no-scrollbar">
-          <FilterButton
-            active={activeFilter === "all"}
-            onClick={() => setActiveFilter("all")}
-          >
+          <FilterButton active={activeFilter === "all"} onClick={() => setActiveFilter("all")}>
             {it.filters.all}
           </FilterButton>
-          <FilterButton
-            active={activeFilter === "unread"}
-            onClick={() => setActiveFilter("unread")}
-          >
+          <FilterButton active={activeFilter === "unread"} onClick={() => setActiveFilter("unread")}>
             {it.filters.unread}
           </FilterButton>
-          {/* Add more type filters as needed */}
         </div>
 
         {offline && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-medium">Koneksi sedang offline.</p><p className="mt-1">Pesan yang sudah tampil tetap tersedia. Hubungkan kembali untuk memuat atau mengirim pesan.</p><button type="button" onClick={() => void loadInbox()} className="mt-3 rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-bold">Coba lagi</button></div>}
@@ -309,12 +301,33 @@ export default function InboxPage() {
             ))}
           </div>
         )}
+
+        {/* Selected Message Detail Modal */}
+        {selectedMessage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl border border-[#E8E9E5]">
+              <div className="flex justify-between items-start">
+                <h2 className="text-xl font-bold text-[#4F5E52]">{selectedMessage.title}</h2>
+                <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52]">Tutup</button>
+              </div>
+              <p className="text-xs text-[#9AA394]">{DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED)}</p>
+              <div className="p-4 bg-[#FCFAF5] rounded-2xl text-sm text-[#4F5E52] leading-relaxed whitespace-pre-wrap">
+                {selectedMessage.content || selectedMessage.summary}
+              </div>
+              {selectedMessage.deepLink && (
+                <button type="button" onClick={() => { setSelectedMessage(null); router.push(selectedMessage.deepLink!); }} className="w-full rounded-xl bg-[#4F5E52] py-3 text-sm font-bold text-white text-center">
+                  {selectedMessage.action || "Buka Tautan"}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );
 }
 
-function FilterButton({ children, active, onClick }: { children: React.ReactNode, active: boolean, onClick: () => void }) {
+function FilterButton({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
