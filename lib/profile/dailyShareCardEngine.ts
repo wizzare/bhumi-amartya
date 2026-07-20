@@ -76,10 +76,35 @@ function splitSentences(value: string): string[] {
     .filter(Boolean);
 }
 
+export function stripThemePrefix(text: string | null | undefined): string {
+  let cleaned = (text ?? "").trim();
+  const pattern = /^\s*tema\s+saat\s+ini\s*:\s*/i;
+  while (pattern.test(cleaned)) {
+    cleaned = cleaned.replace(pattern, "").trim();
+  }
+  return cleaned;
+}
+
+export function deduplicatePhrases(phrases: string[]): string[] {
+  const result: string[] = [];
+  const seenNormalized = new Set<string>();
+  for (const raw of phrases) {
+    const trimmed = (raw ?? "").trim();
+    if (!trimmed) continue;
+    const normalized = trimmed.toLowerCase().replace(/\s+/g, " ");
+    if (!seenNormalized.has(normalized)) {
+      seenNormalized.add(normalized);
+      result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 function snippet(value: string | null | undefined, fallback: string, maxSentences = 2): string {
   const cleaned = clean(value);
   if (!cleaned) return fallback;
-  const sentences = splitSentences(cleaned);
+  const rawSentences = splitSentences(cleaned);
+  const sentences = deduplicatePhrases(rawSentences);
   const selected = sentences.length > 0
     ? sentences.slice(0, maxSentences).join(" ")
     : cleaned;
@@ -114,8 +139,9 @@ function dailySeed(uid: string, dateKey: string, domain: string): string {
 }
 
 function buildSoulMessage(guidance?: DailyGuidance | null): SoulMessageSection {
-  const text = guidance?.dailyConclusion?.text || guidance?.dailyNoteText || guidance?.soulReflectionText || "";
-  const summary = snippet(text, FALLBACK_SOUL_MESSAGE, 2);
+  const rawText = guidance?.dailyConclusion?.text || guidance?.dailyNoteText || guidance?.soulReflectionText || "";
+  const cleanedText = stripThemePrefix(rawText);
+  const summary = snippet(cleanedText, FALLBACK_SOUL_MESSAGE, 2);
   return {
     title: "Pesan untuk Jiwamu",
     themeLabel: "Tema saat ini",
@@ -131,10 +157,11 @@ function buildProfileCandidates(sections: ProfileSection[]): ProfileSectionCandi
     const id = section.title.replace(/\s+/g, "-").toLowerCase();
     if (seen.has(id)) continue;
     seen.add(id);
-    const narratives = section.cards
+    const rawNarratives = section.cards
       .map((c) => c.shortMeaning || c.actionableReflection || "")
       .filter(Boolean);
-    const combined = narratives.join(" ");
+    const deduplicatedNarratives = deduplicatePhrases(rawNarratives);
+    const combined = deduplicatedNarratives.join(" ");
     if (!combined.trim()) continue;
     candidates.push({
       id,
