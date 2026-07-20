@@ -33,6 +33,7 @@ import { db } from "@/lib/firebase/firebase";
 import { adminRepository } from "@/lib/repositories/adminRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
+import { shouldIncludeInAdminAnalytics, getExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -533,17 +534,22 @@ export default function AdminActivityPage() {
     try {
       const userRows = await adminRepository.getAllUsersForMonitoring();
       const normalized = userRows.map(normalizeUser).filter(Boolean) as FounderUser[];
+      const excludedUids = getExcludedUids(userRows);
+      const analyticsFiltered = normalized.filter((u) => !excludedUids.has(u.uid));
       const [activityResult, analyticsResult] = await Promise.allSettled([
         getDocs(query(collection(db, "user_activity"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
         getDocs(query(collection(db, "analytics"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
       ]);
       const activityDocs = activityResult.status === "fulfilled"
-        ? activityResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityDoc))
+        ? activityResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityDoc)).filter((a) => a.uid && !excludedUids.has(a.uid))
         : [];
       const analyticsDocs = analyticsResult.status === "fulfilled"
-        ? analyticsResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as AnalyticsDoc))
+        ? analyticsResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as AnalyticsDoc)).filter((a) => {
+            const uid = uniqueUid(a);
+            return !uid || !excludedUids.has(uid);
+          })
         : [];
-      setUsers(normalized);
+      setUsers(analyticsFiltered);
       setActivities(activityDocs);
       setAnalytics(analyticsDocs);
       setSourceStatus({

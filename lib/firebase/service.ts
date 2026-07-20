@@ -74,6 +74,9 @@ const SERVER_OWNED_ACCESS_FIELDS = new Set([
   'staff',
   'paid',
   'paymentStatus',
+  'isInternalTester',
+  'excludeFromAdminAnalytics',
+  'internalTesterLabel',
 ]);
 
 function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {

@@ -2,6 +2,7 @@ import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { AnalyticsEventName } from "@/lib/analytics/usageAnalytics";
 
+
 export interface AggregateMetrics {
   dailyLogins: Record<string, number>;
   dashboardOpens: number;
@@ -35,7 +36,23 @@ export const analyticsService = {
 
     const snapshot = await getDocs(q);
     const events = snapshot.docs.map(doc => doc.data());
-    const uniqueUids = Array.from(new Set(events.map(e => e.uid).filter(Boolean)));
+
+    const excludedUids: Set<string> = new Set();
+    try {
+      const excludedQuery = query(
+        collection(db, "users"),
+        where("excludeFromAdminAnalytics", "==", true),
+      );
+      const excludedSnapshot = await getDocs(excludedQuery);
+      excludedSnapshot.docs.forEach((d) => excludedUids.add(d.id));
+    } catch (e) {
+      console.warn("[ANALYTICS SERVICE] Failed to fetch excluded UIDs, proceeding without filter:", e);
+    }
+
+    const unfilteredUids = Array.from(new Set(events.map(e => e.uid).filter(Boolean)));
+    const uniqueUids = unfilteredUids.filter((uid) => !excludedUids.has(uid));
+
+    const filteredEvents = events.filter((e) => e.uid && !excludedUids.has(e.uid));
 
     // Fetch Persona Data for Heatmap
     const personaData = {
@@ -97,7 +114,7 @@ export const analyticsService = {
       journey: new Set()
     };
 
-    events.forEach(event => {
+    filteredEvents.forEach(event => {
       const date = event.date;
       const name = event.eventName as AnalyticsEventName;
       const uid = event.uid;
@@ -147,7 +164,7 @@ export const analyticsService = {
 
     // Simple retention calculation based on first appearance vs subsequent appearances
     const userActivityDates: Record<string, Set<string>> = {};
-    events.forEach(e => {
+    filteredEvents.forEach(e => {
         if (!e.uid) return;
         if (!userActivityDates[e.uid]) userActivityDates[e.uid] = new Set();
         userActivityDates[e.uid].add(e.date);

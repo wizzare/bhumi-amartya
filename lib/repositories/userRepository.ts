@@ -60,6 +60,9 @@ export type UserProfile = {
   guardianRole?: "founder" | "admin" | "user";
   guardianBadge?: "core_guardian" | "guardian";
   recognitionTier?: "FOUNDER" | "CORE_GUARDIAN" | "CORE_GUARDIAN_CANDIDATE" | "GUARDIAN";
+  isInternalTester?: boolean;
+  excludeFromAdminAnalytics?: boolean;
+  internalTesterLabel?: string;
   recognitionDate?: string;
   membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME" | "PENJAGA_BHUMI_INTI" | "REGULAR" | string | null;
   membershipExpiryDate?: Timestamp | null;
@@ -172,6 +175,9 @@ const SERVER_OWNED_ACCESS_FIELDS = new Set([
   "staff",
   "paid",
   "paymentStatus",
+  "isInternalTester",
+  "excludeFromAdminAnalytics",
+  "internalTesterLabel",
 ]);
 
 function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {
