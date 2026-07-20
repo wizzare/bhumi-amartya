@@ -123,6 +123,14 @@ export default function InboxPage() {
     } catch (error) { setSendState("error"); setSendErrorCode(communicationErrorCode(error)); }
   };
 
+  useEffect(() => {
+    if (selectedMessage) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [selectedMessage]);
+
   const handleMessageClick = async (msg: CommunicationMessage) => {
     if (!uid) return;
 
@@ -310,18 +318,28 @@ export default function InboxPage() {
 
         {/* Selected Message Detail Modal */}
         {selectedMessage && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl border border-[#E8E9E5]">
-              <div className="flex justify-between items-start">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setSelectedMessage(null)}
+            onKeyDown={(e) => { if (e.key === "Escape") setSelectedMessage(null); }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={selectedMessage.title}
+          >
+            <div
+              className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl border border-[#E8E9E5] flex flex-col max-h-[85dvh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start shrink-0 mb-4">
                 <h2 className="text-xl font-bold text-[#4F5E52]">{selectedMessage.title}</h2>
-                <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52]">Tutup</button>
+                <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52] shrink-0 ml-4">Tutup</button>
               </div>
-              <p className="text-xs text-[#9AA394]">{typeof selectedMessage.createdAt === "string" && DateTime.fromISO(selectedMessage.createdAt).isValid ? DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED) : selectedMessage.createdAt}</p>
-              <div className="p-4 bg-[#FCFAF5] rounded-2xl text-sm text-[#4F5E52] leading-relaxed whitespace-pre-wrap">
+              <p className="text-xs text-[#9AA394] shrink-0 mb-4">{typeof selectedMessage.createdAt === "string" && DateTime.fromISO(selectedMessage.createdAt).isValid ? DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED) : selectedMessage.createdAt}</p>
+              <div className="p-4 bg-[#FCFAF5] rounded-2xl text-sm text-[#4F5E52] leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-0 flex-1 overscroll-behavior-contain">
                 {selectedMessage.content || selectedMessage.summary}
               </div>
               {selectedMessage.deepLink && (
-                <button type="button" onClick={() => { setSelectedMessage(null); router.push(selectedMessage.deepLink!); }} className="w-full rounded-xl bg-[#4F5E52] py-3 text-sm font-bold text-white text-center">
+                <button type="button" onClick={() => { setSelectedMessage(null); router.push(selectedMessage.deepLink!); }} className="w-full rounded-xl bg-[#4F5E52] py-3 text-sm font-bold text-white text-center shrink-0 mt-4">
                   {selectedMessage.action || "Buka Tautan"}
                 </button>
               )}
