@@ -100,6 +100,45 @@ export function deduplicatePhrases(phrases: string[]): string[] {
   return result;
 }
 
+export function formatSentenceCapitalization(text: string): string {
+  if (!text) return "";
+  const lower = text.trim().toLowerCase();
+  return lower.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (match) => match.toUpperCase());
+}
+
+export function composeProfileNarrative(phrases: string[]): { title: string; description: string } {
+  const cleanPhrases = deduplicatePhrases(phrases);
+  if (cleanPhrases.length === 0) {
+    return { title: "", description: "" };
+  }
+  const title = cleanPhrases[0].trim();
+  if (cleanPhrases.length === 1) {
+    return { title, description: "" };
+  }
+
+  const remaining = cleanPhrases.slice(1).map((p) => p.trim());
+  let rawDescription = "";
+
+  if (remaining.length === 1) {
+    const p = remaining[0];
+    rawDescription = p.endsWith(".") ? p : `${p}.`;
+  } else {
+    const first = remaining[0];
+    const rest = remaining.slice(1).map((p) => {
+      let trimmed = p.trim();
+      if (trimmed.endsWith(".")) trimmed = trimmed.slice(0, -1);
+      return trimmed;
+    }).join(", ");
+
+    let combined = `${first}, dengan ${rest}`;
+    if (!combined.endsWith(".")) combined += ".";
+    rawDescription = combined;
+  }
+
+  const description = formatSentenceCapitalization(rawDescription);
+  return { title, description };
+}
+
 function snippet(value: string | null | undefined, fallback: string, maxSentences = 2): string {
   const cleaned = clean(value);
   if (!cleaned) return fallback;
@@ -160,13 +199,15 @@ function buildProfileCandidates(sections: ProfileSection[]): ProfileSectionCandi
     const rawNarratives = section.cards
       .map((c) => c.shortMeaning || c.actionableReflection || "")
       .filter(Boolean);
-    const deduplicatedNarratives = deduplicatePhrases(rawNarratives);
-    const combined = deduplicatedNarratives.join(" ");
-    if (!combined.trim()) continue;
+    const cleanPhrases = deduplicatePhrases(rawNarratives);
+    if (!cleanPhrases.length) continue;
+
+    const { title: archetypeTitle, description: composedDesc } = composeProfileNarrative(cleanPhrases);
+
     candidates.push({
       id,
-      roomTitle: section.title,
-      narrative: combined,
+      roomTitle: archetypeTitle || section.title,
+      narrative: composedDesc || FALLBACK_PROFILE_SUMMARY,
       fallback: FALLBACK_PROFILE_SUMMARY,
     });
   }
