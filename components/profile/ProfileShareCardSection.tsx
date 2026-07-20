@@ -14,8 +14,6 @@ import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { Blueprint } from "@/lib/types/blueprint";
 import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
-import { getShareSafeGaiaInsights } from "@/lib/profile/gaia/selectors";
-import type { GaiaInsight } from "@/lib/profile/gaia/types";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 
@@ -125,8 +123,6 @@ export function ProfileShareCardSection({ title }: { title: string }) {
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dateKey, setDateKey] = useState("");
-  const [gaiaInsights, setGaiaInsights] = useState<GaiaInsight[]>([]);
-
   useEffect(() => {
     async function load() {
       let [profile, blueprint] = await Promise.all([
@@ -140,7 +136,6 @@ export function ProfileShareCardSection({ title }: { title: string }) {
       }
       if (profile) {
         setName(profileName(profile as unknown as LocalRecord));
-        setGaiaInsights(profile.gaiaProfile ? getShareSafeGaiaInsights(profile.gaiaProfile) : []);
       }
       const timezone = (profile as LocalRecord | null)?.timezone;
       const today = getLocalDateKey(new Date(), typeof timezone === "string" ? timezone : Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -193,7 +188,6 @@ export function ProfileShareCardSection({ title }: { title: string }) {
         dateKey={dateKey}
         userSeed={auth?.user?.uid ?? name}
         guidance={dailyGuidance}
-        gaiaInsights={gaiaInsights}
       />
     </section>
   );
