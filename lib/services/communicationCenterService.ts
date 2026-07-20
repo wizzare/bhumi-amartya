@@ -19,7 +19,6 @@ import {
   collection,
   doc,
   setDoc,
-  serverTimestamp,
   query,
   orderBy,
   getDocs,
@@ -438,7 +437,7 @@ export class CommunicationCenterService {
   }): Promise<string> {
     const threadId = `thread_${Date.now()}`;
 
-    const msgId = await this.dispatch({
+    await this.dispatch({
       uid: 'admin',
       senderUid: params.uid,
       threadId,

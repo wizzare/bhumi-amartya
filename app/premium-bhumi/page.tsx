@@ -7,7 +7,7 @@ import { translations } from "@/lib/data/translations";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
-import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, Lock, Unlock, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
+import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCurrentBadge, hasActiveBadgeAccess, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
 import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
