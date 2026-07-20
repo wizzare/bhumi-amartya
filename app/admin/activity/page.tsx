@@ -828,12 +828,11 @@ export default function AdminActivityPage() {
         cityCounts[cityKey].count += 1;
       }
 
-      if (country !== "No data") {
-        if (!countryCounts[country]) {
-          countryCounts[country] = { country, count: 0, topCity: normCity };
-        }
-        countryCounts[country].count += 1;
+      const displayCountry = country === "No data" ? "Unknown / No data" : country;
+      if (!countryCounts[displayCountry]) {
+        countryCounts[displayCountry] = { country: displayCountry, count: 0, topCity: normCity };
       }
+      countryCounts[displayCountry].count += 1;
     });
 
     const top5Cities = Object.values(cityCounts).sort((a, b) => b.count - a.count).slice(0, 5);

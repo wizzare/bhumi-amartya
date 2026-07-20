@@ -350,13 +350,19 @@ const USER_TRIAL = {
   console.log("✔ 27. Top cities are limited to five PASS");
 }
 
-// 28. Country table aggregates correctly.
+// 28. Country table aggregates correctly and reconciles 100% to Total Users.
 {
-  const users = [USER_REGULAR, USER_INTI, USER_ALFA];
-  const countries = users.map((u) => u.country);
-  const indonesianCount = countries.filter((c) => c === "Indonesia").length;
-  assert.strictEqual(indonesianCount, 3);
-  console.log("✔ 28. Country table aggregates correctly PASS");
+  const testUsers = [USER_REGULAR, USER_INTI, USER_ALFA, { city: "No data", country: "No data" }];
+  const counts: Record<string, number> = {};
+  testUsers.forEach((u) => {
+    const c = u.country === "No data" ? "Unknown / No data" : u.country;
+    counts[c] = (counts[c] || 0) + 1;
+  });
+  const totalInTable = Object.values(counts).reduce((a, b) => a + b, 0);
+  assert.strictEqual(totalInTable, testUsers.length);
+  assert.strictEqual(counts["Indonesia"], 3);
+  assert.strictEqual(counts["Unknown / No data"], 1);
+  console.log("✔ 28. Country table aggregates correctly and reconciles 100% to Total Users PASS");
 }
 
 // 29. Unknown locations handled safely.
