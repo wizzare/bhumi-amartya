@@ -67,12 +67,6 @@ type LineItem = {
   autoRenewingPlan?: { basePlanId?: string };
 };
 
-type VerificationResult = {
-  active: boolean;
-  status: string;
-  date?: Date | null;
-};
-
 function shouldBackendAcknowledge(active: boolean, item: LineItem | undefined): boolean {
   // Mirrors: result.active && item?.acknowledgementState !== "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED"
   return active && item?.acknowledgementState !== "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED";
