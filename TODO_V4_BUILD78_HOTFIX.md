@@ -1,77 +1,40 @@
-# Technical To-Do: Bhumi Amartya V4 Build 78 Hotfix
+# Technical To-Do: Bhumi Amartya V4 Build 78 Hotfix & V3 Regression Recovery
 
-**Status:** Canonical Implementation Roadmap  
+**Status:** Canonical Implementation & Recovery Roadmap  
 **Target Release:** Build 78 (Version 4.4.1)  
 **Branch:** `hotfix/v4-build78-wellness-journey-sync`  
-**Mode:** AGENTMEMORY DEGRADED MODE  
+**Mode:** AGENTMEMORY DEGRADED MODE / V3 REGRESSION RECOVERY SPRINT  
 **Owner:** Technical Lead & Principal Architect  
 
 ---
 
-## Task Matrix & Implementation Phases
+## Recovery Sprint Task Matrix
 
-### R0 — Workspace and Baseline Safety
-- [x] **TASK-R0-1:** Perform workspace safety classification and branch isolation.  
-  - **Priority:** P0 | **Severity:** High | **Owner:** Architect  
-  - **Status:** `COMPLETED` (Created branch `hotfix/v4-build78-wellness-journey-sync`).
+### Phase R0 — Baseline & Workspace Safety
+- [x] **TASK-R0-1:** Report git status, HEAD, branch, and APK provenance status.  
+  - **Status:** `COMPLETED` (Branch `hotfix/v4-build78-wellness-journey-sync`, HEAD `8c9a30d`, `DEVICE BUILD PROVENANCE UNKNOWN`).
 
-### R1 — AgentMemory Configuration Clarification
-- [x] **TASK-R1-1:** Audit AgentMemory MCP configuration and document degraded mode fallback.  
-  - **Priority:** P1 | **Severity:** Medium | **Owner:** Infrastructure  
-  - **Status:** `COMPLETED` (Marked `AGENTMEMORY DEGRADED MODE`).
+### Phase R1 & R2 — P0 Billing Source of Truth & Purchase Error Semantics
+- [x] **TASK-REC-001:** Consolidate entitlement evaluation across `entitlementService.ts`, `userRepository.ts`, and `accessControl.ts` enforcing 7-successful-login trial model and canonical precedence.  
+  - **Status:** `COMPLETED` (Ran 30 assertions in `tests/hotfix-008-login-count-trial.test.ts` — 100% PASS).
+- [x] **TASK-REC-002:** Map `BillingResponseCode.ITEM_ALREADY_OWNED` (code 7) in `BhumiBillingPlugin.java` & `app/premium-bhumi/page.tsx` to trigger purchase restore cleanly.  
+  - **Status:** `COMPLETED & VALIDATED`.
 
-### R2 — Inbox Read Pipeline (HOTFIX-001)
-- [x] **TASK-R2-1:** Validate Firestore `user_messages` query resilience and fallback sorting.  
-  - **Priority:** P0 | **Severity:** Critical | **Owner:** Shared / Repository  
-  - **Affected File:** `lib/repositories/communicationRepository.ts`  
-  - **Status:** `COMPLETED IN REPO (Commit 828420f6)`  
+### Phase R3 — P0 Access Policy & Dashboard Loop Prevention
+- [x] **TASK-REC-003:** Remove `!baselineWellnessCompleted` forced redirect in `ProtectedRoute.tsx` so FREE users tapping "Kembali ke Dashboard" never loop back to `/wellness`.  
+  - **Status:** `COMPLETED & VALIDATED`.
+- [x] **TASK-REC-004:** Enforce canonical FREE access policy in `canAccessPremiumFeature` (Dashboard, Inbox, Settings, Premium allowed; Profile, Wellness, Journey gated).  
+  - **Status:** `COMPLETED & VALIDATED`.
 
-### R3 — Broadcast Delivery Pipeline (HOTFIX-002)
-- [x] **TASK-R3-1:** Implement Option A (Existing user delivery hardening with `Promise.allSettled`, deterministic message IDs, and canonical tester predicate).  
-  - **Priority:** P1 | **Severity:** High | **Owner:** Backend / Repository  
-  - **Affected Files:** `lib/services/communicationCenterService.ts`, `tests/hotfix-002-broadcast-delivery.test.ts`  
-  - **Validation Method:** Executed unit test `tests/hotfix-002-broadcast-delivery.test.ts` (5/5 PASS).  
-  - **Status:** `[x] IMPLEMENTED & LOCALLY VALIDATED (Pending Device/Prod Validation)`
+### Phase R4 — Profile / Blueprint Retest (RECOVERY-005)
+- [ ] **TASK-REC-005:** Build recovery APK and retest non-Founder Profile & Arsip Akashi on real device (`TESTER-INTI-01`).  
+  - **Priority:** P1 | **Status:** `READY FOR ANDROID BUILD & DEVICE RETEST` (Runtime files `app/profile/page.tsx` remain strictly FROZEN).
 
-### R4 — Arsip Akashi Availability State (HOTFIX-003)
-- [ ] **TASK-R4-1:** Trace blueprint completion condition against Akashi archive unlock status.  
-  - **Priority:** P1 | **Severity:** Medium | **Owner:** Frontend / Profile  
-  - **Affected File:** `lib/profile/narrativeHumanizer.ts`, `app/admin/insights/`  
-  - **Validation Method:** Verify blueprint calculated flag propagation.  
-  - **Status:** `PENDING AUDIT`
+---
 
-### R5 — Wellness Section 3 -> Journey Progress Synchronization (HOTFIX-004)
-- [x] **TASK-R5-1:** Ensure `markJourneyRecommendationCompleted` constructs and persists recommendation memory to `journeyRepository` when undefined.  
-  - **Priority:** P0 | **Severity:** High | **Owner:** Shared / Wellness & Journey  
-  - **Affected Files:** `lib/services/wellnessCurationService.ts`, `tests/hotfix-004-wellness-journey-sync.test.ts`  
-  - **Validation Method:** Executed unit test `tests/hotfix-004-wellness-journey-sync.test.ts` (1/1 PASS).  
-  - **Status:** `[x] COMPLETED & LOCALLY VALIDATED (Commit 3b740fd9)`
-
-### R6 — Session, Retry, Cache, and Unread Counter (HOTFIX-005, HOTFIX-006, HOTFIX-007)
-- [ ] **TASK-R6-1:** Add cache purge on `onAuthStateChanged` logout (`HOTFIX-005`).  
-  - **Priority:** P1 | **Severity:** High | **Owner:** Frontend / Auth  
-  - **Affected File:** `lib/auth/authActions.ts`  
-  - **Status:** `PENDING IMPLEMENTATION`
-- [ ] **TASK-R6-2:** Repair "Coba Lagi" retry handler to purge query cache and re-fetch (`HOTFIX-006`).  
-  - **Priority:** P1 | **Severity:** Medium | **Owner:** Frontend / UI  
-  - **Affected File:** `app/inbox/page.tsx`  
-  - **Status:** `PENDING IMPLEMENTATION`
-- [ ] **TASK-R6-3:** Bind unread badge counter directly to Firestore unread message state (`HOTFIX-007`).  
-  - **Priority:** P2 | **Severity:** Low | **Owner:** Frontend / Header  
-  - **Affected File:** `lib/repositories/communicationRepository.ts`  
-  - **Status:** `PENDING IMPLEMENTATION`
-
-### R7 — Regression Validation
-- [x] **TASK-R7-1:** Run regression test suite (`tests/hotfix-002-broadcast-delivery.test.ts` & `tests/hotfix-004-wellness-journey-sync.test.ts`).  
-  - **Priority:** P0 | **Severity:** High | **Owner:** QA  
-  - **Status:** `[x] COMPLETED (5/5 PASS & 1/1 PASS)`
-
-### R8 — Five-User Production Validation
-- [ ] **TASK-R8-1:** Execute five-user scenario simulation across Dashboard, Profile, Journey, Wellness, and Inbox.  
-  - **Priority:** P0 | **Severity:** High | **Owner:** QA Lead  
-  - **Status:** `PENDING VALIDATION PHASE`
-
-### R9 — Release Decision
-- [ ] **TASK-R9-1:** Verify Build 78 metadata sync (`package.json`, `build.gradle`, `buildInfo.ts`) and sign off hotfix release.  
-  - **Priority:** P0 | **Severity:** Critical | **Owner:** Release Manager  
-  - **Status:** `PENDING RELEASE GATE`
+## Strict Implementation Constraints
+- ❌ Do NOT modify `app/profile/page.tsx` before device retest.
+- ❌ Do NOT add client-side blueprint calculation fallback.
+- ❌ Do NOT model or test any "Google Play trial" state or calendar 7-day trial.
+- ✅ Canonical Dashboard rule enforced: `/dashboard` is ALWAYS open for authenticated users.
+- ✅ 7-successful-login trial model active and validated across 30 test assertions.

@@ -1,13 +1,13 @@
-import { isPrivilegedUser } from '@/lib/auth/privilegedUser';
+import { isPrivilegedUser } from '../auth/privilegedUser';
 import { UserProfile } from '../repositories/userRepository';
 import { Timestamp } from 'firebase/firestore';
-import { isGaiaAccessOverrideActive } from '@/lib/billing/gaiaAccess';
+import { isGaiaAccessOverrideActive } from '../billing/gaiaAccess';
 import {
   getCurrentBadge,
   hasActiveBadgeAccess,
   isTrialUser,
   type BadgeAccessProfile,
-} from '@/lib/billing/billingPreparation';
+} from '../billing/billingPreparation';
 
 export type PremiumFeature =
   | 'meditation'

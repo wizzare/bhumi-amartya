@@ -1,98 +1,77 @@
-# Source of Truth: Bhumi Amartya V4 Build 78 Hotfix
+# Source of Truth: Bhumi Amartya V4 Build 78 Hotfix & V3 Regression Recovery
 
 **Status:** Canonical V4 Hotfix Baseline  
 **Product:** Bhumi Amartya Platform  
-**Target Release:** Version 4.4.1 (Build 78 Hotfix)  
+**Target Release:** Version 4.4.1 (Build 78 Hotfix & V3 Regression Recovery)  
 **Baseline:** V4 Production Stable  
 **Current Branch:** `hotfix/v4-build78-wellness-journey-sync`  
 **Mode:** AGENTMEMORY DEGRADED MODE  
+**Sprint Mode:** V3 REGRESSION RECOVERY SPRINT (Device-Evidence First)  
 **Owner:** Principal Software Architect & Product Owner  
 
 ---
 
-## 1. Release Identity & Purpose
+## 1. FOUNDER DIRECTIVE: CANONICAL DASHBOARD ACCESS RULE
 
-This document serves as the canonical Source of Truth (SoT) for the **Bhumi Amartya V4 Build 78 Hotfix release cycle**. It defines the verified facts, system architecture, data flow boundaries, backward compatibility constraints, and defect classifications for all seven reported production hotfix issues (`HOTFIX-001` through `HOTFIX-007`).
+> 📌 **CANONICAL DASHBOARD STATEMENT:**  
+> **Dashboard is always accessible to every authenticated user. No trial, subscription, profile, blueprint, Wellness, Journey, onboarding, or entitlement condition may redirect an authenticated user away from Dashboard.**
+
+This rule supersedes all Build 70 and later Dashboard blocking rules.
+
+### Key Rules:
+- For every authenticated user: `/dashboard = ALWAYS ALLOWED`.
+- Includes: Founder, Admin, Premium, Penjaga Bhumi Inti, Penjaga Bhumi Alfa, Tester, Internal trial active, Trial exhausted, Free, Legacy user, User with incomplete Wellness baseline, User with incomplete Profile, User with missing Blueprint, User with incomplete Journey, User with billing verification pending, User with subscription mismatch, User with stale cache.
+- Only logged-out users are redirected away from Dashboard (to canonical `/login` route).
+- `app/profile/page.tsx` and Arsip Akashi runtime files remain strictly **FROZEN**. Client-side blueprint calculation fallback is **PROHIBITED**.
 
 ---
 
-## 2. Workspace Safety & Degradation Status
+## 2. Workspace Baseline & Provenance Status
 
 - **Workspace Branch:** `hotfix/v4-build78-wellness-journey-sync`
-- **Workspace Safety Status:** `SAFE WITH ISOLATION`
+- **Current HEAD:** `8c9a30dae80617ea25f8f2611d8d71c690066cbc`
+- **Device Installed Version:** `versionCode 78`, `versionName "4.4.1"`
+- **Device Build Provenance:** `DEVICE BUILD PROVENANCE UNKNOWN` (No commit hash embedded in installed APK)
 - **AgentMemory Operating Status:** `AGENTMEMORY DEGRADED MODE`
-  - *Note:* Fallback memory source: Git log history, repository documentation, and audit ledgers.
 
 ---
 
-## 3. Product Decision & Scope Constraints (HOTFIX-002)
+## 3. Canonical Entitlement Precedence & Free Access Policy
 
-> 📌 **APPROVED PRODUCT DECISION (Build 78):**  
-> Build 78 broadcast delivery targets **only eligible existing users** in the `users` collection at dispatch time.  
-> *V5 Backlog Note:* Retrospective delivery to users created during an active broadcast window is deferred to the V5 backlog.
+### Canonical Precedence Order:
+1. **Founder / Lifetime Access** (Bypass: `wizzare@gmail.com` or `role: "founder"`)
+2. **Active Explicit Inti / Alfa / Tester Grant** (`testerBadge`, `badge`, `guardianBadge`, valid grant)
+3. **Active Paid Google Play Premium** (`membershipType: "PREMIUM"`, `isPremium: true`, `accessUntil: future`)
+4. **Active Internal 7-Successful-Login Trial** (`trialLoginCount <= 7`)
+5. **Free** (Logins > 7 or expired)
+
+### FREE Access Policy (Post-Trial Completion):
+- **ALLOWED:** Dashboard (`/dashboard`), Inbox (`/inbox`), Settings (`/settings`), Premium Page (`/premium-bhumi`), General routes.
+- **LOCKED:** Profile (`/profile`), Wellness (`/wellness`), Journey (`/journey`).
+- **Notice Buttons:** Target `/dashboard` and `/premium-bhumi`. No forced redirect loop.
 
 ---
 
-## 4. Confirmed vs. Unverified Production Issues Audit
+## 4. Confirmed Production & Recovery Defects
 
-| Bug ID | Summary | Audit Classification | Confirmed Root Cause & Implementation Status |
+| Defect ID | Category | Status | Summary & Confirmed Root Cause |
 | :--- | :--- | :--- | :--- |
-| **HOTFIX-001** | Inbox fails with "Terjadi kesalahan saat memproses komunikasi." | **Partially Fixed** | Resolved in commit `828420f6` by adding fallback in-memory sorting for un-indexed Firestore `user_messages` queries. |
-| **HOTFIX-002** | Admin broadcast created but not received in user Inbox | **IMPLEMENTED & LOCALLY VALIDATED** | Root cause: 1) `Promise.all` in `sendBroadcast()` rejected on single-user errors. 2) `beta-tester` target filter was missing canonical `testerBadge` / `guardianBadge` predicate. Hardened using `Promise.allSettled`, deterministic message IDs (`msg_${broadcastId}_${user.uid}`) for idempotency, and canonical tester predicate in `lib/services/communicationCenterService.ts`. Verified 100% PASS with test `tests/hotfix-002-broadcast-delivery.test.ts`. |
-| **HOTFIX-003** | Arsip Akashi remains unavailable despite completed profile/blueprint | **Unverified** | Flag evaluation boundary between blueprint completion calculation and Akashi archive access check in profile view state. |
-| **HOTFIX-004** | Completing Wellness Recommendation Section 3 not recorded in Journey | **IMPLEMENTED & VALIDATED** | Root cause: `markJourneyRecommendationCompleted` in `wellnessCurationService.ts` early-returned when recommendation memory entry was undefined. Fix implemented to construct and persist memory entry to `journeyRepository`. Verified 100% PASS with test `tests/hotfix-004-wellness-journey-sync.test.ts`. Commit `3b740fd9`. |
-| **HOTFIX-005** | Logout/login does not refresh newest application data | **Unverified** | Firebase `onAuthStateChanged` handler resets user context but does not invalidate or purge in-memory React state / local storage caches. |
-| **HOTFIX-006** | Inbox "Coba Lagi" does not invalidate stale state or refetch | **Unverified** | UI error boundary component resets local `error` state variable without invalidating stale query cache or re-executing `fetchMessages()`. |
-| **HOTFIX-007** | Inbox unread badge does not match message state | **Unverified** | Navigation badge counter calculates unread count independently from `user_messages` read states in Firestore. |
+| **HOTFIX-001** | Inbox Query | **Partially Fixed (Commit 828420f6)** | In-memory sorting fallback for un-indexed `user_messages`. |
+| **HOTFIX-002** | Broadcast Delivery | **IMPLEMENTED LOCALLY / DEVICE VALIDATION PENDING** | Commit `8c9a30d`. Hardened `sendBroadcast()` with `Promise.allSettled`. Device verification pending. |
+| **HOTFIX-003** | Arsip Akashi Access | **NON-FOUNDER ENTITLEMENT COLLAPSE** | Blocked at `AccessGuard` entitlement layer before profile page mounts. Retest required after P0 entitlement fix. |
+| **HOTFIX-004** | Wellness-Journey Sync | **IMPLEMENTED LOCALLY / DEVICE VALIDATION PENDING** | Commit `3b740fd9`. `markJourneyRecommendationCompleted` syncs memory. Device verification pending. |
+| **RECOVERY-001** | Billing Entitlement | **IMPLEMENTED LOCALLY / PASSED (30 ASSERTIONS)** | Consolidated `getEntitlementStatus` & `canAccessPremiumFeature` using 7-successful-login trial model. |
+| **RECOVERY-002** | Purchase Result Mapping | **IMPLEMENTED LOCALLY / PASSED** | Handled `ITEM_ALREADY_OWNED` (code 7) in `BhumiBillingPlugin.java` & `app/premium-bhumi/page.tsx`. |
+| **RECOVERY-003** | Dashboard Return Loop | **IMPLEMENTED LOCALLY / PASSED** | Permanent removal of mandatory Wellness check in `ProtectedRoute.tsx`. `/dashboard` always open. |
+| **RECOVERY-004** | Free Access Policy | **IMPLEMENTED LOCALLY / PASSED** | Enforced canonical FREE access policy in `canAccessPremiumFeature`. |
+| **RECOVERY-005** | Profile / Akashi Access | **NON-FOUNDER ENTITLEMENT COLLAPSE / FROZEN** | `app/profile/page.tsx` FROZEN. Retest non-Founder Profile access after recovery build deployment. |
 
 ---
 
-## 5. Canonical Data Flow & Implementation (HOTFIX-002)
+## 5. Implementation Status
 
-### Hardened Broadcast Delivery Engine:
-```text
-[ Admin Submits Broadcast UI ]
-              │
-              ▼
-[ CommunicationCenterService.sendBroadcast ]
-              │
-   ┌──────────┴────────────────────────────────────────────────┐
-   ▼                                                           ▼
-[ Target Group Filter ]                               [ Promise.allSettled Fan-Out ]
-• all: true                                           • Idempotent Msg ID: msg_${bcId}_${uid}
-• premium: u.isPremium || u.membershipType           • Isolates per-user failures
-• beta-tester: u.testerBadge || u.guardianBadge        • Computes deliveredCount & failedCount
-                                                               │
-                                                               ▼
-                                                      [ Save Global Metadata ]
-                                                      broadcasts/{broadcastId}
-                                                      (Records attempted, delivered,
-                                                       failed, and status: complete|partial|failed)
-```
-
----
-
-## 6. Scope & Constraints
-
-### In Scope (Build 78 Hotfix):
-1. Fix Firestore query resilience for `user_messages` (`HOTFIX-001`, `HOTFIX-002`, `HOTFIX-006`, `HOTFIX-007`).
-2. Restore Wellness Section 3 completion event propagation to Journey progress tracker (`HOTFIX-004` - COMPLETED).
-3. Harden Admin Broadcast delivery pipeline for existing users (`HOTFIX-002` - IMPLEMENTED & VALIDATED).
-4. Ensure Akashi archive access unlocks cleanly upon blueprint completion (`HOTFIX-003`).
-5. Enforce cache invalidation and store purge on session logout (`HOTFIX-005`).
-6. Maintain 100% build metadata synchronization across `package.json`, `android/app/build.gradle`, and `lib/config/buildInfo.ts` (`v4.4.1 Build 78`).
-
-### Out of Scope:
-- Schema changes in Firestore collections.
-- Retrospective broadcast fan-in for users created after dispatch (deferred to V5).
-- UI redesign or component structural changes.
-- V5 features or breaking API contract changes.
-
----
-
-## 7. Success Metrics & Release Gate
-- **TypeScript:** PASS (`npx tsc --noEmit` on affected files)
-- **Build Sync:** PASS (`package.json`, `build.gradle`, `buildInfo.ts` all match `v4.4.1 Build 78`)
-- **HOTFIX-004 Test Suite:** PASS (`tests/hotfix-004-wellness-journey-sync.test.ts`)
-- **HOTFIX-002 Test Suite:** PASS (`tests/hotfix-002-broadcast-delivery.test.ts`)
-- **Status:** PENDING DEVICE & PRODUCTION VALIDATION
+1. **RECOVERY-001:** `COMPLETED` (Implemented 7-successful-login trial model in `entitlementService.ts` & `userRepository.ts`).
+2. **RECOVERY-002:** `COMPLETED` (Handled `ITEM_ALREADY_OWNED` in `BhumiBillingPlugin.java` & `app/premium-bhumi/page.tsx`).
+3. **RECOVERY-003:** `COMPLETED` (Removed forced `/dashboard` -> `/wellness` redirect loop in `ProtectedRoute.tsx`).
+4. **RECOVERY-004:** `COMPLETED` (Enforced canonical FREE access policy).
+5. **TEST SUITE:** `COMPLETED` (Ran 30 assertions in `tests/hotfix-008-login-count-trial.test.ts` - 100% PASS).
