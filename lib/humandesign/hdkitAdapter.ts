@@ -161,12 +161,20 @@ export const normalizeHdkitBodygraph = (bodygraph: HdkitBodygraphLike): HumanDes
   };
 };
 
+const HD_REQUEST_TIMEOUT_MS = 15_000;
+
+function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+}
+
 export async function calculateWithHdkit(
   profile: Required<Pick<HumanDesignBirthProfile, "birthDate" | "birthTime" | "birthCity" | "timezone">> &
     HumanDesignBirthProfile,
 ): Promise<HumanDesignChart> {
   try {
-    const response = await fetch(HD_API_URL, {
+    const response = await fetchWithTimeout(HD_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -180,7 +188,7 @@ export async function calculateWithHdkit(
         latitude: profile.latitude,
         longitude: profile.longitude,
       }),
-    });
+    }, HD_REQUEST_TIMEOUT_MS);
 
     const data = await response.json();
     if (data && typeof data === "object" && isServiceUnavailable(data as Record<string, unknown>)) {
