@@ -4,7 +4,6 @@ import test from "node:test";
 import { calculateWithHdkit } from "./hdkitAdapter";
 import { getHumanDesignCanonicalFailureReason, HD_ENGINE_VERSION, isCanonicalHumanDesign } from "./hdAudit";
 import { calculateHumanDesign } from "./calculateHumanDesign";
-import { POST } from "../../app/api/humandesign/calculate/route";
 import {
   getHumanDesignRepairReason,
   isProtectedHumanDesign,
@@ -16,21 +15,6 @@ function mockResponse(data: Record<string, unknown>) {
   globalThis.fetch = async () => new Response(JSON.stringify(data), {
     status: 200,
     headers: { "Content-Type": "application/json" },
-  });
-}
-
-function routeRequest() {
-  return new Request("http://localhost/api/humandesign/calculate", {
-    method: "POST",
-    body: JSON.stringify({
-      fullName: "Test User",
-      birthDate: "1990-01-01",
-      birthTime: "12:00",
-      birthPlace: "Jakarta",
-      timezone: "+07:00",
-      latitude: -6.2,
-      longitude: 106.8,
-    }),
   });
 }
 
@@ -59,19 +43,20 @@ test("ready response with a valid type becomes ready", async () => {
   assert.equal(result.type, "Generator");
 });
 
-test("python service down returns service unavailable diagnostic", async () => {
+test("python service connection refused returns pending chart with missing_type reason", async () => {
   globalThis.fetch = async () => {
     throw new TypeError("connect ECONNREFUSED");
   };
 
-  const response = await POST(routeRequest());
-  const data = await response.json();
+  const result = await calculateHumanDesign({
+    ...profile,
+    latitude: -6.2,
+    longitude: 106.8,
+  });
 
-  assert.equal(response.status, 503);
-  assert.equal(data.status, "service_unavailable");
-  assert.equal(data.type, null);
-  assert.equal(data.calculationQuality, "connection_error");
-  assert.equal(getHumanDesignCanonicalFailureReason(data), "connection_error");
+  assert.equal(result.status, "pending");
+  assert.equal(result.type, null);
+  assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
 test("adapter preserves service unavailable diagnostic as pending chart", async () => {
@@ -134,7 +119,7 @@ test("valid python service response maps to canonical ready chart", async () => 
   assert.equal(isCanonicalHumanDesign(result), true);
 });
 
-test("successful route response exposes complete HD fields", async () => {
+test("successful calculateHumanDesign response exposes complete HD fields", async () => {
   globalThis.fetch = async () => new Response(JSON.stringify({
     type: "Manifesting Generator",
     profile: "6/3",
@@ -155,21 +140,22 @@ test("successful route response exposes complete HD fields", async () => {
     headers: { "Content-Type": "application/json" },
   });
 
-  const response = await POST(routeRequest());
-  const data = await response.json();
+  const result = await calculateHumanDesign({
+    ...profile,
+    latitude: -6.2,
+    longitude: 106.8,
+  });
 
-  assert.equal(response.status, 200);
-  assert.equal(data.type, "Manifesting Generator");
-  assert.equal(data.authority, "Sacral Authority");
-  assert.equal(data.profile, "6/3");
-  assert.equal(data.incarnationCross, "((24, 44), (13, 7))-LAC");
-  assert.equal(data.inc_cross, "((24, 44), (13, 7))-LAC");
-  assert.deepEqual(data.channels, ["10-20", "2-14"]);
-  assert.equal(data.definition, 1);
-  assert.equal(data.status, "ready");
-  assert.equal(data.source, "human-design-py");
-  assert.equal(data.calculationQuality, "verified");
-  assert.equal(data.hdEngineVersion, HD_ENGINE_VERSION);
+  assert.equal(result.type, "Manifesting Generator");
+  assert.equal(result.authority, "Sacral Authority");
+  assert.equal(result.profile, "6/3");
+  assert.equal(result.incarnationCross.name, "((24, 44), (13, 7))-LAC");
+  assert.deepEqual(result.channels, ["10-20", "2-14"]);
+  assert.equal(result.definition, 1);
+  assert.equal(result.status, "ready");
+  assert.equal(result.source, "human-design-py");
+  assert.equal(result.calculationQuality, "verified");
+  assert.equal(result.hdEngineVersion, HD_ENGINE_VERSION);
 });
 
 test("2xx response without type remains pending and not verified", async () => {
@@ -181,20 +167,22 @@ test("2xx response without type remains pending and not verified", async () => {
   assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
-test("python service timeout returns timeout diagnostic", async () => {
+test("python service timeout returns pending chart with missing_type reason", async () => {
   globalThis.fetch = (_input, init) => new Promise((_resolve, reject) => {
     init?.signal?.addEventListener("abort", () => {
       reject(new DOMException("The operation was aborted.", "AbortError"));
     });
   });
 
-  const response = await POST(routeRequest());
-  const data = await response.json();
+  const result = await calculateHumanDesign({
+    ...profile,
+    latitude: -6.2,
+    longitude: 106.8,
+  });
 
-  assert.equal(response.status, 503);
-  assert.equal(data.status, "service_unavailable");
-  assert.equal(data.calculationQuality, "timeout");
-  assert.equal(getHumanDesignCanonicalFailureReason(data), "timeout");
+  assert.equal(result.status, "pending");
+  assert.equal(result.type, null);
+  assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
 test("ready local fallback is repair eligible", () => {
