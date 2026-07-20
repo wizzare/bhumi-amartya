@@ -23,6 +23,7 @@ import {
   Star,
   TrendingDown,
   TrendingUp,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { collection, doc, getDoc, getDocs, limit as firestoreLimit, query, where } from "firebase/firestore";
@@ -798,33 +799,72 @@ export default function AdminActivityPage() {
       return { eligible, retained, value: pct(retained, eligible) };
     };
 
-    const rawFunnelCounts = FUNNEL_STEPS.map((step) => {
-      let rawCount = 0;
-      if (step.source === "users") {
-        rawCount = users.filter((user) => user.registeredAt && dateKey(new Date(user.registeredAt)) === selectedDay).length;
-      } else if (step.source === "activity") {
-        rawCount = new Set(activities.filter((item) => item.date === selectedDay && item.uid).map((item) => item.uid)).size;
-      } else {
-        rawCount = new Set(analytics.filter((event) => event.date === selectedDay && step.events.includes(String(event.eventName))).map(uniqueUid).filter(Boolean)).size;
-      }
-      return { step, rawCount };
-    });
+    const yesterdayDay = addDays(selectedDay, -1);
+    const newUsersTodayUids = new Set(
+      users.filter((user) => user.registeredAt && dateKey(new Date(user.registeredAt)) === selectedDay).map((user) => user.uid)
+    );
+    const newUsersYesterdayUids = new Set(
+      users.filter((user) => user.registeredAt && dateKey(new Date(user.registeredAt)) === yesterdayDay).map((user) => user.uid)
+    );
 
-    const funnelCounts: number[] = [];
-    rawFunnelCounts.forEach(({ rawCount }, idx) => {
+    const newUsersCount = newUsersTodayUids.size;
+    const newUsersYesterdayCount = newUsersYesterdayUids.size;
+
+    let newUserTrendText = "0%";
+    if (newUsersYesterdayCount === 0) {
+      newUserTrendText = newUsersCount > 0 ? "New from 0 yesterday" : "0%";
+    } else {
+      const trendPct = pct(newUsersCount - newUsersYesterdayCount, newUsersYesterdayCount);
+      newUserTrendText = trendPct !== null ? `${trendPct >= 0 ? "+" : ""}${trendPct}%` : "0%";
+    }
+
+    const cohortUids = newUsersTodayUids;
+
+    const interactiveLoginUids = new Set(
+      activities.filter((item) => item.date === selectedDay && item.uid).map((item) => item.uid)
+    );
+    
+    const eventUidsFor = (eventNames: string[]) => new Set(
+      analytics.filter((event) => event.date === selectedDay && eventNames.includes(String(event.eventName))).map(uniqueUid).filter(Boolean)
+    );
+
+    const openDashboardUids = eventUidsFor(["dashboard_view", "open_dashboard"]);
+    const openProfileUids = eventUidsFor(["profile_view"]);
+    const openWellnessUids = eventUidsFor(["wellness_checkin_completed", "wellness_assessment_completed", "open_innerwork"]);
+    const openJourneyUids = eventUidsFor(["open_journey"]);
+    const completePracticeUids = eventUidsFor(["practice_completed", "daily_completion_reached"]);
+
+    const stageUidsMap: Record<string, Set<string>> = {
+      "Registered / First Seen": cohortUids,
+      "Interactive Login": new Set([...cohortUids].filter((uid) => interactiveLoginUids.has(uid))),
+      "Open Dashboard": new Set([...cohortUids].filter((uid) => openDashboardUids.has(uid))),
+      "Open Profile": new Set([...cohortUids].filter((uid) => openProfileUids.has(uid))),
+      "Open Wellness": new Set([...cohortUids].filter((uid) => openWellnessUids.has(uid))),
+      "Open Journey": new Set([...cohortUids].filter((uid) => openJourneyUids.has(uid))),
+      "Complete Daily Practice": new Set([...cohortUids].filter((uid) => completePracticeUids.has(uid))),
+    };
+
+    const rawFunnelCounts: number[] = [];
+    FUNNEL_STEPS.forEach((step, idx) => {
+      const matchedUids = stageUidsMap[step.label] || new Set<string>();
+      const rawCount = matchedUids.size;
       if (idx === 0) {
-        funnelCounts.push(rawCount);
+        rawFunnelCounts.push(rawCount);
       } else {
-        funnelCounts.push(Math.min(rawCount, funnelCounts[idx - 1]));
+        rawFunnelCounts.push(Math.min(rawCount, rawFunnelCounts[idx - 1]));
       }
     });
 
-    const funnel = rawFunnelCounts.map(({ step }, index) => {
-      const count = funnelCounts[index];
-      const previous = index === 0 ? count : funnelCounts[index - 1];
+    const funnel = FUNNEL_STEPS.map((step, index) => {
+      const count = rawFunnelCounts[index];
+      const previous = index === 0 ? count : rawFunnelCounts[index - 1];
       const conversion = index === 0 ? null : pct(count, Math.max(1, previous));
       return { label: step.label, count, conversion, drop: conversion === null ? null : Math.max(0, 100 - conversion) };
     });
+
+    const funnelBaseCount = funnel[0]?.count ?? 0;
+    const isReconciled = newUsersCount === funnelBaseCount;
+    const reconciliationError = !isReconciled ? `DATA RECONCILIATION ERROR: New User Card (${newUsersCount}) !== Funnel Base (${funnelBaseCount})` : null;
 
     const cohorts = Array.from({ length: 7 }, (_, i) => addDays(selectedDay, -6 + i)).reverse().map((cohort) => {
       const cohortUsers = [...eventDatesByUid.entries()].filter(([, dates]) => [...dates].sort()[0] === cohort);
@@ -915,6 +955,10 @@ export default function AdminActivityPage() {
 
     return {
       totalUsers: users.length,
+      newUsers: newUsersCount,
+      newUsersYesterday: newUsersYesterdayCount,
+      newUserTrendText,
+      reconciliationError,
       dau: todayActive.size,
       wau: wau.size,
       mau: mau.size,
@@ -1090,8 +1134,15 @@ export default function AdminActivityPage() {
           <div className="rounded-md border border-[#E3E0D7] bg-white px-3 py-2"><span className="font-bold text-[#2F3C34]">analytics</span>: {sourceStatus.analytics}</div>
         </section>
 
+        {metrics.reconciliationError && (
+          <div className="rounded-md border border-red-300 bg-red-100 px-4 py-3 text-sm font-bold text-red-800">
+            {metrics.reconciliationError}
+          </div>
+        )}
+
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon={<Users size={18} />} label="Total User" value={metrics.totalUsers} sub="unique valid UIDs" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
+          <MetricCard icon={<UserPlus size={18} />} label="New User" value={metrics.newUsers} sub="Registered users" comparison={`Yesterday: ${metrics.newUsersYesterday}`} trend={metrics.newUserTrendText} tone="sage" />
           <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={metrics.dau} sub={formatDateKey(rangeDates.end)} comparison={`kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}`} trend={trendLabel(metrics.dauTrend)} sparkline={metrics.sparkline} tone="sage" />
           <MetricCard icon={<Calendar size={18} />} label="WAU" value={metrics.wau} sub="rolling 7 days" comparison={`${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="7d active" tone="cream" />
           <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="rolling 30 days" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" tone="cream" />
@@ -1119,7 +1170,7 @@ export default function AdminActivityPage() {
         </Panel>
 
         <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <Panel title="Visual Funnel" action={`${rangeDates.end}`}>
+          <Panel title="New User Activation Funnel" action={`${rangeDates.end}`}>
             <div className="space-y-4">
               {metrics.funnel.map((step, index) => {
                 const max = Math.max(1, metrics.funnel[0]?.count || Math.max(...metrics.funnel.map((item) => item.count), 1));
