@@ -1,29 +1,57 @@
-import type { DailyGuidance, DailyManifestation } from "@/lib/dailyGuidance/types";
+import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
-import type { GaiaInsight } from "@/lib/profile/gaia/types";
 
-export type DailyShareInsight = {
-  id: string;
-  label: string;
-  content: string;
-  reflection?: string;
-  theme?: string;
-  chapter: string;
+export type SoulMessageSection = {
+  title: string;
+  themeLabel: string;
+  summary: string;
+  source: "dailyConclusion";
+};
+
+export type ProfileTodaySection = {
+  title: string;
+  sourceSectionId: string;
+  sectionTitle: string;
+  summary: string;
+  source: "akashiArchive";
+};
+
+export type ManifestationTodaySection = {
+  title: string;
+  lawType: "Law of Affirmation" | "Law of Assumption" | "Law of Attraction";
+  text: string;
+  source: "wellnessManifestation";
 };
 
 export type DailyShareCardContent = {
-  dateKey: string;
-  reflection: string;
-  catatanHariIni: { label: string; content: string };
-  profileInsight: DailyShareInsight;
-  manifestation: { label: string; content: string };
-  footerQuote: string;
+  soulMessage: SoulMessageSection;
+  profileToday: ProfileTodaySection;
+  manifestationToday: ManifestationTodaySection;
+  metadata: {
+    dateKey: string;
+    locale: string;
+    seedVersion: string;
+  };
 };
 
-const DAY_MS = 86_400_000;
+type ProfileSectionCandidate = {
+  id: string;
+  roomTitle: string;
+  narrative: string;
+  fallback: string;
+};
+
+type ManifestationCandidate = {
+  id: string;
+  lawType: ManifestationTodaySection["lawType"];
+  text: string;
+};
+
+const FALLBACK_SOUL_MESSAGE = "Refleksi hari ini belum tersedia.";
 const FALLBACK_MANIFESTATION = "Hari ini aku memilih hadir sepenuhnya bagi diriku sendiri.";
-const FALLBACK_REFLECTION = "Hari ini adalah ruang untuk mendengar dirimu dengan lebih jernih.";
-const FALLBACK_CATATAN = "Setiap langkah kecil yang kamu ambil hari ini memiliki maknanya sendiri.";
+const FALLBACK_PROFILE_TITLE = "Cermin Jiwa";
+const FALLBACK_PROFILE_SUMMARY = "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.";
+const SEED_VERSION = "1.0";
 
 function hash(value: string): number {
   let result = 2166136261;
@@ -34,23 +62,6 @@ function hash(value: string): number {
   return result >>> 0;
 }
 
-function seededShuffle<T>(items: T[], seed: string): T[] {
-  const shuffled = [...items];
-  let state = hash(seed) || 1;
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    const target = state % (index + 1);
-    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
-  }
-  return shuffled;
-}
-
-// Deterministic weekday rhythmic calculation
-function dayNumber(dateKey: string): number {
-  const parsed = Date.parse(`${dateKey}T00:00:00Z`);
-  return Number.isFinite(parsed) ? Math.floor(parsed / DAY_MS) : 0;
-}
-
 function clean(value: string | null | undefined): string {
   return (value ?? "")
     .replace(/[#*_`>~[\]()]/g, "")
@@ -58,13 +69,9 @@ function clean(value: string | null | undefined): string {
     .trim();
 }
 
-function stripMirrorGreeting(value: string): string {
-  return value.replace(/^Hai [^,]+, selamat hari [^.]+.\s*/i, "");
-}
-
 function splitSentences(value: string): string[] {
   return clean(value)
-    .split(/(?<=[.!?])["'”’]?\s+/)
+    .split(/(?<=[.!?])["'"']?\s+/)
     .map((sentence) => sentence.trim())
     .filter(Boolean);
 }
@@ -79,27 +86,131 @@ function snippet(value: string | null | undefined, fallback: string, maxSentence
   return selected.length > 220 ? `${selected.slice(0, 217).trim()}...` : selected;
 }
 
-function buildReflection(guidance?: DailyGuidance | null): string {
-  return snippet(stripMirrorGreeting(clean(guidance?.soulReflectionText)), FALLBACK_REFLECTION, 2);
+/**
+ * Deterministic daily selection helper.
+ *
+ * Same inputs always produce the same selected candidate.
+ * Candidate array reordering does NOT change the result because selection
+ * is based on stable candidate IDs sorted before scoring.
+ */
+export function selectDailyCandidate<T extends { id: string }>(
+  candidates: T[],
+  options: {
+    userKey: string;
+    dateKey: string;
+    domainKey: "PROFILE_TODAY" | "MANIFESTATION_TODAY";
+  },
+): T | null {
+  if (!candidates.length) return null;
+  if (candidates.length === 1) return candidates[0];
+  const sorted = [...candidates].sort((a, b) => a.id.localeCompare(b.id));
+  const seed = `${options.userKey}|${options.dateKey}|${options.domainKey}|${SEED_VERSION}`;
+  const index = hash(seed) % sorted.length;
+  return sorted[index];
 }
 
-function pickDaily<T>(items: T[], seed: string, fallback: T): T {
-  if (items.length === 0) return fallback;
-  return items[hash(seed) % items.length];
+function dailySeed(uid: string, dateKey: string, domain: string): string {
+  return `${uid}|${dateKey}|${domain}|${SEED_VERSION}`;
 }
 
-function buildCatatanHariIni(guidance?: DailyGuidance | null) {
+function buildSoulMessage(guidance?: DailyGuidance | null): SoulMessageSection {
+  const summary = snippet(guidance?.dailyConclusion?.text, FALLBACK_SOUL_MESSAGE, 2);
   return {
-    label: "Pesan untuk Jiwamu",
-    content: snippet(guidance?.dailyNoteText, FALLBACK_CATATAN, 2),
+    title: "Pesan untuk Jiwamu",
+    themeLabel: "Tema saat ini",
+    summary,
+    source: "dailyConclusion",
   };
 }
 
-function buildManifestation(manifestation: DailyManifestation | null | undefined) {
-  const affirmation = snippet(manifestation?.affirmation, FALLBACK_MANIFESTATION, 2);
+function buildProfileCandidates(sections: ProfileSection[]): ProfileSectionCandidate[] {
+  const candidates: ProfileSectionCandidate[] = [];
+  const seen = new Set<string>();
+  for (const section of sections) {
+    const id = section.title.replace(/\s+/g, "-").toLowerCase();
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const narratives = section.cards
+      .map((c) => c.shortMeaning || c.actionableReflection || "")
+      .filter(Boolean);
+    const combined = narratives.join(" ");
+    if (!combined.trim()) continue;
+    candidates.push({
+      id,
+      roomTitle: section.title,
+      narrative: combined,
+      fallback: FALLBACK_PROFILE_SUMMARY,
+    });
+  }
+  return candidates;
+}
+
+function buildProfileToday(
+  candidates: ProfileSectionCandidate[],
+  seed: string,
+): ProfileTodaySection {
+  const selected = selectDailyCandidate(candidates, {
+    userKey: seed,
+    dateKey: "",
+    domainKey: "PROFILE_TODAY",
+  });
+  if (!selected) {
+    return {
+      title: "Profil Hari Ini",
+      sourceSectionId: "fallback",
+      sectionTitle: FALLBACK_PROFILE_TITLE,
+      summary: FALLBACK_PROFILE_SUMMARY,
+      source: "akashiArchive",
+    };
+  }
   return {
-    label: "Law of Affirmation",
-    content: affirmation,
+    title: "Profil Hari Ini",
+    sourceSectionId: selected.id,
+    sectionTitle: selected.roomTitle,
+    summary: snippet(selected.narrative, selected.fallback, 2),
+    source: "akashiArchive",
+  };
+}
+
+function buildManifestationCandidates(
+  manifestation: DailyGuidance["manifestation"] | null | undefined,
+): ManifestationCandidate[] {
+  if (!manifestation) return [];
+  const candidates: ManifestationCandidate[] = [];
+  if (manifestation.affirmation?.trim()) {
+    candidates.push({ id: "affirmation", lawType: "Law of Affirmation", text: manifestation.affirmation });
+  }
+  if (manifestation.assumption?.trim()) {
+    candidates.push({ id: "assumption", lawType: "Law of Assumption", text: manifestation.assumption });
+  }
+  if (manifestation.attraction?.trim()) {
+    candidates.push({ id: "attraction", lawType: "Law of Attraction", text: manifestation.attraction });
+  }
+  return candidates;
+}
+
+function buildManifestationToday(
+  candidates: ManifestationCandidate[],
+  seed: string,
+): ManifestationTodaySection {
+  const selected = selectDailyCandidate(candidates, {
+    userKey: seed,
+    dateKey: "",
+    domainKey: "MANIFESTATION_TODAY",
+  });
+  if (!selected) {
+    return {
+      title: "Manifestasi Hari Ini",
+      lawType: "Law of Affirmation",
+      text: FALLBACK_MANIFESTATION,
+      source: "wellnessManifestation",
+    };
+  }
+  return {
+    title: "Manifestasi Hari Ini",
+    lawType: selected.lawType,
+    text: selected.text,
+    source: "wellnessManifestation",
   };
 }
 
@@ -108,54 +219,26 @@ export function createDailyShareCardContent({
   dateKey,
   userSeed,
   guidance,
-  gaiaInsights = [],
 }: {
   profileSections: ProfileSection[];
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
-  gaiaInsights?: GaiaInsight[];
-  now?: Date;
 }): DailyShareCardContent {
-  const legacyPool = profileSections.flatMap((section) =>
-    section.cards.map((card) => ({
-      id: `${section.title}:${card.title}`,
-      label: card.title,
-      content: snippet(card.shortMeaning, "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.", 2),
-      reflection: snippet(card.actionableReflection, "Amati bagian dirimu ini hari ini dengan lebih lembut.", 1),
-      theme: "general",
-      chapter: section.title,
-    }))
-  );
-  const gaiaPool = gaiaInsights.map((insight) => ({
-    id: `gaia:${insight.id}`,
-    label: insight.title,
-    content: snippet(insight.summary || insight.narrative, "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.", 2),
-    reflection: snippet(insight.guidance?.[0], "Amati bagian dirimu ini hari ini dengan lebih lembut.", 1),
-    theme: insight.theme,
-    chapter: "identity",
-  }));
-  const pool = [...legacyPool, ...gaiaPool];
+  const profileSeed = dailySeed(userSeed, dateKey, "PROFILE_TODAY");
+  const manifestationSeed = dailySeed(userSeed, dateKey, "MANIFESTATION_TODAY");
 
-  const day = dayNumber(dateKey);
-  const cycleLength = Math.max(pool.length, 1);
-  const cycle = Math.floor(day / cycleLength);
-  const position = ((day % cycleLength) + cycleLength) % cycleLength;
-  const ordered = seededShuffle(pool, `${userSeed}:${cycle}`);
-  const profileInsight = ordered[position % ordered.length] ?? {
-    id: "profile:fallback",
-    label: "Cermin Jiwa",
-    content: "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.",
-    reflection: "Langkah kecil apa yang bisa kuambil dengan lebih tulus?",
-    theme: "general",
-    chapter: "identity",
-  };
+  const profileCandidates = buildProfileCandidates(profileSections);
+  const manifestationCandidates = buildManifestationCandidates(guidance?.manifestation);
+
   return {
-    dateKey,
-    reflection: buildReflection(guidance),
-    catatanHariIni: buildCatatanHariIni(guidance),
-    profileInsight,
-    manifestation: buildManifestation(guidance?.manifestation),
-    footerQuote: "Ruang Untuk Pulang dan Kenali Diri",
+    soulMessage: buildSoulMessage(guidance),
+    profileToday: buildProfileToday(profileCandidates, profileSeed),
+    manifestationToday: buildManifestationToday(manifestationCandidates, manifestationSeed),
+    metadata: {
+      dateKey,
+      locale: "id",
+      seedVersion: SEED_VERSION,
+    },
   };
 }
