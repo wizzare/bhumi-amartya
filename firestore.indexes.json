@@ -37,16 +37,6 @@
       ]
     },
     {
-      "collectionGroup": "communications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "wellnessAssessments",
       "queryScope": "COLLECTION",
       "fields": [
@@ -66,6 +56,10 @@
       "collectionGroup": "communications",
       "fieldPath": "createdAt",
       "indexes": [
+        {
+          "queryScope": "COLLECTION",
+          "order": "DESCENDING"
+        },
         {
           "queryScope": "COLLECTION_GROUP",
           "order": "DESCENDING"
