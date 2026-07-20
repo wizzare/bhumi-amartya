@@ -39,24 +39,26 @@ export default function InboxPage() {
   const auth = useAuth();
   const uid = auth?.user?.uid;
 
-  const t = (translations[language] as any);
-  const it = t.inbox || {
-    title: "Inbox",
-    subtitle: "Pesan dan wawasan untuk perjalananmu.",
-    empty: "Belum ada pesan. Teruskan melangkah!",
-    markAllRead: "Tandai semua dibaca",
-    filters: {
-      all: "Semua",
-      unread: "Belum Dibaca",
-    },
-    groups: {
-      today: "Hari Ini",
-      yesterday: "Kemarin",
-      last7Days: "7 Hari Terakhir",
-      thisMonth: "Bulan Ini",
-      older: "Lebih Lama",
-    }
-  };
+  const it = useMemo(() => {
+    const t = (translations[language] as any);
+    return t.inbox || {
+      title: "Inbox",
+      subtitle: "Pesan dan wawasan untuk perjalananmu.",
+      empty: "Belum ada pesan. Teruskan melangkah!",
+      markAllRead: "Tandai semua dibaca",
+      filters: {
+        all: "Semua",
+        unread: "Belum Dibaca",
+      },
+      groups: {
+        today: "Hari Ini",
+        yesterday: "Kemarin",
+        last7Days: "7 Hari Terakhir",
+        thisMonth: "Bulan Ini",
+        older: "Lebih Lama",
+      }
+    };
+  }, [language]);
 
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,8 +155,10 @@ export default function InboxPage() {
     ];
 
     filteredMessages.forEach(msg => {
-      const dt = DateTime.fromISO(msg.createdAt);
-      if (dt.hasSame(now, 'day')) {
+      const dt = typeof msg.createdAt === "string" ? DateTime.fromISO(msg.createdAt) : DateTime.invalid("malformed");
+      if (!dt.isValid) {
+        groups[4].items.push(msg);
+      } else if (dt.hasSame(now, 'day')) {
         groups[0].items.push(msg);
       } else if (dt.hasSame(now.minus({ days: 1 }), 'day')) {
         groups[1].items.push(msg);
@@ -280,7 +284,7 @@ export default function InboxPage() {
                         <div className="flex items-center gap-3 mt-3">
                           <span className="text-[10px] text-[#9AA394] flex items-center gap-1">
                             <Clock size={10} />
-                            {DateTime.fromISO(msg.createdAt).toRelative()}
+                            {typeof msg.createdAt === "string" && DateTime.fromISO(msg.createdAt).isValid ? DateTime.fromISO(msg.createdAt).toRelative() : "Baru saja"}
                           </span>
                           {msg.deepLink && (
                             <span className="text-[10px] font-bold text-[#4F5E52] flex items-center gap-1">
@@ -310,7 +314,7 @@ export default function InboxPage() {
                 <h2 className="text-xl font-bold text-[#4F5E52]">{selectedMessage.title}</h2>
                 <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52]">Tutup</button>
               </div>
-              <p className="text-xs text-[#9AA394]">{DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED)}</p>
+              <p className="text-xs text-[#9AA394]">{typeof selectedMessage.createdAt === "string" && DateTime.fromISO(selectedMessage.createdAt).isValid ? DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED) : selectedMessage.createdAt}</p>
               <div className="p-4 bg-[#FCFAF5] rounded-2xl text-sm text-[#4F5E52] leading-relaxed whitespace-pre-wrap">
                 {selectedMessage.content || selectedMessage.summary}
               </div>

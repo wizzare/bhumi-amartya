@@ -27,39 +27,57 @@ import {
  * Handles durable storage of communication objects in Firestore.
  */
 export class CommunicationRepository {
-  private static normalizeAdminMessage(raw: Record<string, any>, id: string): CommunicationMessage {
+  public static normalizeCommunicationMessage(raw: Record<string, any>, id: string): CommunicationMessage {
     const iso = (value: any) => {
-      if (value && typeof value.toDate === "function") return value.toDate().toISOString();
+      if (!value) return new Date(0).toISOString();
+      if (typeof value.toDate === "function") {
+        try { return value.toDate().toISOString(); } catch { return new Date(0).toISOString(); }
+      }
       if (value instanceof Date) return value.toISOString();
       if (typeof value === "string" && value) return value;
+      if (typeof value === "number" && Number.isFinite(value)) return new Date(value).toISOString();
+      if (typeof value === "object" && typeof value.seconds === "number") {
+        return new Date(value.seconds * 1000).toISOString();
+      }
       return new Date(0).toISOString();
     };
+
     return {
-      id,
-      uid: typeof raw.uid === "string" ? raw.uid : "admin",
-      senderUid: typeof raw.senderUid === "string" ? raw.senderUid : "unknown",
+      id: typeof raw.id === "string" && raw.id ? raw.id : id,
+      uid: typeof raw.uid === "string" ? raw.uid : "user",
+      senderUid: typeof raw.senderUid === "string" ? raw.senderUid : "bhumi",
       senderName: typeof raw.senderName === "string" ? raw.senderName : undefined,
       type: raw.type || "user-message",
       priority: raw.priority || "normal",
-      title: typeof raw.title === "string" ? raw.title : "Pesan pengguna",
-      summary: typeof raw.summary === "string" ? raw.summary : "",
-      content: typeof raw.content === "string" ? raw.content : "",
+      source: raw.source || "system",
+      title: typeof raw.title === "string" && raw.title ? raw.title : "Pesan",
+      summary: typeof raw.summary === "string" ? raw.summary : (typeof raw.content === "string" ? raw.content.substring(0, 100) : ""),
+      content: typeof raw.content === "string" ? raw.content : (typeof raw.summary === "string" ? raw.summary : ""),
       createdAt: iso(raw.createdAt),
       updatedAt: iso(raw.updatedAt || raw.createdAt),
-      status: raw.status || "queued",
-      source: raw.source || "user",
-      threadId: typeof raw.threadId === "string" ? raw.threadId : id,
-      isRead: raw.isRead === true,
-      isArchived: raw.isArchived === true,
-      isDismissed: raw.isDismissed === true,
-      deliveryChannels: Array.isArray(raw.deliveryChannels) ? raw.deliveryChannels : ["inbox"],
-      deliveryAttempts: typeof raw.deliveryAttempts === "number" ? raw.deliveryAttempts : 0,
+      expiresAt: raw.expiresAt ? iso(raw.expiresAt) : undefined,
+      status: raw.status || "delivered",
+      action: typeof raw.action === "string" ? raw.action : undefined,
+      deepLink: typeof raw.deepLink === "string" ? raw.deepLink : undefined,
+      threadId: typeof raw.threadId === "string" && raw.threadId ? raw.threadId : id,
+      parentMessageId: typeof raw.parentMessageId === "string" ? raw.parentMessageId : undefined,
+      metadata: typeof raw.metadata === "object" && raw.metadata !== null ? raw.metadata : undefined,
       ownerUserId: typeof raw.ownerUserId === "string" ? raw.ownerUserId : undefined,
       senderRole: raw.senderRole,
       recipientRole: raw.recipientRole,
-      metadata: raw.metadata,
+      category: raw.category,
+      isRead: raw.isRead === true || raw.status === "opened" || raw.status === "clicked",
+      isArchived: raw.isArchived === true || raw.status === "archived",
+      isDismissed: raw.isDismissed === true || raw.status === "dismissed",
+      deliveryChannels: Array.isArray(raw.deliveryChannels) ? raw.deliveryChannels : ["inbox"],
+      deliveryAttempts: typeof raw.deliveryAttempts === "number" ? raw.deliveryAttempts : 0,
     } as CommunicationMessage;
   }
+
+  private static normalizeAdminMessage(raw: Record<string, any>, id: string): CommunicationMessage {
+    return this.normalizeCommunicationMessage(raw, id);
+  }
+
   /**
    * Save a new message or update existing.
    * Always saves to the user-scoped collection to ensure consolidated history.
@@ -96,13 +114,21 @@ export class CommunicationRepository {
       );
 
       const snapshot = await getDocs(q);
-      let messages = snapshot.docs.map(doc => doc.data() as CommunicationMessage);
-      
-      // Filter out archived and expired messages in memory
-      messages = messages.filter(
-        (m) => !m.isArchived && m.status !== "expired"
-      );
+      const messages: CommunicationMessage[] = [];
 
+      for (const docSnap of snapshot.docs) {
+        try {
+          const raw = docSnap.data();
+          if (!raw) continue;
+          const normalized = this.normalizeCommunicationMessage(raw, docSnap.id);
+          if (!normalized.isArchived && normalized.status !== "expired") {
+            messages.push(normalized);
+          }
+        } catch (err) {
+          console.warn(`[CommunicationRepository] Skipped malformed message ${docSnap.id}:`, err);
+        }
+      }
+      
       const safeTime = (msg: CommunicationMessage) => {
         if (!msg.createdAt) return 0;
         const t = new Date(msg.createdAt).getTime();
@@ -133,8 +159,18 @@ export class CommunicationRepository {
         limit(200)
       );
       const snapshot = await getDocs(q);
-      const messages = snapshot.docs.map(doc => doc.data() as CommunicationMessage);
-      
+      const messages: CommunicationMessage[] = [];
+
+      for (const docSnap of snapshot.docs) {
+        try {
+          const raw = docSnap.data();
+          if (!raw) continue;
+          messages.push(this.normalizeCommunicationMessage(raw, docSnap.id));
+        } catch (err) {
+          console.warn(`[CommunicationRepository] Skipped malformed thread message ${docSnap.id}:`, err);
+        }
+      }
+
       const safeTime = (msg: CommunicationMessage) => {
         if (!msg.createdAt) return 0;
         const t = new Date(msg.createdAt).getTime();
