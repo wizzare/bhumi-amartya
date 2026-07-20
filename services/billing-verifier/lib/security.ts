@@ -6,6 +6,10 @@ export const PACKAGE_NAME = process.env.ANDROID_PACKAGE_NAME || "com.bhumiamarty
 export const MAX_BODY_BYTES = 16 * 1024;
 export const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
 
+export function previewDryRunEnabled() {
+  return process.env.VERCEL_ENV === "preview" && process.env.BILLING_PREVIEW_DRY_RUN === "true";
+}
+
 export function originAllowed(origin?: string) {
   if (!origin) return true;
   const allowed = (process.env.ALLOWED_ORIGINS || "capacitor://localhost,http://localhost").split(",").map((value) => value.trim()).filter(Boolean);

@@ -118,11 +118,11 @@ export function calculateWeton(input: WetonInput): WetonBlueprint {
     totalNeptu,
     wuku,
     pranataMangsa,
-    watak: `${day} memberi corak ${dayMeaning.watak}, sementara ${pasaran} ${pasaranMeaning.watak}. Neptu ${totalNeptu} menegaskan pribadi yang ${neptuMeaning.watak}.`,
+    watak: `${day} membentuk dasar sifat yang ${dayMeaning.watak}, sedangkan ${pasaran} menghadirkan lapisan ${pasaranMeaning.watak.replace(/^membawa\s+/i, "")}. Total perpaduan ini menggambarkan pribadi yang ${neptuMeaning.watak}.`,
     strengths: [
       dayMeaning.strength,
       pasaranMeaning.strength,
-      `${wuku.name}: ${wuku.description}`,
+      `Membawa pelajaran tentang ${wuku.description.charAt(0).toLowerCase()}${wuku.description.slice(1)}`,
       neptuMeaning.strength,
     ],
     challenges: [
@@ -130,19 +130,19 @@ export function calculateWeton(input: WetonInput): WetonBlueprint {
       pasaranMeaning.challenge,
       neptuMeaning.challenge,
     ],
-    lifeMission: `${neptuMeaning.mission}. Pelajaran Wuku ${wuku.name} mengarahkan kekuatan itu pada ${wuku.description.toLowerCase()}`,
+    lifeMission: `${neptuMeaning.mission}. Arah ini dikuatkan oleh tema ${wuku.name} yang menekankan ${wuku.description.charAt(0).toLowerCase()}${wuku.description.slice(1)}`,
     relationshipStyle: pasaranMeaning.relationship,
-    workStyle: `${dayMeaning.work}. Wuku ${wuku.name} menambahkan tema ${wuku.description.toLowerCase()}`,
+    workStyle: `${dayMeaning.work}. Pengaruh ${wuku.name} mempertegas kecenderungan untuk ${wuku.description.charAt(0).toLowerCase()}${wuku.description.slice(1)}`,
     moneyStyle: pasaranMeaning.money,
   };
 }
 
 export function generateWetonSummary(weton: WetonBlueprint): string[] {
   return [
-    `Kelahiranmu berada pada ${weton.weton}. ${weton.day} membentuk cara dasar energimu hadir, sedangkan pasaran ${weton.pasaran} memberi warna pada cara kamu berhubungan dengan lingkungan. Perpaduan ini menggambarkan ${weton.watak}`,
-    `Nilai neptumu adalah ${weton.totalNeptu}, tersusun dari neptu hari ${weton.neptuDay} dan neptu pasaran ${weton.neptuPasaran}. Angka ini bukan ukuran baik atau buruk, melainkan penanda ritme: kekuatan utamamu bertumpu pada ${weton.strengths.slice(0, 2).join(" serta ")}. Tantangannya adalah ${weton.challenges.slice(0, 2).join(" dan ")}.`,
-    `Kamu lahir dalam Wuku ${weton.wuku.name}, wuku ke-${weton.wuku.index} dari siklus 210 hari. ${weton.wuku.description} Dalam pekerjaan, pola ini tampak sebagai kecenderungan untuk ${weton.workStyle.toLowerCase()}`,
-    `Pranata Mangsa ${weton.pranataMangsa.name} memberi latar musim kelahiranmu. ${weton.pranataMangsa.description} Dalam relasi dan pengelolaan rezeki, kamu cenderung ${weton.relationshipStyle.toLowerCase()}, sementara ${weton.moneyStyle.toLowerCase()}.`,
-    `Arah pertumbuhanmu adalah ${weton.lifeMission.charAt(0).toLowerCase()}${weton.lifeMission.slice(1)} Dengan menyatukan keteguhan hari, watak pasaran, irama neptu, dan pelajaran wuku, kamu dapat menggunakan potensi ini secara lebih sadar dan membumi.`,
+    `Kelahiranmu berada pada ${weton.weton}. Ritme ini memperlihatkan dasar pribadi yang tumbuh dari perpaduan sifat harian dan cara kamu merespons lingkungan terdekat. Gambaran umumnya terasa ${weton.watak.charAt(0).toLowerCase()}${weton.watak.slice(1)}`,
+    `Kekuatan utamamu tampak pada kemampuan untuk ${weton.strengths.slice(0, 2).join(" serta ")}. Pada saat yang sama, ruang belajarmu muncul ketika kamu perlu ${weton.challenges.slice(0, 2).join(" dan ")}. Kombinasi ini menunjukkan pribadi yang bisa berkembang jauh ketika keseimbangan batin tetap dijaga.`,
+    `Arah hidupmu cenderung bergerak melalui tema ${weton.wuku.name}, yang menonjolkan ${weton.wuku.description.charAt(0).toLowerCase()}${weton.wuku.description.slice(1)}. Dalam pekerjaan, kecenderungan ini biasanya terlihat saat kamu ${weton.workStyle.charAt(0).toLowerCase()}${weton.workStyle.slice(1)}`,
+    `Dalam relasi, kamu cenderung ${weton.relationshipStyle.toLowerCase()}. Dalam urusan rezeki, pola yang terasa lebih kuat adalah bahwa ${weton.moneyStyle.toLowerCase()}. Keduanya menekankan pentingnya kejelasan sikap sekaligus kestabilan langkah.`,
+    `Arah pertumbuhanmu adalah ${weton.lifeMission.charAt(0).toLowerCase()}${weton.lifeMission.slice(1)}. Jika dijalani dengan sadar, pola ini membantumu memakai kekuatan pribadi secara lebih matang, membumi, dan bermanfaat bagi hidupmu maupun orang-orang di sekitarmu.`,
   ];
 }

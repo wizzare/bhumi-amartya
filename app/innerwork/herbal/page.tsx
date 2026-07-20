@@ -16,6 +16,7 @@ import { INNERWORK_VARIATION_LIBRARY } from "@/lib/data/innerworkVariationLibrar
 import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
 
 const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_VARIATION_LIBRARY.healthyFood];
 const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
@@ -29,6 +30,11 @@ export default function HealthyFoodPage() {
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [saving, setSaving] = React.useState(false);
   const [saved, setSaved] = React.useState(false);
+  const [zoneBContext, setZoneBContext] = React.useState<ZoneBContext | null>(null);
+
+  React.useEffect(() => {
+    setZoneBContext(readZoneBContext(window.location.search));
+  }, []);
 
   React.useEffect(() => {
     trackEvent("open_healthy_food", auth?.user?.uid);
@@ -121,6 +127,12 @@ export default function HealthyFoodPage() {
             </div>
             <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Healthy Food</h1>
             <p className="text-[#7B8776]">Rekomendasi makanan sehat, jamu, dan herbal untuk mendukung tubuhmu.</p>
+            {zoneBContext && (
+              <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-sm text-[#4F5E52]">
+                <p className="font-semibold">Disesuaikan dengan: {zoneBContext.title}</p>
+                <p className="mt-1 text-[#7B8776]">{getZoneBGuide(zoneBContext).description}</p>
+              </div>
+            )}
           </header>
 
           <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">

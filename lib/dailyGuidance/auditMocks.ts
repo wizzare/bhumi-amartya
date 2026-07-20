@@ -112,10 +112,15 @@ function fullAuditBlueprint(uid: string, theme: string, overrides: Record<string
 }
 
 export function getMockProfile(user: string) {
-  if (user === "moana007") {
+  const now = new Date();
+  
+  if (user === "founder_control" || user === "moana007") {
     return {
-      uid: "moana007_uid",
-      fullName: "Founder Test",
+      uid: "founder_control_uid",
+      email: "wizzare@gmail.com",
+      fullName: "Founder Control",
+      badge: "Founder",
+      testerBadge: "Founder",
       language: "id",
       setupCompleted: true,
       birthDate: "1990-05-05",
@@ -123,6 +128,127 @@ export function getMockProfile(user: string) {
       birthCity: "Jakarta",
       timezone: "Asia/Jakarta",
       guardianRole: "founder",
+      role: "founder",
+    };
+  }
+
+  if (user === "premium_control") {
+    return {
+      uid: "premium_control_uid",
+      email: "premium@bhumi.io",
+      fullName: "Premium Control",
+      badge: "Penjaga Bhumi Inti",
+      testerBadge: "Penjaga Bhumi Inti",
+      language: "id",
+      setupCompleted: true,
+      birthDate: "1990-01-01",
+      birthTime: "09:30",
+      birthCity: "Jakarta",
+      timezone: "Asia/Jakarta",
+      guardianRole: "user",
+      role: "user",
+      membershipType: "PREMIUM",
+      membership: "premium",
+      plan: "premium",
+      accessUntil: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      membershipExpiryDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  if (user === "trial_control") {
+    return {
+      uid: "trial_control_uid",
+      email: "trial@bhumi.io",
+      fullName: "Trial Control",
+      badge: "Penjaga Bhumi",
+      testerBadge: "Penjaga Bhumi",
+      language: "id",
+      setupCompleted: true,
+      birthDate: "1990-01-01",
+      birthTime: "09:30",
+      birthCity: "Jakarta",
+      timezone: "Asia/Jakarta",
+      guardianRole: "user",
+      role: "user",
+      membershipType: "FREE_TRIAL",
+      membership: "free_trial",
+      plan: "free_trial",
+      trialStartedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      trialEndsAt: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000), // 4 days left
+      accessUntil: new Date(now.getTime() + 4 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  if (user === "expired_trial") {
+    return {
+      uid: "expired_trial_uid",
+      email: "expired@bhumi.io",
+      fullName: "Expired Trial",
+      badge: "Penjaga Bhumi",
+      testerBadge: "Penjaga Bhumi",
+      language: "id",
+      setupCompleted: true,
+      birthDate: "1990-01-01",
+      birthTime: "09:30",
+      birthCity: "Jakarta",
+      timezone: "Asia/Jakarta",
+      guardianRole: "user",
+      role: "user",
+      membershipType: "FREE_TRIAL",
+      membership: "expired",
+      plan: "expired",
+      subscriptionStatus: "expired",
+      trialStartedAt: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+      trialEndsAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000), // expired 3 days ago
+      accessUntil: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  if (user === "new_user_a") {
+    return {
+      uid: "new_user_a_uid",
+      email: "newuserA@bhumi.io",
+      fullName: "New User A",
+      badge: "Penjaga Bhumi",
+      testerBadge: "Penjaga Bhumi",
+      language: "id",
+      setupCompleted: false, // Incomplete setup
+      birthDate: "",
+      birthTime: "",
+      birthCity: "",
+      timezone: "Asia/Jakarta",
+      guardianRole: "user",
+      role: "user",
+      membershipType: "FREE_TRIAL",
+      membership: "free_trial",
+      plan: "free_trial",
+      trialStartedAt: now,
+      trialEndsAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // exactly 7 days
+      accessUntil: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+    };
+  }
+
+  if (user === "new_user_b") {
+    return {
+      uid: "new_user_b_uid",
+      email: "newuserB@bhumi.io",
+      fullName: "New User B",
+      badge: "Penjaga Bhumi",
+      testerBadge: "Penjaga Bhumi",
+      language: "id",
+      setupCompleted: false, // Incomplete setup
+      birthDate: "",
+      birthTime: "",
+      birthCity: "",
+      timezone: "Asia/Jakarta",
+      guardianRole: "user",
+      role: "user",
+      membershipType: "FREE_TRIAL",
+      membership: "free_trial",
+      plan: "free_trial",
+      trialStartedAt: now,
+      trialEndsAt: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000), // exactly 7 days
+      accessUntil: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
     };
   }
 
@@ -140,8 +266,28 @@ export function getMockProfile(user: string) {
 }
 
 export function getMockBlueprint(user: string) {
-  if (user === "moana007") {
-    return fullAuditBlueprint("moana007_uid", "founder stewardship");
+  if (user === "founder_control" || user === "moana007") {
+    return fullAuditBlueprint("founder_control_uid", "founder stewardship");
+  }
+
+  if (user === "premium_control") {
+    return fullAuditBlueprint("premium_control_uid", "premium stewardship");
+  }
+
+  if (user === "trial_control") {
+    return fullAuditBlueprint("trial_control_uid", "trial stewardship");
+  }
+
+  if (user === "expired_trial") {
+    return fullAuditBlueprint("expired_trial_uid", "expired trial stewardship");
+  }
+
+  if (user === "new_user_a") {
+    return fullAuditBlueprint("new_user_a_uid", "new user a stewardship");
+  }
+
+  if (user === "new_user_b") {
+    return fullAuditBlueprint("new_user_b_uid", "new user b stewardship");
   }
 
   if (user.includes("partial")) {

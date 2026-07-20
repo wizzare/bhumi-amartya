@@ -1,318 +1,51 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Calendar, ChevronDown, ChevronUp, Compass, Moon, Orbit, Globe, Zap, Sun } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronUp, Compass, Moon, Orbit, Sun, Zap } from "lucide-react";
 import { calculateCurrentSky } from "@/lib/astrology/calculateCurrentSky";
 import { buildAstroHouseActivations } from "@/lib/astrology/astroHouseActivations";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
+import { GAP_KIN } from "@/lib/tzolkin/dictionaries";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { buildTransitNarrative } from "@/lib/astrology/personalizedTransitNarrative";
 
-type AstroTodayCardProps = {
-  context: {
-    profile?: Record<string, unknown> & {
-      uid?: string;
-      timezone?: string;
-      birthDate?: string;
-      birthTime?: string;
-      birthCity?: string;
-    };
-    blueprint?: Record<string, unknown> & {
-      astrology?: Record<string, unknown> & { houses?: Record<string, unknown> };
-      natalChart?: Record<string, unknown>;
-    };
-    [key: string]: unknown;
-  };
-};
-
-const LABELS: Record<string, string> = {
-  Sun: "Matahari",
-  Moon: "Bulan",
-  Mercury: "Merkurius",
-  Venus: "Venus",
-  Mars: "Mars",
-  Jupiter: "Jupiter",
-  Saturn: "Saturnus",
-  Uranus: "Uranus",
-  Neptune: "Neptunus",
-  Pluto: "Pluto",
-  Chiron: "Chiron",
-};
+type AstroTodayCardProps = { context: { profile?: Record<string, any>; blueprint?: Record<string, any>; [key: string]: unknown } };
+type TimingCard = { id: string; title: string; timing: string; summary: string; collective: string; personal: string; action: string };
+const LABELS: Record<string, string> = { Sun: "Matahari", Moon: "Bulan", Mercury: "Merkurius", Venus: "Venus", Mars: "Mars", Jupiter: "Jupiter", Saturn: "Saturnus", Uranus: "Uranus", Neptune: "Neptunus", Pluto: "Pluto" };
 
 export function AstroTodayCard({ context }: AstroTodayCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const timezone = context.profile?.timezone || "UTC";
   const today = getLocalDateKey(new Date(), timezone);
-
+  const [openLevel, setOpenLevel] = useState(false);
+  const [openGroup, setOpenGroup] = useState<string | null>(null);
+  const [openCard, setOpenCard] = useState<string | null>(null);
+  useEffect(() => { setOpenLevel(false); setOpenGroup(null); setOpenCard(null); }, [context.profile?.uid, today]);
   const sky = useMemo(() => calculateCurrentSky(new Date()), []);
-
-  const astroActivations = useMemo(() => buildAstroHouseActivations({
-    uid: context.profile?.uid,
-    currentSky: sky,
-    natalChart: context.blueprint?.astrology || context.blueprint?.natalChart || null,
-    natalHouses: context.blueprint?.astrology?.houses || null,
-  }).activations, [sky, context.profile?.uid, context.blueprint]);
-
-  const vedic = useMemo(() => {
-    try {
-      return calculateVedic({
-        birthDate: context.profile?.birthDate || "1990-01-01",
-        birthTime: context.profile?.birthTime || "12:00",
-        birthCity: context.profile?.birthCity || "Jakarta",
-        timezone,
-        asOf: new Date()
-      });
-    } catch { return null; }
-  }, [context.profile, timezone]);
-
-  const bazi = useMemo(() => {
-    try {
-      return calculateBazi({
-        birthDate: context.profile?.birthDate || "1990-01-01",
-        birthTime: context.profile?.birthTime || "12:00",
-        timezone,
-        referenceDate: new Date()
-      });
-    } catch { return null; }
-  }, [context.profile, timezone]);
-
+  const activations = useMemo(() => buildAstroHouseActivations({ uid: context.profile?.uid, currentSky: sky, natalChart: context.blueprint?.astrology || context.blueprint?.natalChart || null, natalHouses: context.blueprint?.astrology?.houses || null }).activations, [sky, context.profile?.uid, context.blueprint]);
+  const moon = sky.bodies.find((body) => body.body === "Moon");
+  const moonActivation = activations.find((activation) => activation.planet === "Moon");
+  const moonNarrative = moon ? buildTransitNarrative(moon, moonActivation, context) : null;
+  const vedic = useMemo(() => { try { return calculateVedic({ birthDate: context.profile?.birthDate || "1990-01-01", birthTime: context.profile?.birthTime || "12:00", birthCity: context.profile?.birthCity || "Jakarta", timezone, asOf: new Date() }); } catch { return null; } }, [context.profile, timezone]);
+  const bazi = useMemo(() => { try { return calculateBazi({ birthDate: context.profile?.birthDate || "1990-01-01", birthTime: context.profile?.birthTime || "12:00", timezone, referenceDate: new Date() }); } catch { return null; } }, [context.profile, timezone]);
   const tzolkin = useMemo(() => calculateTzolkin({ birthDate: today }), [today]);
+  const nextGap = useMemo(() => { for (let offset = 0; offset <= 260; offset += 1) { const date = new Date(`${today}T12:00:00`); date.setDate(date.getDate() + offset); const dateKey = date.toISOString().slice(0, 10); const kin = calculateTzolkin({ birthDate: dateKey }); if (GAP_KIN.has(kin.kin)) return { date: dateKey, days: offset }; } return null; }, [today]);
   const weton = useMemo(() => calculateWeton({ birthDate: today }), [today]);
-
-  const moonStatus = sky.bodies.find(b => b.body === "Moon");
-  const moonActivation = astroActivations.find(a => a.planet === "Moon");
-  const moonNarrative = moonStatus ? buildTransitNarrative(moonStatus, moonActivation, context) : null;
-
-  return (
-    <section className="mt-10 space-y-4">
-      <header className="px-1">
-        <h3 className="text-2xl font-serif font-bold text-[#4F6658]">Astro Hari Ini</h3>
-        <p className="mt-1 text-[13px] font-medium text-[#3C3C3C]/70">Membangun kesadaran terhadap ritme semesta.</p>
-      </header>
-
-      <div className="bhumi-card overflow-hidden border-none bg-white shadow-sm">
-        <div className="p-7">
-          <div className="flex items-start gap-4">
-            <div className="rounded-2xl bg-indigo-50 p-3 text-indigo-500">
-               <Moon size={22} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9AA394]">Fase Bulan</p>
-              <h4 className="mt-1 text-lg font-bold text-[#4F6658]">Bulan: {sky.moonInfo.label} di {moonStatus?.sign || "zodiak hari ini"}</h4>
-              <p className="mt-1 text-xs font-semibold text-[#7B8776]">Periode: {sky.moonInfo.startDate} - {sky.moonInfo.endDate}</p>
-              <p className="mt-1 text-xs font-bold text-[#4F6658]">
-                Berikutnya: {sky.moonInfo.nextPhaseLabel} di {sky.moonInfo.nextPhaseSign} · {sky.moonInfo.endDate}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {!isExpanded && (
-          <button type="button" onClick={() => setIsExpanded(true)} className="flex w-full items-center justify-center gap-2 border-t border-[#F1EEE7] bg-[#FCFAF5] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4F6658]">
-            Lihat Detail Langit Hari Ini <ChevronDown size={16} />
-          </button>
-        )}
-      </div>
-
-      {isExpanded && (
-        <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <AstroSection icon={<Moon size={18} />} title="Fase Bulan">
-            <div className="space-y-4">
-              <div>
-                <p className="font-bold text-[#4F6658]">{sky.moonInfo.label} di {moonStatus?.sign || "zodiak hari ini"}</p>
-                <p className="mt-1 text-xs font-medium text-[#9AA394]">Periode: {sky.moonInfo.startDate} - {sky.moonInfo.endDate}</p>
-              </div>
-              <NarrativeBlocks
-                collective={sky.moonInfo.theme}
-                personal={moonNarrative?.personalImpact || sky.moonInfo.theme}
-                action={moonNarrative?.action || "Amati perubahan ritmemu dan pilih respons yang paling membumi."}
-              />
-            </div>
-          </AstroSection>
-
-          {/* SECTION 1: LANGIT BARAT */}
-          <AstroSection icon={<Sun size={18} />} title="Langit Barat">
-             <div className="space-y-6">
-                {sky.bodies.filter(b => b.body !== "Moon" && b.body !== "Lilith" && b.body !== "North Node").slice(0, 8).map(b => {
-                   const activation = astroActivations.find(a => a.planet === b.body);
-                   const narrative = buildTransitNarrative(b, activation, context);
-                   return (
-                      <div key={b.body} className="space-y-3">
-                         <div className="flex justify-between items-end border-b border-[#F1EEE7] pb-1">
-                            <h5 className="font-bold text-[#4F6658] text-sm">{LABELS[b.body] || b.body} di {b.sign} {b.isRetrograde ? "(Rx)" : ""}</h5>
-                            <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-tighter">
-                               {b.periodStart} - {b.periodEnd}
-                            </span>
-                         </div>
-                         <div className="grid gap-2">
-                            <div className="p-3 bg-[#FCFAF5] rounded-xl">
-                               <p className="text-[9px] font-bold text-[#9AA394] uppercase mb-1">Tema Kolektif</p>
-                               <p className="text-[11px] text-[#526053]">{narrative.collectiveTheme}</p>
-                            </div>
-                            <div className="p-3 bg-indigo-50/20 rounded-xl border border-indigo-50">
-                               <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                               <p className="text-[11px] text-indigo-900/60">{narrative.personalImpact}</p>
-                            </div>
-                            <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-50">
-                               <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">Yang Bisa Dilakukan</p>
-                               <p className="text-[11px] text-emerald-900/60">{narrative.action}</p>
-                            </div>
-                         </div>
-                      </div>
-                   );
-                })}
-             </div>
-          </AstroSection>
-
-          {/* SECTION 2: VEDIC */}
-          <AstroSection icon={<Zap size={18} />} title="Vedic (Mahadasha)">
-             {vedic ? (
-                <div className="space-y-4">
-                   <div className="pb-2 border-b border-[#F1EEE7]">
-                      <p className="text-sm font-bold text-[#4F6658]">Siklus: {vedic.currentMahadasha.planet} - {vedic.currentAntardasha.planet}</p>
-                      <p className="text-[10px] font-bold text-[#9AA394]">
-                         {new Date(vedic.currentAntardasha.startDate).toLocaleDateString("id-ID")} - {new Date(vedic.currentAntardasha.endDate).toLocaleDateString("id-ID")}
-                      </p>
-                   </div>
-                   <div className="space-y-2">
-                      <div className="p-3 bg-indigo-50/20 rounded-xl border border-indigo-50">
-                         <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                         <p className="text-[11px] text-indigo-900/60">{vedic.summary[2]}</p>
-                      </div>
-                      <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-50">
-                         <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">Yang Bisa Dilakukan</p>
-                         <p className="text-[11px] text-emerald-900/60">Gunakan periode {vedic.currentAntardasha.planet} ini untuk mengamati tema {vedic.currentAntardasha.planet === "Venus" ? "relasi dan kenyamanan" : vedic.currentAntardasha.planet === "Mars" ? "aksi dan keberanian" : "pertumbuhan batin"}.</p>
-                      </div>
-                   </div>
-                </div>
-             ) : <p className="text-xs italic text-gray-400">Menghitung siklus...</p>}
-          </AstroSection>
-
-          {/* SECTION 3: BAZI */}
-          <AstroSection icon={<Compass size={18} />} title="BaZi (Energi Elemen)">
-             {bazi ? (
-                <div className="space-y-4">
-                   <div className="pb-2 border-b border-[#F1EEE7]">
-                      <p className="text-sm font-bold text-[#4F6658]">Pilar Hari: {bazi.dayPillar.display}</p>
-                      <p className="text-[10px] font-bold text-[#9AA394]">Periode Hari Ini</p>
-                   </div>
-                   <div className="space-y-2">
-                      <div className="p-3 bg-indigo-50/20 rounded-xl border border-indigo-50">
-                         <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                         <p className="text-[11px] text-indigo-900/60">Elemen dominan hari ini mengajak pada tema {bazi.dayMaster.element.toLowerCase()}. Perhatikan bagaimana elemen ini beresonansi dengan kapasitas kerjamu.</p>
-                      </div>
-                      <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-50">
-                         <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">Yang Bisa Dilakukan</p>
-                         <p className="text-[11px] text-emerald-900/60">Lakukan tindakan yang selaras dengan energi {bazi.dayMaster.element.toLowerCase()} untuk menjaga keseimbangan batin.</p>
-                      </div>
-                   </div>
-                </div>
-             ) : <p className="text-xs italic text-gray-400">Menghitung elemen...</p>}
-          </AstroSection>
-
-          {/* SECTION 4: TZOLKIN MAYA */}
-          <AstroSection icon={<Globe size={18} />} title="Tzolkin Maya">
-             <div className="space-y-4">
-                <div className="pb-2 border-b border-[#F1EEE7]">
-                   <p className="text-sm font-bold text-[#4F6658]">Kin Hari Ini: {tzolkin.kinName} {tzolkin.gap ? "(GAP)" : ""}</p>
-                   <p className="text-[10px] font-bold text-[#9AA394]">Periode Hari Ini</p>
-                </div>
-                <div className="space-y-2">
-                   <div className="p-3 bg-indigo-50/20 rounded-xl border border-indigo-50">
-                      <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                      <p className="text-[11px] text-indigo-900/60">{tzolkin.wavespell.meaning}</p>
-                   </div>
-                   <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-50">
-                      <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">Yang Bisa Dilakukan</p>
-                      <p className="text-[11px] text-emerald-900/60">Arahkan fokus pada {tzolkin.wavespell.growthDirection.toLowerCase()}.</p>
-                   </div>
-                </div>
-             </div>
-          </AstroSection>
-
-          {/* SECTION 5: KALENDER JAWA */}
-          <AstroSection icon={<Calendar size={18} />} title="Kalender Jawa">
-             <div className="space-y-4">
-                <div className="pb-2 border-b border-[#F1EEE7]">
-                   <p className="text-sm font-bold text-[#4F6658]">{weton.weton} (Wuku {weton.wuku.name})</p>
-                   <p className="text-[10px] font-bold text-[#9AA394]">Periode Hari Ini</p>
-                </div>
-                <div className="space-y-2">
-                   <div className="p-3 bg-indigo-50/20 rounded-xl border border-indigo-50">
-                      <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                      <p className="text-[11px] text-indigo-900/60">{weton.wuku.description}. Ini memberikan corak batin yang {weton.watak.split(". ")[1]}.</p>
-                   </div>
-                   <div className="p-3 bg-emerald-50/20 rounded-xl border border-emerald-50">
-                      <p className="text-[9px] font-bold text-emerald-300 uppercase mb-1">Yang Bisa Dilakukan</p>
-                      <p className="text-[11px] text-emerald-900/60">{weton.workStyle}.</p>
-                   </div>
-                </div>
-             </div>
-          </AstroSection>
-
-          {/* SECTION 6: GERHANA */}
-          <AstroSection icon={<Orbit size={18} />} title="Gerhana & Siklus Besar">
-             <div className="space-y-4">
-                <div className="p-4 bg-red-50/30 rounded-2xl border border-red-100/50">
-                   <p className="text-[10px] font-bold text-red-700 uppercase tracking-widest mb-1">Gerhana Matahari Berikutnya</p>
-                   <p className="text-sm font-bold text-[#4F6658]">Total Solar Eclipse</p>
-                   <p className="text-xs text-[#7B8776] mb-3">12 Agustus 2026 (±54 Hari Lagi)</p>
-                   <div className="p-3 bg-white/50 rounded-xl border border-red-50">
-                      <p className="text-[9px] font-bold text-red-300 uppercase mb-1">Menyentuh Dirimu</p>
-                      <p className="text-[11px] text-red-900/60">Periode ini mengajakmu untuk mengamati pola penutupan intens dan awal baru yang mendalam.</p>
-                   </div>
-                </div>
-                <div className="p-4 bg-indigo-50/30 rounded-2xl border border-indigo-100/50">
-                   <p className="text-[10px] font-bold text-indigo-700 uppercase tracking-widest mb-1">Gerhana Bulan Berikutnya</p>
-                   <p className="text-sm font-bold text-[#4F6658]">Partial Lunar Eclipse</p>
-                   <p className="text-xs text-[#7B8776] mb-3">28 Agustus 2026 (±70 Hari Lagi)</p>
-                   <div className="p-3 bg-white/50 rounded-xl border border-indigo-50">
-                      <p className="text-[9px] font-bold text-indigo-300 uppercase mb-1">Menyentuh Dirimu</p>
-                      <p className="text-[11px] text-indigo-900/60">Pembersihan emosional dan evaluasi batin sedang meminta perhatian dalam ritme hidupmu.</p>
-                   </div>
-                </div>
-             </div>
-          </AstroSection>
-
-          <button type="button" onClick={() => setIsExpanded(false)} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4F6658]">
-            Tutup Detail <ChevronUp size={16} />
-          </button>
-        </div>
-      )}
-    </section>
-  );
-}
-
-function NarrativeBlocks({ collective, personal, action }: { collective: string; personal: string; action: string }) {
-  return (
-    <div className="grid gap-2">
-      <div className="rounded-xl bg-[#FCFAF5] p-3">
-        <p className="mb-1 text-[9px] font-bold uppercase text-[#9AA394]">Tema Kolektif</p>
-        <p className="text-[11px] text-[#526053]">{collective}</p>
-      </div>
-      <div className="rounded-xl border border-indigo-50 bg-indigo-50/20 p-3">
-        <p className="mb-1 text-[9px] font-bold uppercase text-indigo-300">Menyentuh Dirimu</p>
-        <p className="text-[11px] text-indigo-900/60">{personal}</p>
-      </div>
-      <div className="rounded-xl border border-emerald-50 bg-emerald-50/20 p-3">
-        <p className="mb-1 text-[9px] font-bold uppercase text-emerald-300">Yang Bisa Dilakukan</p>
-        <p className="text-[11px] text-emerald-900/60">{action}</p>
-      </div>
-    </div>
-  );
-}
-
-function AstroSection({ icon, title, children }: { icon: React.ReactNode, title: string, children: React.ReactNode }) {
-  return (
-    <div className="bhumi-card border-none bg-white p-7 shadow-sm">
-      <div className="mb-5 flex items-center gap-3 text-[#4F6658]">
-        {icon}
-        <h4 className="font-bold text-sm uppercase tracking-widest">{title}</h4>
-      </div>
-      {children}
-    </div>
-  );
+  const daysUntil = (date: string) => Math.max(0, Math.ceil((new Date(`${date}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86400000));
+  const formatDate = (date: string) => new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: timezone }).format(new Date(`${date}T12:00:00`));
+  const westernCards: TimingCard[] = sky.bodies.filter((body) => body.body !== "Moon" && body.body !== "Lilith" && body.body !== "North Node").slice(0, 5).map((body) => { const narrative = buildTransitNarrative(body, activations.find((activation) => activation.planet === body.body), context); return { id: `western-${body.body}`, title: `${LABELS[body.body] || body.body} di ${body.sign}`, timing: `${body.periodStart}–${body.periodEnd}`, summary: narrative.collectiveTheme, collective: narrative.collectiveTheme, personal: narrative.personalImpact, action: narrative.action }; });
+  const groups: Array<{ id: string; title: string; icon: React.ReactNode; summary: string; cards: TimingCard[] }> = [
+    { id: "moon", title: "Fase Bulan", icon: <Moon size={18} />, summary: `${sky.moonInfo.label} di ${moon?.sign || "zodiak hari ini"}`, cards: [{ id: "moon-phase", title: sky.moonInfo.label, timing: `${sky.moonInfo.startDate}–${sky.moonInfo.endDate}`, summary: sky.moonInfo.theme, collective: sky.moonInfo.theme, personal: moonNarrative?.personalImpact || "Amati kebutuhan ritme dan energimu.", action: moonNarrative?.action || "Beri jeda sebelum memilih respons." }] },
+    { id: "western", title: "Langit Barat", icon: <Sun size={18} />, summary: `${westernCards.length} timing personal tersedia`, cards: westernCards },
+    { id: "eastern", title: "Siklus Timur & Tradisional", icon: <Compass size={18} />, summary: [vedic && "Vedic", bazi && "BaZi", tzolkin && "Tzolkin", weton && "Weton"].filter(Boolean).join(" · ") || "Belum ada timing tambahan", cards: [vedic && { id: "vedic", title: "Siklus Vedic", timing: "Periode berjalan", summary: `Mahadasha ${vedic.currentMahadasha.planet} dan Antardasha ${vedic.currentAntardasha.planet} sedang aktif.`, collective: "Siklus waktu memberi konteks untuk ritme pengembanganmu.", personal: String(vedic.summary?.[2] || "Perhatikan tema pertumbuhan yang sedang aktif."), action: "Pilih satu kebiasaan yang ingin kamu latih." }, bazi && { id: "bazi", title: `Pilar Hari: ${bazi.dayPillar.display}`, timing: `Hari ini, ${formatDate(today)}`, summary: `Elemen ${bazi.dayMaster.element.toLowerCase()} memberi warna pada cara kamu mengatur tenaga.`, collective: "Pilar hari memberi konteks budaya untuk membaca ritme harian.", personal: `Tema ${bazi.dayMaster.element.toLowerCase()} dapat menjadi cermin ritmemu.`, action: "Sesuaikan beban kerja dengan kapasitas tubuh." }, tzolkin && { id: "tzolkin", title: `Kin Hari Ini: ${tzolkin.kinName}`, timing: `Hari ini, ${formatDate(today)}`, summary: `${tzolkin.wavespell.name} memberi satu kata kunci untuk refleksi.`, collective: "Siklus Tzolkin memberi konteks simbolik untuk fokus harian.", personal: tzolkin.wavespell.meaning, action: "Bawa arah pertumbuhan itu ke satu tindakan kecil." }, nextGap && { id: "tzolkin-gap", title: "Galactic Activation Portal (GAP)", timing: `${formatDate(nextGap.date)} · ${nextGap.days === 0 ? "hari ini" : `${nextGap.days} hari lagi`}`, summary: nextGap.days === 0 ? "Hari ini termasuk hari GAP." : `Hari GAP berikutnya jatuh pada ${formatDate(nextGap.date)}.`, collective: "GAP adalah klasifikasi simbolik dalam kalender Tzolkin.", personal: "Gunakan penanda ini sebagai ajakan untuk memperhatikan pola dan refleksi, bukan kepastian khusus.", action: "Jadwalkan journaling singkat pada hari tersebut." }, weton && { id: "weton", title: `${weton.weton} · Wuku ${weton.wuku.name}`, timing: `Hari ini, ${formatDate(today)}`, summary: `${weton.weton} jatuh pada Wuku ${weton.wuku.name}.`, collective: "Kalender Jawa memberi konteks budaya untuk membaca ritme hari.", personal: weton.wuku.description, action: `Gunakan watak hari ini untuk ${weton.workStyle.toLowerCase()}.` }].filter(Boolean) as TimingCard[] },
+    { id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini", icon: <Zap size={18} />, summary: `${activations.length} aktivasi personal`, cards: activations.slice(0, 5).map((activation) => { const body = sky.bodies.find((item) => item.body === activation.planet); const narrative = body ? buildTransitNarrative(body, activation, context) : null; return { id: `blueprint-${activation.planet}`, title: LABELS[activation.planet] || activation.planet, timing: "Aktif hari ini", summary: narrative?.personalImpact || "Aktivasi personal tersedia.", collective: narrative?.collectiveTheme || "Ritme langit sedang menyentuh pola pribadimu.", personal: narrative?.personalImpact || "Perhatikan respons tubuh dan pikiran.", action: narrative?.action || "Pilih satu respons yang paling membumi." }; }) },
+    { id: "eclipse", title: "Gerhana & Siklus Besar", icon: <Orbit size={18} />, summary: "Gerhana Matahari 12 Agustus · Gerhana Bulan 28 Agustus 2026", cards: [{ id: "solar-eclipse-2026", title: "Gerhana Matahari Total", timing: `12 Agustus 2026 · ${daysUntil("2026-08-12")} hari lagi`, summary: `Gerhana Matahari Total berlangsung pada 12 Agustus 2026.`, collective: "Gerhana Matahari menandai jendela untuk menata ulang arah dan awal baru.", personal: "Perhatikan keputusan yang ingin kamu mulai setelah evaluasi musim ini.", action: "Tulis satu arah baru dan satu langkah pertama yang realistis." }, { id: "lunar-eclipse-2026", title: "Gerhana Bulan Sebagian", timing: `28 Agustus 2026 · ${daysUntil("2026-08-28")} hari lagi`, summary: `Gerhana Bulan Sebagian berlangsung pada 28 Agustus 2026.`, collective: "Gerhana Bulan memberi ruang untuk melihat emosi dan pola yang perlu diintegrasikan.", personal: "Amati hal yang muncul kembali agar bisa dipahami tanpa reaksi berlebihan.", action: "Jadwalkan satu sesi journaling atau istirahat untuk menutup siklus dengan sadar." }] },
+  ];
+  return <section className="mt-10 space-y-4" aria-labelledby="astro-today-title">
+    <header className="px-1"><h3 id="astro-today-title" className="text-2xl font-serif font-bold text-[#4F6658]">Astro Hari Ini</h3><p className="mt-1 text-[13px] font-medium text-[#3C3C3C]/70">Membangun kesadaran terhadap ritme semesta.</p></header>
+    <div className="bhumi-card overflow-hidden border-none bg-white shadow-sm"><div className="p-6"><div className="flex items-start gap-4"><div className="rounded-2xl bg-indigo-50 p-3 text-indigo-500"><Moon size={22} /></div><div className="min-w-0 flex-1"><p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#9AA394]">{sky.moonInfo.label}</p><h4 className="mt-1 text-lg font-bold text-[#4F6658]">Bulan di {moon?.sign || "zodiak hari ini"}</h4><p className="mt-1 text-sm leading-relaxed text-[#667064]">{moonNarrative?.personalImpact || sky.moonInfo.theme}</p></div></div></div><button type="button" aria-expanded={openLevel} onClick={() => setOpenLevel((value) => !value)} className="flex w-full items-center justify-center gap-2 border-t border-[#F1EEE7] bg-[#FCFAF5] px-5 py-4 text-[11px] font-bold uppercase tracking-[0.18em] text-[#4F6658]">{openLevel ? "Tutup" : "Lihat Selengkapnya"}{openLevel ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button></div>
+    {openLevel && <div className="space-y-4">{groups.map((group) => <div key={group.id} className="bhumi-card border-none bg-white p-5 shadow-sm"><button type="button" aria-expanded={openGroup === group.id} onClick={() => { setOpenGroup((value) => value === group.id ? null : group.id); setOpenCard(null); }} className="flex w-full items-center gap-3 text-left text-[#4F6658]"><span>{group.icon}</span><span className="flex-1"><span className="block text-sm font-bold uppercase tracking-widest">{group.title}</span><span className="mt-1 block text-xs font-medium normal-case tracking-normal text-[#7B8776]">{group.summary}</span></span>{openGroup === group.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>{openGroup === group.id && <div className="mt-4 space-y-3">{group.cards.map((card) => <div key={card.id} className="rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] p-4"><button type="button" aria-expanded={openCard === card.id} onClick={() => setOpenCard((value) => value === card.id ? null : card.id)} className="flex w-full items-start gap-3 text-left"><span className="flex-1"><span className="block text-sm font-bold text-[#4F6658]">{card.title}</span><span className="mt-1 block text-[10px] font-semibold text-[#9AA394]">{card.timing}</span><span className="mt-1 block text-xs leading-relaxed text-[#667064]">{card.summary}</span></span>{openCard === card.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</button>{openCard === card.id && <div className="mt-3 grid gap-2 text-xs"><div className="rounded-xl bg-white p-3"><p className="font-bold text-[#9AA394]">Tema Kolektif</p><p className="mt-1 text-[#526053]">{card.collective}</p></div><div className="rounded-xl border border-indigo-50 bg-indigo-50/20 p-3"><p className="font-bold text-indigo-300">Menyentuh Dirimu</p><p className="mt-1 text-indigo-900/60">{card.personal}</p></div><div className="rounded-xl border border-emerald-50 bg-emerald-50/20 p-3"><p className="font-bold text-emerald-300">Yang Bisa Dilakukan</p><p className="mt-1 text-emerald-900/60">{card.action}</p></div></div>}</div>)}</div>}</div>)}</div>}
+  </section>;
 }

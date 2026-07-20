@@ -89,6 +89,13 @@ function pickDaily<T>(items: T[], seed: string, fallback: T): T {
 }
 
 function buildCatatanHariIni(guidance?: DailyGuidance | null, seed?: string) {
+  if (guidance?.dailyConclusion?.text) {
+    return {
+      label: "Catatan Hari Ini dari Bhumi",
+      content: snippet(guidance.dailyConclusion.text, FALLBACK_CATATAN, 2),
+    };
+  }
+
   const categories = guidance?.categories;
   if (!categories) {
     return {

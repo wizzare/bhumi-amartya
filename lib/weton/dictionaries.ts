@@ -118,18 +118,18 @@ export const NEPTU_INTERPRETATIONS: Record<number, {
   challenge: string;
   mission: string;
 }> = {
-  7: { watak: "ringkas dan cepat menangkap inti", strength: "fokus", challenge: "kesabaran", mission: "mengubah ketajaman menjadi keputusan yang bermanfaat" },
-  8: { watak: "tenang namun teguh", strength: "ketahanan", challenge: "keluwesan", mission: "membangun dasar yang dapat diandalkan" },
-  9: { watak: "peka dan idealis", strength: "kepedulian", challenge: "batas diri", mission: "menghadirkan kepedulian tanpa kehilangan pusat diri" },
-  10: { watak: "mandiri dan praktis", strength: "inisiatif", challenge: "menerima bantuan", mission: "membuka jalan melalui tindakan yang terukur" },
-  11: { watak: "dinamis dan komunikatif", strength: "adaptasi", challenge: "konsistensi", mission: "menyatukan ide dengan penyelesaian nyata" },
-  12: { watak: "berimbang dan sosial", strength: "kerja sama", challenge: "ketegasan", mission: "menciptakan harmoni yang tetap memiliki arah" },
-  13: { watak: "kuat dan penuh daya juang", strength: "keberanian", challenge: "pengendalian diri", mission: "menggunakan kekuatan untuk melindungi dan membangun" },
-  14: { watak: "luas pandangan dan bertanggung jawab", strength: "kepemimpinan", challenge: "beban berlebih", mission: "memimpin dengan kebijaksanaan dan pembagian tanggung jawab" },
-  15: { watak: "magnetis dan berorientasi hasil", strength: "pengaruh", challenge: "keseimbangan ambisi", mission: "mengubah pengaruh menjadi manfaat bersama" },
-  16: { watak: "mendalam dan berprinsip", strength: "integritas", challenge: "kekakuan", mission: "menjaga nilai sambil tetap terbuka pada pembaruan" },
-  17: { watak: "visioner dan tahan uji", strength: "ketekunan", challenge: "melepas kendali", mission: "mewujudkan visi besar melalui langkah yang sabar" },
-  18: { watak: "intens dan berdaya besar", strength: "transformasi", challenge: "mengelola tekanan", mission: "menyalurkan daya besar menjadi perubahan yang matang" },
+  7: { watak: "ringkas dan cepat menangkap inti", strength: "fokus pada prioritas dengan cara yang mengarahkan energi pada satu titik pencapaian", challenge: "melatih kesabaran menunggu hasil tumbuh secara alami sebelum mengambil langkah lanjutan", mission: "mengubah ketajaman menjadi keputusan yang bermanfaat" },
+  8: { watak: "tenang namun teguh", strength: "ketahanan yang mantap dalam menghadapi tekanan dan hambatan hidup sehari-hari", challenge: "melatih keluwesan sikap agar tidak kaku saat perubahan terjadi secara mendadak", mission: "membangun dasar yang dapat diandalkan" },
+  9: { watak: "peka dan idealis", strength: "kepedulian yang tulus terhadap kebutuhan orang lain dan lingkungan sekitar", challenge: "menjaga batas diri agar kepedulian tidak menguras energi pribadi secara berlebihan", mission: "menghadirkan kepedulian tanpa kehilangan pusat diri" },
+  10: { watak: "mandiri dan praktis", strength: "inisiatif yang berani untuk memulai langkah pertama menuju perubahan nyata", challenge: "menerima bantuan dari orang lain tanpa merasa kehilangan kendali atas diri sendiri", mission: "membuka jalan melalui tindakan yang terukur" },
+  11: { watak: "dinamis dan komunikatif", strength: "adaptasi yang cepat terhadap situasi baru dengan tetap menjaga keseimbangan diri", challenge: "menjaga konsistensi ketika menghadapi banyak pilihan dan perubahan arah yang cepat", mission: "menyatukan ide dengan penyelesaian nyata" },
+  12: { watak: "berimbang dan sosial", strength: "kerja sama yang erat dengan orang lain untuk menciptakan hasil yang lebih baik bersama", challenge: "ketegasan dalam mengambil keputusan saat situasi membutuhkan batas dan arah yang jelas", mission: "menciptakan harmoni yang tetap memiliki arah" },
+  13: { watak: "kuat dan penuh daya juang", strength: "keberanian yang kokoh untuk melindungi nilai-nilai dan menghadapi tantangan berat", challenge: "pengendalian diri agar ketegasan tidak berubah menjadi dorongan yang melampaui batas", mission: "menggunakan kekuatan untuk melindungi dan membangun" },
+  14: { watak: "luas pandangan dan bertanggung jawab", strength: "kepemimpinan yang bijaksana dalam membimbing orang lain menuju tujuan bersama", challenge: "beban berlebih akibat terlalu banyak memikul tanggung jawab yang seharusnya bisa dibagi", mission: "memimpin dengan kebijaksanaan dan pembagian tanggung jawab" },
+  15: { watak: "magnetis dan berorientasi hasil", strength: "pengaruh positif yang mampu menggerakkan orang lain untuk bertindak dan berkembang", challenge: "keseimbangan ambisi agar dorongan mencapai hasil tidak mengabaikan proses dan relasi", mission: "mengubah pengaruh menjadi manfaat bersama" },
+  16: { watak: "mendalam dan berprinsip", strength: "integritas yang teguh dalam memegang nilai-nilai dan bertindak sesuai keyakinan diri", challenge: "kekakuan dalam mempertahankan prinsip saat keadaan menuntut kelenturan dan penyesuaian", mission: "menjaga nilai sambil tetap terbuka pada pembaruan" },
+  17: { watak: "visioner dan tahan uji", strength: "ketekunan yang tak kenal lelah dalam mewujudkan visi besar meskipun menghadapi rintangan", challenge: "melepas kendali atas hasil dan mempercayakan proses kepada waktu dan keadaan sekitar", mission: "mewujudkan visi besar melalui langkah yang sabar" },
+  18: { watak: "intens dan berdaya besar", strength: "transformasi diri yang mendalam melalui pengalaman dan keberanian menghadapi perubahan", challenge: "mengelola tekanan agar energi besar tidak berubah menjadi kelelahan atau kekacauan batin", mission: "menyalurkan daya besar menjadi perubahan yang matang" },
 };
 
 export const WUKU_DATA = [

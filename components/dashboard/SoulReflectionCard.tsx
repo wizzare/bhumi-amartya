@@ -23,9 +23,6 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
         <h3 className="text-[#4F6658] font-serif text-2xl font-bold italic">
           {language === "id" ? "Refleksi Jiwa" : "Soul Reflection"}
         </h3>
-        <p className="text-[#7B8776] text-[10px] mt-1 font-bold uppercase tracking-[0.2em]">
-          {language === "id" ? "Mirror" : "Mirror"}
-        </p>
       </div>
 
       <div
@@ -55,7 +52,7 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
                   : "Reading your soul today"}
               </p>
               <h2 className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
-                &ldquo;{cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}&rdquo;
+                {cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}
               </h2>
 
               {cleanedReflection && cleanedReflection.length > 150 && (

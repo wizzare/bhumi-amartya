@@ -2,10 +2,10 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminAuth } from "../../../lib/firebaseAdmin";
 import { acknowledgeSubscription, fetchSubscription, validateProduct } from "../../../lib/googlePlay";
 import { decision, persistEntitlement } from "../../../lib/entitlement";
-import { BASE_PLAN_ID, MAX_BODY_BYTES, PACKAGE_NAME, PRODUCT_ID, originAllowed } from "../../../lib/security";
+import { BASE_PLAN_ID, MAX_BODY_BYTES, PACKAGE_NAME, PRODUCT_ID, originAllowed, previewDryRunEnabled } from "../../../lib/security";
 import { sendJson } from "../../../lib/response";
 
-export const config = { runtime: "nodejs20.x", maxDuration: 30, api: { bodyParser: { sizeLimit: "16kb" } } };
+export const config = { runtime: "nodejs", maxDuration: 30, api: { bodyParser: { sizeLimit: "16kb" } } };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = typeof req.headers.origin === "string" ? req.headers.origin : undefined;
@@ -20,10 +20,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const authorization = typeof req.headers.authorization === "string" ? req.headers.authorization : "";
   if (!authorization.startsWith("Bearer ")) return sendJson(res, 401, { ok: false, error: "AUTH_MISSING" });
   let decoded: { uid: string };
-  try { decoded = await adminAuth().verifyIdToken(authorization.slice(7).trim(), true); } catch (error) { const message = error instanceof Error ? error.message : ""; return sendJson(res, 401, { ok: false, error: message.includes("revoked") ? "AUTH_REVOKED" : message.includes("expired") ? "AUTH_EXPIRED" : "AUTH_INVALID" }); }
+  try { decoded = await adminAuth().verifyIdToken(authorization.slice(7).trim(), true); } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const code = typeof error === "object" && error && "code" in error ? String((error as { code?: unknown }).code || "unknown") : "unknown";
+    const category = code.includes("id-token-revoked") || message.includes("revoked") ? "auth/id-token-revoked" : code.includes("id-token-expired") || message.includes("expired") ? "auth/id-token-expired" : code.includes("invalid-credential") ? "auth/invalid-credential" : code.includes("project-not-found") ? "auth/project-not-found" : code.includes("permission") ? "auth/insufficient-permission" : code.includes("argument-error") ? "auth/argument-error" : code.includes("invalid-id-token") ? "auth/invalid-id-token" : "unknown-verification-failure";
+    return sendJson(res, 401, { ok: false, error: category });
+  }
   const body = req.body as Record<string, unknown>;
   const purchaseToken = typeof body?.purchaseToken === "string" ? body.purchaseToken.trim() : "";
   if (!purchaseToken || body.productId !== PRODUCT_ID || Object.keys(body).some((key) => !["purchaseToken", "productId"].includes(key))) return sendJson(res, 400, { ok: false, error: !purchaseToken ? "BODY_INVALID" : "PRODUCT_MISMATCH" });
+  if (previewDryRunEnabled()) return sendJson(res, 200, { ok: true, active: false, status: "PREVIEW_DRY_RUN", membershipType: "FREE", accessUntil: null, refreshRequired: false, productId: PRODUCT_ID, basePlanId: BASE_PLAN_ID, packageName: PACKAGE_NAME, preview: true });
   try {
     const subscription = await fetchSubscription(purchaseToken);
     const item = subscription.lineItems?.[0];

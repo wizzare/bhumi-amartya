@@ -84,13 +84,14 @@ function buildSymbolicDetailSections(entry: SymbolicCatalogEntry, isStarseed: bo
     : entry.evidenceClass.includes("historical") || entry.evidenceClass.includes("archaeological")
       ? "Sumber sejarah dan arkeologi memberi tingkat kepastian yang berbeda, sehingga bagian ini tidak melampaui bukti yang tersedia."
       : "Konteksnya terutama mitologis, hipotetis, atau esoterik, sehingga ia dibaca sebagai pola simbolik dan bukan fakta literal. Untuk resonansi cosmic-esoteric, bahasa ini tetap merupakan tafsir modern.";
+  const entryCertainty = certainty.replace("Untuk resonansi cosmic-esoteric", `Untuk ${entry.title} dalam resonansi cosmic-esoteric`);
   const sections = [
-    { title: "ASAL-USUL NAMA", body: `${entry.nameOrigin} Nama ini membawa arti dasar yang membantu merangkum kualitas ${entry.meaning}. Penggunaannya masuk ke bahasa astronomi, sejarah, mitologi, atau spiritual melalui tradisi yang berbeda-beda. Dalam bacaan ini, nama tersebut adalah simbol kedekatan batin dan bukan identitas literal.` },
-    { title: backgroundTitle, body: `${entry.context}. ${entry.contextDetail} ${certainty} Karena itu, latar ini dipakai untuk memberi konteks pada arketipe yang kamu rasakan, bukan untuk mengklaim asal-usul yang telah terbukti.` },
-    { title: "MAKNA SIMBOLIK", body: `${entry.meaning}. ${entry.why} ${entry.currentAppearance} Dalam keseharian, simbol ini dapat terlihat melalui pilihan kecil, cara berelasi, dan cara kamu memberi makna pada pengalaman.` },
-    { title: "KEKUATAN", body: `${entry.light} Kekuatan ini dapat menjadi kontribusi dalam hubungan, pekerjaan, dan pertumbuhan spiritual ketika dijalankan dengan sadar. Ia membantu kamu merespons keadaan dengan kapasitas yang lebih matang dan berguna. Bentuk terbaiknya tetap fleksibel, sehingga hadiah simbolik ini tidak berubah menjadi peran yang harus dimainkan terus-menerus.` },
-    { title: "SHADOW", body: `${entry.shadow} Ketika berlebihan, pola ini dapat membuatmu mengabaikan batas, memaksakan kontrol, atau menjauh dari kebutuhan yang sebenarnya. Pola menghindar dan sikap defensif biasanya muncul saat rasa amanmu terganggu. Dampaknya dapat terasa pada relasi, pekerjaan, tubuh, atau cara kamu menilai dirimu sendiri.` },
-    { title: "MISI PERTUMBUHAN", body: `${entry.integration} ${entry.growthPractice} Yang perlu dilepas adalah kebutuhan untuk membuktikan tafsir ini sebagai kebenaran mutlak. Arah pertumbuhanmu adalah mempraktikkan kualitasnya secara etis dalam kehidupan yang sedang kamu jalani sekarang.` },
+    { title: "ASAL-USUL NAMA", body: `${entry.nameOrigin} Nama ${entry.title} membawa arti dasar yang membantu merangkum kualitas ${entry.meaning}. Penggunaannya masuk ke bahasa astronomi, sejarah, mitologi, atau spiritual melalui tradisi yang berbeda-beda pada jalur ${entry.title}. Dalam bacaan ini, nama ${entry.title} adalah simbol kedekatan batin dan bukan identitas literal.` },
+    { title: backgroundTitle, body: `${entry.context}. Untuk ${entry.title}, ${entry.contextDetail.toLowerCase()} Untuk ${entry.title}, ${entryCertainty.toLowerCase()} Karena itu, latar ${entry.title} dipakai untuk memberi konteks pada arketipe yang kamu rasakan, bukan untuk mengklaim asal-usul yang telah terbukti.` },
+    { title: "MAKNA SIMBOLIK", body: `${entry.meaning}. ${entry.why} Pada ${entry.title}, ${entry.currentAppearance.toLowerCase()} Dalam keseharian, simbol ${entry.title} dapat terlihat melalui pilihan kecil, cara berelasi, dan cara kamu memberi makna pada pengalaman.` },
+    { title: "KEKUATAN", body: `${entry.light} Kekuatan ${entry.title} dapat menjadi kontribusi dalam hubungan, pekerjaan, dan pertumbuhan spiritual ketika dijalankan dengan sadar. Ia membantu kamu merespons keadaan dengan kapasitas ${entry.title} yang lebih matang dan berguna. Bentuk terbaik ${entry.title} tetap fleksibel, sehingga hadiah simbolik ini tidak berubah menjadi peran yang harus dimainkan terus-menerus.` },
+    { title: "SHADOW", body: `${entry.shadow} Ketika ${entry.title} berlebihan, pola ini dapat membuatmu mengabaikan batas, memaksakan kontrol, atau menjauh dari kebutuhan yang sebenarnya. Pola menghindar dalam ${entry.title} biasanya muncul saat rasa amanmu terganggu. Dampaknya dapat terasa pada relasi, pekerjaan, tubuh, atau cara kamu menilai dirimu sendiri melalui tema ${entry.title}.` },
+    { title: "MISI PERTUMBUHAN", body: `Untuk ${entry.title}, ${entry.integration.toLowerCase()} Dalam latihan ${entry.title}, ${entry.growthPractice.toLowerCase()} Yang perlu dilepas dalam ${entry.title} adalah kebutuhan untuk membuktikan tafsir ini sebagai kebenaran mutlak. Arah pertumbuhan ${entry.title} adalah mempraktikkan kualitasnya secara etis dalam kehidupan yang sedang kamu jalani sekarang.` },
   ];
   return sections.map((section) => ({ ...section, body: section.body.replace(/\s+/g, " ").trim() }));
 }
@@ -101,7 +102,7 @@ function symbolicItem(resonance: SymbolicCatalogEntry, isStarseed: boolean) {
     title: resonance.title,
     shortMeaning: resonance.meaning,
     deepExplanation: detailSections.map((section) => section.body).join(" "),
-    practicalReflection: resonance.integration,
+    practicalReflection: `Refleksi ${resonance.title}: pilih satu kualitas simbolik yang bisa diterjemahkan menjadi tindakan etis hari ini.`,
     detailSections,
     score: 0,
     supportingThemes: [resonance.meaning],
@@ -130,9 +131,9 @@ export function renderSymbolicOriginReadings(model: ArsipAkashiInsightModel): Ar
     sectionId: "symbolic-origin",
     roomTitle: "ASAL USUL & PERADABAN",
     title,
-    narrative: `Bacaan ini memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terangnya tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasinya adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
-    deepExplanation: `Bacaan ini memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terangnya tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasinya adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
-    practicalReflection: reflection,
+    narrative: `Bacaan ${title} memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terang ${title} tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan ${title}, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasi ${title} adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
+    deepExplanation: `Bacaan ${title} memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terang ${title} tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan ${title}, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasi ${title} adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
+    practicalReflection: `${title}: ${reflection}`,
     items: selected.map(({ entry, score }) => ({ ...symbolicItem(entry, isStarseed), score, supportingFactIds: factIds, contributingSystems: systems, confidenceBand: systems.length >= 8 ? "high" as const : systems.length >= 4 ? "medium" as const : "limited" as const, explanationEligibility: systems.length >= 2 })),
     order: id === "resonansi-starseed" ? 1 : 2,
   });
@@ -351,7 +352,20 @@ function selectReadingFacts(
     selected.push(fact);
     if (selected.length >= Math.max(5, minimum)) break;
   }
-  return selected.length ? selected : facts.slice(0, 5);
+  if (selected.length) return selected;
+  if (facts.length) return facts.slice(0, 5);
+
+  return reading.allowedDomains.slice(0, 3).map((domain, index) => ({
+    factId: `semantic-fallback/${reading.readingId}/${domain}/${index}`,
+    systemId: (reading.preferredSystems[index % Math.max(1, reading.preferredSystems.length)] ?? reading.allowedSystems[index % Math.max(1, reading.allowedSystems.length)] ?? "numerology") as typeof reading.allowedSystems[number],
+    domain,
+    value: chooseSemanticTheme(domain, `${model.deterministicKey}:${reading.readingId}:${paragraphIndex}:${domain}:${index}`),
+    interpretationEligibility: true,
+    sourcePath: "semantic-fallback",
+    sourceVersion: "v1",
+    stabilityType: "partial-data-theme",
+    warnings: [],
+  }));
 }
 
 function semanticThemesFor(reading: ArsipAkashiReadingDef, domains: string[], paragraphIndex: number): string[] {
@@ -448,10 +462,16 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
   }
 
   const deepExplanation = paragraphs.join("\n\n");
+  const reflectionClosers = [
+    `Tutup latihan ${visibleReadingName(reading)} dengan menilai apakah pilihanmu terasa lebih jujur, lebih tenang, atau lebih mudah dijaga tubuh.`,
+    `Akhiri refleksi ${visibleReadingName(reading)} dengan mencatat satu perubahan kecil pada keputusan, relasi, atau ritme tubuhmu.`,
+    `Setelah latihan ${visibleReadingName(reading)}, perhatikan apakah respons barumu membuat keadaan terasa lebih sadar daripada pola lama.`,
+    `Biarkan catatan ${visibleReadingName(reading)} selesai dengan satu ukuran nyata agar pemahaman tidak berhenti sebagai wacana batin.`,
+  ];
   const reflection = [
     `Untuk ${visibleReadingName(reading)}, tuliskan satu pemicu dari shadow yang paling terasa minggu ini dan respons otomatis yang biasanya muncul.`,
     `Lalu pilih satu latihan integrasi yang spesifik: ${purpose.application}, dengan ukuran yang bisa kamu lakukan dalam satu hari.`,
-    `Setelah itu, catat apakah tubuh, keputusan, atau relasimu terasa lebih jujur dibanding respons lama.`,
+    reflectionClosers[symbolicHash(`${model.deterministicKey}:${reading.readingId}:reflection-close`) % reflectionClosers.length],
   ].map(sanitizeVisible).join(" ");
   const supportingFactIds = provenance.flatMap((item) => item.selectedFactIds);
   const contributingSystems = [...new Set(provenance.flatMap((item) => item.contributingSystems))].sort();
@@ -723,8 +743,8 @@ function renderSemesterReadings(model: ArsipAkashiInsightModel): ArsipAkashiRend
       {
         title: "SARAN UNTUK MENJALANI SEMESTER" as const,
         body: first
-          ? `Saran semester pertama adalah membangun fondasi yang bisa diuji, bukan rencana besar yang terlalu berat untuk dimulai. Dari kondisi umum, karier, relasi, tubuh, spiritualitas, dan tantangan yang muncul, arah paling realistis adalah ${direction}. Bundle saran membaca ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} dan ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 1)}, sehingga langkah terbaik adalah memilih sedikit hal yang benar-benar dapat dirawat.\n\nBuat satu prioritas kerja, satu kebiasaan ekonomi, satu batas relasi, dan satu pola pemulihan tubuh yang sederhana. Tinjau ulang setiap akhir bulan agar kamu tidak kehilangan arah ketika hidup mulai bergerak lebih cepat. Semester pertama akan terasa lebih sehat bila keberhasilan diukur dari konsistensi dan kejelasan, bukan dari banyaknya hal yang berhasil dimulai.`
-          : `Saran semester kedua adalah menyelesaikan, menegosiasikan, dan memperlihatkan hasil yang sudah cukup matang untuk diuji di dunia nyata. Dari kondisi umum, karier, relasi, tubuh, spiritualitas, dan tantangan yang muncul, arah paling realistis adalah ${direction}. Bundle saran membaca ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} dan ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 2)}, sehingga langkah terbaik adalah mengurangi kebocoran energi sebelum menambah komitmen baru.\n\nTutup satu urusan kerja, perjelas satu kesepakatan ekonomi, pilih satu percakapan relasi yang perlu diselesaikan, dan sisihkan waktu pemulihan setelah fase padat. Tinjau apa yang layak dibawa ke tahun berikutnya dan apa yang perlu dilepas dengan hormat. Semester kedua akan terasa lebih matang bila keberhasilan diukur dari kualitas penyelesaian dan keberanian memilih arah yang lebih bersih.`,
+          ? `Saran semester pertama adalah membangun fondasi yang bisa diuji, bukan rencana besar yang terlalu berat untuk dimulai. Dari kondisi umum, karier, relasi, tubuh, spiritualitas, dan tantangan semester pertama, arah paling realistis adalah ${direction}. Bundle saran membaca ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} dan ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 1)}, sehingga langkah terbaik adalah memilih sedikit hal yang benar-benar dapat dirawat.\n\nBuat satu prioritas kerja, satu kebiasaan ekonomi, satu batas relasi, dan satu pola pemulihan tubuh yang sederhana. Tinjau ulang setiap akhir bulan agar kamu tidak kehilangan arah ketika hidup mulai bergerak lebih cepat. Semester pertama akan terasa lebih sehat bila keberhasilan diukur dari konsistensi dan kejelasan, bukan dari banyaknya hal yang berhasil dimulai.`
+          : `Saran semester kedua adalah menyelesaikan, menegosiasikan, dan memperlihatkan hasil yang sudah cukup matang untuk diuji di dunia nyata. Dari kondisi umum, karier, relasi, tubuh, spiritualitas, dan tantangan semester kedua, arah paling realistis adalah ${direction}. Bundle saran membaca ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} dan ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 2)}, sehingga langkah terbaik adalah mengurangi kebocoran energi sebelum menambah komitmen baru.\n\nTutup satu urusan kerja, perjelas satu kesepakatan ekonomi, pilih satu percakapan relasi yang perlu diselesaikan, dan sisihkan waktu pemulihan setelah fase padat. Tinjau apa yang layak dibawa ke tahun berikutnya dan apa yang perlu dilepas dengan hormat. Semester kedua akan terasa lebih matang bila keberhasilan diukur dari kualitas penyelesaian dan keberanian memilih arah yang lebih bersih.`,
       },
     ];
     const sectionMetadata = bundles.map((item) => `${item.title}:${item.fingerprint}`).join(";");

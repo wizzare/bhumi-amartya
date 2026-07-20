@@ -19,7 +19,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
-import { APP_TIME_REFRESH_MS, applyDynamicGreetingPrefix, getEnvironmentWindowKey, getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { APP_TIME_REFRESH_MS, getEnvironmentWindowKey } from "@/lib/dailyGuidance/timeOfDayGreeting";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import {
@@ -32,7 +32,6 @@ import { dailyGuidanceRepository } from "@/lib/repositories/dailyGuidanceReposit
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import type { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
-import { wellnessNavigatorRepository } from "@/lib/repositories/wellnessNavigatorRepository";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import { journalRepository } from "@/lib/repositories/journalRepository";
 import { meditationRepository } from "@/lib/repositories/meditationRepository";
@@ -54,6 +53,10 @@ import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFa
 import { astroAwarenessEngine } from "@/lib/engines/astroAwarenessEngine";
 import { loadWellnessDailyIntelligence } from "@/lib/services/wellnessDailyIntelligence";
 import { generateBlueprintHash, generateMemoryHash } from "@/lib/utils/hashing";
+import { buildMirrorDailyReflection } from "@/lib/dailyGuidance/mirrorDailyReflection";
+import { buildArsipAkashiInputFromProfile } from "@/lib/arsipAkashi/profile/inputBuilder";
+import { buildArsipAkashiProfileViewModel } from "@/lib/arsipAkashi/profile/viewModel";
+import { buildProfileDailyGuidance } from "@/lib/dailyGuidance/profileDailySynthesis";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -61,76 +64,53 @@ import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
+import { WeeklyGuidanceCard } from "@/components/dashboard/WeeklyGuidanceCard";
+import { buildWeeklyGuidance } from "@/lib/weeklyGuidance/weeklyGuidanceEngine";
+import type { WeeklyGuidance } from "@/lib/weeklyGuidance/types";
 import { DashboardReviewPrompt } from "@/components/rating/DashboardReviewPrompt";
 
-function compactTzolkinSignature(tzolkin: any): string | undefined {
-  const kin = tzolkin?.kin;
-  const kinNumber = typeof kin === "number" && kin > 0 ? kin : undefined;
-  const sealName = tzolkin?.solarSeal?.name || "";
-  const aliasMatch = /\(([^)]+)\)/.exec(String(tzolkin?.kinName || ""));
-  const compactSeal = aliasMatch?.[1] || sealName.split(" ").pop() || String(tzolkin?.kinName || "").split(/\s+/)[0] || "";
-  if (!compactSeal && !kinNumber) return undefined;
-  return [compactSeal, kinNumber].filter(Boolean).join(" ");
-}
+function withCanonicalDailyConclusion(
+  guidance: DailyGuidance,
+  uid: string,
+  profile: Record<string, unknown>,
+  blueprint: Record<string, unknown>,
+  localDateKey: string,
+  timezone: string,
+): DailyGuidance {
+  if (guidance.dailyConclusion?.text) return guidance;
 
-function formatBaziDayMaster(bazi: any): string | undefined {
-  const dayMaster = bazi?.dayMaster;
-  if (!dayMaster?.polarity || !dayMaster?.element) return undefined;
-  return `${dayMaster.polarity} ${dayMaster.element}`;
-}
+  const arsipInput = buildArsipAkashiInputFromProfile(
+    {
+      uid,
+      timezone,
+      birthDate: typeof profile.birthDate === "string" ? profile.birthDate : undefined,
+      birthTime: typeof profile.birthTime === "string" ? profile.birthTime : undefined,
+      referenceDate: `${localDateKey}T12:00:00.000Z`,
+    },
+    blueprint as any,
+  );
+  const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+  const catatanGuidance = buildProfileDailyGuidance({
+    uid,
+    profile,
+    blueprint,
+    arsipViewModel,
+    localDateKey,
+    timezone,
+    referenceDate: new Date(`${localDateKey}T12:00:00.000Z`),
+  });
 
-function wordCount(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
-function limitWords(text: string, maxWords: number): string {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length <= maxWords) return text.trim();
-  return `${words.slice(0, maxWords).join(" ").replace(/[,.!?;:]+$/, "")}.`;
-}
-
-function shortenReflectionBody(text: string): string {
-  const clean = text
-    .replace(/[*_`#>]/g, "")
-    .replace(/[“”"]/g, "")
-    .replace(/\bRenungkan perlahan\.?/gi, "")
-    .replace(/\bReflect slowly\.?/gi, "")
-    .replace(/Peluk hangat dari Bhumi\.?/gi, "")
-    .replace(/^\s*(Halo|Hai)\s+[^,\n]+,\s*/i, "")
-    .replace(/^\s*Selamat\s+(pagi|siang|sore|malam)\.?\s*/i, "")
-    .replace(/^\s*Good\s+(morning|afternoon|evening|night)\.?\s*/i, "")
-    .replace(/^Bagaimana\s+hari\s+[^?!.]+[?!.]\s*/i, "")
-    .replace(/Kelola energimu dengan bijak, luangkan waktu untuk melihat sekeliling dengan jernih\./gi, "Kamu sedang diajak mengelola energimu dengan bijak dan melihat sekeliling dengan lebih jernih.")
-    .replace(/Sekarang ada ruang untuk membawa kenyamanan dalam mengekspresikan pertumbuhan melalui tindakan nyata\./gi, "Kenyamananmu bisa hadir lewat tindakan nyata yang sederhana.")
-    .replace(/Coba\s+[^.?!]+[.?!]\s*/gi, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/(^|[.!?]\s+)([a-z])/g, (_match, prefix: string, letter: string) => `${prefix}${letter.toUpperCase()}`);
-  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map((sentence) => sentence.trim()).filter(Boolean) ?? [];
-  if (!sentences.length) return "";
-
-  let body = "";
-  for (const sentence of sentences) {
-    const next = `${body} ${sentence}`.trim();
-    if (wordCount(next) > 84 && body) break;
-    body = next;
-    if (wordCount(body) >= 58) break;
-  }
-
-  return limitWords(body || clean, 84);
-}
-
-function formatSoulReflectionForDashboard(
-  reflection: string,
-  userName: string,
-  language: "id" | "en",
-  date: Date,
-): string {
-  const body = shortenReflectionBody(reflection);
-  if (!body) return "";
-  // BUILD 70: DashboardHeader already handles greeting.
-  // Reflection starts directly with narrative.
-  return body;
+  return {
+    ...guidance,
+    dailySynthesisState: catatanGuidance.dailySynthesisState,
+    dailySynthesisSources: catatanGuidance.dailySynthesisSources,
+    dailyConclusion: catatanGuidance.dailyConclusion,
+    dailyNarrativeParagraphs: catatanGuidance.dailyNarrativeParagraphs,
+    dailyNoteText: catatanGuidance.dailyNoteText,
+    soulReflectionText: catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText,
+    categories: catatanGuidance.categories ?? guidance.categories,
+    dailyVariationSeed: catatanGuidance.dailyVariationSeed ?? guidance.dailyVariationSeed,
+  };
 }
 
 export function DashboardClient() {
@@ -141,24 +121,32 @@ export function DashboardClient() {
   const [blueprint, setBlueprint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
-  const [dailyState, setDailyState] = useState<DailyState | null>(null);
-  const [yesterdayState, setYesterdayState] = useState<DailyState | null>(null);
-  const [recentDailyStates, setRecentDailyStates] = useState<DailyState[]>([]);
+  const [, setDailyState] = useState<DailyState | null>(null);
+  const [, setYesterdayState] = useState<DailyState | null>(null);
+  const [, setRecentDailyStates] = useState<DailyState[]>([]);
   const [navigatorState, setNavigatorState] = useState<NavigatorState | null>(null);
-  const [dailyNoteFocus, setDailyNoteFocus] = useState<string>("");
+  const [, setDailyNoteFocus] = useState<string>("");
   const [safetyState, setSafetyState] = useState<SafetyState | null>(null);
   const [trustedContact, setTrustedContact] = useState<TrustedContact | undefined>(undefined);
   const [dgLoading, setDgLoading] = useState(false);
+  const [dgError, setDgError] = useState<string | null>(null);
+  const [weeklyGuidance, setWeeklyGuidance] = useState<WeeklyGuidance | null>(null);
     const [appNow, setAppNow] = useState(() => new Date());
 
   const language = (profile?.language || "id") as "id" | "en";
   const t = translations[language];
-  const visibleSoulReflection = formatSoulReflectionForDashboard(
-    applyDynamicGreetingPrefix(dailyGuidance?.soulReflectionText?.trim() || "", language, appNow),
-    profile?.fullName || "",
-    language,
-    appNow,
-  );
+  const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const appDateKey = getLocalDateKey(appNow, appTimezone);
+  const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
+  const mirrorDaily = buildMirrorDailyReflection({
+    guidance: dailyGuidance,
+    userName: profile?.fullName || profile?.displayName || profile?.name,
+    now: appNow,
+    timezone: appTimezone,
+    loading: dgLoading,
+    error: dgError,
+  });
+  const visibleSoulReflection = mirrorDaily.text;
   // TEST CHANGE
 
 
@@ -167,14 +155,34 @@ export function DashboardClient() {
     return () => window.clearInterval(interval);
   }, []);
 
-  const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const appDateKey = getLocalDateKey(appNow, appTimezone);
-  const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
+  useEffect(() => {
+    setDailyGuidance(null);
+  }, [auth?.user?.uid, appDateKey]);
+
+  useEffect(() => {
+    const uid = auth?.user?.uid;
+    if (!uid || !profile || !blueprint || loading) return;
+    try {
+      const arsipInput = buildArsipAkashiInputFromProfile({
+        uid,
+        timezone: appTimezone,
+        birthDate: typeof profile.birthDate === "string" ? profile.birthDate : undefined,
+        birthTime: typeof profile.birthTime === "string" ? profile.birthTime : undefined,
+        referenceDate: `${appDateKey}T12:00:00.000Z`,
+      }, blueprint as any);
+      const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+      setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel, referenceDate: appNow, timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null }));
+    } catch (error) {
+      console.warn("[WEEKLY_GUIDANCE_BUILD_FAILED]", error);
+      setWeeklyGuidance(null);
+    }
+  }, [auth?.user?.uid, profile, blueprint, loading, appDateKey, appTimezone, appNow]);
 
   useEffect(() => {
     const uid = auth?.user?.uid;
     if (!uid || !profile || !blueprint || loading) return;
     void fetchBackgroundData(uid, profile, blueprint);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appEnvironmentWindowKey]);
 
   useEffect(() => {
@@ -211,6 +219,7 @@ export function DashboardClient() {
     const invalidCacheKeys = ["dailyGuidance", `dailyGuidance:${today}`, "dailyGuidance:today", "globalDailyGuidance", "sharedReflection", "staticReflection"];
 
     setDgLoading(true);
+    setDgError(null);
     let journals: any[] = [];
     let meditations: any[] = [];
     let audios: any[] = [];
@@ -363,7 +372,7 @@ export function DashboardClient() {
           previousGuidance
         }) : "parse_error";
         if (parsed && !staleReason) {
-          const normalized = normalizeUserFacingGuidance(parsed, p);
+          const normalized = withCanonicalDailyConclusion(normalizeUserFacingGuidance(parsed, p), uid, p, b, today, timezone);
           console.log(`[DAILY GUIDANCE CACHE HIT] Local storage hit for ${uid} on ${today}`);
           setDailyGuidance(normalized);
           window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
@@ -385,7 +394,7 @@ export function DashboardClient() {
       });
 
       if (existing && !existingStaleReason) {
-        const normalized = normalizeUserFacingGuidance(existing, p);
+        const normalized = withCanonicalDailyConclusion(normalizeUserFacingGuidance(existing, p), uid, p, b, today, timezone);
         setDailyGuidance(normalized);
         window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
         await dailyGuidanceRepository.saveDailyGuidance(normalized).catch(() => {});
@@ -424,7 +433,7 @@ export function DashboardClient() {
 
       const result = await response.json() as { ok: true; guidance: DailyGuidance } | { ok: false; reason: string };
       if (!result.ok) throw new Error(result.reason);
-      const dg = normalizeUserFacingGuidance(result.guidance, p);
+      const dg = withCanonicalDailyConclusion(normalizeUserFacingGuidance(result.guidance, p), uid, p, b, today, timezone);
       const staleReason = getDailyGuidanceStaleReason(dg, {
         uid,
         localDateKey: today,
@@ -548,9 +557,10 @@ export function DashboardClient() {
           previousProgressSummary: "Local fallback",
         };
 
-        setDailyGuidance(normalizeUserFacingGuidance(localGuidance, p));
+        setDailyGuidance(withCanonicalDailyConclusion(normalizeUserFacingGuidance(localGuidance, p), uid, p, b, today, timezone));
       } catch (fallbackErr) {
         console.error("[DAILY_GUIDANCE_FALLBACK_ERROR]", fallbackErr);
+        setDgError(fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr));
       }
     } finally {
       setDgLoading(false);
@@ -736,6 +746,7 @@ export function DashboardClient() {
 
     void boot();
     return () => clearTimeout(watchdog);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth, router]);
 
 
@@ -769,7 +780,11 @@ export function DashboardClient() {
     <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
       <AppNav />
 
-      <DashboardReviewPrompt profile={profile} dashboardReady={!loading && Boolean(profile && blueprint)} blockedByModal={Boolean(safetyState?.isSafetyMode)} />
+      <DashboardReviewPrompt
+        profile={profile}
+        dashboardReady={Boolean(dailyGuidance) && !dgLoading && !dgError}
+        blockedByModal={Boolean(safetyState?.isSafetyMode)}
+      />
 
       {/* ...existing code... */}
 
@@ -810,36 +825,14 @@ export function DashboardClient() {
         arcanaCenter={blueprint.destinyMatrix?.center || 0}
         sunSign={blueprint.astrology?.sunSign || ""}
         humanDesign={blueprint.humanDesign}
-        weton={blueprint.weton?.weton}
-        baziDayMaster={formatBaziDayMaster(blueprint.bazi)}
-        vedicMoonSign={blueprint.vedic?.moonSign?.sign ? `${blueprint.vedic.moonSign.sign} Moon` : undefined}
-        tzolkinSignature={(() => {
-          const stored = compactTzolkinSignature(blueprint.tzolkin);
-          if (stored) return stored;
-          const birthDate = profile?.birthDate || profile?.profile?.blueprintInput?.birthDate || blueprint?.input?.birthDate;
-          if (birthDate) {
-            try {
-              return compactTzolkinSignature(calculateTzolkin({ birthDate }));
-            } catch (e) {
-              console.warn("Failed to calculate fallback Tzolkin signature:", e);
-            }
-          } else {
-            return language === "en" ? "Complete profile" : "Lengkapi profil";
-          }
-          return "-";
-        })()}
         labels={{
           title: t.dashboard.coreIdentity,
           lifePath: t.dashboard.lifePath,
           arcanaCenter: t.dashboard.arcanaCenter,
           sunSign: t.dashboard.sunSign,
-          humanDesign: t.dashboard.humanDesign,
+          humanDesign: language === "en" ? "Human Design Type" : "Human Design Type",
           humanDesignPending: t.dashboard.humanDesignPending,
           humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
-          weton: t.dashboard.weton,
-          baziDayMaster: t.dashboard.baziDayMaster,
-          vedicMoonSign: t.dashboard.vedicMoonSign,
-          tzolkinSignature: t.dashboard.tzolkinSignature,
         }}
       />
 
@@ -854,6 +847,8 @@ export function DashboardClient() {
       />
 
       <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
+
+      <WeeklyGuidanceCard guidance={weeklyGuidance} />
 
       <DailyUserFlowGuide language={language} />
 

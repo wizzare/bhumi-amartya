@@ -28,6 +28,15 @@ export type DailyManifestation = {
   assumption: string;
 };
 
+export type DailyConclusion = {
+  title: "Kesimpulan Hari Ini";
+  text: string;
+  localDateKey: string;
+  timezone: string;
+  owner: "daily-synthesis";
+  sourceVersion: string;
+};
+
 export type DailyGuidance = {
   uid: string;
   date: string;
@@ -52,6 +61,15 @@ export type DailyGuidance = {
   blueprintSummary?: string;
   soulReflectionText?: string;
   dailyNoteText?: string;
+  dailyNarrativeParagraphs?: string[];
+  dailyConclusion?: DailyConclusion;
+  dailySynthesisState?: "ready" | "limited" | "unavailable" | "error";
+  dailySynthesisSources?: {
+    arsipAkashi: boolean;
+    dailyAstrology: boolean;
+    environment: boolean;
+    journey: boolean;
+  };
   dominantIssue?: {
     key: string;
     label: string;

@@ -1,3 +1,5 @@
+import { sanitizeUserNarrative } from "@/lib/narrative/presentationSafety";
+
 /**
  * BHUMI AMARTYA — Narrative Humanizer (BUILD 70)
  *
@@ -321,5 +323,5 @@ export function sanitizeNarrative(value: string | null | undefined): string {
     .replace(/([.!?])\1+/g, "$1")
     .trim();
 
-  return text;
+  return sanitizeUserNarrative(text).text;
 }

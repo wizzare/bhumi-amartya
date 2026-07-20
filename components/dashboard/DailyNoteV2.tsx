@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Compass, Brain, Wallet, Heart, Users, Sparkles, ShieldAlert, Sprout } from "lucide-react";
+import { Compass, Brain, Wallet, Heart, Users, Sparkles, ShieldAlert, Sprout, type LucideIcon } from "lucide-react";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { DailyState } from "@/lib/repositories/dailyStateRepository";
 import type { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
@@ -22,9 +22,11 @@ interface DailyNoteV2Props {
   recentDailyStates: DailyState[];
   navigatorState: NavigatorState | null;
   appNow?: Date;
+  dailyNoteState?: "loading" | "ready" | "limited" | "unavailable" | "error";
+  dailyNoteError?: string | null;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: string }>> = {
+const ICON_MAP: Record<string, LucideIcon> = {
   Compass,
   Brain,
   Wallet,
@@ -37,6 +39,8 @@ const ICON_MAP: Record<string, React.ComponentType<{ size?: number; className?: 
 
 export function DailyNoteV2({
   dailyGuidance,
+  dailyNoteState,
+  dailyNoteError,
   language,
   userName,
   appNow = new Date(),
@@ -47,12 +51,47 @@ export function DailyNoteV2({
     if (dailyGuidance) trackEvent("open_daily_note", auth?.user?.uid);
   }, [dailyGuidance, auth?.user?.uid]);
 
-  if (!dailyGuidance?.categories) {
+  const state = dailyNoteState ?? (dailyGuidance?.categories ? "ready" : "loading");
+
+  if (state === "loading") {
     return (
       <section className="mt-8 space-y-4">
         <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm italic text-[#7B8776]">
           {language === "id" ? "Catatanmu sedang dirapikan sebentar..." : "Your letter is being written..."}
+        </div>
+      </section>
+    );
+  }
+
+  if (state === "unavailable") {
+    return (
+      <section className="mt-8 space-y-4">
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
+          Catatan Hari Ini belum bisa disusun karena data minimum profil dan Arsip Akashi belum tersedia.
+        </div>
+      </section>
+    );
+  }
+
+  if (state === "error") {
+    return (
+      <section className="mt-8 space-y-4">
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
+          Catatan Hari Ini belum berhasil dibuka. {dailyNoteError ? `Detail: ${dailyNoteError}` : "Silakan muat ulang halaman ini sebentar lagi."}
+        </div>
+      </section>
+    );
+  }
+
+  if (!dailyGuidance?.categories) {
+    return (
+      <section className="mt-8 space-y-4">
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
+          Catatan Hari Ini belum memiliki struktur bacaan yang lengkap untuk ditampilkan.
         </div>
       </section>
     );
@@ -98,15 +137,7 @@ export function DailyNoteV2({
     let main = humanize(section.main);
     let advice = section.advice ? humanize(section.advice) : undefined;
 
-    // Issue 2: Ekonomi & Rezeki limiter (Max 2 sentences)
-    if (section.key === "finance") {
-      const sentences = main.split(/(?<=[.!?])\s+/).filter(Boolean);
-      if (sentences.length > 2) {
-        main = sentences.slice(0, 2).join(" ");
-      }
-    }
-
-    // Issue 3: Advice Duplication Prevention
+    // Advice Duplication Prevention
     // If advice repeats the insight or concept too closely, suppress it in presentation.
     if (advice && main.toLowerCase().includes(advice.toLowerCase().substring(0, Math.min(20, advice.length)))) {
       advice = undefined;
@@ -121,6 +152,7 @@ export function DailyNoteV2({
 
   const greeting = getTimeOfDayGreeting(appNow, language);
   const cleanName = userName?.trim() || (language === "id" ? "Sahabat" : "Friend");
+  const conclusion = dailyGuidance?.dailyConclusion?.text;
 
   return (
     <section className="mt-10 space-y-6">
@@ -135,6 +167,12 @@ export function DailyNoteV2({
         })}</p>
         <p className="text-xs text-[#9AA394] mt-2 opacity-80 italic">Sebuah catatan kecil dari Bhumi untuk kamu.</p>
       </div>
+
+      {state === "limited" && (
+        <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-4 text-xs leading-5 text-[#7B8776]">
+          Beberapa sumber pendukung belum tersedia, jadi catatan ini disusun dari data yang sudah valid tanpa mengarang konteks tambahan.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5">
         {sections.map((section) => {
@@ -168,11 +206,14 @@ export function DailyNoteV2({
       </div>
 
       {/* Dedicated Personal Closing */}
-      {dailyGuidance.dailyNoteText && (
+      {(conclusion || dailyGuidance.dailyNoteText) && (
         <div className="mt-8 px-1">
           <div className="p-6 rounded-[2rem] bg-[#FCFAF5] border border-[#F1EEE7] shadow-sm relative overflow-hidden">
+            {conclusion && (
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Kesimpulan Hari Ini</p>
+            )}
             <p className="text-sm leading-7 text-[#526053] italic">
-              &ldquo;{humanize(dailyGuidance.dailyNoteText)}&rdquo;
+              &ldquo;{humanize(conclusion || dailyGuidance.dailyNoteText || "")}&rdquo;
             </p>
             <p className="mt-4 text-xs font-bold text-[#4F6658] text-center">- Bhumi -</p>
           </div>

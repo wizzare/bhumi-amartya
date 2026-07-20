@@ -1,14 +1,14 @@
 {
   "name": "bhumi-billing-verifier",
   "private": true,
-  "engines": { "node": ">=20" },
+  "engines": { "node": "20.x" },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",
     "lint": "eslint api lib"
   },
   "dependencies": {
-    "firebase-admin": "^14.0.0",
+    "firebase-admin": "^13.10.0",
     "google-auth-library": "^10.7.0"
   },
   "devDependencies": {

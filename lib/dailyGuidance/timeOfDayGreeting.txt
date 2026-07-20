@@ -1,0 +1,89 @@
+/**
+ * BHUMI V4 TIME-OF-DAY GREETING ENGINE
+ * Strict deterministic Indonesian greetings based on local time.
+ */
+
+export type GreetingLanguage = "id" | "en";
+
+export const APP_TIME_REFRESH_MS = 60000;
+
+/**
+ * Returns a time-of-day greeting based on the provided date and language.
+ */
+export function getTimeOfDayGreeting(date: Date = new Date(), language: GreetingLanguage = "id"): string {
+  const hour = date.getHours();
+
+  if (language === "en") {
+    if (hour >= 0 && hour < 5) return "Good early morning";
+    if (hour >= 5 && hour < 11) return "Good morning";
+    if (hour >= 11 && hour < 15) return "Good afternoon";
+    if (hour >= 15 && hour < 18) return "Good evening";
+    return "Good night";
+  }
+
+  // Indonesian Rules (Canonical V4)
+  if (hour >= 0 && hour < 5) return "Selamat dini hari";
+  if (hour >= 5 && hour < 11) return "Selamat pagi";
+  if (hour >= 11 && hour < 15) return "Selamat siang";
+  if (hour >= 15 && hour < 18) return "Selamat sore";
+  return "Selamat malam";
+}
+
+/**
+ * Semantic alias for getTimeOfDayGreeting.
+ */
+export function getTimeAwareGreeting(date: Date = new Date(), language: GreetingLanguage = "id"): string {
+  return getTimeOfDayGreeting(date, language);
+}
+
+/**
+ * Returns a time-aware closing signature.
+ */
+export function getTimeAwareClosing(date: Date = new Date(), language: GreetingLanguage = "id"): string {
+  if (language === "en") return "Warm hugs from Bhumi.";
+  return "Peluk hangat dari Bhumi.";
+}
+
+/**
+ * Applies a dynamic greeting prefix to a given text based on the time of day.
+ * Reuses getTimeOfDayGreeting to maintain a single canonical source of truth.
+ *
+ * Used by DailyNoteV2 to humanize section content.
+ */
+export function applyDynamicGreetingPrefix(
+  text: string | null | undefined,
+  language: GreetingLanguage = "id",
+  date: Date = new Date()
+): string {
+  if (!text) return "";
+  const greeting = getTimeOfDayGreeting(date, language);
+
+  // Rule: If text already starts with a greeting, return as is to avoid duplication.
+  if (text.toLowerCase().startsWith(greeting.toLowerCase())) {
+    return text;
+  }
+
+  // Prepend greeting and lowercase the first letter of the original text.
+  return `${greeting}, ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+}
+
+/**
+ * Legacy compatibility helper.
+ */
+export function getTimeWindow(date: Date = new Date()): string {
+  const hour = date.getHours();
+  if (hour >= 0 && hour < 5) return "afterMidnight";
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 15) return "afternoon";
+  if (hour >= 15 && hour < 18) return "evening";
+  return "night";
+}
+
+/**
+ * Legacy compatibility helper.
+ */
+export function getEnvironmentWindowKey(date: Date = new Date(), localDateKey?: string): string {
+  const dateStr = localDateKey || date.toISOString().slice(0, 10);
+  const window = getTimeWindow(date);
+  return `${dateStr}-${window}`;
+}

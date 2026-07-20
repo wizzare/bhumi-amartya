@@ -117,7 +117,24 @@ const entry = (value: number): ArcanaDictionaryEntry => {
 
 const lower = (value: string) => value.charAt(0).toLowerCase() + value.slice(1);
 const clean = (value: string) => value.replace(/\s*\([^)]*\)/g, "").replace(/Burnout/gi, "kelelahan").trim();
-const phrase = (value: string) => lower(clean(value));
+/**
+ * Dictionary values are stored as title-cased fragments (for example,
+ * "Kemampuan Beradaptasi, Optimisme"). They are embedded inside complete
+ * sentences in the blueprint, so only the first word may retain sentence
+ * casing; words that follow must not introduce an unexpected capital.
+ */
+const phrase = (value: string) => {
+  const words = clean(value).split(/(\s+)/);
+  let wordIndex = 0;
+  return words
+    .map((token) => {
+      if (/^\s+$/.test(token) || token === "") return token;
+      const normalized = wordIndex === 0 ? lower(token) : token.toLocaleLowerCase("id-ID");
+      wordIndex += 1;
+      return normalized;
+    })
+    .join("");
+};
 
 function valuesFor(matrix: CanonicalDestinyMatrix, line: DestinyMatrixTopologyLine): number[] {
   const nodeMap = new Map(matrix.graph.nodes.map((node) => [node.id, node.value]));

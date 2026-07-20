@@ -1,3 +1,5 @@
+import { sanitizeUserNarrative } from "@/lib/narrative/presentationSafety";
+
 const FORBIDDEN_SYSTEM_NAMES = [
   "human design", "bazi", "zi wei", "whole sign", "natal chart",
   "destiny matrix", "tzolkin", "astrocartography", "weton",
@@ -50,5 +52,10 @@ export function sanitizeSoulLetterParagraph(text: string): SanitizerResult {
       "$1$2, ",
     )
     .replace(/\s+([,.!?;:])/g, "$1");
+
+  const global = sanitizeUserNarrative(cleaned);
+  cleaned = global.text;
+  issues.push(...global.issues);
+
   return { cleaned, issues };
 }

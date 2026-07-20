@@ -806,7 +806,7 @@ function applyDynamicInfluence(guidance: any, context: any): any {
 
   return {
     ...guidance,
-    soulReflectionText: influence.mirror || text(guidance.soulReflectionText),
+    soulReflectionText: text(guidance.soulReflectionText) || influence.mirror,
     dailyNoteText: appendSentence(guidance.dailyNoteText, influence.compass, 900),
     companionReflection: guidance.companionReflection
       ? {

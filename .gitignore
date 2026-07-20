@@ -74,3 +74,8 @@ android/gradlew.bat
 android/astro-current-screen.png
 .vercel
 .env*
+
+# Build 79 Security Hardening
+secure/
+*adminsdk*.json
+*service-account*.json
