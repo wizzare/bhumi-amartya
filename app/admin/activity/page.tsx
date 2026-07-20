@@ -588,6 +588,8 @@ export default function AdminActivityPage() {
     return { start: dateKey(start), end: dateKey(end) };
   }, [customEnd, customStart, range, today]);
 
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<string>("");
+
   const loadDashboard = async () => {
     setLoading(true);
     setError(null);
@@ -620,9 +622,9 @@ export default function AdminActivityPage() {
       if (activityResult.status === "rejected" || analyticsResult.status === "rejected") {
         console.warn("Founder Dashboard partial Firestore load", {
           userActivity: activityResult.status === "rejected" ? activityResult.reason : "ok",
-          analytics: analyticsResult.status === "rejected" ? analyticsResult.reason : "ok",
         });
       }
+      setLastRefreshedAt(new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB");
     } catch (err) {
       console.error("Failed to load Founder Dashboard:", err);
       setUsers([]);
@@ -719,27 +721,41 @@ export default function AdminActivityPage() {
   }, [rangeDates.end, selectedUser]);
 
   const metrics = useMemo(() => {
+    const includedUidSet = new Set(users.map((u) => u.uid));
     const eventDatesByUid = new Map<string, Set<string>>();
+    const orphanUids = new Set<string>();
+
     analytics.forEach((event) => {
       const uid = uniqueUid(event);
       const date = event.date || (toDateMs(event.timestamp) ? dateKey(new Date(toDateMs(event.timestamp))) : "");
       if (!uid || !date) return;
+      if (!includedUidSet.has(uid)) {
+        orphanUids.add(uid);
+        return;
+      }
       const dates = eventDatesByUid.get(uid) ?? new Set<string>();
       dates.add(date);
       eventDatesByUid.set(uid, dates);
     });
+
     activities.forEach((activity) => {
       if (!activity.uid || !activity.date) return;
+      if (!includedUidSet.has(activity.uid)) {
+        orphanUids.add(activity.uid);
+        return;
+      }
       const dates = eventDatesByUid.get(activity.uid) ?? new Set<string>();
       dates.add(activity.date);
       eventDatesByUid.set(activity.uid, dates);
     });
+
     users.forEach((user) => {
       const dates = eventDatesByUid.get(user.uid) ?? new Set<string>();
       user.activeDays.forEach((d) => dates.add(d));
       if (dates.size) eventDatesByUid.set(user.uid, dates);
     });
 
+    const orphanActivityUidsCount = orphanUids.size;
     const selectedDay = rangeDates.end;
     const todayActive = new Set<string>();
     const yesterdayActive = new Set<string>();
@@ -790,11 +806,14 @@ export default function AdminActivityPage() {
     const retentionFor = (day: number) => {
       let eligible = 0;
       let retained = 0;
-      eventDatesByUid.forEach((dates) => {
-        const first = [...dates].sort()[0];
-        if (!first || addDays(first, day) > selectedDay) return;
+      users.forEach((user) => {
+        const regDate = user.registeredAt ? dateKey(new Date(user.registeredAt)) : "";
+        if (!regDate || addDays(regDate, day) > selectedDay) return;
         eligible += 1;
-        if (dates.has(addDays(first, day))) retained += 1;
+        const userDates = eventDatesByUid.get(user.uid);
+        if (userDates && userDates.has(addDays(regDate, day))) {
+          retained += 1;
+        }
       });
       return { eligible, retained, value: pct(retained, eligible) };
     };
@@ -1009,6 +1028,7 @@ export default function AdminActivityPage() {
       countryTable,
       topFeatures,
       dailyFeatureReach,
+      orphanActivityUidsCount,
     };
   }, [activities, analytics, rangeDates.end, users]);
 
@@ -1134,6 +1154,11 @@ export default function AdminActivityPage() {
               <button onClick={loadDashboard} className="inline-flex h-10 items-center gap-2 rounded-md border border-[#D9D6CC] bg-white px-3 text-sm font-semibold">
                 <RefreshCw size={16} className={loading ? "animate-spin" : ""} /> Refresh
               </button>
+              {lastRefreshedAt && (
+                <div className="flex h-10 items-center rounded-md border border-[#D9D6CC] bg-[#F4F2EB] px-3 text-xs font-semibold text-[#557264]">
+                  Last refreshed: {lastRefreshedAt}
+                </div>
+              )}
               <button onClick={exportXLSX} className="inline-flex h-10 items-center gap-2 rounded-md bg-[#2F3C34] px-3 text-sm font-semibold text-white">
                 <FileSpreadsheet size={16} /> XLSX
               </button>
@@ -1165,17 +1190,17 @@ export default function AdminActivityPage() {
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon={<Users size={18} />} label="Total User" value={metrics.totalUsers} sub="unique valid UIDs" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
-          <MetricCard icon={<UserPlus size={18} />} label="New User" value={metrics.newUsers} sub="Registered users" comparison={`Yesterday: ${metrics.newUsersYesterday}`} trend={metrics.newUserTrendText} tone="sage" />
-          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={metrics.dau} sub={formatDateKey(rangeDates.end)} comparison={`kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}`} trend={trendLabel(metrics.dauTrend)} sparkline={metrics.sparkline} tone="sage" />
-          <MetricCard icon={<Calendar size={18} />} label="WAU" value={metrics.wau} sub="rolling 7 days" comparison={`${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="7d active" tone="cream" />
-          <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="rolling 30 days" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" tone="cream" />
-          <MetricCard icon={<TrendingUp size={18} />} label="Retention D1" value={metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`} sub={`${metrics.d1.retained}/${metrics.d1.eligible} retained`} comparison="cohort day 1" trend={metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch"} tone="sage" />
-          <MetricCard icon={<TrendingDown size={18} />} label="Retention D7" value={metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`} sub={`${metrics.d7.retained}/${metrics.d7.eligible} retained`} comparison="cohort day 7" trend={metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch"} tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub={`${metrics.premiumAccessShare ?? 0}% of users`} comparison="all premium sources" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
-          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="verified billing proof" comparison="paid subscribers" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="explicit grant" comparison="community Inti" trend="Inti Tier" tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="explicit grant" comparison="community Alfa" trend="Alfa Tier" tone="gold" />
-          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub={`${metrics.googlePlayPaid}/${metrics.eligibleUsers} eligible users`} comparison="Google Play Paid / Eligible" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
+          <MetricCard icon={<UserPlus size={18} />} label="New User" value={metrics.newUsers} sub="registered users on selected date" comparison={`Yesterday: ${metrics.newUsersYesterday}`} trend={metrics.newUserTrendText} tone="sage" />
+          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={metrics.dau} sub="unique active users on selected date" comparison={`kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}`} trend={trendLabel(metrics.dauTrend)} sparkline={metrics.sparkline} tone="sage" />
+          <MetricCard icon={<Calendar size={18} />} label="WAU" value={metrics.wau} sub="rolling 7-day unique active users" comparison={`${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="7d active" tone="cream" />
+          <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="rolling 30-day unique active users" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" tone="cream" />
+          <MetricCard icon={<TrendingUp size={18} />} label="Aggregate Retention D1" value={metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`} sub={`${metrics.d1.retained}/${metrics.d1.eligible} retained (D+1)`} comparison="cohort day 1" trend={metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch"} tone="sage" />
+          <MetricCard icon={<TrendingDown size={18} />} label="Aggregate Retention D7" value={metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`} sub={`${metrics.d7.retained}/${metrics.d7.eligible} retained (D+7)`} comparison="cohort day 7" trend={metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch"} tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub="all verified access sources excluding Trial" comparison="all premium sources" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
+          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="server-verified active subscriptions" comparison="paid subscribers" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="explicit community grant" comparison="community Inti" trend="Inti Tier" tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="explicit community grant" comparison="community Alfa" trend="Alfa Tier" tone="gold" />
+          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub="verified paid / eligible users" comparison="Google Play Paid / Eligible" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
         </section>
 
         <Panel title="Founder Insight" action="executive summary">
@@ -1226,6 +1251,47 @@ export default function AdminActivityPage() {
                   <div className="h-2 overflow-hidden rounded-full bg-[#E8E1D5]">
                     <div className="h-full rounded-full bg-[#557264]" style={{ width: `${feature.reachPct ?? 0}%` }} />
                   </div>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+          <Panel title="Cohort Retention" action="daily cohort">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[680px] border-separate border-spacing-1 text-left text-sm">
+                <thead className="text-xs uppercase text-[#6D786F]">
+                  <tr><th className="py-2">Registration</th><th>Users</th><th>D1</th><th>D3</th><th>D7</th><th>D14</th><th>D30</th></tr>
+                </thead>
+                <tbody>
+                  {metrics.cohorts.map((row) => (
+                    <tr key={row.cohort}>
+                      <td className="py-3 font-semibold">{formatDateKey(row.cohort)}</td>
+                      <td>{row.users}</td>
+                      {[row.d1, row.d3, row.d7, row.d14, row.d30].map((value, index) => (
+                        <td key={`${row.cohort}-${index}`}>
+                          <span className={`inline-flex min-w-14 justify-center rounded-[6px] px-2 py-1.5 text-xs font-bold ${heatmapClass(value)}`}>
+                            {value === null ? "-" : `${value}%`}
+                          </span>
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+
+          <Panel title="Churn Dashboard" action="inactive at least N days">
+            <div className="space-y-3">
+              {metrics.churn.map((row) => (
+                <div key={row.day} className={row.count === Math.max(...metrics.churn.map((item) => item.count)) && row.count > 0 ? "rounded-[8px] border border-[#D8C7A1] bg-[#FFF8E8] p-3" : ""}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span>Inactive at least {row.day} day{row.day > 1 ? "s" : ""}</span>
+                    <span className="font-semibold">{row.count} · {pct(row.count, metrics.totalUsers) ?? 0}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#E3E0D7]"><div className="h-2 rounded-full bg-[#8B5F4D]" style={{ width: `${Math.min(100, pct(row.count, metrics.totalUsers) ?? 0)}%` }} /></div>
                 </div>
               ))}
             </div>
