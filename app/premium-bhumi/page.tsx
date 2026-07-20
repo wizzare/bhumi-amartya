@@ -61,12 +61,27 @@ export default function PremiumBhumiPage() {
     setMessage(null);
     try {
       const result = await purchasePremiumSubscription();
-      if (result?.purchases?.length > 0) {
-        setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Memverifikasi dengan server...");
-        setTimeout(() => router.refresh(), 2000);
+      const purchases = result?.purchases || [];
+      if (purchases.length > 0) {
+        setMessage((result as any)?.alreadyOwned
+          ? (t.premiumBhumi?.restoreSuccess || "Pembelian ditemukan dan dipulihkan! Memverifikasi dengan server...")
+          : (t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Memverifikasi dengan server..."));
+        
+        // Backend Verification & Server Entitlement Persistence
+        for (const p of purchases) {
+          if (p.purchaseToken) {
+            await verifyGooglePlayPurchase(p).catch(() => null);
+          }
+        }
+        await storageProvider.getUserProfile().catch(() => null);
+        setTimeout(() => router.refresh(), 1500);
       }
     } catch (err: any) {
-      setError(err?.message || t.premiumBhumi?.purchaseFailed || "Pembelian gagal. Silakan coba lagi.");
+      if (err?.message?.includes("USER_CANCELED") || err?.code === "USER_CANCELED") {
+        setMessage(null);
+      } else {
+        setError(err?.message || t.premiumBhumi?.purchaseFailed || "Pembelian gagal. Silakan coba lagi.");
+      }
     } finally {
       setPurchasing(false);
     }
@@ -78,9 +93,16 @@ export default function PremiumBhumiPage() {
     setMessage(null);
     try {
       const result = await restorePremiumPurchases();
-      if (result?.purchases?.length > 0) {
+      const purchases = result?.purchases || [];
+      if (purchases.length > 0) {
         setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian dipulihkan! Memverifikasi dengan server...");
-        setTimeout(() => router.refresh(), 2000);
+        for (const p of purchases) {
+          if (p.purchaseToken) {
+            await verifyGooglePlayPurchase(p).catch(() => null);
+          }
+        }
+        await storageProvider.getUserProfile().catch(() => null);
+        setTimeout(() => router.refresh(), 1500);
       } else {
         setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada pembelian yang ditemukan untuk dipulihkan.");
       }

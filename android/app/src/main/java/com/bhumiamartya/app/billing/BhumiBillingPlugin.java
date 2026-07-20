@@ -117,6 +117,26 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
             return;
         }
 
+        if (responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
+            QueryPurchasesParams params = QueryPurchasesParams.newBuilder()
+                .setProductType(BillingClient.ProductType.SUBS)
+                .build();
+            billingClient.queryPurchasesAsync(params, (queryResult, existingPurchases) -> {
+                if (queryResult.getResponseCode() == BillingClient.BillingResponseCode.OK && existingPurchases != null) {
+                    for (Purchase purchase : existingPurchases) {
+                        acknowledgeIfNeeded(purchase);
+                    }
+                    JSObject result = new JSObject();
+                    result.put("alreadyOwned", true);
+                    result.put("purchases", purchasesToJson(existingPurchases));
+                    call.resolve(result);
+                } else {
+                    call.reject("Item already owned, but purchase retrieval failed.", "ITEM_ALREADY_OWNED_FETCH_FAILED");
+                }
+            });
+            return;
+        }
+
         if (responseCode == BillingClient.BillingResponseCode.USER_CANCELED) {
             call.reject("Purchase canceled.", "USER_CANCELED");
             return;
