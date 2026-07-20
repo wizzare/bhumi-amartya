@@ -162,6 +162,18 @@ function classifyUserPremiumSource(user: FounderUser): "GOOGLE_PLAY_PAID" | "FOU
   return "FREE";
 }
 
+const INDONESIAN_CITY_ALIASES = [
+  "jakarta", "bandung", "surabaya", "yogyakarta", "jogja", "bali", "denpasar",
+  "medan", "semarang", "makassar", "bogor", "depok", "tangerang", "bekasi",
+  "malang", "solo", "surakarta", "palembang", "padang", "batam", "pontianak",
+];
+
+const MALAYSIAN_CITY_ALIASES = [
+  "kuala lumpur", "penang", "pulau pinang", "johor", "johor bahru", "selangor",
+  "petaling jaya", "shah alam", "melaka", "malacca", "ipoh", "perak", "sabah",
+  "sarawak", "kuching", "kota kinabalu",
+];
+
 function normalizeCityName(city: string): string {
   const c = city.trim().toLowerCase();
   if (!c || c === "no data" || c === "unknown" || c === "-") return "No data";
@@ -173,7 +185,26 @@ function normalizeCityName(city: string): string {
   if (c.includes("medan")) return "Medan";
   if (c.includes("semarang")) return "Semarang";
   if (c.includes("makassar")) return "Makassar";
+  if (c.includes("kuala lumpur")) return "Kuala Lumpur";
+  if (c.includes("penang")) return "Penang";
   return city.trim();
+}
+
+function inferCountry(countryRaw: string, cityRaw: string, provinceRaw: string): string {
+  const country = (countryRaw || "").trim();
+  if (country && country !== "No data" && country !== "Unknown" && country !== "-") {
+    return country;
+  }
+  const c = (cityRaw || "").trim().toLowerCase();
+  const p = (provinceRaw || "").trim().toLowerCase();
+
+  if (c.includes("indonesia") || p.includes("indonesia") || INDONESIAN_CITY_ALIASES.some((alias) => c.includes(alias))) {
+    return "Indonesia";
+  }
+  if (c.includes("malaysia") || p.includes("malaysia") || MALAYSIAN_CITY_ALIASES.some((alias) => c.includes(alias))) {
+    return "Malaysia";
+  }
+  return "No data";
 }
 
 const USER_TABLE_PAGE_SIZE = 10;
@@ -818,7 +849,7 @@ export default function AdminActivityPage() {
 
     users.forEach((u) => {
       const normCity = normalizeCityName(u.city);
-      const country = u.country && u.country !== "No data" ? u.country : (u.city.includes("Indonesia") || normCity !== "No data" ? "Indonesia" : "No data");
+      const country = inferCountry(u.country, u.city, u.province);
 
       if (normCity !== "No data") {
         const cityKey = `${normCity}_${country}`;

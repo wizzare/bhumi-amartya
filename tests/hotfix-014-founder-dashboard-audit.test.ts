@@ -352,7 +352,11 @@ const USER_TRIAL = {
 
 // 28. Country table aggregates correctly and reconciles 100% to Total Users.
 {
-  const testUsers = [USER_REGULAR, USER_INTI, USER_ALFA, { city: "No data", country: "No data" }];
+  const testUsers = [
+    USER_REGULAR, USER_INTI, USER_ALFA,
+    { city: "Kuala Lumpur", country: "Malaysia" },
+    { city: "No data", country: "No data" },
+  ];
   const counts: Record<string, number> = {};
   testUsers.forEach((u) => {
     const c = u.country === "No data" ? "Unknown / No data" : u.country;
@@ -361,8 +365,9 @@ const USER_TRIAL = {
   const totalInTable = Object.values(counts).reduce((a, b) => a + b, 0);
   assert.strictEqual(totalInTable, testUsers.length);
   assert.strictEqual(counts["Indonesia"], 3);
+  assert.strictEqual(counts["Malaysia"], 1);
   assert.strictEqual(counts["Unknown / No data"], 1);
-  console.log("✔ 28. Country table aggregates correctly and reconciles 100% to Total Users PASS");
+  console.log("✔ 28. Country table aggregates correctly, preserves Malaysia, and reconciles 100% PASS");
 }
 
 // 29. Unknown locations handled safely.
