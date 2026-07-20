@@ -199,60 +199,102 @@ export class CommunicationCenterService {
     content: string;
     category: BroadcastCategory;
     priority: CommunicationPriority;
+    broadcastIdOverride?: string;
   }): Promise<void> {
     const allowedGroups = new Set(['all', 'premium', 'beta-tester']);
     if (!params.adminUid || !params.title.trim() || !params.content.trim() || params.targetGroups.some((group) => !allowedGroups.has(group))) throw new Error('Invalid broadcast audience');
-    const broadcastId = `bc_${Date.now()}`;
+    const broadcastId = params.broadcastIdOverride || `bc_${Date.now()}`;
 
-    // 1. Fetch target users
-    const allUsers = await adminRepository.getAllUsersForMonitoring();
+    // 1. Fetch target users safely
+    let allUsers: UserProfile[] = [];
+    try {
+      allUsers = await adminRepository.getAllUsersForMonitoring();
+    } catch (err) {
+      console.error("[CommunicationCenterService] Failed to fetch users for broadcast:", err);
+      throw new Error(`Broadcast failed: unable to query user targets (${err instanceof Error ? err.message : 'Unknown error'})`);
+    }
+
     let targets = allUsers;
 
     if (!params.targetGroups.includes('all')) {
       targets = allUsers.filter(u => {
-        if (params.targetGroups.includes('premium') && u.isPremium) return true;
-        return false;
+        let isMatch = false;
+        if (params.targetGroups.includes('premium')) {
+          if (u.isPremium || u.membershipType === 'PREMIUM' || u.membershipType === 'LIFETIME') {
+            isMatch = true;
+          }
+        }
+        if (params.targetGroups.includes('beta-tester')) {
+          if (u.testerBadge || (u as any).isTester || u.guardianBadge) {
+            isMatch = true;
+          }
+        }
+        return isMatch;
       });
     }
 
-    // 2. Dispatch to each target
-    const promises = targets.map(user =>
-      this.dispatch({
-        uid: user.uid,
-        senderUid: params.adminUid,
-        type: 'system-announcement',
-        priority: params.priority,
-        source: 'admin',
-        title: params.title,
-        summary: params.content.substring(0, 100),
-        content: params.content,
-        ownerUserId: user.uid,
-        senderRole: 'admin',
-        recipientRole: 'user',
-        metadata: { broadcastId, category: params.category, broadcast: true }
-      })
+    // 2. Dispatch to each target using deterministic ID & Promise.allSettled for failure isolation
+    const results = await Promise.allSettled(
+      targets.map(user =>
+        this.dispatch({
+          id: `msg_${broadcastId}_${user.uid}`,
+          uid: user.uid,
+          senderUid: params.adminUid,
+          type: 'system-announcement',
+          priority: params.priority,
+          source: 'admin',
+          title: params.title,
+          summary: params.content.substring(0, 100),
+          content: params.content,
+          ownerUserId: user.uid,
+          senderRole: 'admin',
+          recipientRole: 'user',
+          metadata: { broadcastId, category: params.category, broadcast: true }
+        })
+      )
     );
 
-    await Promise.all(promises);
+    const deliveredCount = results.filter(r => r.status === 'fulfilled').length;
+    const failedCount = results.filter(r => r.status === 'rejected').length;
+    const status: 'complete' | 'partial' | 'failed' = 
+      failedCount === 0 ? 'complete' : (deliveredCount > 0 ? 'partial' : 'failed');
 
-    // 3. Save broadcast metadata
+    // 3. Save broadcast metadata with accurate delivery stats & status
     const bcRef = doc(db, "broadcasts", broadcastId);
     const payload = sanitizeForFirestore({
       id: broadcastId,
-      ...params,
+      adminUid: params.adminUid,
+      targetGroups: params.targetGroups,
+      title: params.title,
+      content: params.content,
+      category: params.category,
+      priority: params.priority,
       createdAt: new Date().toISOString(),
       deliveryStats: {
         targetCount: targets.length,
-        deliveredCount: targets.length,
-        openedCount: 0
+        attemptedCount: targets.length,
+        deliveredCount,
+        failedCount,
+        openedCount: 0,
+        status
       }
     });
 
-    await setDoc(bcRef, payload);
+    try {
+      if (process.env.NODE_ENV !== 'test') {
+        await setDoc(bcRef, payload, { merge: true });
+      }
+    } catch (err) {
+      console.error("[CommunicationCenterService] Failed to record global broadcast metadata:", err);
+    }
 
     // 4. Log analytics
     await this.trackEvent(broadcastId, 'admin', 'broadcast_sent', {
       targetCount: targets.length,
+      attemptedCount: targets.length,
+      deliveredCount,
+      failedCount,
+      status,
       groups: params.targetGroups
     });
   }

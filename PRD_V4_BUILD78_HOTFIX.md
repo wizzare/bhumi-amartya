@@ -3,7 +3,7 @@
 **Status:** Canonical V4 Hotfix PRD  
 **Target Version:** 4.4.1 (Build 78)  
 **Branch:** `hotfix/v4-build78-wellness-journey-sync`  
-**Mode:** AGENTMEMORY DEGRADED MODE / HOTFIX-004 EXECUTED MODE  
+**Mode:** AGENTMEMORY DEGRADED MODE  
 **Owner:** Product Owner & QA Lead  
 
 ---
@@ -35,9 +35,9 @@ The V4 Build 78 Hotfix is a targeted stability release designed to eliminate cri
 | Requirement ID | Target Issue | Specification | Implementation Status |
 | :--- | :--- | :--- | :--- |
 | **FR-78-001** | HOTFIX-001 | `CommunicationRepository` must execute Firestore `user_messages` queries with in-memory fallback sorting if composite indexes are building. | **Partially Fixed (Commit 828420f6)** |
-| **FR-78-002** | HOTFIX-002 | Admin broadcast messages must be correctly targeted and queryable by all active users in their inbox view. | **Pending Audit** |
+| **FR-78-002** | HOTFIX-002 | Admin broadcasts must target eligible existing users at dispatch time using `Promise.allSettled` for failure isolation, deterministic message IDs (`msg_${broadcastId}_${user.uid}`) for idempotency, and canonical `testerBadge` / `guardianBadge` for beta-tester targeting. Retrospective fan-in for later signups is deferred to V5. | **IMPLEMENTED & LOCALLY VALIDATED** (Pending Device/Prod Validation) |
 | **FR-78-003** | HOTFIX-003 | Arsip Akashi accessibility state must evaluate `profile.isComplete` and `blueprint.isCalculated` accurately without false negative blocks. | **Pending Audit** |
-| **FR-78-004** | HOTFIX-004 | Completing Wellness Section 3 must synchronously update the Journey daily record recommendations memory in `journeyRepository`. | **IMPLEMENTED & VALIDATED** |
+| **FR-78-004** | HOTFIX-004 | Completing Wellness Section 3 must synchronously update the Journey daily record recommendations memory in `journeyRepository`. | **IMPLEMENTED & VALIDATED (Commit 3b740fd9)** |
 | **FR-78-005** | HOTFIX-005 | `onAuthStateChanged` logout handler must purge all in-memory caches, local storage keys, and React query states. | **Pending Implementation** |
 | **FR-78-006** | HOTFIX-006 | Clicking "Coba Lagi" in the Inbox error boundary must reset error state, purge query cache, and re-fetch messages from Firestore. | **Pending Implementation** |
 | **FR-78-007** | HOTFIX-007 | Unread message badge counter must dynamically subscribe to real-time `user_messages` where `read == false`. | **Pending Implementation** |
@@ -55,7 +55,7 @@ The V4 Build 78 Hotfix is a targeted stability release designed to eliminate cri
 ## 5. Acceptance Criteria per Hotfix
 
 1. **AC-001:** Inbox loads without "Terjadi kesalahan saat memproses komunikasi" error under all network/index conditions.
-2. **AC-002:** Broadcast message sent by Admin appears in targeted user inbox upon fetch.
+2. **AC-002:** Broadcast message sent by Admin is delivered reliably to eligible target users without aborting on partial user errors, `beta-tester` filtering resolves correct users via `testerBadge` / `guardianBadge`, and retries use deterministic IDs without generating duplicates.
 3. **AC-003:** Arsip Akashi tab unlocks immediately when profile blueprint calculation completes.
 4. **AC-004:** Section 3 completion in Wellness updates Journey daily record recommendations memory immediately and idempotently on retry.
 5. **AC-005:** Logging out and logging in as a different user displays zero data from the previous session.
@@ -66,5 +66,5 @@ The V4 Build 78 Hotfix is a targeted stability release designed to eliminate cri
 
 ## 6. Regression Risks & Rollback Strategy
 
-- **Regression Surface:** `communicationRepository.ts`, `wellnessCurationService.ts`, `authActions.ts`, `journeyRepository.ts`.
+- **Regression Surface:** `communicationRepository.ts`, `communicationCenterService.ts`, `wellnessCurationService.ts`, `authActions.ts`.
 - **Rollback Strategy:** Revert hotfix commits and redeploy Build 77 AAB package if critical regressions occur in production.

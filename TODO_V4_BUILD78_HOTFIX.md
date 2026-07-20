@@ -3,7 +3,7 @@
 **Status:** Canonical Implementation Roadmap  
 **Target Release:** Build 78 (Version 4.4.1)  
 **Branch:** `hotfix/v4-build78-wellness-journey-sync`  
-**Mode:** AGENTMEMORY DEGRADED MODE / HOTFIX-004 EXECUTED MODE  
+**Mode:** AGENTMEMORY DEGRADED MODE  
 **Owner:** Technical Lead & Principal Architect  
 
 ---
@@ -27,11 +27,11 @@
   - **Status:** `COMPLETED IN REPO (Commit 828420f6)`  
 
 ### R3 — Broadcast Delivery Pipeline (HOTFIX-002)
-- [ ] **TASK-R3-1:** Audit broadcast target mapping and verify user inbox query inclusion.  
+- [x] **TASK-R3-1:** Implement Option A (Existing user delivery hardening with `Promise.allSettled`, deterministic message IDs, and canonical tester predicate).  
   - **Priority:** P1 | **Severity:** High | **Owner:** Backend / Repository  
-  - **Affected File:** `lib/repositories/communicationRepository.ts`, `lib/services/communicationCenterService.ts`  
-  - **Validation Method:** Run broadcast delivery script simulation.  
-  - **Status:** `PENDING NEXT TASK AUDIT`
+  - **Affected Files:** `lib/services/communicationCenterService.ts`, `tests/hotfix-002-broadcast-delivery.test.ts`  
+  - **Validation Method:** Executed unit test `tests/hotfix-002-broadcast-delivery.test.ts` (5/5 PASS).  
+  - **Status:** `[x] IMPLEMENTED & LOCALLY VALIDATED (Pending Device/Prod Validation)`
 
 ### R4 — Arsip Akashi Availability State (HOTFIX-003)
 - [ ] **TASK-R4-1:** Trace blueprint completion condition against Akashi archive unlock status.  
@@ -44,8 +44,8 @@
 - [x] **TASK-R5-1:** Ensure `markJourneyRecommendationCompleted` constructs and persists recommendation memory to `journeyRepository` when undefined.  
   - **Priority:** P0 | **Severity:** High | **Owner:** Shared / Wellness & Journey  
   - **Affected Files:** `lib/services/wellnessCurationService.ts`, `tests/hotfix-004-wellness-journey-sync.test.ts`  
-  - **Validation Method:** Executed unit test `tests/hotfix-004-wellness-journey-sync.test.ts` & `tests/sprint-e-hotfix.test.ts`.  
-  - **Status:** `[x] COMPLETED & LOCALLY VALIDATED (PASS)`
+  - **Validation Method:** Executed unit test `tests/hotfix-004-wellness-journey-sync.test.ts` (1/1 PASS).  
+  - **Status:** `[x] COMPLETED & LOCALLY VALIDATED (Commit 3b740fd9)`
 
 ### R6 — Session, Retry, Cache, and Unread Counter (HOTFIX-005, HOTFIX-006, HOTFIX-007)
 - [ ] **TASK-R6-1:** Add cache purge on `onAuthStateChanged` logout (`HOTFIX-005`).  
@@ -62,9 +62,9 @@
   - **Status:** `PENDING IMPLEMENTATION`
 
 ### R7 — Regression Validation
-- [x] **TASK-R7-1:** Run regression test suite (`tests/hotfix-004-wellness-journey-sync.test.ts` & `tests/sprint-e-hotfix.test.ts`).  
+- [x] **TASK-R7-1:** Run regression test suite (`tests/hotfix-002-broadcast-delivery.test.ts` & `tests/hotfix-004-wellness-journey-sync.test.ts`).  
   - **Priority:** P0 | **Severity:** High | **Owner:** QA  
-  - **Status:** `[x] COMPLETED (17/17 PASS & 1/1 PASS)`
+  - **Status:** `[x] COMPLETED (5/5 PASS & 1/1 PASS)`
 
 ### R8 — Five-User Production Validation
 - [ ] **TASK-R8-1:** Execute five-user scenario simulation across Dashboard, Profile, Journey, Wellness, and Inbox.  
