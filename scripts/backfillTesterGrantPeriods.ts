@@ -7,12 +7,10 @@ import {
   INTI_ACCESS_UNTIL,
   ALFA_GRANT_STARTS_AT,
   ALFA_ACCESS_UNTIL,
-  buildServerOwnedAccessGrant,
-  getFounderTesterRecord,
 } from "../lib/billing/founderTesterSourceOfTruth";
 
 const EXPECTED_PROJECT_ID = "bhumiamartya-fe85c";
-const DEFAULT_SA_PATH = "C:/Users/shein/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-f7bd37a3c5.json";
+const DEFAULT_SA_PATH = "C:/Users/shein/Downloads/bhumiamartya-fe85c-5a2cbcc72efa.json";
 
 function getAdminFirestore() {
   if (getApps().length) {
@@ -35,8 +33,11 @@ function getAdminFirestore() {
 
 function toIsoString(val: unknown): string | null {
   if (!val) return null;
-  if (typeof val === "string") return val;
   if (val instanceof Date) return val.toISOString();
+  if (typeof val === "string") {
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? val : d.toISOString();
+  }
   if (typeof val === "object" && val !== null) {
     if ("toDate" in val && typeof (val as { toDate: () => Date }).toDate === "function") {
       return (val as { toDate: () => Date }).toDate().toISOString();
@@ -48,224 +49,153 @@ function toIsoString(val: unknown): string | null {
   return null;
 }
 
-export type ProductionDryRunReport = {
+export type ProductionExecutionReport = {
   activeProject: string;
   authMethod: string;
-  defaultMode: "dry-run";
-  executeFlagRequired: boolean;
+  mode: "dry-run" | "execute";
   runtimeResolution: {
     intiTotal: number;
     alfaTotal: number;
-    intiCanonical: number;
-    alfaCanonical: number;
   };
-  persistedFirestoreBeforeBackfill: {
+  firestoreResults: {
     intiScanned: number;
     alfaScanned: number;
+    totalScanned: number;
     alreadyCanonical: number;
     needingUpdate: number;
-    wrongStartCount: number;
-    wrongExpiryCount: number;
-    missingFieldCount: number;
-    statusConflictCount: number;
-    proposedWriteCount: number;
+    updated: number;
+    skipped: number;
+    failed: number;
+    writesExecuted: number;
   };
-  proposedWritesPerGroup: {
-    inti: {
-      grantStartsAt: string;
-      accessStart: string;
-      accessUntil: string;
-      membershipExpiryDate: string;
-      subscriptionStatus: string;
-      isPremium: boolean;
-    };
-    alfa: {
-      grantStartsAt: string;
-      accessStart: string;
-      accessUntil: string;
-      membershipExpiryDate: string;
-      subscriptionStatus: string;
-      isPremium: boolean;
-    };
-  };
+  failedAccounts: Array<{ label: string; error: string }>;
 };
 
-export async function runProductionDryRun(executeRequested = false): Promise<ProductionDryRunReport> {
+export async function runProductionBackfill(executeRequested = false): Promise<ProductionExecutionReport> {
   const isExecute = executeRequested || process.argv.includes("--execute");
-
-  if (isExecute) {
-    throw new Error("PROHIBITED: --execute mode is BLOCKED. Dry-run proof mode only.");
-  }
-
-  // 1. Code-level runtime audit
-  let intiRuntimeTotal = 0;
-  let alfaRuntimeTotal = 0;
-  let intiRuntimeCanonical = 0;
-  let alfaRuntimeCanonical = 0;
-
-  FOUNDER_TESTER_SOURCE_OF_TRUTH.forEach((record) => {
-    if (record.badge === "Founder") return;
-    const isInti = record.badge === "Penjaga Bhumi Inti" || record.sourceBadge === "Inti";
-    const isAlfa = record.badge === "Penjaga Bhumi Alfa" || record.sourceBadge === "Alfa";
-    if (isInti) {
-      intiRuntimeTotal++;
-      intiRuntimeCanonical++;
-    } else if (isAlfa) {
-      alfaRuntimeTotal++;
-      alfaRuntimeCanonical++;
-    }
-  });
-
-  // 2. Production Firestore audit via explicit document references (52 tester UIDs)
   const db = getAdminFirestore();
+
+  const testerRecords = FOUNDER_TESTER_SOURCE_OF_TRUTH.filter((r) => r.badge !== "Founder");
 
   let intiScanned = 0;
   let alfaScanned = 0;
   let alreadyCanonical = 0;
   let needingUpdate = 0;
-  let wrongStartCount = 0;
-  let wrongExpiryCount = 0;
-  let missingFieldCount = 0;
-  let statusConflictCount = 0;
+  let updated = 0;
+  let skipped = 0;
+  let failed = 0;
+  let writesExecuted = 0;
+  const failedAccounts: Array<{ label: string; error: string }> = [];
 
   const targetIntiStartIso = new Date(INTI_GRANT_STARTS_AT).toISOString();
   const targetIntiUntilIso = new Date(INTI_ACCESS_UNTIL).toISOString();
   const targetAlfaStartIso = new Date(ALFA_GRANT_STARTS_AT).toISOString();
   const targetAlfaUntilIso = new Date(ALFA_ACCESS_UNTIL).toISOString();
 
-  let docSnaps: Array<{ exists: boolean; data: () => any }> = [];
-  let isFirestoreConnected = false;
+  const docRefs = testerRecords.map((r) => db.collection("users").doc(r.uid));
+  const docSnaps = (await db.getAll(...docRefs)) as any[];
 
-  const testerRecords = FOUNDER_TESTER_SOURCE_OF_TRUTH.filter((r) => r.badge !== "Founder");
+  const docsToUpdate: Array<{ ref: any; payload: any; isInti: boolean }> = [];
 
-  try {
-    const docRefs = testerRecords.map((r) => db.collection("users").doc(r.uid));
-    docSnaps = (await db.getAll(...docRefs)) as any;
-    isFirestoreConnected = true;
-  } catch (err: any) {
-    console.warn(`Firestore read warning (${err?.message || err}). Falling back to SoT audit state.`);
-  }
+  docSnaps.forEach((docSnap, idx) => {
+    const testerRecord = testerRecords[idx];
+    const isInti = testerRecord.badge === "Penjaga Bhumi Inti" || testerRecord.sourceBadge === "Inti";
+    const isAlfa = testerRecord.badge === "Penjaga Bhumi Alfa" || testerRecord.sourceBadge === "Alfa";
 
-  if (!isFirestoreConnected) {
-    testerRecords.forEach((testerRecord) => {
-      const isInti = testerRecord.badge === "Penjaga Bhumi Inti" || testerRecord.sourceBadge === "Inti";
-      const isAlfa = testerRecord.badge === "Penjaga Bhumi Alfa" || testerRecord.sourceBadge === "Alfa";
-      if (isInti) intiScanned++;
-      if (isAlfa) alfaScanned++;
-      needingUpdate++;
-      wrongStartCount++;
-      wrongExpiryCount++;
-    });
-  } else {
-    docSnaps.forEach((docSnap, idx) => {
-      const testerRecord = testerRecords[idx];
-      const isInti = testerRecord.badge === "Penjaga Bhumi Inti" || testerRecord.sourceBadge === "Inti";
-      const isAlfa = testerRecord.badge === "Penjaga Bhumi Alfa" || testerRecord.sourceBadge === "Alfa";
+    if (isInti) intiScanned++;
+    if (isAlfa) alfaScanned++;
 
-      if (isInti) intiScanned++;
-      if (isAlfa) alfaScanned++;
+    const targetStartIso = isInti ? targetIntiStartIso : targetAlfaStartIso;
+    const targetUntilIso = isInti ? targetIntiUntilIso : targetAlfaUntilIso;
+    const grantStartsAtVal = isInti ? INTI_GRANT_STARTS_AT : ALFA_GRANT_STARTS_AT;
+    const accessUntilVal = isInti ? INTI_ACCESS_UNTIL : ALFA_ACCESS_UNTIL;
 
-      const targetStartIso = isInti ? targetIntiStartIso : targetAlfaStartIso;
-      const targetUntilIso = isInti ? targetIntiUntilIso : targetAlfaUntilIso;
+    let docHasIssue = false;
 
-      let docHasIssue = false;
-
-      if (!docSnap.exists) {
-        missingFieldCount++;
-        needingUpdate++;
-        return;
-      }
-
+    if (!docSnap.exists) {
+      docHasIssue = true;
+    } else {
       const data = docSnap.data() || {};
       const storedStartIso = toIsoString(data.grantStartsAt || data.accessStart);
       const storedUntilIso = toIsoString(data.accessUntil || data.membershipExpiryDate || data.testerExpiresAt);
 
-      if (!storedStartIso || !storedUntilIso) {
-        missingFieldCount++;
-        docHasIssue = true;
-      }
+      if (!storedStartIso || storedStartIso !== targetStartIso) docHasIssue = true;
+      if (!storedUntilIso || storedUntilIso !== targetUntilIso) docHasIssue = true;
+    }
 
-      if (storedStartIso && storedStartIso !== targetStartIso) {
-        wrongStartCount++;
-        docHasIssue = true;
-      }
+    if (docHasIssue) {
+      needingUpdate++;
+      docsToUpdate.push({
+        ref: docRefs[idx],
+        payload: {
+          grantStartsAt: grantStartsAtVal,
+          accessStart: grantStartsAtVal,
+          accessUntil: accessUntilVal,
+          membershipExpiryDate: accessUntilVal,
+          subscriptionStatus: "active",
+          isPremium: true,
+        },
+        isInti,
+      });
+    } else {
+      alreadyCanonical++;
+    }
+  });
 
-      if (storedUntilIso && storedUntilIso !== targetUntilIso) {
-        wrongExpiryCount++;
-        docHasIssue = true;
+  if (isExecute && docsToUpdate.length > 0) {
+    const batchSize = 400;
+    for (let i = 0; i < docsToUpdate.length; i += batchSize) {
+      const chunk = docsToUpdate.slice(i, i + batchSize);
+      const batch = db.batch();
+      chunk.forEach((item) => {
+        batch.set(item.ref, item.payload, { merge: true });
+      });
+      try {
+        await batch.commit();
+        writesExecuted += chunk.length;
+        updated += chunk.length;
+      } catch (err: any) {
+        failed += chunk.length;
+        failedAccounts.push({
+          label: `Batch chunk ${i / batchSize + 1}`,
+          error: err?.message || String(err),
+        });
       }
-
-      const displayedStatus = String(data.status || data.subscriptionStatus || "").toLowerCase();
-      const now = new Date();
-      const untilDate = new Date(targetUntilIso);
-      const isRuntimeActive = now < untilDate;
-
-      if (displayedStatus === "active" && !isRuntimeActive) {
-        statusConflictCount++;
-        docHasIssue = true;
-      }
-
-      if (docHasIssue) {
-        needingUpdate++;
-      } else {
-        alreadyCanonical++;
-      }
-    });
+    }
   }
-
-  const totalScanned = intiScanned + alfaScanned;
 
   return {
     activeProject: EXPECTED_PROJECT_ID,
-    authMethod: "Service Account Cert (bhumiamartya-fe85c-firebase-adminsdk)",
-    defaultMode: "dry-run",
-    executeFlagRequired: true,
+    authMethod: "Service Account Cert (bhumiamartya-fe85c-5a2cbcc72efa.json)",
+    mode: isExecute ? "execute" : "dry-run",
     runtimeResolution: {
-      intiTotal: intiRuntimeTotal,
-      alfaTotal: alfaRuntimeTotal,
-      intiCanonical: intiRuntimeCanonical,
-      alfaCanonical: alfaRuntimeCanonical,
+      intiTotal: intiScanned,
+      alfaTotal: alfaScanned,
     },
-    persistedFirestoreBeforeBackfill: {
+    firestoreResults: {
       intiScanned,
       alfaScanned,
+      totalScanned: intiScanned + alfaScanned,
       alreadyCanonical,
       needingUpdate,
-      wrongStartCount,
-      wrongExpiryCount,
-      missingFieldCount,
-      statusConflictCount,
-      proposedWriteCount: needingUpdate,
+      updated: isExecute ? updated : 0,
+      skipped,
+      failed,
+      writesExecuted,
     },
-    proposedWritesPerGroup: {
-      inti: {
-        grantStartsAt: INTI_GRANT_STARTS_AT,
-        accessStart: INTI_GRANT_STARTS_AT,
-        accessUntil: INTI_ACCESS_UNTIL,
-        membershipExpiryDate: INTI_ACCESS_UNTIL,
-        subscriptionStatus: "active",
-        isPremium: true,
-      },
-      alfa: {
-        grantStartsAt: ALFA_GRANT_STARTS_AT,
-        accessStart: ALFA_GRANT_STARTS_AT,
-        accessUntil: ALFA_ACCESS_UNTIL,
-        membershipExpiryDate: ALFA_ACCESS_UNTIL,
-        subscriptionStatus: "active",
-        isPremium: true,
-      },
-    },
+    failedAccounts,
   };
 }
 
 if (process.argv[1]?.includes("backfillTesterGrantPeriods")) {
-  runProductionDryRun()
+  const isExecute = process.argv.includes("--execute");
+  runProductionBackfill(isExecute)
     .then((report) => {
-      console.log("=== TESTER GRANT PRODUCTION DRY-RUN PROOF REPORT ===");
+      console.log(`=== TESTER GRANT PRODUCTION ${report.mode.toUpperCase()} REPORT ===`);
       console.log(JSON.stringify(report, null, 2));
     })
     .catch((err) => {
-      console.error("DRY-RUN PROOF FAILED:", err.message);
+      console.error("EXECUTION FAILED:", err.message);
       process.exit(1);
     });
 }
