@@ -1,24 +1,57 @@
 export type AnalyticsSubject = {
   uid?: string;
   email?: string | null;
+  phoneNumber?: string | null;
+  displayName?: string | null;
+  name?: string | null;
+  createdAt?: any;
   isInternalTester?: boolean;
   excludeFromAdminAnalytics?: boolean;
   internalTesterLabel?: string;
+  authMissing?: boolean;
 };
 
+export type UserAnalyticsEligibility =
+  | "eligible"
+  | "excluded_internal"
+  | "incomplete_record"
+  | "orphan_confirmed";
+
 /**
- * Pure policy function for Admin/Founder Dashboard analytics exclusion.
+ * Classifies user accounts for Founder Dashboard analytics inclusion.
  *
- * Internal testers marked with `excludeFromAdminAnalytics: true` or `isInternalTester: true`
- * are strictly excluded from all dashboard metrics, funnels, activity lists, and aggregates.
- *
- * No hardcoded emails or UIDs are allowed in application logic.
+ * Classifications:
+ * - `excluded_internal`: Internal testers with `excludeFromAdminAnalytics: true` or `isInternalTester: true`.
+ * - `orphan_confirmed`: Server-verified Auth absence.
+ * - `incomplete_record`: Missing email, phone number, real name, and creation metadata.
+ * - `eligible`: Valid email or phone users.
  */
-export function shouldIncludeInAdminAnalytics(user: AnalyticsSubject): boolean {
+export function getAnalyticsEligibility(user: AnalyticsSubject): UserAnalyticsEligibility {
   if (user.excludeFromAdminAnalytics === true || user.isInternalTester === true) {
-    return false;
+    return "excluded_internal";
   }
-  return true;
+
+  if (user.authMissing === true) {
+    return "orphan_confirmed";
+  }
+
+  const hasEmail = Boolean(user.email && user.email.trim().length > 0);
+  const hasPhone = Boolean(user.phoneNumber && user.phoneNumber.trim().length > 0);
+  const hasName = Boolean(
+    (user.displayName && user.displayName.trim().length > 0) ||
+    (user.name && user.name.trim().length > 0 && user.name.trim().toLowerCase() !== "jiwa")
+  );
+  const hasCreatedAt = Boolean(user.createdAt);
+
+  if (!hasEmail && !hasPhone && !hasName && !hasCreatedAt) {
+    return "incomplete_record";
+  }
+
+  return "eligible";
+}
+
+export function shouldIncludeInAdminAnalytics(user: AnalyticsSubject): boolean {
+  return getAnalyticsEligibility(user) === "eligible";
 }
 
 export function getExcludedUids(users: (AnalyticsSubject & { uid: string })[]): Set<string> {

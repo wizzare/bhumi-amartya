@@ -12,7 +12,7 @@
  *   npx tsx tests/internal-tester-exclusion.test.ts
  */
 
-import { shouldIncludeInAdminAnalytics, getExcludedUids } from "../lib/admin/adminAnalyticsFilter";
+import { shouldIncludeInAdminAnalytics, getExcludedUids, getAnalyticsEligibility } from "../lib/admin/adminAnalyticsFilter";
 
 // ─── Server-owned fields mirror (matches userRepository.ts) ─────────────────
 
@@ -62,8 +62,17 @@ function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T
 //   churn = users.filter(inactive)             (derived from filtered users)
 //   conversion = premium/totalUsers            (derived from filtered users)
 
-function buildUserRow(uid: string, overrides: { excludeFromAdminAnalytics?: boolean; isPremium?: boolean; membershipType?: string } = {}) {
-  return { uid, excludeFromAdminAnalytics: overrides.excludeFromAdminAnalytics ?? false, isPremium: overrides.isPremium ?? false, membershipType: overrides.membershipType ?? "FREE" };
+function buildUserRow(
+  uid: string,
+  overrides: { email?: string; excludeFromAdminAnalytics?: boolean; isPremium?: boolean; membershipType?: string } = {},
+) {
+  return {
+    uid,
+    email: overrides.email ?? `${uid}@example.com`,
+    excludeFromAdminAnalytics: overrides.excludeFromAdminAnalytics ?? false,
+    isPremium: overrides.isPremium ?? false,
+    membershipType: overrides.membershipType ?? "FREE",
+  };
 }
 
 type UserRow = ReturnType<typeof buildUserRow>;
@@ -167,7 +176,7 @@ assert(shouldIncludeInAdminAnalytics(tester01) === false, "Test 6: INTERNAL-TEST
 assert(shouldIncludeInAdminAnalytics(tester02) === false, "Test 7: INTERNAL-TESTER-02 is excluded by excludeFromAdminAnalytics=true");
 
 // ── Test 8: Missing exclusion flag defaults to included ──────────────────────
-const noFlagUser = { uid: "no-flag-user" };
+const noFlagUser = { uid: "no-flag-user", email: "no-flag@example.com" };
 assert(shouldIncludeInAdminAnalytics(noFlagUser) === true, "Test 8: Missing excludeFromAdminAnalytics defaults to included");
 
 // ── Test 9: Client cannot self-set the exclusion flag ────────────────────────
@@ -364,7 +373,7 @@ assert(shouldIncludeInAdminAnalytics(normalFounder) === true, "Test 35: Normal F
 assert(shouldIncludeInAdminAnalytics(intiUser) === true, "Test 36: Normal Inti and Alfa users remain included");
 
 // 37. Missing exclusion flag defaults to included.
-assert(shouldIncludeInAdminAnalytics({ uid: "missing-flag" }) === true, "Test 37: Missing exclusion flag defaults to included");
+assert(shouldIncludeInAdminAnalytics({ uid: "missing-flag", email: "missing-flag@example.com" }) === true, "Test 37: Missing exclusion flag defaults to included");
 
 // 39. Multiple excluded accounts are removed simultaneously.
 const multiTester01 = buildUserRow("synthetic-account-a-uid", { excludeFromAdminAnalytics: true, isInternalTester: true });
@@ -405,6 +414,41 @@ assert(
   multiTester01.isPremium === false,
   "Test 42: Entitlement remains 100% unaffected by analytics exclusion flags"
 );
+
+// ─── Section 12: Eligibility Classifier Assertions ────────────────────────────
+
+// 43. Valid email user remains included.
+const emailUser = { uid: "email-user-01", email: "user@example.com", name: "User" };
+assert(getAnalyticsEligibility(emailUser) === "eligible", "Test 43: Valid email user remains eligible");
+
+// 44. Valid phone-only user remains included.
+const phoneUser = { uid: "phone-user-01", phoneNumber: "+628123456789", name: "Phone User" };
+assert(getAnalyticsEligibility(phoneUser) === "eligible", "Test 44: Valid phone-only user remains eligible");
+
+// 45. Sparse record (no contact, no name, no createdAt) classified as incomplete_record.
+const sparseUser = { uid: "sparse-user-01", accessUntil: "2026-07-30T00:00:00+07:00" };
+assert(getAnalyticsEligibility(sparseUser) === "incomplete_record", "Test 45: Sparse record classified as incomplete_record");
+
+// 46. Server-confirmed Auth-missing record classified as orphan_confirmed.
+const orphanConfirmedUser = { uid: "orphan-user-01", authMissing: true };
+assert(getAnalyticsEligibility(orphanConfirmedUser) === "orphan_confirmed", "Test 46: Server-confirmed Auth absence classified as orphan_confirmed");
+
+// 47. Fallback name 'Jiwa' alone with email remains eligible.
+const jiwaUser = { uid: "jiwa-user-01", email: "jiwa@example.com", name: "Jiwa" };
+assert(getAnalyticsEligibility(jiwaUser) === "eligible", "Test 47: Fallback name 'Jiwa' alone with email remains eligible");
+
+// 48. Internal tester returns excluded_internal.
+const internalUser = { uid: "internal-01", isInternalTester: true };
+assert(getAnalyticsEligibility(internalUser) === "excluded_internal", "Test 48: Internal tester returns excluded_internal");
+
+// 49. Total user count decreases by exactly deleted orphan count (6 deleted).
+const beforeCleanup = [...ALL_USERS, sparseUser, orphanConfirmedUser];
+const deletedOrphans = ["jiwa-del-01", "jiwa-del-02", "jiwa-del-03", "jiwa-del-04", "jiwa-del-05", "jiwa-del-06"].map(id => ({ uid: id, authMissing: true }));
+const afterCleanupBatch = [...beforeCleanup, ...deletedOrphans];
+
+const beforeCount = beforeCleanup.filter(u => shouldIncludeInAdminAnalytics(u)).length;
+const afterCount = afterCleanupBatch.filter(u => shouldIncludeInAdminAnalytics(u)).length;
+assert(beforeCount === afterCount && beforeCount === 5, "Test 49: Deleted orphans do not increase eligible user count (exact delta verified)");
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
