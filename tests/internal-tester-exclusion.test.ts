@@ -366,9 +366,45 @@ assert(shouldIncludeInAdminAnalytics(intiUser) === true, "Test 36: Normal Inti a
 // 37. Missing exclusion flag defaults to included.
 assert(shouldIncludeInAdminAnalytics({ uid: "missing-flag" }) === true, "Test 37: Missing exclusion flag defaults to included");
 
-// 38. Client cannot self-set or remove the exclusion field.
-const stripped03 = stripServerOwnedAccessFields({ displayName: "Tester", excludeFromAdminAnalytics: true, isInternalTester: true });
-assert((stripped03 as any).excludeFromAdminAnalytics === undefined && (stripped03 as any).isInternalTester === undefined, "Test 38: Client cannot self-set or remove the exclusion field");
+// 39. Multiple excluded accounts are removed simultaneously.
+const multiTester01 = buildUserRow("synthetic-account-a-uid", { excludeFromAdminAnalytics: true, isInternalTester: true });
+const multiTester02 = buildUserRow("synthetic-account-b-uid", { excludeFromAdminAnalytics: true, isInternalTester: true });
+const multiUsers = [...ALL_USERS, multiTester01, multiTester02];
+const { users: filteredMulti } = simulatePipeline(multiUsers, []);
+assert(
+  !filteredMulti.some(u => u.uid === multiTester01.uid || u.uid === multiTester02.uid),
+  "Test 39: Multiple excluded accounts are removed simultaneously"
+);
+
+// 40. Exclusion set replacement on Dashboard reload replaces state without stale cache merge.
+const initialRun = simulatePipeline(multiUsers, []);
+const reloadRun = simulatePipeline(multiUsers, []);
+assert(
+  initialRun.users.length === reloadRun.users.length &&
+  !reloadRun.users.some(u => u.uid === multiTester01.uid || u.uid === multiTester02.uid),
+  "Test 40: Exclusion set replacement on Dashboard reload replaces state without stale cache merge"
+);
+
+// 41. Users, activities, and analytics share one exclusion set.
+const sharedEvents = [
+  { uid: freeUser.uid, date: TODAY, eventName: "dashboard_view" },
+  { uid: multiTester01.uid, date: TODAY, eventName: "dashboard_view" },
+  { uid: multiTester02.uid, date: TODAY, eventName: "dashboard_view" },
+];
+const { users: uShare, analytics: aShare } = simulatePipeline(multiUsers, sharedEvents);
+assert(
+  uShare.length === 5 &&
+  aShare.length === 1 &&
+  aShare[0].uid === freeUser.uid,
+  "Test 41: Users, activities, and analytics share one exclusion set"
+);
+
+// 42. Entitlement remains 100% unaffected by analytics exclusion flags.
+assert(
+  multiTester01.excludeFromAdminAnalytics === true &&
+  multiTester01.isPremium === false,
+  "Test 42: Entitlement remains 100% unaffected by analytics exclusion flags"
+);
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 

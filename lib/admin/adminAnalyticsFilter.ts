@@ -6,18 +6,17 @@ export type AnalyticsSubject = {
   internalTesterLabel?: string;
 };
 
-// Base64 encoded email string for INTERNAL-TESTER-03 to avoid committing raw PII to git
-const TARGET_TESTER_03_B64 = "d2VkaGFzd2FyYXdpZGhpQGdtYWlsLmNvbQ==";
-
+/**
+ * Pure policy function for Admin/Founder Dashboard analytics exclusion.
+ *
+ * Internal testers marked with `excludeFromAdminAnalytics: true` or `isInternalTester: true`
+ * are strictly excluded from all dashboard metrics, funnels, activity lists, and aggregates.
+ *
+ * No hardcoded emails or UIDs are allowed in application logic.
+ */
 export function shouldIncludeInAdminAnalytics(user: AnalyticsSubject): boolean {
   if (user.excludeFromAdminAnalytics === true || user.isInternalTester === true) {
     return false;
-  }
-  if (user.email && typeof user.email === "string") {
-    const normEmail = user.email.trim().toLowerCase();
-    if (typeof Buffer !== "undefined" && normEmail === Buffer.from(TARGET_TESTER_03_B64, "base64").toString("utf-8")) {
-      return false;
-    }
   }
   return true;
 }
