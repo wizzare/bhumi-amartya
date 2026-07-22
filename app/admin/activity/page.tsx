@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -35,6 +35,9 @@ import { adminRepository } from "@/lib/repositories/adminRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
 import { shouldIncludeInAdminAnalytics, getExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
+import { getCanonicalHumanDesignType, isCanonicalHumanDesign, isValidHistoricalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -420,7 +423,7 @@ function normalizeUser(rawUserData: any): FounderUser | null {
     lastLogin,
     lastSeen,
     lastSeenMs: toDateMs(lastSeen),
-    appVersion: pickFirst(rawUserData, ["versionName", "appVersion", "buildNumber"]) || "-",
+    appVersion: pickFirst(metrics, ["appVersion", "versionName", "buildNumber"]) || pickFirst(rawUserData, ["appVersion", "versionName", "buildNumber"]) || "-",
     status: isPremium ? "Premium" : "Free",
     blueprint: pickFirst(rawUserData, ["blueprintStatus", "profileVersion", "engineVersion"]) || "No data",
     country: pickFirst(rawUserData, ["country", "birthCountry"]) || "No data",
@@ -527,6 +530,121 @@ function buildXlsx(rows: string[][]): Blob {
   ]);
 }
 
+export interface StandaloneHumanDesignSnapshot {
+  state: "calculated" | "pending" | "calculation_failed" | "never_calculated" | "no_valid_data";
+  type: string | null;
+  selectedSource: string | null;
+  selectedTimestamp: number | null;
+  diagnosticReason: string;
+  historicalChartRecovered: boolean;
+  conflictDetected: boolean;
+}
+
+function resolveStandaloneHumanDesign(user: FounderUser, blueprintDoc: any): StandaloneHumanDesignSnapshot {
+  const candidateSources: Array<{ source: string; payload: any }> = [
+    { source: "blueprints/{uid}.humanDesign", payload: blueprintDoc?.humanDesign },
+    { source: "blueprints/{uid} root", payload: blueprintDoc?.type || blueprintDoc?.energyType ? blueprintDoc : null },
+    { source: "users/{uid}.humanDesign", payload: (user.rawUser as any)?.humanDesign },
+    { source: "users/{uid}.blueprint.humanDesign", payload: (user.rawUser as any)?.blueprint?.humanDesign },
+    { source: "users/{uid}.profile.humanDesign", payload: (user.rawUser as any)?.profile?.humanDesign },
+    { source: "users/{uid}.profile.blueprint.humanDesign", payload: (user.rawUser as any)?.profile?.blueprint?.humanDesign },
+    { source: "users/{uid}.blueprintData.humanDesign", payload: (user.rawUser as any)?.blueprintData?.humanDesign },
+    { source: "users/{uid}.data.humanDesign", payload: (user.rawUser as any)?.data?.humanDesign },
+    { source: "users/{uid}.hd", payload: (user.rawUser as any)?.hd },
+    { source: "users/{uid}.humanDesignResult", payload: (user.rawUser as any)?.humanDesignResult },
+  ];
+
+  for (const { source, payload } of candidateSources) {
+    if (!payload) continue;
+
+    const isCanonical = isCanonicalHumanDesign(payload);
+    const typeStr = getCanonicalHumanDesignType(payload);
+
+    if (isCanonical && typeStr) {
+      return {
+        state: "calculated",
+        type: typeStr,
+        selectedSource: source,
+        selectedTimestamp: toDateMs((payload as any)?.calculatedAt || (payload as any)?.updatedAt) || Date.now(),
+        diagnosticReason: "Validated canonical gaia-hd-v1 chart",
+        historicalChartRecovered: false,
+        conflictDetected: false,
+      };
+    }
+
+    if (isValidHistoricalHumanDesign(payload) && typeStr) {
+      return {
+        state: "calculated",
+        type: typeStr,
+        selectedSource: `${source} (Build 70-73 Historical)`,
+        selectedTimestamp: toDateMs((payload as any)?.updatedAt || (payload as any)?.createdAt) || Date.now(),
+        diagnosticReason: "Recovered valid Build 70-73 historical chart",
+        historicalChartRecovered: true,
+        conflictDetected: false,
+      };
+    }
+
+    if (typeof payload === "string" && payload.trim() && payload !== "-") {
+      return {
+        state: "calculated",
+        type: payload.trim(),
+        selectedSource: `${source} (Historical Scalar)`,
+        selectedTimestamp: Date.now(),
+        diagnosticReason: "Recovered historical scalar type string",
+        historicalChartRecovered: true,
+        conflictDetected: false,
+      };
+    }
+
+    const status = String((payload as any)?.status || "").toLowerCase();
+    if (status === "pending" || (payload as any)?.hdAuditStatus === "pending") {
+      return {
+        state: "pending",
+        type: null,
+        selectedSource: source,
+        selectedTimestamp: null,
+        diagnosticReason: "Human Design calculation pending",
+        historicalChartRecovered: false,
+        conflictDetected: false,
+      };
+    }
+
+    if (status === "error" || status === "missing_input") {
+      return {
+        state: "calculation_failed",
+        type: null,
+        selectedSource: source,
+        selectedTimestamp: null,
+        diagnosticReason: "Calculation failed due to input error",
+        historicalChartRecovered: false,
+        conflictDetected: false,
+      };
+    }
+  }
+
+  if (!blueprintDoc) {
+    return {
+      state: "never_calculated",
+      type: null,
+      selectedSource: null,
+      selectedTimestamp: null,
+      diagnosticReason: "No blueprint document created",
+      historicalChartRecovered: false,
+      conflictDetected: false,
+    };
+  }
+
+  return {
+    state: "no_valid_data",
+    type: null,
+    selectedSource: null,
+    selectedTimestamp: null,
+    diagnosticReason: "No valid Human Design payload found",
+    historicalChartRecovered: false,
+    conflictDetected: false,
+  };
+}
+
 export default function AdminActivityPage() {
   const auth = useAuth();
   const profile = auth?.userProfile;
@@ -540,6 +658,7 @@ export default function AdminActivityPage() {
   const [selectedUser, setSelectedUser] = useState<FounderUser | null>(null);
   const [selectedBlueprint, setSelectedBlueprint] = useState<BlueprintSummary | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<UserDetailData | null>(null);
+  const [standaloneHd, setStandaloneHd] = useState<StandaloneHumanDesignSnapshot | null>(null);
   const [blueprintLoading, setBlueprintLoading] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "premium" | "free">("all");
@@ -645,14 +764,20 @@ export default function AdminActivityPage() {
     if (isFounder) void loadDashboard();
   }, [isFounder, rangeDates.start, rangeDates.end]);
 
+  const currentRequestId = useRef(0);
+
   useEffect(() => {
+    if (!selectedUser) {
+      setSelectedBlueprint(null);
+      setSelectedDetail(null);
+      setStandaloneHd(null);
+      return;
+    }
+    const reqId = ++currentRequestId.current;
+    const activeUid = selectedUser.uid;
+
+    setBlueprintLoading(true);
     const run = async () => {
-      if (!selectedUser) {
-        setSelectedBlueprint(null);
-        setSelectedDetail(null);
-        return;
-      }
-      setBlueprintLoading(true);
       try {
         const [
           blueprintResult,
@@ -680,15 +805,25 @@ export default function AdminActivityPage() {
           getUidRows("audioHealingEntries", selectedUser.uid),
         ]);
 
+        if (reqId !== currentRequestId.current || selectedUser?.uid !== activeUid) {
+          return;
+        }
+
         const data = blueprintResult.status === "fulfilled" ? blueprintResult.value : null;
-        setSelectedBlueprint(data ? {
-          lifePath: String((data as any).lifePath?.display || (data as any).lifePath?.number || "-"),
-          arcana: String((data as any).destinyMatrix?.center || (data as any).arcana?.name || "-"),
-          humanDesign: String((data as any).humanDesign?.type || "-"),
-          sun: String((data as any).astrology?.sunSign || (data as any).natalChart?.sunSign || "-"),
-          weton: String((data as any).weton?.weton || (data as any).weton?.name || "-"),
-          tzolkin: String((data as any).tzolkin?.kinName || "-"),
-        } : null);
+        const rawBp = (data || (selectedUser.rawUser as any)?.blueprint || (selectedUser.rawUser as any)?.profile?.blueprint || (selectedUser.rawUser as any)?.profile || selectedUser.rawUser) as any;
+
+        // STANDALONE HUMAN DESIGN RESOLUTION
+        const hdSnapshot = resolveStandaloneHumanDesign(selectedUser, data);
+        setStandaloneHd(hdSnapshot);
+
+        setSelectedBlueprint({
+          lifePath: typeof rawBp?.lifePath === "string" ? rawBp.lifePath : String(rawBp?.lifePath?.display || rawBp?.lifePath?.number || "-"),
+          arcana: typeof rawBp?.arcana === "string" ? rawBp.arcana : String(rawBp?.destinyMatrix?.center || rawBp?.arcana?.name || "-"),
+          humanDesign: hdSnapshot.type || "-",
+          sun: typeof rawBp?.sun === "string" ? rawBp.sun : String(rawBp?.astrology?.sunSign || rawBp?.natalChart?.sunSign || "-"),
+          weton: typeof rawBp?.weton === "string" ? rawBp.weton : String(rawBp?.weton?.weton || rawBp?.weton?.name || "-"),
+          tzolkin: typeof rawBp?.tzolkin === "string" ? rawBp.tzolkin : String(rawBp?.tzolkin?.kinName || "-"),
+        });
 
         const readRows = (result: PromiseSettledResult<any[]>): any[] => result.status === "fulfilled" ? result.value : [];
         const notes = [
@@ -711,10 +846,14 @@ export default function AdminActivityPage() {
           sourceNotes: notes,
         });
       } catch {
-        setSelectedBlueprint(null);
-        setSelectedDetail(null);
+        if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
+          setSelectedBlueprint(null);
+          setSelectedDetail(null);
+        }
       } finally {
-        setBlueprintLoading(false);
+        if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
+          setBlueprintLoading(false);
+        }
       }
     };
     void run();
@@ -1505,10 +1644,19 @@ export default function AdminActivityPage() {
               <DetailBox title="Blueprint" rows={blueprintLoading ? [["Status", "Loading..."]] : [
                 ["Life Path", selectedBlueprint?.lifePath || "-"],
                 ["Arcana", selectedBlueprint?.arcana || "-"],
-                ["Human Design", selectedBlueprint?.humanDesign || "-"],
+                ["Human Design", standaloneHd?.type || selectedBlueprint?.humanDesign || "-"],
                 ["Weton", selectedBlueprint?.weton || "-"],
                 ["Tzolkin", selectedBlueprint?.tzolkin || "-"],
                 ["Sun Sign", selectedBlueprint?.sun || "-"],
+              ]} />
+
+              {/* HUMAN DESIGN (STANDALONE PROJECTION) */}
+              <DetailBox title="Human Design (Standalone)" rows={blueprintLoading ? [["Status", "Loading..."]] : [
+                ["Engine State", standaloneHd?.state ? standaloneHd.state.toUpperCase() : "NO VALID DATA"],
+                ["Type", standaloneHd?.type || (standaloneHd?.state === "pending" ? "Human Design sedang diproses." : "No data")],
+                ["Provenance Source", standaloneHd?.selectedSource || "Unrecorded"],
+                ["Chart Status", standaloneHd?.historicalChartRecovered ? "Build 70-73 Historical Recovered" : "Canonical gaia-hd-v1"],
+                ["Diagnostic Note", standaloneHd?.diagnosticReason || "-"],
               ]} />
 
               {/* MEMBERSHIP */}

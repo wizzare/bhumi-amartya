@@ -91,6 +91,31 @@ export function createHdCacheKey(profile: HumanDesignBirthProfile): string {
   return [profile.birthDate, profile.birthTime, profile.timezone, profile.latitude, profile.longitude].map((value) => String(value ?? "").trim()).join("|");
 }
 
+export function isRecognizedHumanDesignType(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const normalized = value.trim().toLowerCase();
+  return ["generator", "manifesting generator", "projector", "manifestor", "reflector"].includes(normalized);
+}
+
+export function normalizeHumanDesignType(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "-") return null;
+  const lower = trimmed.toLowerCase();
+  if (lower === "generator") return "Generator";
+  if (lower === "manifesting generator" || lower === "manifesting_generator") return "Manifesting Generator";
+  if (lower === "projector") return "Projector";
+  if (lower === "manifestor") return "Manifestor";
+  if (lower === "reflector") return "Reflector";
+  return trimmed;
+}
+
+export function preserveCalculatedHumanDesign(existing?: unknown, candidate?: unknown): Partial<HumanDesignChart> {
+  if (isCanonicalHumanDesign(existing)) return existing as Partial<HumanDesignChart>;
+  if (isCanonicalHumanDesign(candidate)) return candidate as Partial<HumanDesignChart>;
+  return (candidate || existing || {}) as Partial<HumanDesignChart>;
+}
+
 export function logHumanDesignAudit(profile: HumanDesignBirthProfile, result: Partial<HumanDesignChart>, source: string) {
   console.info("[GAIA HD AUDIT]", {
     rawBirthDate: profile.birthDate ?? null,

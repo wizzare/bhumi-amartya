@@ -10,6 +10,7 @@ import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContex
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
 import { AccuracyUpgradeBanner } from "@/components/dashboard/AccuracyUpgradeBanner";
+import { PendingHdRecoveryBanner } from "@/components/dashboard/PendingHdRecoveryBanner";
 import { GuardianIdentityCard } from "@/components/dashboard/GuardianIdentityCard";
 import { SafetyActionCard } from "@/components/safety/SafetyActionCard";
 import { evaluateSafetyTriggers, SafetyState } from "@/lib/engines/safetySentinelEngine";
@@ -789,6 +790,8 @@ export function DashboardClient() {
       {/* ...existing code... */}
 
       <DashboardHeader userName={profile.fullName} language={language} />
+
+      <PendingHdRecoveryBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 
       {safetyState?.isSafetyMode && (
         <SafetyActionCard

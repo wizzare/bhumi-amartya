@@ -181,6 +181,27 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
   const ensuredHumanDesign = blueprint.humanDesign ?? createPendingHumanDesignChart(
     "Human Design requires precise time zone and birth location.",
   );
+
+  // Transition Guard: Only clear hdDismissedAt if status transitioned FROM non-pending TO pending
+  try {
+    const existingSnap = await getDoc(blueprintRef);
+    if (existingSnap.exists()) {
+      const oldHd = existingSnap.data()?.humanDesign;
+      const oldStatus = String(oldHd?.status || oldHd?.calculationStatus || "").toLowerCase();
+      const newStatus = String(ensuredHumanDesign.status || ensuredHumanDesign.calculationStatus || "").toLowerCase();
+
+      const isOldPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(oldStatus);
+      const isNewPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(newStatus);
+
+      if (!isOldPending && isNewPending) {
+        const userRef = doc(db, "users", uid);
+        await setDoc(userRef, { hdDismissedAt: null }, { merge: true });
+      }
+    }
+  } catch (err) {
+    console.warn("[BLUEPRINT REPO] Transition check for hdDismissedAt failed:", err);
+  }
+
   const normalizedPayload = normalizeBlueprint(uid, {
     ...blueprint,
     humanDesign: ensuredHumanDesign,

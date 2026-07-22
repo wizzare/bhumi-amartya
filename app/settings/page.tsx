@@ -542,6 +542,26 @@ export default function SettingsPage() {
       authProvider: googleEmail ? "google" : "local",
       createdAt: now,
     } as LocalUserProfile;
+
+    const isBirthFieldEdited = Boolean(
+      originalProfile && (
+        birthDate !== originalProfile.birthDate ||
+        birthTime !== originalProfile.birthTime ||
+        birthCity !== originalProfile.birthCity
+      )
+    );
+
+    if (isBirthFieldEdited) {
+      if (!birthTime || !birthTime.trim()) {
+        setMessage("Jam kelahiran wajib diisi untuk pemetaan Human Design yang akurat.");
+        return;
+      }
+      if (!selectedCity || selectedCity.latitude == null || selectedCity.longitude == null) {
+        setMessage("Pilih kota kelahiran dari daftar autocomplete agar koordinat lokasi terdeteksi.");
+        return;
+      }
+    }
+
     const cityChanged = birthCity !== currentProfile.birthCity;
     const cityFallback = resolveNatalLocation({
       birthDate,

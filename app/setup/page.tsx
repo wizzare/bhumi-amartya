@@ -150,6 +150,17 @@ export default function SetupPage() {
     if (!effectiveUser) return;
     const uid = effectiveUser.uid;
     console.log("[SETUP SUBMIT START] UID:", uid);
+
+    if (!birthTime || !birthTime.trim()) {
+      setFormError("Jam kelahiran wajib diisi untuk pemetaan Human Design yang akurat.");
+      return;
+    }
+
+    if (!selectedCity || selectedCity.latitude == null || selectedCity.longitude == null) {
+      setFormError("Pilih kota kelahiran dari daftar yang muncul agar koordinat lokasi terdeteksi.");
+      return;
+    }
+
     setLoading(true);
     setFormError(null);
     setDebug(prev => ({ ...prev, errorMessage: null }));
@@ -363,7 +374,10 @@ export default function SetupPage() {
           <CityAutocomplete
             value={birthPlace}
             placeholder="Kota Kelahiran"
-            onInputChange={(val) => setBirthPlace(val)}
+            onInputChange={(val) => {
+              setBirthPlace(val);
+              setSelectedCity(null);
+            }}
             onCitySelect={(city) => { setBirthPlace(city.formattedCity); setSelectedCity(city); }}
           />
 
@@ -371,7 +385,11 @@ export default function SetupPage() {
             <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-2xl">{formError}</p>
           )}
 
-          <button type="submit" disabled={loading} className="bhumi-button w-full pt-4">
+          <button
+            type="submit"
+            disabled={loading || !birthDate || !birthTime || !birthPlace || !selectedCity}
+            className="bhumi-button w-full pt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             {loading ? "Menyimpan..." : "Lanjut ke Dashboard"}
           </button>
         </form>
