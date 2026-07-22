@@ -79,12 +79,26 @@ export function getHumanDesignCanonicalFailureReason(
   return isCanonicalHumanDesign(hd) ? "canonical" : "unknown";
 }
 
+export function isValidHistoricalHumanDesign(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+  const hd = value as Partial<HumanDesignChart> & Record<string, unknown>;
+  const type = String(hd.type || hd.auditCandidateType || "").trim();
+  const status = String(hd.status || "").toLowerCase();
+  if (!type) return false;
+  if (status === "error" || status === "missing_input") return false;
+  return true;
+}
+
 export function getCanonicalHumanDesign(value: unknown): Partial<HumanDesignChart> | null {
   return isCanonicalHumanDesign(value) ? value as Partial<HumanDesignChart> : null;
 }
 
 export function getCanonicalHumanDesignType(value: unknown): string | null {
-  return getCanonicalHumanDesign(value)?.type ?? null;
+  if (!value || typeof value !== "object") return null;
+  const hd = value as Partial<HumanDesignChart> & Record<string, unknown>;
+  if (isCanonicalHumanDesign(hd)) return hd.type ?? null;
+  if (isValidHistoricalHumanDesign(hd)) return (hd.type || hd.auditCandidateType || null) as string | null;
+  return null;
 }
 
 export function createHdCacheKey(profile: HumanDesignBirthProfile): string {
