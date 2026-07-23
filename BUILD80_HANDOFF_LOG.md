@@ -5,6 +5,23 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-07-24 -- Correction: Governance Status Adjustment (Items 7, 8, 9)
+
+Agent: Antigravity AI Assistant
+Starting HEAD: f71e070
+Ending HEAD: f71e070
+
+Work completed:
+- Mengoreksi tabel status `BUILD80_STATUS.md` untuk item 7, 8, dan 9:
+  - Item 7: Status `LOCAL TEST PASS` (source implementation selesai, unit test pass, belum `EMULATOR PASS` sampai konsol log emulator asli ditampilkan, controlled restore belum dilakukan).
+  - Item 8: Status `LOCAL TEST PASS / BLOCKED` (source fix selesai, belum `AUTHENTICATED RUNTIME PASS` sampai verifikasi browser nyata dilakukan untuk user baru + 0 regresi user lama).
+  - Item 9: Status `LOCAL TEST PASS / BLOCKED` (source implementation selesai, belum `EMULATOR PASS` sampai bukti 2 runtime konkuren / emulator nyata ditampilkan).
+- Code changes: 0
+- Production data writes: 0
+- Exact next task setelah checkpoint: `Browser verification new-user Dashboard and HD Pending`.
+
+---
+
 ## 2026-07-24 -- Governance & Privacy Redaction: Widya Amalia Data Provenance
 
 Agent: Claude (Reviewer)

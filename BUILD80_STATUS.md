@@ -74,7 +74,7 @@ Sebelum melakukan pekerjaan apa pun:
 
 ## CURRENT ACTIVE TASK
 
-Lanjutkan ke **TAHAP 4: AUDIT VERSI APP SELURUH AKUN** (Read-only audit seluruh akun, buat tabel klasifikasi versi app).
+Browser verification new-user Dashboard and HD Pending
 
 ## CURRENT STATUS PER ITEM
 
@@ -86,9 +86,9 @@ Lanjutkan ke **TAHAP 4: AUDIT VERSI APP SELURUH AKUN** (Read-only audit seluruh 
 | 4 | Bug URL relatif HD API (hdApiUrl.ts) | `AUTHENTICATED RUNTIME PASS` | Dry-run + tulis nyata untuk Widya diverifikasi browser |
 | 5 | HD Recovery 21 user Kategori B | `AUTHENTICATED RUNTIME PASS` (sample) | 3 user sample diverifikasi browser; 21 user tercatat di Firestore dengan source human-design-py |
 | 6 | Forensic audit insiden 220 dokumen | Setara `EMULATOR PASS` | Query langsung Firestore production, bukan browser, tapi data mentah terverifikasi |
-| 7 | Billing fix -- Slamat Ardy Widjaja | `LOCAL TEST PASS` | BELUM `EMULATOR PASS` -- skenario Valid/Expired/Refunded/Duplicate Purchase belum ada log konsol asli |
-| 8 | New-user dashboard stuck loading + HD tidak muncul | `LOCAL TEST PASS` | BLOCKED -- menunggu klarifikasi kontradiksi data HD Widya Amalia (dilaporkan Projector 2/4, padahal Founder sudah verifikasi browser sebelumnya hasilnya Manifestor) + verifikasi browser sungguhan yang belum dilakukan |
-| 9 | Cross-runtime atomicity (race condition 2 device) | `LOCAL TEST PASS` | BLOCKED -- menunggu klarifikasi kontradiksi data HD Widya Amalia (dilaporkan Projector 2/4, padahal Founder sudah verifikasi browser sebelumnya hasilnya Manifestor) + verifikasi browser sungguhan yang belum dilakukan |
+| 7 | Billing fix -- Slamat Ardy Widjaja | `LOCAL TEST PASS` | source implementation selesai; unit/local test telah dijalankan; belum boleh disebut EMULATOR PASS; belum ada log konsol asli dari Firebase Emulator untuk skenario: Valid, Expired, Refunded, dan Duplicate; backend belum production verified; controlled Restore Purchase belum dilakukan. |
+| 8 | New-user dashboard stuck loading + HD tidak muncul | `LOCAL TEST PASS / BLOCKED` | source fix dan local test selesai; belum boleh disebut AUTHENTICATED RUNTIME PASS; menunggu verifikasi browser nyata dengan build terbaru; wajib membuktikan user baru dapat masuk Dashboard saat HD masih Pending; wajib mengecek tidak ada regresi pada akun lama representatif; canonical HD Widya adalah Manifestor 1/3 berdasarkan provenance yang sudah diverifikasi; jangan gunakan kembali unsupported claim lama. |
+| 9 | Cross-runtime atomicity (race condition 2 device) | `LOCAL TEST PASS / BLOCKED` | source implementation dan local test selesai; belum boleh disebut EMULATOR PASS atau runtime pass; menunggu bukti Firebase Emulator nyata atau dua runtime konkuren; wajib membuktikan hanya satu canonical write dan tidak ada overwrite pada blueprint atau HD canonical. |
 | 10 | Audit Versi App seluruh akun | `NOT RUN` | Termasuk klarifikasi kasus "3.1.12-RC" |
 | 11 | Audit force-update Build 80 | `NOT RUN` | Infra ada sejak build 55/66 (VersionChecker.tsx, server-driven via app_config/version). JANGAN aktifkan minimumBuild:80 sebelum app tersedia di Play Store |
 | 12 | Deploy backend billing ke production | `BLOCKED` | Menunggu item 7 & 9 selesai EMULATOR PASS + approval Founder |
