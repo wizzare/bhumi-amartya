@@ -10,7 +10,7 @@ import {
   purchasePremiumSubscription,
   queryPremiumSubscription,
   restorePremiumPurchases,
-  verifyGooglePlayPurchase,
+  processAndVerifyPurchaseToken,
   type GooglePlayProduct,
   type GooglePlayPurchase,
 } from "@/lib/billing/googlePlayBilling";
@@ -22,7 +22,7 @@ export default function UpgradePage() {
   const [product, setProduct] = useState<GooglePlayProduct | null>(null);
   const [state, setState] = useState<PurchaseState>("idle");
   const [message, setMessage] = useState<string | null>(null);
-  const billingAvailable = isGooglePlayBillingAvailable();
+  const billingAvailable = useMemo(() => isGooglePlayBillingAvailable(), []);
 
   const activeUntil = useMemo(() => formatAccessUntil((auth?.userProfile as any)?.accessUntil), [auth?.userProfile]);
   const isPremium = String((auth?.userProfile as any)?.plan || "").toLowerCase() === "premium"
@@ -52,7 +52,7 @@ export default function UpgradePage() {
   }, [billingAvailable]);
 
   const verifyAndRefresh = async (purchase: GooglePlayPurchase) => {
-    const verification = await verifyGooglePlayPurchase(purchase);
+    const verification = await processAndVerifyPurchaseToken(purchase);
     if (!verification.active) {
       setMessage("Pembelian tercatat, tetapi statusnya belum aktif dari Google Play.");
       return;

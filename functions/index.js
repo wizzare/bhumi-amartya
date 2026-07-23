@@ -4,6 +4,7 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const functions = require("firebase-functions/v1");
 const { google } = require("googleapis");
+const { recordInteractiveLoginTransaction } = require("./trialLogin");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -78,6 +79,41 @@ exports.assignJuly1AccessOnCreate = functions
       accessStart: payload.accessStart,
       accessUntil: payload.accessUntil,
     });
+  });
+
+exports.recordInteractiveLogin = functions
+  .region("asia-southeast2")
+  .https.onCall(async (data, context) => {
+    if (!context.auth || !context.auth.uid) {
+      throw new functions.https.HttpsError("unauthenticated", "Login diperlukan untuk mencatat sesi.");
+    }
+
+    try {
+      const result = await recordInteractiveLoginTransaction({
+        admin,
+        uid: context.auth.uid,
+        authTimeSeconds: context.auth.token && context.auth.token.auth_time,
+        provider: context.auth.token && context.auth.token.firebase && context.auth.token.firebase.sign_in_provider,
+        registrationHint: data && data.registrationHint === true,
+      });
+      functions.logger.info("[INTERACTIVE_LOGIN_RECORDED]", {
+        uid: context.auth.uid,
+        eventType: result.eventType,
+        counted: result.counted,
+        trialLoginCount: result.trialLoginCount,
+        idempotent: result.idempotent,
+      });
+      return result;
+    } catch (error) {
+      functions.logger.error("[INTERACTIVE_LOGIN_RECORD_FAILED]", {
+        uid: context.auth.uid,
+        errorName: error && error.name,
+        errorCode: error && error.code,
+        errorMessage: error && error.message,
+        errorDetails: error && error.details,
+      });
+      throw new functions.https.HttpsError("internal", "Sesi login belum dapat dicatat.");
+    }
   });
 
 async function getAndroidPublisherClient() {
@@ -310,29 +346,10 @@ exports.verifyGooglePlayPurchase = functions
       voided: voidedCheck.voided,
     });
 
-    let acknowledgedByServer = false;
-    if (decision.active) {
-      try {
-        acknowledgedByServer = await acknowledgeSubscriptionIfPending(
-          androidpublisher,
-          packageName,
-          verifiedProductId,
-          purchaseToken,
-          subscription,
-        );
-      } catch (error) {
-        functions.logger.warn("[GOOGLE_PLAY_ACKNOWLEDGE_DEFERRED]", {
-          uid,
-          productId: verifiedProductId,
-          purchaseTokenHash,
-          message: error && error.message,
-        });
-      }
-    }
-
     const nowIso = new Date().toISOString();
     const accessUntilIso = toIsoOrNull(decision.accessUntil);
 
+    // STEP 1: ATOMIC FIRESTORE PERSISTENCE (PERSIST FIRST WITH ACK_PENDING)
     await admin.firestore().runTransaction(async (transaction) => {
       const userRef = admin.firestore().doc(`users/${uid}`);
       const tokenRef = admin.firestore().doc(`billing_purchase_tokens/${purchaseTokenHash}`);
@@ -384,6 +401,7 @@ exports.verifyGooglePlayPurchase = functions
         tokenHash: purchaseTokenHash,
         subscriptionState,
         entitlementStatus: decision.entitlementStatus,
+        ackStatus: "ACK_PENDING",
         accessUntil: accessUntilIso,
         latestOrderId: subscription.latestOrderId || null,
         firstLinkedAt: tokenOwnership.idempotent
@@ -418,7 +436,8 @@ exports.verifyGooglePlayPurchase = functions
           entitlementStatus: decision.entitlementStatus,
           entitlementDecisionReason: decision.reason,
           acknowledgementState: subscription.acknowledgementState || null,
-          acknowledgedByServer,
+          acknowledgedByServer: false,
+          ackStatus: "ACK_PENDING",
           latestOrderId: subscription.latestOrderId || null,
           voidedCheck: {
             checked: voidedCheck.checked,
@@ -435,6 +454,7 @@ exports.verifyGooglePlayPurchase = functions
             tokenHash: purchaseTokenHash,
             subscriptionState,
             entitlementStatus: decision.entitlementStatus,
+            ackStatus: "ACK_PENDING",
             accessUntil: accessUntilIso,
             updatedAt: nowIso,
           },
@@ -443,6 +463,41 @@ exports.verifyGooglePlayPurchase = functions
         updatedAt: nowIso,
       }, { merge: true });
     });
+
+    // STEP 2: ACKNOWLEDGE WITH GOOGLE PLAY API (AFTER FIRESTORE PERSISTENCE IS GUARANTEED)
+    let acknowledgedByServer = false;
+    if (decision.active) {
+      try {
+        acknowledgedByServer = await acknowledgeSubscriptionIfPending(
+          androidpublisher,
+          packageName,
+          verifiedProductId,
+          purchaseToken,
+          subscription,
+        );
+
+        // STEP 3: UPDATE ACKNOWLEDGED STATUS IN FIRESTORE ON SUCCESS
+        if (acknowledgedByServer) {
+          await admin.firestore().runTransaction(async (transaction) => {
+            const userRef = admin.firestore().doc(`users/${uid}`);
+            const tokenRef = admin.firestore().doc(`billing_purchase_tokens/${purchaseTokenHash}`);
+            transaction.set(tokenRef, { ackStatus: "ACKNOWLEDGED", acknowledgedAt: new Date().toISOString() }, { merge: true });
+            transaction.set(userRef, {
+              "purchase.acknowledgedByServer": true,
+              "purchase.ackStatus": "ACKNOWLEDGED",
+              "purchases.googlePlay.ackStatus": "ACKNOWLEDGED",
+            }, { merge: true });
+          });
+        }
+      } catch (error) {
+        functions.logger.warn("[GOOGLE_PLAY_ACKNOWLEDGE_DEFERRED]", {
+          uid,
+          productId: verifiedProductId,
+          purchaseTokenHash,
+          message: error && error.message,
+        });
+      }
+    }
 
     functions.logger.info("[GOOGLE_PLAY_SUBSCRIPTION_VERIFIED]", {
       uid,

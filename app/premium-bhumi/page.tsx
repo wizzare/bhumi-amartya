@@ -11,7 +11,7 @@ import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, CheckCircle,
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCurrentBadge, hasActiveBadgeAccess, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
 import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
-import { purchasePremiumSubscription, restorePremiumPurchases, verifyGooglePlayPurchase } from "@/lib/billing/googlePlayBilling";
+import { purchasePremiumSubscription, restorePremiumPurchases, processAndVerifyPurchaseToken } from "@/lib/billing/googlePlayBilling";
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
@@ -63,18 +63,29 @@ export default function PremiumBhumiPage() {
       const result = await purchasePremiumSubscription();
       const purchases = result?.purchases || [];
       if (purchases.length > 0) {
-        setMessage((result as any)?.alreadyOwned
-          ? (t.premiumBhumi?.restoreSuccess || "Pembelian ditemukan dan dipulihkan! Memverifikasi dengan server...")
-          : (t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Memverifikasi dengan server..."));
-        
-        // Backend Verification & Server Entitlement Persistence
+        let verifiedAny = false;
+        let lastError: string | null = null;
+
         for (const p of purchases) {
           if (p.purchaseToken) {
-            await verifyGooglePlayPurchase(p).catch(() => null);
+            try {
+              const verified = await processAndVerifyPurchaseToken(p);
+              if (verified?.ok && verified?.active) {
+                verifiedAny = true;
+              }
+            } catch (vErr: any) {
+              lastError = vErr?.message || "Verifikasi server gagal.";
+            }
           }
         }
-        await storageProvider.getUserProfile().catch(() => null);
-        setTimeout(() => router.refresh(), 1500);
+
+        if (verifiedAny) {
+          setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
+          await storageProvider.getUserProfile().catch(() => null);
+          setTimeout(() => router.refresh(), 1500);
+        } else {
+          setError(lastError || "Pembelian Play Store terdeteksi, namun verifikasi server gagal. Silakan gunakan tombol Pulihkan Pembelian.");
+        }
       }
     } catch (err: any) {
       if (err?.message?.includes("USER_CANCELED") || err?.code === "USER_CANCELED") {
@@ -95,16 +106,31 @@ export default function PremiumBhumiPage() {
       const result = await restorePremiumPurchases();
       const purchases = result?.purchases || [];
       if (purchases.length > 0) {
-        setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian dipulihkan! Memverifikasi dengan server...");
+        let verifiedAny = false;
+        let lastError: string | null = null;
+
         for (const p of purchases) {
           if (p.purchaseToken) {
-            await verifyGooglePlayPurchase(p).catch(() => null);
+            try {
+              const verified = await processAndVerifyPurchaseToken(p);
+              if (verified?.ok && verified?.active) {
+                verifiedAny = true;
+              }
+            } catch (vErr: any) {
+              lastError = vErr?.message || "Verifikasi server gagal.";
+            }
           }
         }
-        await storageProvider.getUserProfile().catch(() => null);
-        setTimeout(() => router.refresh(), 1500);
+
+        if (verifiedAny) {
+          setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
+          await storageProvider.getUserProfile().catch(() => null);
+          setTimeout(() => router.refresh(), 1500);
+        } else {
+          setError(lastError || "Pembelian aktif ditemukan di Play Store, namun verifikasi server gagal. Silakan coba lagi.");
+        }
       } else {
-        setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada pembelian yang ditemukan untuk dipulihkan.");
+        setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan.");
       }
     } catch (err: any) {
       setError(err?.message || t.premiumBhumi?.restoreFailed || "Pulihkan gagal. Silakan coba lagi.");
