@@ -198,6 +198,6 @@ Next task setelah Build 80 P0 tuntas (di luar Build 80 inti):
   tidak berubah untuk 200 user lama maupun 12 user Kategori A.
 - Widya Amalia SEHARUSNYA badge "Penjaga Bhumi Alfa" (bukan Inti) --
   sudah diperbaiki di source of truth + Firestore, JANGAN diubah balik.
-- jangkrik bos (UID VUyef3YmJNeGOZNrmPJlBbGbtuw2) adalah akun test
+- jangkrik bos (UID [REDACTED_TEST_UID]) adalah akun test
   Founder -- SENGAJA di-skip dari HD recovery, bukan terlewat.
-- KLAIM DATA LAHIR/HD WIDYA AMALIA ("1996-09-08, Kediri, 3/5") DARI SESI CHATGPT SEBELUMNYA TERBUKTI HALUSINASI/KARANGAN. Data lahir asli Widya Amalia yang BENAR dan TERVERIFIKASI FIRESTORE PRODUCTION: Tanggal Lahir 1987-06-09, Jam Lahir 09:00, Kota Lahir Bangil East Java, HD type Manifestor profile "1/3: Investigator Martyr". DILARANG MENGGUNAKAN ATAU MENGULANG DATA HALUSINASI DARI CHATGPT KELIRU TERSEBUT!
+- UNSUPPORTED CLAIM CONCERNING WIDYA AMALIA HD ("1996-09-08, Kediri, 3/5") IS CONTRADICTED BY CANONICAL FIRESTORE EVIDENCE. Canonical Human Design in Firestore production is Manifestor 1/3: Investigator Martyr. Provenance: Firestore production read-only query. Production Writes: 0. DO NOT REUSE UNSUPPORTED CLAIM.
