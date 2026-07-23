@@ -200,3 +200,4 @@ Next task setelah Build 80 P0 tuntas (di luar Build 80 inti):
   sudah diperbaiki di source of truth + Firestore, JANGAN diubah balik.
 - jangkrik bos (UID VUyef3YmJNeGOZNrmPJlBbGbtuw2) adalah akun test
   Founder -- SENGAJA di-skip dari HD recovery, bukan terlewat.
+- KLAIM DATA LAHIR/HD WIDYA AMALIA ("1996-09-08, Kediri, 3/5") DARI SESI CHATGPT SEBELUMNYA TERBUKTI HALUSINASI/KARANGAN. Data lahir asli Widya Amalia yang BENAR dan TERVERIFIKASI FIRESTORE PRODUCTION: Tanggal Lahir 1987-06-09, Jam Lahir 09:00, Kota Lahir Bangil East Java, HD type Manifestor profile "1/3: Investigator Martyr". DILARANG MENGGUNAKAN ATAU MENGULANG DATA HALUSINASI DARI CHATGPT KELIRU TERSEBUT!

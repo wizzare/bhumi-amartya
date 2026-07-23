@@ -5,6 +5,19 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-07-24 -- Correction: Widya Amalia Birth Data Provenance (Bangil 1987-06-09 09:00 Manifestor 1/3)
+
+Agent: Claude (Reviewer)
+Starting HEAD: 867160e
+Ending HEAD: 867160e
+
+Work completed:
+- Mengonfirmasi dan mencatat koreksi total atas klaim data halusinasi/karangan sesi ChatGPT terdahulu ("1996-09-08, Kediri, profile 3/5").
+- Mengonfirmasi data lahir asli Widya Amalia (UID `Xd7KwAx2uPPlpWxIF7J22ub0SYI2`): **Tanggal Lahir 1987-06-09**, **Jam Lahir 09:00**, **Kota Lahir Bangil East Java**, **HD type Manifestor profile "1/3: Investigator Martyr"**.
+- Memasukkan aturan ketat ke bagian DO NOT REPEAT pada `BUILD80_STATUS.md` agar data halusinasi tidak pernah diulang.
+
+---
+
 ## 2026-07-24 -- Correction: Status Reversion (Items 7, 8, 9) & Widya Amalia HD Clarification
 
 Agent: Antigravity AI Assistant
