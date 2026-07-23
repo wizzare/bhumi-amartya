@@ -5,6 +5,26 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-07-24 -- Browser Runtime Verification: New-User Dashboard & HD Pending (Item 8)
+
+Agent: Antigravity AI Assistant
+Starting HEAD: 79b42c7
+Ending HEAD: 79b42c7
+
+Work completed:
+- Menjalankan pengujian Browser Runtime nyata via Playwright Chromium Browser pada server lokal `http://localhost:3000` & Firestore Emulator `127.0.0.1:8080`.
+- Hasil 4 Skenario:
+  1. SKENARIO 1 (NEW USER NORMAL): PASS (Setup selesai, Dashboard terbuka instan tanpa spinner abadi, blueprint dasar muncul).
+  2. SKENARIO 2 (HD PENDING NON-BLOCKING): PASS (Dashboard tetap terbuka & interaktif saat HD berstatus Pending).
+  3. SKENARIO 3 (HD FAILURE NON-BLOCKING): PASS (Kegagalan HD engine tidak menghapus blueprint dasar dan tidak mengunci UI).
+  4. SKENARIO 4 (CANONICAL HD REGRESSION): PASS (Profil HD canonical historis utuh tanpa regresi atau downgrade ke Pending).
+- Scope: Terbukti pada browser runtime + emulator lokal (`http://localhost:3000`), BUKAN production verified.
+- Console Errors: 0
+- Code files changed: 0
+- Production data writes: 0
+
+---
+
 ## 2026-07-24 -- Correction: Governance Status Adjustment (Items 7, 8, 9)
 
 Agent: Antigravity AI Assistant
