@@ -190,14 +190,15 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
   }
 
   // 5. Everyone Else - Free account
+  const isExhausted = loginCount > 7;
   return {
     isPremium: false,
     reason: "none",
     expiresAt: null,
     daysRemaining: 0,
-    effectiveTier: loginCount > 7 ? "Free (Trial Exhausted)" : "Free",
+    effectiveTier: isExhausted ? "Free (Trial Exhausted)" : "Free",
     source: "Free Account",
-    status: "Active",
-    trialLoginsRemaining: loginCount > 7 ? "Sisa Kuota Login: 0/7" : null,
+    status: isExhausted ? "Trial Exhausted" : "Free Access",
+    trialLoginsRemaining: isExhausted ? "Sisa Kuota Login: 0/7" : null,
   };
 }
