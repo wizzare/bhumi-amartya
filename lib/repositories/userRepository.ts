@@ -56,6 +56,7 @@ export type UserProfile = {
   isPremium?: boolean;
   isDeveloper?: boolean;
   isFoundingMember?: boolean;
+  effectiveTier?: string;
   testerBadge?: "Founder" | "Penjaga Bhumi Inti" | "Penjaga Bhumi Alfa" | "Penjaga Bhumi";
   guardianRole?: "founder" | "admin" | "user";
   guardianBadge?: "core_guardian" | "guardian";
@@ -340,34 +341,6 @@ const updatePresence = async (
   );
 };
 
-const recordSuccessfulLogin = async (uid: string): Promise<UserProfile | null> => {
-  const userRef = doc(db, "users", uid);
-  const path = `users/${uid}`;
-  const profile = await getUserProfile(uid);
-  if (!profile) return null;
-
-  const currentCount = typeof profile.trialLoginCount === "number" ? profile.trialLoginCount : 0;
-  const newCount = currentCount + 1;
-  const newStatus = newCount > 7 ? "free" : "active";
-  const now = Timestamp.now();
-
-  const payload: Partial<UserProfile> = {
-    trialLoginCount: newCount,
-    trialStatus: newStatus,
-    lastSuccessfulLoginAt: now,
-  };
-  if (newCount > 7 && !profile.trialCompletedAt) {
-    payload.trialCompletedAt = now;
-  }
-
-  await debugFirestoreOperation(
-    { operation: "setDoc", path, uid, payloadKeys: Object.keys(payload) },
-    () => setDoc(userRef, sanitizeForFirestore(payload), { merge: true }),
-  );
-
-  return (await getUserProfile(uid)) ?? { ...profile, ...payload };
-};
-
 export const userRepository = {
   upsertUserProfile,
   getUserProfile,
@@ -376,5 +349,4 @@ export const userRepository = {
   recordJournalProgress,
   updateEmotionalState,
   updateBlueprintStatus,
-  recordSuccessfulLogin,
 };

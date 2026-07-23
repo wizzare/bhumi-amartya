@@ -32,12 +32,14 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase/firebase";
 import { adminRepository } from "@/lib/repositories/adminRepository";
+import { UserProfile } from "@/lib/repositories/userRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
 import { shouldIncludeInAdminAnalytics, getExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
 import { getCanonicalHumanDesignType, isCanonicalHumanDesign, isValidHistoricalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
+import { getFounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -406,7 +408,13 @@ function normalizeUser(rawUserData: any): FounderUser | null {
   const lastLogin = metrics.lastLoginAt ?? rawUserData.lastLoginAt ?? null;
   const lastSeen = metrics.lastSeen ?? rawUserData.lastSeen ?? lastLogin;
   const membership = String(rawUserData.membershipType || rawUserData.membershipStatus || rawUserData.subscriptionStatus || "").toLowerCase();
-  const badge = String(rawUserData.testerBadge || rawUserData.guardianBadge || rawUserData.badge || rawUserData.recognitionTier || "");
+  const testerRecord = getFounderTesterRecord({
+    uid: String(rawUserData.uid || rawUserData.id || ""),
+    email,
+    fullName: displayName,
+    displayName,
+  });
+  const badge = String(rawUserData.testerBadge || rawUserData.guardianBadge || rawUserData.badge || rawUserData.recognitionTier || testerRecord?.badge || "");
   const isPremium = rawUserData.isPremium === true
     || membership.includes("premium")
     || membership.includes("inti")
@@ -1778,90 +1786,47 @@ function userCompletion(user: FounderUser, detail: UserDetailData | null, events
 function formatEntitlementDisplay(rawUser: Record<string, unknown> | null | undefined): Array<[string, string]> {
   if (!rawUser) return [["Entitlement Status", "No data"]];
 
-  const rawEnt = rawUser.entitlement ?? rawUser.entitlements;
-  
-  let effectiveTier = "Free";
-  let source = "-";
-  let status = "-";
-  let reason = "-";
-  let accessUntilStr = formatDateTime(rawUser.accessUntil ?? rawUser.expiresAt ?? rawUser.subscriptionExpiresAt);
-  let trialLoginsRemaining = "-";
-  let safeBillingState = "-";
+  const profile: UserProfile = {
+    uid: String(rawUser.uid || rawUser.id || ""),
+    email: String(rawUser.email || ""),
+    displayName: String(rawUser.displayName || rawUser.name || rawUser.fullName || ""),
+    fullName: String(rawUser.fullName || rawUser.displayName || rawUser.name || ""),
+    testerBadge: rawUser.testerBadge as any,
+    guardianBadge: rawUser.guardianBadge as any,
+    badge: rawUser.badge as any,
+    isPremium: rawUser.isPremium === true,
+    membershipType: rawUser.membershipType as any,
+    membershipExpiryDate: rawUser.membershipExpiryDate as any,
+    accessUntil: rawUser.accessUntil as any,
+    trialLoginCount: typeof rawUser.trialLoginCount === "number" ? rawUser.trialLoginCount : (typeof rawUser.loginCount === "number" ? rawUser.loginCount : undefined),
+    trialStatus: rawUser.trialStatus as any,
+    plan: rawUser.plan as any,
+    setupCompleted: rawUser.setupCompleted === true,
+  } as unknown as UserProfile;
 
-  if (typeof rawEnt === "string" && rawEnt.trim()) {
-    effectiveTier = rawEnt.trim();
-    source = "Legacy Field";
-  } else if (rawEnt && typeof rawEnt === "object") {
-    const ent = rawEnt as Record<string, unknown>;
-    effectiveTier = String(ent.tier || ent.effectiveTier || ent.membershipType || ent.type || "Free");
-    source = String(ent.source || ent.grantedBy || ent.type || "-");
-    status = String(ent.status || ent.state || "-");
-    reason = String(ent.reason || ent.description || "-");
-    if (ent.accessUntil || ent.expiresAt) {
-      accessUntilStr = formatDateTime(ent.accessUntil || ent.expiresAt);
-    }
-    if (ent.trialLoginsRemaining !== undefined || ent.remainingLogins !== undefined) {
-      trialLoginsRemaining = String(ent.trialLoginsRemaining ?? ent.remainingLogins);
-    }
-    if (ent.billingState || ent.billingStatus) {
-      safeBillingState = String(ent.billingState || ent.billingStatus);
-    }
-  }
+  const testerRecord = getFounderTesterRecord({
+    uid: profile.uid,
+    email: profile.email,
+    fullName: profile.fullName,
+    displayName: profile.displayName,
+  });
 
-  const badge = String(rawUser.testerBadge || rawUser.guardianBadge || rawUser.badge || rawUser.recognitionTier || "").trim();
-  const email = String(rawUser.email || "").trim().toLowerCase();
-  const isFounder = email === "wizzare@gmail.com" || badge.toLowerCase().includes("founder") || rawUser.role === "founder";
-  const loginCount = typeof rawUser.trialLoginCount === "number" ? rawUser.trialLoginCount : (typeof rawUser.loginCount === "number" ? rawUser.loginCount : 0);
+  const badgeDisplay = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge || testerRecord?.badge || "No data";
 
-  if (isFounder) {
-    effectiveTier = "Founder (Lifetime)";
-    source = "Founder Privileged";
-    status = "Active";
-  } else if (badge.includes("Inti")) {
-    effectiveTier = "Penjaga Bhumi Inti";
-    if (source === "-") source = "Explicit Grant";
-    const start = new Date("2026-06-29T00:00:00+07:00");
-    const until = new Date(rawUser.accessUntil ? String(rawUser.accessUntil) : "2026-08-30T00:00:00+07:00");
-    accessUntilStr = formatDateTime(until);
-    const now = new Date();
-    if (now < start) status = "Scheduled";
-    else if (now >= until) status = "Expired";
-    else status = "Active";
-  } else if (badge.includes("Alfa")) {
-    effectiveTier = "Penjaga Bhumi Alfa";
-    if (source === "-") source = "Explicit Grant";
-    const start = new Date("2026-06-29T00:00:00+07:00");
-    const until = new Date(rawUser.accessUntil ? String(rawUser.accessUntil) : "2026-07-30T00:00:00+07:00");
-    accessUntilStr = formatDateTime(until);
-    const now = new Date();
-    if (now < start) status = "Scheduled";
-    else if (now >= until) status = "Expired";
-    else status = "Active";
-  } else if (rawUser.isPremium === true || String(rawUser.membershipType).toUpperCase().includes("PREMIUM")) {
-    if (effectiveTier === "Free") effectiveTier = "Paid Premium";
-    if (source === "-") source = "Google Play Billing";
-    if (status === "-") status = "Active";
-  } else if (loginCount <= 7 && loginCount > 0) {
-    if (effectiveTier === "Free") effectiveTier = "Internal Login-Count Trial";
-    if (source === "-") source = "7-Login Trial";
-    status = "Active";
-    trialLoginsRemaining = `${Math.max(0, 7 - loginCount)} logins left (${loginCount}/7 used)`;
-  } else if (loginCount > 7) {
-    if (effectiveTier === "Free") effectiveTier = "Free (Trial Exhausted)";
-    trialLoginsRemaining = "0 logins left (Trial exhausted)";
-  }
+  const entitlement = getEntitlementStatus(profile);
 
   const rows: Array<[string, string]> = [
-    ["Badge", badge || "No data"],
-    ["Effective Tier", effectiveTier],
-    ["Source", source],
-    ["Status", status],
+    ["Badge", badgeDisplay],
+    ["Effective Tier", entitlement.effectiveTier],
+    ["Source", entitlement.source],
+    ["Status", entitlement.status],
+    ["Reason", entitlement.reason],
+    ["Access Until", entitlement.expiresAt ? formatDateTime(entitlement.expiresAt) : "Lifetime / No Expiry"],
   ];
 
-  if (reason !== "-") rows.push(["Reason", reason]);
-  rows.push(["Access Until", accessUntilStr]);
-  if (trialLoginsRemaining !== "-") rows.push(["Trial Logins Remaining", trialLoginsRemaining]);
-  if (safeBillingState !== "-") rows.push(["Safe Billing State", safeBillingState]);
+  if (entitlement.reason === "trial" && entitlement.trialLoginsRemaining) {
+    rows.push(["Trial Logins Remaining", entitlement.trialLoginsRemaining]);
+  }
 
   return rows;
 }
