@@ -92,7 +92,7 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
     displayName: profile.displayName,
   });
 
-  const effectiveBadge = badge || testerRecord?.badge;
+  const effectiveBadge = testerRecord?.badge || badge;
   if (effectiveBadge === "Founder") {
     return {
       isPremium: true,

@@ -7,5 +7,16 @@
  *   set to the HTTPS Cloud Run endpoint, e.g.
  *   "https://bhumi-humandesign-api-xxxxx.a.run.app/calculate"
  */
-export const HD_API_URL: string =
-  process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL || "/api/humandesign/calculate";
+export function getHdApiUrl(): string {
+  if (process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL) {
+    return process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+  }
+  if (typeof window !== "undefined") {
+    return "/api/humandesign/calculate";
+  }
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000";
+  const baseUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
+  return `${baseUrl}/api/humandesign/calculate`;
+}
+
+export const HD_API_URL: string = getHdApiUrl();

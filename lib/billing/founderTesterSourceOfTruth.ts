@@ -189,11 +189,20 @@ export function getFounderTesterRecord(input: {
     normalizeTesterName(input.displayName),
   ].filter(Boolean);
 
-  return FOUNDER_TESTER_SOURCE_OF_TRUTH.find((record) => {
-    if (uid && record.uid === uid) return true;
-    if (email && record.email === email) return true;
-    return candidates.includes(normalizeTesterName(record.name));
-  }) ?? null;
+  // Strong identifiers must win before a legacy/name fallback. A duplicate
+  // display name must never make one canonical cohort inherit another's policy.
+  if (uid) {
+    const uidMatch = FOUNDER_TESTER_SOURCE_OF_TRUTH.find((record) => record.uid === uid);
+    if (uidMatch) return uidMatch;
+  }
+  if (email) {
+    const emailMatch = FOUNDER_TESTER_SOURCE_OF_TRUTH.find((record) => normalizeEmail(record.email) === email);
+    if (emailMatch) return emailMatch;
+  }
+  if (candidates.length === 0) return null;
+
+  const nameMatches = FOUNDER_TESTER_SOURCE_OF_TRUTH.filter((record) => candidates.includes(normalizeTesterName(record.name)));
+  return nameMatches.length === 1 ? nameMatches[0] : null;
 }
 
 export function toPolicyDate(value?: unknown): Date | null {

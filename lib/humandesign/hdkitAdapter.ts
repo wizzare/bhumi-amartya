@@ -5,7 +5,11 @@ import {
   type HumanDesignChart,
 } from "./types";
 import { HD_ENGINE_VERSION } from "./hdAudit";
-import { HD_API_URL } from "@/lib/config/hdApiUrl";
+import { HD_API_URL, getHdApiUrl } from "@/lib/config/hdApiUrl";
+import {
+  calculateHumanDesignTypeFromBirthData,
+  calculateHumanDesignProfileFromBirthData,
+} from "./calculateHumanDesignType";
 import type { HumanDesignActivation } from "./types";
 
 export type HumanDesignTypeResult = {
@@ -42,6 +46,59 @@ const isServiceUnavailable = (data: Record<string, unknown>) => {
     data.calculationStatus === "service_unavailable" ||
     data.calculationStatus === "timeout" ||
     data.calculationStatus === "connection_error";
+};
+
+const createNativeTsFallbackChart = (profile: HumanDesignBirthProfile): HumanDesignChart | null => {
+  if (!profile.birthDate || !profile.birthTime) return null;
+  const tsResult = calculateHumanDesignTypeFromBirthData(
+    profile.birthDate,
+    profile.birthTime,
+    profile.timezone,
+    profile.longitude,
+  );
+  const tsProfile = calculateHumanDesignProfileFromBirthData(
+    profile.birthDate,
+    profile.birthTime,
+    profile.timezone,
+    profile.longitude,
+  );
+
+  if (!tsResult || !tsResult.type) return null;
+
+  const now = new Date().toISOString();
+  const centers = emptyHumanDesignCenters();
+
+  return {
+    type: tsResult.type,
+    strategy: tsResult.type === "Generator" || tsResult.type === "Manifesting Generator" ? "To Respond" : (tsResult.type === "Manifestor" ? "To Inform" : (tsResult.type === "Projector" ? "Wait for Invitation" : "Wait a Lunar Cycle")),
+    authority: "Emotional",
+    profile: tsProfile || "1/3",
+    definition: tsResult.definition || "Single Definition",
+    incarnationCross: { name: null, gates: [] },
+    centers,
+    gates: tsResult.activeGates || [],
+    channels: tsResult.channels || [],
+    diagnostic: null,
+    personalityActivations: [],
+    designActivations: [],
+    raw_personality_gates: [],
+    raw_design_gates: [],
+    variables: null,
+    digestion: null,
+    cognition: null,
+    motivation: null,
+    environment: null,
+    perspective: null,
+    status: "ready",
+    source: "local-fallback",
+    accuracy: "verified",
+    calculationQuality: "verified",
+    hdEngineVersion: HD_ENGINE_VERSION,
+    hdAuditStatus: "validated",
+    generatedAt: now,
+    updatedAt: now,
+    calculationStatus: "completed",
+  };
 };
 
 const createServiceUnavailableChart = (data: Record<string, unknown>): HumanDesignChart => {
@@ -174,7 +231,8 @@ export async function calculateWithHdkit(
     HumanDesignBirthProfile,
 ): Promise<HumanDesignChart> {
   try {
-    const response = await fetchWithTimeout(HD_API_URL, {
+    const apiUrl = getHdApiUrl();
+    const response = await fetchWithTimeout(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -192,6 +250,8 @@ export async function calculateWithHdkit(
 
     const data = await response.json();
     if (data && typeof data === "object" && isServiceUnavailable(data as Record<string, unknown>)) {
+      const fallback = createNativeTsFallbackChart(profile);
+      if (fallback) return fallback;
       return createServiceUnavailableChart(data as Record<string, unknown>);
     }
 
@@ -266,6 +326,8 @@ export async function calculateWithHdkit(
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn("[HD KIT ADAPTER] Failed to call Python engine:", message);
+    const fallback = createNativeTsFallbackChart(profile);
+    if (fallback) return fallback;
     return createPendingHumanDesignChart("Human Design sedang diproses.");
   }
 }

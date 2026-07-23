@@ -236,6 +236,7 @@ function formatDateKey(key: string): string {
 
 function toDateMs(value: unknown): number {
   if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
   if (typeof value === "number") return value > 10_000_000_000 ? value : value * 1000;
   if (typeof value === "string") {
     const parsed = Date.parse(value);
@@ -414,7 +415,7 @@ function normalizeUser(rawUserData: any): FounderUser | null {
     fullName: displayName,
     displayName,
   });
-  const badge = String(rawUserData.testerBadge || rawUserData.guardianBadge || rawUserData.badge || rawUserData.recognitionTier || testerRecord?.badge || "");
+  const badge = String(testerRecord?.badge || rawUserData.testerBadge || rawUserData.guardianBadge || rawUserData.badge || rawUserData.recognitionTier || "");
   const isPremium = rawUserData.isPremium === true
     || membership.includes("premium")
     || membership.includes("inti")
@@ -1811,7 +1812,7 @@ function formatEntitlementDisplay(rawUser: Record<string, unknown> | null | unde
     displayName: profile.displayName,
   });
 
-  const badgeDisplay = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge || testerRecord?.badge || "No data";
+  const badgeDisplay = testerRecord?.badge || profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge || "No data";
 
   const entitlement = getEntitlementStatus(profile);
 
