@@ -237,22 +237,34 @@ export default function SetupPage() {
 
       // 3. Save Blueprint
       console.log("[BLUEPRINT WRITE ATTEMPT]");
+      let bpSaved = false;
       try {
         await blueprintRepository.saveUserBlueprint(uid, deepClean(blueprint));
         setDebug(prev => ({ ...prev, blueprintWrite: "success" }));
         console.log("[BLUEPRINT WRITE SUCCESS]");
+        bpSaved = true;
       } catch (err: any) {
         if (devUser && err?.code === "permission-denied") {
           console.warn("[SETUP AUDIT] Firestore blueprint write blocked, continuing with local fallback");
           setDebug(prev => ({ ...prev, blueprintWrite: "local-only" }));
+          bpSaved = true;
         } else {
-          throw err;
+          console.error("[SETUP] Blueprint save failed:", err);
+          // Mark recovery_required in profile payload
+          const recoveryProfile = { ...profilePayload, setupCompleted: false, blueprintStatus: "recovery_required" as any, updatedAt: Timestamp.now() };
+          await userRepository.upsertUserProfile(uid, recoveryProfile).catch(() => {});
+          throw new Error("Gagal menyimpan blueprint. Data kelahiranmu telah tersimpan, silakan coba lagi.");
         }
       }
 
-      // 4. Final Profile
+      // 4. Final Profile (ONLY if blueprint saved)
       console.log("[FINAL PROFILE WRITE ATTEMPT]");
-      const finalProfile = { ...profilePayload, setupCompleted: true, blueprintStatus: "ready" as any, updatedAt: Timestamp.now() };
+      const finalProfile = {
+        ...profilePayload,
+        setupCompleted: bpSaved,
+        blueprintStatus: bpSaved ? ("ready" as any) : ("recovery_required" as any),
+        updatedAt: Timestamp.now(),
+      };
       try {
         await userRepository.upsertUserProfile(uid, finalProfile);
         await userRepository.updatePresence(uid, {

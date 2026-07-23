@@ -600,24 +600,33 @@ export function DashboardClient() {
       }
 
       try {
-        const p = await storageProvider.getUserProfile();
-        const b = await storageProvider.getUserBlueprint() as any;
+        let p = await storageProvider.getUserProfile();
+        let b = await storageProvider.getUserBlueprint() as any;
 
-        // Human Design stability audit log (Build 31 requirement)
-        if (b?.humanDesign) {
-          console.log("[HD AUDIT]", {
-            uid: auth.user.uid,
-            type: b.humanDesign.type,
-            status: b.humanDesign.status,
-            source: b.humanDesign.source,
-          });
-        }
-
-        if (!p || p.setupCompleted !== true || !b) {
+        // If profile is missing or setup is incomplete, redirect to setup
+        if (!p || p.setupCompleted !== true) {
           setLoading(false);
+          clearTimeout(watchdog);
           return;
         }
 
+        // AUTOMATIC RECOVERY: If profile exists but blueprint is missing (NO_BP / NEVER_CALCULATED)
+        if (!b && p.birthDate) {
+          console.log("[DASHBOARD BOOT] Blueprint missing for valid profile. Triggering automatic recovery...");
+          const { recoverUserBlueprint } = await import("@/lib/engines/blueprintRecoveryEngine");
+          b = await recoverUserBlueprint(auth.user.uid, p).catch((err) => {
+            console.error("[DASHBOARD RECOVERY FAILED]", err);
+            return null;
+          });
+        }
+
+        if (!b) {
+          setLoading(false);
+          clearTimeout(watchdog);
+          return;
+        }
+
+        // Hydrate fast basic systems (Tzolkin, Weton, BaZi, Vedic) if missing
         let updatedBlueprint = { ...b };
         let needsSave = false;
         const birthDate = p.birthDate || p.profile?.blueprintInput?.birthDate || b.input?.birthDate;
@@ -627,103 +636,65 @@ export function DashboardClient() {
         const latitude = p.latitude ?? p.profile?.latitude ?? b.input?.latitude ?? null;
         const longitude = p.longitude ?? p.profile?.longitude ?? b.input?.longitude ?? null;
 
-        // 1. Tzolkin Hydration
         if (b && (!b.tzolkin || !b.tzolkin.oracle || !b.tzolkin.kinName)) {
           if (birthDate) {
             try {
               const calculated = calculateTzolkin({ birthDate });
               updatedBlueprint.tzolkin = calculated;
               needsSave = true;
-              console.log("[HYDRATION] Tzolkin computed.");
             } catch (e) {
               console.warn("[HYDRATION FAILED] Tzolkin", e);
             }
           }
         }
 
-        // 2. Weton Hydration
         if (b && (!b.weton || !b.weton.weton)) {
           if (birthDate) {
             try {
               const calculated = calculateWeton({ birthDate, birthTime });
               updatedBlueprint.weton = calculated;
               needsSave = true;
-              console.log("[HYDRATION] Weton computed.");
             } catch (e) {
               console.warn("[HYDRATION FAILED] Weton", e);
             }
           }
         }
 
-        // 3. BaZi Hydration
         if (b && (!b.bazi || !b.bazi.dayMaster)) {
           if (birthDate && birthTime) {
             try {
-              const calculated = calculateBazi({
-                birthDate,
-                birthTime,
-                timezone,
-              });
+              const calculated = calculateBazi({ birthDate, birthTime, timezone });
               updatedBlueprint.bazi = calculated;
               needsSave = true;
-              console.log("[HYDRATION] BaZi computed.");
             } catch (e) {
               console.warn("[HYDRATION FAILED] BaZi", e);
             }
           }
         }
 
-        // 4. Vedic Hydration
         if (b && (!b.vedic || !b.vedic.moonSign)) {
           if (birthDate && birthTime) {
             try {
-              const calculated = calculateVedic({
-                birthDate,
-                birthTime,
-                birthCity,
-                latitude,
-                longitude,
-                timezone,
-              });
+              const calculated = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone });
               updatedBlueprint.vedic = calculated;
               needsSave = true;
-              console.log("[HYDRATION] Vedic computed.");
             } catch (e) {
               console.warn("[HYDRATION FAILED] Vedic", e);
             }
           }
         }
 
-        // 5. Human Design Stability Audit & Repair
-        const isHdCanonical = isCanonicalHumanDesign(b?.humanDesign);
-        if (!isHdCanonical && birthDate) {
-          try {
-            console.log("[HYDRATION] Human Design not canonical, attempting repair...");
-            const calculated = await calculateHumanDesign({
-              birthDate,
-              birthTime,
-              birthCity,
-              latitude,
-              longitude,
-              timezone,
-            });
-            updatedBlueprint.humanDesign = calculated;
-            needsSave = true;
-            console.log("[HYDRATION] Human Design repaired.");
-          } catch (e) {
-            console.warn("[HYDRATION FAILED] Human Design", e);
-          }
-        }
-
         if (needsSave) {
           updatedBlueprint.updatedAt = new Date().toISOString();
-          await blueprintRepository.saveUserBlueprint(auth.user.uid, updatedBlueprint);
-          await storageProvider.saveUserBlueprint(updatedBlueprint);
-          console.log("[HYDRATION SUCCESS] Blueprint updated and saved.");
+          void blueprintRepository.saveUserBlueprint(auth.user.uid, updatedBlueprint);
+          void storageProvider.saveUserBlueprint(updatedBlueprint);
         }
 
+        // CRITICAL REFACTOR: Set profile and basic blueprint IMMEDIATELY to unblock Dashboard entry
         setProfile(p);
         setBlueprint(updatedBlueprint);
+        setLoading(false);
+        clearTimeout(watchdog);
 
         if (auth.user.email) {
           void repairOwnerHumanDesign(auth.user.uid, auth.user.email);
@@ -732,16 +703,22 @@ export function DashboardClient() {
         trackEvent("open_dashboard", auth.user.uid);
         void participationEngine.recordActivity(auth.user.uid, "launch");
 
-        // ... rest of the code
+        // NON-BLOCKING: Trigger background HD calculation asynchronously if HD is pending/non-canonical
+        const isHdCanonical = isCanonicalHumanDesign(updatedBlueprint.humanDesign);
+        if (!isHdCanonical && birthDate) {
+          console.log("[BACKGROUND HD] Triggering non-blocking HD calculation for new/partial user...");
+          const { triggerBackgroundHdCalculation } = await import("@/lib/engines/blueprintRecoveryEngine");
+          void triggerBackgroundHdCalculation(auth.user.uid, p, updatedBlueprint);
+        }
 
-        setLoading(false);
-        clearTimeout(watchdog);
-
+        // Fetch background daily guidance and intelligence
         void fetchBackgroundData(auth.user.uid, p, updatedBlueprint);
 
       } catch (err) {
         console.error("[DASHBOARD BOOT ERROR]", err);
+      } finally {
         setLoading(false);
+        clearTimeout(watchdog);
       }
     };
 
@@ -767,11 +744,32 @@ export function DashboardClient() {
 
   if (!profile || !blueprint) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
-        <div className="bhumi-card p-12 text-center max-w-md w-full bg-white border-none shadow-xl">
-          <h2 className="text-3xl font-serif text-[#4F5E52] mb-4 italic">Setup Belum Lengkap</h2>
-          <p className="text-[#7B8776] mb-10 leading-relaxed font-medium">Lengkapi data profilmu untuk mulai mengenali diri.</p>
-          <button onClick={() => router.replace("/setup")} className="bhumi-button w-full py-5 text-lg">Buka Setup</button>
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6 py-12">
+        <div className="bhumi-card p-10 text-center max-w-md w-full bg-white border-none shadow-xl flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-[#4F5E52]/10 flex items-center justify-center mb-6">
+            <span className="text-2xl">🌱</span>
+          </div>
+          <h2 className="text-2xl font-serif text-[#4F5E52] mb-3 font-semibold">Menyelaraskan Ruangmu</h2>
+          <p className="text-[#7B8776] mb-8 leading-relaxed text-sm">
+            Data profil atau peta jiwamu sedang dalam pemulihan. Silakan muat ulang atau buka pengaturan setup.
+          </p>
+          <div className="flex flex-col gap-3 w-full">
+            <button
+              onClick={() => {
+                setLoading(true);
+                window.location.reload();
+              }}
+              className="bhumi-button w-full py-4 text-base"
+            >
+              Coba Muat Ulang Data
+            </button>
+            <button
+              onClick={() => router.replace("/setup")}
+              className="py-3 px-4 rounded-full border border-[#4F5E52]/20 text-[#4F5E52] text-sm hover:bg-gray-50 transition-all"
+            >
+              Ke Halaman Setup
+            </button>
+          </div>
         </div>
       </main>
     );
