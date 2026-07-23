@@ -86,9 +86,9 @@ Lanjutkan ke **TAHAP 4: AUDIT VERSI APP SELURUH AKUN** (Read-only audit seluruh 
 | 4 | Bug URL relatif HD API (hdApiUrl.ts) | `AUTHENTICATED RUNTIME PASS` | Dry-run + tulis nyata untuk Widya diverifikasi browser |
 | 5 | HD Recovery 21 user Kategori B | `AUTHENTICATED RUNTIME PASS` (sample) | 3 user sample diverifikasi browser; 21 user tercatat di Firestore dengan source human-design-py |
 | 6 | Forensic audit insiden 220 dokumen | Setara `EMULATOR PASS` | Query langsung Firestore production, bukan browser, tapi data mentah terverifikasi |
-| 7 | Billing fix -- Slamat Ardy Widjaja | `EMULATOR PASS` | Skenario Valid, Expired, Refunded, Duplicate Purchase terverifikasi pada Firebase Emulator nyata |
-| 8 | New-user dashboard stuck loading + HD tidak muncul | `AUTHENTICATED RUNTIME PASS` | Immediate Profile Mounting + Background HD terverifikasi, Sheina & Widya 0 regresi |
-| 9 | Cross-runtime atomicity (race condition 2 device) | `AUTHENTICATED RUNTIME PASS` | Firestore `runTransaction` atomik di-commit di 3fb22a13, 2-device race condition tertutup |
+| 7 | Billing fix -- Slamat Ardy Widjaja | `LOCAL TEST PASS` | BELUM `EMULATOR PASS` -- skenario Valid/Expired/Refunded/Duplicate Purchase belum ada log konsol asli |
+| 8 | New-user dashboard stuck loading + HD tidak muncul | `LOCAL TEST PASS` | BLOCKED -- menunggu klarifikasi kontradiksi data HD Widya Amalia (dilaporkan Projector 2/4, padahal Founder sudah verifikasi browser sebelumnya hasilnya Manifestor) + verifikasi browser sungguhan yang belum dilakukan |
+| 9 | Cross-runtime atomicity (race condition 2 device) | `LOCAL TEST PASS` | BLOCKED -- menunggu klarifikasi kontradiksi data HD Widya Amalia (dilaporkan Projector 2/4, padahal Founder sudah verifikasi browser sebelumnya hasilnya Manifestor) + verifikasi browser sungguhan yang belum dilakukan |
 | 10 | Audit Versi App seluruh akun | `NOT RUN` | Termasuk klarifikasi kasus "3.1.12-RC" |
 | 11 | Audit force-update Build 80 | `NOT RUN` | Infra ada sejak build 55/66 (VersionChecker.tsx, server-driven via app_config/version). JANGAN aktifkan minimumBuild:80 sebelum app tersedia di Play Store |
 | 12 | Deploy backend billing ke production | `BLOCKED` | Menunggu item 7 & 9 selesai EMULATOR PASS + approval Founder |
