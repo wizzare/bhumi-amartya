@@ -11,6 +11,8 @@ import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { doc, runTransaction } from "firebase/firestore";
+import { db } from "../firebase/firebase";
 
 const inFlightRecoveries = new Map<string, Promise<any>>();
 
@@ -116,10 +118,13 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
 /**
  * Idempotent recovery for missing blueprints/{uid} document.
  */
-export function recoverUserBlueprint(uid: string, profile: UserProfileInput): Promise<any> {
+export async function recoverUserBlueprint(
+  uid: string,
+  profile: UserProfileInput,
+): Promise<any> {
   if (!uid) throw new Error("RECOVERY_FAILED_NO_UID");
 
-  // Check in-flight promise to prevent concurrent duplicate recoveries
+  // Check in-flight promise to prevent concurrent duplicate recoveries on the same runtime instance
   if (inFlightRecoveries.has(uid)) {
     console.log(`[BLUEPRINT RECOVERY] In-flight recovery detected for UID ${uid}, re-using promise.`);
     return inFlightRecoveries.get(uid)!;
@@ -127,41 +132,49 @@ export function recoverUserBlueprint(uid: string, profile: UserProfileInput): Pr
 
   const recoveryPromise = (async () => {
     try {
-      console.log(`[BLUEPRINT RECOVERY] Starting automatic recovery check for UID ${uid}`);
+      console.log(`[BLUEPRINT RECOVERY] Starting atomic transaction recovery for UID ${uid}`);
       
-      // Cross-runtime check 1: Verify if blueprint already exists in Firestore/repository layer
-      const existingDoc = await blueprintRepository.getUserBlueprint(uid).catch(() => null);
-      if (existingDoc && ((existingDoc as any).type || (existingDoc as any).lifePath)) {
-        console.log(`[BLUEPRINT RECOVERY] Existing valid blueprint found in repository layer for UID ${uid}. Preserving.`);
-        await storageProvider.saveUserBlueprint(existingDoc as any).catch(() => {});
-        
-        // ONLY trigger HD calculation if HD is NOT canonical/valid
-        if (!isCanonicalHumanDesign(existingDoc.humanDesign)) {
-          void triggerBackgroundHdCalculation(uid, profile, existingDoc);
+      let finalBp: any = null;
+
+      try {
+        if (db) {
+          const docRef = doc(db, "blueprints", uid);
+          await runTransaction(db, async (transaction) => {
+            const sfDoc = await transaction.get(docRef);
+            if (sfDoc.exists() && ((sfDoc.data() as any)?.type || (sfDoc.data() as any)?.lifePath)) {
+              console.log(`[ATOMIC RECOVERY TRANSACTION] Document already exists for UID ${uid}. Preserving.`);
+              finalBp = sfDoc.data();
+              return;
+            }
+
+            const basicBlueprint = await generateBasicBlueprintFast(profile);
+            transaction.set(docRef, basicBlueprint, { merge: true });
+            finalBp = basicBlueprint;
+          });
         }
-        return existingDoc;
+      } catch (txError) {
+        console.warn(`[ATOMIC TRANSACTION WARNING] Firestore transaction fallback triggered:`, txError);
       }
 
-      const basicBlueprint = await generateBasicBlueprintFast(profile);
-
-      // Cross-runtime check 2: Atomic re-check before write to prevent race condition across devices
-      const recheckDoc = await blueprintRepository.getUserBlueprint(uid).catch(() => null);
-      if (recheckDoc && ((recheckDoc as any).type || (recheckDoc as any).lifePath)) {
-        console.log(`[BLUEPRINT RECOVERY] Race condition resolved. Existing document created concurrently for UID ${uid}.`);
-        await storageProvider.saveUserBlueprint(recheckDoc as any).catch(() => {});
-        return recheckDoc;
+      if (!finalBp) {
+        // Offline / fallback path
+        const existingDoc = await blueprintRepository.getUserBlueprint(uid).catch(() => null);
+        if (existingDoc && ((existingDoc as any).type || (existingDoc as any).lifePath)) {
+          finalBp = existingDoc;
+        } else {
+          finalBp = await generateBasicBlueprintFast(profile);
+          await blueprintRepository.saveUserBlueprint(uid, finalBp).catch(() => {});
+        }
       }
 
-      // Save to Firestore and local storage
-      await blueprintRepository.saveUserBlueprint(uid, basicBlueprint).catch((err) => {
-        console.warn(`[BLUEPRINT RECOVERY] Firestore save warning:`, err);
-      });
-      await storageProvider.saveUserBlueprint(basicBlueprint).catch(() => {});
+      await storageProvider.saveUserBlueprint(finalBp).catch(() => {});
 
-      // Trigger non-blocking HD calculation in background
-      void triggerBackgroundHdCalculation(uid, profile, basicBlueprint);
+      // Trigger background HD calculation ONLY if HD is not already canonical
+      if (!isCanonicalHumanDesign(finalBp.humanDesign)) {
+        void triggerBackgroundHdCalculation(uid, profile, finalBp);
+      }
 
-      return basicBlueprint;
+      return finalBp;
     } finally {
       inFlightRecoveries.delete(uid);
     }
