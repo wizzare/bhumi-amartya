@@ -12,7 +12,7 @@ service cloud.firestore {
 
     // NEW AUDITABLE FOUNDER RULE
     function isFounderByEmail() {
-      return isSignedIn() && request.auth.token.email == 'wizzare@gmail.com';
+      return isSignedIn() && ('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com';
     }
 
     function getUserData() {
@@ -21,15 +21,9 @@ service cloud.firestore {
 
     function isFounderOrAdmin() {
       return isSignedIn() && (
-        request.auth.token.email == 'wizzare@gmail.com' ||
-        (
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-          (
-            getUserData().guardianRole == 'founder' ||
-            getUserData().guardianRole == 'admin' ||
-            getUserData().role == 'admin'
-          )
-        )
+        (('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com') ||
+        (('admin' in request.auth.token) && request.auth.token.admin == true) ||
+        (('founder' in request.auth.token) && request.auth.token.founder == true)
       );
     }
 
@@ -204,8 +198,8 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      match /{document=**} {
-        allow read, write: if !document.matches('communications/.*')
+      match /{subcollection}/{document=**} {
+        allow read, write: if subcollection != 'communications'
           && (isOwner(userId) || isFounderByEmail() || isFounderOrAdmin());
       }
     }
