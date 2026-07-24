@@ -1,3 +1,6 @@
+import { isAdminExcludedAccount, isAdminExcludedEmail, deriveAdminExcludedUids } from "./adminAccountExclusions";
+export { isAdminExcludedAccount, isAdminExcludedEmail, deriveAdminExcludedUids } from "./adminAccountExclusions";
+
 export type AnalyticsSubject = {
   uid?: string;
   email?: string | null;
@@ -21,13 +24,13 @@ export type UserAnalyticsEligibility =
  * Classifies user accounts for Founder Dashboard analytics inclusion.
  *
  * Classifications:
- * - `excluded_internal`: Internal testers with `excludeFromAdminAnalytics: true` or `isInternalTester: true`.
+ * - `excluded_internal`: Internal testers with `excludeFromAdminAnalytics: true`, `isInternalTester: true`, or matching `ADMIN_EXCLUDED_EMAILS`.
  * - `orphan_confirmed`: Server-verified Auth absence.
  * - `incomplete_record`: Missing email, phone number, real name, and creation metadata.
  * - `eligible`: Valid email or phone users.
  */
 export function getAnalyticsEligibility(user: AnalyticsSubject): UserAnalyticsEligibility {
-  if (user.excludeFromAdminAnalytics === true || user.isInternalTester === true) {
+  if (isAdminExcludedAccount(user)) {
     return "excluded_internal";
   }
 

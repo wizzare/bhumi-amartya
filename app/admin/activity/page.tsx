@@ -35,7 +35,7 @@ import { adminRepository } from "@/lib/repositories/adminRepository";
 import { UserProfile } from "@/lib/repositories/userRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
-import { shouldIncludeInAdminAnalytics, getExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
+import { shouldIncludeInAdminAnalytics, getExcludedUids, isAdminExcludedAccount, deriveAdminExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
 import { getCanonicalHumanDesignType, isCanonicalHumanDesign, isValidHistoricalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
@@ -724,19 +724,19 @@ export default function AdminActivityPage() {
     try {
       const userRows = await adminRepository.getAllUsersForMonitoring();
       const normalized = userRows.map(normalizeUser).filter(Boolean) as FounderUser[];
-      const excludedUids = getExcludedUids(userRows);
-      const analyticsFiltered = normalized.filter((u) => !excludedUids.has(u.uid));
+      const excludedUids = deriveAdminExcludedUids(userRows);
+      const analyticsFiltered = normalized.filter((u) => !isAdminExcludedAccount({ email: u.email, uid: u.uid, excludedUids }));
       const [activityResult, analyticsResult] = await Promise.allSettled([
         getDocs(query(collection(db, "user_activity"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
         getDocs(query(collection(db, "analytics"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
       ]);
       const activityDocs = activityResult.status === "fulfilled"
-        ? activityResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityDoc)).filter((a) => a.uid && !excludedUids.has(a.uid))
+        ? activityResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityDoc)).filter((a) => a.uid && !isAdminExcludedAccount({ email: a.email, uid: a.uid, excludedUids }))
         : [];
       const analyticsDocs = analyticsResult.status === "fulfilled"
         ? analyticsResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as AnalyticsDoc)).filter((a) => {
             const uid = uniqueUid(a);
-            return !uid || !excludedUids.has(uid);
+            return !isAdminExcludedAccount({ email: (a as any).email, uid, excludedUids });
           })
         : [];
       setUsers(analyticsFiltered);
@@ -776,10 +776,14 @@ export default function AdminActivityPage() {
   const currentRequestId = useRef(0);
 
   useEffect(() => {
-    if (!selectedUser) {
+    if (!selectedUser || isAdminExcludedAccount({ email: selectedUser.email, uid: selectedUser.uid })) {
+      if (selectedUser) {
+        setSelectedUser(null);
+      }
       setSelectedBlueprint(null);
       setSelectedDetail(null);
       setStandaloneHd(null);
+      setBlueprintLoading(false);
       return;
     }
     const reqId = ++currentRequestId.current;

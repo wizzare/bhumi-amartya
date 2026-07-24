@@ -1,6 +1,7 @@
 import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { AnalyticsEventName } from "@/lib/analytics/usageAnalytics";
+import { isAdminExcludedAccount, isAdminExcludedEmail } from "@/lib/admin/adminAccountExclusions";
 
 
 export interface AggregateMetrics {
@@ -39,12 +40,13 @@ export const analyticsService = {
 
     const excludedUids: Set<string> = new Set();
     try {
-      const excludedQuery = query(
-        collection(db, "users"),
-        where("excludeFromAdminAnalytics", "==", true),
-      );
-      const excludedSnapshot = await getDocs(excludedQuery);
-      excludedSnapshot.docs.forEach((d) => excludedUids.add(d.id));
+      const allUsersSnap = await getDocs(collection(db, "users"));
+      allUsersSnap.docs.forEach((d) => {
+        const data = d.data();
+        if (isAdminExcludedAccount({ email: data.email, uid: d.id, excludeFromAdminAnalytics: data.excludeFromAdminAnalytics, isInternalTester: data.isInternalTester })) {
+          excludedUids.add(d.id);
+        }
+      });
     } catch (e) {
       console.warn("[ANALYTICS SERVICE] Failed to fetch excluded UIDs, proceeding without filter:", e);
     }
@@ -52,7 +54,7 @@ export const analyticsService = {
     const unfilteredUids = Array.from(new Set(events.map(e => e.uid).filter(Boolean)));
     const uniqueUids = unfilteredUids.filter((uid) => !excludedUids.has(uid));
 
-    const filteredEvents = events.filter((e) => e.uid && !excludedUids.has(e.uid));
+    const filteredEvents = events.filter((e) => e.uid && !isAdminExcludedAccount({ email: (e as any).email, uid: e.uid, excludedUids }));
 
     // Fetch Persona Data for Heatmap
     const personaData = {
