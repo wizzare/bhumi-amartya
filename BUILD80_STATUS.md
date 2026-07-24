@@ -5,11 +5,11 @@
 > hanya keadaan TERBARU, bukan sejarah percakapan. Untuk kronologi
 > pergantian sesi, lihat `BUILD80_HANDOFF_LOG.md`.
 
-Last Updated: 2026-07-24 21:26:00+07:00
+Last Updated: 2026-07-24 23:13:00+07:00
 Updated By: Antigravity AI Assistant
 Worktree: bhumi-build80-telemetry
 Branch: feature/build80-cloudflare-telemetry-v1
-HEAD: a31de115
+HEAD: a18a89a4e0a3a3bde7bff77f3e9ac937e4ad3bda
 Version Name: 4.4.4
 Version Code: 80
 
@@ -228,34 +228,133 @@ Known limitations:
 - in-memory cache Map is not proven bounded for a long-running runtime;
 - these limitations remain follow-up items and are not release-safe claims.
 
+#### 5. lib/repositories/behaviorMemoryRepository.ts
+
+Status:
+ADMITTED AFTER FIRESTORE RULE HARDENING AND REAL EMULATOR VERIFICATION
+
+Provenance:
+ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE, THEN CONTRACT-AUDITED AND VERIFIED THROUGH AUTHENTICATED FIREBASE EMULATOR TESTS.
+
+Consumer contract:
+MATCH
+
+Firestore path:
+users/{uid}/behaviorMemory/wellness
+
+Document identity:
+DETERMINISTIC
+
+Write model:
+TRANSACTION / SET-MERGE / UPDATE / ATOMIC INCREMENT
+
+UID binding:
+RULES-DEPENDENT
+
+Evidence commits:
+- 188219fca05a3abdd8152292881eea443ebb387f
+- dcb7abbbecfbbb78f74fdc526df6eabba06c9fdd
+- a18a89a4e0a3a3bde7bff77f3e9ac937e4ad3bda
+
+Verified evidence:
+- fail-closed safety guard: PASS;
+- authenticated emulator assertions: 53/53 PASS;
+- emulator exit code: 0;
+- failed assertions: 0;
+- skipped assertions: 0;
+- Function not found rule errors: 0;
+- same-user create: PASS;
+- same-user read: PASS;
+- same-user update: PASS;
+- unauthenticated access: DENIED;
+- ordinary user cross-user access: DENIED;
+- communications broad-match bypass: NOT PRESENT;
+- communications dedicated rule contract: PASS;
+- get: VERIFIED;
+- ensureExists: VERIFIED;
+- recordRecommended: VERIFIED;
+- recordCompleted: VERIFIED;
+- recordSkipped: VERIFIED;
+- recordExpired: VERIFIED;
+- persisted idempotency: PROVEN;
+- persisted concurrency: PASS;
+- unexplained lost updates: NONE;
+- contextCompletions bound at 30: PASS;
+- seenRecommendationKeys bound at 200: PASS;
+- production reads: 0;
+- production writes: 0.
+
+Firestore rule defect repaired:
+
+Old invalid condition:
+!document.matches('communications/.*')
+
+Replacement:
+subcollection != 'communications'
+
+Record:
+- Path.matches runtime defect: FIXED;
+- broad communications bypass: NOT PRESENT;
+- Founder/Admin bypass remains PRESENT BY RULE DESIGN;
+- Founder/Admin bypass runtime: NOT VERIFIED;
+- rule authorization: MATCH;
+- rule schema validation: ABSENT;
+- overall rule contract: PARTIAL.
+
+Known repository preconditions and limitations:
+- recordSkipped requires the document to exist;
+- recordExpired requires the document to exist;
+- both throw NOT_FOUND on a missing document;
+- ensureExists must run before those operations;
+- recommendations map growth remains tied to the number of unique recommendation IDs;
+- Firestore Rules do not validate field names, field types, or document size;
+- malformed owner-authored payloads are not rejected by schema rules;
+- UID authorization depends on Firestore Rules, not an in-repository auth identity check.
+
+Privacy classification:
+- logging privacy risk: LOW;
+- stored data sensitivity: MEDIUM;
+- overall privacy risk: MEDIUM.
+
 ### Commit 83a5e68 Status
 
 Status:
-PARTIALLY ADMITTED / HOLD
+FULLY RECONCILED / INCIDENT CLOSED
 
-Empat dari lima orphaned dependencies telah diterima secara formal:
+Semua lima orphaned dependencies telah diterima secara formal:
 - `lib/weeklyGuidance/types.ts`: ADMITTED AS CURRENT IMPLEMENTATION
 - `lib/weeklyGuidance/weeklyGuidanceEngine.ts`: ADMITTED WITH FOLLOW-UP TEST COVERAGE
 - `lib/firebase/behaviorSyncLogger.ts`: ADMITTED AFTER PRIVACY HARDENING
 - `lib/services/dailyGuidanceServiceCore.ts`: ADMITTED AFTER REAL FIREBASE EMULATOR VERIFICATION
+- `lib/repositories/behaviorMemoryRepository.ts`: ADMITTED AFTER FIRESTORE RULE HARDENING AND REAL EMULATOR VERIFICATION
 
-Satu file berikut masih HOLD dan belum diterima:
-- `lib/repositories/behaviorMemoryRepository.ts`
+Klarifikasi Provenance & Closure:
+- Provenance tetap reconstructed from untracked source;
+- Closure tidak secara retroaktif membuat historical provenance;
+- Setiap dependency telah diaudit dan diterima secara independen;
+- Known limitations tetap dicatat sebagai item follow-up yang didokumentasikan.
 
-Alasan:
-- `behaviorMemoryRepository.ts` belum melalui formal contract audit lengkap dan emulator test suite;
-- tidak boleh dinyatakan aman atau production verified sebelum audit selesai.
+Closure Evidence Commits:
+- a4831a30cb257375a6536f9574a620065b94c41e
+- 37aae260172bb58fcbbd2b82ff63cf6bc477c7c3
+- 91daf1d9ad870c03e4f45d8647fb032f44abd650
+- a31de115881ad4c6856aecf5ec268a85d45302d6
+- b685217feeeab72bf6e67266e3d6281ca064c5aa
+- 188219fca05a3abdd8152292881eea443ebb387f
+- dcb7abbbecfbbb78f74fdc526df6eabba06c9fdd
+- a18a89a4e0a3a3bde7bff77f3e9ac937e4ad3bda
 
 ### Dependency Risk Classification
 
-Formally Admitted (4/5):
+Formally Admitted (5/5):
 - `lib/weeklyGuidance/types.ts`
 - `lib/weeklyGuidance/weeklyGuidanceEngine.ts`
 - `lib/firebase/behaviorSyncLogger.ts`
 - `lib/services/dailyGuidanceServiceCore.ts`
-
-Contains possible production Firestore writes (HOLD - 1/5):
 - `lib/repositories/behaviorMemoryRepository.ts`
+
+Contains possible production Firestore writes (HOLD - 0/5):
+- None
 
 ### Admin Stale-Snapshot Fix Status
 
