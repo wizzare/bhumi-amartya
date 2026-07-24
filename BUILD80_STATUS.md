@@ -5,11 +5,11 @@
 > hanya keadaan TERBARU, bukan sejarah percakapan. Untuk kronologi
 > pergantian sesi, lihat `BUILD80_HANDOFF_LOG.md`.
 
-Last Updated: 2026-07-24 03:10:00+07:00
+Last Updated: 2026-07-24 21:26:00+07:00
 Updated By: Antigravity AI Assistant
 Worktree: bhumi-build80-telemetry
 Branch: feature/build80-cloudflare-telemetry-v1
-HEAD: 3fb22a13
+HEAD: a31de115
 Version Name: 4.4.4
 Version Code: 80
 
@@ -186,35 +186,85 @@ Implementation hardening commit:
 Provenance:
 ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE, THEN PRIVACY-HARDENED AND TESTED
 
+#### 4. lib/services/dailyGuidanceServiceCore.ts
+
+Status:
+ADMITTED AFTER REAL FIREBASE EMULATOR VERIFICATION
+
+Provenance:
+ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE, THEN CONTRACT-AUDITED AND VERIFIED WITH REAL FIREBASE EMULATOR TESTS.
+
+Consumer contract:
+MATCH
+
+Evidence commits:
+- 91daf1d9ad870c03e4f45d8647fb032f44abd650
+- a31de115881ad4c6856aecf5ec268a85d45302d6
+
+Verified evidence:
+- core contract tests: 14/14 PASS;
+- authenticated Firestore Rules tests: 9/9 PASS;
+- real document behavior tests: 6/6 PASS;
+- total emulator assertions: 29/29 PASS;
+- Firebase emulator process exit code: 0;
+- authenticated same-user read/write behavior verified;
+- cross-user isolation verified;
+- unauthenticated access rejection verified;
+- deterministic document identity verified;
+- retry does not create an auto-ID duplicate;
+- in-process in-flight generation deduplication verified;
+- synthetic emulator data cleanup verified;
+- emulator shutdown verified;
+- fail-closed production project guard verified;
+- production reads: 0;
+- production writes: 0.
+
+Known limitations:
+- cross-runtime generation deduplication is NOT PROVEN;
+- separate runtimes may generate the same guidance concurrently;
+- deterministic document ID prevents duplicate documents but does not prevent duplicate generation;
+- concurrent successful generations may produce last-write-wins behavior;
+- last-write-wins risk remains PRESENT;
+- in-memory cache Map is not proven bounded for a long-running runtime;
+- these limitations remain follow-up items and are not release-safe claims.
+
 ### Commit 83a5e68 Status
 
 Status:
 PARTIALLY ADMITTED / HOLD
 
-Tiga file low-risk telah diterima secara formal.
+Empat dari lima orphaned dependencies telah diterima secara formal:
+- `lib/weeklyGuidance/types.ts`: ADMITTED AS CURRENT IMPLEMENTATION
+- `lib/weeklyGuidance/weeklyGuidanceEngine.ts`: ADMITTED WITH FOLLOW-UP TEST COVERAGE
+- `lib/firebase/behaviorSyncLogger.ts`: ADMITTED AFTER PRIVACY HARDENING
+- `lib/services/dailyGuidanceServiceCore.ts`: ADMITTED AFTER REAL FIREBASE EMULATOR VERIFICATION
 
-Dua file berikut masih HOLD dan belum diterima:
-- `lib/services/dailyGuidanceServiceCore.ts`
+Satu file berikut masih HOLD dan belum diterima:
 - `lib/repositories/behaviorMemoryRepository.ts`
 
 Alasan:
-- keduanya memiliki kemungkinan Firestore production write;
-- belum melalui formal contract audit lengkap;
-- belum melalui Firebase Emulator verification;
-- tidak boleh dinyatakan aman atau production verified.
+- `behaviorMemoryRepository.ts` belum melalui formal contract audit lengkap dan emulator test suite;
+- tidak boleh dinyatakan aman atau production verified sebelum audit selesai.
 
 ### Dependency Risk Classification
 
-Low or no production write (ADMITTED):
+Formally Admitted (4/5):
 - `lib/weeklyGuidance/types.ts`
 - `lib/weeklyGuidance/weeklyGuidanceEngine.ts`
 - `lib/firebase/behaviorSyncLogger.ts`
-
-Contains possible production Firestore writes (HOLD):
 - `lib/services/dailyGuidanceServiceCore.ts`
+
+Contains possible production Firestore writes (HOLD - 1/5):
 - `lib/repositories/behaviorMemoryRepository.ts`
 
-Kedua file dengan write side effect wajib melalui audit dan emulator test sebelum dinyatakan admitted.
+### Admin Stale-Snapshot Fix Status
+
+Status:
+PENDING MANUAL RECONCILIATION INTO BUILD 80
+
+Alasan:
+Cherry-pick commit `fad0f65df40164af76561dd01fa93bdad86f2f0b` mengalami konflik di `app/admin/activity/page.tsx` dan telah di-abort secara aman. Jangan mengklaim Admin fix sudah masuk ke Build 80.
+
 
 ### TypeScript Verification
 
