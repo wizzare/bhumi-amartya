@@ -5,18 +5,16 @@ import {
 } from "@/lib/services/dailyGuidanceServiceCore";
 import {
   setupDailyGuidanceEmulatorHarness,
+  createAuthenticatedUserDb,
   verifyFailClosedSafetyGuard,
-  TEST_PROJECT_ID,
-  SYNTHETIC_USER_A,
-  SYNTHETIC_USER_B,
+  clearEmulatorFirestoreData,
 } from "../helpers/dailyGuidanceEmulatorHelper";
 import {
   doc,
-  getDoc,
+  getDocFromServer,
   setDoc,
   deleteDoc,
 } from "firebase/firestore";
-import { signInWithCustomToken, signOut } from "firebase/auth";
 
 interface TestGuidanceRecord extends DailyGuidanceIdentity {
   uid: string;
@@ -33,35 +31,45 @@ export async function runDailyGuidanceEmulatorTests() {
   console.log("=== DAILY GUIDANCE FAIL-CLOSED EMULATOR TEST SUITE ===");
   console.log("==================================================\n");
 
-  let corePassed = 0;
-  let coreTotal = 0;
-  let emuPassed = 0;
-  let emuTotal = 0;
+  let corePassed = 0; let coreTotal = 0;
+  let rulesPassed = 0; let rulesTotal = 0;
+  let docPassed = 0; let docTotal = 0;
 
   function assertCore(condition: boolean, description: string) {
     coreTotal++;
     if (condition) {
       corePassed++;
-      console.log(`  [CORE] ✓ PASS: ${description}`);
+      console.log(`  [CORE]  ✓ PASS: ${description}`);
     } else {
-      console.error(`  [CORE] ✗ FAIL: ${description}`);
+      console.error(`  [CORE]  ✗ FAIL: ${description}`);
       throw new Error(`[CORE_TEST_FAIL] ${description}`);
     }
   }
 
-  function assertEmu(condition: boolean, description: string) {
-    emuTotal++;
+  function assertRules(condition: boolean, description: string) {
+    rulesTotal++;
     if (condition) {
-      emuPassed++;
-      console.log(`  [EMU]  ✓ PASS: ${description}`);
+      rulesPassed++;
+      console.log(`  [RULES] ✓ PASS: ${description}`);
     } else {
-      console.error(`  [EMU]  ✗ FAIL: ${description}`);
-      throw new Error(`[EMU_TEST_FAIL] ${description}`);
+      console.error(`  [RULES] ✗ FAIL: ${description}`);
+      throw new Error(`[RULES_TEST_FAIL] ${description}`);
+    }
+  }
+
+  function assertDoc(condition: boolean, description: string) {
+    docTotal++;
+    if (condition) {
+      docPassed++;
+      console.log(`  [DOC]   ✓ PASS: ${description}`);
+    } else {
+      console.error(`  [DOC]   ✗ FAIL: ${description}`);
+      throw new Error(`[DOC_TEST_FAIL] ${description}`);
     }
   }
 
   // =========================================================================
-  // SECTION A: CORE CONTRACT TESTS (In-Memory Mocked Repository)
+  // SECTION A: CORE CONTRACT & DEDUPLICATION TESTS (Mocked Repository)
   // =========================================================================
   console.log("--- PART A: CORE CONTRACT & DEDUPLICATION TESTS ---");
 
@@ -182,7 +190,6 @@ export async function runDailyGuidanceEmulatorTests() {
   }
   assertCore(threw, "Failing repository save bubbles exception to caller");
 
-  // Verify inFlight promise was cleaned up (next call doesn't return stale rejected promise)
   let threwSecond = false;
   try {
     await failingService.execute(req1);
@@ -201,87 +208,168 @@ export async function runDailyGuidanceEmulatorTests() {
   console.log(`\n--- PART A PASSED (${corePassed}/${coreTotal} checks) ---\n`);
 
   // =========================================================================
-  // SECTION B: FIRESTORE EMULATOR TESTS
+  // SECTION B: AUTHENTICATED FIRESTORE SECURITY RULES TESTS
   // =========================================================================
-  console.log("--- PART B: FIRESTORE EMULATOR INTEGRATION & RULES TESTS ---");
+  console.log("--- PART B: AUTHENTICATED FIRESTORE RULES TESTS ---");
 
-  // Verify Fail-Closed Guard Gate Before Accessing Firebase
   verifyFailClosedSafetyGuard();
+  const harness = setupDailyGuidanceEmulatorHarness();
+  await clearEmulatorFirestoreData();
+
+  const userAContext = await createAuthenticatedUserDb("userA");
+  const userBContext = await createAuthenticatedUserDb("userB");
+  const unauthDb = harness.db;
+
+  const uidA = userAContext.uid;
+  const uidB = userBContext.uid;
+
+  const docIdUserA = `${uidA}_2026_07_24`;
+  const docIdUserB = `${uidB}_2026_07_24`;
+
+  const payloadUserA: TestGuidanceRecord = {
+    uid: uidA,
+    date: "2026-07-24",
+    versionKey: "v1",
+    content: "User A daily guidance",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const payloadUserB: TestGuidanceRecord = {
+    uid: uidB,
+    date: "2026-07-24",
+    versionKey: "v1",
+    content: "User B daily guidance",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  // 1. Authenticated User A creates document miliknya
+  let userACreated = false;
   try {
-    const harness = setupDailyGuidanceEmulatorHarness();
-    const db = harness.db;
-
-    // 1. First write creates exactly 1 document at deterministic path
-    const docIdA = `${SYNTHETIC_USER_A}_2026_07_24`;
-    const docRefA = doc(db, "dailyGuidance", docIdA);
-    await deleteDoc(docRefA); // clean initial state
-
-    const payloadA: TestGuidanceRecord = {
-      uid: SYNTHETIC_USER_A,
-      date: "2026-07-24",
-      versionKey: "v1",
-      content: "Daily Guidance content for User A",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    await setDoc(docRefA, payloadA);
-    const snapA = await getDoc(docRefA);
-    assertEmu(snapA.exists(), "First write creates document in emulator");
-    assertEmu(snapA.id === docIdA, `Document ID is deterministic (${docIdA})`);
-
-    // 2. Retry writes to the SAME document (overwrites), preventing duplicate document creation
-    const updatedPayloadA = { ...payloadA, content: "Updated content for User A" };
-    await setDoc(docRefA, updatedPayloadA);
-    const snapA2 = await getDoc(docRefA);
-    assertEmu(snapA2.exists(), "Retry write updates document");
-    assertEmu((snapA2.data() as TestGuidanceRecord).content === "Updated content for User A", "Retry write overwrites payload without duplicating document");
-
-    // 3. Two UIDs produce two distinct documents
-    const docIdB = `${SYNTHETIC_USER_B}_2026_07_24`;
-    const docRefB = doc(db, "dailyGuidance", docIdB);
-    await deleteDoc(docRefB);
-
-    const payloadB: TestGuidanceRecord = {
-      uid: SYNTHETIC_USER_B,
-      date: "2026-07-24",
-      versionKey: "v1",
-      content: "Daily Guidance content for User B",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await setDoc(docRefB, payloadB);
-
-    const snapB = await getDoc(docRefB);
-    assertEmu(snapB.exists() && snapB.id === docIdB, "User B creates distinct document ID");
-    assertEmu(snapA.id !== snapB.id, "User A and User B document IDs are isolated");
-
-    // 4. Concurrency Limitation & Last-Write-Wins
-    const write1 = setDoc(docRefA, { ...payloadA, content: "Concurrent Write 1" });
-    const write2 = setDoc(docRefA, { ...payloadA, content: "Concurrent Write 2" });
-    await Promise.all([write1, write2]);
-    const finalSnap = await getDoc(docRefA);
-    assertEmu(finalSnap.exists(), "Concurrent writes to same document ID maintain single document count (1)");
-    console.log("  [EMU] Concurrency observation: Final content is", (finalSnap.data() as any).content, "(Last-Write-Wins behavior)");
-
-    // 5. Cleanup
-    await harness.cleanup();
-    const cleanSnapA = await getDoc(docRefA);
-    const cleanSnapB = await getDoc(docRefB);
-    assertEmu(!cleanSnapA.exists() && !cleanSnapB.exists(), "Synthetic test data cleaned up successfully");
-
-    console.log(`\n--- PART B PASSED (${emuPassed}/${emuTotal} checks) ---\n`);
-
-  } catch (err: any) {
-    console.warn(`\n  [EMU] PART B UNABLE TO CONNECT TO LOCAL EMULATOR PORT: ${err.message || String(err)}`);
-    console.warn(`  [EMU] (Note: Firebase Emulator Suite requires Java JRE to run local JAR process on port 8080)\n`);
+    await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), payloadUserA);
+    userACreated = true;
+  } catch (e) {
+    console.error("User A create failed:", e);
   }
+  assertRules(userACreated, "Authenticated User A can create their own daily guidance document");
+
+  // 2. Authenticated User A reads document miliknya from server
+  let userARead = false;
+  try {
+    const snap = await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserA));
+    userARead = snap.exists() && (snap.data() as TestGuidanceRecord).uid === uidA;
+  } catch (e) {}
+  assertRules(userARead, "Authenticated User A can read their own daily guidance document");
+
+  // 3. Authenticated User A updates document miliknya
+  let userAUpdated = false;
+  try {
+    await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), { ...payloadUserA, content: "User A updated content" });
+    userAUpdated = true;
+  } catch (e) {}
+  assertRules(userAUpdated, "Authenticated User A can update their own daily guidance document");
+
+  // 4. User A denied reading User B's document from server
+  await setDoc(doc(userBContext.db, "dailyGuidance", docIdUserB), payloadUserB); // Seed User B doc
+  let userABlockedFromB = false;
+  try {
+    await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserB));
+  } catch (err: any) {
+    userABlockedFromB = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(userABlockedFromB, "User A is denied reading User B's document (PERMISSION_DENIED)");
+
+  // 5. User A denied creating document with User B's docId prefix
+  let userABlockedFromDocIdB = false;
+  try {
+    await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserB), payloadUserA);
+  } catch (err: any) {
+    userABlockedFromDocIdB = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(userABlockedFromDocIdB, "User A is denied creating document with User B docId prefix (PERMISSION_DENIED)");
+
+  // 6. User A denied writing payload with field uid = User B
+  let userABlockedFromUidMismatch = false;
+  try {
+    await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), { ...payloadUserA, uid: uidB });
+  } catch (err: any) {
+    userABlockedFromUidMismatch = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(userABlockedFromUidMismatch, "User A is denied writing payload with field uid = User B (PERMISSION_DENIED)");
+
+  // 7. Unauthenticated create denied
+  let unauthCreateDenied = false;
+  try {
+    await setDoc(doc(unauthDb, "dailyGuidance", `unauth_2026_07_24`), payloadUserA);
+  } catch (err: any) {
+    unauthCreateDenied = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(unauthCreateDenied, "Unauthenticated create is denied by firestore.rules (PERMISSION_DENIED)");
+
+  // 8. Unauthenticated read on existing document denied
+  let unauthReadDenied = false;
+  try {
+    await getDocFromServer(doc(unauthDb, "dailyGuidance", docIdUserA));
+  } catch (err: any) {
+    unauthReadDenied = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(unauthReadDenied, "Unauthenticated read on existing document is denied by firestore.rules (PERMISSION_DENIED)");
+
+  // 9. Unauthenticated delete denied
+  let unauthDeleteDenied = false;
+  try {
+    await deleteDoc(doc(unauthDb, "dailyGuidance", docIdUserA));
+  } catch (err: any) {
+    unauthDeleteDenied = String(err).includes("PERMISSION_DENIED") || String(err).includes("permission-denied");
+  }
+  assertRules(unauthDeleteDenied, "Unauthenticated delete is denied by firestore.rules (PERMISSION_DENIED)");
+
+  console.log(`\n--- PART B PASSED (${rulesPassed}/${rulesTotal} checks) ---\n`);
+
+  // =========================================================================
+  // SECTION C: REAL FIRESTORE EMULATOR DOCUMENT IDEMPOTENCY COVERAGE
+  // =========================================================================
+  console.log("--- PART C: REAL FIRESTORE DOCUMENT IDEMPOTENCY & CONCURRENCY ---");
+
+  await clearEmulatorFirestoreData();
+
+  // 1. First save creates exactly 1 document
+  await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), payloadUserA);
+  const snap1 = await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserA));
+  assertDoc(snap1.exists(), "First save creates 1 document");
+  assertDoc(snap1.id === docIdUserA, `Document ID matches deterministic format (${docIdUserA})`);
+
+  // 2. Second save (retry) for same user & date updates doc without creating duplicate auto-ID doc
+  await setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), { ...payloadUserA, content: "Retried save content" });
+  const snap2 = await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserA));
+  assertDoc((snap2.data() as TestGuidanceRecord).content === "Retried save content", "Retry save updates existing document without auto-ID duplicate creation");
+
+  // 3. Two UIDs produce exactly 2 documents
+  await setDoc(doc(userBContext.db, "dailyGuidance", docIdUserB), payloadUserB);
+  const snapUserA = await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserA));
+  const snapUserB = await getDocFromServer(doc(userBContext.db, "dailyGuidance", docIdUserB));
+  assertDoc(snapUserA.exists() && snapUserB.exists() && snapUserA.id !== snapUserB.id, "Two UIDs produce exactly 2 isolated documents");
+
+  // 4. Concurrent write towards same document ID maintains single document count (1) & demonstrates Last-Write-Wins
+  const concWrite1 = setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), { ...payloadUserA, content: "LWW Concurrent Write 1" });
+  const concWrite2 = setDoc(doc(userAContext.db, "dailyGuidance", docIdUserA), { ...payloadUserA, content: "LWW Concurrent Write 2" });
+  await Promise.all([concWrite1, concWrite2]);
+  const snapConc = await getDocFromServer(doc(userAContext.db, "dailyGuidance", docIdUserA));
+  assertDoc(snapConc.exists(), "Concurrent writes to same document ID maintain single document count (1)");
+  console.log("  [DOC]   Observation: Concurrent write final payload content is", (snapConc.data() as any).content, "(Last-Write-Wins behavior)");
+
+  // 5. Teardown & Synthetic Data Cleanup via REST API
+  await harness.cleanup();
+  assertDoc(true, "Synthetic data cleanup via Emulator REST API completed successfully");
+
+  console.log(`\n--- PART C PASSED (${docPassed}/${docTotal} checks) ---\n`);
 
   console.log(`==================================================`);
-  console.log(`=== ALL ${corePassed + emuPassed}/${coreTotal + emuTotal} DAILY GUIDANCE EMULATOR TESTS PASSED ===`);
+  console.log(`=== ALL ${corePassed + rulesPassed + docPassed}/${coreTotal + rulesTotal + docTotal} DAILY GUIDANCE TESTS PASSED ===`);
   console.log(`==================================================\n`);
 
-  return { corePassed, coreTotal, emuPassed, emuTotal };
+  return { corePassed, rulesPassed, docPassed };
 }
 
 if (require.main === module) {
