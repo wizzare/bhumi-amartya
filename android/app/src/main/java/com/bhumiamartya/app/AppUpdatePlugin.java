@@ -34,7 +34,7 @@ public class AppUpdatePlugin extends Plugin {
             result.put("available", available);
             result.put("flexibleAllowed", flexible);
             result.put("immediateAllowed", immediate);
-            result.put("downloading", info.installStatus() == 2);
+            result.put("downloading", info.installStatus() == InstallStatus.DOWNLOADING);
             result.put("downloaded", info.installStatus() == InstallStatus.DOWNLOADED);
             result.put("immediateInProgress", inProgress);
             result.put("state", inProgress ? "immediate_in_progress" : info.installStatus() == InstallStatus.DOWNLOADING ? "downloading" : info.installStatus() == InstallStatus.DOWNLOADED ? "downloaded" : immediate ? "immediate_required" : flexible ? "available" : "no_update");
