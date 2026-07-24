@@ -124,17 +124,93 @@ Browser verification new-user Dashboard and HD Pending
 - Kelima file tidak ditemukan pada baseline commit 219f7cdd.
 - Kelima file berasal dari untracked files pada worktree `bhumi-amartya-clean`.
 - Karena committed consumers sudah mengimpor file-file tersebut sebelum 83a5e68, kasus ini diklasifikasikan sebagai **ORPHANED DEPENDENCY INCIDENT**.
-- Commit 83a5e68 berstatus **HOLD / PENDING FORMAL ADMISSION REVIEW**.
+- Commit 83a5e68 berstatus **PARTIALLY ADMITTED / HOLD**.
 - Jangan menyebutnya verified baseline restoration.
+
+### Low-Risk Dependency Admission
+
+#### 1. lib/weeklyGuidance/types.ts
+
+Status:
+ADMITTED AS CURRENT IMPLEMENTATION
+
+Dasar admission:
+- dibutuhkan oleh committed consumers;
+- hanya berisi TypeScript interfaces/types;
+- tidak memiliki runtime side effect;
+- tidak melakukan network, storage, atau Firestore operation;
+- consumer contract sesuai.
+
+Provenance:
+ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE
+
+#### 2. lib/weeklyGuidance/weeklyGuidanceEngine.ts
+
+Status:
+ADMITTED WITH FOLLOW-UP TEST COVERAGE
+
+Dasar admission:
+- dibutuhkan oleh committed Dashboard consumers;
+- fungsi bersifat in-memory;
+- tidak melakukan network, Firestore, atau localStorage operation;
+- hasil terbukti deterministik untuk input dan referenceDate yang sama;
+- safe local test yang dijalankan PASS.
+
+Follow-up:
+- dedicated unit coverage untuk input kosong, partial blueprint, missing Arsip Akashi, dan malformed optional data tetap perlu dibuat pada test-hardening sprint;
+- follow-up ini tidak memblokir admission current implementation.
+
+Provenance:
+ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE
+
+#### 3. lib/firebase/behaviorSyncLogger.ts
+
+Status:
+ADMITTED AFTER PRIVACY HARDENING
+
+Dasar admission:
+- dibutuhkan oleh committed wellness consumer;
+- tidak melakukan network atau Firestore write;
+- UID tidak dicetak atau disimpan;
+- raw Error dan stack trace tidak dicatat;
+- production console tidak menyimpan raw errorMessage;
+- development message disanitasi dan dibatasi;
+- localStorage development-only dan maksimum 20 record;
+- malformed JSON dan storage failure tidak dilempar ke caller;
+- SSR safety PASS;
+- privacy tests 15/15 PASS.
+
+Implementation hardening commit:
+37aae260172bb58fcbbd2b82ff63cf6bc477c7c3
+
+Provenance:
+ORPHANED DEPENDENCY RECONSTRUCTED FROM UNTRACKED SOURCE, THEN PRIVACY-HARDENED AND TESTED
+
+### Commit 83a5e68 Status
+
+Status:
+PARTIALLY ADMITTED / HOLD
+
+Tiga file low-risk telah diterima secara formal.
+
+Dua file berikut masih HOLD dan belum diterima:
+- `lib/services/dailyGuidanceServiceCore.ts`
+- `lib/repositories/behaviorMemoryRepository.ts`
+
+Alasan:
+- keduanya memiliki kemungkinan Firestore production write;
+- belum melalui formal contract audit lengkap;
+- belum melalui Firebase Emulator verification;
+- tidak boleh dinyatakan aman atau production verified.
 
 ### Dependency Risk Classification
 
-Low or no production write:
+Low or no production write (ADMITTED):
 - `lib/weeklyGuidance/types.ts`
 - `lib/weeklyGuidance/weeklyGuidanceEngine.ts`
 - `lib/firebase/behaviorSyncLogger.ts`
 
-Contains possible production Firestore writes:
+Contains possible production Firestore writes (HOLD):
 - `lib/services/dailyGuidanceServiceCore.ts`
 - `lib/repositories/behaviorMemoryRepository.ts`
 
