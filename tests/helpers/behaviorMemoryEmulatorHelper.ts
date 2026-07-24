@@ -36,13 +36,17 @@ export function connectPrimaryToEmulator(): void {
   primaryEmulatorConnected = true;
 }
 
+import { doc, setDoc } from "firebase/firestore";
+
 export async function authenticatePrimaryUser(): Promise<{ uid: string; auth: Auth; db: Firestore }> {
   connectPrimaryToEmulator();
   if (primaryAuth.currentUser) {
     await signOut(primaryAuth).catch(() => {});
   }
   const cred = await signInAnonymously(primaryAuth);
-  return { uid: cred.user.uid, auth: primaryAuth, db: primaryDb };
+  const uid = cred.user.uid;
+  await setDoc(doc(primaryDb, "users", uid), { uid }).catch(() => {});
+  return { uid, auth: primaryAuth, db: primaryDb };
 }
 
 export function verifyFailClosedSafetyGuard(): void {
@@ -153,6 +157,7 @@ export async function createSecondaryAuthenticatedUserDb(prefix = "user-b"): Pro
 
   const cred = await signInAnonymously(authInstance);
   const uid = cred.user.uid;
+  await setDoc(doc(dbInstance, "users", uid), { uid }).catch(() => {});
 
   return { app, auth: authInstance, db: dbInstance, uid };
 }
