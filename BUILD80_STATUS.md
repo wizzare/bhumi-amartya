@@ -102,7 +102,7 @@ Browser verification new-user Dashboard and HD Pending
 ## COMPLETED AND FROZEN (jangan dibuka lagi tanpa bukti baru)
 
 - Profile Catatan Hari Ini
-- Arsip Akashi (3x3 paragraph/sentence contract enforced for all 42 regular readings, commit 3ed62ae -- LOCAL TEST PASS / BROWSER RUNTIME PASS)
+- Arsip Akashi (3x3 paragraph/sentence contract enforced for all 42 regular readings, commit 3ed62ae -- LOCAL TEST PASS / HTTP ROUTE PASS / BROWSER VISUAL VERIFICATION PENDING)
 - Trial counter backend (local + emulator pass)
 - Billing/Entitlement Inti/Alfa (item 2 di atas -- sudah AUTHENTICATED RUNTIME PASS)
 - HD form validation + banner (item 3 -- sudah AUTHENTICATED RUNTIME PASS)
@@ -117,8 +117,52 @@ Browser verification new-user Dashboard and HD Pending
   G (Telemetry), dan H (Daily/Weekly Guidance) telah di-DISCARD karena
   tidak pernah disetujui Founder secara eksplisit. Arsip Akashi khususnya
   melanggar status Frozen yang sudah ditetapkan sebelumnya.
-- Verifikasi pasca-discard `npx tsc --noEmit` PASS (dengan pemulihan baseline dependencies):
-  Baseline breakage file `dailyGuidanceServiceCore.ts`, `weeklyGuidance`, `behaviorMemoryRepository`, dan `behaviorSyncLogger` dipulihkan dari worktree `bhumi-amartya-clean` (file asli, commit `83a5e68`) untuk unblock viewing halaman `/profile` -- ini restorasi file yang hilang dari baseline pre-existing, BUKAN bagian scope Build 80 P0.
+
+### Orphaned Dependency Incident
+
+- Commit 83a5e68 menambahkan lima dependency yang dibutuhkan oleh committed consumers.
+- Kelima file tidak ditemukan pada baseline commit 219f7cdd.
+- Kelima file berasal dari untracked files pada worktree `bhumi-amartya-clean`.
+- Karena committed consumers sudah mengimpor file-file tersebut sebelum 83a5e68, kasus ini diklasifikasikan sebagai **ORPHANED DEPENDENCY INCIDENT**.
+- Commit 83a5e68 berstatus **HOLD / PENDING FORMAL ADMISSION REVIEW**.
+- Jangan menyebutnya verified baseline restoration.
+
+### Dependency Risk Classification
+
+Low or no production write:
+- `lib/weeklyGuidance/types.ts`
+- `lib/weeklyGuidance/weeklyGuidanceEngine.ts`
+- `lib/firebase/behaviorSyncLogger.ts`
+
+Contains possible production Firestore writes:
+- `lib/services/dailyGuidanceServiceCore.ts`
+- `lib/repositories/behaviorMemoryRepository.ts`
+
+Kedua file dengan write side effect wajib melalui audit dan emulator test sebelum dinyatakan admitted.
+
+### TypeScript Verification
+
+- Command: `npx tsc --noEmit`
+- Exit code: `1`
+- Status: `FAIL`
+- Remaining error: `scripts/validateDailyNoteV2MirrorContract.ts` tidak menemukan `./validateDailyNoteV2Helpers`. Error berasal dari utility/manual script.
+
+### Runtime Evidence
+
+- Dev server: `SERVER RUNTIME PASS`
+- `/profile`: `HTTP ROUTE PASS`
+- Browser page rendering: `NOT VERIFIED`
+- Authenticated profile data: `NOT VERIFIED`
+- Regular Reading 3x3 visual contract: `NOT VERIFIED`
+- Surat Jiwa 5x5 visual contract: `NOT VERIFIED`
+- Founder browser review: `PENDING`
+
+### Commit 3ed62ae Assessment
+
+- Commit 3ed62ae tidak memperkenalkan import terhadap lima dependency.
+- Arsip Akashi 3x3 unit contract dapat diuji secara independen.
+- Jangan menyatakan browser visual PASS sebelum Founder memeriksanya.
+
 - Pemisahan `lib/config/buildInfo.ts` selesai: import dan test-mode
   force-update Bucket E telah di-discard, sedangkan metadata versi 4.4.4/80
   Bucket I dipertahankan. Bucket B/E/F/G/H kini bersih dari sisa import
