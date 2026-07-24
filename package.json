@@ -10,6 +10,7 @@
     "check:destiny": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkDestinyMatrix.ts",
     "check:zi-wei": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkZiWei.ts",
     "test:emulator:daily": "npx firebase emulators:exec --only firestore,auth \"npx tsx tests/integration/daily_guidance_emulator.test.ts\"",
+    "test:emulator:behavior-memory": "npx firebase emulators:exec --only firestore,auth \"npx tsx --import ./tests/helpers/initTestEnv.ts tests/integration/behavior_memory_repository_emulator.test.ts\"",
     "android:sync": ".\\node_modules\\.bin\\cap.cmd sync android",
     "android:open": ".\\node_modules\\.bin\\cap.cmd open android"
   },
