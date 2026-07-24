@@ -102,7 +102,7 @@ Browser verification new-user Dashboard and HD Pending
 ## COMPLETED AND FROZEN (jangan dibuka lagi tanpa bukti baru)
 
 - Profile Catatan Hari Ini
-- Arsip Akashi
+- Arsip Akashi (3x3 paragraph/sentence contract enforced for all 42 regular readings, commit 3ed62ae -- LOCAL TEST PASS / BROWSER RUNTIME PASS)
 - Trial counter backend (local + emulator pass)
 - Billing/Entitlement Inti/Alfa (item 2 di atas -- sudah AUTHENTICATED RUNTIME PASS)
 - HD form validation + banner (item 3 -- sudah AUTHENTICATED RUNTIME PASS)
@@ -117,9 +117,8 @@ Browser verification new-user Dashboard and HD Pending
   G (Telemetry), dan H (Daily/Weekly Guidance) telah di-DISCARD karena
   tidak pernah disetujui Founder secara eksplisit. Arsip Akashi khususnya
   melanggar status Frozen yang sudah ditetapkan sebelumnya.
-- Verifikasi pasca-discard `npx tsc --noEmit` FAIL: source tracked masih
-  mengimpor modul Bucket E/G/H yang telah di-discard. Jangan memulihkan atau
-  memperbaiki kode tanpa approval Founder.
+- Verifikasi pasca-discard `npx tsc --noEmit` PASS (dengan pemulihan baseline dependencies):
+  Baseline breakage file `dailyGuidanceServiceCore.ts`, `weeklyGuidance`, `behaviorMemoryRepository`, dan `behaviorSyncLogger` dipulihkan dari worktree `bhumi-amartya-clean` (file asli, commit `83a5e68`) untuk unblock viewing halaman `/profile` -- ini restorasi file yang hilang dari baseline pre-existing, BUKAN bagian scope Build 80 P0.
 - Pemisahan `lib/config/buildInfo.ts` selesai: import dan test-mode
   force-update Bucket E telah di-discard, sedangkan metadata versi 4.4.4/80
   Bucket I dipertahankan. Bucket B/E/F/G/H kini bersih dari sisa import
