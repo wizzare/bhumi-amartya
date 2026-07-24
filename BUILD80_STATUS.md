@@ -120,6 +120,11 @@ Browser verification new-user Dashboard and HD Pending
 - Verifikasi pasca-discard `npx tsc --noEmit` FAIL: source tracked masih
   mengimpor modul Bucket E/G/H yang telah di-discard. Jangan memulihkan atau
   memperbaiki kode tanpa approval Founder.
+- Pemisahan `lib/config/buildInfo.ts` selesai: import dan test-mode
+  force-update Bucket E telah di-discard, sedangkan metadata versi 4.4.4/80
+  Bucket I dipertahankan. Bucket B/E/F/G/H kini bersih dari sisa import
+  uncommitted; error TypeScript yang tersisa hanya baseline breakage
+  pre-existing yang tercatat di backlog terpisah.
 
 ## FILES CHANGED (kumulatif, branch feature/build80-cloudflare-telemetry-v1)
 
@@ -181,6 +186,16 @@ docs/BUILD80_ADMIN_DATA_PROVENANCE_AND_SNAPSHOT_STABILITY_REPORT.md
   end-to-end + cek regresi user lama.
 - Force-update TIDAK BOLEH diaktifkan (minimumBuild: 80) sebelum app
   build 80 benar-benar tersedia di Google Play production.
+
+## TEMUAN TERBUKA
+
+- Ditemukan baseline breakage PRE-EXISTING (sebelum Build 80 dimulai):
+  commit `99f60a306`, `8b0535331`, `3d697aa06`, dan `b719690d4`
+  (17-21 Jul 2026) meng-commit kode konsumen yang mengimpor modul yang
+  TIDAK PERNAH ter-commit (weeklyGuidance, wellness behaviorMemory,
+  dailyGuidance core, dan validateDailyNoteV2Helpers). Ini di luar scope
+  Build 80 P0, dicatat sebagai backlog terpisah — JANGAN diperbaiki sebagai
+  bagian dari Build 80 kecuali diminta eksplisit oleh Founder.
 
 ## EXACT NEXT TASK
 
