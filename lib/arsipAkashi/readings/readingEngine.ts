@@ -392,45 +392,21 @@ function buildParagraphSentences(
   if (paragraphIndex === 1) {
     return [
       `Bacaan ${name} membaca ${purpose.purpose} melalui ${domainA.core} yang terhubung dengan ${cueA}.`,
-      `Pada bacaan ${name}, pola dominan terlihat sebagai ${themes[0].replace(`${name}: `, "")} dengan jejak ${cueA}.`,
-      `Tegangan utama ${name} berada di antara ${domainA.integration}, ${domainB.shadow}, dan tanda ${cueB}.`,
-      `Bagian ${name} penting karena ${purpose.activation} sering bertemu dengan ${cueB} sebelum kamu menyadarinya.`,
-      `Ia ${purpose.distinction} melalui cara ${cueC} membentuk pilihan kecilmu.`,
+      `Dalam keseharian, pola ${name} aktif ketika ${purpose.activation} dan ${domainA.daily} dipertegas oleh ${cueB}.`,
+      `Bagian ini ${purpose.distinction} melalui cara ${cueC} membentuk keputusan dan pilihan kecilmu.`,
     ];
   }
   if (paragraphIndex === 2) {
     return [
-      `Dalam keseharian, ${name} muncul lewat ${domainA.daily} yang dipertegas oleh ${cueA}.`,
-      `Pola ${name} biasanya aktif ketika ${purpose.activation} dan tanda ${cueA} meminta jawaban yang lebih cepat.`,
-      `Keputusan dalam ${name} ikut dibentuk oleh ${domainB.daily} serta ${cueB}, sehingga respons pertama tidak selalu sama dengan kebutuhan terdalam.`,
-      `Orang lain dapat merasakan ${name} sebagai cara kamu mengatur jarak, tempo, bahasa, atau komitmen saat ${cueB} ikut bekerja.`,
-      `Tempat paling terlihat dari ${name} adalah momen kecil ketika ${purpose.application} dan ${cueC} hadir bersamaan.`,
-    ];
-  }
-  if (paragraphIndex === 3) {
-    return [
-      `Kekuatan matang dari ${name} adalah ${domainA.strength} yang mendapat bentuk dari ${cueA}.`,
-      `Saat sehat, ${name} membuatmu mampu memakai ${domainB.strength} sambil merespons ${cueA} tanpa membesar-besarkan peranmu.`,
-      `Kontribusi ${name} terlihat ketika kamu mengubah pemahaman tentang ${cueB} menjadi pilihan yang membantu dirimu dan orang sekitar.`,
-      `Potensi ${name} tumbuh lebih kuat bila ${cueB} diberi struktur, jeda, dan ukuran keberhasilan yang realistis.`,
-      `Dalam bentuk terbaiknya, ${name} menjadi kapasitas yang dapat diandalkan ketika ${cueC} tidak hanya menjadi gambaran indah tentang diri.`,
-    ];
-  }
-  if (paragraphIndex === 4) {
-    return [
-      `Shadow dari ${name} muncul ketika ${domainA.shadow} bertemu dengan ${cueA}.`,
-      `Konflik batin ${name} dapat terasa sebagai tarik-menarik antara kebutuhan aman, ${cueA}, dan dorongan untuk tetap berfungsi seperti biasa.`,
-      `Pertahanan dalam ${name} sering muncul sebagai mengurangi kejujuran, menunda respons, atau mengambil alih ${cueB} yang sebenarnya perlu dibicarakan.`,
-      `Risiko ${name} muncul ketika ${domainB.shadow} dan ${cueB} mulai memengaruhi pilihan tanpa diberi nama terlebih dahulu.`,
-      `Bila tidak disadari, pola ${cueC} bisa membuat ${name} terasa seperti beban, padahal ia seharusnya menjadi pintu pemahaman.`,
+      `Saat matang, kekuatan ${name} menghadirkan ${domainA.strength} yang mendapat bentuk dari ${cueA}.`,
+      `Namun, shadow dari ${name} dapat muncul ketika ${domainA.shadow} dan pertahanan batin dipicu oleh ${cueB}.`,
+      `Risiko ini terasa bila ${domainB.shadow} dan ${cueC} memengaruhi pilihan tanpa diberi nama terlebih dahulu.`,
     ];
   }
   return [
-    `Integrasi ${name} dimulai dengan mengenali kapan ${cueA} sedang aktif dan apa kebutuhan yang dibawanya.`,
-    `Latihan utama ${name} adalah ${domainA.integration} sambil memperhatikan ${cueA} dengan cara yang cukup kecil untuk diulang.`,
-    `Yang perlu dilepas dari ${name} adalah kebiasaan memakai ${cueB} sebagai pembenaran untuk menghindari percakapan, batas, atau tindakan nyata.`,
-    `Penerapan ${name} bisa dimulai dari ${purpose.application}, terutama ketika ${cueC} muncul dalam satu situasi yang sedang kamu jalani sekarang.`,
-    `Saat matang, ${name} membantu kamu merespons ${cueA} dengan lebih sadar, spesifik, dan selaras dengan arah hidupmu.`,
+    `Integrasi ${name} dimulai dengan merawat ${domainA.integration} sambil memperhatikan ${cueA} dengan sadar.`,
+    `Yang perlu dilepas adalah kebiasaan memakai ${cueB} sebagai pembenaran untuk menunda tindakan nyata.`,
+    `Penerapan ${name} bisa dimulai dari ${purpose.application}, terutama ketika ${cueC} muncul dalam situasi harianmu.`,
   ];
 }
 
@@ -439,7 +415,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
   const paragraphs: string[] = [];
   const provenance: DeepNarrativeParagraphProvenance[] = [];
 
-  for (let paragraphIndex = 1; paragraphIndex <= 5; paragraphIndex++) {
+  for (let paragraphIndex = 1; paragraphIndex <= 3; paragraphIndex++) {
     const selectedFacts = selectReadingFacts(model, reading, paragraphIndex);
     const selectedFactIds = selectedFacts.map((fact) => fact.factId);
     const contributingSystems = [...new Set(selectedFacts.map((fact) => fact.systemId))].sort();

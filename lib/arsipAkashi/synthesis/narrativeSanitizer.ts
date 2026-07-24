@@ -22,27 +22,33 @@ export interface SanitizerResult {
 }
 
 export function sanitizeNarrative(text: string): SanitizerResult {
-  let cleaned = text;
+  const rawParagraphs = text.split("\n\n");
+  const cleanedParagraphs: string[] = [];
   const issues: string[] = [];
 
-  for (const name of FORBIDDEN_SYSTEM_NAMES) {
-    const re = new RegExp(`\\b${name}\\b`, "gi");
-    if (re.test(cleaned)) {
-      issues.push(`Forbidden system name found: "${name}"`);
-      cleaned = cleaned.replace(re, "");
+  for (const para of rawParagraphs) {
+    let cleaned = para;
+
+    for (const name of FORBIDDEN_SYSTEM_NAMES) {
+      const re = new RegExp(`\\b${name}\\b`, "gi");
+      if (re.test(cleaned)) {
+        issues.push(`Forbidden system name found: "${name}"`);
+        cleaned = cleaned.replace(re, "");
+      }
     }
+
+    for (const pattern of FORBIDDEN_PATTERNS) {
+      if (pattern.test(cleaned)) {
+        issues.push(`Forbidden pattern matched: ${pattern}`);
+        cleaned = cleaned.replace(pattern, "");
+      }
+    }
+
+    const global = sanitizeUserNarrative(cleaned);
+    cleaned = global.text.replace(/[ \t]+/g, " ").trim().replace(/\.+/g, ".");
+    issues.push(...global.issues);
+    cleanedParagraphs.push(cleaned);
   }
 
-  for (const pattern of FORBIDDEN_PATTERNS) {
-    if (pattern.test(cleaned)) {
-      issues.push(`Forbidden pattern matched: ${pattern}`);
-      cleaned = cleaned.replace(pattern, "");
-    }
-  }
-
-  const global = sanitizeUserNarrative(cleaned);
-  cleaned = global.text.replace(/\s+/g, " ").trim().replace(/\.+/g, ".");
-  issues.push(...global.issues);
-
-  return { cleaned, issues };
+  return { cleaned: cleanedParagraphs.join("\n\n"), issues };
 }
