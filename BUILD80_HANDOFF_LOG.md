@@ -5,6 +5,50 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-07-24 -- Founder-approved scratch cleanup and unapproved bucket discard
+
+Agent: Codex
+Starting HEAD: 0822a801b644f3d24458bf28b632aa547daa6292
+
+Work completed:
+- Audited 27 dirty scratch scripts read-only. Deleted the five Founder-approved,
+  completed production-write scripts without commit or backup:
+  - `scratch_fix_dian_puspa_dewi_badge.ts`
+  - `scratch_fix_widya_badge_firestore.ts`
+  - `scratch_write_category_b_batch_recovery.ts`
+  - `scratch_write_category_b_targeted_recovery.ts`
+  - `scratch_write_widya_hd_canonical.ts`
+- Moved 22 read-only scratch scripts to the already-gitignored local `scratch/`
+  directory. No scratch script was executed.
+- Discarded unapproved Bucket B by checkout:
+  `app/login/page.tsx`, `context/AuthContext.tsx`, `firebase.json`,
+  `firestore.rules`, `lib/access/accessControl.ts`, `lib/auth/authActions.ts`,
+  `lib/billing/accessControl.ts`; deleted untracked trial/auth files and tests.
+- Discarded unapproved Bucket E by checkout:
+  `components/global/UpdateRequiredScreen.tsx`, `components/global/VersionChecker.tsx`,
+  `lib/services/appUpdatePolicy.ts`, `lib/services/appUpdateService.ts`; deleted
+  untracked update-policy source, Playwright config, and update tests.
+- Discarded unapproved Bucket F by checkout:
+  `components/profile/details/ProfileSectionClient.tsx`,
+  `lib/arsipAkashi/profile/viewModel.ts`; deleted the untracked explanation
+  contract and Arsip Akashi DOM/format tests. This restores the Frozen area.
+- Discarded unapproved Bucket G by checkout:
+  `lib/analytics/usageAnalytics.ts`; deleted untracked behavior-sync logger and
+  behavior-memory repository.
+- Discarded unapproved Bucket H by checkout: `app/profile/page.tsx`; deleted
+  untracked daily-guidance core, DailyNote helper, weekly-guidance types/engine,
+  and profile daily-note test.
+
+Validation:
+- `npx tsc --noEmit`: FAIL. Remaining tracked sources still import discarded
+  Bucket E/G/H modules (update policy, behavior-memory/behavior-sync, daily
+  guidance core, and weekly guidance). No code was restored or repaired.
+- Production data reads: 0. Production data writes: 0.
+
+Exact next task: STOP AND WAIT FOR FOUNDER APPROVAL on the TypeScript failure.
+
+---
+
 ## 2026-07-24 -- Browser Runtime Verification: New-User Dashboard & HD Pending (Item 8)
 
 Agent: Antigravity AI Assistant

@@ -40,6 +40,10 @@ Sebelum melakukan pekerjaan apa pun:
 9. Verifikasi WAJIB di layar browser nyata (authenticated runtime) untuk
    klaim UI/fitur — script/unit test SAJA tidak cukup untuk menyatakan
    sebuah item selesai.
+10. Setiap script yang menulis ke Firestore production WAJIB mencatat
+    command yang dijalankan, timestamp, dan daftar dokumen yang terpengaruh
+    ke BUILD80_HANDOFF_LOG.md SEGERA setelah eksekusi selesai — bukan hanya
+    dilaporkan di chat.
 ```
 
 ## ATURAN WAJIB SEBELUM SESI BERAKHIR / LIMIT HABIS
@@ -102,6 +106,20 @@ Browser verification new-user Dashboard and HD Pending
 - Trial counter backend (local + emulator pass)
 - Billing/Entitlement Inti/Alfa (item 2 di atas -- sudah AUTHENTICATED RUNTIME PASS)
 - HD form validation + banner (item 3 -- sudah AUTHENTICATED RUNTIME PASS)
+
+## LOCAL SCRATCH SCRIPT AUDIT
+
+- 27 scratch script telah diaudit. Lima script write-capable dengan tugas
+  yang sudah selesai dan terverifikasi telah dihapus dari working directory.
+- 22 script read-only dipindahkan ke `scratch/`, yang sudah gitignored,
+  untuk referensi lokal dan tidak boleh di-commit tanpa approval Founder.
+- Bucket B (Trial/Entitlement login), E (Force-update), F (Arsip Akashi),
+  G (Telemetry), dan H (Daily/Weekly Guidance) telah di-DISCARD karena
+  tidak pernah disetujui Founder secara eksplisit. Arsip Akashi khususnya
+  melanggar status Frozen yang sudah ditetapkan sebelumnya.
+- Verifikasi pasca-discard `npx tsc --noEmit` FAIL: source tracked masih
+  mengimpor modul Bucket E/G/H yang telah di-discard. Jangan memulihkan atau
+  memperbaiki kode tanpa approval Founder.
 
 ## FILES CHANGED (kumulatif, branch feature/build80-cloudflare-telemetry-v1)
 
