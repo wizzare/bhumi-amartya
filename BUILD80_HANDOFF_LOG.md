@@ -5,6 +5,34 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-07-24 -- Founder-approved Bucket C discard and canonical HD read-only verification
+
+Agent: Codex
+Starting HEAD: e9c96d53
+
+Work completed:
+- Discarded unapproved Bucket C tracked files by checkout:
+  `app/blueprint/human-design/page.tsx`,
+  `lib/humandesign/calculateHumanDesign.ts`, `lib/repositories/adminRepository.ts`,
+  `lib/types/blueprint.ts`, and `lib/humandesign/hdRootCause.test.ts`.
+- Deleted untracked Bucket C display/API/test files:
+  `app/api/humandesign/calculate/route.ts`,
+  `lib/humandesign/displayProjection.ts`, `lib/admin/humanDesignDisplay.ts`,
+  `tests/p0/admin-projection.spec.ts`, and `tests/p0/human-design-route.spec.ts`.
+- `npx tsc --noEmit`: baseline missing-module errors remain as documented.
+  Two additional errors are stale `.next` validators referring to the deleted
+  route; no generated artifact was cleaned and no code was restored.
+- Firestore production read-only verification:
+  two approved canonical fixtures remained `ready`, source `human-design-py`,
+  with expected Projector and Manifestor 1/3 values. An anonymized
+  `human-design-py` sample was also `ready`; its membership in the recorded
+  recovery-21 roster could not be proven because no roster is in governance.
+  Production document reads: 12. Production writes: 0.
+
+Exact next task: STOP AND WAIT FOR FOUNDER APPROVAL.
+
+---
+
 ## 2026-07-24 -- Founder-approved scratch cleanup and unapproved bucket discard
 
 Agent: Codex

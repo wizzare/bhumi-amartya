@@ -125,6 +125,18 @@ Browser verification new-user Dashboard and HD Pending
   Bucket I dipertahankan. Bucket B/E/F/G/H kini bersih dari sisa import
   uncommitted; error TypeScript yang tersisa hanya baseline breakage
   pre-existing yang tercatat di backlog terpisah.
+- Bucket C (Human Design display projection dan admin repository changes)
+  telah di-DISCARD karena tidak pernah disetujui Founder dan berisiko
+  mengubah display HD canonical tanpa validasi source quality memadai.
+- Verifikasi Firestore production read-only pasca-discard: dua fixture
+  canonical tetap `Projector` dan `Manifestor 1/3`, keduanya `ready` dari
+  `human-design-py`. Satu sample `human-design-py` juga `ready`; membership
+  sample tersebut dalam roster recovery-21 tidak dapat dibuktikan dari
+  governance yang tersedia. Production writes: 0.
+- `npx tsc --noEmit` sesudah discard Bucket C masih menunjukkan baseline
+  breakage pre-existing dan dua referensi validator `.next` stale ke route
+  yang di-discard; jangan bersihkan artefak generated atau memperbaiki
+  baseline tanpa approval Founder.
 
 ## FILES CHANGED (kumulatif, branch feature/build80-cloudflare-telemetry-v1)
 
