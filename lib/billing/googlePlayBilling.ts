@@ -1,6 +1,6 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase/firebase";
+import { httpsCallable } from "firebase/functions";
+import { auth, getClientFunctions } from "@/lib/firebase/firebase";
 
 export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
@@ -125,12 +125,11 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
     throw new Error("Purchase token tidak tersedia.");
   }
 
-  const currentUser = getAuth(app).currentUser;
+  const currentUser = auth.currentUser;
   if (!currentUser) throw new Error("AUTH_MISSING");
 
   try {
-    const { getFunctions, httpsCallable } = await import("firebase/functions");
-    const functionsInstance = getFunctions(app, "asia-southeast2");
+    const functionsInstance = getClientFunctions("asia-southeast2");
     const verifyCallable = httpsCallable(functionsInstance, "verifyGooglePlayPurchase");
 
     const response = await verifyCallable({

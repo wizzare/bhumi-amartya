@@ -18,7 +18,7 @@ function test(label: string, condition: boolean, detail?: string) {
 
 const endpoints = getFirebaseEmulatorEndpoints();
 
-test("production mode disables emulators", shouldUseFirebaseEmulators({ NODE_ENV: "production", NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true" }) === false);
+test("explicit emulator flag enables emulators in every runtime", shouldUseFirebaseEmulators({ NODE_ENV: "production", NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true" }) === true);
 test("development true enables emulators", shouldUseFirebaseEmulators({ NODE_ENV: "development", NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true" }) === true);
 test("missing flag disables emulators", shouldUseFirebaseEmulators({ NODE_ENV: "development" }) === false);
 test("false disables emulators", shouldUseFirebaseEmulators({ NODE_ENV: "development", NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false" }) === false);

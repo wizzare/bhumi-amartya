@@ -1,1 +1,1 @@
-export { app, auth, db, functions } from "./config";
+export { app, auth, db, functions, getClientFunctions } from "./config";
