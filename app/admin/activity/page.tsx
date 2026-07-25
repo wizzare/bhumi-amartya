@@ -724,7 +724,7 @@ export default function AdminActivityPage() {
     try {
       const userRows = await adminRepository.getAllUsersForMonitoring();
       const normalized = userRows.map(normalizeUser).filter(Boolean) as FounderUser[];
-      const excludedUids = deriveAdminExcludedUids(userRows);
+      const excludedUids = deriveAdminExcludedUids(normalized);
       const analyticsFiltered = normalized.filter((u) => !isAdminExcludedAccount({ email: u.email, uid: u.uid, excludedUids }));
       const [activityResult, analyticsResult] = await Promise.allSettled([
         getDocs(query(collection(db, "user_activity"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
