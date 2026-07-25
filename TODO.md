@@ -31,7 +31,7 @@
 | 2 | TSC error scope decision (21 pre-existing) | PENDING | Founder |
 | 3 | Firestore Rules production deployment verification | PENDING | Founder |
 | 4 | Authenticated browser regression | PENDING | — |
-| 5 | Billing/entitlement runtime verification | PENDING | — |
+| 5 | Billing/entitlement runtime verification | PENDING (contract source-tested 33/33) | — |
 | 6 | Version/build metadata reconciliation | PENDING | — |
 | 7 | Signed AAB and signing verification | PENDING | — |
 | 8 | Internal testing track | PENDING | — |

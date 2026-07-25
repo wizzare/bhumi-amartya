@@ -143,7 +143,8 @@ Eight verified deterministic engines. No evidence of 10 or 11 implemented applic
 
 | Area | Status | Detail |
 |---|---|---|
-| TypeScript | FAIL | `npx tsc --noEmit` exit code 1; 21 pre-existing errors; no new regression from Daily Guidance or Behavior Memory work |
+| TypeScript | PASS | Production typecheck exit code 0; 21 pre-existing errors excluded from production scope |
+| Billing/entitlement | SOURCE CONTRACT TESTED | 33/33 contract tests PASS; backend deployed NOT VERIFIED; Play runtime PENDING |
 | Browser QA | PARTIAL | Authenticated runtime verified for HD+billing scope; full browser regression PENDING |
 | Android QA | NOT VERIFIED | No physical-device Build 80 QA |
 | Build 80 APK | NOT VERIFIED | |
@@ -155,7 +156,8 @@ Eight verified deterministic engines. No evidence of 10 or 11 implemented applic
 1. Reconcile Admin stale-snapshot fix into Build 80.
 2. Reconcile versionName/versionCode across web (`src/lib/version.ts`) and Android (`android/app/build.gradle`).
 3. Address or formally scope 21 TSC pre-existing errors.
-4. Verify billing and entitlement runtime end-to-end.
+3. `trialLogin` module referenced in `functions/index.js` but file is missing (backend deployment blocker).
+4. Billing backend not deployed, Play Billing runtime not verified.
 5. Verify force-update and version telemetry.
 6. Run complete browser regression.
 7. Run physical-device Android QA.
