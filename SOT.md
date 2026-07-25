@@ -156,7 +156,7 @@ Eight verified deterministic engines. No evidence of 10 or 11 implemented applic
 1. Reconcile Admin stale-snapshot fix into Build 80.
 2. Reconcile versionName/versionCode across web (`src/lib/version.ts`) and Android (`android/app/build.gradle`).
 3. Address or formally scope 21 TSC pre-existing errors.
-3. `trialLogin` module referenced in `functions/index.js` but file is missing (backend deployment blocker).
+3. `trialLogin` module referenced in `functions/index.js` — CREATED (commit a9774e1), deployment still pending.
 4. Billing backend not deployed, Play Billing runtime not verified.
 5. Verify force-update and version telemetry.
 6. Run complete browser regression.
