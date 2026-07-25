@@ -1,6 +1,8 @@
 import { FirebaseOptions, initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
+import { shouldUseFirebaseEmulators, connectEmulators } from './emulatorConfig';
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -31,5 +33,10 @@ if (missingFirebaseEnv.length > 0) {
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
-export { app, auth, db };
+if (shouldUseFirebaseEmulators()) {
+  connectEmulators(auth, db, functions);
+}
+
+export { app, auth, db, functions };
