@@ -1,182 +1,311 @@
 #!/usr/bin/env node
-// Local-only Firestore Emulator seeder using Admin SDK.
-// Safety: refuses non-local hosts. Requires FIRESTORE_EMULATOR_HOST.
+// Local-only billing fixture seeder using the Auth and Firestore emulators.
+
+import { createConnection } from "node:net";
+import { pathToFileURL } from "node:url";
 
 const EMULATOR_HOSTS = new Set(["127.0.0.1", "localhost"]);
+export const EXPECTED_PROJECT_ID = "bhumiamartya-fe85c";
+export const BILLING_EMAILS = [
+  "free-user@bhumi.test",
+  "trial-active@bhumi.test",
+  "trial-exhausted@bhumi.test",
+  "premium-active@bhumi.test",
+  "premium-expired@bhumi.test",
+];
 
-function validateFirestoreHost(host) {
-  if (!host) {
-    throw new Error("FIRESTORE_EMULATOR_HOST is not set. Refusing to connect.");
+export function validateLocalEndpoint(value, expectedPort, label) {
+  if (!value) throw new Error(`${label} emulator host is not set.`);
+  const [host, rawPort, ...extra] = value.split(":");
+  const port = Number(rawPort);
+  if (extra.length || !EMULATOR_HOSTS.has(host.toLowerCase()) || port !== expectedPort) {
+    throw new Error(`Refusing unexpected ${label} emulator endpoint: ${value}`);
   }
-  const parts = host.split(":");
-  const address = parts[0].toLowerCase();
-  if (!EMULATOR_HOSTS.has(address)) {
-    throw new Error(`Refusing non-local Firestore host: ${host}`);
-  }
-  return `http://${host}`;
+  return { host, port };
 }
 
-function validateAuthHost(host) {
-  if (!host) {
-    throw new Error("AUTH_EMULATOR_HOST is not set. Refusing to connect.");
+export function validateEnvironment(env = process.env) {
+  if (env.GCLOUD_PROJECT !== EXPECTED_PROJECT_ID) {
+    throw new Error(`Refusing unexpected project: ${env.GCLOUD_PROJECT || "<missing>"}`);
   }
-  const address = host.split(":")[0].toLowerCase();
-  if (!EMULATOR_HOSTS.has(address)) {
-    throw new Error(`Refusing non-local Auth host: ${host}`);
+  if (env.GOOGLE_APPLICATION_CREDENTIALS) {
+    throw new Error("Refusing to run while GOOGLE_APPLICATION_CREDENTIALS is set.");
   }
-  return `http://${host}`;
+  return {
+    auth: validateLocalEndpoint(
+      env.FIREBASE_AUTH_EMULATOR_HOST || env.AUTH_EMULATOR_HOST,
+      9099,
+      "Auth",
+    ),
+    firestore: validateLocalEndpoint(env.FIRESTORE_EMULATOR_HOST, 8080, "Firestore"),
+    functions: validateLocalEndpoint(env.FUNCTIONS_EMULATOR_HOST, 5001, "Functions"),
+  };
 }
 
-const FIRESTORE_HOST = validateFirestoreHost(process.env.FIRESTORE_EMULATOR_HOST);
-const AUTH_HOST = validateAuthHost(process.env.AUTH_EMULATOR_HOST || "127.0.0.1:9099");
-const PROJECT_ID = process.env.GCLOUD_PROJECT || "demo-no-project";
-
-if (PROJECT_ID !== "demo-no-project") {
-  throw new Error(`Refusing non-demo project: ${PROJECT_ID}`);
-}
-
-// Set host before importing Admin SDK
-process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
-
-import { initializeApp } from "firebase-admin/app";
-import { getFirestore, Timestamp } from "firebase-admin/firestore";
-
-initializeApp({ projectId: PROJECT_ID });
-const db = getFirestore();
-
-const NOW = Timestamp.now();
-
-async function verifyUid(email, uid) {
-  const pwMap = { "admin@bhumi.test":"admin-1pass","user-a@bhumi.test":"user-a-pass","user-b@bhumi.test":"user-b-pass","wedhaswarawidhi@gmail.com":"excl-1-pass","widhi.w.karyodikromo@gmail.com":"excl-2-pass","free-user@bhumi.test":"free-pass-1","trial-active@bhumi.test":"trial-pass","trial-exhausted@bhumi.test":"exh-pass-1","premium-active@bhumi.test":"prem-pass-1","premium-expired@bhumi.test":"exp-pass-1" };
-  const pw = pwMap[email];
-  if (!pw) return null;
-  const resp = await fetch(`${AUTH_HOST}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake-key`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password: pw, returnSecureToken: false }),
+function assertListener({ host, port }, label) {
+  return new Promise((resolve, reject) => {
+    const socket = createConnection({ host, port });
+    const fail = () => reject(new Error(`${label} emulator listener unavailable at ${host}:${port}`));
+    socket.setTimeout(1500);
+    socket.once("connect", () => {
+      socket.destroy();
+      resolve();
+    });
+    socket.once("timeout", () => {
+      socket.destroy();
+      fail();
+    });
+    socket.once("error", fail);
   });
-  if (!resp.ok) return null;
-  const data = await resp.json();
-  return data.localId === uid ? uid : null;
 }
 
-const AUTH_UID_MAP = {
-  "admin@bhumi.test": "U2QyahEe2Ud8iEw9x02wkOv4qcww",
-  "user-a@bhumi.test": "yQu6m9opGQC0o5GHpAA5W29phmLY",
-  "user-b@bhumi.test": "NWFYPgG6k6UiwdIOwluZ5mqcpZ1M",
-  "wedhaswarawidhi@gmail.com": "AYf7OZ5xRFy9r1jsdQYioAwpQNMu",
-  "widhi.w.karyodikromo@gmail.com": "yPvQqwgjbKAgTPCRKmhUDIb9vSuC",
-  "free-user@bhumi.test": "rKkXBsqHKpOeUxPS6ykUl0pEb9aO",
-  "trial-active@bhumi.test": "Fpy95WGK8JV2O1qdrUGPaRtpr4nX",
-  "trial-exhausted@bhumi.test": "Q04Elzf8ddklICFWeDEpYpSl9VnK",
-  "premium-active@bhumi.test": "DYpsQVRyb2a906sOfmQdBPoCP1bx",
-  "premium-expired@bhumi.test": "qSxMboWBd5p7ZQrsbrVwdRwblJC2",
-};
-
-async function main() {
-  // Smoke test first
-  const smokeRef = db.collection("qaSmoke").doc("firestore-emulator");
-  await smokeRef.set({ smoke: true, timestamp: NOW });
-  const smokeSnap = await smokeRef.get();
-  if (!smokeSnap.exists) {
-    throw new Error("Smoke write failed: document not found");
-  }
-  console.log("SMOKE WRITE: PASS");
-  console.log("SMOKE READ: PASS");
-
-  // Verify known UIDs against Auth Emulator
-  let verified = 0;
-  for (const [email, uid] of Object.entries(AUTH_UID_MAP)) {
-    const result = await verifyUid(email, uid);
-    if (result) verified++;
-  }
-  console.log(`AUTH USERS VERIFIED: ${verified} / ${Object.keys(AUTH_UID_MAP).length}`);
-
-  let created = 0;
-  let updated = 0;
-  let skipped = 0;
-  let failed = 0;
-
-  const fixtureMap = {
-    "admin@bhumi.test": {
-      label: "ADMIN", guardianRole: "admin",
+export function buildBillingFixtureDefinitions() {
+  const activeUntil = new Date("2026-08-30T00:00:00Z");
+  const expiredAt = new Date("2026-06-01T00:00:00Z");
+  const trialStartedAt = new Date("2026-07-25T00:00:00Z");
+  return {
+    "free-user@bhumi.test": {
+      label: "FREE",
+      expectedState: "free",
+      access: {
+        badge: null,
+        testerBadge: null,
+        membership: null,
+        membershipType: "FREE",
+        plan: "free",
+        trialStatus: "free",
+        trialLoginCount: 8,
+        isPremium: false,
+        accessUntil: null,
+        membershipExpiryDate: null,
+        subscriptionStatus: "inactive",
+      },
     },
-    "user-a@bhumi.test": { label: "USER_A" },
-    "user-b@bhumi.test": { label: "USER_B" },
-    "wedhaswarawidhi@gmail.com": { label: "EXCL1" },
-    "widhi.w.karyodikromo@gmail.com": { label: "EXCL2" },
-    "free-user@bhumi.test": { label: "FREE", plan: "free", trialLoginCount: 8 },
-    "trial-active@bhumi.test": { label: "TRIAL", trialLoginCount: 3 },
-    "trial-exhausted@bhumi.test": { label: "EXH", trialLoginCount: 10 },
+    "trial-active@bhumi.test": {
+      label: "TRIAL",
+      expectedState: "trial_active",
+      access: {
+        badge: null,
+        testerBadge: "Penjaga Bhumi",
+        membership: "free_trial",
+        membershipType: "TRIAL",
+        plan: "free_trial",
+        trialStatus: "active",
+        trialLoginCount: 3,
+        trialStartedAt,
+        trialEndsAt: activeUntil,
+        isPremium: false,
+        accessUntil: activeUntil,
+        membershipExpiryDate: null,
+        subscriptionStatus: "trial_active",
+      },
+    },
+    "trial-exhausted@bhumi.test": {
+      label: "EXHAUSTED",
+      expectedState: "trial_exhausted",
+      access: {
+        badge: null,
+        testerBadge: "Penjaga Bhumi",
+        membership: "free_trial",
+        membershipType: "TRIAL",
+        plan: "expired",
+        trialStatus: "free",
+        trialLoginCount: 10,
+        trialStartedAt,
+        trialEndsAt: expiredAt,
+        isPremium: false,
+        accessUntil: expiredAt,
+        membershipExpiryDate: null,
+        subscriptionStatus: "expired",
+      },
+    },
     "premium-active@bhumi.test": {
-      label: "PREMIUM", membershipType: "PREMIUM", isPremium: true,
-      membershipExpiryDate: Timestamp.fromDate(new Date("2026-08-01T00:00:00Z")),
+      label: "PREMIUM",
+      expectedState: "premium_active",
+      access: {
+        badge: null,
+        testerBadge: null,
+        membership: "premium",
+        membershipType: "PREMIUM",
+        plan: "premium",
+        trialStatus: "free",
+        trialLoginCount: 8,
+        isPremium: true,
+        accessUntil: activeUntil,
+        membershipExpiryDate: activeUntil,
+        subscriptionStatus: "active",
+      },
     },
     "premium-expired@bhumi.test": {
-      label: "EXPIRED", membershipType: "PREMIUM", isPremium: true,
-      membershipExpiryDate: Timestamp.fromDate(new Date("2026-06-01T00:00:00Z")),
+      label: "EXPIRED",
+      expectedState: "premium_expired",
+      access: {
+        badge: null,
+        testerBadge: null,
+        membership: "expired",
+        membershipType: "PREMIUM",
+        plan: "expired",
+        trialStatus: "free",
+        trialLoginCount: 8,
+        isPremium: false,
+        accessUntil: expiredAt,
+        membershipExpiryDate: expiredAt,
+        subscriptionStatus: "expired",
+      },
     },
   };
-
-  for (const [email, info] of Object.entries(fixtureMap)) {
-    const uid = AUTH_UID_MAP[email];
-    if (!uid) {
-      console.log(`  SKIPPED ${info.label} — no Auth UID for ${email}`);
-      skipped++;
-      continue;
-    }
-
-    const userRef = db.collection("users").doc(uid);
-    const snap = await userRef.get();
-
-    const docData = {
-      uid,
-      email,
-      displayName: info.label,
-      fullName: info.label,
-      setupCompleted: true,
-      createdAt: NOW,
-      lastSeen: NOW,
-      trialLoginCount: info.trialLoginCount ?? 0,
-    };
-
-    if (info.guardianRole) docData.guardianRole = info.guardianRole;
-    if (info.plan) docData.plan = info.plan;
-    if (info.membershipType) docData.membershipType = info.membershipType;
-    if (info.isPremium != null) docData.isPremium = info.isPremium;
-    if (info.membershipExpiryDate) docData.membershipExpiryDate = info.membershipExpiryDate;
-
-    try {
-      if (snap.exists) {
-        await userRef.update(docData);
-        updated++;
-      } else {
-        await userRef.set(docData);
-        created++;
-      }
-    } catch (err) {
-      console.log(`  FAILED  ${info.label} — ${err.message}`);
-      failed++;
-    }
-
-    // Also create user_activity daily record
-    const activityId = `${uid}_2026-07-25`;
-    const activityRef = db.collection("user_activity").doc(activityId);
-    const activitySnap = await activityRef.get();
-    if (!activitySnap.exists) {
-      await activityRef.set({
-        uid, date: "2026-07-25", appVersion: "4.4.4", buildNumber: "80",
-        lastSeen: NOW, totalSeconds: 123,
-      });
-      created++;
-    }
-  }
-
-  console.log(`FIRESTORE SEED: ${created} created, ${updated} updated, ${skipped} skipped, ${failed} failed`);
-  if (failed > 0) process.exit(1);
 }
 
-main().catch((err) => {
-  console.error("FATAL:", err.message);
-  process.exit(1);
-});
+export async function resolveAuthUsers(auth, emails = BILLING_EMAILS) {
+  const resolved = new Map();
+  for (const email of emails) {
+    try {
+      const user = await auth.getUserByEmail(email);
+      resolved.set(email, user.uid);
+    } catch (error) {
+      if (error?.code === "auth/user-not-found") {
+        throw new Error(`Expected Auth Emulator account is missing: ${email}`);
+      }
+      throw error;
+    }
+  }
+  return resolved;
+}
+
+function toMillis(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value.getTime();
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.toDate === "function") return value.toDate().getTime();
+  return new Date(value).getTime();
+}
+
+export function classifyFixture(data, now = new Date("2026-07-26T00:00:00Z")) {
+  const expiry = data.membershipExpiryDate || data.accessUntil;
+  const expiryMillis = toMillis(expiry);
+  if (data.membershipType === "PREMIUM") {
+    return expiryMillis && expiryMillis > now.getTime() ? "premium_active" : "premium_expired";
+  }
+  const explicitFree = data.trialStatus === "free" || ["free", "expired"].includes(String(data.plan).toLowerCase());
+  if (Number(data.trialLoginCount) <= 7 && !explicitFree) return "trial_active";
+  if (String(data.membershipType).toUpperCase() === "TRIAL") return "trial_exhausted";
+  return "free";
+}
+
+function normalizedEqual(actual, expected) {
+  if (actual === expected) return true;
+  if (actual == null || expected == null) return actual == null && expected == null;
+  if (expected instanceof Date) return toMillis(actual) === expected.getTime();
+  return false;
+}
+
+async function findStaleFixtures(db, resolvedUids) {
+  const stale = [];
+  for (const email of BILLING_EMAILS) {
+    const currentUid = resolvedUids.get(email);
+    const matches = await db.collection("users").where("email", "==", email).get();
+    for (const document of matches.docs) {
+      if (document.id === currentUid) continue;
+      stale.push({ email, documentId: document.id, currentUid, ref: document.ref });
+    }
+  }
+  for (const item of stale) {
+    console.log(`STALE FIXTURE: email=${item.email} documentId=${item.documentId} currentUid=${item.currentUid}`);
+  }
+  return stale;
+}
+
+async function main() {
+  const endpoints = validateEnvironment();
+  await Promise.all([
+    assertListener(endpoints.auth, "Auth"),
+    assertListener(endpoints.firestore, "Firestore"),
+    assertListener(endpoints.functions, "Functions"),
+  ]);
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = `${endpoints.auth.host}:${endpoints.auth.port}`;
+
+  const [{ initializeApp }, { getAuth }, { getFirestore }] = await Promise.all([
+    import("firebase-admin/app"),
+    import("firebase-admin/auth"),
+    import("firebase-admin/firestore"),
+  ]);
+  const app = initializeApp({ projectId: EXPECTED_PROJECT_ID }, "billing-fixture-seeder");
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const definitions = buildBillingFixtureDefinitions();
+
+  const resolvedUids = await resolveAuthUsers(auth);
+  for (const [email, uid] of resolvedUids) {
+    console.log(`AUTH UID: email=${email} uid=${uid} endpoint=${endpoints.auth.host}:${endpoints.auth.port}`);
+  }
+
+  const stale = await findStaleFixtures(db, resolvedUids);
+  if (process.argv.includes("--report-stale-only")) {
+    console.log(`STALE FIXTURE REPORT: ${stale.length} found, 0 removed`);
+    return;
+  }
+
+  const smokeRef = db.collection("qaSmoke").doc("billing-fixture-seeder");
+  await smokeRef.set({ smoke: true, projectId: EXPECTED_PROJECT_ID, timestamp: new Date() });
+  if (!(await smokeRef.get()).exists) throw new Error("Firestore Emulator smoke read failed.");
+  for (const item of stale) await item.ref.delete();
+  let created = 0;
+  let updated = 0;
+  for (const [email, definition] of Object.entries(definitions)) {
+    const uid = resolvedUids.get(email);
+    const userRef = db.collection("users").doc(uid);
+    const before = await userRef.get();
+    const now = new Date();
+    const document = {
+      uid,
+      email,
+      displayName: definition.label,
+      fullName: definition.label,
+      setupCompleted: true,
+      ...definition.access,
+      lastSeen: now,
+      ...(before.exists ? {} : { createdAt: now }),
+    };
+    await userRef.set(document, { merge: true });
+    before.exists ? updated++ : created++;
+
+    const activityId = `${uid}_2026-07-25`;
+    await db.collection("user_activity").doc(activityId).set({
+      uid,
+      date: "2026-07-25",
+      appVersion: "4.4.4",
+      buildNumber: "80",
+      lastSeen: now,
+      totalSeconds: 123,
+    }, { merge: true });
+  }
+
+  for (const [email, definition] of Object.entries(definitions)) {
+    const uid = resolvedUids.get(email);
+    const snapshot = await db.collection("users").doc(uid).get();
+    const data = snapshot.data();
+    if (!snapshot.exists || data.uid !== uid || data.email !== email) {
+      throw new Error(`Fixture identity readback failed: ${email}`);
+    }
+    for (const [key, expected] of Object.entries(definition.access)) {
+      if (!normalizedEqual(data[key], expected)) {
+        throw new Error(`Fixture field readback failed: ${email} ${key}`);
+      }
+    }
+    const state = classifyFixture(data);
+    if (state !== definition.expectedState) {
+      throw new Error(`Fixture state readback failed: ${email} expected=${definition.expectedState} actual=${state}`);
+    }
+    console.log(`FIXTURE READBACK: email=${email} uid=${uid} state=${state} document=users/${uid}`);
+  }
+
+  console.log(`FIRESTORE SEED: ${created} created, ${updated} updated, ${stale.length} stale removed`);
+}
+
+const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+if (isDirectRun) {
+  main().catch((error) => {
+    console.error("FATAL:", error.message);
+    process.exit(1);
+  });
+}
