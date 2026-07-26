@@ -71,6 +71,21 @@ export function buildMirrorDailyReflection({
     };
   }
 
+  // State-aware guard: when the synthesis engine itself reports unavailable,
+  // do not inspect dailyConclusion.text — it contains the error message string
+  // (non-empty) and would otherwise be wrapped in greeting/farewell as if it
+  // were real reflection content.
+  if (guidance?.dailySynthesisState === "unavailable") {
+    return {
+      state: "unavailable",
+      text: "Refleksi Jiwa hari ini belum tersedia karena Kesimpulan Hari Ini belum selesai disusun.",
+      dailyConclusionText: null,
+      localDateKey: guidance.localDateKey ?? guidance.date ?? null,
+      timezone,
+      synthesisFingerprint: null,
+    };
+  }
+
   const contract = buildMirrorDailyConclusionContract(guidance);
   if (!contract?.dailyConclusion.text) {
     return {
