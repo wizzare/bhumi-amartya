@@ -521,14 +521,15 @@ class FirebaseStorageProvider implements StorageProvider {
   async getUserBlueprint(): Promise<UserBlueprint | null> {
     const uid = this.getCurrentUserId();
     if (!uid) return null;
-    const blueprint = await firebaseService.getUserBlueprint(uid);
+    const [blueprint, profile] = await Promise.all([
+      firebaseService.getUserBlueprint(uid),
+      firebaseService.getUserProfile(uid).catch(() => null),
+    ]);
 
     if (blueprint && blueprint.uid !== uid) {
        console.warn("[USER DATA MISMATCH BLOCKED]", { reason: "blueprint_load_uid_mismatch", activeUid: uid, blueprintUid: blueprint.uid });
        return null;
     }
-
-    const profile = await firebaseService.getUserProfile(uid).catch(() => null);
     const repair = blueprint ? repairHumanDesignIfPossible(blueprint as any, profile as any) : null;
     if (repair?.repaired) {
       console.log("[BLUEPRINT HD REPAIR]", {
