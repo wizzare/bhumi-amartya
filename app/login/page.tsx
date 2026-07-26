@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { participationEngine } from "@/lib/engines/participationEngine";
+import { EmulatorQaLogin } from "@/components/dev/EmulatorQaLogin";
 
 function LoginContent() {
   const router = useRouter();
@@ -158,6 +159,8 @@ JSON: ${JSON.stringify(fullErrorDetail, null, 2)}
       <p className="text-center text-xs text-[#7B8776] leading-relaxed px-4">
         Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.
       </p>
+
+      <EmulatorQaLogin />
     </div>
   );
 }
