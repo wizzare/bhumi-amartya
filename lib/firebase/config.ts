@@ -6,6 +6,7 @@ import {
   assertFirestoreEmulatorWired,
   connectEmulators,
   connectFunctionsEmulatorOnce,
+  getFirebaseEmulatorEndpoints,
   shouldUseFirebaseEmulators,
 } from './emulatorConfig';
 
@@ -47,11 +48,12 @@ if (useFirebaseEmulators) {
   connectEmulators(auth, db, functions);
   assertFirestoreEmulatorWired(db);
   if (process.env.NODE_ENV !== 'production') {
+    const emulatorEndpoints = getFirebaseEmulatorEndpoints();
     console.info('[DEV] Firebase client initialized', {
       emulatorMode: useFirebaseEmulators,
       appName: app.name,
       projectId: app.options.projectId,
-      firestore: '127.0.0.1:8080',
+      firestore: emulatorEndpoints.firestore.url,
       initializedAt: new Date().toISOString(),
     });
   }

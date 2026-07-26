@@ -1,13 +1,18 @@
+import { Capacitor } from "@capacitor/core";
 import { connectAuthEmulator } from "firebase/auth";
 import { connectFirestoreEmulator } from "firebase/firestore";
 import { connectFunctionsEmulator } from "firebase/functions";
 
-const EMULATOR_HOST_AUTH = "127.0.0.1";
+const WEB_EMULATOR_HOST = "127.0.0.1";
+const ANDROID_EMULATOR_HOST = "10.0.2.2";
 const EMULATOR_PORT_AUTH = 9099;
-const EMULATOR_HOST_FIRESTORE = "127.0.0.1";
 const EMULATOR_PORT_FIRESTORE = 8080;
-const EMULATOR_HOST_FUNCTIONS = "127.0.0.1";
 const EMULATOR_PORT_FUNCTIONS = 5001;
+
+type FirebaseEmulatorEndpointOptions = {
+  platform?: string;
+  nativeHost?: string;
+};
 
 type FirebaseEmulatorGlobal = typeof globalThis & {
   __bhumiFirebaseEmulatorConnections?: {
@@ -27,11 +32,39 @@ export function shouldUseFirebaseEmulators(env?: Record<string, string | undefin
   return flag === "true";
 }
 
-export function getFirebaseEmulatorEndpoints() {
+function isPrivateLanIpv4(host: string): boolean {
+  const octets = host.split(".").map(Number);
+  if (octets.length !== 4 || octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
+    return false;
+  }
+
+  return octets[0] === 10
+    || (octets[0] === 172 && octets[1] >= 16 && octets[1] <= 31)
+    || (octets[0] === 192 && octets[1] === 168);
+}
+
+export function resolveFirebaseEmulatorHost(options: FirebaseEmulatorEndpointOptions = {}): string {
+  const platform = options.platform ?? Capacitor.getPlatform();
+  if (platform !== "android") return WEB_EMULATOR_HOST;
+
+  const nativeHost = options.nativeHost ?? process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_HOST;
+  if (!nativeHost) {
+    throw new Error(
+      "Firebase emulator mode on Android requires an explicit NEXT_PUBLIC_FIREBASE_EMULATOR_HOST.",
+    );
+  }
+  if (nativeHost !== ANDROID_EMULATOR_HOST && !isPrivateLanIpv4(nativeHost)) {
+    throw new Error("Firebase emulator mode on Android requires 10.0.2.2 or an explicit private LAN IPv4 host.");
+  }
+  return nativeHost;
+}
+
+export function getFirebaseEmulatorEndpoints(options: FirebaseEmulatorEndpointOptions = {}) {
+  const host = resolveFirebaseEmulatorHost(options);
   return {
-    auth: { host: EMULATOR_HOST_AUTH, port: EMULATOR_PORT_AUTH, url: `http://${EMULATOR_HOST_AUTH}:${EMULATOR_PORT_AUTH}` },
-    firestore: { host: EMULATOR_HOST_FIRESTORE, port: EMULATOR_PORT_FIRESTORE, url: `${EMULATOR_HOST_FIRESTORE}:${EMULATOR_PORT_FIRESTORE}` },
-    functions: { host: EMULATOR_HOST_FUNCTIONS, port: EMULATOR_PORT_FUNCTIONS, url: `${EMULATOR_HOST_FUNCTIONS}:${EMULATOR_PORT_FUNCTIONS}` },
+    auth: { host, port: EMULATOR_PORT_AUTH, url: `http://${host}:${EMULATOR_PORT_AUTH}` },
+    firestore: { host, port: EMULATOR_PORT_FIRESTORE, url: `${host}:${EMULATOR_PORT_FIRESTORE}` },
+    functions: { host, port: EMULATOR_PORT_FUNCTIONS, url: `${host}:${EMULATOR_PORT_FUNCTIONS}` },
   } as const;
 }
 
@@ -66,7 +99,10 @@ export function connectFunctionsEmulatorOnce(functions: object): void {
 export function assertFirestoreEmulatorWired(db: object): void {
   if (!shouldUseFirebaseEmulators()) return;
   if (!getConnectionRegistry().firestore.has(db)) {
-    throw new Error("Firestore emulator mode is enabled, but this Firestore instance is not wired to 127.0.0.1:8080.");
+    const endpoint = getFirebaseEmulatorEndpoints().firestore;
+    throw new Error(
+      `Firestore emulator mode is enabled, but this Firestore instance is not wired to ${endpoint.host}:${endpoint.port}.`,
+    );
   }
 }
 
