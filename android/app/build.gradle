@@ -16,13 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    def keystoreFile = System.getenv('BHUMI_RELEASE_STORE_FILE')
+    def keystorePassword = System.getenv('BHUMI_RELEASE_STORE_PASSWORD')
+    def keyAlias = System.getenv('BHUMI_RELEASE_KEY_ALIAS')
+    def keyPassword = System.getenv('BHUMI_RELEASE_KEY_PASSWORD')
+
+    if (!keystoreFile || !keystorePassword || !keyAlias || !keyPassword) {
+        def props = new Properties()
+        def propFile = rootProject.file('keystore.properties')
+        if (propFile.exists()) {
+            propFile.withInputStream { props.load(it) }
+        }
+        keystoreFile = keystoreFile ?: props.getProperty('BHUMI_RELEASE_STORE_FILE')
+        keystorePassword = keystorePassword ?: props.getProperty('BHUMI_RELEASE_STORE_PASSWORD')
+        keyAlias = keyAlias ?: props.getProperty('BHUMI_RELEASE_KEY_ALIAS')
+        keyPassword = keyPassword ?: props.getProperty('BHUMI_RELEASE_KEY_PASSWORD')
+    }
+
+    def releaseSigningComplete = keystoreFile && keystorePassword && keyAlias && keyPassword
+
     signingConfigs {
         release {
-            if (project.hasProperty('BHUMI_RELEASE_STORE_FILE')) {
-                storeFile file(BHUMI_RELEASE_STORE_FILE)
-                storePassword BHUMI_RELEASE_STORE_PASSWORD
-                keyAlias BHUMI_RELEASE_KEY_ALIAS
-                keyPassword BHUMI_RELEASE_KEY_PASSWORD
+            if (releaseSigningComplete) {
+                storeFile file(keystoreFile)
+                storePassword keystorePassword
+                keyAlias keyAlias
+                keyPassword keyPassword
             }
         }
     }

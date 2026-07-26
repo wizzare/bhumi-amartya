@@ -72,6 +72,14 @@ next-env.d.ts
 android/gradlew
 android/gradlew.bat
 android/astro-current-screen.png
+
+# Signing credentials (never commit)
+android/keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
 .vercel
 .env*
 
