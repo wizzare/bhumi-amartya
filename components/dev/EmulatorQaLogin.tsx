@@ -1,8 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase/firebase";
+
+export function shouldShowEmulatorQaLogin({
+  nodeEnv,
+  useFirebaseEmulators,
+  enableAndroidQaLogin,
+  isNativePlatform,
+  platform,
+}: {
+  nodeEnv: string | undefined;
+  useFirebaseEmulators: string | undefined;
+  enableAndroidQaLogin: string | undefined;
+  isNativePlatform: boolean;
+  platform: string;
+}) {
+  if (useFirebaseEmulators !== "true") return false;
+  if (!isNativePlatform) return nodeEnv !== "production";
+  return platform === "android" && enableAndroidQaLogin === "true";
+}
 
 export function EmulatorQaLogin() {
   const [mounted, setMounted] = useState(false);
@@ -17,9 +36,13 @@ export function EmulatorQaLogin() {
 
   if (!mounted) return null;
 
-  const showQaLogin =
-    process.env.NODE_ENV !== "production" &&
-    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
+  const showQaLogin = shouldShowEmulatorQaLogin({
+    nodeEnv: process.env.NODE_ENV,
+    useFirebaseEmulators: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS,
+    enableAndroidQaLogin: process.env.NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN,
+    isNativePlatform: Capacitor.isNativePlatform(),
+    platform: Capacitor.getPlatform(),
+  });
 
   if (!showQaLogin) return null;
 
