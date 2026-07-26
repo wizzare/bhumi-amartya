@@ -21,6 +21,7 @@ function compareVersions(a: string, b: string) {
 
 export function VersionChecker({ children }: { children: React.ReactNode }) {
   const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
   const [isOptionalOpen, setIsOptionalOpen] = useState(false);
   const [updateAction, setUpdateAction] = useState<"idle" | "starting" | "completing" | "failed">("idle");
 
@@ -43,6 +44,8 @@ export function VersionChecker({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.warn("[VERSION CHECKER] Failed to check for updates:", err);
+      } finally {
+        if (!disposed) setIsChecking(false);
       }
     }
     void check();
@@ -55,11 +58,13 @@ export function VersionChecker({ children }: { children: React.ReactNode }) {
     return () => { disposed = true; void appStateHandle?.remove(); };
   }, []);
 
-  if (!updateStatus) {
+  if (isChecking) {
     return (
       <div className="min-h-screen bg-[#FCFAF5]" />
     );
   }
+
+  if (!updateStatus) return <>{children}</>;
 
   // 1. FORCED UPDATE (Blocker)
   if (updateStatus.isOutdated && updateStatus.nativeState !== "immediate_required") {

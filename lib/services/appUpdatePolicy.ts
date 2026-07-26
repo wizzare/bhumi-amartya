@@ -17,7 +17,7 @@ export function evaluateAppUpdateStatus(
   buildInfo: BuildInfo,
   remoteConfig: RemoteVersionConfig | null,
 ): AppUpdateStatus {
-  const MIN_SUPPORTED_ANDROID_VERSION_CODE = 62;
+  const MIN_SUPPORTED_ANDROID_VERSION_CODE = 80;
   const defaultUpdateUrl = "market://details?id=com.bhumiamartya.app";
   const currentBuild = buildInfo.versionCode;
   let minimumBuild = buildInfo.platform === "android" ? MIN_SUPPORTED_ANDROID_VERSION_CODE : 0;

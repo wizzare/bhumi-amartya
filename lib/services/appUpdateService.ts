@@ -6,8 +6,18 @@ import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export type { AppUpdateStatus };
 
+interface NativeAppUpdateResult {
+  available?: boolean;
+  flexibleAllowed?: boolean;
+  immediateAllowed?: boolean;
+  downloading?: boolean;
+  downloaded?: boolean;
+  immediateInProgress?: boolean;
+  state?: AppUpdateStatus["nativeState"];
+}
+
 interface NativeAppUpdatePlugin {
-  check(): Promise<{ available?: boolean; flexibleAllowed?: boolean; immediateAllowed?: boolean; downloading?: boolean; downloaded?: boolean; immediateInProgress?: boolean; state?: AppUpdateStatus["nativeState"] }>;
+  check(): Promise<NativeAppUpdateResult | null | undefined>;
   startFlexible(): Promise<void>;
   startImmediate(): Promise<void>;
   resumeImmediate(): Promise<void>;
@@ -16,6 +26,35 @@ interface NativeAppUpdatePlugin {
 
 const NativeAppUpdate = registerPlugin<NativeAppUpdatePlugin>("AppUpdate");
 
+export function normalizeNativeAppUpdateResult(value: unknown): NativeAppUpdateResult {
+  if (!value || typeof value !== "object") return {};
+  const candidate = value as Record<string, unknown>;
+  const normalized: NativeAppUpdateResult = {};
+
+  for (const key of ["available", "flexibleAllowed", "immediateAllowed", "downloading", "downloaded", "immediateInProgress"] as const) {
+    if (typeof candidate[key] === "boolean") normalized[key] = candidate[key];
+  }
+
+  const allowedStates: AppUpdateStatus["nativeState"][] = ["unavailable", "no_update", "available", "downloading", "downloaded", "immediate_required", "immediate_in_progress", "failed"];
+  if (allowedStates.includes(candidate.state as AppUpdateStatus["nativeState"])) {
+    normalized.state = candidate.state as AppUpdateStatus["nativeState"];
+  }
+
+  return normalized;
+}
+
+export async function runNativeAppUpdateCheck(
+  check: () => Promise<unknown>,
+  logWarning: (message: string, error: unknown) => void = console.warn,
+): Promise<{ native: NativeAppUpdateResult; succeeded: boolean }> {
+  try {
+    return { native: normalizeNativeAppUpdateResult(await check()), succeeded: true };
+  } catch (error) {
+    logWarning("[APP UPDATE SERVICE] Native update check unavailable. Using local fallback.", error);
+    return { native: {}, succeeded: false };
+  }
+}
+
 /**
  * Checks for application updates from Firestore.
  * Stabilized in KARA 53 to support legacy schema and prevent false positives.
@@ -23,14 +62,11 @@ const NativeAppUpdate = registerPlugin<NativeAppUpdatePlugin>("AppUpdate");
 export async function checkAppUpdateStatus(): Promise<AppUpdateStatus> {
   const buildInfo = await getRuntimeBuildInfo();
   let nativeCheckSucceeded = false;
-  let native: Awaited<ReturnType<NativeAppUpdatePlugin["check"]>> = {};
+  let native: NativeAppUpdateResult = {};
   if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android") {
-    try {
-      native = await NativeAppUpdate.check();
-      nativeCheckSucceeded = true;
-    } catch {
-      native = {};
-    }
+    const nativeCheck = await runNativeAppUpdateCheck(() => NativeAppUpdate.check());
+    native = nativeCheck.native;
+    nativeCheckSucceeded = nativeCheck.succeeded;
     if (native.downloaded || native.downloading || native.immediateInProgress || native.available) {
       const nativeState = native.state || (native.downloaded ? "downloaded" : native.downloading ? "downloading" : native.immediateInProgress ? "immediate_in_progress" : native.immediateAllowed ? "immediate_required" : "available");
       const immediate = native.immediateAllowed === true || native.immediateInProgress === true;
@@ -49,11 +85,13 @@ export async function checkAppUpdateStatus(): Promise<AppUpdateStatus> {
   }
 
   const evaluated = evaluateAppUpdateStatus(buildInfo, remoteConfig);
-  // Play Core is the authority for native distribution availability. If it
-  // reports no Play update (or is unavailable in a debug/sideload build), do
-  // not turn the Firestore flag into a blocking screen or retry loop.
-  if (buildInfo.platform === "android" && (!nativeCheckSucceeded || (!native.available && !native.downloaded && !native.downloading && !native.immediateInProgress))) {
-    return { ...evaluated, isOutdated: false, nativeState: nativeCheckSucceeded ? "no_update" : "unavailable", policy: "no_update" };
+  // Play Core is the authority for native distribution, but the Firestore
+  // minimumBuild/forceUpdate is the authority for what is supported. If Play
+  // Core reports no update AND Firestore also says the build is current, only
+  // then skip the forced-update screen. If Firestore flags the build as
+  // outdated, that takes precedence regardless of Play Core availability.
+  if (buildInfo.platform === "android" && !evaluated.isOutdated && (!nativeCheckSucceeded || (!native.available && !native.downloaded && !native.downloading && !native.immediateInProgress))) {
+    return { ...evaluated, nativeState: nativeCheckSucceeded ? "no_update" : "unavailable", policy: "no_update" };
   }
   return evaluated;
 }

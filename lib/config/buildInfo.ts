@@ -31,11 +31,23 @@ export async function getRuntimeBuildInfo(): Promise<BuildInfo> {
   try {
     const { App } = await import("@capacitor/app");
     const info = await App.getInfo();
-    const buildNumber = info.build || CURRENT_BUILD_NUMBER;
+    let buildNumber = info.build || CURRENT_BUILD_NUMBER;
+    let versionCode = parseVersionCode(buildNumber) ?? CURRENT_VERSION_CODE;
+
+    const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
+    const isQaMode = process.env.NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN === "true";
+    const simulatedBuild = process.env.NEXT_PUBLIC_QA_SIMULATED_BUILD;
+    if (isEmulatorMode && isQaMode && simulatedBuild) {
+      const parsed = parseInt(simulatedBuild, 10);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        versionCode = parsed;
+        buildNumber = String(parsed);
+      }
+    }
 
     return {
       versionName: info.version || CURRENT_VERSION_NAME,
-      versionCode: parseVersionCode(buildNumber) ?? CURRENT_VERSION_CODE,
+      versionCode,
       buildNumber,
       platform,
     };
