@@ -26,6 +26,7 @@ import { buildArsipAkashiInputFromProfile } from "@/lib/arsipAkashi/profile/inpu
 import { buildArsipAkashiProfileViewModel } from "@/lib/arsipAkashi/profile/viewModel";
 import { applyArsipAkashiContentToV3Section, buildSoulLettersV3Section } from "@/lib/arsipAkashi/profile/v3ContentBridge";
 import { classifyProfileReadiness, type ProfileReadiness } from "@/lib/arsipAkashi/profile/readiness";
+import { isCurrentProfilePageLoad, resolveProfilePageLoadState } from "@/lib/profile/profilePageLoadState";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -157,6 +158,7 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
 export default function ProfilePage() {
   const auth = useAuth();
   const trackedRef = useRef(false);
+  const activeProfileLoadRef = useRef(0);
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
     : null;
@@ -164,6 +166,7 @@ export default function ProfilePage() {
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [dailyNoteState, setDailyNoteState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
   const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
@@ -179,24 +182,42 @@ export default function ProfilePage() {
   }, [auditUser, auth?.authStateResolved, auth?.userProfile, auth?.user?.uid]);
 
   useEffect(() => {
+    const loadId = ++activeProfileLoadRef.current;
+    let cancelled = false;
+    const isCurrent = () => isCurrentProfilePageLoad(loadId, activeProfileLoadRef.current, cancelled);
+    setLoading(true);
+    setDailyGuidance(null);
+    setDailyNoteState("loading");
+
     async function load() {
+      let hasProfile = false;
+      let hasBlueprint = false;
+      let guidanceReady = false;
       try {
         let [profile, blueprint] = await Promise.all([
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
         ]);
+        if (!isCurrent()) return;
         if (auditUser && (!profile || !blueprint)) {
           const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
+          if (!isCurrent()) return;
           profile = profile || getMockProfile(auditUser) as any;
           blueprint = blueprint || getMockBlueprint(auditUser) as any;
         }
+        hasProfile = Boolean(profile);
+        hasBlueprint = Boolean(blueprint);
         if (profile) {
+          if (!isCurrent()) return;
           setReadiness(classifyProfileReadiness(profile as unknown as Record<string, unknown>));
+          if (!isCurrent()) return;
           setName(profileName(profile as unknown as LocalRecord));
+          if (!isCurrent()) return;
           setLanguage((profile as any).language === "en" ? "en" : "id");
         }
         if (blueprint) {
           const canonicalBlueprint = blueprint as unknown as Blueprint;
+          if (!isCurrent()) return;
           if (canonicalBlueprint.bazi) setBazi(BaziMeaningService.enrich(canonicalBlueprint.bazi));
           const soulIdentityAi = (profile as any)?.soulIdentityAi;
           try {
@@ -222,7 +243,7 @@ export default function ProfilePage() {
             console.warn("[Profile] Canonical translation failed — Blueprint cards may be limited:", translateError);
           }
 
-          try {
+          if (profile) try {
             const timezone = (profile as any)?.timezone || (profile as any)?.profile?.timezone || "UTC";
             const date = getLocalDateKey(new Date(), timezone);
             const dgResult = await getExistingDailyGuidance({
@@ -231,18 +252,33 @@ export default function ProfilePage() {
               blueprint,
               date,
             });
+            if (!isCurrent()) return;
             if (dgResult.status === "success" && dgResult.guidance) {
               setDailyGuidance(dgResult.guidance);
+              guidanceReady = true;
             }
           } catch (guidanceError) {
-            console.warn("[Profile] Daily guidance load failed — not blocking profile:", guidanceError);
+            if (isCurrent()) {
+              console.warn("[Profile] Daily guidance load failed — not blocking profile:", guidanceError);
+            }
           }
         }
+      } catch (profileError) {
+        if (isCurrent()) {
+          console.error("[Profile] Profile data load failed:", profileError);
+        }
       } finally {
-        setLoading(false);
+        if (!isCurrent()) return;
+        const nextState = resolveProfilePageLoadState({ hasProfile, hasBlueprint, guidanceReady });
+        setDailyNoteState(nextState.dailyNoteState);
+        if (!isCurrent()) return;
+        setLoading(nextState.loading);
       }
     }
     void load();
+    return () => {
+      cancelled = true;
+    };
   }, [auditUser]);
 
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
@@ -289,6 +325,7 @@ export default function ProfilePage() {
 
             <DailyNoteV2
               dailyGuidance={dailyGuidance}
+              dailyNoteState={dailyNoteState}
               language={language}
               userName={name}
               dailyState={null}

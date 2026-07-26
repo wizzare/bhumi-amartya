@@ -11,10 +11,11 @@ import {
   NotificationPreferences,
   firebaseService
 } from '@/lib/firebase/service';
-import { auth } from '@/lib/firebase/firebase';
+import { app, auth, db } from '@/lib/firebase/firebase';
 import { getActiveUserId } from '@/lib/auth/getActiveUserId';
 import { readOwnedCacheObject, writeOwnedCacheObject } from '@/lib/storage/derivedCacheOwnership';
 import { repairHumanDesignIfPossible } from '@/lib/humandesign/repairHumanDesign';
+import { settleWithTimeout } from '@/lib/storage/settleWithTimeout';
 
 // Storage Provider Interface
 export interface StorageProvider {
@@ -691,16 +692,50 @@ class DualStorageProvider implements StorageProvider {
     this.firebaseStorageProvider = new FirebaseStorageProvider();
   }
 
-  private async withTimeout<T>(promise: Promise<T>, fallback: T): Promise<T> {
-    return Promise.race([
+  private async withTimeout<T>(operation: string, documentPath: string, promise: Promise<T>, fallback: T): Promise<T> {
+    const startedAt = performance.now();
+    const firestoreHost = (db as any)._settings?.host ?? "default";
+    const diagnostic = {
+      operation,
+      appName: app.name,
+      firestoreHost,
+      documentPath,
+    };
+
+    if (process.env.NODE_ENV !== "production") {
+      console.info("[STORAGE PROVIDER] Firebase operation start", diagnostic);
+    }
+
+    return settleWithTimeout(
       promise,
-      new Promise<T>((resolve) =>
-        setTimeout(() => {
-          console.warn("[STORAGE PROVIDER] Firebase call timed out, falling back.");
-          resolve(fallback);
-        }, this.FIREBASE_TIMEOUT_MS)
-      ),
-    ]);
+      this.FIREBASE_TIMEOUT_MS,
+      () => fallback,
+      {
+        onTimeout: () => {
+        console.warn("[STORAGE PROVIDER] Firebase operation timeout", {
+          ...diagnostic,
+          elapsedMs: Math.round(performance.now() - startedAt),
+        });
+        },
+        onPrimaryResolved: () => {
+          if (process.env.NODE_ENV !== "production") {
+            console.info("[STORAGE PROVIDER] Firebase operation success", {
+              ...diagnostic,
+              elapsedMs: Math.round(performance.now() - startedAt),
+            });
+          }
+        },
+        onPrimaryRejected: (error) => {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[STORAGE PROVIDER] Firebase operation failure", {
+              ...diagnostic,
+              elapsedMs: Math.round(performance.now() - startedAt),
+              errorCode: typeof error === "object" && error !== null ? (error as { code?: unknown }).code : undefined,
+            });
+          }
+        },
+      },
+    );
   }
 
   private getCurrentUserId(): string | null {
@@ -716,6 +751,8 @@ class DualStorageProvider implements StorageProvider {
   async getUserProfile(): Promise<UserProfile | null> {
     try {
       const firebaseProfile = await this.withTimeout(
+        "getUserProfile",
+        `users/${this.getCurrentUserId() ?? "unknown"}`,
         this.firebaseStorageProvider.getUserProfile(),
         null
       );
@@ -732,7 +769,7 @@ class DualStorageProvider implements StorageProvider {
   async saveUserProfile(profile: UserProfile): Promise<boolean> {
     const [localSuccess, firebaseSuccess] = await Promise.allSettled([
       this.localStorageProvider.saveUserProfile(profile),
-      this.withTimeout(this.firebaseStorageProvider.saveUserProfile(profile), false)
+      this.withTimeout("saveUserProfile", `users/${profile.uid}`, this.firebaseStorageProvider.saveUserProfile(profile), false)
     ]);
 
     return (localSuccess.status === 'fulfilled' && localSuccess.value) ||
@@ -742,6 +779,8 @@ class DualStorageProvider implements StorageProvider {
   async getUserBlueprint(): Promise<UserBlueprint | null> {
     try {
       const firebaseBlueprint = await this.withTimeout(
+        "getUserBlueprint",
+        `blueprints/${this.getCurrentUserId() ?? "unknown"}`,
         this.firebaseStorageProvider.getUserBlueprint(),
         null
       );
@@ -758,7 +797,7 @@ class DualStorageProvider implements StorageProvider {
   async saveUserBlueprint(blueprint: UserBlueprint): Promise<boolean> {
     const [localSuccess, firebaseSuccess] = await Promise.allSettled([
       this.localStorageProvider.saveUserBlueprint(blueprint),
-      this.withTimeout(this.firebaseStorageProvider.saveUserBlueprint(blueprint), false)
+      this.withTimeout("saveUserBlueprint", `blueprints/${blueprint.uid}`, this.firebaseStorageProvider.saveUserBlueprint(blueprint), false)
     ]);
 
     return (localSuccess.status === 'fulfilled' && localSuccess.value) ||

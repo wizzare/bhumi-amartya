@@ -156,6 +156,49 @@ export function buildBillingFixtureDefinitions() {
   };
 }
 
+export function buildProfileRuntimeFixtureFields() {
+  return {
+    birthDate: "1990-01-01",
+    birthTime: "12:00",
+    birthCity: "Jakarta",
+    birthPlace: "Jakarta",
+    latitude: -6.2,
+    longitude: 106.816666,
+    timezone: "Asia/Jakarta",
+    language: "id",
+    onboardingCompleted: true,
+    baselineWellnessCompleted: true,
+    setupCompleted: true,
+    blueprintStatus: "missing",
+    healingProgress: {
+      healingStreak: 0,
+      totalJournalEntries: 0,
+      totalMeditationMinutes: 0,
+      totalInnerworkSessions: 0,
+      consciousnessLevel: 0,
+    },
+    emotionalState: {
+      currentMood: null,
+      lastCheckInAt: null,
+      recurringThemes: [],
+    },
+    profile: {
+      language: "id",
+      onboardingCompleted: true,
+      timezone: "Asia/Jakarta",
+      birthCity: "Jakarta",
+      latitude: -6.2,
+      longitude: 106.816666,
+      blueprintInput: {
+        birthDate: "1990-01-01",
+        birthTime: "12:00",
+        birthCity: "Jakarta",
+      },
+    },
+    settings: {},
+  };
+}
+
 export async function resolveAuthUsers(auth, emails = BILLING_EMAILS) {
   const resolved = new Map();
   for (const email of emails) {
@@ -261,12 +304,13 @@ async function main() {
       email,
       displayName: definition.label,
       fullName: definition.label,
-      setupCompleted: true,
+      ...buildProfileRuntimeFixtureFields(),
       ...definition.access,
       lastSeen: now,
       ...(before.exists ? {} : { createdAt: now }),
     };
     await userRef.set(document, { merge: true });
+    await db.collection("blueprints").doc(uid).delete();
     before.exists ? updated++ : created++;
 
     const activityId = `${uid}_2026-07-25`;

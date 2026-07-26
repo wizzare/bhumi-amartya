@@ -10,6 +10,7 @@ import {
   BILLING_EMAILS,
   EXPECTED_PROJECT_ID,
   buildBillingFixtureDefinitions,
+  buildProfileRuntimeFixtureFields,
   classifyFixture,
   resolveAuthUsers,
   validateEnvironment as validateFirestoreEnvironment,
@@ -163,6 +164,15 @@ await test("expired premium has no trial fallback", () => {
   assert.equal(access.plan, "expired");
   assert.equal(access.trialStatus, "free");
   assert.ok(access.trialLoginCount > 7);
+});
+
+await test("profile runtime fixtures have minimum profile data but no blueprint payload", () => {
+  const profile = buildProfileRuntimeFixtureFields();
+  assert.equal(profile.setupCompleted, true);
+  assert.equal(profile.onboardingCompleted, true);
+  assert.equal(profile.profile.blueprintInput.birthDate, "1990-01-01");
+  assert.equal(profile.blueprintStatus, "missing");
+  assert.equal("blueprint" in profile, false);
 });
 
 await test("Firestore document IDs are the resolved Auth UIDs", async () => {
