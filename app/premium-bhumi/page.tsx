@@ -9,7 +9,9 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
-import { getCurrentBadge, hasActiveBadgeAccess, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
+import { getCurrentBadge } from "@/lib/billing/billingPreparation";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
 import { purchasePremiumSubscription, restorePremiumPurchases, processAndVerifyPurchaseToken } from "@/lib/billing/googlePlayBilling";
 
@@ -44,16 +46,19 @@ export default function PremiumBhumiPage() {
     loadProfile();
   }, [auth, router]);
 
-    const badge = profile ? getCurrentBadge(profile) : null;
-  const isPremium = profile ? hasActiveBadgeAccess(profile) : false;
-  const isTrial = profile ? isTrialUser(profile) : false;
-  const isExpired = profile ? isExpiredUser(profile) : true;
+  const badge = profile ? getCurrentBadge(profile) : null;
+  const entitlement = profile ? getEntitlementStatus(profile) : null;
+  const presentation = getBillingPresentation(entitlement);
+  const isPremium = presentation.state === "premium_active";
+  const isTrial = presentation.state === "trial_active";
+  const isExpired = presentation.state === "trial_exhausted" || presentation.state === "premium_expired";
 
   // Founder = Lifetime, No expiry date. Show "Akses hingga" only for actual trial users.
   const isFounder = badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
   const trialWindow = profile && isTrial ? computeTrialWindow(profile) : null;
   const accessUntil = trialWindow?.end || null;
   const daysLeft = profile && isTrial ? getTrialDaysLeft(profile) : 0;
+  const accountLabel = badge || (isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
 
   const handleSubscribe = async () => {
     setPurchasing(true);
@@ -190,15 +195,15 @@ export default function PremiumBhumiPage() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[#4F5E52]">
-                  {badge || (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)")}
+                  {accountLabel}
                 </h3>
                                 <p className="text-sm text-[#7B8776]">
                   {isFounder
                     ? (t.premiumBhumi?.lifetimeAccess || "Akses selamanya (Lifetime)")
-                    : isPremium 
-                      ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
-                      : isTrial
-                        ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
+                    : isTrial
+                      ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
+                      : isPremium
+                        ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
                         : isExpired
                           ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
                           : (t.premiumBhumi?.freeAccess || "Akses gratis")}

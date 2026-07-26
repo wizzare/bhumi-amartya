@@ -156,6 +156,7 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
   }
 
   // 3. Paid Subscriber (Rule Priority 3) - Authoritative Google Play status
+  let expiredSubscriberAt: Date | null = null;
   if (profile.membershipType === "PREMIUM" || profile.isPremium === true) {
     const expiry = toDate(profile.membershipExpiryDate) || toDate(profile.accessUntil);
     if (!expiry || now < expiry) {
@@ -170,11 +171,13 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
         trialLoginsRemaining: null,
       };
     }
+    expiredSubscriberAt = expiry;
   }
 
   // 4. Internal Bhumi 7-Successful-Login Trial (Rule Priority 4)
   const loginCount = typeof profile.trialLoginCount === "number" ? profile.trialLoginCount : (profile.setupCompleted ? 1 : 0);
-  const isExplicitFree = profile.trialStatus === "free" || String(profile.plan).toLowerCase() === "free" || String(profile.plan).toLowerCase() === "expired";
+  const normalizedPlan = String(profile.plan).toLowerCase();
+  const isExplicitFree = profile.trialStatus === "free" || normalizedPlan === "free" || normalizedPlan === "expired";
   if (loginCount <= 7 && !isExplicitFree) {
     const rem = Math.max(0, 7 - loginCount);
     return {
@@ -189,8 +192,21 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
     };
   }
 
+  if (expiredSubscriberAt) {
+    return {
+      isPremium: false,
+      reason: "none",
+      expiresAt: expiredSubscriberAt,
+      daysRemaining: 0,
+      effectiveTier: "Paid Premium (Expired)",
+      source: "Google Play Billing",
+      status: "Expired",
+      trialLoginsRemaining: null,
+    };
+  }
+
   // 5. Everyone Else - Free account
-  const isExhausted = loginCount > 7;
+  const isExhausted = loginCount > 7 && normalizedPlan !== "free";
   return {
     isPremium: false,
     reason: "none",

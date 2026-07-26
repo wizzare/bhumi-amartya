@@ -34,7 +34,9 @@ import type { UserProfile as StorageUserProfile, UserBlueprint as StorageUserBlu
 import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
 import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
-import { getCurrentBadge, isTrialUser, isExpiredUser } from "@/lib/billing/billingPreparation";
+import { getCurrentBadge } from "@/lib/billing/billingPreparation";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { cancelDailyReminders, getDailyReminderEnabled, refreshGentleNightReminder, setDailyReminderEnabled } from "@/lib/notifications/gentleNightReminder";
 import { Capacitor } from "@capacitor/core";
 
@@ -311,13 +313,20 @@ export default function SettingsPage() {
     return getCurrentBadge(originalProfile as any) || "Penghuni Bhumi";
   }, [originalProfile]);
 
+  const entitlement = useMemo(() => {
+    return getEntitlementStatus(originalProfile as any);
+  }, [originalProfile]);
+
+  const billingPresentation = useMemo(() => {
+    return getBillingPresentation(entitlement);
+  }, [entitlement]);
+
   const statusBadge = useMemo(() => {
     const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
-    const isPremium = (originalProfile as any)?.isPremium === true;
-    const isTrial = isTrialUser(originalProfile as any);
-    const isExpired = isExpiredUser(originalProfile as any);
 
-    let label: string = resolvedBadge;
+    let label: string = billingPresentation.state === "premium_active" && resolvedBadge === "Penghuni Bhumi"
+      ? "Premium Bhumi"
+      : resolvedBadge;
     let description = "Akses publik aktif";
     let color = "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]";
     let Icon = Shield;
@@ -327,17 +336,17 @@ export default function SettingsPage() {
       description = "Akses Penuh Selamanya";
       color = "bg-[#FDF6E2] text-[#B7791F] border-[#F6E05E]";
       Icon = ShieldCheck;
-    } else if (isPremium) {
-      label = resolvedBadge;
+    } else if (billingPresentation.state === "premium_active") {
+      label = resolvedBadge === "Penghuni Bhumi" ? "Premium Bhumi" : resolvedBadge;
       description = "Akses Premium Aktif";
       color = "bg-[#E6FFFA] text-[#319795] border-[#81E6D9]";
       Icon = ShieldCheck;
-    } else if (isTrial) {
+    } else if (billingPresentation.state === "trial_active") {
       label = resolvedBadge;
       description = "Masa Uji Coba Aktif";
       color = "bg-[#EBF8FF] text-[#2B6CB0] border-[#90CDF4]";
       Icon = Shield;
-    } else if (isExpired) {
+    } else if (billingPresentation.state === "trial_exhausted" || billingPresentation.state === "premium_expired") {
       label = resolvedBadge;
       description = "Masa Uji Coba Berakhir";
       color = "bg-[#FFF5F5] text-[#C53030] border-[#FEB2B2]";
@@ -351,13 +360,10 @@ export default function SettingsPage() {
       color,
       Icon,
     };
-  }, [originalProfile, resolvedBadge]);
+  }, [billingPresentation.state, originalProfile, resolvedBadge]);
 
   const membershipDisplay = useMemo(() => {
     const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
-    const isPremium = (originalProfile as any)?.isPremium === true;
-    const isTrial = isTrialUser(originalProfile as any);
-    const isExpired = isExpiredUser(originalProfile as any);
 
     if (isFounder) {
       return {
@@ -369,7 +375,7 @@ export default function SettingsPage() {
       };
     }
 
-    if (isPremium) {
+    if (billingPresentation.state === "premium_active") {
       return {
         title: "Paket Premium Aktif",
         subtitle: "Akses penuh ke seluruh konten & analisis personal.",
@@ -379,7 +385,7 @@ export default function SettingsPage() {
       };
     }
 
-    if (isTrial) {
+    if (billingPresentation.state === "trial_active") {
       let daysRemaining = 7;
       if (originalProfile?.trialEndsAt) {
         const trialEnd = new Date(
@@ -399,7 +405,7 @@ export default function SettingsPage() {
       };
     }
 
-    if (isExpired) {
+    if (billingPresentation.state === "trial_exhausted" || billingPresentation.state === "premium_expired") {
       return {
         title: "Masa Uji Coba Berakhir",
         subtitle: "Perpanjang akses untuk melanjutkan perjalanan pertumbuhan batinmu.",
@@ -416,7 +422,7 @@ export default function SettingsPage() {
       nextBilling: null,
       pro: false,
     };
-  }, [originalProfile, resolvedBadge]);
+  }, [billingPresentation.state, originalProfile, resolvedBadge]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
