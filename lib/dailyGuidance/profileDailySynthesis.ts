@@ -122,7 +122,8 @@ function buildArsipBundle(viewModel: ArsipAkashiProfileViewModel, seed: string) 
   const dailyAnchor = pick(selected, seed, selected[0] ?? readings[0]);
 
   return {
-    available: viewModel.status !== "unavailable" && readings.length > 0,
+    available: readings.length > 0,
+    coverageStatus: viewModel.status,
     identity: short(identity, "pola identitas jiwamu sedang meminta kehadiran yang lebih utuh"),
     mechanics: short(mechanics, "ritme energimu hari ini perlu dibaca dengan lebih jujur"),
     shadow: short(shadow, "ada pola lama yang lebih mudah terlihat saat kamu terlalu memaksa diri"),
