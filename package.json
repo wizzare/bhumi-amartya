@@ -7,6 +7,7 @@
     "dev:prod": "node scripts/run-dev.mjs prod",
     "dev:emulator": "node scripts/run-dev.mjs emulator",
     "build": "next build",
+    "build:prod": "node scripts/run-prod-build.mjs",
     "start": "next start",
     "lint": "eslint app components lib src",
     "check:destiny": "node --experimental-strip-types --experimental-specifier-resolution=node scripts/checkDestinyMatrix.ts",

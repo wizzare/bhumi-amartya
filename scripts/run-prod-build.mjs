@@ -1,0 +1,50 @@
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const rootDir = resolve(__dirname, '..');
+
+const env = {
+  ...process.env,
+  NEXT_PUBLIC_USE_FIREBASE_EMULATORS: 'false',
+  NEXT_PUBLIC_USE_AUTH_EMULATOR: 'false',
+  NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: 'false',
+  NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: 'false',
+  NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN: 'false',
+  NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN: 'false',
+  NEXT_PUBLIC_ENABLE_FOUNDER_PRE_RELEASE_QA: 'false',
+  NODE_ENV: 'production'
+};
+
+// Explicitly unset emulator host variables to prevent any inheritance
+delete env.FIREBASE_AUTH_EMULATOR_HOST;
+delete env.FIRESTORE_EMULATOR_HOST;
+delete env.FIREBASE_FUNCTIONS_EMULATOR_HOST;
+
+console.log(`\n>>> STARTING DETERMINISTIC PRODUCTION BUILD <<<`);
+console.log(`USE_FIREBASE_EMULATORS: ${env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS}`);
+console.log(`USE_AUTH_EMULATOR: ${env.NEXT_PUBLIC_USE_AUTH_EMULATOR}`);
+console.log(`USE_FIRESTORE_EMULATOR: ${env.NEXT_PUBLIC_USE_FIRESTORE_EMULATOR}`);
+console.log(`USE_FUNCTIONS_EMULATOR: ${env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR}`);
+console.log(`ENABLE_QA_LOGIN: ${env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN}`);
+console.log(`-----------------------------------------------\n`);
+
+const nextBin = resolve(rootDir, 'node_modules', '.bin', 'next.cmd');
+
+const nextBuild = spawn(nextBin, ['build'], {
+  stdio: 'inherit',
+  env,
+  shell: true,
+  cwd: rootDir
+});
+
+nextBuild.on('close', (code) => {
+  if (code === 0) {
+    console.log('\nProduction build completed successfully.\n');
+  } else {
+    console.error(`\nProduction build failed with code ${code}.\n`);
+  }
+  process.exit(code);
+});
