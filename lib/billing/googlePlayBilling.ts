@@ -6,7 +6,6 @@ export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
 export const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
 export const GOOGLE_PLAY_BILLING_ENABLED = true;
-export const BILLING_VERIFIER_URL = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || "https://bhumiamartya-fe85c.asia-southeast2.run.app";
 export const RESTORE_TIMEOUT_MS = 15000;
 
 export type RestoreTerminalState =
@@ -58,6 +57,18 @@ export function isGooglePlayBillingAvailable() {
 }
 
 let isAutoRecoveryInitialized = false;
+
+function isRetryableCallableTransportError(error: unknown) {
+  const code = String((error as { code?: unknown } | null)?.code || "").toLowerCase();
+  return [
+    "functions/unavailable",
+    "functions/deadline-exceeded",
+    "functions/internal",
+    "functions/unknown",
+    "functions/resource-exhausted",
+    "functions/network-request-failed",
+  ].includes(code);
+}
 
 export async function initializeGooglePlayBilling() {
   assertAndroidBilling();
@@ -158,28 +169,10 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
       ackStatus?: string;
     };
   } catch (callableError: any) {
-    // HTTP Fetch Fallback if Firebase Callable is blocked by network policy
-    const idToken = await currentUser.getIdToken();
-    if (!BILLING_VERIFIER_URL) throw callableError;
-
-    const response = await fetch(`${BILLING_VERIFIER_URL.replace(/\/$/, "")}/api/billing/google-play/verify`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ productId: GOOGLE_PLAY_PRODUCT_ID, purchaseToken: purchase.purchaseToken }),
-      cache: "no-store",
-    });
-
-    const result = await response.json().catch(() => null) as any;
-    if (!response.ok || !result?.ok) {
-      throw new Error(result?.error || callableError?.message || "GOOGLE_API_FAILURE");
+    if (isRetryableCallableTransportError(callableError)) {
+      Object.assign(callableError, { retryable: true });
     }
-
-    return {
-      ...result,
-      plan: "premium" as const,
-      productId: GOOGLE_PLAY_PRODUCT_ID,
-      basePlanId: GOOGLE_PLAY_BASE_PLAN_ID,
-    };
+    throw callableError;
   }
 }
 

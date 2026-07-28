@@ -10,7 +10,7 @@ if (!service.includes("firebase-admin") || !service.includes("google-auth-librar
 for (const item of ['runtime: "nodejs"', "verifyIdToken", "TOKEN_OWNERSHIP_CONFLICT"]) if (!route.includes(item) && !entitlement.includes(item)) throw new Error(`server contract missing: ${item}`);
 if (!entitlement.includes("runTransaction") || !security.includes("bhumi_premium_monthly")) throw new Error("server ownership contract incomplete");
 if (!vercel.includes('"sin1"')) throw new Error("server region missing");
-if (!client.includes("NEXT_PUBLIC_BILLING_VERIFIER_URL") || client.includes("httpsCallable") || client.includes('fetch("/api/billing')) throw new Error("client verifier ownership invalid");
+if (!client.includes('httpsCallable(functionsInstance, "verifyGooglePlayPurchase")') || client.includes("BILLING_VERIFIER_URL") || client.includes("fetch(")) throw new Error("client verifier ownership invalid");
 if (!next.includes("output: 'export'")) throw new Error("static export removed");
 if (fs.existsSync("app/api/billing/google-play/verify/route.ts")) throw new Error("dynamic app route remains");
 console.log("BILLING_SERVER_PROJECT_PASS");
