@@ -21,12 +21,14 @@ import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
 import { getExistingDailyGuidance } from "@/lib/services/dailyGuidanceService";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { buildProfileDailyGuidance } from "@/lib/dailyGuidance/profileDailySynthesis";
+import { getDailyGuidanceStaleReason } from "@/lib/dailyGuidance/version";
 import { BaziMeaningService, type EnrichedBaziBlueprint } from "@/lib/bazi/baziMeaning";
 import { buildArsipAkashiInputFromProfile } from "@/lib/arsipAkashi/profile/inputBuilder";
 import { buildArsipAkashiProfileViewModel } from "@/lib/arsipAkashi/profile/viewModel";
 import { applyArsipAkashiContentToV3Section, buildSoulLettersV3Section } from "@/lib/arsipAkashi/profile/v3ContentBridge";
 import { classifyProfileReadiness, type ProfileReadiness } from "@/lib/arsipAkashi/profile/readiness";
-import { isCurrentProfilePageLoad, resolveProfilePageLoadState } from "@/lib/profile/profilePageLoadState";
+import { isCurrentProfilePageLoad, resolveProfilePageLoadState, type ProfileDailyGuidanceSource } from "@/lib/profile/profilePageLoadState";
 
 type LocalRecord = Record<string, unknown>;
 
@@ -166,7 +168,8 @@ export default function ProfilePage() {
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
-  const [dailyNoteState, setDailyNoteState] = useState<"loading" | "ready" | "unavailable">("loading");
+  const [dailyNoteState, setDailyNoteState] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
+  const [dailyNoteError, setDailyNoteError] = useState<string | null>(null);
   const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
   const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
@@ -188,11 +191,14 @@ export default function ProfilePage() {
     setLoading(true);
     setDailyGuidance(null);
     setDailyNoteState("loading");
+    setDailyNoteError(null);
 
     async function load() {
       let hasProfile = false;
       let hasBlueprint = false;
-      let guidanceReady = false;
+      let arsipAvailable = false;
+      let normalizedReadingsLength = 0;
+      let guidanceSource: ProfileDailyGuidanceSource = "unavailable";
       try {
         let [profile, blueprint] = await Promise.all([
           storageProvider.getUserProfile(),
@@ -230,6 +236,8 @@ export default function ProfilePage() {
                 canonicalBlueprint,
               );
               const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+              normalizedReadingsLength = arsipViewModel.readings.length;
+              arsipAvailable = normalizedReadingsLength > 0;
               const sections = legacySections
                 .map((section) => applyArsipAkashiContentToV3Section(section, arsipViewModel))
                 .filter((section): section is ProfileSection => Boolean(section));
@@ -253,13 +261,40 @@ export default function ProfilePage() {
               date,
             });
             if (!isCurrent()) return;
-            if (dgResult.status === "success" && dgResult.guidance) {
+            const staleReason = dgResult.guidance
+              ? getDailyGuidanceStaleReason(dgResult.guidance, {
+                uid: blueprint.uid,
+                localDateKey: date,
+                blueprint: canonicalBlueprint as unknown as Record<string, unknown>,
+              })
+              : null;
+            if (dgResult.status === "success" && dgResult.guidance && !staleReason) {
               setDailyGuidance(dgResult.guidance);
-              guidanceReady = true;
+              guidanceSource = "existing";
+            } else if (arsipAvailable) {
+              const arsipInput = buildArsipAkashiInputFromProfile(
+                { uid: blueprint.uid, timezone, birthDate: (profile as any)?.birthDate, birthTime: (profile as any)?.birthTime },
+                canonicalBlueprint,
+              );
+              const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
+              const localGuidance = buildProfileDailyGuidance({
+                uid: blueprint.uid,
+                profile: profile as unknown as Record<string, unknown>,
+                blueprint: canonicalBlueprint as unknown as Record<string, unknown>,
+                arsipViewModel,
+                localDateKey: date,
+                timezone,
+              });
+              if (localGuidance.dailySynthesisState !== "unavailable") {
+                setDailyGuidance(localGuidance);
+                guidanceSource = "local";
+              }
             }
           } catch (guidanceError) {
             if (isCurrent()) {
               console.warn("[Profile] Daily guidance load failed — not blocking profile:", guidanceError);
+              guidanceSource = "error";
+              setDailyNoteError("Catatan Hari Ini belum berhasil disusun.");
             }
           }
         }
@@ -269,7 +304,7 @@ export default function ProfilePage() {
         }
       } finally {
         if (!isCurrent()) return;
-        const nextState = resolveProfilePageLoadState({ hasProfile, hasBlueprint, guidanceReady });
+        const nextState = resolveProfilePageLoadState({ hasProfile, hasBlueprint, arsipAvailable, normalizedReadingsLength, guidanceSource });
         setDailyNoteState(nextState.dailyNoteState);
         if (!isCurrent()) return;
         setLoading(nextState.loading);
@@ -326,6 +361,7 @@ export default function ProfilePage() {
             <DailyNoteV2
               dailyGuidance={dailyGuidance}
               dailyNoteState={dailyNoteState}
+              dailyNoteError={dailyNoteError}
               language={language}
               userName={name}
               dailyState={null}
