@@ -16,32 +16,32 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    def keystoreFile = System.getenv('BHUMI_RELEASE_STORE_FILE')
-    def keystorePassword = System.getenv('BHUMI_RELEASE_STORE_PASSWORD')
-    def keyAlias = System.getenv('BHUMI_RELEASE_KEY_ALIAS')
-    def keyPassword = System.getenv('BHUMI_RELEASE_KEY_PASSWORD')
+    def releaseStoreFile = System.getenv('BHUMI_RELEASE_STORE_FILE')
+    def releaseStorePassword = System.getenv('BHUMI_RELEASE_STORE_PASSWORD')
+    def releaseKeyAlias = System.getenv('BHUMI_RELEASE_KEY_ALIAS')
+    def releaseKeyPassword = System.getenv('BHUMI_RELEASE_KEY_PASSWORD')
 
-    if (!keystoreFile || !keystorePassword || !keyAlias || !keyPassword) {
+    if (!releaseStoreFile || !releaseStorePassword || !releaseKeyAlias || !releaseKeyPassword) {
         def props = new Properties()
         def propFile = rootProject.file('keystore.properties')
         if (propFile.exists()) {
             propFile.withInputStream { props.load(it) }
         }
-        keystoreFile = keystoreFile ?: props.getProperty('BHUMI_RELEASE_STORE_FILE')
-        keystorePassword = keystorePassword ?: props.getProperty('BHUMI_RELEASE_STORE_PASSWORD')
-        keyAlias = keyAlias ?: props.getProperty('BHUMI_RELEASE_KEY_ALIAS')
-        keyPassword = keyPassword ?: props.getProperty('BHUMI_RELEASE_KEY_PASSWORD')
+        releaseStoreFile = releaseStoreFile ?: props.getProperty('BHUMI_RELEASE_STORE_FILE')
+        releaseStorePassword = releaseStorePassword ?: props.getProperty('BHUMI_RELEASE_STORE_PASSWORD')
+        releaseKeyAlias = releaseKeyAlias ?: props.getProperty('BHUMI_RELEASE_KEY_ALIAS')
+        releaseKeyPassword = releaseKeyPassword ?: props.getProperty('BHUMI_RELEASE_KEY_PASSWORD')
     }
 
-    def releaseSigningComplete = keystoreFile && keystorePassword && keyAlias && keyPassword
+    def releaseSigningComplete = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
     signingConfigs {
         release {
             if (releaseSigningComplete) {
-                storeFile file(keystoreFile)
-                storePassword keystorePassword
-                keyAlias keyAlias
-                keyPassword keyPassword
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
             }
         }
     }
