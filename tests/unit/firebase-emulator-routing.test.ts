@@ -3,6 +3,9 @@ import {
   getFirebaseEmulatorEndpoints,
   resolveFirebaseEmulatorHost,
   shouldUseFirebaseEmulators,
+  shouldUseAuthEmulator,
+  shouldUseFirestoreEmulator,
+  shouldUseFunctionsEmulator,
 } from "../../lib/firebase/emulatorConfig";
 
 console.log("▶ Running Firebase Emulator Routing Contract Tests\n");
@@ -48,6 +51,45 @@ test("Android without an explicit host fails closed", (() => {
     return true;
   }
 })());
+// Product-specific flag tests
+test("global flag enables all three product emulators", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true" };
+  return shouldUseAuthEmulator(env) && shouldUseFirestoreEmulator(env) && shouldUseFunctionsEmulator(env);
+})());
+
+test("global flag false disables all three product emulators", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false" };
+  return !shouldUseAuthEmulator(env) && !shouldUseFirestoreEmulator(env) && !shouldUseFunctionsEmulator(env);
+})());
+
+test("product-specific auth flag overrides global false", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false", NEXT_PUBLIC_USE_AUTH_EMULATOR: "true" };
+  return shouldUseAuthEmulator(env) === true;
+})());
+
+test("product-specific firestore flag overrides global false", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false", NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: "true" };
+  return shouldUseFirestoreEmulator(env) === true;
+})());
+
+test("product-specific functions flag overrides global false", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false", NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: "true" };
+  return shouldUseFunctionsEmulator(env) === true;
+})());
+
+test("local google-qa mode: auth production, firestore emulator, functions emulator", (() => {
+  const env = { NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false", NEXT_PUBLIC_USE_AUTH_EMULATOR: "false", NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: "true", NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: "true" };
+  return !shouldUseAuthEmulator(env) && shouldUseFirestoreEmulator(env) && shouldUseFunctionsEmulator(env);
+})());
+
+test("product flag absence falls back to global flag", (() => {
+  return shouldUseAuthEmulator({ NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "true" }) === true;
+})());
+
+test("no flag at all returns false", (() => {
+  return shouldUseAuthEmulator({}) === false;
+})());
+
 test("Android rejects a production Firebase hostname", (() => {
   try {
     resolveFirebaseEmulatorHost({ platform: "android", nativeHost: "firestore.googleapis.com" });
