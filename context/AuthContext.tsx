@@ -17,6 +17,7 @@ import {
   resolveProfileLoad,
   type ProfileLoadOutcome,
 } from '@/lib/auth/profileLoadOutcome';
+import { enforceFounderQaAllowlist } from '@/lib/auth/founderQaGuard';
 
 interface AuthContextType {
   user: User | null;
@@ -191,6 +192,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (!firebaseUser) {
             console.log("[AUTH] No firebase user, clearing profile state.");
+            if (!isActive()) return;
+            setUserProfile(null);
+            if (!isActive()) return;
+            setProfileLoading(false);
+            return;
+          }
+
+          const allowlistResult = await enforceFounderQaAllowlist(firebaseUser.email);
+          if (!allowlistResult.allowed) {
+            console.warn("[AUTH FOUNDER QA] Unauthorized account rejected:", allowlistResult.reason);
             if (!isActive()) return;
             setUserProfile(null);
             if (!isActive()) return;

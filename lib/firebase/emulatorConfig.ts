@@ -32,6 +32,31 @@ export function shouldUseFirebaseEmulators(env?: Record<string, string | undefin
   return flag === "true";
 }
 
+// Product-specific emulator checks. Each falls back to the global flag.
+export function shouldUseAuthEmulator(env?: Record<string, string | undefined>): boolean {
+  const productFlag = env
+    ? env.NEXT_PUBLIC_USE_AUTH_EMULATOR
+    : process.env.NEXT_PUBLIC_USE_AUTH_EMULATOR;
+  if (productFlag !== undefined) return productFlag === "true";
+  return shouldUseFirebaseEmulators(env);
+}
+
+export function shouldUseFirestoreEmulator(env?: Record<string, string | undefined>): boolean {
+  const productFlag = env
+    ? env.NEXT_PUBLIC_USE_FIRESTORE_EMULATOR
+    : process.env.NEXT_PUBLIC_USE_FIRESTORE_EMULATOR;
+  if (productFlag !== undefined) return productFlag === "true";
+  return shouldUseFirebaseEmulators(env);
+}
+
+export function shouldUseFunctionsEmulator(env?: Record<string, string | undefined>): boolean {
+  const productFlag = env
+    ? env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR
+    : process.env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR;
+  if (productFlag !== undefined) return productFlag === "true";
+  return shouldUseFirebaseEmulators(env);
+}
+
 function isPrivateLanIpv4(host: string): boolean {
   const octets = host.split(".").map(Number);
   if (octets.length !== 4 || octets.some((octet) => !Number.isInteger(octet) || octet < 0 || octet > 255)) {
@@ -109,21 +134,54 @@ export function assertFirestoreEmulatorWired(db: object): void {
 export function connectEmulators(auth: object, db: object, functions: object): void {
   const registry = getConnectionRegistry();
   const endpoints = getFirebaseEmulatorEndpoints();
+  const connected: string[] = [];
 
-  if (!registry.auth.has(auth)) {
+  if (shouldUseAuthEmulator() && !registry.auth.has(auth)) {
+    connectAuthEmulator(auth as Parameters<typeof connectAuthEmulator>[0], endpoints.auth.url, { disableWarnings: true });
+    registry.auth.add(auth);
+    connected.push("auth");
+  }
+
+  if (shouldUseFirestoreEmulator()) {
+    connectFirestoreEmulatorOnce(db);
+    connected.push("firestore");
+  }
+
+  if (shouldUseFunctionsEmulator()) {
+    connectFunctionsEmulatorOnce(functions);
+    connected.push("functions");
+  }
+
+  if (process.env.NODE_ENV !== "production" && connected.length > 0) {
+    console.info("[DEV] Firebase emulators connected", {
+      products: connected,
+      auth: shouldUseAuthEmulator() ? endpoints.auth.url : "production",
+      firestore: shouldUseFirestoreEmulator() ? endpoints.firestore.url : "production",
+      functions: shouldUseFunctionsEmulator() ? endpoints.functions.url : "production",
+      initializedAt: new Date().toISOString(),
+    });
+  }
+}
+
+export function connectEmulatorsSplit(
+  auth: object,
+  db: object,
+  functions: object,
+  flags: { auth?: boolean; firestore?: boolean; functions?: boolean },
+): void {
+  const registry = getConnectionRegistry();
+  const endpoints = getFirebaseEmulatorEndpoints();
+
+  if (flags.auth && !registry.auth.has(auth)) {
     connectAuthEmulator(auth as Parameters<typeof connectAuthEmulator>[0], endpoints.auth.url, { disableWarnings: true });
     registry.auth.add(auth);
   }
 
-  connectFirestoreEmulatorOnce(db);
-  connectFunctionsEmulatorOnce(functions);
+  if (flags.firestore) {
+    connectFirestoreEmulatorOnce(db);
+  }
 
-  if (process.env.NODE_ENV !== "production") {
-    console.info("[DEV] Firebase emulators connected", {
-      auth: endpoints.auth.url,
-      firestore: endpoints.firestore.url,
-      functions: endpoints.functions.url,
-      initializedAt: new Date().toISOString(),
-    });
+  if (flags.functions) {
+    connectFunctionsEmulatorOnce(functions);
   }
 }

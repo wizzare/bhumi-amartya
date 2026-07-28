@@ -8,9 +8,13 @@ import {
   connectFunctionsEmulatorOnce,
   getFirebaseEmulatorEndpoints,
   shouldUseFirebaseEmulators,
+  shouldUseFirestoreEmulator,
+  shouldUseFunctionsEmulator,
 } from './emulatorConfig';
 
 const useFirebaseEmulators = shouldUseFirebaseEmulators();
+const useFirestoreEmulator = shouldUseFirestoreEmulator();
+const useFunctionsEmulator = shouldUseFunctionsEmulator();
 const emulatorProjectId = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
 
 const firebaseConfig: FirebaseOptions = {
@@ -44,16 +48,20 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const functions = getFunctions(app);
 
-if (useFirebaseEmulators) {
+if (useFirestoreEmulator || useFunctionsEmulator || shouldUseFirebaseEmulators()) {
   connectEmulators(auth, db, functions);
-  assertFirestoreEmulatorWired(db);
+  if (useFirestoreEmulator || shouldUseFirebaseEmulators()) {
+    assertFirestoreEmulatorWired(db);
+  }
   if (process.env.NODE_ENV !== 'production') {
     const emulatorEndpoints = getFirebaseEmulatorEndpoints();
     console.info('[DEV] Firebase client initialized', {
       emulatorMode: useFirebaseEmulators,
+      useFirestoreEmulator,
+      useFunctionsEmulator,
       appName: app.name,
       projectId: app.options.projectId,
-      firestore: emulatorEndpoints.firestore.url,
+      firestore: useFirestoreEmulator || useFirebaseEmulators ? emulatorEndpoints.firestore.url : 'production',
       initializedAt: new Date().toISOString(),
     });
   }
@@ -61,7 +69,7 @@ if (useFirebaseEmulators) {
 
 function getClientFunctions(region?: string) {
   const regionalFunctions = getFunctions(app, region);
-  if (useFirebaseEmulators) {
+  if (useFunctionsEmulator || useFirebaseEmulators) {
     connectFunctionsEmulatorOnce(regionalFunctions);
   }
   return regionalFunctions;

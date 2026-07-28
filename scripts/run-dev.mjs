@@ -41,7 +41,9 @@ console.log(`USE_FUNCTIONS_EMULATOR: ${env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR}`)
 console.log(`ENABLE_QA_LOGIN: ${env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN}`);
 console.log(`-------------------------------------------\n`);
 
-const nextDev = spawn('npm', ['run', 'dev', '--', '-p', '3001'], {
+const nextBin = resolve(rootDir, 'node_modules', '.bin', 'next.cmd');
+
+const nextDev = spawn(nextBin, ['dev', '-p', '3001'], {
   stdio: 'inherit',
   env,
   shell: true,

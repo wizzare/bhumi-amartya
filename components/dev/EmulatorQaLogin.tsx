@@ -8,17 +8,20 @@ import { auth } from "@/lib/firebase/firebase";
 export function shouldShowEmulatorQaLogin({
   nodeEnv,
   useFirebaseEmulators,
+  useAuthEmulator,
   enableAndroidQaLogin,
   isNativePlatform,
   platform,
 }: {
   nodeEnv: string | undefined;
   useFirebaseEmulators: string | undefined;
+  useAuthEmulator: string | undefined;
   enableAndroidQaLogin: string | undefined;
   isNativePlatform: boolean;
   platform: string;
 }) {
-  if (useFirebaseEmulators !== "true") return false;
+  const authEmulatorOn = useAuthEmulator !== undefined ? useAuthEmulator === "true" : useFirebaseEmulators === "true";
+  if (!authEmulatorOn) return false;
   if (!isNativePlatform) return nodeEnv !== "production";
   return platform === "android" && enableAndroidQaLogin === "true";
 }
@@ -39,6 +42,7 @@ export function EmulatorQaLogin() {
   const showQaLogin = shouldShowEmulatorQaLogin({
     nodeEnv: process.env.NODE_ENV,
     useFirebaseEmulators: process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS,
+    useAuthEmulator: process.env.NEXT_PUBLIC_USE_AUTH_EMULATOR,
     enableAndroidQaLogin: process.env.NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN,
     isNativePlatform: Capacitor.isNativePlatform(),
     platform: Capacitor.getPlatform(),
