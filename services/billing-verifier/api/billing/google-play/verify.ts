@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { adminAuth } from "../../../lib/firebaseAdmin";
-import { acknowledgeSubscription, fetchSubscription, validateProduct } from "../../../lib/googlePlay";
-import { decision, persistEntitlement } from "../../../lib/entitlement";
+import { acknowledgeSubscription, checkVoidedPurchase, fetchSubscription, validateProduct } from "../../../lib/googlePlay";
+import { decision, markEntitlementAcknowledged, persistEntitlement } from "../../../lib/entitlement";
 import { BASE_PLAN_ID, MAX_BODY_BYTES, PACKAGE_NAME, PRODUCT_ID, originAllowed, previewDryRunEnabled } from "../../../lib/security";
 import { sendJson } from "../../../lib/response";
 
@@ -35,10 +35,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const item = subscription.lineItems?.[0];
     if (!validateProduct(item)) return sendJson(res, 403, { ok: false, error: "PRODUCT_MISMATCH" });
     const state = subscription.subscriptionState || "SUBSCRIPTION_STATE_UNSPECIFIED";
-    const result = decision(state, item?.expiryTime);
-    if (result.active && item?.acknowledgementState !== "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED") await acknowledgeSubscription(purchaseToken);
     if (state === "SUBSCRIPTION_STATE_UNSPECIFIED") return sendJson(res, 403, { ok: false, error: "SUBSCRIPTION_INACTIVE" });
-    await persistEntitlement(decoded.uid, purchaseToken, state, result);
-    return sendJson(res, 200, { ok: true, active: result.active, status: result.status, membershipType: result.active ? "PREMIUM" : "FREE", accessUntil: result.date?.toISOString() || null, badge: result.active ? "Penghuni Bhumi" : undefined, refreshRequired: true, productId: PRODUCT_ID, basePlanId: BASE_PLAN_ID, packageName: PACKAGE_NAME });
+    const voidedCheck = await checkVoidedPurchase(purchaseToken);
+    if (!voidedCheck.checked) {
+      console.error("[GOOGLE_PLAY_VOIDED_CHECK_UNAVAILABLE]", {
+        reason: voidedCheck.reason,
+        productId: PRODUCT_ID,
+        packageName: PACKAGE_NAME,
+      });
+    }
+    const result = decision(state, item?.expiryTime, { voided: voidedCheck.voided });
+    const acknowledgementPending = result.active && subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING";
+
+    // Persist entitlement before any irreversible Google Play acknowledgement.
+    await persistEntitlement(decoded.uid, purchaseToken, state, result, acknowledgementPending ? "ACK_PENDING" : subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ? "ACKNOWLEDGED" : "NOT_REQUIRED", voidedCheck);
+
+    let acknowledgementDeferred = false;
+    if (acknowledgementPending) {
+      try {
+        await acknowledgeSubscription(purchaseToken);
+        await markEntitlementAcknowledged(decoded.uid, purchaseToken);
+      } catch {
+        acknowledgementDeferred = true;
+      }
+    }
+
+    return sendJson(res, 200, { ok: true, active: result.active, status: result.status, membershipType: result.active ? "PREMIUM" : "FREE", accessUntil: result.date?.toISOString() || null, badge: result.active ? "Penghuni Bhumi" : undefined, refreshRequired: true, acknowledgementDeferred, productId: PRODUCT_ID, basePlanId: BASE_PLAN_ID, packageName: PACKAGE_NAME });
   } catch (error) { const code = error instanceof Error ? error.message : "UNKNOWN"; const safe = ["TOKEN_INVALID", "TOKEN_OWNERSHIP_CONFLICT", "GOOGLE_API_FAILURE", "ACKNOWLEDGMENT_FAILURE"].includes(code) ? code : "ENTITLEMENT_WRITE_FAILURE"; return sendJson(res, safe === "TOKEN_OWNERSHIP_CONFLICT" ? 409 : 502, { ok: false, error: safe }); }
 }

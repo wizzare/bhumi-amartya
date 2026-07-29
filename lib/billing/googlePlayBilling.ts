@@ -1,12 +1,12 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
-import { httpsCallable } from "firebase/functions";
-import { auth, getClientFunctions } from "@/lib/firebase/firebase";
+import { auth } from "@/lib/firebase/firebase";
 
 export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
 export const GOOGLE_PLAY_PACKAGE_NAME = "com.bhumiamartya.app";
 export const GOOGLE_PLAY_BILLING_ENABLED = true;
 export const RESTORE_TIMEOUT_MS = 15000;
+const BILLING_VERIFIER_PATH = "/api/billing/google-play/verify";
 
 export type RestoreTerminalState =
   | "RESTORED" | "NO_ACTIVE_PURCHASE" | "PENDING" | "EXPIRED" | "CANCELLED"
@@ -57,17 +57,30 @@ export function isGooglePlayBillingAvailable() {
 }
 
 let isAutoRecoveryInitialized = false;
+let onPostVerification: (() => Promise<void>) | null = null;
 
-function isRetryableCallableTransportError(error: unknown) {
+export function setOnPostVerification(cb: () => Promise<void>) {
+  onPostVerification = cb;
+}
+
+export function clearOnPostVerification() {
+  onPostVerification = null;
+}
+
+function billingVerifierUrl() {
+  const baseUrl = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL?.trim().replace(/\/+$/, "");
+  if (!baseUrl) throw Object.assign(new Error("Billing verifier URL belum dikonfigurasi."), { code: "BILLING_VERIFIER_URL_MISSING" });
+  return `${baseUrl}${BILLING_VERIFIER_PATH}`;
+}
+
+function isRetryableVerifierTransportError(error: unknown) {
   const code = String((error as { code?: unknown } | null)?.code || "").toLowerCase();
+  const status = Number((error as { status?: unknown } | null)?.status || 0);
   return [
-    "functions/unavailable",
-    "functions/deadline-exceeded",
-    "functions/internal",
-    "functions/unknown",
-    "functions/resource-exhausted",
-    "functions/network-request-failed",
-  ].includes(code);
+    "billing_verifier_unavailable",
+    "google_api_failure",
+    "acknowledgment_failure",
+  ].includes(code) || status === 429 || status >= 500 || error instanceof TypeError;
 }
 
 export async function initializeGooglePlayBilling() {
@@ -94,7 +107,9 @@ function setupAutoRecoveryListeners() {
   try {
     AppPlugin.addListener("appStateChange", (state: any) => {
       if (state?.isActive) {
-        autoRecoverActiveSubscriptions().catch(() => null);
+        autoRecoverActiveSubscriptions().catch(err => {
+          console.warn("[BILLING AUTO-RECOVERY] Foreground recovery failed:", err?.message);
+        });
       }
     });
   } catch (err) {
@@ -105,11 +120,22 @@ function setupAutoRecoveryListeners() {
   try {
     BhumiBilling.addListener("purchaseUpdated", async (data: any) => {
       const purchases: GooglePlayPurchase[] = data?.purchases || [];
+      let verified = false;
       for (const p of purchases) {
         if (p.purchaseToken) {
-          await processAndVerifyPurchaseToken(p).catch(err => {
+          try {
+            const result = await processAndVerifyPurchaseToken(p);
+            if (result?.ok && result?.active) verified = true;
+          } catch (err: any) {
             console.error("[BILLING EVENT RECOVERY FAILED]:", err?.message);
-          });
+          }
+        }
+      }
+      if (verified && onPostVerification) {
+        try {
+          await onPostVerification();
+        } catch (refreshErr) {
+          console.error("[BILLING EVENT] Gagal refresh profil setelah purchase event:", refreshErr);
         }
       }
     });
@@ -140,17 +166,29 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
   if (!currentUser) throw new Error("AUTH_MISSING");
 
   try {
-    const functionsInstance = getClientFunctions("asia-southeast2");
-    const verifyCallable = httpsCallable(functionsInstance, "verifyGooglePlayPurchase");
-
-    const response = await verifyCallable({
-      packageName: GOOGLE_PLAY_PACKAGE_NAME,
-      purchaseToken: purchase.purchaseToken,
+    const response = await fetch(billingVerifierUrl(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${await currentUser.getIdToken()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        purchaseToken: purchase.purchaseToken,
+        productId: GOOGLE_PLAY_PRODUCT_ID,
+      }),
     });
 
-    const data = response.data as any;
-    if (!data || !data.ok) {
-      throw new Error(data?.error || "GOOGLE_API_FAILURE");
+    let data: any = null;
+    try {
+      data = await response.json();
+    } catch {
+      // The transport status below remains the source of the client error code.
+    }
+    if (!response.ok || !data?.ok) {
+      throw Object.assign(new Error(data?.error || "BILLING_VERIFIER_UNAVAILABLE"), {
+        code: data?.error || "BILLING_VERIFIER_UNAVAILABLE",
+        status: response.status,
+      });
     }
 
     return {
@@ -167,12 +205,13 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
       accessUntil: string;
       subscriptionState: string;
       ackStatus?: string;
+      acknowledgementDeferred?: boolean;
     };
-  } catch (callableError: any) {
-    if (isRetryableCallableTransportError(callableError)) {
-      Object.assign(callableError, { retryable: true });
+  } catch (verificationError: any) {
+    if (isRetryableVerifierTransportError(verificationError)) {
+      Object.assign(verificationError, { retryable: true });
     }
-    throw callableError;
+    throw verificationError;
   }
 }
 
@@ -209,14 +248,25 @@ export async function autoRecoverActiveSubscriptions(): Promise<{ recoveredCount
     const purchases = result?.purchases || [];
     for (const p of purchases) {
       if (p.purchaseToken) {
-        const verified = await processAndVerifyPurchaseToken(p).catch(() => null);
-        if (verified?.ok && verified?.active) {
-          recoveredCount++;
+        try {
+          const verified = await processAndVerifyPurchaseToken(p);
+          if (verified?.ok && verified?.active) {
+            recoveredCount++;
+          }
+        } catch (err: any) {
+          console.warn("[BILLING AUTO-RECOVERY] Token verification failed:", err?.message);
         }
       }
     }
-  } catch (_err) {
-    // Background recovery silent failsafe so app launch is never blocked
+  } catch (err: any) {
+    console.warn("[BILLING AUTO-RECOVERY] Purchase query failed:", err?.message);
+  }
+  if (recoveredCount > 0 && onPostVerification) {
+    try {
+      await onPostVerification();
+    } catch (refreshErr) {
+      console.error("[BILLING AUTO-RECOVERY] Gagal refresh profil setelah recovery:", refreshErr);
+    }
   }
   return { recoveredCount };
 }
