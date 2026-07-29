@@ -36,7 +36,7 @@ import { UserProfile } from "@/lib/repositories/userRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
 import { shouldIncludeInAdminAnalytics, getExcludedUids, isAdminExcludedAccount, deriveAdminExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
-import { getCanonicalHumanDesignType, isCanonicalHumanDesign, isValidHistoricalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { getHdState, type HdState, type HdStateResult } from "@/lib/humandesign/hdState";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getFounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
@@ -540,13 +540,15 @@ function buildXlsx(rows: string[][]): Blob {
 }
 
 export interface StandaloneHumanDesignSnapshot {
-  state: "calculated" | "pending" | "calculation_failed" | "never_calculated" | "no_valid_data";
+  state: HdState;
   type: string | null;
   selectedSource: string | null;
   selectedTimestamp: number | null;
   diagnosticReason: string;
   historicalChartRecovered: boolean;
   conflictDetected: boolean;
+  provenance: HdStateResult["provenance"];
+  needsUpgrade: boolean;
 }
 
 function resolveStandaloneHumanDesign(user: FounderUser, blueprintDoc: any): StandaloneHumanDesignSnapshot {
@@ -563,95 +565,56 @@ function resolveStandaloneHumanDesign(user: FounderUser, blueprintDoc: any): Sta
     { source: "users/{uid}.humanDesignResult", payload: (user.rawUser as any)?.humanDesignResult },
   ];
 
+  const buildSnapshot = (
+    source: string | null,
+    payload: any,
+    hd: HdStateResult,
+  ): StandaloneHumanDesignSnapshot => {
+    const isHistorical = hd.provenance === "historical";
+    const sourceLabel = isHistorical && source ? `${source} (Historical)` : source;
+    const stateMessage: Record<HdState, string> = {
+      CANONICAL: "Validated canonical gaia-hd-v1 chart",
+      FALLBACK_LABELED: isHistorical
+        ? "Historical chart recovered; canonical upgrade required"
+        : "Noncanonical fallback chart; canonical upgrade required",
+      PENDING: "Human Design calculation pending",
+      RETRIABLE_ERROR: "Human Design retry required",
+      TERMINAL_ERROR: "Human Design calculation reached a terminal error",
+    };
+
+    return {
+      state: hd.state,
+      type: hd.type,
+      selectedSource: sourceLabel,
+      selectedTimestamp: toDateMs(payload?.calculatedAt || payload?.updatedAt || payload?.createdAt) || null,
+      diagnosticReason: `${stateMessage[hd.state]} (${hd.reason})`,
+      historicalChartRecovered: isHistorical,
+      conflictDetected: false,
+      provenance: hd.provenance,
+      needsUpgrade: hd.needsUpgrade,
+    };
+  };
+
+  const firstByState = new Map<HdState, StandaloneHumanDesignSnapshot>();
   for (const { source, payload } of candidateSources) {
     if (!payload) continue;
 
-    const isCanonical = isCanonicalHumanDesign(payload);
-    const typeStr = getCanonicalHumanDesignType(payload);
-
-    if (isCanonical && typeStr) {
-      return {
-        state: "calculated",
-        type: typeStr,
-        selectedSource: source,
-        selectedTimestamp: toDateMs((payload as any)?.calculatedAt || (payload as any)?.updatedAt) || Date.now(),
-        diagnosticReason: "Validated canonical gaia-hd-v1 chart",
-        historicalChartRecovered: false,
-        conflictDetected: false,
-      };
-    }
-
-    if (isValidHistoricalHumanDesign(payload) && typeStr) {
-      return {
-        state: "calculated",
-        type: typeStr,
-        selectedSource: `${source} (Build 70-73 Historical)`,
-        selectedTimestamp: toDateMs((payload as any)?.updatedAt || (payload as any)?.createdAt) || Date.now(),
-        diagnosticReason: "Recovered valid Build 70-73 historical chart",
-        historicalChartRecovered: true,
-        conflictDetected: false,
-      };
-    }
-
-    if (typeof payload === "string" && payload.trim() && payload !== "-") {
-      return {
-        state: "calculated",
-        type: payload.trim(),
-        selectedSource: `${source} (Historical Scalar)`,
-        selectedTimestamp: Date.now(),
-        diagnosticReason: "Recovered historical scalar type string",
-        historicalChartRecovered: true,
-        conflictDetected: false,
-      };
-    }
-
-    const status = String((payload as any)?.status || "").toLowerCase();
-    if (status === "pending" || (payload as any)?.hdAuditStatus === "pending") {
-      return {
-        state: "pending",
-        type: null,
-        selectedSource: source,
-        selectedTimestamp: null,
-        diagnosticReason: "Human Design calculation pending",
-        historicalChartRecovered: false,
-        conflictDetected: false,
-      };
-    }
-
-    if (status === "error" || status === "missing_input") {
-      return {
-        state: "calculation_failed",
-        type: null,
-        selectedSource: source,
-        selectedTimestamp: null,
-        diagnosticReason: "Calculation failed due to input error",
-        historicalChartRecovered: false,
-        conflictDetected: false,
-      };
-    }
+    // Legacy scalar values remain readable, but are explicitly classified as
+    // historical fallback rather than silently upgraded to canonical.
+    const selectorPayload = typeof payload === "string"
+      ? { type: payload, status: "ready", source: "legacy-scalar" }
+      : payload;
+    const hd = getHdState(selectorPayload);
+    const snapshot = buildSnapshot(source, payload, hd);
+    if (hd.state === "CANONICAL") return snapshot;
+    if (!firstByState.has(hd.state)) firstByState.set(hd.state, snapshot);
   }
 
-  if (!blueprintDoc) {
-    return {
-      state: "never_calculated",
-      type: null,
-      selectedSource: null,
-      selectedTimestamp: null,
-      diagnosticReason: "No blueprint document created",
-      historicalChartRecovered: false,
-      conflictDetected: false,
-    };
-  }
-
-  return {
-    state: "no_valid_data",
-    type: null,
-    selectedSource: null,
-    selectedTimestamp: null,
-    diagnosticReason: "No valid Human Design payload found",
-    historicalChartRecovered: false,
-    conflictDetected: false,
-  };
+  return firstByState.get("FALLBACK_LABELED")
+    || firstByState.get("RETRIABLE_ERROR")
+    || firstByState.get("TERMINAL_ERROR")
+    || firstByState.get("PENDING")
+    || buildSnapshot(null, null, getHdState(null));
 }
 
 export default function AdminActivityPage() {
@@ -1665,10 +1628,15 @@ export default function AdminActivityPage() {
 
               {/* HUMAN DESIGN (STANDALONE PROJECTION) */}
               <DetailBox title="Human Design (Standalone)" rows={blueprintLoading ? [["Status", "Loading..."]] : [
-                ["Engine State", standaloneHd?.state ? standaloneHd.state.toUpperCase() : "NO VALID DATA"],
-                ["Type", standaloneHd?.type || (standaloneHd?.state === "pending" ? "Human Design sedang diproses." : "No data")],
+                ["Engine State", standaloneHd?.state || "PENDING"],
+                ["Type", standaloneHd?.type || (standaloneHd?.state === "PENDING" ? "Human Design sedang diproses." : "No data")],
                 ["Provenance Source", standaloneHd?.selectedSource || "Unrecorded"],
-                ["Chart Status", standaloneHd?.historicalChartRecovered ? "Build 70-73 Historical Recovered" : "Canonical gaia-hd-v1"],
+                ["Chart Status", standaloneHd?.state === "CANONICAL"
+                  ? "Canonical gaia-hd-v1"
+                  : standaloneHd?.state === "FALLBACK_LABELED"
+                    ? `${standaloneHd.provenance === "historical" ? "Historical" : "Fallback"} — needs canonical upgrade`
+                    : standaloneHd?.state || "Pending"],
+                ["Upgrade", standaloneHd?.needsUpgrade ? "Canonical upgrade required" : "Not required"],
                 ["Diagnostic Note", standaloneHd?.diagnosticReason || "-"],
               ]} />
 
