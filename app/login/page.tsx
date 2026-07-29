@@ -4,7 +4,12 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
-import { signInWithGoogle } from "@/lib/auth/authActions";
+import {
+  GooglePopupTimeoutError,
+  handleGoogleRedirectResult,
+  signInWithGoogle,
+  signInWithGoogleRedirect,
+} from "@/lib/auth/authActions";
 import { useAuth } from "@/context/AuthContext";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
@@ -26,6 +31,35 @@ function LoginContent() {
 
   const [loginLoading, setLoginLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showRedirectFallback, setShowRedirectFallback] = useState(false);
+
+  const getGoogleLoginErrorMessage = (err: unknown): string => {
+    const code = (err as { code?: string })?.code;
+    if (err instanceof GooglePopupTimeoutError || code === "auth/popup-timeout") {
+      return "Google belum merespons. Periksa apakah pop-up diblokir, lalu coba lagi atau gunakan halaman masuk Google.";
+    }
+    if (code === "auth/popup-blocked") {
+      return "Pop-up Google diblokir oleh browser. Gunakan halaman masuk Google atau izinkan pop-up untuk aplikasi ini.";
+    }
+    if (code === "auth/popup-closed-by-user") {
+      return "Jendela masuk Google ditutup sebelum proses selesai. Silakan coba lagi.";
+    }
+    return "Masuk dengan Google belum berhasil. Periksa koneksi lalu coba lagi.";
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    void handleGoogleRedirectResult().catch((err) => {
+      console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
+      if (!active) return;
+      setError(getGoogleLoginErrorMessage(err));
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const checkUserAndRoute = async () => {
@@ -70,32 +104,27 @@ function LoginContent() {
     try {
       setLoginLoading(true);
       setError(null);
+      setShowRedirectFallback(false);
       console.log("[LOGIN FLOW] Starting Google Auth");
       await signInWithGoogle({ promptSelectAccount: true });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("[CRITICAL AUTH ERROR - RAW]", err);
+      const code = (err as { code?: string })?.code;
+      setError(getGoogleLoginErrorMessage(err));
+      setShowRedirectFallback(code === "auth/popup-timeout" || code === "auth/popup-blocked");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
 
-      // Attempting to extract all possible fields from the error object
-      const fullErrorDetail = {
-        code: err?.code,
-        message: err?.message,
-        name: err?.name,
-        stack: err?.stack,
-        errorMessage: err?.errorMessage, // Capacitor common field
-        ...err // Spread to catch any other enumerable properties
-      };
-
-      console.error("[CRITICAL AUTH ERROR - STRINGIFIED]", JSON.stringify(fullErrorDetail, null, 2));
-
-      const displayError = `
-NAME: ${err?.name || 'N/A'}
-CODE: ${err?.code || 'N/A'}
-MESSAGE: ${err?.message || 'N/A'}
-STACK: ${err?.stack || 'N/A'}
-JSON: ${JSON.stringify(fullErrorDetail, null, 2)}
-      `.trim();
-
-      setError(displayError);
+  const handleGoogleRedirectLogin = async () => {
+    try {
+      setLoginLoading(true);
+      setError(null);
+      await signInWithGoogleRedirect({ promptSelectAccount: true });
+    } catch (err) {
+      console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
+      setError(getGoogleLoginErrorMessage(err));
     } finally {
       setLoginLoading(false);
     }
@@ -126,10 +155,21 @@ JSON: ${JSON.stringify(fullErrorDetail, null, 2)}
 
       <div className="space-y-4 pt-4">
         {error && (
-          <div className="text-red-600 text-[10px] text-left bg-red-50 p-4 rounded-2xl border border-red-100 overflow-auto max-h-40 font-mono whitespace-pre-wrap">
-            <p className="font-bold mb-1">CRITICAL AUTH ERROR:</p>
+          <div className="text-red-600 text-sm text-left bg-red-50 p-4 rounded-2xl border border-red-100">
+            <p className="font-bold mb-1">Masuk dengan Google belum selesai</p>
             {error}
           </div>
+        )}
+
+        {showRedirectFallback && (
+          <button
+            type="button"
+            onClick={handleGoogleRedirectLogin}
+            disabled={loginLoading}
+            className="w-full rounded-full border border-[#4F5E52] px-6 py-3 text-[#4F5E52] font-medium transition hover:bg-[#F3F5F1] disabled:opacity-60"
+          >
+            Gunakan halaman masuk Google
+          </button>
         )}
 
         <button

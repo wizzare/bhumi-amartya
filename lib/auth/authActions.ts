@@ -1,7 +1,9 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
   signInWithCredential,
+  getRedirectResult,
   signOut as firebaseSignOut,
   User,
   setPersistence,
@@ -34,6 +36,48 @@ type NativeGoogleAuthWithLegacyOptions = typeof FirebaseAuthentication & {
     useCredentialManager: boolean;
   }): Promise<NativeGoogleSignInResult>;
 };
+
+export const GOOGLE_POPUP_TIMEOUT_MS = 35_000;
+
+export class GooglePopupTimeoutError extends Error {
+  readonly code = "auth/popup-timeout";
+
+  constructor(timeoutMs: number) {
+    super(`Google sign-in popup did not settle within ${timeoutMs}ms.`);
+    this.name = "GooglePopupTimeoutError";
+  }
+}
+
+export function waitForGooglePopupResult<T>(operation: Promise<T>, timeoutMs = GOOGLE_POPUP_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeoutId = setTimeout(() => {
+      reject(new GooglePopupTimeoutError(timeoutMs));
+    }, timeoutMs);
+
+    operation.then(
+      (result) => {
+        clearTimeout(timeoutId);
+        resolve(result);
+      },
+      (error) => {
+        clearTimeout(timeoutId);
+        reject(error);
+      },
+    );
+  });
+}
+
+function createGoogleProvider(promptSelectAccount?: boolean): GoogleAuthProvider {
+  const googleProvider = new GoogleAuthProvider();
+
+  if (promptSelectAccount) {
+    googleProvider.setCustomParameters({
+      prompt: "select_account",
+    });
+  }
+
+  return googleProvider;
+}
 
 function buildMinimalUserProfile(user: User, now: Timestamp): UserProfile {
   return {
@@ -209,25 +253,33 @@ export const signInWithGoogle = async (options?: {
     }
   }
 
-  const googleProvider = new GoogleAuthProvider();
-
-  if (options?.promptSelectAccount) {
-    googleProvider.setCustomParameters({
-      prompt: "select_account",
-    });
-  }
+  const googleProvider = createGoogleProvider(options?.promptSelectAccount);
 
   await setPersistence(auth, browserLocalPersistence);
   console.log("[GOOGLE AUTH START]", { method: "signInWithPopup" });
-  await signInWithPopup(auth, googleProvider);
+  await waitForGooglePopupResult(signInWithPopup(auth, googleProvider));
   console.log("[GOOGLE AUTH RESULT]", { status: "success" });
 };
 
+export const signInWithGoogleRedirect = async (options?: {
+  promptSelectAccount?: boolean;
+}): Promise<never> => {
+  if (Capacitor.isNativePlatform()) {
+    throw new Error("Google redirect sign-in is only available on the web.");
+  }
+
+  const googleProvider = createGoogleProvider(options?.promptSelectAccount);
+  await setPersistence(auth, browserLocalPersistence);
+  console.log("[GOOGLE AUTH START]", { method: "signInWithRedirect" });
+  return signInWithRedirect(auth, googleProvider);
+};
+
 export const handleGoogleRedirectResult = async (): Promise<GoogleRedirectProcessingResult> => {
-  const redirectUser = auth.currentUser;
+  const redirectResult = await getRedirectResult(auth);
+  const redirectUser = redirectResult?.user ?? auth.currentUser;
   return {
     user: redirectUser ?? null,
-    redirectResultUser: null,
+    redirectResultUser: redirectResult?.user ?? null,
   };
 };
 
