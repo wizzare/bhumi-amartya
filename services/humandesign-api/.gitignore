@@ -48,3 +48,5 @@ htmlcov/
 
 # reports
 reports/
+.vercel
+.env*

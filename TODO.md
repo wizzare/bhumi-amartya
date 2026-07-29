@@ -59,6 +59,9 @@
 | 4 | Firestore Rules field validation absent | No schema enforcement | — |
 | 5 | TSC baseline errors (21) | Pre-existing; blocks clean TSC | Founder |
 | 6 | Web/Android version metadata discrepancy | 4.4.1/78 vs 4.4.4/79 | — |
+| 7 | Billing verifier ESLint v9 configuration | `npm run lint` ignores `api`/`lib`; source lint is unavailable | — |
+| 8 | Billing verifier auth validator contract drift | Validator requires `AUTH_INVALID`, but the route emits categorized auth errors instead | — |
+| 9 | Arsip Akashi timezone contract mismatch | `localDateParts` passes `+07:00` to `Intl.DateTimeFormat`, which requires an IANA zone; the 3x3 regression test cannot execute | — |
 
 ## 6. Security and Privacy Follow-ups
 
