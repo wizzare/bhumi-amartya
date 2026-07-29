@@ -1,19 +1,14 @@
 "use client";
 
-import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { getHdState } from "@/lib/humandesign/hdState";
+import type { HumanDesignChart } from "@/lib/humandesign/types";
 
 interface CoreIdentityProps {
   lifePath?: string | number;
   lifePathRole?: string;
   arcanaCenter?: number;
   sunSign?: string;
-  humanDesign?: {
-    type?: string | null;
-    status?: string | null;
-    source?: string | null;
-    hdEngineVersion?: string | null;
-    calculationQuality?: string | null;
-  } | null;
+  humanDesign?: Partial<HumanDesignChart> | null;
   labels: {
     title: string;
     lifePath: string;
@@ -43,17 +38,36 @@ export function CoreIdentity({
   humanDesign,
   labels,
 }: CoreIdentityProps) {
-  const isVerified = isCanonicalHumanDesign(humanDesign);
-  let humanDesignValue = isVerified ? humanDesign?.type : null;
-  if (humanDesignValue === "Manifesting Generator") humanDesignValue = "ManGen";
-
-  if (!humanDesignValue) {
-    if (humanDesign?.status === "needs_verified_timezone") {
-      humanDesignValue = labels.humanDesignNeedsTimezone || labels.humanDesignPending;
-    } else {
-      humanDesignValue = labels.humanDesignPending;
+  const hdState = getHdState(humanDesign);
+  const humanDesignType = hdState.type === "Manifesting Generator" ? "ManGen" : hdState.type;
+  const humanDesignPresentation = (() => {
+    switch (hdState.state) {
+      case "CANONICAL":
+        return { value: humanDesignType || "Belum tersedia" };
+      case "FALLBACK_LABELED":
+        return {
+          value: humanDesignType || "Data historis",
+          subValue: "Data historis, perlu kalkulasi ulang",
+        };
+      case "PENDING":
+        return {
+          value: hdState.reason === "needs_verified_timezone"
+            ? labels.humanDesignNeedsTimezone || labels.humanDesignPending
+            : labels.humanDesignPending,
+          subValue: "Perhitungan sedang berlangsung",
+        };
+      case "RETRIABLE_ERROR":
+        return {
+          value: "Perlu dihitung ulang",
+          subValue: "Kalkulasi belum tersedia. Coba lagi nanti.",
+        };
+      case "TERMINAL_ERROR":
+        return {
+          value: "Belum tersedia",
+          subValue: "Data Human Design belum dapat dihitung.",
+        };
     }
-  }
+  })();
 
   return (
     <div className="mt-8 bhumi-card p-6 bg-[#FCFAF5]/50 shadow-none border-dashed">
@@ -64,7 +78,7 @@ export function CoreIdentity({
         <Stat label={labels.lifePath} value={lifePath} subValue={lifePathRole} />
         <Stat label={labels.sunSign} value={sunSign} />
         <Stat label={labels.arcanaCenter} value={arcanaCenter} />
-        <Stat label={labels.humanDesign} value={humanDesignValue} />
+        <Stat label={labels.humanDesign} {...humanDesignPresentation} />
       </div>
     </div>
   );
