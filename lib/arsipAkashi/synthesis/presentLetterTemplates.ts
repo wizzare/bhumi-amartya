@@ -1,4 +1,5 @@
 import type { ArsipAkashiInsightModel } from "./types";
+import { factSignatureToken } from "../factValue";
 
 function hashKey(value: string): number {
   let h = 0;
@@ -86,7 +87,7 @@ export function buildPresentLetterContext(model: ArsipAkashiInsightModel): Prese
     contributingSystems: [...new Set(selectedFacts.map((fact) => fact.systemId))].sort(),
     timingLimitations: [...new Set(timingFacts.flatMap((fact) => fact.warnings))],
     referenceDate: model.generatedAt,
-    signatureTokens: selectedFacts.map((fact) => fact.value.slice(0, 24)).slice(0, 40),
+    signatureTokens: selectedFacts.map((fact) => factSignatureToken(fact.value, 24)).slice(0, 40),
   };
 }
 

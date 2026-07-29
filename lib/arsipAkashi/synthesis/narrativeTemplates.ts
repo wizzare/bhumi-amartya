@@ -1,3 +1,5 @@
+import { factSignatureToken } from "../factValue";
+
 function hashKey(value: string): number {
   let h = 0;
   for (let i = 0; i < value.length; i++) h = ((h << 5) - h + value.charCodeAt(i)) | 0;
@@ -18,7 +20,7 @@ export function insightsig(insight: {
   const themeSig = insight.primaryThemes.map(t => t.themeId).join(",");
   const tensionSig = insight.tensions.map(t => t.tensionId).join(",");
   const supportSig = insight.supportingThemes.map(t => t.themeId).join(",");
-  const factHash = insight.selectedFacts.slice(0, 3).map(f => hashKey(f.value.slice(0, 20))).join(",");
+  const factHash = insight.selectedFacts.slice(0, 3).map(f => hashKey(factSignatureToken(f.value, 20))).join(",");
   return `${themeSig}|${tensionSig}|${supportSig}|${factHash}|${insight.provenance.length}`;
 }
 

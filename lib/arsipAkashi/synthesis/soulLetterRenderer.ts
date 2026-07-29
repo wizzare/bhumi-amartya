@@ -4,6 +4,7 @@ import { ARSIP_AKASHI_SOUL_LETTER_IDS } from "../types";
 import { composePastSelfParagraphs, composeFutureSelfParagraphs } from "./soulLetterTemplates";
 import { buildPresentLetterContext, composePresentSelfParagraphs } from "./presentLetterTemplates";
 import { sanitizeSoulLetterParagraph } from "./soulLetterSanitizer";
+import { factSignatureToken } from "../factValue";
 
 function sentenceCount(text: string): number {
   return text.split(/(?<=[.!?])\s+/).filter((s: string) => s.trim().length >= 6).length;
@@ -76,7 +77,7 @@ function letterSignature(
 ): string {
   const ids = themes.map(t => t.themeId).sort().join(",");
   const eds = themes.map(t => t.emotionalDirection).sort().join(",");
-  const factTokens = model.sections.flatMap(s => s.selectedFacts.map(f => f.value.slice(0, 10))).slice(0, 8).join("|");
+  const factTokens = model.sections.flatMap(s => s.selectedFacts.map(f => factSignatureToken(f.value, 10))).slice(0, 8).join("|");
   return `${letterId}|${ids}|${eds}|${factTokens}`;
 }
 

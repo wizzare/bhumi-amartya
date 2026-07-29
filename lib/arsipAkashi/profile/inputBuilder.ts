@@ -1,5 +1,6 @@
 import type { Blueprint } from "@/lib/types/blueprint";
 import type { ArsipAkashiInput, ArsipAkashiSystemEntry } from "../types";
+import { normalizeArsipFactValue } from "../factValue";
 
 import { adaptWetonToArsipAkashi } from "../adapters/wetonAdapter";
 import { adaptBaziToArsipAkashi } from "../adapters/baziAdapter";
@@ -91,7 +92,7 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `numerology/identity/expression`,
           systemId: "numerology", domain: "talents",
-          label: "expression", value: n.expression ?? "unknown",
+          label: "expression", value: normalizeArsipFactValue(n.expression),
           sourcePath: "lib/numerology", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
@@ -114,28 +115,28 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `human-design/identity/type`,
           systemId: "human-design", domain: "identity",
-          label: "type", value: hd.type ?? "unknown",
+          label: "type", value: normalizeArsipFactValue(hd.type),
           sourcePath: "lib/humandesign", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `human-design/mechanics/authority`,
           systemId: "human-design", domain: "mechanics",
-          label: "authority", value: hd.authority ?? "unknown",
+          label: "authority", value: normalizeArsipFactValue(hd.authority),
           sourcePath: "lib/humandesign", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `human-design/mechanics/strategy`,
           systemId: "human-design", domain: "mechanics",
-          label: "strategy", value: hd.strategy ?? "unknown",
+          label: "strategy", value: normalizeArsipFactValue(hd.strategy),
           sourcePath: "lib/humandesign", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `human-design/identity/profile`,
           systemId: "human-design", domain: "identity",
-          label: "profile", value: hd.profile ?? "unknown",
+          label: "profile", value: normalizeArsipFactValue(hd.profile),
           sourcePath: "lib/humandesign", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
@@ -158,21 +159,21 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `natal-chart/identity/sunSign`,
           systemId: "natal-chart", domain: "identity",
-          label: "sunSign", value: a.sun?.sign ?? "unknown",
+          label: "sunSign", value: normalizeArsipFactValue(a.sun?.sign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `natal-chart/identity/moonSign`,
           systemId: "natal-chart", domain: "identity",
-          label: "moonSign", value: a.moon?.sign ?? "unknown",
+          label: "moonSign", value: normalizeArsipFactValue(a.moon?.sign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `natal-chart/mechanics/ascendant`,
           systemId: "natal-chart", domain: "mechanics",
-          label: "ascendant", value: a.ascendant?.sign ?? "unknown",
+          label: "ascendant", value: normalizeArsipFactValue(a.ascendant?.sign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
@@ -195,14 +196,14 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `destiny-matrix/identity/mainArcana`,
           systemId: "destiny-matrix", domain: "identity",
-          label: "mainArcana", value: dm.energyType ?? "unknown",
+          label: "mainArcana", value: normalizeArsipFactValue(dm.energyType),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `destiny-matrix/mechanics/energyType`,
           systemId: "destiny-matrix", domain: "mechanics",
-          label: "energyType", value: dm.energyType ?? "unknown",
+          label: "energyType", value: normalizeArsipFactValue(dm.energyType),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
