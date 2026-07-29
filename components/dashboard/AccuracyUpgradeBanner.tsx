@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Sparkles, RefreshCw, X } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
+import { getHdState } from "@/lib/humandesign/hdState";
 
 interface AccuracyUpgradeBannerProps {
   uid: string;
@@ -15,7 +16,11 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
-  if (!blueprint.humanDesign?.needsUpgrade || dismissed) return null;
+  const hd = blueprint?.humanDesign;
+  const hdState = getHdState(hd);
+  const shouldDisplay = hdState.state === "FALLBACK_LABELED" && hdState.needsUpgrade;
+
+  if (!shouldDisplay || dismissed) return null;
 
   const handleUpgrade = async () => {
     setLoading(true);

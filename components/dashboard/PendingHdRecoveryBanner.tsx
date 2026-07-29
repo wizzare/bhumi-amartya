@@ -3,7 +3,7 @@
 import React, { useMemo, useState } from "react";
 import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { getHdState } from "@/lib/humandesign/hdState";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { Timestamp } from "firebase/firestore";
 
@@ -29,21 +29,13 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   }
 
   const hd = blueprint?.humanDesign || profile?.humanDesign;
-  const status = String(hd?.status || hd?.calculationStatus || "").toLowerCase();
-  const type = hd?.type || hd?.energyType;
-
-  const isPendingStatus =
-    status === "pending" ||
-    status === "missing-input" ||
-    status === "missing-location" ||
-    status === "needs_verified_timezone" ||
-    (!type && !isCanonicalHumanDesign(hd));
+  const hdState = getHdState(hd);
+  const shouldDisplay = hdState.state === "PENDING" || hdState.state === "RETRIABLE_ERROR";
 
   const isFirestoreDismissed = Boolean(profile?.hdDismissedAt);
 
-  const isRetriableError = status === "retriable_error";
+  const isRetriableError = hdState.state === "RETRIABLE_ERROR";
   const isMissingBirthData = !hasBirthData(profile);
-  const isLabeledFallback = type && !isCanonicalHumanDesign(hd);
 
   const { title, message, buttonLabel, buttonAction } = useMemo(() => {
     if (isMissingBirthData) {
@@ -62,23 +54,15 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         buttonAction: "reload" as const,
       };
     }
-    if (isLabeledFallback) {
-      return {
-        title: "Pembacaan Sementara",
-        message: "Peta Human Design sedang dalam penyempurnaan. Pembacaan saat ini bersifat sementara dan akan diperbarui.",
-        buttonLabel: "Muat Ulang",
-        buttonAction: "reload" as const,
-      };
-    }
     return {
       title: "Perhitungan Sedang Berlangsung",
       message: "Peta Human Design sedang diproses. Hasil akan muncul setelah perhitungan selesai.",
       buttonLabel: "Coba Lagi Nanti",
       buttonAction: "reload" as const,
     };
-  }, [isMissingBirthData, isRetriableError, isLabeledFallback]);
+  }, [isMissingBirthData, isRetriableError]);
 
-  if (!isPendingStatus || isFirestoreDismissed || localDismissed) {
+  if (!shouldDisplay || isFirestoreDismissed || localDismissed) {
     return null;
   }
 
