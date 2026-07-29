@@ -28,7 +28,7 @@ interface AuthContextType {
   authStateResolved: boolean;
   profileLoading: boolean;
   profileError: string | null;
-  refreshUserProfile: () => Promise<void>;
+  refreshUserProfile: () => Promise<UserProfile | null>;
   logout: () => Promise<void>;
 }
 
@@ -62,51 +62,54 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  const refreshUserProfile = async () => {
+  const refreshUserProfile = async (): Promise<UserProfile | null> => {
     const firebaseUser = auth.currentUser;
 
     if (!firebaseUser) {
       setUserProfile(null);
-      return;
+      return null;
     }
 
     const refreshUid = firebaseUser.uid;
     const isCurrentRefresh = () => auth.currentUser?.uid === refreshUid;
-    if (!isCurrentRefresh()) return;
+    if (!isCurrentRefresh()) return null;
     setProfileError(null);
-    if (!isCurrentRefresh()) return;
+    if (!isCurrentRefresh()) return null;
     setProfileLoading(true);
     try {
       const guardedOutcome = await resolveCurrentAuthOperation(
         () => resolveProfileLoad(ensureMinimalUserProfile(firebaseUser), PROFILE_LOAD_TIMEOUT_MS),
         isCurrentRefresh,
       );
-      if (guardedOutcome.status === "stale") return;
+      if (guardedOutcome.status === "stale") return null;
       const outcome = guardedOutcome.value;
       if (outcome.status === "success") {
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setUserProfile(outcome.value);
+        return outcome.value;
       } else if (outcome.status === "missing") {
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setUserProfile(null);
+        return null;
       } else if (outcome.status === "timeout") {
         console.warn("Auth profile refresh timed out.", { elapsedMs: outcome.elapsedMs });
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setUserProfile(null);
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setProfileError("Profil masih disiapkan. Silakan coba lagi.");
+        return null;
       } else {
         console.error("Auth profile refresh error:", outcome.error);
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setUserProfile(null);
-        if (!isCurrentRefresh()) return;
+        if (!isCurrentRefresh()) return null;
         setProfileError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
         throw outcome.error;
       }
     } catch (error) {
-      if (!isCurrentRefresh()) return;
+      if (!isCurrentRefresh()) return null;
       setUserProfile(null);
-      if (!isCurrentRefresh()) return;
+      if (!isCurrentRefresh()) return null;
       setProfileError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
       throw error;
     } finally {

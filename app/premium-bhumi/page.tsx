@@ -86,7 +86,19 @@ export default function PremiumBhumiPage() {
 
         if (verifiedAny) {
           setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
-          await storageProvider.getUserProfile().catch(() => null);
+          try {
+            const fresh = await auth?.refreshUserProfile?.();
+            if (!fresh?.isPremium) {
+              console.warn("[PREMIUM PURCHASE] Verifikasi sukses tapi entitlement belum konsisten — retry dalam 1s.");
+              await new Promise(r => setTimeout(r, 1000));
+              const retry = await auth?.refreshUserProfile?.();
+              if (!retry?.isPremium) {
+                console.warn("[PREMIUM PURCHASE] Premium tidak terdeteksi setelah retry — kemungkinan lag entitlement write.");
+              }
+            }
+          } catch (refreshErr) {
+            console.error("[PREMIUM PURCHASE] Gagal refresh profil setelah purchase:", refreshErr);
+          }
           setTimeout(() => router.refresh(), 1500);
         } else {
           setError(lastError || "Pembelian Play Store terdeteksi, namun verifikasi server gagal. Silakan gunakan tombol Pulihkan Pembelian.");
@@ -129,7 +141,19 @@ export default function PremiumBhumiPage() {
 
         if (verifiedAny) {
           setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
-          await storageProvider.getUserProfile().catch(() => null);
+          try {
+            const fresh = await auth?.refreshUserProfile?.();
+            if (!fresh?.isPremium) {
+              console.warn("[PREMIUM RESTORE] Verifikasi sukses tapi entitlement belum konsisten — retry dalam 1s.");
+              await new Promise(r => setTimeout(r, 1000));
+              const retry = await auth?.refreshUserProfile?.();
+              if (!retry?.isPremium) {
+                console.warn("[PREMIUM RESTORE] Premium tidak terdeteksi setelah retry — kemungkinan lag entitlement write.");
+              }
+            }
+          } catch (refreshErr) {
+            console.error("[PREMIUM RESTORE] Gagal refresh profil setelah restore:", refreshErr);
+          }
           setTimeout(() => router.refresh(), 1500);
         } else {
           setError(lastError || "Pembelian aktif ditemukan di Play Store, namun verifikasi server gagal. Silakan coba lagi.");
