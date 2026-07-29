@@ -5,6 +5,8 @@ import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getHdState } from "@/lib/humandesign/hdState";
 import { userRepository } from "@/lib/repositories/userRepository";
+import { storageProvider } from "@/lib/storage/storageProvider";
+import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { Timestamp } from "firebase/firestore";
 
 interface PendingHdRecoveryBannerProps {
@@ -20,13 +22,9 @@ function hasBirthData(profile: any): boolean {
 }
 
 export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRecoveryBannerProps) {
-  const router = Router();
+  const router = useRouter();
   const [localDismissed, setLocalDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  function Router() {
-    return useRouter();
-  }
 
   const hd = blueprint?.humanDesign || profile?.humanDesign;
   const hdState = getHdState(hd);
@@ -82,11 +80,39 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
     }
   };
 
-  const handleActionClick = () => {
+  const handleActionClick = async () => {
     if (buttonAction === "settings") {
       router.push("/settings");
-    } else {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (profile) {
+        const nextHD = await calculateHumanDesign({
+          birthDate: profile.birthDate || profile.dateOfBirth,
+          birthTime: profile.birthTime || profile.timeOfBirth,
+          birthCity: profile.birthCity || profile.birthPlace || profile.cityOfBirth || profile.placeOfBirth,
+          timezone: profile.timezone || "+07:00",
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+        });
+
+        if (blueprint) {
+          const nextBlueprint = {
+            ...blueprint,
+            humanDesign: nextHD,
+            updatedAt: new Date().toISOString(),
+          };
+          await storageProvider.saveUserBlueprint(nextBlueprint);
+        }
+      }
       window.location.reload();
+    } catch (err) {
+      console.error("[PendingHdBanner] Recalculation failed:", err);
+      window.location.reload();
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,10 +150,17 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
 
         <button
           onClick={handleActionClick}
-          className="w-full py-3.5 px-5 rounded-2xl bg-amber-100 hover:bg-white text-[#4F5E52] font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md"
+          disabled={loading}
+          className="w-full py-3.5 px-5 rounded-2xl bg-amber-100 hover:bg-white text-[#4F5E52] font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md disabled:opacity-50"
         >
-          <span>{buttonLabel}</span>
-          {buttonAction === "reload" ? <RefreshCw size={16} /> : <ArrowRight size={16} />}
+          {loading ? (
+            <RefreshCw size={16} className="animate-spin" />
+          ) : (
+            <>
+              <span>{buttonLabel}</span>
+              {buttonAction === "reload" ? <RefreshCw size={16} /> : <ArrowRight size={16} />}
+            </>
+          )}
         </button>
       </div>
     </div>
