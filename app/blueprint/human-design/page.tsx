@@ -96,7 +96,9 @@ export default function HumanDesignPage() {
 
   const hasBirthData = Boolean(blueprint?.input?.birthDate && blueprint?.input?.birthTime && blueprint?.input?.timezone);
   const chart = useMemo(
-    () => hdState?.state === "CANONICAL" ? blueprint?.humanDesign as HumanDesignChart : null,
+    () => (hdState?.state === "CANONICAL" || (hdState?.state === "FALLBACK_LABELED" && Boolean((blueprint?.humanDesign as Partial<HumanDesignChart>)?.type)))
+      ? blueprint?.humanDesign as HumanDesignChart
+      : null,
     [blueprint, hdState],
   );
   const statusCopy = hdState ? getStatusCopy(hdState, hasBirthData) : null;
@@ -104,7 +106,7 @@ export default function HumanDesignPage() {
     if (!chart || !blueprint) return null;
     return executeHumanMeaningRuntime(blueprint);
   }, [blueprint, chart]);
-  const presentation = useMemo(() => chart && runtime?.ok ? buildHumanDesignHumanMeaning(chart) : null, [chart, runtime]);
+  const presentation = useMemo(() => chart && (runtime?.ok || hdState?.state === "FALLBACK_LABELED") ? buildHumanDesignHumanMeaning(chart) : null, [chart, runtime, hdState]);
 
   const signature = chart?.type === "Projector" ? "Success" : chart?.type === "Manifestor" ? "Peace" : chart?.type === "Reflector" ? "Surprise" : "Satisfaction";
   const notSelf = chart?.type === "Projector" ? "Bitterness" : chart?.type === "Manifestor" ? "Anger" : chart?.type === "Reflector" ? "Disappointment" : "Frustration";
@@ -141,7 +143,7 @@ export default function HumanDesignPage() {
             </section>
           )}
 
-          {hdState?.state === "CANONICAL" && chart && (
+          {chart && (
             <div className="space-y-6">
               <HumanDesignBodygraphLite humanDesign={chart} />
               <div className="grid gap-4 sm:grid-cols-2">
@@ -169,7 +171,7 @@ export default function HumanDesignPage() {
               <div className="rounded-2xl border border-[#E9E4D9] bg-white p-5 shadow-sm">
                 <h3 className="font-serif text-xl text-[#4F5E52]">Centers</h3>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {centerEntries.map(([key, meaning]) => <div key={key} className="sm:col-span-2"><p className="text-sm font-semibold text-[#4F5E52]">{key} <span className="text-xs font-normal text-[#9AA394]">({chart.centers[key as keyof typeof chart.centers] === true ? "Defined" : "Open"})</span></p><ExpandableExplanation value={meaning} /></div>)}
+                  {centerEntries.map(([key, meaning]) => <div key={key} className="sm:col-span-2"><p className="text-sm font-semibold text-[#4F5E52]">{key} <span className="text-xs font-normal text-[#9AA394]">({chart.centers?.[key as keyof typeof chart.centers] === true ? "Defined" : "Open"})</span></p><ExpandableExplanation value={meaning} /></div>)}
                 </div>
               </div>
 

@@ -7,8 +7,9 @@ export function isSetupProfileComplete(profile: UnknownRecord): boolean {
   const birthCity = typeof profile.birthCity === "string" ? profile.birthCity.trim() : "";
   const birthPlace = typeof profile.birthPlace === "string" ? profile.birthPlace.trim() : "";
   const cityOfBirth = typeof profile.cityOfBirth === "string" ? profile.cityOfBirth.trim() : "";
+  const placeOfBirth = typeof profile.placeOfBirth === "string" ? profile.placeOfBirth.trim() : "";
   const setupCompleted = profile.setupCompleted === true;
-  return setupCompleted && Boolean(birthDate) && Boolean(birthTime) && Boolean(birthPlace || cityOfBirth || birthCity);
+  return setupCompleted && Boolean(birthDate) && Boolean(birthTime) && Boolean(birthPlace || cityOfBirth || birthCity || placeOfBirth);
 }
 
 export function isBlueprintComplete(blueprint: UnknownRecord): boolean {
