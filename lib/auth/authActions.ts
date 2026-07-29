@@ -83,24 +83,37 @@ function buildMinimalUserProfile(user: User, now: Timestamp): UserProfile {
   } as UserProfile;
 }
 
-function hasMinimalProfileFields(profile: UserProfile): boolean {
-  return (
-    typeof profile.onboardingCompleted === "boolean" &&
-    typeof profile.baselineWellnessCompleted === "boolean" &&
-    typeof profile.setupCompleted === "boolean" &&
-    Boolean(profile.healingProgress) &&
-    Boolean(profile.emotionalState) &&
-    Boolean(profile.profile) &&
-    Boolean(profile.settings)
-  );
+/**
+ * Builds a merge patch for fields that are absent from a persisted profile.
+ * Defined values, including false, empty strings, and null, are preserved.
+ */
+export function buildMissingMinimalProfilePatch(
+  existingProfile: UserProfile,
+  minimalProfile: UserProfile,
+): Partial<UserProfile> {
+  const patch: Partial<UserProfile> = {};
+
+  for (const [field, value] of Object.entries(minimalProfile) as Array<
+    [keyof UserProfile, unknown]
+  >) {
+    if (existingProfile[field] === undefined) {
+      Object.assign(patch, { [field]: value });
+    }
+  }
+
+  return patch;
 }
 
 export const ensureMinimalUserProfile = async (user: User) => {
   const existingProfile = await userRepository.getUserProfile(user.uid);
   const now = Timestamp.now();
   if (existingProfile) {
-    if (!hasMinimalProfileFields(existingProfile)) {
-      await userRepository.upsertUserProfile(user.uid, buildMinimalUserProfile(user, now));
+    const missingFieldsPatch = buildMissingMinimalProfilePatch(
+      existingProfile,
+      buildMinimalUserProfile(user, now),
+    );
+    if (Object.keys(missingFieldsPatch).length > 0) {
+      await userRepository.upsertUserProfile(user.uid, missingFieldsPatch);
     }
     await userRepository.updatePresence(user.uid, {
       email: user.email || existingProfile.email || "",
