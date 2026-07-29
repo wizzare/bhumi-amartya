@@ -1,6 +1,7 @@
 import type { HumanDesignBirthProfile, HumanDesignChart } from "./types";
+import { getHdState, HD_ENGINE_VERSION as HD_STATE_ENGINE_VERSION } from "./hdState";
 
-export const HD_ENGINE_VERSION = "gaia-hd-v1";
+export const HD_ENGINE_VERSION = HD_STATE_ENGINE_VERSION;
 
 export type HumanDesignCanonicalFailureReason =
   | "canonical"
@@ -37,19 +38,7 @@ function utcDateTime(profile: HumanDesignBirthProfile): string | null {
 }
 
 export function isCanonicalHumanDesign(value: unknown): boolean {
-  if (!value || typeof value !== "object") return false;
-  const hd = value as Partial<HumanDesignChart>;
-  const status = String(hd.status || "").toLowerCase();
-  const source = String(hd.source || "").toLowerCase();
-  const quality = String(hd.calculationQuality || "").toLowerCase();
-  const invalidSources = new Set(["local-fallback", "fallback_approximation", "pending", "error"]);
-  return Boolean(
-    hd.type
-      && ["ready", "verified"].includes(status)
-      && !invalidSources.has(source)
-      && quality !== "fallback_approximation"
-      && hd.hdEngineVersion === HD_ENGINE_VERSION,
-  );
+  return getHdState(value).state === "CANONICAL";
 }
 
 export function getHumanDesignCanonicalFailureReason(
