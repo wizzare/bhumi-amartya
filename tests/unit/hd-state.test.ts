@@ -20,8 +20,20 @@ const historicalBuild70to73 = {
 const historicalState = getHdState(historicalBuild70to73);
 equal(historicalState.state, "FALLBACK_LABELED", "Build 70-73 chart is labeled fallback");
 equal(historicalState.type, "Generator", "historical type is preserved");
+equal(historicalState.provenance, "historical", "Build 70-73 chart remains distinct from a failed local calculation");
 equal(historicalState.needsUpgrade, true, "historical chart remains eligible for canonical upgrade");
 equal(isCanonicalHumanDesign(historicalBuild70to73), false, "historical chart is not canonical");
+
+const localFallbackState = getHdState({
+  type: "Generator",
+  status: "ready",
+  source: "local-fallback",
+  calculationQuality: "verified",
+  hdEngineVersion: "gaia-hd-v1",
+});
+equal(localFallbackState.state, "FALLBACK_LABELED", "local fallback remains non-canonical");
+equal(localFallbackState.provenance, "local_fallback", "failed local calculation is not labeled historical");
+equal(localFallbackState.needsUpgrade, true, "local fallback remains eligible for a complete calculation");
 
 const canonicalChart = {
   type: "Projector",

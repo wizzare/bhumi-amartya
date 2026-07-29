@@ -45,6 +45,12 @@ export function CoreIdentity({
       case "CANONICAL":
         return { value: humanDesignType || "Belum tersedia" };
       case "FALLBACK_LABELED":
+        if (hdState.provenance === "local_fallback") {
+          return {
+            value: humanDesignType || "Perhitungan belum berhasil",
+            subValue: "Perhitungan belum berhasil, akan dicoba lagi",
+          };
+        }
         return {
           value: humanDesignType || "Data historis",
           subValue: "Data historis, perlu kalkulasi ulang",
