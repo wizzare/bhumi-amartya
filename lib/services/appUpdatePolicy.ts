@@ -29,20 +29,26 @@ export function evaluateAppUpdateStatus(
   if (remoteConfig) {
     latestVersion = String(remoteConfig.latestVersion || remoteConfig.currentVersion || latestVersion);
     updateUrl = String(remoteConfig.updateUrl || updateUrl);
-    forceUpdate = remoteConfig.forceUpdate === true;
 
-    let remoteMinBuild: number | null = null;
-    if (typeof remoteConfig.minimumSupportedVersionCode !== "undefined") {
-      remoteMinBuild = parseInt(String(remoteConfig.minimumSupportedVersionCode), 10);
-    } else if (typeof remoteConfig.minimumBuild !== "undefined") {
-      remoteMinBuild = parseInt(String(remoteConfig.minimumBuild), 10);
-    } else if (remoteConfig.forceUpdate === true) {
-      console.warn("[APP UPDATE] Legacy forceUpdate active but minimumBuild missing.");
-    }
+    // minimumSupportedVersionCode, minimumBuild, and forceUpdate are Android
+    // release controls. Web has no independently versioned binary, so it must
+    // not be locked by an Android minimum until a separate web policy exists.
+    if (buildInfo.platform === "android") {
+      forceUpdate = remoteConfig.forceUpdate === true;
 
-    if (remoteMinBuild !== null && !isNaN(remoteMinBuild)) {
-      minimumBuild = Math.max(remoteMinBuild, minimumBuild);
-      configSource = "firestore";
+      let remoteMinBuild: number | null = null;
+      if (typeof remoteConfig.minimumSupportedVersionCode !== "undefined") {
+        remoteMinBuild = parseInt(String(remoteConfig.minimumSupportedVersionCode), 10);
+      } else if (typeof remoteConfig.minimumBuild !== "undefined") {
+        remoteMinBuild = parseInt(String(remoteConfig.minimumBuild), 10);
+      } else if (remoteConfig.forceUpdate === true) {
+        console.warn("[APP UPDATE] Legacy forceUpdate active but minimumBuild missing.");
+      }
+
+      if (remoteMinBuild !== null && !isNaN(remoteMinBuild)) {
+        minimumBuild = Math.max(remoteMinBuild, minimumBuild);
+        configSource = "firestore";
+      }
     }
   }
 

@@ -150,8 +150,10 @@ function test(label: string, condition: boolean) {
 // PLATFORM WEB: not affected by Android-only constraints
 {
   const status = evaluateAppUpdateStatus(androidBuild(78, "web"), config());
-  test("web platform: build 78 outdated", status.isOutdated === true);
-  test("web platform: policy immediate_required", status.policy === "immediate_required");
+  test("web platform: ignores Android remote minimum", status.minimumBuild === 0);
+  test("web platform: build 78 is not outdated", status.isOutdated === false);
+  test("web platform: Android force update is not immediate_required", status.policy === "no_update");
+  test("web platform: Android remote config is not a version gate source", status.configSource === "default");
 }
 
 // OLDER CONFIG SCHEMA: minimumBuild instead of minimumSupportedVersionCode

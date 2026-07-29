@@ -14,7 +14,6 @@ import {
 import { app, auth, db } from '@/lib/firebase/firebase';
 import { getActiveUserId } from '@/lib/auth/getActiveUserId';
 import { readOwnedCacheObject, writeOwnedCacheObject } from '@/lib/storage/derivedCacheOwnership';
-import { repairHumanDesignIfPossible } from '@/lib/humandesign/repairHumanDesign';
 import { settleWithTimeout } from '@/lib/storage/settleWithTimeout';
 
 // Storage Provider Interface
@@ -521,25 +520,15 @@ class FirebaseStorageProvider implements StorageProvider {
   async getUserBlueprint(): Promise<UserBlueprint | null> {
     const uid = this.getCurrentUserId();
     if (!uid) return null;
-    const [blueprint, profile] = await Promise.all([
-      firebaseService.getUserBlueprint(uid),
-      firebaseService.getUserProfile(uid).catch(() => null),
-    ]);
+    const blueprint = await firebaseService.getUserBlueprint(uid);
 
     if (blueprint && blueprint.uid !== uid) {
        console.warn("[USER DATA MISMATCH BLOCKED]", { reason: "blueprint_load_uid_mismatch", activeUid: uid, blueprintUid: blueprint.uid });
        return null;
     }
-    const repair = blueprint ? repairHumanDesignIfPossible(blueprint as any, profile as any) : null;
-    if (repair?.repaired) {
-      console.log("[BLUEPRINT HD REPAIR]", {
-        uid,
-        source: "firebase",
-        reason: repair.reason,
-      });
-      await firebaseService.saveUserBlueprint(repair.blueprint as UserBlueprint);
-      return repair.blueprint as UserBlueprint;
-    }
+
+    // Reads must not mutate user data. repairHumanDesignIfPossible remains an
+    // explicit repair utility and must be invoked only by a deliberate action.
     return blueprint;
   }
 
