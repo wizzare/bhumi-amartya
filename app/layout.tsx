@@ -7,6 +7,7 @@ import { APP_VERSION, RELEASE_NAME } from "@/src/lib/version";
 import { GentleNightReminderLifecycle } from "@/components/notifications/GentleNightReminderLifecycle";
 import { ActivityTracker } from "@/components/analytics/ActivityTracker";
 import { VersionChecker } from "@/components/global/VersionChecker";
+import { BillingBootstrap } from "@/components/billing/BillingBootstrap";
 
 export const metadata: Metadata = {
 
@@ -38,6 +39,7 @@ export default function RootLayout({
 
         <VersionChecker>
           <AuthProvider>
+            <BillingBootstrap />
             <ActivityTracker />
             <LanguageProvider>
               <GentleNightReminderLifecycle />
