@@ -584,8 +584,8 @@ export function buildProfileDailyGuidance(input: DailySynthesisInput): DailyGuid
   const { uid, profile, blueprint, arsipViewModel, localDateKey, timezone } = input;
   const now = input.referenceDate ?? new Date(`${localDateKey}T12:00:00`);
   const name = cleanText(profile.fullName || profile.displayName || profile.name) || "Sahabat Bhumi";
-  const seed = `${uid}:${localDateKey}:${arsipViewModel.contentVersion}:${generateBlueprintHash(blueprint)}`;
-  const arsip = buildArsipBundle(arsipViewModel, seed);
+  const dailySynthesisSeed = `${uid}:${localDateKey}:${arsipViewModel.contentVersion}:${generateBlueprintHash(blueprint)}`;
+  const arsip = buildArsipBundle(arsipViewModel, dailySynthesisSeed);
   const astrology = buildAstrologyBundle(blueprint, localDateKey);
   const environment = buildEnvironmentBundle(profile, blueprint, timezone);
   const journey = buildJourneyBundle(profile);
@@ -605,6 +605,7 @@ export function buildProfileDailyGuidance(input: DailySynthesisInput): DailyGuid
       schemaVersion: DAILY_GUIDANCE_SCHEMA_VERSION,
       generatedWithPromptVersion: DAILY_GUIDANCE_PROMPT_VERSION,
       guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
+      dailySynthesisSeed,
       dailySynthesisState: "unavailable",
       dailySynthesisSources: { arsipAkashi: false, dailyAstrology: astrology.available, environment: environment.available, journey: journey.available },
       dailyConclusion: { title: "Kesimpulan Hari Ini", text, localDateKey, timezone, owner: "daily-synthesis", sourceVersion: SOURCE_VERSION },
@@ -632,7 +633,7 @@ export function buildProfileDailyGuidance(input: DailySynthesisInput): DailyGuid
   const { paragraphs, conclusion } = buildParagraphs({
     name,
     dateLabel: formatDate(localDateKey, timezone),
-    seed,
+    seed: dailySynthesisSeed,
     arsip,
     astrology,
     environment,
@@ -648,7 +649,7 @@ export function buildProfileDailyGuidance(input: DailySynthesisInput): DailyGuid
     schemaVersion: DAILY_GUIDANCE_SCHEMA_VERSION,
     generatedWithPromptVersion: DAILY_GUIDANCE_PROMPT_VERSION,
     guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
-    dailyVariationSeed: seed,
+    dailySynthesisSeed,
     blueprintHash: generateBlueprintHash(blueprint),
     memoryHash: generateMemoryHash({ profile, localDateKey, timezone, arsipRooms: arsip.contributingRooms }),
     dailySynthesisState: state,
@@ -675,7 +676,7 @@ export function buildProfileDailyGuidance(input: DailySynthesisInput): DailyGuid
     previousProgressSummary: journey.available ? "Journey context tersedia." : "Journey context tidak tersedia.",
     profileSnapshot: profile,
     blueprintSnapshot: blueprint,
-    categories: buildDailyCategories({ seed, arsip, astrology, environment, journey, state }),
+    categories: buildDailyCategories({ seed: dailySynthesisSeed, arsip, astrology, environment, journey, state }),
     manifestation: {
       affirmation: "Hari ini aku memilih bergerak dengan ritme yang jujur dan membumi.",
       attraction: "Aku membuka ruang bagi kesempatan yang sesuai dengan pusat diriku.",

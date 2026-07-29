@@ -45,6 +45,8 @@ export type DailyGuidance = {
   generatedWithPromptVersion?: string;
   guidanceVersion?: string;
   dailyVariationSeed?: string;
+  /** Deterministic seed for the Arsip-backed Catatan synthesis only. */
+  dailySynthesisSeed?: string;
   promptContextLength?: number;
   generatedAt?: string;
   profileSnapshot: Record<string, unknown> | null;

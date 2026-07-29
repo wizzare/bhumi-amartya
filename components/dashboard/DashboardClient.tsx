@@ -110,7 +110,7 @@ function withCanonicalDailyConclusion(
     dailyNoteText: catatanGuidance.dailyNoteText,
     soulReflectionText: catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText,
     categories: catatanGuidance.categories ?? guidance.categories,
-    dailyVariationSeed: catatanGuidance.dailyVariationSeed ?? guidance.dailyVariationSeed,
+    dailySynthesisSeed: catatanGuidance.dailySynthesisSeed,
   };
 }
 
@@ -398,7 +398,6 @@ export function DashboardClient() {
         const normalized = withCanonicalDailyConclusion(normalizeUserFacingGuidance(existing, p), uid, p, b, today, timezone);
         setDailyGuidance(normalized);
         window.localStorage.setItem(localCacheKey, JSON.stringify(normalized));
-        await dailyGuidanceRepository.saveDailyGuidance(normalized).catch(() => {});
         setDgLoading(false);
         return;
       }
