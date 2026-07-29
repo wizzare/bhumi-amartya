@@ -87,3 +87,11 @@ android/keystore.properties
 secure/
 *adminsdk*.json
 *service-account*.json
+
+# IDE Caches & Build Artifacts
+.idea/
+app/.idea/
+tsconfig.tsbuildinfo
+output/
+test-results/
+
