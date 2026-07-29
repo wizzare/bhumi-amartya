@@ -175,7 +175,12 @@ export function DashboardClient() {
       setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel, referenceDate: appNow, timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null }));
     } catch (error) {
       console.warn("[WEEKLY_GUIDANCE_BUILD_FAILED]", error);
-      setWeeklyGuidance(null);
+      try {
+        const fallbackArsip = { status: "unavailable" as const, readings: [] as any[], rooms: [] as any[], soulLetters: [] as any[], synthesisVersion: "1.0", contentVersion: "1.0" };
+        setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel: fallbackArsip, referenceDate: appNow, timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null }));
+      } catch {
+        setWeeklyGuidance(null);
+      }
     }
   }, [auth?.user?.uid, profile, blueprint, loading, appDateKey, appTimezone, appNow]);
 

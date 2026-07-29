@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { Sparkles, ArrowRight, X } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { userRepository } from "@/lib/repositories/userRepository";
@@ -11,6 +11,12 @@ interface PendingHdRecoveryBannerProps {
   uid: string;
   blueprint: any;
   profile: any;
+}
+
+function hasBirthData(profile: any): boolean {
+  const time = profile?.birthTime || profile?.timeOfBirth;
+  const place = profile?.birthCity || profile?.birthPlace || profile?.cityOfBirth || profile?.placeOfBirth;
+  return Boolean(time) && Boolean(place);
 }
 
 export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRecoveryBannerProps) {
@@ -26,7 +32,6 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   const status = String(hd?.status || hd?.calculationStatus || "").toLowerCase();
   const type = hd?.type || hd?.energyType;
 
-  // Check if status is pending, missing input, missing location, or needs verified timezone
   const isPendingStatus =
     status === "pending" ||
     status === "missing-input" ||
@@ -34,8 +39,44 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
     status === "needs_verified_timezone" ||
     (!type && !isCanonicalHumanDesign(hd));
 
-  // Check if user has already dismissed the banner in Firestore
   const isFirestoreDismissed = Boolean(profile?.hdDismissedAt);
+
+  const isRetriableError = status === "retriable_error";
+  const isMissingBirthData = !hasBirthData(profile);
+  const isLabeledFallback = type && !isCanonicalHumanDesign(hd);
+
+  const { title, message, buttonLabel, buttonAction } = useMemo(() => {
+    if (isMissingBirthData) {
+      return {
+        title: "Data Kelahiran Belum Lengkap",
+        message: "Lengkapi jam dan kota lahirmu agar peta jiwamu bisa terbaca dengan presisi.",
+        buttonLabel: "Lengkapi Sekarang",
+        buttonAction: "settings" as const,
+      };
+    }
+    if (isRetriableError) {
+      return {
+        title: "Perhitungan Terkendala",
+        message: "Peta Human Design belum selesai dihitung. Silakan coba lagi atau muat ulang halaman.",
+        buttonLabel: "Coba Lagi",
+        buttonAction: "reload" as const,
+      };
+    }
+    if (isLabeledFallback) {
+      return {
+        title: "Pembacaan Sementara",
+        message: "Peta Human Design sedang dalam penyempurnaan. Pembacaan saat ini bersifat sementara dan akan diperbarui.",
+        buttonLabel: "Muat Ulang",
+        buttonAction: "reload" as const,
+      };
+    }
+    return {
+      title: "Perhitungan Sedang Berlangsung",
+      message: "Peta Human Design sedang diproses. Hasil akan muncul setelah perhitungan selesai.",
+      buttonLabel: "Coba Lagi Nanti",
+      buttonAction: "reload" as const,
+    };
+  }, [isMissingBirthData, isRetriableError, isLabeledFallback]);
 
   if (!isPendingStatus || isFirestoreDismissed || localDismissed) {
     return null;
@@ -58,7 +99,11 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   };
 
   const handleActionClick = () => {
-    router.push("/settings");
+    if (buttonAction === "settings") {
+      router.push("/settings");
+    } else {
+      window.location.reload();
+    }
   };
 
   return (
@@ -75,7 +120,7 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
             </div>
             <div>
               <h4 className="font-serif font-bold text-base tracking-wide text-amber-100">
-                Pesan dari Bhumi ✨
+                {title}
               </h4>
             </div>
           </div>
@@ -90,15 +135,15 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         </div>
 
         <p className="text-xs leading-relaxed text-amber-50 font-normal">
-          Lengkapi jam dan kota lahirmu agar peta jiwamu bisa terbaca dengan presisi.
+          {message}
         </p>
 
         <button
           onClick={handleActionClick}
           className="w-full py-3.5 px-5 rounded-2xl bg-amber-100 hover:bg-white text-[#4F5E52] font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md"
         >
-          <span>Lengkapi Sekarang</span>
-          <ArrowRight size={16} />
+          <span>{buttonLabel}</span>
+          {buttonAction === "reload" ? <RefreshCw size={16} /> : <ArrowRight size={16} />}
         </button>
       </div>
     </div>
