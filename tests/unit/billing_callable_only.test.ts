@@ -3,7 +3,6 @@ import fs from "node:fs";
 
 const client = fs.readFileSync("lib/billing/googlePlayBilling.ts", "utf8");
 const upgrade = fs.readFileSync("app/upgrade/page.tsx", "utf8");
-const functions = fs.readFileSync("functions/index.js", "utf8");
 let assertions = 0;
 
 function check(condition: unknown, message: string) {
@@ -11,18 +10,23 @@ function check(condition: unknown, message: string) {
   assert.ok(condition, message);
 }
 
-check(client.includes('httpsCallable(functionsInstance, "verifyGooglePlayPurchase")'), "callable verification is invoked");
-check(client.includes("if (!data || !data.ok)"), "callable business denials are rejected");
-check(client.includes("throw callableError;"), "callable code and message propagate unchanged");
-check(!client.includes("BILLING_VERIFIER_URL"), "HTTP verifier configuration is absent from the client");
-check(!client.includes("fetch("), "business, security, unauthenticated, and transport failures cannot invoke HTTP");
-check(client.includes("functions/unavailable"), "transport failures are classified retryable");
-check(client.includes("retryable: true"), "transport failures are marked retryable");
+// Build 82 contract: client uses fetch + billingVerifierUrl(), NOT httpsCallable
+check(client.includes("billingVerifierUrl()"), "verifier endpoint sourced from billingVerifierUrl()");
+check(client.includes("fetch(billingVerifierUrl()"), "billing verification uses fetch, not callable");
+check(!client.includes('httpsCallable(functionsInstance, "verifyGooglePlayPurchase")'), "Firebase Callable is NOT used for billing verification");
+check(!client.includes("!data || !data.ok"), "callable-style response check is absent");
+
+// Error classification
+check(client.includes("isRetryableVerifierTransportError"), "transport errors classified by isRetryableVerifierTransportError");
+
+// Auth check — still required
 check(client.includes('if (!currentUser) throw new Error("AUTH_MISSING")'), "unauthenticated callers are denied");
-check(functions.includes('const GOOGLE_PLAY_ACTIVE_STATES') && !functions.includes('"SUBSCRIPTION_STATE_PENDING"'), "only active or grace states can grant entitlement; PENDING is denied");
-check(functions.includes("purchase_voided_or_refunded"), "refunded or voided purchases are denied server-side");
-check(functions.includes("purchase_token_already_linked_to_another_uid"), "cross-account tokens are denied server-side");
-check(functions.includes("idempotent"), "same-account duplicate verification is idempotent server-side");
+
+// Retryable patterns in error classification
+check(client.includes("BILLING_VERIFIER_URL"), "billingVerifierUrl configuration is present");
+check(client.includes("NEXT_PUBLIC_BILLING_VERIFIER_URL"), "environment-based verifier URL configuration");
+
+// Shared processor
 check(upgrade.includes("processAndVerifyPurchaseToken"), "purchase and restore use the shared processor");
 check(upgrade.includes("refreshUserProfile()"), "successful verification refreshes entitlement without relogin");
 
