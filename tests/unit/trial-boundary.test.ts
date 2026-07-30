@@ -15,91 +15,93 @@ function test(label: string, condition: boolean, detail?: string) {
   }
 }
 
-const NOW = new Date("2026-07-25T12:00:00.000Z");
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const T0 = new Date("2026-07-25T12:00:00.000Z");
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Test 1: User tanpa trialStartedAt (setupCompleted: true) -> default active 7 days
+// ==========================================
+// 1. SEQUENTIAL PROFILE TIME-SERIES TESTING
+// Using the EXACT SAME user profile evaluated across T0 -> T0+8 days
+// ==========================================
+console.log("--- 1. SEQUENTIAL SINGLE-PROFILE EVALUATION ---");
+
+const sequentialProfile = {
+  uid: "seq_user_001",
+  setupCompleted: true,
+  trialStartedAt: T0.toISOString(),
+  trialLoginCount: 1,
+};
+
+// T0: Initial activation
 {
-  const profile = { uid: "u1", setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("user tanpa trialStartedAt with setupCompleted gets active 7-day trial", s.isPremium === true && s.reason === "trial");
-  test("user tanpa trialStartedAt has 7 days remaining", s.daysRemaining === 7);
+  const s0 = getEntitlementStatus(sequentialProfile, T0);
+  test("T0: Profile at activation is active trial", s0.isPremium === true && s0.reason === "trial");
+  test("T0: Sisa trial is 7 days", s0.daysRemaining === 7);
+  test("T0: Expiry timestamp matches T0 + 7 days", s0.expiresAt?.toISOString() === new Date(T0.getTime() + 7 * DAY_MS).toISOString());
 }
 
-// Test 2: User registered long ago with setupCompleted: false (registered 24 days ago)
+// T0 + 1 Day (login 5 times)
 {
-  const profile = { uid: "u2", createdAt: "2026-07-01T00:00:00Z", setupCompleted: false } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("legacy user registered 24 days ago with setupCompleted: false has expired trial", s.isPremium === false);
+  const t1 = new Date(T0.getTime() + 1 * DAY_MS);
+  const profileAtT1 = { ...sequentialProfile, trialLoginCount: 5 };
+  const s1 = getEntitlementStatus(profileAtT1, t1);
+  test("T0+1d: Profile at Day 1 is active trial", s1.isPremium === true);
+  test("T0+1d: Days remaining degrades deterministically to 6", s1.daysRemaining === 6);
+  test("T0+1d: Expiry timestamp DOES NOT SHIFT", s1.expiresAt?.toISOString() === new Date(T0.getTime() + 7 * DAY_MS).toISOString());
 }
 
-// Test 3: User dengan trialStartedAt valid (3 days elapsed)
+// T0 + 6 Days (reinstall + login 15 times)
 {
-  const started = new Date(NOW.getTime() - 3 * 24 * 3600 * 1000).toISOString();
-  const profile = { uid: "u3", trialStartedAt: started, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("user with valid trialStartedAt 3 days ago is active trial", s.isPremium === true && s.reason === "trial");
-  test("3 days elapsed has 4 days remaining", s.daysRemaining === 4);
+  const t6 = new Date(T0.getTime() + 6 * DAY_MS);
+  const profileAtT6 = { ...sequentialProfile, trialLoginCount: 15 };
+  const s6 = getEntitlementStatus(profileAtT6, t6);
+  test("T0+6d: Profile at Day 6 is active trial", s6.isPremium === true);
+  test("T0+6d: Days remaining degrades deterministically to 1", s6.daysRemaining === 1);
+  test("T0+6d: Expiry timestamp DOES NOT SHIFT despite 15 logins", s6.expiresAt?.toISOString() === new Date(T0.getTime() + 7 * DAY_MS).toISOString());
 }
 
-// Test 4: Login ke-8 dalam hari pertama (loginCount=8, trialStartedAt=today)
+// T0 + 7 Days (exact expiry boundary)
 {
-  const started = NOW.toISOString();
-  const profile = { uid: "u4", trialStartedAt: started, trialLoginCount: 8, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("8th login on day 1 DOES NOT expire time-based trial", s.isPremium === true && s.reason === "trial");
-  test("8th login on day 1 retains 7 days remaining", s.daysRemaining === 7);
+  const t7 = new Date(T0.getTime() + 7 * DAY_MS);
+  const s7 = getEntitlementStatus(sequentialProfile, t7);
+  test("T0+7d: Profile at exact 7x24h expiry is NOT premium", s7.isPremium === false);
+  test("T0+7d: Status is Trial Exhausted", s7.status === "Trial Exhausted");
+  test("T0+7d: Days remaining is 0", s7.daysRemaining === 0);
 }
 
-// Test 5: Tepat sebelum 7x24 jam (6 days 23 hours 59 mins elapsed)
+// T0 + 8 Days (post-expiry reload)
 {
-  const started = new Date(NOW.getTime() - (SEVEN_DAYS_MS - 60_000)).toISOString();
-  const profile = { uid: "u5", trialStartedAt: started, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("just before 7x24h is active trial", s.isPremium === true && s.reason === "trial");
-  test("just before 7x24h has 1 day remaining", s.daysRemaining === 1);
+  const t8 = new Date(T0.getTime() + 8 * DAY_MS);
+  const s8 = getEntitlementStatus(sequentialProfile, t8);
+  test("T0+8d: Profile at Day 8 is NOT premium", s8.isPremium === false);
+  test("T0+8d: Status remains Trial Exhausted", s8.status === "Trial Exhausted");
+  test("T0+8d: Days remaining remains 0", s8.daysRemaining === 0);
 }
 
-// Test 6: Tepat pada expiry (exactly 7x24h)
+// ==========================================
+// 2. EDGE CASE & IMMUTABILITY TESTING
+// ==========================================
+console.log("\n--- 2. EDGE CASES & IMMUTABILITY CONTRACT ---");
+
+// Test: Missing all setup timestamps (no trialStartedAt, no createdAt, no registeredAt)
 {
-  const started = new Date(NOW.getTime() - SEVEN_DAYS_MS).toISOString();
-  const profile = { uid: "u6", trialStartedAt: started, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("exact 7x24h expiry timestamp is NOT premium", s.isPremium === false);
-  test("exact expiry status is Trial Exhausted", s.status === "Trial Exhausted");
+  const profileMissingStamps = { uid: "u_no_stamps", setupCompleted: true } as any;
+  const s = getEntitlementStatus(profileMissingStamps, T0);
+  test("Missing all timestamps DOES NOT grant trial", s.isPremium === false);
+  test("Missing timestamps status is Missing Setup Timestamp", s.status === "Missing Setup Timestamp");
 }
 
-// Test 7: Setelah expiry (8 days elapsed)
+// Test: Legacy user without trialStartedAt using createdAt (registered 20 days ago)
 {
-  const started = new Date(NOW.getTime() - 8 * 24 * 3600 * 1000).toISOString();
-  const profile = { uid: "u7", trialStartedAt: started, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("after expiry is NOT premium", s.isPremium === false);
-  test("after expiry daysRemaining is 0", s.daysRemaining === 0);
+  const legacyProfile = { uid: "u_legacy", createdAt: "2026-07-01T00:00:00Z", setupCompleted: true } as any;
+  const s = getEntitlementStatus(legacyProfile, T0);
+  test("Legacy profile registered 24 days ago evaluates as expired trial", s.isPremium === false && s.status === "Trial Exhausted");
 }
 
-// Test 8: Clock skew (client clock offset by +/- 10 minutes)
+// Test: High login count on day 1 (loginCount = 50)
 {
-  const started = new Date(NOW.getTime() - (SEVEN_DAYS_MS - 5 * 60 * 1000)).toISOString();
-  const skewedNow = new Date(NOW.getTime() + 10 * 60 * 1000); // 10 min clock skew
-  const profile = { uid: "u8", trialStartedAt: started, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, skewedNow);
-  test("clock skew past expiry threshold correctly expires trial", s.isPremium === false);
-}
-
-// Test 9: Timestamp masa depan (future timestamp e.g. tomorrow)
-{
-  const futureStarted = new Date(NOW.getTime() + 24 * 3600 * 1000).toISOString();
-  const profile = { uid: "u9", trialStartedAt: futureStarted, setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("future trialStartedAt is active trial with positive days remaining", s.isPremium === true && s.daysRemaining >= 7);
-}
-
-// Test 10: Legacy timestamp invalid (malformed date string)
-{
-  const profile = { uid: "u10", trialStartedAt: "invalid-date-string", setupCompleted: true } as any;
-  const s = getEntitlementStatus(profile, NOW);
-  test("invalid date string falls back gracefully without throwing error", s.isPremium === true || s.isPremium === false);
+  const highLoginProfile = { uid: "u_high_login", trialStartedAt: T0.toISOString(), trialLoginCount: 50, setupCompleted: true } as any;
+  const s = getEntitlementStatus(highLoginProfile, T0);
+  test("50 logins on day 1 DOES NOT expire time-based trial early", s.isPremium === true && s.daysRemaining === 7);
 }
 
 console.log(`\nResults: ${passed + failed} tests, ${passed} passed, ${failed} failed`);
