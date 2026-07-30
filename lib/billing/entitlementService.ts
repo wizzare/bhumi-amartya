@@ -174,21 +174,26 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
     expiredSubscriberAt = expiry;
   }
 
-  // 4. Internal Bhumi 7-Successful-Login Trial (Rule Priority 4)
-  const loginCount = typeof profile.trialLoginCount === "number" ? profile.trialLoginCount : (profile.setupCompleted ? 1 : 0);
-  const normalizedPlan = String(profile.plan).toLowerCase();
+  // 4. Time-Based 7-Day Free Trial (Rule Priority 4)
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const trialStart = toDate(profile.trialStartedAt) || toDate(profile.accessStart) || toDate(profile.createdAt) || toDate(profile.registeredAt);
+  const trialEnd = toDate(profile.trialEndsAt) || toDate(profile.accessUntil) || (trialStart ? new Date(trialStart.getTime() + SEVEN_DAYS_MS) : (profile.setupCompleted ? new Date(now.getTime() + SEVEN_DAYS_MS) : null));
+
+  const normalizedPlan = String(profile.plan || "").toLowerCase();
   const isExplicitFree = profile.trialStatus === "free" || normalizedPlan === "free" || normalizedPlan === "expired";
-  if (loginCount <= 7 && !isExplicitFree) {
-    const rem = Math.max(0, 7 - loginCount);
+
+  if (trialEnd && now < trialEnd && !isExplicitFree) {
+    const msLeft = trialEnd.getTime() - now.getTime();
+    const daysRemaining = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
     return {
       isPremium: true,
       reason: "trial",
-      expiresAt: null,
-      daysRemaining: rem,
+      expiresAt: trialEnd,
+      daysRemaining,
       effectiveTier: "Trial",
-      source: "7-Login Trial",
+      source: "7-Day Trial",
       status: "Active",
-      trialLoginsRemaining: `Sisa Kuota Login: ${rem}/7`,
+      trialLoginsRemaining: `Sisa Trial: ${daysRemaining} Hari`,
     };
   }
 
@@ -206,15 +211,15 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
   }
 
   // 5. Everyone Else - Free account
-  const isExhausted = loginCount > 7 && normalizedPlan !== "free";
+  const isTrialExhausted = Boolean(trialEnd && now >= trialEnd);
   return {
     isPremium: false,
     reason: "none",
-    expiresAt: null,
+    expiresAt: trialEnd,
     daysRemaining: 0,
-    effectiveTier: isExhausted ? "Free (Trial Exhausted)" : "Free",
+    effectiveTier: isTrialExhausted ? "Free (Trial Exhausted)" : "Free",
     source: "Free Account",
-    status: isExhausted ? "Trial Exhausted" : "Free Access",
-    trialLoginsRemaining: isExhausted ? "Sisa Kuota Login: 0/7" : null,
+    status: isTrialExhausted ? "Trial Exhausted" : "Free Access",
+    trialLoginsRemaining: isTrialExhausted ? "Sisa Trial: 0 Hari" : null,
   };
 }
