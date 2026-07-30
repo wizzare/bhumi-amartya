@@ -14,9 +14,7 @@ export function getHdApiUrl(): string {
   if (typeof window !== "undefined") {
     return "/api/humandesign/calculate";
   }
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL || "http://localhost:3000";
-  const baseUrl = appUrl.startsWith("http") ? appUrl : `https://${appUrl}`;
-  return `${baseUrl}/api/humandesign/calculate`;
+  return "https://bhumi-human-design-api.vercel.app/calculate";
 }
 
 export const HD_API_URL: string = getHdApiUrl();

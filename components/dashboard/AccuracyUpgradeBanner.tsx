@@ -25,14 +25,21 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
   const handleUpgrade = async () => {
     setLoading(true);
     try {
-      // Force recalculation using Kit (which now calls Python engine)
+      const birthDate = profile?.birthDate || profile?.dateOfBirth || profile?.profile?.birthDate;
+      const birthTime = profile?.birthTime || profile?.timeOfBirth || profile?.profile?.birthTime;
+      const birthCity = profile?.birthCity || profile?.birthPlace || profile?.cityOfBirth || profile?.placeOfBirth || profile?.profile?.birthCity;
+      const timezone = profile?.timezone || profile?.profile?.timezone || "+07:00";
+      const latitude = profile?.latitude ?? profile?.profile?.latitude ?? null;
+      const longitude = profile?.longitude ?? profile?.profile?.longitude ?? null;
+
+      // Force recalculation using Python engine
       const nextHD = await calculateHumanDesign({
-        birthDate: profile.birthDate,
-        birthTime: profile.birthTime,
-        birthCity: profile.birthCity,
-        timezone: profile.timezone,
-        latitude: profile.latitude,
-        longitude: profile.longitude,
+        birthDate,
+        birthTime,
+        birthCity,
+        timezone,
+        latitude,
+        longitude,
       });
 
       const nextBlueprint = {
