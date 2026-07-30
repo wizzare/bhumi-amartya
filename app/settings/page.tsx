@@ -33,9 +33,10 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import type { UserProfile as StorageUserProfile, UserBlueprint as StorageUserBlueprint } from "@/lib/firebase/service";
 import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
-import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/founderTesterSourceOfTruth";
+import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/registrationPolicy";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { cancelDailyReminders, getDailyReminderEnabled, refreshGentleNightReminder, setDailyReminderEnabled } from "@/lib/notifications/gentleNightReminder";
 import { Capacitor } from "@capacitor/core";
@@ -200,6 +201,7 @@ export default function SettingsPage() {
   const auth = useAuth();
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -276,6 +278,7 @@ export default function SettingsPage() {
         return;
       }
       setOriginalProfile(activeProfile);
+      getFounderTesterRecord(activeProfile.uid).then(setTesterRecord).catch(() => setTesterRecord(null));
       setFullName(normalizedProfile.displayName);
       setEmail(normalizedProfile.email || googleEmail || "");
       setBirthDate(normalizedProfile.birthDate);
@@ -314,8 +317,8 @@ export default function SettingsPage() {
   }, [originalProfile]);
 
   const entitlement = useMemo(() => {
-    return getEntitlementStatus(originalProfile as any);
-  }, [originalProfile]);
+    return getEntitlementStatus(originalProfile as any, new Date(), testerRecord);
+  }, [originalProfile, testerRecord]);
 
   const billingPresentation = useMemo(() => {
     return getBillingPresentation(entitlement);
