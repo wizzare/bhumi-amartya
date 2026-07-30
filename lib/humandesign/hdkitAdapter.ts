@@ -220,10 +220,44 @@ export const normalizeHdkitBodygraph = (bodygraph: HdkitBodygraphLike): HumanDes
 
 const HD_REQUEST_TIMEOUT_MS = 15_000;
 
-function fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
+async function fetchWithAuthAndTimeout(
+  url: string,
+  body: Record<string, unknown>,
+  timeoutMs: number,
+): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // 1. Retrieve Firebase Auth ID Token if user is logged in
+  try {
+    const { auth } = await import("@/lib/firebase/config");
+    const user = auth?.currentUser;
+    if (user) {
+      const idToken = await user.getIdToken();
+      if (idToken) {
+        headers["Authorization"] = `Bearer ${idToken}`;
+      }
+    }
+  } catch (e) {
+    // Ignore client auth retrieval errors; fallback to headerless or dev bypass
+  }
+
+  // 2. Dev mode / test bypass header for local dev environment
+  if (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN === "true") {
+    headers["x-dev-secret"] = "bhumi-dev-bypass";
+  }
+
+  return fetch(url, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    signal: controller.signal,
+    cache: "no-store",
+  }).finally(() => clearTimeout(timer));
 }
 
 export async function calculateWithHdkit(
@@ -232,20 +266,14 @@ export async function calculateWithHdkit(
 ): Promise<HumanDesignChart> {
   try {
     const apiUrl = getHdApiUrl();
-    const response = await fetchWithTimeout(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fullName: "User",
-        birthDate: profile.birthDate,
-        birthTime: profile.birthTime,
-        birthPlace: profile.birthCity,
-        timezone: profile.timezone,
-        latitude: profile.latitude,
-        longitude: profile.longitude,
-      }),
+    const response = await fetchWithAuthAndTimeout(apiUrl, {
+      fullName: "User",
+      birthDate: profile.birthDate,
+      birthTime: profile.birthTime,
+      birthPlace: profile.birthCity,
+      timezone: profile.timezone,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
     }, HD_REQUEST_TIMEOUT_MS);
 
     const data = await response.json();

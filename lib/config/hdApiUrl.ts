@@ -1,20 +1,42 @@
+import { Capacitor } from "@capacitor/core";
+
+const CANONICAL_VERCEL_API_URL = "https://bhumi-human-design-api.vercel.app/calculate";
+
 /**
- * Canonical URL for the Human Design calculation API.
+ * Runtime-aware URL resolution for Human Design calculation API.
  *
- * - Web dev (next dev):  falls back to "/api/humandesign/calculate"
- *   which is handled by the Next.js API route on the dev server.
- * - Android APK (production):  NEXT_PUBLIC_HUMAN_DESIGN_API_URL must be
- *   set to the HTTPS Cloud Run endpoint, e.g.
- *   "https://bhumi-humandesign-api-xxxxx.a.run.app/calculate"
+ * Rules:
+ * 1. Environment Override: `process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL` if present.
+ * 2. Capacitor Android/iOS Native APK: MUST use absolute HTTPS URL (never relative `/api/...`).
+ * 3. Web Production / Staging: Uses web API proxy route `/api/humandesign/calculate` or absolute web URL.
+ * 4. Web Localhost (Dev Server): Uses relative route `/api/humandesign/calculate`.
  */
-export function getHdApiUrl(): string {
-  if (process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL) {
-    return process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+export function getHdApiUrl(options?: {
+  envUrl?: string;
+  isNative?: boolean;
+  isProd?: boolean;
+  isWindow?: boolean;
+  webOrigin?: string;
+}): string {
+  const envUrl = options?.envUrl ?? process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim();
   }
-  if (typeof window !== "undefined") {
+
+  const isNative = options?.isNative ?? (typeof Capacitor !== "undefined" && typeof Capacitor.isNativePlatform === "function" && Capacitor.isNativePlatform());
+
+  // Rule: Native Capacitor Android / iOS APK MUST ALWAYS use absolute HTTPS backend endpoint.
+  if (isNative) {
+    const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL || "https://bhumi-amartya.vercel.app";
+    return `${webAppUrl.replace(/\/$/, "")}/api/humandesign/calculate`;
+  }
+
+  const isWindow = options?.isWindow ?? (typeof window !== "undefined");
+  if (isWindow) {
     return "/api/humandesign/calculate";
   }
-  return "https://bhumi-human-design-api.vercel.app/calculate";
+
+  return CANONICAL_VERCEL_API_URL;
 }
 
 export const HD_API_URL: string = getHdApiUrl();
