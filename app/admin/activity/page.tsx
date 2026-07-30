@@ -39,7 +39,7 @@ import { shouldIncludeInAdminAnalytics, getExcludedUids, isAdminExcludedAccount,
 import { getHdState, type HdState, type HdStateResult } from "@/lib/humandesign/hdState";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
-import { getFounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
+import { getFounderTesterRecordsByUids, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -386,10 +386,20 @@ async function getUidRows(collectionName: string, uid: string): Promise<any[]> {
   return snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 }
 
-function normalizeUser(rawUserData: any): FounderUser | null {
+function normalizeUser(rawUserData: any, testerRecord: FounderTesterRecord | null = null): FounderUser | null {
   const email = String(rawUserData.email || "");
   const displayName = String(rawUserData.name || rawUserData.fullName || rawUserData.displayName || "Jiwa");
   if (email.includes("bhumi.qa.delete") || displayName.includes("QA Delete Account")) return null;
+
+  // Merge the Firestore-backed tester registry record onto rawUserData (mutated in
+  // place) so it flows through to `rawUser` on the returned FounderUser below, and
+  // is visible later wherever selectedUser.rawUser is read (e.g. formatEntitlementDisplay).
+  if (testerRecord) {
+    rawUserData.__testerRecord = testerRecord;
+  }
+  if (testerRecord && !rawUserData.testerBadge) {
+    rawUserData.testerBadge = testerRecord.badge;
+  }
 
   const metrics = rawUserData.participationMetrics || {};
   const activeDays: string[] = Array.isArray(metrics.activeDays)
@@ -409,12 +419,6 @@ function normalizeUser(rawUserData: any): FounderUser | null {
   const lastLogin = metrics.lastLoginAt ?? rawUserData.lastLoginAt ?? null;
   const lastSeen = metrics.lastSeen ?? rawUserData.lastSeen ?? lastLogin;
   const membership = String(rawUserData.membershipType || rawUserData.membershipStatus || rawUserData.subscriptionStatus || "").toLowerCase();
-  const testerRecord = getFounderTesterRecord({
-    uid: String(rawUserData.uid || rawUserData.id || ""),
-    email,
-    fullName: displayName,
-    displayName,
-  });
   const badge = String(testerRecord?.badge || rawUserData.testerBadge || rawUserData.guardianBadge || rawUserData.badge || rawUserData.recognitionTier || "");
   const isPremium = rawUserData.isPremium === true
     || membership.includes("premium")
@@ -686,7 +690,12 @@ export default function AdminActivityPage() {
     setError(null);
     try {
       const userRows = await adminRepository.getAllUsersForMonitoring();
-      const normalized = userRows.map(normalizeUser).filter(Boolean) as FounderUser[];
+      const testerRecordsByUid = await getFounderTesterRecordsByUids(
+        userRows.map((row: any) => String(row.uid || row.id || "")),
+      ).catch(() => new Map<string, FounderTesterRecord>());
+      const normalized = userRows
+        .map((row: any) => normalizeUser(row, testerRecordsByUid.get(String(row.uid || row.id || "")) || null))
+        .filter(Boolean) as FounderUser[];
       const excludedUids = deriveAdminExcludedUids(normalized);
       const analyticsFiltered = normalized.filter((u) => !isAdminExcludedAccount({ email: u.email, uid: u.uid, excludedUids }));
       const [activityResult, analyticsResult] = await Promise.allSettled([
@@ -1777,16 +1786,11 @@ function formatEntitlementDisplay(rawUser: Record<string, unknown> | null | unde
     setupCompleted: rawUser.setupCompleted === true,
   } as unknown as UserProfile;
 
-  const testerRecord = getFounderTesterRecord({
-    uid: profile.uid,
-    email: profile.email,
-    fullName: profile.fullName,
-    displayName: profile.displayName,
-  });
+  // profile.testerBadge already reflects the Firestore tester-registry lookup,
+  // merged in by normalizeUser() when this user's rawUser was first loaded.
+  const badgeDisplay = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge || "No data";
 
-  const badgeDisplay = testerRecord?.badge || profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge || "No data";
-
-  const entitlement = getEntitlementStatus(profile);
+  const entitlement = getEntitlementStatus(profile, new Date(), (rawUser as any)?.__testerRecord || null);
 
   const rows: Array<[string, string]> = [
     ["Badge", badgeDisplay],
