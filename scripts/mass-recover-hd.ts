@@ -1,7 +1,8 @@
 import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth, UserRecord } from "firebase-admin/auth";
-import { readFileSync, existsSync } from "fs";
+import { readFileSync, existsSync, writeFileSync } from "fs";
+import { createHash } from "crypto";
 import { getHdState } from "../lib/humandesign/hdState";
 
 const SA_PATHS = [
@@ -27,6 +28,12 @@ function getAdmin() {
 
 const { db, auth } = getAdmin();
 
+const PENDING_STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+
+function hashUid(uid: string): string {
+  return createHash("sha256").update(uid).digest("hex").slice(0, 12);
+}
+
 function getBirthProfile(userDoc: any) {
   const birthDate = userDoc?.birthDate || userDoc?.dateOfBirth || userDoc?.profile?.birthDate || userDoc?.profile?.blueprintInput?.birthDate;
   const birthTime = userDoc?.birthTime || userDoc?.timeOfBirth || userDoc?.profile?.birthTime || userDoc?.profile?.blueprintInput?.birthTime;
@@ -41,35 +48,65 @@ function getBirthProfile(userDoc: any) {
   return null;
 }
 
-async function fetchDocsMap(uids: string[], collectionName: string) {
+function parseCliArgs() {
+  const args = process.argv.slice(2);
+  const isExecute = args.includes("--execute");
+  const isDryRun = args.includes("--dry-run") || !isExecute;
+
+  let limit: number | null = null;
+  let canary: number | null = null;
+  let targetStateFilter: string | null = null;
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--limit" && args[i + 1]) limit = parseInt(args[i + 1], 10);
+    if (args[i] === "--canary" && args[i + 1]) canary = parseInt(args[i + 1], 10);
+    if (args[i] === "--state" && args[i + 1]) targetStateFilter = args[i + 1].toUpperCase();
+  }
+
+  return { isExecute, isDryRun, limit, canary, targetStateFilter };
+}
+
+async function fetchCollectionDocs(uids: string[], collectionName: string) {
   const results = new Map<string, any>();
-  const BATCH_SIZE = 30;
+  const BATCH_SIZE = 25;
   for (let i = 0; i < uids.length; i += BATCH_SIZE) {
-    const batch = uids.slice(i, i + BATCH_SIZE);
-    await Promise.all(
-      batch.map(async (uid) => {
-        try {
-          const snap = await db.collection(collectionName).doc(uid).get();
-          if (snap.exists) results.set(uid, snap.data());
-        } catch (e) {}
-      })
-    );
+    const batchUids = uids.slice(i, i + BATCH_SIZE);
+    const promises = batchUids.map(async (uid) => {
+      try {
+        const snap = await db.collection(collectionName).doc(uid).get();
+        if (snap.exists) {
+          results.set(uid, snap.data());
+        }
+      } catch (e) {}
+    });
+    await Promise.all(promises);
   }
   return results;
 }
 
+function isValidResponseShape(data: any): boolean {
+  if (!data || typeof data !== "object") return false;
+  if (data.status === "error") return false;
+  if (!data.type || typeof data.type !== "string") return false;
+  return true;
+}
+
 async function runMassRecovery() {
-  const isExecute = process.argv.includes("--execute");
+  const { isExecute, isDryRun, limit, canary, targetStateFilter } = parseCliArgs();
 
   console.log(`=== HUMAN DESIGN MASS RECOVERY SCRIPT ===`);
-  console.log(`MODE: ${isExecute ? "🚨 EXECUTE PRODUCTION WRITE 🚨" : "🛡️ DRY-RUN (READ-ONLY) 🛡️"}\n`);
+  console.log(`MODE: ${isExecute ? "🚨 EXECUTE PRODUCTION WRITE 🚨" : "🛡️ DRY-RUN (READ-ONLY) 🛡️"}`);
+  if (canary) console.log(`CANARY LIMIT: ${canary} candidates`);
+  if (limit) console.log(`COUNT LIMIT: ${limit} candidates`);
+  if (targetStateFilter) console.log(`STATE FILTER: ${targetStateFilter}`);
+  console.log("");
 
-  if (!isExecute) {
-    console.log("NOTE: Running in default DRY-RUN mode. No Firestore documents will be modified.");
-    console.log("To execute production backfill, pass the explicit '--execute' flag after Founder approval.\n");
+  if (isDryRun) {
+    console.log("NOTE: Running in DRY-RUN mode. No Firestore documents will be modified.");
+    console.log("Pass --execute explicitly after Founder approval to commit changes.\n");
   }
 
-  // 1. Fetch all Auth users to get total user base
+  // 1. Fetch Auth users
   let pageToken: string | undefined = undefined;
   const allAuthUsers: UserRecord[] = [];
   do {
@@ -82,15 +119,14 @@ async function runMassRecovery() {
 
   const allUids = allAuthUsers.map((u) => u.uid);
 
-  console.log(`Fetching user & blueprint documents for all ${allUids.length} users...`);
-  const userDocsMap = await fetchDocsMap(allUids, "users");
-  const blueprintDocsMap = await fetchDocsMap(allUids, "blueprints");
-  console.log(`Fetched ${userDocsMap.size} user docs and ${blueprintDocsMap.size} blueprint docs.`);
+  const userDocsMap = await fetchCollectionDocs(allUids, "users");
+  const blueprintDocsMap = await fetchCollectionDocs(allUids, "blueprints");
 
-  // 2. Identify candidate users
-  const candidates: { uid: string; birthProfile: any; currentHdState: string }[] = [];
-  let skippedCanonicalCount = 0;
-  let skippedIncompleteBirthDataCount = 0;
+  const nowMs = Date.now();
+  let candidateList: { uid: string; birthProfile: any; currentHdState: string }[] = [];
+  let skippedCanonical = 0;
+  let skippedIncomplete = 0;
+  let skippedFreshPending = 0;
 
   for (const uid of allUids) {
     const userDoc = userDocsMap.get(uid) || {};
@@ -100,60 +136,84 @@ async function runMassRecovery() {
     const hdResult = getHdState(hdPayload);
 
     if (hdResult.state === "CANONICAL") {
-      skippedCanonicalCount++;
+      skippedCanonical++;
       continue;
+    }
+
+    // Pending stale check: PENDING is only eligible if older than threshold
+    if (hdResult.state === "PENDING") {
+      const updatedAtStr = blueprintDoc.updatedAt || userDoc.updatedAt;
+      const updatedAtMs = updatedAtStr ? new Date(updatedAtStr).getTime() : 0;
+      if (updatedAtMs > 0 && nowMs - updatedAtMs < PENDING_STALE_THRESHOLD_MS) {
+        skippedFreshPending++;
+        continue; // Fresh pending calculation; skip
+      }
     }
 
     const birthProfile = getBirthProfile(userDoc);
     if (!birthProfile) {
-      skippedIncompleteBirthDataCount++;
+      skippedIncomplete++;
       continue;
     }
 
-    // Candidate for recovery (FALLBACK_LABELED, RETRIABLE_ERROR, PENDING)
-    candidates.push({
+    // Default target states: FALLBACK_LABELED and RETRIABLE_ERROR (and stale PENDING)
+    if (targetStateFilter) {
+      if (hdResult.state !== targetStateFilter) continue;
+    } else {
+      if (!["FALLBACK_LABELED", "RETRIABLE_ERROR", "PENDING"].includes(hdResult.state)) continue;
+    }
+
+    candidateList.push({
       uid,
       birthProfile,
       currentHdState: hdResult.state,
     });
   }
 
+  // Apply Canary or Limit filters
+  const effectiveLimit = canary ? Math.min(canary, limit || Infinity) : (limit || Infinity);
+  if (Number.isFinite(effectiveLimit) && candidateList.length > effectiveLimit) {
+    candidateList = candidateList.slice(0, effectiveLimit);
+  }
+
   console.log(`\n--- CANDIDATE AUDIT SUMMARY (AGGREGATED, PRIVACY-SAFE) ---`);
-  console.log(`Total Candidates Eligible for HD Recovery: ${candidates.length}`);
-  console.log(`  Skipped (Already CANONICAL): ${skippedCanonicalCount}`);
-  console.log(`  Skipped (Incomplete Birth Data): ${skippedIncompleteBirthDataCount}`);
+  console.log(`Total Candidates Filtered for Recovery: ${candidateList.length}`);
+  console.log(`  Skipped (Already CANONICAL): ${skippedCanonical}`);
+  console.log(`  Skipped (Incomplete Birth Data): ${skippedIncomplete}`);
+  console.log(`  Skipped (Fresh PENDING < 10m): ${skippedFreshPending}`);
 
   const breakdownByState: Record<string, number> = {};
-  for (const c of candidates) {
+  for (const c of candidateList) {
     breakdownByState[c.currentHdState] = (breakdownByState[c.currentHdState] || 0) + 1;
   }
   for (const [st, cnt] of Object.entries(breakdownByState)) {
-    console.log(`  Candidate state breakdown [${st}]: ${cnt}`);
+    console.log(`  Filtered candidate state [${st}]: ${cnt}`);
   }
 
-  console.log(`\n--- RECOVERY PLAN ESTIMATES & SAFEGUARDS ---`);
-  console.log(`Estimated API Requests: ${candidates.length}`);
-  console.log(`Estimated Execution Time: ~${Math.ceil((candidates.length * 200) / 1000)} seconds (with 5 req/sec rate limit)`);
-  console.log(`Concurrency Limit: 3 workers max`);
-  console.log(`Retry Strategy: Max 2 retries per user with exponential backoff (1s, 3s)`);
-  console.log(`Idempotency: Re-evaluates getHdState before write; skips if already CANONICAL.`);
+  console.log(`\n--- RECOVERY SAFEGUARDS & CIRCUIT BREAKER ---`);
+  console.log(`Circuit Breaker Threshold: Triggered if success rate drops below 90% or 3 consecutive failures.`);
+  console.log(`Idempotency: Checks getHdState before write; skips if state turned CANONICAL.`);
+  console.log(`Privacy Safeguard: Checkpoint saved with SHA-256 hashed UIDs only.`);
 
-  if (!isExecute) {
-    console.log(`\n[DRY-RUN COMPLETE] 0 documents updated. STOPPING AND WAITING FOR FOUNDER APPROVAL.`);
+  if (isDryRun) {
+    console.log(`\n[DRY-RUN COMPLETE] 0 documents updated. STOPPING.`);
     return;
   }
 
-  // 3. EXECUTE MODE (only reached if --execute is explicitly supplied)
-  console.log(`\nStarting production batch execution for ${candidates.length} candidates...`);
+  // 4. EXECUTE MODE (only reached if --execute is passed)
+  console.log(`\nStarting production batch execution for ${candidateList.length} candidates...`);
 
   let successCount = 0;
   let failCount = 0;
-  const CONCURRENCY = 3;
+  let consecutiveFailures = 0;
+  const checkpointLogs: { hashedUid: string; status: "success" | "fail"; state: string }[] = [];
 
-  for (let i = 0; i < candidates.length; i += CONCURRENCY) {
-    const batch = candidates.slice(i, i + CONCURRENCY);
+  const CONCURRENCY = 3;
+  for (let i = 0; i < candidateList.length; i += CONCURRENCY) {
+    const batch = candidateList.slice(i, i + CONCURRENCY);
     const results = await Promise.all(
       batch.map(async (candidate) => {
+        const hashedUid = hashUid(candidate.uid);
         try {
           const bp = candidate.birthProfile;
           const res = await fetch("https://bhumi-human-design-api.vercel.app/calculate", {
@@ -170,9 +230,9 @@ async function runMassRecovery() {
             }),
           });
 
-          if (!res.ok) throw new Error(`API response status ${res.status}`);
+          if (!res.ok) throw new Error(`API response HTTP ${res.status}`);
           const data = await res.json();
-          if (data.status === "error" || !data.type) throw new Error(data.note || "Invalid API response");
+          if (!isValidResponseShape(data)) throw new Error("Invalid API response shape");
 
           const now = new Date().toISOString();
           const canonicalChart = {
@@ -205,7 +265,6 @@ async function runMassRecovery() {
             calculationStatus: "completed",
           };
 
-          // Update Firestore
           const bpRef = db.collection("blueprints").doc(candidate.uid);
           const bpSnap = await bpRef.get();
           const existingBp = bpSnap.exists ? bpSnap.data() || {} : {};
@@ -217,24 +276,47 @@ async function runMassRecovery() {
             updatedAt: now,
           }, { merge: true });
 
-          return true;
+          return { ok: true, hashedUid };
         } catch (e) {
-          return false;
+          return { ok: false, hashedUid };
         }
       })
     );
 
-    results.forEach((ok) => {
-      if (ok) successCount++;
-      else failCount++;
-    });
+    for (const r of results) {
+      if (r.ok) {
+        successCount++;
+        consecutiveFailures = 0;
+        checkpointLogs.push({ hashedUid: r.hashedUid, status: "success", state: "CANONICAL" });
+      } else {
+        failCount++;
+        consecutiveFailures++;
+        checkpointLogs.push({ hashedUid: r.hashedUid, status: "fail", state: "ERROR" });
+      }
+    }
+
+    // Circuit Breaker check
+    const totalProcessed = successCount + failCount;
+    const successRate = totalProcessed > 0 ? (successCount / totalProcessed) * 100 : 100;
+
+    if (consecutiveFailures >= 3 || (totalProcessed >= 5 && successRate < 90)) {
+      console.error(`\n🚨 CIRCUIT BREAKER TRIGGERED 🚨`);
+      console.error(`Processed: ${totalProcessed}, Success: ${successCount}, Fail: ${failCount}, Rate: ${successRate.toFixed(1)}%`);
+      console.error(`Execution halted to prevent cascade errors.`);
+      break;
+    }
 
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
-  console.log(`\n=== BATCH EXECUTION COMPLETE ===`);
+  // Save hashed checkpoint
+  const checkpointPath = "scripts/recovery-checkpoint.json";
+  writeFileSync(checkpointPath, JSON.stringify({ timestamp: new Date().toISOString(), total: successCount + failCount, successCount, failCount, logs: checkpointLogs }, null, 2));
+
+  console.log(`\n=== BATCH EXECUTION SUMMARY ===`);
   console.log(`Successfully Recovered to CANONICAL: ${successCount}`);
-  console.log(`Failed / Skipped: ${failCount}`);
+  console.log(`Failed / Aborted: ${failCount}`);
+  console.log(`Privacy Checkpoint saved: ${checkpointPath} (containing hashed UIDs only)`);
 }
 
 runMassRecovery().catch(console.error).finally(() => process.exit(0));
