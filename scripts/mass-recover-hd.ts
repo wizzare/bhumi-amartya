@@ -5,30 +5,34 @@ import { readFileSync, existsSync, writeFileSync } from "fs";
 import { createHash } from "crypto";
 import { getHdState } from "../lib/humandesign/hdState";
 
-const SA_PATHS = [
-  "C:/Users/shein/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json",
-  "C:/Users/shein/Downloads/bhumiamartya-fe85c-f49e4c95baf3.json",
-  "C:/Users/shein/Downloads/bhumiamartya-fe85c-522e9ad4ac07.json",
-  "C:/Users/shein/Downloads/bhumiamartya-adminsdk.json.json",
-];
-
 function getAdmin() {
   if (getApps().length) return { db: getFirestore(), auth: getAuth() };
-  for (const p of SA_PATHS) {
+
+  const envPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  const candidatePaths = [
+    envPath,
+    "./service-account.json",
+    process.env.HOME ? `${process.env.HOME}/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json` : null,
+    process.env.USERPROFILE ? `${process.env.USERPROFILE}/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json` : null,
+  ].filter(Boolean) as string[];
+
+  for (const p of candidatePaths) {
     if (existsSync(p)) {
-      const sa = JSON.parse(readFileSync(p, "utf8"));
-      if (sa.private_key && sa.private_key.includes("BEGIN PRIVATE KEY")) {
-        initializeApp({ credential: cert(sa), projectId: sa.project_id });
-        return { db: getFirestore(), auth: getAuth() };
-      }
+      try {
+        const sa = JSON.parse(readFileSync(p, "utf8"));
+        if (sa.private_key && sa.private_key.includes("BEGIN PRIVATE KEY")) {
+          initializeApp({ credential: cert(sa), projectId: sa.project_id });
+          return { db: getFirestore(), auth: getAuth() };
+        }
+      } catch (e) {}
     }
   }
-  throw new Error("No valid service account found");
+  throw new Error("No valid service account credential found in GOOGLE_APPLICATION_CREDENTIALS or standard paths");
 }
 
 const { db, auth } = getAdmin();
 
-const PENDING_STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 minutes
+const PENDING_STALE_THRESHOLD_MS = 30 * 60 * 1000; // Minimum 30 minutes threshold for PENDING
 
 function hashUid(uid: string): string {
   return createHash("sha256").update(uid).digest("hex").slice(0, 12);
@@ -98,7 +102,7 @@ async function runMassRecovery() {
   console.log(`MODE: ${isExecute ? "🚨 EXECUTE PRODUCTION WRITE 🚨" : "🛡️ DRY-RUN (READ-ONLY) 🛡️"}`);
   if (canary) console.log(`CANARY LIMIT: ${canary} candidates`);
   if (limit) console.log(`COUNT LIMIT: ${limit} candidates`);
-  if (targetStateFilter) console.log(`STATE FILTER: ${targetStateFilter}`);
+  console.log(`STATE FILTER: ${targetStateFilter || "DEFAULT (FALLBACK_LABELED/local_fallback + RETRIABLE_ERROR strictly, PENDING EXCLUDED)"}`);
   console.log("");
 
   if (isDryRun) {
@@ -126,7 +130,7 @@ async function runMassRecovery() {
   let candidateList: { uid: string; birthProfile: any; currentHdState: string }[] = [];
   let skippedCanonical = 0;
   let skippedIncomplete = 0;
-  let skippedFreshPending = 0;
+  let skippedExcludedPending = 0;
 
   for (const uid of allUids) {
     const userDoc = userDocsMap.get(uid) || {};
@@ -140,27 +144,37 @@ async function runMassRecovery() {
       continue;
     }
 
-    // Pending stale check: PENDING is only eligible if older than threshold
-    if (hdResult.state === "PENDING") {
-      const updatedAtStr = blueprintDoc.updatedAt || userDoc.updatedAt;
-      const updatedAtMs = updatedAtStr ? new Date(updatedAtStr).getTime() : 0;
-      if (updatedAtMs > 0 && nowMs - updatedAtMs < PENDING_STALE_THRESHOLD_MS) {
-        skippedFreshPending++;
-        continue; // Fresh pending calculation; skip
-      }
-    }
-
     const birthProfile = getBirthProfile(userDoc);
     if (!birthProfile) {
       skippedIncomplete++;
       continue;
     }
 
-    // Default target states: FALLBACK_LABELED and RETRIABLE_ERROR (and stale PENDING)
+    // Default target filter: strictly FALLBACK_LABELED (local_fallback) and RETRIABLE_ERROR.
+    // PENDING is EXCLUDED by default unless --state PENDING is explicitly provided.
     if (targetStateFilter) {
       if (hdResult.state !== targetStateFilter) continue;
+      if (targetStateFilter === "PENDING") {
+        const updatedAtStr = blueprintDoc.updatedAt || userDoc.updatedAt;
+        const updatedAtMs = updatedAtStr ? new Date(updatedAtStr).getTime() : 0;
+        if (updatedAtMs > 0 && nowMs - updatedAtMs < PENDING_STALE_THRESHOLD_MS) {
+          skippedExcludedPending++;
+          continue; // Fresh pending calculation under 30 minutes; skip
+        }
+      }
     } else {
-      if (!["FALLBACK_LABELED", "RETRIABLE_ERROR", "PENDING"].includes(hdResult.state)) continue;
+      // Default execute/dry-run filter:
+      // Exclude PENDING completely
+      if (hdResult.state === "PENDING") {
+        skippedExcludedPending++;
+        continue;
+      }
+      // Require FALLBACK_LABELED with local_fallback OR RETRIABLE_ERROR
+      if (hdResult.state === "FALLBACK_LABELED") {
+        if (hdResult.provenance !== "local_fallback") continue;
+      } else if (hdResult.state !== "RETRIABLE_ERROR") {
+        continue;
+      }
     }
 
     candidateList.push({
@@ -180,7 +194,7 @@ async function runMassRecovery() {
   console.log(`Total Candidates Filtered for Recovery: ${candidateList.length}`);
   console.log(`  Skipped (Already CANONICAL): ${skippedCanonical}`);
   console.log(`  Skipped (Incomplete Birth Data): ${skippedIncomplete}`);
-  console.log(`  Skipped (Fresh PENDING < 10m): ${skippedFreshPending}`);
+  console.log(`  Skipped (Excluded PENDING): ${skippedExcludedPending}`);
 
   const breakdownByState: Record<string, number> = {};
   for (const c of candidateList) {
