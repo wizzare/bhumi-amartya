@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PremiumFeature, canAccessPremiumFeature } from "@/lib/access/accessControl";
+import { PremiumFeature } from "@/lib/access/accessControl";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 
 interface PremiumLockProps {
@@ -13,11 +15,24 @@ interface PremiumLockProps {
 export function PremiumLock({ children, feature }: PremiumLockProps) {
   const auth = useAuth();
   const router = useRouter();
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+
+  const uid = auth?.userProfile?.uid;
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    getFounderTesterRecord(uid).then((record) => {
+      if (!cancelled) setTesterRecord(record);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   if (!auth || auth.loading) return children;
 
   const { userProfile } = auth;
-  const hasAccess = canAccessPremiumFeature(userProfile, feature);
+  const hasAccess = getEntitlementStatus(userProfile, new Date(), testerRecord).isPremium;
 
   if (hasAccess) {
     return <>{children}</>;
