@@ -31,7 +31,7 @@ console.log(`USE_FUNCTIONS_EMULATOR: ${env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR}`)
 console.log(`ENABLE_QA_LOGIN: ${env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN}`);
 console.log(`-----------------------------------------------\n`);
 
-const nextBin = resolve(rootDir, 'node_modules', '.bin', 'next.cmd');
+const nextBin = resolve(rootDir, 'node_modules', '.bin', process.platform === 'win32' ? 'next.cmd' : 'next');
 
 const nextBuild = spawn(nextBin, ['build'], {
   stdio: 'inherit',
