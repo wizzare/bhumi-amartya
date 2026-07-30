@@ -33,6 +33,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { getEntitlementStatus } from "../lib/billing/entitlementService";
 import { UserProfile } from "../lib/repositories/userRepository";
+import type { FounderTesterRecord } from "../lib/billing/founderTesterSourceOfTruth";
 
 // ─── Test harness ─────────────────────────────────────────────────────────────
 
@@ -238,12 +239,11 @@ assert(
   "15. Dashboard remains accessible for Free user after billing failure — getEntitlementStatus returns valid shape without crash"
 );
 
-// 16. Internal Trial entitlement remains unchanged
+// 16. Internal Trial entitlement remains unchanged (time-based trial window)
 const trialUser: UserProfile = {
   uid: "trial_16",
   email: "trial@bhumi.app",
-  trialLoginCount: 4,
-  trialStatus: "active",
+  trialStartedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   onboardingCompleted: true,
   baselineWellnessCompleted: true,
   blueprintStatus: "ready",
@@ -251,22 +251,31 @@ const trialUser: UserProfile = {
 } as any;
 assert(
   getEntitlementStatus(trialUser).isPremium === true,
-  "16. Internal Trial entitlement remains unchanged — trial user within 7 logins is premium"
+  "16. Internal Trial entitlement remains unchanged — trial user within the 7-day time-based trial window is premium"
 );
 
-// 17. Inti entitlement remains unchanged
+// 17. Inti entitlement remains unchanged (via testerBadgeRegistry-sourced testerRecord)
 const intiUser: UserProfile = {
   uid: "inti_17",
   email: "inti@bhumi.app",
-  membershipType: "INTI",
   onboardingCompleted: true,
   baselineWellnessCompleted: true,
   blueprintStatus: "ready",
   setupCompleted: true,
 } as any;
+const intiTesterRecord: FounderTesterRecord = {
+  uid: "inti_17",
+  registeredAt: "2026-06-01T00:00:00Z",
+  activeDays: 10,
+  badge: "Penjaga Bhumi Inti",
+  sourceBadge: "Inti",
+  membership: "PREMIUM_2_MONTHS",
+  premiumMonths: 2,
+  trialDays: null,
+};
 assert(
-  getEntitlementStatus(intiUser).isPremium === true,
-  "17. Inti entitlement remains unchanged — INTI membershipType is premium"
+  getEntitlementStatus(intiUser, new Date(), intiTesterRecord).isPremium === true,
+  "17. Inti entitlement remains unchanged — testerBadgeRegistry-sourced Inti record is premium"
 );
 
 // 18. Premium entitlement refresh contract remains intact

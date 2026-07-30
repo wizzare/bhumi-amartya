@@ -58,11 +58,12 @@ async function runR3Tests() {
   assert(typeof journeyRepository.getDailyRecord === "function", "10. Legacy Journey record reader contract intact");
 
   // Regressions
-  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE", trialLoginCount: 8, trialStatus: "completed" } as any;
+  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE" } as any;
   assert(getEntitlementStatus(freeUser).isPremium === false, "11. Dashboard access policy remains intact");
 
-  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialLoginCount: 3, trialStatus: "active" } as any;
-  assert(getEntitlementStatus(trialUser).isPremium === true, "12. Trial login count entitlement remains intact");
+  const trialStartedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialStartedAt } as any;
+  assert(getEntitlementStatus(trialUser).isPremium === true, "12. Time-based trial entitlement remains intact");
 
   const premiumUser: UserProfile = { uid: "prem_1", email: "prem@test.com", membershipType: "PREMIUM", isPremium: true, accessUntil: "2026-12-31T00:00:00Z" } as any;
   assert(getEntitlementStatus(premiumUser).isPremium === true, "13. Premium entitlement remains intact");

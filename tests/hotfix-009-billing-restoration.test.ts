@@ -1,5 +1,6 @@
 import { getEntitlementStatus } from "../lib/billing/entitlementService";
 import { UserProfile } from "../lib/repositories/userRepository";
+import type { FounderTesterRecord } from "../lib/billing/founderTesterSourceOfTruth";
 
 function assert(condition: boolean, message: string) {
   if (!condition) {
@@ -12,13 +13,27 @@ function assert(condition: boolean, message: string) {
 async function runBillingTests() {
   console.log("▶ Running HOTFIX-009 Suite: 20 Billing Restoration & Regression Assertions\n");
 
-  // Fixtures
-  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE", trialLoginCount: 8, trialStatus: "completed" } as any;
+  // Fixtures — time-based trial model (trialStartedAt/trialEndsAt), no legacy trialLoginCount/trialStatus
+  const now = new Date();
+  const activeTrialStartedAt = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const exhaustedTrialStartedAt = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000).toISOString();
+
+  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE" } as any;
   const premiumUser: UserProfile = { uid: "prem_1", email: "prem@test.com", membershipType: "PREMIUM", isPremium: true, accessUntil: "2026-12-31T00:00:00Z" } as any;
-  const pendingUser: UserProfile = { uid: "pend_1", email: "pend@test.com", membershipType: "FREE", subscriptionStatus: "SUBSCRIPTION_PENDING", trialLoginCount: 8, trialStatus: "completed" } as any;
-  const intiUser: UserProfile = { uid: "inti_1", email: "inti@test.com", testerBadge: "Penjaga Bhumi Inti" } as any;
-  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialLoginCount: 3, trialStatus: "active" } as any;
-  const trialExhausted: UserProfile = { uid: "trial_8", email: "trial8@test.com", trialLoginCount: 8, trialStatus: "completed" } as any;
+  const pendingUser: UserProfile = { uid: "pend_1", email: "pend@test.com", membershipType: "FREE", subscriptionStatus: "SUBSCRIPTION_PENDING" } as any;
+  const intiUser: UserProfile = { uid: "inti_1", email: "inti@test.com" } as any;
+  const intiTesterRecord: FounderTesterRecord = {
+    uid: "inti_1",
+    registeredAt: "2026-06-01T00:00:00Z",
+    activeDays: 10,
+    badge: "Penjaga Bhumi Inti",
+    sourceBadge: "Inti",
+    membership: "PREMIUM_2_MONTHS",
+    premiumMonths: 2,
+    trialDays: null,
+  };
+  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialStartedAt: activeTrialStartedAt } as any;
+  const trialExhausted: UserProfile = { uid: "trial_8", email: "trial8@test.com", trialStartedAt: exhaustedTrialStartedAt } as any;
 
   // 1. ITEM_ALREADY_OWNED starts restore/query payload
   const restorePayload = {
@@ -56,7 +71,7 @@ async function runBillingTests() {
   assert(getEntitlementStatus(freeUser).isPremium === false, "8. Verifier failure preserves Free status");
 
   // 9. Verifier returns inactive
-  const inactiveUser: UserProfile = { uid: "inact_1", email: "inact@test.com", membershipType: "FREE", subscriptionStatus: "EXPIRED", trialLoginCount: 8, trialStatus: "completed" } as any;
+  const inactiveUser: UserProfile = { uid: "inact_1", email: "inact@test.com", membershipType: "FREE", subscriptionStatus: "EXPIRED" } as any;
   assert(getEntitlementStatus(inactiveUser).isPremium === false, "9. Verifier returns inactive status");
 
   // 10. Entitlement persistence success
@@ -88,11 +103,11 @@ async function runBillingTests() {
   // 18. Dashboard remains accessible
   assert(getEntitlementStatus(freeUser).isPremium === false, "18. Dashboard remains accessible for Free users");
 
-  // 19. Internal Trial remains unchanged
-  assert(getEntitlementStatus(trialUser).isPremium === true && getEntitlementStatus(trialExhausted).isPremium === false, "19. Internal Trial remains unchanged");
+  // 19. Internal Trial remains unchanged (time-based trial window)
+  assert(getEntitlementStatus(trialUser, now).isPremium === true && getEntitlementStatus(trialExhausted, now).isPremium === false, "19. Internal Trial remains unchanged");
 
-  // 20. Inti entitlement remains active
-  assert(getEntitlementStatus(intiUser).isPremium === true, "20. Inti entitlement remains active");
+  // 20. Inti entitlement remains active (via testerBadgeRegistry-sourced testerRecord)
+  assert(getEntitlementStatus(intiUser, now, intiTesterRecord).isPremium === true, "20. Inti entitlement remains active");
 
   console.log("\n✅ ALL 20 BILLING RESTORATION ASSERTIONS PASSED PERFECTLY!");
 }

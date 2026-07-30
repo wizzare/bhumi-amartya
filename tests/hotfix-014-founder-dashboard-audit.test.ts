@@ -96,7 +96,7 @@ const USER_TRIAL = {
   email: "trial01@example.com",
   badge: "Penghuni Bhumi",
   membershipType: "FREE",
-  trialLoginCount: 3,
+  trialStartedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   isPremium: false,
   registeredAt: new Date("2026-07-01T10:00:00Z").getTime(),
   activeDays: ["2026-07-20"],

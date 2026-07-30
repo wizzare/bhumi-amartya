@@ -258,17 +258,18 @@ async function runR4Tests() {
   assert(deterministicId1 === deterministicId2, "19. Deterministic broadcast message IDs prevent duplicates on retry");
 
   // ── 20–24. Cross-suite regression assertions ─────────────────────────────
-  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE", trialLoginCount: 8, trialStatus: "completed" } as any;
+  const freeUser: UserProfile = { uid: "free_1", email: "free@test.com", membershipType: "FREE" } as any;
   assert(getEntitlementStatus(freeUser).isPremium === false, "20. HOTFIX-002 broadcast assumption: free user is not premium (entitlement intact)");
 
-  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialLoginCount: 3, trialStatus: "active" } as any;
-  assert(getEntitlementStatus(trialUser).isPremium === true, "21. Dashboard access intact: trial user within 7 logins gets access");
+  const trialStartedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialStartedAt } as any;
+  assert(getEntitlementStatus(trialUser).isPremium === true, "21. Dashboard access intact: trial user within the 7-day time-based trial window gets access");
 
   const premiumUser: UserProfile = { uid: "prem_1", email: "prem@test.com", membershipType: "PREMIUM", isPremium: true, accessUntil: "2026-12-31T00:00:00Z" } as any;
   assert(getEntitlementStatus(premiumUser).isPremium === true, "22. Trial/entitlement suite intact: verified premium user");
 
-  const founderUser: UserProfile = { uid: "founder_1", email: "founder@test.com", membershipType: "FOUNDER" } as any;
-  assert(getEntitlementStatus(founderUser).isPremium === true, "23. Billing suite intact: Founder user is premium");
+  const founderUser: UserProfile = { uid: "founder_1", email: "founder@test.com", membershipType: "LIFETIME" } as any;
+  assert(getEntitlementStatus(founderUser).isPremium === true, "23. Billing suite intact: Lifetime/Founder user is premium");
 
   assert(typeof inboxFilter === "function" && typeof inboxSort === "function", "24. R3 Wellness/Journey: inbox helpers remain callable without side effects");
 
