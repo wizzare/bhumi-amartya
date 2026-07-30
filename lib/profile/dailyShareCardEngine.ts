@@ -48,9 +48,10 @@ type ManifestationCandidate = {
   text: string;
 };
 
-type ThemeExplanationCandidate = {
+export type ThemeExplanationCandidate = {
   id: string;
   text: string;
+  sourceTier: "primary" | "secondary";
 };
 
 const ULTIMATE_FALLBACK_THEME = "Tidak semua hal perlu dipaksa hari ini.";
@@ -157,11 +158,7 @@ function snippet(value: string | null | undefined, fallback: string, maxSentence
 }
 
 /**
- * Deterministic daily selection helper.
- *
- * Same inputs always produce the same selected candidate.
- * Candidate array reordering does NOT change the result because selection
- * is based on stable candidate IDs sorted before scoring.
+ * Deterministic selection helper based on a given seed.
  */
 export function selectDailyCandidate<T extends { id: string }>(
   candidates: T[],
@@ -169,12 +166,13 @@ export function selectDailyCandidate<T extends { id: string }>(
     userKey: string;
     dateKey: string;
     domainKey: "PROFILE_TODAY" | "MANIFESTATION_TODAY" | "SOUL_MESSAGE_THEME";
+    cardInstanceSeed?: string;
   },
 ): T | null {
   if (!candidates.length) return null;
   if (candidates.length === 1) return candidates[0];
   const sorted = [...candidates].sort((a, b) => a.id.localeCompare(b.id));
-  const seed = `${options.userKey}|${options.dateKey}|${options.domainKey}|${SEED_VERSION}`;
+  const seed = `${options.userKey}|${options.dateKey}|${options.domainKey}|${options.cardInstanceSeed || "default"}|${SEED_VERSION}`;
   const index = hash(seed) % sorted.length;
   return sorted[index];
 }
@@ -207,58 +205,82 @@ function isProhibitedThemeText(text: string): boolean {
   return PROHIBITED_THEME_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-export function extractThemeExplanationCandidates(guidance?: DailyGuidance | null): ThemeExplanationCandidate[] {
-  if (!guidance) return [];
+/**
+ * Extracts theme candidates with strict prioritization:
+ * - Primary sources: companionReflection.fullReflection, dailyNarrativeParagraphs, categories.*.insight, categories.*.reason
+ * - Secondary fallback sources: dailyConclusion.text, dailyNoteText, soulReflectionText, companionReflection.preview
+ */
+export function extractThemeExplanationCandidates(guidance?: DailyGuidance | null): {
+  primary: ThemeExplanationCandidate[];
+  secondary: ThemeExplanationCandidate[];
+} {
+  if (!guidance) return { primary: [], secondary: [] };
 
-  const rawBlocks: string[] = [];
+  const primaryRawBlocks: string[] = [];
+  const secondaryRawBlocks: string[] = [];
 
-  if (guidance.companionReflection?.fullReflection) rawBlocks.push(guidance.companionReflection.fullReflection);
-  if (guidance.companionReflection?.preview) rawBlocks.push(guidance.companionReflection.preview);
-  if (guidance.dailyNoteText) rawBlocks.push(guidance.dailyNoteText);
+  // Primary Sources
+  if (guidance.companionReflection?.fullReflection) primaryRawBlocks.push(guidance.companionReflection.fullReflection);
   if (guidance.dailyNarrativeParagraphs && Array.isArray(guidance.dailyNarrativeParagraphs)) {
-    rawBlocks.push(...guidance.dailyNarrativeParagraphs);
+    primaryRawBlocks.push(...guidance.dailyNarrativeParagraphs);
   }
-  if (guidance.dailyConclusion?.text) rawBlocks.push(guidance.dailyConclusion.text);
-  if (guidance.soulReflectionText) rawBlocks.push(guidance.soulReflectionText);
-
   if (guidance.categories) {
     Object.values(guidance.categories).forEach((cat) => {
-      if (cat?.insight) rawBlocks.push(cat.insight);
-      if (cat?.reason) rawBlocks.push(cat.reason);
+      if (cat?.insight) primaryRawBlocks.push(cat.insight);
+      if (cat?.reason) primaryRawBlocks.push(cat.reason);
     });
   }
 
-  const candidateTexts: string[] = [];
+  // Secondary Fallback Sources
+  if (guidance.dailyConclusion?.text) secondaryRawBlocks.push(guidance.dailyConclusion.text);
+  if (guidance.dailyNoteText) secondaryRawBlocks.push(guidance.dailyNoteText);
+  if (guidance.soulReflectionText) secondaryRawBlocks.push(guidance.soulReflectionText);
+  if (guidance.companionReflection?.preview) secondaryRawBlocks.push(guidance.companionReflection.preview);
 
-  for (const block of rawBlocks) {
-    const cleanedBlock = stripThemePrefix(clean(block));
-    if (!cleanedBlock) continue;
-    const sentences = splitSentences(cleanedBlock);
-    for (const sentence of sentences) {
-      const normalizedSentence = normalizeIndonesianSentenceCase(sentence);
-      if (!isProhibitedThemeText(normalizedSentence)) {
-        candidateTexts.push(normalizedSentence);
+  const processBlocks = (blocks: string[], tier: "primary" | "secondary"): ThemeExplanationCandidate[] => {
+    const list: string[] = [];
+    for (const block of blocks) {
+      const cleanedBlock = stripThemePrefix(clean(block));
+      if (!cleanedBlock) continue;
+      const sentences = splitSentences(cleanedBlock);
+      for (const sentence of sentences) {
+        const normalizedSentence = normalizeIndonesianSentenceCase(sentence);
+        if (!isProhibitedThemeText(normalizedSentence)) {
+          list.push(normalizedSentence);
+        }
       }
     }
-  }
+    return deduplicatePhrases(list).map((text, idx) => ({
+      id: `theme-${tier}-${idx}-${hash(text).toString(16)}`,
+      text,
+      sourceTier: tier,
+    }));
+  };
 
-  const deduped = deduplicatePhrases(candidateTexts);
-  return deduped.map((text, idx) => ({
-    id: `theme-cand-${idx}-${hash(text).toString(16)}`,
-    text,
-  }));
+  return {
+    primary: processBlocks(primaryRawBlocks, "primary"),
+    secondary: processBlocks(secondaryRawBlocks, "secondary"),
+  };
 }
 
-function buildSoulMessage(guidance?: DailyGuidance | null, seed?: string): SoulMessageSection {
-  const candidates = extractThemeExplanationCandidates(guidance);
+function buildSoulMessage(
+  guidance?: DailyGuidance | null,
+  seed?: string,
+  cardInstanceSeed?: string,
+): SoulMessageSection {
+  const { primary, secondary } = extractThemeExplanationCandidates(guidance);
 
   let selectedText = ULTIMATE_FALLBACK_THEME;
 
-  if (candidates.length > 0) {
-    const selected = selectDailyCandidate(candidates, {
+  // Rule 3 & 4: Primary candidates ALWAYS prioritized before secondary fallbacks
+  const targetCandidates = primary.length > 0 ? primary : secondary;
+
+  if (targetCandidates.length > 0) {
+    const selected = selectDailyCandidate(targetCandidates, {
       userKey: seed || "default-soul-seed",
       dateKey: "",
       domainKey: "SOUL_MESSAGE_THEME",
+      cardInstanceSeed,
     });
     if (selected && selected.text) {
       selectedText = selected.text;
@@ -306,11 +328,13 @@ function buildProfileCandidates(sections: ProfileSection[]): ProfileSectionCandi
 function buildProfileToday(
   candidates: ProfileSectionCandidate[],
   seed: string,
+  cardInstanceSeed?: string,
 ): ProfileTodaySection {
   const selected = selectDailyCandidate(candidates, {
     userKey: seed,
     dateKey: "",
     domainKey: "PROFILE_TODAY",
+    cardInstanceSeed,
   });
   if (!selected) {
     return {
@@ -350,11 +374,13 @@ function buildManifestationCandidates(
 function buildManifestationToday(
   candidates: ManifestationCandidate[],
   seed: string,
+  cardInstanceSeed?: string,
 ): ManifestationTodaySection {
   const selected = selectDailyCandidate(candidates, {
     userKey: seed,
     dateKey: "",
     domainKey: "MANIFESTATION_TODAY",
+    cardInstanceSeed,
   });
   if (!selected) {
     return {
@@ -377,11 +403,13 @@ export function createDailyShareCardContent({
   dateKey,
   userSeed,
   guidance,
+  cardInstanceSeed,
 }: {
   profileSections: ProfileSection[];
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
+  cardInstanceSeed?: string;
 }): DailyShareCardContent {
   const profileSeed = dailySeed(userSeed, dateKey, "PROFILE_TODAY");
   const manifestationSeed = dailySeed(userSeed, dateKey, "MANIFESTATION_TODAY");
@@ -391,9 +419,9 @@ export function createDailyShareCardContent({
   const manifestationCandidates = buildManifestationCandidates(guidance?.manifestation);
 
   return {
-    soulMessage: buildSoulMessage(guidance, soulSeed),
-    profileToday: buildProfileToday(profileCandidates, profileSeed),
-    manifestationToday: buildManifestationToday(manifestationCandidates, manifestationSeed),
+    soulMessage: buildSoulMessage(guidance, soulSeed, cardInstanceSeed),
+    profileToday: buildProfileToday(profileCandidates, profileSeed, cardInstanceSeed),
+    manifestationToday: buildManifestationToday(manifestationCandidates, manifestationSeed, cardInstanceSeed),
     metadata: {
       dateKey,
       locale: "id",

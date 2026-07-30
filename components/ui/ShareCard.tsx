@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element -- html-to-image export waits on native image loading state. */
 
-import React, { useMemo, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { Loader2, Share2 } from "lucide-react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { toPng } from "html-to-image";
@@ -18,6 +18,7 @@ interface ShareCardProps {
   userSeed: string;
   guidance?: DailyGuidance | null;
   userName?: string;
+  cardInstanceSeed?: string;
 }
 
 const ornamentPath = "/share-card/ornaments";
@@ -34,19 +35,23 @@ async function waitForCardImages(container: HTMLElement): Promise<void> {
   await document.fonts?.ready;
 }
 
-export function ShareCard({ profileSections, dateKey, userSeed, guidance, userName }: ShareCardProps) {
+export function ShareCard({ profileSections, dateKey, userSeed, guidance, userName, cardInstanceSeed: externalSeed }: ShareCardProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [now] = useState(() => new Date());
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const content = useMemo<DailyShareCardContent>(() => createDailyShareCardContent({
+  // Rule 1 & 2: Lock per-card instance seed and content ONCE via lazy useState initialization
+  const [cardSeed] = useState(() => externalSeed || `card-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+
+  const [content] = useState<DailyShareCardContent>(() => createDailyShareCardContent({
     profileSections,
     dateKey: dateKey || new Date().toISOString().slice(0, 10),
     userSeed,
     guidance,
-  }), [dateKey, profileSections, guidance, userSeed]);
+    cardInstanceSeed: cardSeed,
+  }));
 
-  const shareDate = useMemo(() => new Intl.DateTimeFormat("id-ID", {
+  const shareDate = React.useMemo(() => new Intl.DateTimeFormat("id-ID", {
     weekday: "long",
     day: "numeric",
     month: "long",
