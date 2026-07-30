@@ -6,9 +6,11 @@ screenshots/
 # Android build cache
 android/.next/
 
-# Human Design audit output
+# Human Design audit & recovery output
 services/humandesign-api/current_response.json
 services/humandesign-api/random_response.json
+scripts/recovery-checkpoint.json
+scripts/test-*.ts
 
 # HD sample vendor
 lib/humandesign/hdkit-main/hdkit-main/sample-apps/sfhdl/vendor/
