@@ -3,6 +3,7 @@ import fs from "node:fs";
 
 const client = fs.readFileSync("lib/billing/googlePlayBilling.ts", "utf8");
 const upgrade = fs.readFileSync("app/upgrade/page.tsx", "utf8");
+const functions = fs.readFileSync("functions/index.js", "utf8");
 let assertions = 0;
 
 function check(condition: unknown, message: string) {
@@ -25,6 +26,13 @@ check(client.includes('if (!currentUser) throw new Error("AUTH_MISSING")'), "una
 // Retryable patterns in error classification
 check(client.includes("BILLING_VERIFIER_URL"), "billingVerifierUrl configuration is present");
 check(client.includes("NEXT_PUBLIC_BILLING_VERIFIER_URL"), "environment-based verifier URL configuration");
+
+// Server-side purchase validation contract (unchanged by the callable->fetch migration —
+// this logic lives in the verifier backend, not the client, and remains load-bearing)
+check(functions.includes('const GOOGLE_PLAY_ACTIVE_STATES') && !functions.includes('"SUBSCRIPTION_STATE_PENDING"'), "only active or grace states can grant entitlement; PENDING is denied");
+check(functions.includes("purchase_voided_or_refunded"), "refunded or voided purchases are denied server-side");
+check(functions.includes("purchase_token_already_linked_to_another_uid"), "cross-account tokens are denied server-side");
+check(functions.includes("idempotent"), "same-account duplicate verification is idempotent server-side");
 
 // Shared processor
 check(upgrade.includes("processAndVerifyPurchaseToken"), "purchase and restore use the shared processor");
