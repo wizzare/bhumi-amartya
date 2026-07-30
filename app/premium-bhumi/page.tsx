@@ -13,7 +13,6 @@ import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
-import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
 import { purchasePremiumSubscription, restorePremiumPurchases, processAndVerifyPurchaseToken } from "@/lib/billing/googlePlayBilling";
 
 export default function PremiumBhumiPage() {
@@ -59,9 +58,11 @@ export default function PremiumBhumiPage() {
 
   // Founder = Lifetime, No expiry date. Show "Akses hingga" only for actual trial users.
   const isFounder = badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
-  const trialWindow = profile && isTrial ? computeTrialWindow(profile) : null;
-  const accessUntil = trialWindow?.end || null;
-  const daysLeft = profile && isTrial ? getTrialDaysLeft(profile) : 0;
+  // Derived from the same entitlement object above (Priority 4 time-based
+  // trial), not recomputed via the badge-based isTrialUser() check — keeps
+  // the "days left" text consistent with the actual access decision.
+  const accessUntil = entitlement?.expiresAt || null;
+  const daysLeft = profile && isTrial ? (entitlement?.daysRemaining ?? 0) : 0;
   const accountLabel = badge || (isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
 
   const handleSubscribe = async () => {
