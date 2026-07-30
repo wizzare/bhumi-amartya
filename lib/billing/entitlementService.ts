@@ -1,7 +1,7 @@
 import { UserProfile } from "../repositories/userRepository";
 import { isPrivilegedUser } from "../auth/privilegedUser";
 import { isGaiaAccessOverrideActive } from "./gaiaAccess";
-import { getFounderTesterRecord } from "./founderTesterSourceOfTruth";
+import type { FounderTesterRecord } from "./founderTesterSourceOfTruth";
 
 export type EntitlementStatus = {
   isPremium: boolean;
@@ -38,10 +38,14 @@ function toDate(value?: unknown): Date | null {
  * 1. Founder / Lifetime
  * 2. Active Explicit Inti / Alfa / Tester Grant
  * 3. Active Paid Premium
- * 4. Active Internal 7-Successful-Login Trial
+ * 4. Active Time-Based 7-Day Free Trial
  * 5. Free
  */
-export function getEntitlementStatus(profile: UserProfile | null, now = new Date()): EntitlementStatus {
+export function getEntitlementStatus(
+  profile: UserProfile | null,
+  now = new Date(),
+  testerRecord: FounderTesterRecord | null = null,
+): EntitlementStatus {
   if (!profile) {
     return {
       isPremium: false,
@@ -83,14 +87,10 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
     };
   }
 
-  // 2. Badge & Tester Grant (Rule Priority 2) - Inti, Alfa, or active Tester SoT record
+  // 2. Badge & Tester Grant (Rule Priority 2) - Inti, Alfa, or active Tester Registry record
+  // testerRecord must be fetched by the caller (async Firestore lookup keyed by uid)
+  // and passed in here; this function stays synchronous.
   const badge = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge;
-  const testerRecord = getFounderTesterRecord({
-    uid: profile.uid,
-    email: profile.email,
-    fullName: profile.fullName,
-    displayName: profile.displayName,
-  });
 
   const effectiveBadge = testerRecord?.badge || badge;
   if (effectiveBadge === "Founder") {
@@ -141,6 +141,11 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
         trialLoginsRemaining: null,
       };
     }
+    // NOTE: if now < startDate (grant scheduled but not yet started), execution
+    // intentionally falls through to Priority 3/4 below. See merge review notes
+    // for build82-integration: this is a pre-existing structural gap, currently
+    // unreachable since INTI_GRANT_STARTS_AT/ALFA_GRANT_STARTS_AT are both fixed
+    // in the past. Flagged as a follow-up hardening item, not fixed here.
   }
   if (effectiveBadge === "Penjaga Bhumi" && testerRecord) {
     return {
