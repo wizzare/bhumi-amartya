@@ -17,10 +17,10 @@ import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
 import {
   createDefaultUserPlan,
   getOrCreateLocalUserPlan,
-  isDeveloperProEmail,
   USER_PLAN_STORAGE_KEY,
   type UserPlan,
 } from "@/lib/billing/getUserPlanStatus";
+import { getAdminRoleRecord } from "@/lib/billing/adminRoleRegistry";
 import {
   generateLocalBlueprint,
   type LocalHumanDesign,
@@ -202,6 +202,7 @@ export default function SettingsPage() {
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+  const [isDeveloperPro, setIsDeveloperPro] = useState(false);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -279,6 +280,9 @@ export default function SettingsPage() {
       }
       setOriginalProfile(activeProfile);
       getFounderTesterRecord(activeProfile.uid).then(setTesterRecord).catch(() => setTesterRecord(null));
+      getAdminRoleRecord(activeProfile.uid)
+        .then((record) => setIsDeveloperPro(record?.isDeveloperPro ?? false))
+        .catch(() => setIsDeveloperPro(false));
       setFullName(normalizedProfile.displayName);
       setEmail(normalizedProfile.email || googleEmail || "");
       setBirthDate(normalizedProfile.birthDate);
@@ -636,7 +640,7 @@ export default function SettingsPage() {
     setMessage(null);
 
     try {
-      const nextPlan: UserPlan = isDeveloperProEmail(effectiveEmail)
+      const nextPlan: UserPlan = isDeveloperPro
         ? {
             plan: "pro",
             startedAt: plan?.startedAt || now,

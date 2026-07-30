@@ -374,5 +374,14 @@ service cloud.firestore {
       allow read: if isOwner(uid) || isAdminActor();
       allow write: if false;
     }
+
+    // ADMIN ROLE REGISTRY — replaces the previous hardcoded client-bundled
+    // developer/admin email allowlists. Keyed by uid, no email/name fields.
+    // No client writes — records are provisioned only via the one-time
+    // migration script (Admin SDK, bypasses these rules) or a trusted backend.
+    match /adminRoleRegistry/{uid} {
+      allow read: if isOwner(uid) || isAdminActor();
+      allow write: if false;
+    }
   }
 }
