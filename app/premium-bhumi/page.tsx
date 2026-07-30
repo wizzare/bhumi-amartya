@@ -11,6 +11,7 @@ import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, CheckCircle,
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { computeTrialWindow, getTrialDaysLeft } from "@/lib/billing/accessControl";
 import { purchasePremiumSubscription, restorePremiumPurchases, processAndVerifyPurchaseToken } from "@/lib/billing/googlePlayBilling";
@@ -21,6 +22,7 @@ export default function PremiumBhumiPage() {
   const { language } = useLanguage();
   const t = translations[language];
   const [profile, setProfile] = useState<any>(null);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -37,6 +39,8 @@ export default function PremiumBhumiPage() {
       try {
         const p = await storageProvider.getUserProfile();
         setProfile(p);
+        const record = await getFounderTesterRecord(p?.uid).catch(() => null);
+        setTesterRecord(record);
       } catch (err) {
         console.error("[PremiumBhumi] Load profile failed", err);
       } finally {
@@ -47,7 +51,7 @@ export default function PremiumBhumiPage() {
   }, [auth, router]);
 
   const badge = profile ? getCurrentBadge(profile) : null;
-  const entitlement = profile ? getEntitlementStatus(profile) : null;
+  const entitlement = profile ? getEntitlementStatus(profile, new Date(), testerRecord) : null;
   const presentation = getBillingPresentation(entitlement);
   const isPremium = presentation.state === "premium_active";
   const isTrial = presentation.state === "trial_active";
