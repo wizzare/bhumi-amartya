@@ -9,7 +9,8 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AccessGuard } from "@/components/auth/AccessGuard";
 import { useAuth } from "@/context/AuthContext";
-import { canAccessPremiumFeature } from "@/lib/access/accessControl";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { ProfileRuntimeAdapter } from "@/lib/services/profileRuntimeAdapter";
@@ -173,16 +174,29 @@ export default function ProfilePage() {
   const [language, setLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
   const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+
+  const profileUid = auth?.userProfile?.uid;
+  useEffect(() => {
+    if (!profileUid) return;
+    let cancelled = false;
+    getFounderTesterRecord(profileUid).then((record) => {
+      if (!cancelled) setTesterRecord(record);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [profileUid]);
 
   useEffect(() => {
     if (!trackedRef.current) {
-      const isAuthorized = auditUser || (auth?.authStateResolved && auth?.userProfile && canAccessPremiumFeature(auth.userProfile, "profile"));
+      const isAuthorized = auditUser || (auth?.authStateResolved && auth?.userProfile && getEntitlementStatus(auth.userProfile, new Date(), testerRecord).isPremium);
       if (isAuthorized) {
         trackedRef.current = true;
         trackEvent("profile_view", auth?.user?.uid);
       }
     }
-  }, [auditUser, auth?.authStateResolved, auth?.userProfile, auth?.user?.uid]);
+  }, [auditUser, auth?.authStateResolved, auth?.userProfile, auth?.user?.uid, testerRecord]);
 
   useEffect(() => {
     const loadId = ++activeProfileLoadRef.current;
