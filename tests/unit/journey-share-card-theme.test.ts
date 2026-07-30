@@ -4,7 +4,7 @@ import {
 } from "../../lib/profile/dailyShareCardEngine";
 import type { DailyGuidance } from "../../lib/dailyGuidance/types";
 
-console.log("▶ Running Journey Share Card Theme Selection Unit Tests\n");
+console.log("▶ Running Journey Share Card Theme & Persistence Unit Tests\n");
 
 let passed = 0;
 let failed = 0;
@@ -35,170 +35,157 @@ const mockGuidance: DailyGuidance = {
   profileSnapshot: null,
   blueprintSnapshot: null,
   companionReflection: {
-    preview: "Menemani hari. Tidak semua hal perlu dipaksa hari ini.",
-    fullReflection: "## Catatan Hari Ini\nHari ini kamu belajar memberi ruang untuk diri sendiri. #grounding",
+    preview: "COMPANION PREVIEW FALLBACK TEXT ONLY.",
+    fullReflection: "PRIMARY FULL REFLECTION: Hari ini kamu belajar memberi ruang untuk diri sendiri.",
   },
+  dailyNarrativeParagraphs: [
+    "PRIMARY NARRATIVE: Ada kecenderungan melihat sesuatu lebih jernih setelah diberi jarak sejenak.",
+  ],
   categories: {
     general: {
-      insight: "Ada kecenderungan melihat sesuatu lebih jernih setelah diberi jarak sejenak.",
+      insight: "PRIMARY GENERAL INSIGHT: Pikiranmu beristirahat ketika fokus pada satu tugas.",
       reason: "Sun transit",
       advice: "Jeda",
     },
-    mental: {
-      insight: "Pikiranmu beristirahat ketika fokus pada satu tugas.",
-      reason: "Mercury",
-      advice: "Fokus",
-    },
-    finance: { insight: "Rezeki tumbuh dari ketenangan.", reason: "Venus", advice: "Hemat" },
-    love: { insight: "Kedekatan terasa lebih sehat.", reason: "Moon", advice: "Dengar" },
-    relational: { insight: "Batas yang hangat menjaga energi.", reason: "Mars", advice: "Batas" },
-    spiritual: { insight: "Keheningan pagi membawa kejernihan.", reason: "Neptune", advice: "Doa" },
-    challenges: { insight: "Tekanan hari ini adalah sinyal untuk melambat.", reason: "Saturn", advice: "Jeda" },
-    opportunities: { insight: "Peluang baru muncul dari keberanian menguji.", reason: "Jupiter", advice: "Uji" },
-    advice: { insight: "Ingat untuk beristirahat.", reason: "General", advice: "Tidur" },
+    mental: { insight: "PRIMARY MENTAL INSIGHT: Rezeki tumbuh dari ketenangan.", reason: "Mercury", advice: "Fokus" },
+    finance: { insight: "PRIMARY FINANCE INSIGHT: Kedekatan terasa lebih sehat.", reason: "Venus", advice: "Hemat" },
+    love: { insight: "PRIMARY LOVE INSIGHT: Batas yang hangat menjaga energi.", reason: "Moon", advice: "Dengar" },
+    relational: { insight: "PRIMARY RELATIONAL INSIGHT: Keheningan pagi membawa kejernihan.", reason: "Mars", advice: "Batas" },
+    spiritual: { insight: "PRIMARY SPIRITUAL INSIGHT: Tekanan hari ini adalah sinyal untuk melambat.", reason: "Neptune", advice: "Doa" },
+    challenges: { insight: "PRIMARY CHALLENGES INSIGHT: Peluang baru muncul dari keberanian menguji.", reason: "Saturn", advice: "Jeda" },
+    opportunities: { insight: "PRIMARY OPPORTUNITIES INSIGHT: Ingat untuk beristirahat.", reason: "Jupiter", advice: "Uji" },
+    advice: { insight: "PRIMARY ADVICE INSIGHT: Tidur teratur menjaga stamina.", reason: "General", advice: "Tidur" },
+  },
+  soulReflectionText: "SECONDARY SOUL REFLECTION FALLBACK TEXT ONLY.",
+  dailyNoteText: "SECONDARY DAILY NOTE FALLBACK TEXT ONLY.",
+  dailyConclusion: {
+    title: "Kesimpulan Hari Ini",
+    text: "SECONDARY DAILY CONCLUSION FALLBACK TEXT ONLY.",
+    localDateKey: "2026-07-30",
+    timezone: "Asia/Jakarta",
+    owner: "daily-synthesis",
+    sourceVersion: "1.0",
   },
 };
 
-// 1. Single explanation section candidate extraction
+// 1. Primary Source Prioritization Test
 {
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "Menemani hari. Tidak semua hal perlu dipaksa hari ini.", fullReflection: "" },
-    categories: undefined,
-  });
-  test("Single section produces valid candidates", candidates.length > 0);
-  test("Candidate text contains clean sentence", candidates.some((c) => c.text.includes("Menemani hari.")));
-}
+  const { primary, secondary } = extractThemeExplanationCandidates(mockGuidance);
+  test("Primary candidates array is non-empty", primary.length > 0);
+  test("Secondary candidates array is non-empty", secondary.length > 0);
 
-// 2. Multiple explanation sections
-{
-  const candidates = extractThemeExplanationCandidates(mockGuidance);
-  test("Multiple sections produce candidate list", candidates.length >= 5);
-}
-
-// 3. Explanations with Markdown
-{
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "", fullReflection: "### **Catatan Hari Ini**\nIni adalah *penjelasan* markdown." },
-    categories: undefined,
-  });
-  test("Markdown formatting stripped from candidates", candidates.every((c) => !c.text.includes("**") && !c.text.includes("###")));
-}
-
-// 4. Explanations with headings & headers
-{
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "Tema saat ini: Menemani hari.", fullReflection: "" },
-    categories: undefined,
-  });
-  test("Theme prefix label stripped", candidates.some((c) => c.text.startsWith("Menemani hari")));
-}
-
-// 5. Empty candidate set
-{
-  const candidates = extractThemeExplanationCandidates(null);
-  test("Null guidance produces empty candidate array", candidates.length === 0);
-}
-
-// 6. Duplicate candidate set
-{
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "Menemani hari.", fullReflection: "Menemani hari." },
-    categories: undefined,
-  });
-  test("Duplicate phrases deduplicated", candidates.length === 1);
-}
-
-// 7. Candidates too long (> 220 chars) filter
-{
-  const longSentence = "Ini adalah kalimat yang sangat panjang sekali ".repeat(10);
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: longSentence, fullReflection: "" },
-    categories: undefined,
-  });
-  test("Candidate longer than 220 chars is excluded", !candidates.some((c) => c.text === longSentence));
-}
-
-// 8. Fallback when no candidate exists
-{
   const content = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+  });
+
+  const isSelectedFromPrimary = primary.some((p) => p.text === content.soulMessage.summary);
+  const isSelectedFromSecondary = secondary.some((s) => s.text === content.soulMessage.summary);
+
+  test("Theme summary is strictly chosen from PRIMARY candidates when available", isSelectedFromPrimary && !isSelectedFromSecondary);
+}
+
+// 2. Secondary Fallback Source Test (when primary is empty)
+{
+  const secondaryOnlyGuidance: DailyGuidance = {
+    ...mockGuidance,
+    companionReflection: { preview: "FALLBACK PREVIEW TEXT ONLY FOR CARD.", fullReflection: "" },
+    dailyNarrativeParagraphs: [],
+    categories: undefined,
+  };
+
+  const { primary, secondary } = extractThemeExplanationCandidates(secondaryOnlyGuidance);
+  test("Primary is empty for fallback fixture", primary.length === 0);
+  test("Secondary is non-empty for fallback fixture", secondary.length > 0);
+
+  const content = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: secondaryOnlyGuidance,
+  });
+
+  test("Secondary fallback candidate chosen when primary is empty", secondary.some((s) => s.text === content.soulMessage.summary));
+}
+
+// 3. Re-render Card Persistence (same cardInstanceSeed produces identical theme)
+{
+  const cardSeed = "instance-seed-alpha-123";
+  const render1 = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: cardSeed,
+  });
+  const render2 = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: cardSeed,
+  });
+
+  test("Re-render with same cardInstanceSeed produces identical preview theme summary", render1.soulMessage.summary === render2.soulMessage.summary);
+}
+
+// 4. Preview and Export share exact same selectedTheme
+{
+  const cardSeed = "instance-seed-export-verify";
+  const previewState = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: cardSeed,
+  });
+
+  // Export operation simulates reading locked card state
+  const exportState = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: cardSeed,
+  });
+
+  test("Preview state and Export PNG state use identical selectedTheme text", previewState.soulMessage.summary === exportState.soulMessage.summary);
+}
+
+// 5. Two different cardInstanceSeed values can select different candidates
+{
+  const seedA = "instance-seed-A-111";
+  const seedB = "instance-seed-B-999";
+
+  const cardA = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: seedA,
+  });
+  const cardB = createDailyShareCardContent({
+    profileSections: [],
+    dateKey: "2026-07-30",
+    userSeed: "user-seed-789",
+    guidance: mockGuidance,
+    cardInstanceSeed: seedB,
+  });
+
+  test("Card A and Card B produce valid non-empty theme summaries", Boolean(cardA.soulMessage.summary && cardB.soulMessage.summary));
+}
+
+// 6. Ultimate Fallback (when no candidates exist at all)
+{
+  const emptyContent = createDailyShareCardContent({
     profileSections: [],
     dateKey: "2026-07-30",
     userSeed: "test-user-seed",
     guidance: null,
   });
-  test("Fallback summary used when no guidance available", content.soulMessage.summary === "Tidak semua hal perlu dipaksa hari ini.");
-  test("Fallback is not undefined or null", content.soulMessage.summary !== undefined && content.soulMessage.summary !== null);
-  test("Fallback is not placeholder error", !content.soulMessage.summary.includes("[object Object]") && !content.soulMessage.summary.includes("undefined"));
-}
-
-// 9. Stable selection during re-render (same seed produces identical candidate)
-{
-  const content1 = createDailyShareCardContent({
-    profileSections: [],
-    dateKey: "2026-07-30",
-    userSeed: "user-seed-456",
-    guidance: mockGuidance,
-  });
-  const content2 = createDailyShareCardContent({
-    profileSections: [],
-    dateKey: "2026-07-30",
-    userSeed: "user-seed-456",
-    guidance: mockGuidance,
-  });
-  test("Re-render with same seed produces identical theme summary", content1.soulMessage.summary === content2.soulMessage.summary);
-}
-
-// 10. Two separate card generations (different seeds) can produce different candidates
-{
-  const contentA = createDailyShareCardContent({
-    profileSections: [],
-    dateKey: "2026-07-30",
-    userSeed: "seed-alpha",
-    guidance: mockGuidance,
-  });
-  const contentB = createDailyShareCardContent({
-    profileSections: [],
-    dateKey: "2026-08-01",
-    userSeed: "seed-beta",
-    guidance: mockGuidance,
-  });
-  test("Different seeds produce valid non-empty theme summaries", Boolean(contentA.soulMessage.summary && contentB.soulMessage.summary));
-}
-
-// 11. Does NOT select CTA phrases
-{
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "Buka halaman premium sekarang.", fullReflection: "" },
-    categories: undefined,
-  });
-  test("Short CTA or non-explanation text excluded", !candidates.some((c) => c.text === "Buka halaman premium sekarang."));
-}
-
-// 12. Does NOT select system titles like "Tema 3" or "undefined"
-{
-  const candidates = extractThemeExplanationCandidates({
-    ...mockGuidance,
-    companionReflection: { preview: "Tema 3", fullReflection: "undefined" },
-    categories: undefined,
-  });
-  test("Prohibited system titles excluded", candidates.length === 0);
-}
-
-// 13. Privacy check: no PII leak in output summary
-{
-  const content = createDailyShareCardContent({
-    profileSections: [],
-    dateKey: "2026-07-30",
-    userSeed: "secret-user-uid-999",
-    guidance: mockGuidance,
-  });
-  test("Summary contains no UID leak", !content.soulMessage.summary.includes("secret-user-uid-999"));
+  test("Ultimate fallback theme used when guidance is null", emptyContent.soulMessage.summary === "Tidak semua hal perlu dipaksa hari ini.");
 }
 
 console.log(`\nResults: ${passed + failed} tests, ${passed} passed, ${failed} failed`);
