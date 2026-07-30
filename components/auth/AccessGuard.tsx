@@ -1,8 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { canAccessPremiumFeature, type PremiumFeature } from "@/lib/access/accessControl";
+import { type PremiumFeature } from "@/lib/access/accessControl";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 
 type AccessGuardProps = {
@@ -13,6 +15,19 @@ type AccessGuardProps = {
 export function AccessGuard({ children, feature }: AccessGuardProps) {
   const auth = useAuth();
   const router = useRouter();
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+
+  const uid = auth?.userProfile?.uid;
+  useEffect(() => {
+    if (!uid) return;
+    let cancelled = false;
+    getFounderTesterRecord(uid).then((record) => {
+      if (!cancelled) setTesterRecord(record);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [uid]);
 
   if (
     process.env.NODE_ENV === "development" &&
@@ -24,7 +39,7 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
 
   if (!auth || auth.loading) return <>{children}</>;
 
-  const hasAccess = canAccessPremiumFeature(auth.userProfile, feature);
+  const hasAccess = getEntitlementStatus(auth.userProfile, new Date(), testerRecord).isPremium;
   if (hasAccess) return <>{children}</>;
 
   return (
