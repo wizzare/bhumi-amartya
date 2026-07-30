@@ -2,12 +2,12 @@ import { initializeApp, cert, getApps } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { existsSync, readFileSync } from "fs";
 import {
-  FOUNDER_TESTER_SOURCE_OF_TRUTH,
   INTI_GRANT_STARTS_AT,
   INTI_ACCESS_UNTIL,
   ALFA_GRANT_STARTS_AT,
   ALFA_ACCESS_UNTIL,
 } from "../lib/billing/founderTesterSourceOfTruth";
+import { LEGACY_FOUNDER_TESTER_RECORDS as FOUNDER_TESTER_SOURCE_OF_TRUTH } from "./migrations/legacyFounderTesterData";
 
 const EXPECTED_PROJECT_ID = "bhumiamartya-fe85c";
 const DEFAULT_SA_PATH = "C:/Users/shein/Downloads/bhumiamartya-fe85c-5a2cbcc72efa.json";

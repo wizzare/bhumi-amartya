@@ -1,10 +1,9 @@
+import { buildServerOwnedAccessGrant, getFounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import {
   buildDefaultNewUserAccessGrant,
-  buildServerOwnedAccessGrant,
   DEFAULT_USER_POLICY_EFFECTIVE_AT,
-  getFounderTesterRecord,
   type ServerOwnedAccessGrant,
-} from "@/lib/billing/founderTesterSourceOfTruth";
+} from "@/lib/billing/registrationPolicy";
 
 export type MembershipType = "REGULAR" | "PENJAGA_BHUMI_INTI";
 
@@ -16,8 +15,8 @@ export type July1AccessGrantInput = {
   registeredAt?: string | Date | null;
 };
 
-export function getJuly1AccessGrant(input: July1AccessGrantInput): ServerOwnedAccessGrant {
-  const record = getFounderTesterRecord(input);
+export async function getJuly1AccessGrant(input: July1AccessGrantInput): Promise<ServerOwnedAccessGrant> {
+  const record = await getFounderTesterRecord(input.uid);
   if (record) {
     return buildServerOwnedAccessGrant(record);
   }
