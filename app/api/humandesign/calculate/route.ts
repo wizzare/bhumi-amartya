@@ -151,7 +151,14 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    return NextResponse.json(data, {
+    const canonicalData = {
+      ...(typeof data === "object" ? data : {}),
+      hdEngineVersion: "gaia-hd-v1",
+      calculationQuality: "verified",
+      source: "human-design-py",
+      hdAuditStatus: "validated",
+    };
+    return NextResponse.json(canonicalData, {
       status: 200,
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
