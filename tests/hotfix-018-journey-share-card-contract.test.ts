@@ -106,17 +106,61 @@ assert(true, "6. Profile and manifestation use independent domain seeds (proved 
 
 // ── createDailyShareCardContent tests ──────────────────────────────────────
 
-// 7: Soul message uses daily conclusion
+// 7: Soul message falls back to daily conclusion (secondary tier) when no
+// primary explanation source exists. A single-sentence conclusion is used so
+// the deterministic per-sentence candidate selection is unambiguous.
 const withConclusion = createDailyShareCardContent({
   profileSections: mockSections(2),
   dateKey: "2026-07-20",
   userSeed: "test-user",
-  guidance: mockGuidance("Ini adalah kesimpulan hari ini. Ini adalah kalimat kedua."),
+  guidance: mockGuidance("Ini adalah kesimpulan hari ini yang tunggal."),
 });
-assert(withConclusion.soulMessage.summary.includes("kesimpulan"), "7a. Soul message contains daily conclusion text");
+assert(withConclusion.soulMessage.summary.includes("kesimpulan"), "7a. Soul message falls back to daily conclusion text when no primary source exists");
 assert(withConclusion.soulMessage.title === "Pesan untuk Jiwamu", "7b. Soul message title is canonical");
 assert(withConclusion.soulMessage.themeLabel === "Tema saat ini", "7c. Theme label is canonical");
 assert(withConclusion.soulMessage.source === "dailyConclusion", "7d. Soul message source is dailyConclusion");
+
+// 7e: Primary explanation source (dailyNarrativeParagraphs) takes precedence
+// over the secondary dailyConclusion fallback, per extractThemeExplanationCandidates'
+// documented priority (companionReflection.fullReflection, dailyNarrativeParagraphs,
+// categories.*.insight/reason are primary; dailyConclusion.text is secondary).
+const guidanceWithPrimaryAndSecondary = mockGuidance("Kesimpulan sekunder yang seharusnya tidak dipakai.");
+guidanceWithPrimaryAndSecondary.dailyNarrativeParagraphs = ["Narasi utama yang menjadi sumber penjelasan tema."];
+const withPrimarySource = createDailyShareCardContent({
+  profileSections: mockSections(2),
+  dateKey: "2026-07-20",
+  userSeed: "test-user",
+  guidance: guidanceWithPrimaryAndSecondary,
+});
+assert(
+  withPrimarySource.soulMessage.summary.includes("Narasi utama") && !withPrimarySource.soulMessage.summary.includes("kesimpulan sekunder"),
+  "7e. Primary explanation source (dailyNarrativeParagraphs) takes precedence over secondary dailyConclusion fallback"
+);
+
+// 7f: Stable per-card selection / preview-export identity — the same
+// cardInstanceSeed (locked once by ShareCard.tsx via useState) must always
+// resolve to the exact same soul message, whether the content is computed
+// for the live preview render or the exported PNG.
+const previewRender = createDailyShareCardContent({
+  profileSections: mockSections(2),
+  dateKey: "2026-07-20",
+  userSeed: "test-user",
+  guidance: mockGuidance("Ini adalah kesimpulan hari ini yang tunggal."),
+  cardInstanceSeed: "locked-card-instance-001",
+});
+const exportRender = createDailyShareCardContent({
+  profileSections: mockSections(2),
+  dateKey: "2026-07-20",
+  userSeed: "test-user",
+  guidance: mockGuidance("Ini adalah kesimpulan hari ini yang tunggal."),
+  cardInstanceSeed: "locked-card-instance-001",
+});
+assert(
+  previewRender.soulMessage.summary === exportRender.soulMessage.summary &&
+  previewRender.profileToday.summary === exportRender.profileToday.summary &&
+  previewRender.manifestationToday.text === exportRender.manifestationToday.text,
+  "7f. Preview and export renders with the same locked cardInstanceSeed produce identical content (WYSIWYG identity)"
+);
 
 // 8: Missing daily conclusion uses fallback
 const withoutConclusion = createDailyShareCardContent({
