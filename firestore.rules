@@ -364,5 +364,15 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isFounderOrAdmin();
     }
+
+    // TESTER BADGE REGISTRY — replaces the previous hardcoded client-bundled
+    // founder/tester array. Keyed by uid. A user may read only their own
+    // record; admins may read any record (for the admin activity dashboard).
+    // No client writes — records are provisioned only via the one-time
+    // migration script (Admin SDK, bypasses these rules) or a trusted backend.
+    match /testerBadgeRegistry/{uid} {
+      allow read: if isOwner(uid) || isAdminActor();
+      allow write: if false;
+    }
   }
 }
