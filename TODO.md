@@ -62,6 +62,8 @@
 | 7 | Billing verifier ESLint v9 configuration | `npm run lint` ignores `api`/`lib`; source lint is unavailable | — |
 | 8 | Billing verifier auth validator contract drift | Validator requires `AUTH_INVALID`, but the route emits categorized auth errors instead | — |
 | 9 | Arsip Akashi timezone contract mismatch | `localDateParts` passes `+07:00` to `Intl.DateTimeFormat`, which requires an IANA zone; the 3x3 regression test cannot execute | — |
+| 10 | `billing-entitlement-presentation.test.ts` failing | Pre-existing on rescue/opencode-sharecard-66f8871f prior to build82-integration; not caused by the PII/trial-timing integration work. Not yet fixed. | — |
+| 11 | `hd-url-resolution.test.ts` failing (4/8 assertions) | Pre-existing on rescue/opencode-sharecard-66f8871f prior to build82-integration; not caused by the PII/trial-timing integration work. Not yet fixed. | — |
 
 ## 6. Security and Privacy Follow-ups
 
