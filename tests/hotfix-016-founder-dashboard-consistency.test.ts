@@ -12,11 +12,11 @@ function dateKey(date: Date): string {
 
 const TODAY = "2026-07-20";
 
-const u1 = { uid: "U1", registeredAt: new Date("2026-07-20T10:00:00Z").getTime(), excludeFromAdminAnalytics: false };
-const u2 = { uid: "U2", registeredAt: new Date("2026-07-20T14:30:00Z").getTime(), excludeFromAdminAnalytics: false };
-const u3_yesterday = { uid: "U3", registeredAt: new Date("2026-07-19T09:00:00Z").getTime(), excludeFromAdminAnalytics: false };
-const u4_tester = { uid: "U4_TESTER", registeredAt: new Date("2026-07-20T11:00:00Z").getTime(), excludeFromAdminAnalytics: true };
-const u5_existing = { uid: "U5_EXISTING", registeredAt: new Date("2026-06-01T10:00:00Z").getTime(), excludeFromAdminAnalytics: false };
+const u1 = { uid: "U1", email: "u1@example.com", registeredAt: new Date("2026-07-20T10:00:00Z").getTime(), excludeFromAdminAnalytics: false };
+const u2 = { uid: "U2", email: "u2@example.com", registeredAt: new Date("2026-07-20T14:30:00Z").getTime(), excludeFromAdminAnalytics: false };
+const u3_yesterday = { uid: "U3", email: "u3@example.com", registeredAt: new Date("2026-07-19T09:00:00Z").getTime(), excludeFromAdminAnalytics: false };
+const u4_tester = { uid: "U4_TESTER", email: "u4@example.com", registeredAt: new Date("2026-07-20T11:00:00Z").getTime(), excludeFromAdminAnalytics: true };
+const u5_existing = { uid: "U5_EXISTING", email: "u5@example.com", registeredAt: new Date("2026-06-01T10:00:00Z").getTime(), excludeFromAdminAnalytics: false };
 
 const ALL_USERS = [u1, u2, u3_yesterday, u4_tester, u5_existing];
 
