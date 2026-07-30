@@ -1,5 +1,6 @@
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
+import { normalizeIndonesianSentenceCase } from "@/lib/utils/sentenceCase";
 
 export type SoulMessageSection = {
   title: string;
@@ -47,7 +48,13 @@ type ManifestationCandidate = {
   text: string;
 };
 
-const FALLBACK_SOUL_MESSAGE = "Refleksi hari ini belum tersedia.";
+type ThemeExplanationCandidate = {
+  id: string;
+  text: string;
+};
+
+const ULTIMATE_FALLBACK_THEME = "Tidak semua hal perlu dipaksa hari ini.";
+const FALLBACK_SOUL_MESSAGE = "Tidak semua hal perlu dipaksa hari ini.";
 const FALLBACK_MANIFESTATION = "Hari ini aku memilih hadir sepenuhnya bagi diriku sendiri.";
 const FALLBACK_PROFILE_TITLE = "Cermin Jiwa";
 const FALLBACK_PROFILE_SUMMARY = "Hari ini, dengarkan bagian dirimu yang meminta ruang untuk tumbuh tanpa tergesa-gesa.";
@@ -78,7 +85,7 @@ function splitSentences(value: string): string[] {
 
 export function stripThemePrefix(text: string | null | undefined): string {
   let cleaned = (text ?? "").trim();
-  const pattern = /^\s*tema\s+saat\s+ini\s*:\s*/i;
+  const pattern = /^\s*(tema\s+saat\s+ini|tema|pesan|catatan|penjelasan)\s*:\s*/i;
   while (pattern.test(cleaned)) {
     cleaned = cleaned.replace(pattern, "").trim();
   }
@@ -101,9 +108,7 @@ export function deduplicatePhrases(phrases: string[]): string[] {
 }
 
 export function formatSentenceCapitalization(text: string): string {
-  if (!text) return "";
-  const lower = text.trim().toLowerCase();
-  return lower.replace(/(^\s*\w|[\.\!\?]\s*\w)/g, (match) => match.toUpperCase());
+  return normalizeIndonesianSentenceCase(text);
 }
 
 export function composeProfileNarrative(phrases: string[]): { title: string; description: string } {
@@ -135,19 +140,20 @@ export function composeProfileNarrative(phrases: string[]): { title: string; des
     rawDescription = combined;
   }
 
-  const description = formatSentenceCapitalization(rawDescription);
+  const description = normalizeIndonesianSentenceCase(rawDescription);
   return { title, description };
 }
 
 function snippet(value: string | null | undefined, fallback: string, maxSentences = 2): string {
   const cleaned = clean(value);
-  if (!cleaned) return fallback;
+  if (!cleaned) return normalizeIndonesianSentenceCase(fallback);
   const rawSentences = splitSentences(cleaned);
   const sentences = deduplicatePhrases(rawSentences);
   const selected = sentences.length > 0
     ? sentences.slice(0, maxSentences).join(" ")
     : cleaned;
-  return selected.length > 220 ? `${selected.slice(0, 217).trim()}...` : selected;
+  const result = selected.length > 220 ? `${selected.slice(0, 217).trim()}...` : selected;
+  return normalizeIndonesianSentenceCase(result);
 }
 
 /**
@@ -162,7 +168,7 @@ export function selectDailyCandidate<T extends { id: string }>(
   options: {
     userKey: string;
     dateKey: string;
-    domainKey: "PROFILE_TODAY" | "MANIFESTATION_TODAY";
+    domainKey: "PROFILE_TODAY" | "MANIFESTATION_TODAY" | "SOUL_MESSAGE_THEME";
   },
 ): T | null {
   if (!candidates.length) return null;
@@ -177,10 +183,93 @@ function dailySeed(uid: string, dateKey: string, domain: string): string {
   return `${uid}|${dateKey}|${domain}|${SEED_VERSION}`;
 }
 
-function buildSoulMessage(guidance?: DailyGuidance | null): SoulMessageSection {
-  const rawText = guidance?.dailyConclusion?.text || guidance?.dailyNoteText || guidance?.soulReflectionText || "";
-  const cleanedText = stripThemePrefix(rawText);
-  const summary = snippet(cleanedText, FALLBACK_SOUL_MESSAGE, 2);
+const PROHIBITED_THEME_PATTERNS = [
+  /^tema\s*\d+$/i,
+  /^undefined$/i,
+  /^null$/i,
+  /^\[object\s+object\]$/i,
+  /tema\s+tidak\s+tersedia/i,
+  /berdasarkan\s+analisis\s+lengkap/i,
+  /buka\s+halaman\s+premium/i,
+  /langganan\s+premium/i,
+  /upgrade\s+ke/i,
+  /klik\s+di\s+sini/i,
+  /kebijakan\s+privasi/i,
+  /syarat\s+dan\s+ketentuan/i,
+  /copyright/i,
+  /http:\/\//i,
+  /https:\/\//i,
+];
+
+function isProhibitedThemeText(text: string): boolean {
+  if (!text || text.trim().length < 10 || text.trim().length > 220) return true;
+  const trimmed = text.trim();
+  return PROHIBITED_THEME_PATTERNS.some((pattern) => pattern.test(trimmed));
+}
+
+export function extractThemeExplanationCandidates(guidance?: DailyGuidance | null): ThemeExplanationCandidate[] {
+  if (!guidance) return [];
+
+  const rawBlocks: string[] = [];
+
+  if (guidance.companionReflection?.fullReflection) rawBlocks.push(guidance.companionReflection.fullReflection);
+  if (guidance.companionReflection?.preview) rawBlocks.push(guidance.companionReflection.preview);
+  if (guidance.dailyNoteText) rawBlocks.push(guidance.dailyNoteText);
+  if (guidance.dailyNarrativeParagraphs && Array.isArray(guidance.dailyNarrativeParagraphs)) {
+    rawBlocks.push(...guidance.dailyNarrativeParagraphs);
+  }
+  if (guidance.dailyConclusion?.text) rawBlocks.push(guidance.dailyConclusion.text);
+  if (guidance.soulReflectionText) rawBlocks.push(guidance.soulReflectionText);
+
+  if (guidance.categories) {
+    Object.values(guidance.categories).forEach((cat) => {
+      if (cat?.insight) rawBlocks.push(cat.insight);
+      if (cat?.reason) rawBlocks.push(cat.reason);
+    });
+  }
+
+  const candidateTexts: string[] = [];
+
+  for (const block of rawBlocks) {
+    const cleanedBlock = stripThemePrefix(clean(block));
+    if (!cleanedBlock) continue;
+    const sentences = splitSentences(cleanedBlock);
+    for (const sentence of sentences) {
+      const normalizedSentence = normalizeIndonesianSentenceCase(sentence);
+      if (!isProhibitedThemeText(normalizedSentence)) {
+        candidateTexts.push(normalizedSentence);
+      }
+    }
+  }
+
+  const deduped = deduplicatePhrases(candidateTexts);
+  return deduped.map((text, idx) => ({
+    id: `theme-cand-${idx}-${hash(text).toString(16)}`,
+    text,
+  }));
+}
+
+function buildSoulMessage(guidance?: DailyGuidance | null, seed?: string): SoulMessageSection {
+  const candidates = extractThemeExplanationCandidates(guidance);
+
+  let selectedText = ULTIMATE_FALLBACK_THEME;
+
+  if (candidates.length > 0) {
+    const selected = selectDailyCandidate(candidates, {
+      userKey: seed || "default-soul-seed",
+      dateKey: "",
+      domainKey: "SOUL_MESSAGE_THEME",
+    });
+    if (selected && selected.text) {
+      selectedText = selected.text;
+    }
+  } else if (guidance?.dailyConclusion?.text || guidance?.dailyNoteText || guidance?.soulReflectionText) {
+    const fallbackText = guidance.dailyConclusion?.text || guidance.dailyNoteText || guidance.soulReflectionText || "";
+    selectedText = snippet(stripThemePrefix(fallbackText), ULTIMATE_FALLBACK_THEME, 2);
+  }
+
+  const summary = normalizeIndonesianSentenceCase(selectedText);
+
   return {
     title: "Pesan untuk Jiwamu",
     themeLabel: "Tema saat ini",
@@ -228,7 +317,7 @@ function buildProfileToday(
       title: "Profil Hari Ini",
       sourceSectionId: "fallback",
       sectionTitle: FALLBACK_PROFILE_TITLE,
-      summary: FALLBACK_PROFILE_SUMMARY,
+      summary: normalizeIndonesianSentenceCase(FALLBACK_PROFILE_SUMMARY),
       source: "akashiArchive",
     };
   }
@@ -247,13 +336,13 @@ function buildManifestationCandidates(
   if (!manifestation) return [];
   const candidates: ManifestationCandidate[] = [];
   if (manifestation.affirmation?.trim()) {
-    candidates.push({ id: "affirmation", lawType: "Law of Affirmation", text: manifestation.affirmation });
+    candidates.push({ id: "affirmation", lawType: "Law of Affirmation", text: normalizeIndonesianSentenceCase(manifestation.affirmation) });
   }
   if (manifestation.assumption?.trim()) {
-    candidates.push({ id: "assumption", lawType: "Law of Assumption", text: manifestation.assumption });
+    candidates.push({ id: "assumption", lawType: "Law of Assumption", text: normalizeIndonesianSentenceCase(manifestation.assumption) });
   }
   if (manifestation.attraction?.trim()) {
-    candidates.push({ id: "attraction", lawType: "Law of Attraction", text: manifestation.attraction });
+    candidates.push({ id: "attraction", lawType: "Law of Attraction", text: normalizeIndonesianSentenceCase(manifestation.attraction) });
   }
   return candidates;
 }
@@ -271,7 +360,7 @@ function buildManifestationToday(
     return {
       title: "Manifestasi Hari Ini",
       lawType: "Law of Affirmation",
-      text: FALLBACK_MANIFESTATION,
+      text: normalizeIndonesianSentenceCase(FALLBACK_MANIFESTATION),
       source: "wellnessManifestation",
     };
   }
@@ -296,12 +385,13 @@ export function createDailyShareCardContent({
 }): DailyShareCardContent {
   const profileSeed = dailySeed(userSeed, dateKey, "PROFILE_TODAY");
   const manifestationSeed = dailySeed(userSeed, dateKey, "MANIFESTATION_TODAY");
+  const soulSeed = dailySeed(userSeed, dateKey, "SOUL_MESSAGE_THEME");
 
   const profileCandidates = buildProfileCandidates(profileSections);
   const manifestationCandidates = buildManifestationCandidates(guidance?.manifestation);
 
   return {
-    soulMessage: buildSoulMessage(guidance),
+    soulMessage: buildSoulMessage(guidance, soulSeed),
     profileToday: buildProfileToday(profileCandidates, profileSeed),
     manifestationToday: buildManifestationToday(manifestationCandidates, manifestationSeed),
     metadata: {
