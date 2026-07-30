@@ -1,6 +1,7 @@
 "use client";
 
 import type { WeeklyGuidance } from "@/lib/weeklyGuidance/types";
+import { normalizeIndonesianSentenceCase } from "@/lib/utils/sentenceCase";
 
 function formatRange(value: WeeklyGuidance): string {
   const format = (date: string) => new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: value.timezone }).format(new Date(`${date}T12:00:00`));
@@ -19,13 +20,13 @@ export function WeeklyGuidanceCard({ guidance }: { guidance: WeeklyGuidance | nu
       {guidance.sections.map((section) => <article key={section.key} className="rounded-[2rem] border border-[#E8E9E5] bg-white p-5 shadow-sm">
         <h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52]">{section.title}</h3>
         <div className="mt-3 space-y-3 text-sm leading-relaxed text-[#667064]">
-          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Awal Pekan</p>{section.phases.awalPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-awal-${i}`}>{paragraph}</p>)}</div>
-          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Tengah Pekan</p>{section.phases.tengahPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-tengah-${i}`}>{paragraph}</p>)}</div>
-          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Akhir Pekan</p>{section.phases.akhirPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-akhir-${i}`}>{paragraph}</p>)}</div>
+          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Awal Pekan</p>{section.phases.awalPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-awal-${i}`}>{normalizeIndonesianSentenceCase(paragraph)}</p>)}</div>
+          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Tengah Pekan</p>{section.phases.tengahPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-tengah-${i}`}>{normalizeIndonesianSentenceCase(paragraph)}</p>)}</div>
+          <div><p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#9AA394]">Akhir Pekan</p>{section.phases.akhirPekan.map((paragraph, i) => <p className="mt-1" key={`${section.key}-tengah-${i}`}>{normalizeIndonesianSentenceCase(paragraph)}</p>)}</div>
         </div>
-        <div className="mt-3 rounded-2xl border border-[#DDE4D8] bg-white/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7B8776]">Saran Bhumi</p><p className="mt-1 text-sm leading-relaxed text-[#667064]">{section.advice.join(" ")}</p></div>
+        <div className="mt-3 rounded-2xl border border-[#DDE4D8] bg-white/60 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#7B8776]">Saran Bhumi</p><p className="mt-1 text-sm leading-relaxed text-[#667064]">{normalizeIndonesianSentenceCase(section.advice.join(" "))}</p></div>
       </article>)}
-      <article className="rounded-[2rem] border border-[#DDE4D8] bg-[#F7F5EF] p-5"><h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52]">Arah Minggu Ini</h3><div className="mt-2 space-y-3 text-sm leading-relaxed text-[#667064]">{guidance.weeklyDirection.paragraphs.map((paragraph, i) => <p key={`direction-${i}`}>{paragraph}</p>)}</div></article>
+      <article className="rounded-[2rem] border border-[#DDE4D8] bg-[#F7F5EF] p-5"><h3 className="text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52]">Arah Minggu Ini</h3><div className="mt-2 space-y-3 text-sm leading-relaxed text-[#667064]">{guidance.weeklyDirection.paragraphs.map((paragraph, i) => <p key={`direction-${i}`}>{normalizeIndonesianSentenceCase(paragraph)}</p>)}</div></article>
     </div>
   </section>;
 }
