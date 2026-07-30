@@ -177,10 +177,36 @@ export function getEntitlementStatus(profile: UserProfile | null, now = new Date
   // 4. Time-Based 7-Day Free Trial (Rule Priority 4)
   const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
   const trialStart = toDate(profile.trialStartedAt) || toDate(profile.accessStart) || toDate(profile.createdAt) || toDate(profile.registeredAt);
-  const trialEnd = toDate(profile.trialEndsAt) || toDate(profile.accessUntil) || (trialStart ? new Date(trialStart.getTime() + SEVEN_DAYS_MS) : (profile.setupCompleted ? new Date(now.getTime() + SEVEN_DAYS_MS) : null));
+  const trialEnd = toDate(profile.trialEndsAt) || toDate(profile.accessUntil) || (trialStart ? new Date(trialStart.getTime() + SEVEN_DAYS_MS) : null);
 
   const normalizedPlan = String(profile.plan || "").toLowerCase();
   const isExplicitFree = profile.trialStatus === "free" || normalizedPlan === "free" || normalizedPlan === "expired";
+
+  // If no setup timestamp exists at all (trialStart is null and trialEnd is null), return explicit safe non-premium status
+  if (!trialStart && !trialEnd) {
+    if (expiredSubscriberAt) {
+      return {
+        isPremium: false,
+        reason: "none",
+        expiresAt: expiredSubscriberAt,
+        daysRemaining: 0,
+        effectiveTier: "Paid Premium (Expired)",
+        source: "Google Play Billing",
+        status: "Expired",
+        trialLoginsRemaining: null,
+      };
+    }
+    return {
+      isPremium: false,
+      reason: "none",
+      expiresAt: null,
+      daysRemaining: 0,
+      effectiveTier: "Free",
+      source: "Free Account",
+      status: "Missing Setup Timestamp",
+      trialLoginsRemaining: null,
+    };
+  }
 
   if (trialEnd && now < trialEnd && !isExplicitFree) {
     const msLeft = trialEnd.getTime() - now.getTime();
