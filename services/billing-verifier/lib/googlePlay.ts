@@ -9,7 +9,10 @@ type VoidedPurchasesResponse = { voidedPurchases?: VoidedPurchase[] };
 const VOIDED_PURCHASE_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 
 async function accessToken() {
-  const privateKey = process.env.GOOGLE_PLAY_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const rawKey = process.env.GOOGLE_PLAY_PRIVATE_KEY || "";
+  const privateKey = rawKey.trim().startsWith("-----BEGIN")
+    ? rawKey.replace(/\\n/g, "\n")
+    : Buffer.from(rawKey.trim(), "base64").toString("utf-8");
   if (!process.env.GOOGLE_PLAY_CLIENT_EMAIL || !privateKey) throw new Error("GOOGLE_PLAY_CREDENTIALS_MISSING");
   const auth = new GoogleAuth({ credentials: { client_email: process.env.GOOGLE_PLAY_CLIENT_EMAIL, private_key: privateKey }, scopes: ["https://www.googleapis.com/auth/androidpublisher"] });
   const client = await auth.getClient();
