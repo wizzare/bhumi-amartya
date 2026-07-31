@@ -15,15 +15,32 @@ service cloud.firestore {
       return isSignedIn() && ('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com';
     }
 
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    // COMPATIBILITY BRIDGE (Build 83, Option A): production admin/founder
+    // accounts were provisioned via Firestore users/{uid}.role /
+    // .guardianRole, not Auth custom claims. No migration has provisioned
+    // admin/founder custom claims yet (confirmed by read-only audit against
+    // bhumiamartya-fe85c on 2026-07-31), so the legacy Firestore-role path
+    // MUST stay active until that migration runs, or existing non-Founder
+    // admins lose access the moment this ruleset deploys. Remove
+    // legacyRoleIsAdminOrFounder() only after a completed + verified custom
+    // claims migration for every account currently relying on it.
+    function legacyRoleIsAdminOrFounder() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '').lower()
+            in ['admin', 'founder', 'dev_admin'] ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('guardianRole', '').lower()
+            in ['admin', 'founder', 'dev_admin']
+        );
     }
 
     function isFounderOrAdmin() {
       return isSignedIn() && (
         (('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com') ||
         (('admin' in request.auth.token) && request.auth.token.admin == true) ||
-        (('founder' in request.auth.token) && request.auth.token.founder == true)
+        (('founder' in request.auth.token) && request.auth.token.founder == true) ||
+        legacyRoleIsAdminOrFounder()
       );
     }
 
@@ -324,6 +341,10 @@ service cloud.firestore {
     }
 
     match /weeklyReports/{reportId} {
+      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /weeklyReflections/{docId} {
       allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
