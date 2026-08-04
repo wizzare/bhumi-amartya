@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, getDoc, setDoc, orderBy, limit as firestoreLimit, startAfter, documentId, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, getDoc, setDoc, orderBy, limit as firestoreLimit, startAfter, documentId, getCountFromServer, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { timedQuery } from "@/lib/dev/queryInstrumentation";
 import { UserProfile } from "@/lib/repositories/userRepository";
@@ -179,6 +179,45 @@ export const adminRepository = {
       } catch (error: unknown) {
         console.error("[ADMIN REPO] getAllUsersForMonitoring failed:", error);
         throw error;
+      }
+    });
+  },
+
+  async getTotalUserCount(): Promise<number> {
+    return timedQuery({ name: "getTotalUserCount", component: "adminRepository", expectedMax: 1 }, async () => {
+      try {
+        const snapshot = await getCountFromServer(collection(db, "users"));
+        return snapshot.data().count;
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] getTotalUserCount failed:", error);
+        return 0;
+      }
+    });
+  },
+
+  async findUserByExactUidOrEmail(term: string): Promise<UserProfile | null> {
+    return timedQuery({ name: "findUserByExactUidOrEmail", component: "adminRepository", expectedMax: 1 }, async () => {
+      const clean = term.trim();
+      if (!clean) return null;
+      try {
+        // 1. Try exact UID getDoc
+        const uidSnap = await getDoc(doc(db, "users", clean));
+        if (uidSnap.exists()) {
+          return { ...uidSnap.data(), uid: uidSnap.id } as UserProfile;
+        }
+
+        // 2. Try exact email query
+        if (clean.includes("@")) {
+          const emailSnap = await getDocs(query(collection(db, "users"), where("email", "==", clean.toLowerCase()), firestoreLimit(1)));
+          if (!emailSnap.empty) {
+            const first = emailSnap.docs[0];
+            return { ...first.data(), uid: first.id } as UserProfile;
+          }
+        }
+        return null;
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] findUserByExactUidOrEmail failed:", error);
+        return null;
       }
     });
   },

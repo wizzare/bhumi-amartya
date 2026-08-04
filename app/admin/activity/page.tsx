@@ -623,6 +623,7 @@ function resolveStandaloneHumanDesign(user: FounderUser, blueprintDoc: any): Sta
 }
 
 type AdminTab = "users" | "analytics" | "inbox";
+type FetchStatus = "idle" | "loading" | "loaded" | "error";
 
 export default function AdminActivityPage() {
   const auth = useAuth();
@@ -633,13 +634,14 @@ export default function AdminActivityPage() {
   const [customStart, setCustomStart] = useState(today);
   const [customEnd, setCustomEnd] = useState(today);
   const [users, setUsers] = useState<FounderUser[]>([]);
+  const [globalUserCount, setGlobalUserCount] = useState<number | null>(null);
   const [usersCursor, setUsersCursor] = useState<QueryDocumentSnapshot<DocumentData> | undefined>(undefined);
   const [usersHasMore, setUsersHasMore] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
   const [activities, setActivities] = useState<ActivityDoc[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsDoc[]>([]);
   const [analyticsHitLimit, setAnalyticsHitLimit] = useState(false);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsStatus, setAnalyticsStatus] = useState<FetchStatus>("idle");
   const [analyticsRan, setAnalyticsRan] = useState(false);
   const hasLoadedAnalytics = useRef(false);
   const [selectedUser, setSelectedUser] = useState<FounderUser | null>(null);
@@ -651,6 +653,8 @@ export default function AdminActivityPage() {
   const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({});
   const [tabError, setTabError] = useState<Record<string, string | null>>({});
   const [searchText, setSearchText] = useState("");
+  const [exactSearching, setExactSearching] = useState(false);
+  const [exactSearchNotice, setExactSearchNotice] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "premium" | "free">("all");
   const [sortBy, setSortBy] = useState<SortField>("lastLogin");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -703,6 +707,9 @@ export default function AdminActivityPage() {
     setUsersLoading(true);
     setError(null);
     try {
+      if (reset) {
+        void adminRepository.getTotalUserCount().then((count) => setGlobalUserCount(count));
+      }
       const page = await adminRepository.getAllUsersForMonitoring(25, reset ? undefined : usersCursor);
       const testerRecordsByUid = await getFounderTesterRecordsByUids(
         page.users.map((row: any) => String(row.uid || row.id || "")),
@@ -718,7 +725,7 @@ export default function AdminActivityPage() {
       setUsersHasMore(page.hasMore);
       setSourceStatus((prev) => ({
         ...prev,
-        users: `${reset ? analyticsFiltered.length : users.length + analyticsFiltered.length} users (page 25)`,
+        users: `${reset ? analyticsFiltered.length : users.length + analyticsFiltered.length} loaded (page 25)`,
       }));
       setLastRefreshedAt(new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB");
     } catch (err) {
@@ -731,7 +738,7 @@ export default function AdminActivityPage() {
   }, [users.length, usersCursor]);
 
   const loadActivityAnalytics = useCallback(async () => {
-    setAnalyticsLoading(true);
+    setAnalyticsStatus("loading");
     setAnalyticsHitLimit(false);
     try {
       const excludedUids = deriveAdminExcludedUids(users);
@@ -760,6 +767,7 @@ export default function AdminActivityPage() {
       setAnalytics(analyticsDocs);
       setAnalyticsHitLimit(hitLimit);
       setAnalyticsRan(true);
+      setAnalyticsStatus("loaded");
       setSourceStatus((prev) => ({
         ...prev,
         activity: activityResult.status === "fulfilled" ? `${activityDocs.length} rows` : "No data: Firestore read failed",
@@ -767,10 +775,38 @@ export default function AdminActivityPage() {
       }));
     } catch (err) {
       console.error("Failed to load activity analytics:", err);
-    } finally {
-      setAnalyticsLoading(false);
+      setAnalyticsStatus("error");
     }
   }, [rangeDates.end, rangeDates.start, users]);
+
+  const triggerExactSearch = useCallback(async (term: string) => {
+    const clean = term.trim();
+    if (!clean) return;
+    setExactSearching(true);
+    setExactSearchNotice(null);
+    try {
+      const found = await adminRepository.findUserByExactUidOrEmail(clean);
+      if (found) {
+        const testerRecordsByUid = await getFounderTesterRecordsByUids([found.uid]).catch(() => new Map<string, FounderTesterRecord>());
+        const normalized = normalizeUser(found, testerRecordsByUid.get(found.uid) || null);
+        if (normalized) {
+          setUsers((prev) => {
+            if (prev.some((u) => u.uid === normalized.uid)) return prev;
+            return [normalized, ...prev];
+          });
+          setSelectedUser(normalized);
+          setExactSearchNotice(`User "${normalized.displayName}" ditemukan via exact search server-side (UID/email match).`);
+        }
+      } else {
+        setExactSearchNotice(`User dengan UID/email "${clean}" tidak ditemukan di Firestore.`);
+      }
+    } catch (err) {
+      console.error("Exact search failed:", err);
+      setExactSearchNotice("Exact search server-side gagal.");
+    } finally {
+      setExactSearching(false);
+    }
+  }, []);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -1337,29 +1373,35 @@ export default function AdminActivityPage() {
         )}
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={<Users size={18} />} label="Total User" value={metrics.totalUsers} sub="unique valid UIDs" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
+          <MetricCard icon={<Users size={18} />} label="Total User" value={globalUserCount !== null ? globalUserCount : metrics.totalUsers} sub="global total (getCountFromServer)" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
           <MetricCard icon={<UserPlus size={18} />} label="New User" value={metrics.newUsers} sub="registered users on selected date" comparison={`Yesterday: ${metrics.newUsersYesterday}`} trend={metrics.newUserTrendText} tone="sage" />
-          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={metrics.dau} sub="unique active users on selected date" comparison={`kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}`} trend={trendLabel(metrics.dauTrend)} sparkline={metrics.sparkline} tone="sage" />
-          <MetricCard icon={<Calendar size={18} />} label="WAU" value={metrics.wau} sub="rolling 7-day unique active users" comparison={`${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="7d active" tone="cream" />
-          <MetricCard icon={<Calendar size={18} />} label="MAU" value={metrics.mau} sub="rolling 30-day unique active users" comparison={`${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base`} trend="30d active" tone="cream" />
-          <MetricCard icon={<TrendingUp size={18} />} label="Aggregate Retention D1" value={metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`} sub={`${metrics.d1.retained}/${metrics.d1.eligible} retained (D+1)`} comparison="cohort day 1" trend={metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch"} tone="sage" />
-          <MetricCard icon={<TrendingDown size={18} />} label="Aggregate Retention D7" value={metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`} sub={`${metrics.d7.retained}/${metrics.d7.eligible} retained (D+7)`} comparison="cohort day 7" trend={metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch"} tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub="all verified access sources excluding Trial" comparison="all premium sources" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
-          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="server-verified active subscriptions" comparison="paid subscribers" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="explicit community grant" comparison="community Inti" trend="Inti Tier" tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="explicit community grant" comparison="community Alfa" trend="Alfa Tier" tone="gold" />
-          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub="verified paid / eligible users" comparison="Google Play Paid / Eligible" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
+          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={analyticsStatus === "loaded" ? metrics.dau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? trendLabel(metrics.dauTrend) : "—"} sparkline={analyticsStatus === "loaded" ? metrics.sparkline : undefined} tone="sage" />
+          <MetricCard icon={<Calendar size={18} />} label="WAU" value={analyticsStatus === "loaded" ? metrics.wau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 7-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? "7d active" : "—"} tone="cream" />
+          <MetricCard icon={<Calendar size={18} />} label="MAU" value={analyticsStatus === "loaded" ? metrics.mau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 30-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? "30d active" : "—"} tone="cream" />
+          <MetricCard icon={<TrendingUp size={18} />} label="Aggregate Retention D1" value={analyticsStatus === "loaded" ? (metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`) : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `${metrics.d1.retained}/${metrics.d1.eligible} retained (D+1)` : "Buka tab Analytics"} comparison="cohort day 1" trend={analyticsStatus === "loaded" ? (metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch") : "—"} tone="sage" />
+          <MetricCard icon={<TrendingDown size={18} />} label="Aggregate Retention D7" value={analyticsStatus === "loaded" ? (metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`) : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `${metrics.d7.retained}/${metrics.d7.eligible} retained (D+7)` : "Buka tab Analytics"} comparison="cohort day 7" trend={analyticsStatus === "loaded" ? (metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch") : "—"} tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
+          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend="Inti Tier" tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend="Alfa Tier" tone="gold" />
+          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
         </section>
 
         <Panel title="Founder Insight" action="executive summary">
           <div className="grid gap-5 lg:grid-cols-[1fr_280px]">
-            <p className="text-base leading-8 text-[#405047]">{analytics.length || activities.length || users.length ? metrics.insight : "No data"}</p>
+            <p className="text-base leading-8 text-[#405047]">{analyticsStatus === "loaded" ? (analytics.length || activities.length || users.length ? metrics.insight : "No data") : "Buka tab Analytics untuk memuat Founder Insight."}</p>
             <div className="rounded-[8px] border border-[#E3E0D7] bg-white p-4">
               <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-[#6D786F]">Prioritas hari ini</p>
               <div className="space-y-2 text-sm text-[#405047]">
-                <p>• Kirim reminder kepada {metrics.churn.find((item) => item.day === 3)?.count ?? 0} pengguna.</p>
-                <p>• Pantau CTA Dashboard → Wellness.</p>
-                <p>• Evaluasi Refleksi Jiwa build terbaru.</p>
+                {analyticsStatus === "loaded" ? (
+                  <>
+                    <p>• Kirim reminder kepada {metrics.churn.find((item) => item.day === 3)?.count ?? 0} pengguna.</p>
+                    <p>• Pantau CTA Dashboard → Wellness.</p>
+                    <p>• Evaluasi Refleksi Jiwa build terbaru.</p>
+                  </>
+                ) : (
+                  <p className="text-[#6D786F]">Belum dimuat</p>
+                )}
               </div>
             </div>
           </div>
