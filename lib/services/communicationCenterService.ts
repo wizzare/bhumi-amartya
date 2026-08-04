@@ -33,6 +33,20 @@ import { birthdayYearKey, buildBirthdayMessage, type BirthdayProfile } from "@/l
  * Hardened in Phase E2, Expanded in E5, Threaded in E6
  * Unified engagement layer with lifecycle management, persistence, and two-way feedback.
  */
+const BROADCAST_RECIPIENT_CACHE_TTL_MS = 30_000;
+const DISPATCH_BATCH_SIZE = 50;
+let broadcastRecipientCache: { users: UserProfile[]; fetchedAt: number } | null = null;
+
+async function getCachedBroadcastRecipients(): Promise<UserProfile[]> {
+  const now = Date.now();
+  if (broadcastRecipientCache && now - broadcastRecipientCache.fetchedAt < BROADCAST_RECIPIENT_CACHE_TTL_MS) {
+    return broadcastRecipientCache.users;
+  }
+  const users = await adminRepository.getAllUsersUnbounded();
+  broadcastRecipientCache = { users, fetchedAt: now };
+  return users;
+}
+
 export class CommunicationCenterService {
   public static async submitUserSupportMessage(params: {
     authenticatedUid: string;
@@ -205,10 +219,11 @@ export class CommunicationCenterService {
     if (!params.adminUid || !params.title.trim() || !params.content.trim() || params.targetGroups.some((group) => !allowedGroups.has(group))) throw new Error('Invalid broadcast audience');
     const broadcastId = params.broadcastIdOverride || `bc_${Date.now()}`;
 
-    // 1. Fetch target users safely
+    // 1. Fetch target users safely (cached across the preview→confirm→send flow so
+    // retries within the TTL window don't re-read the whole users collection).
     let allUsers: UserProfile[] = [];
     try {
-      allUsers = await adminRepository.getAllUsersForMonitoring();
+      allUsers = await getCachedBroadcastRecipients();
     } catch (err) {
       console.error("[CommunicationCenterService] Failed to fetch users for broadcast:", err);
       throw new Error(`Broadcast failed: unable to query user targets (${err instanceof Error ? err.message : 'Unknown error'})`);
@@ -233,26 +248,32 @@ export class CommunicationCenterService {
       });
     }
 
-    // 2. Dispatch to each target using deterministic ID & Promise.allSettled for failure isolation
-    const results = await Promise.allSettled(
-      targets.map(user =>
-        this.dispatch({
-          id: `msg_${broadcastId}_${user.uid}`,
-          uid: user.uid,
-          senderUid: params.adminUid,
-          type: 'system-announcement',
-          priority: params.priority,
-          source: 'admin',
-          title: params.title,
-          summary: params.content.substring(0, 100),
-          content: params.content,
-          ownerUserId: user.uid,
-          senderRole: 'admin',
-          recipientRole: 'user',
-          metadata: { broadcastId, category: params.category, broadcast: true }
-        })
-      )
-    );
+    // 2. Dispatch to each target in paginated batches, using deterministic ID &
+    // Promise.allSettled per batch for failure isolation.
+    const results: PromiseSettledResult<string>[] = [];
+    for (let i = 0; i < targets.length; i += DISPATCH_BATCH_SIZE) {
+      const batch = targets.slice(i, i + DISPATCH_BATCH_SIZE);
+      const batchResults = await Promise.allSettled(
+        batch.map(user =>
+          this.dispatch({
+            id: `msg_${broadcastId}_${user.uid}`,
+            uid: user.uid,
+            senderUid: params.adminUid,
+            type: 'system-announcement',
+            priority: params.priority,
+            source: 'admin',
+            title: params.title,
+            summary: params.content.substring(0, 100),
+            content: params.content,
+            ownerUserId: user.uid,
+            senderRole: 'admin',
+            recipientRole: 'user',
+            metadata: { broadcastId, category: params.category, broadcast: true }
+          })
+        )
+      );
+      results.push(...batchResults);
+    }
 
     const deliveredCount = results.filter(r => r.status === 'fulfilled').length;
     const failedCount = results.filter(r => r.status === 'rejected').length;
@@ -396,9 +417,12 @@ export class CommunicationCenterService {
     return await CommunicationRepository.getInbox(uid);
   }
 
-  /** Admin-only view; repository applies the source=user collection-group filter. */
-  public static async getAllUserCommunications(): Promise<CommunicationMessage[]> {
-    return await CommunicationRepository.getAllUserCommunications();
+  /** Admin-only view; repository applies the source=user collection-group filter. Cursor-paginated. */
+  public static async getAllUserCommunications(
+    pageSize?: number,
+    cursor?: import("firebase/firestore").QueryDocumentSnapshot<import("firebase/firestore").DocumentData>
+  ) {
+    return await CommunicationRepository.getAllUserCommunications(pageSize, cursor);
   }
 
   /**

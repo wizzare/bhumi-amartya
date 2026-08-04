@@ -1,5 +1,6 @@
-import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, getDoc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, addDoc, serverTimestamp, getDoc, setDoc, orderBy, limit as firestoreLimit, startAfter, documentId, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import { timedQuery } from "@/lib/dev/queryInstrumentation";
 import { UserProfile } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
@@ -134,44 +135,66 @@ export const adminRepository = {
     await logDiagnosticAction(founderUid, user.uid, "RE_RUN_GAIA_MIGRATION");
     return migrated;
   },
-  async getCoreGuardianCandidates(): Promise<UserProfile[]> {
-    try {
-      const snapshot = await getDocs(collection(db, "users"));
-      return snapshot.docs
-        .map(d => ({ ...d.data(), uid: d.id } as UserProfile))
-        .filter((user) => user.guardianCandidate === true || user.recognitionTier === "CORE_GUARDIAN_CANDIDATE");
-    } catch (error: unknown) {
-      console.error("[ADMIN REPO] getCoreGuardianCandidates failed:", error);
-      throw error;
-    }
+  // Zero current callers (confirmed by repo-wide grep). Bounded here as preventative
+  // hardening — guardian queries must never re-introduce a full users collection scan.
+  async getCoreGuardianCandidates(pageSize = 25, cursor?: QueryDocumentSnapshot<DocumentData>): Promise<{ users: UserProfile[]; nextCursor?: QueryDocumentSnapshot<DocumentData>; hasMore: boolean }> {
+    return timedQuery({ name: "getCoreGuardianCandidates", component: "adminRepository", expectedMax: pageSize }, async () => {
+      try {
+        const constraints = [orderBy(documentId()), ...(cursor ? [startAfter(cursor)] : []), firestoreLimit(pageSize)];
+        const snapshot = await getDocs(query(collection(db, "users"), ...constraints));
+        const users = snapshot.docs
+          .map(d => ({ ...d.data(), uid: d.id } as UserProfile))
+          .filter((user) => user.guardianCandidate === true || user.recognitionTier === "CORE_GUARDIAN_CANDIDATE");
+        return { users, nextCursor: snapshot.docs[snapshot.docs.length - 1], hasMore: snapshot.docs.length === pageSize };
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] getCoreGuardianCandidates failed:", error);
+        throw error;
+      }
+    });
   },
 
-  async getCoreGuardians(): Promise<UserProfile[]> {
-    try {
-      const q = query(
-        collection(db, "users"),
-        where("recognitionTier", "==", "CORE_GUARDIAN")
-      );
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as UserProfile));
-    } catch (error: unknown) {
-      console.error("[ADMIN REPO] getCoreGuardians failed:", error);
-      throw error;
-    }
+  async getCoreGuardians(pageSize = 25, cursor?: QueryDocumentSnapshot<DocumentData>): Promise<{ users: UserProfile[]; nextCursor?: QueryDocumentSnapshot<DocumentData>; hasMore: boolean }> {
+    return timedQuery({ name: "getCoreGuardians", component: "adminRepository", expectedMax: pageSize }, async () => {
+      try {
+        const constraints = [where("recognitionTier", "==", "CORE_GUARDIAN"), orderBy(documentId()), ...(cursor ? [startAfter(cursor)] : []), firestoreLimit(pageSize)];
+        const q = query(collection(db, "users"), ...constraints);
+        const snapshot = await getDocs(q);
+        const users = snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as UserProfile));
+        return { users, nextCursor: snapshot.docs[snapshot.docs.length - 1], hasMore: snapshot.docs.length === pageSize };
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] getCoreGuardians failed:", error);
+        throw error;
+      }
+    });
   },
 
-  async getAllUsersForMonitoring(): Promise<UserProfile[]> {
-    try {
-      const q = query(
-        collection(db, "users")
-      );
-      const snapshot = await getDocs(q);
-      console.log("[ADMIN REPO] getAllUsersForMonitoring snapshot size:", snapshot.size);
-      return snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as UserProfile));
-    } catch (error: unknown) {
-      console.error("[ADMIN REPO] getAllUsersForMonitoring failed:", error);
-      throw error;
-    }
+  async getAllUsersForMonitoring(pageSize = 25, cursor?: QueryDocumentSnapshot<DocumentData>): Promise<{ users: UserProfile[]; nextCursor?: QueryDocumentSnapshot<DocumentData>; hasMore: boolean }> {
+    return timedQuery({ name: "getAllUsersForMonitoring", component: "adminRepository", expectedMax: pageSize }, async () => {
+      try {
+        const constraints = [orderBy(documentId()), ...(cursor ? [startAfter(cursor)] : []), firestoreLimit(pageSize)];
+        const q = query(collection(db, "users"), ...constraints);
+        const snapshot = await getDocs(q);
+        const users = snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as UserProfile));
+        return { users, nextCursor: snapshot.docs[snapshot.docs.length - 1], hasMore: snapshot.docs.length === pageSize };
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] getAllUsersForMonitoring failed:", error);
+        throw error;
+      }
+    });
+  },
+
+  // Unbounded fetch retained ONLY for broadcast targeting, which must reach every
+  // eligible recipient. Callers must paginate/cache — see communicationCenterService.
+  async getAllUsersUnbounded(): Promise<UserProfile[]> {
+    return timedQuery({ name: "getAllUsersUnbounded", component: "communicationCenterService.sendBroadcast", expectedMax: Infinity }, async () => {
+      try {
+        const snapshot = await getDocs(query(collection(db, "users")));
+        return snapshot.docs.map(d => ({ ...d.data(), uid: d.id } as UserProfile));
+      } catch (error: unknown) {
+        console.error("[ADMIN REPO] getAllUsersUnbounded failed:", error);
+        throw error;
+      }
+    });
   },
 
   async processValidation(

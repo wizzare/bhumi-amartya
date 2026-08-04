@@ -10,16 +10,23 @@ import {
   addDoc,
   serverTimestamp,
   collectionGroup,
-  getDoc,
-  limit
+  limit,
+  startAfter,
+  documentId,
+  type QueryDocumentSnapshot,
+  type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
+import { timedQuery } from "@/lib/dev/queryInstrumentation";
 import {
   CommunicationMessage,
   CommunicationStatus,
   CommunicationAnalytics,
 } from "../types/communication";
+
+// Sender metadata cached for the admin session — cleared on reload, not persisted.
+const senderMetaCache = new Map<string, string | undefined>();
 
 /**
  * BHUMI V4 COMMUNICATION REPOSITORY
@@ -269,40 +276,56 @@ export class CommunicationRepository {
   }
 
   /**
-   * ADMIN: Fetch all user-initiated communications across all users.
+   * ADMIN: Fetch one page of user-initiated communications across all users.
+   * Cursor-paginated (limit 50) — never an unbounded collectionGroup scan.
    */
-  public static async getAllUserCommunications(): Promise<CommunicationMessage[]> {
-    try {
-      const commsQuery = query(
-        collectionGroup(db, "communications"),
-        orderBy("createdAt", "desc")
-      );
-      const snapshot = await getDocs(commsQuery);
-      const messages = snapshot.docs
-        .map((entry) => CommunicationRepository.normalizeAdminMessage(entry.data(), entry.id))
-        .filter((message) => message.source === "user");
-      const ownerIds = [...new Set(messages.map((message) => message.ownerUserId || message.uid).filter((uid) => uid && uid !== "admin" && uid !== "bhumi"))];
-      const profiles = await Promise.all(ownerIds.map(async (uid) => {
-        try {
-          const profile = await getDoc(doc(db, "users", uid));
-          if (!profile.exists()) return [uid, undefined] as const;
-          const data = profile.data() as Record<string, any>;
-          const candidates = [data.fullName, data.displayName, data.name, data.nama, data.profile?.fullName, data.profile?.displayName, data.profile?.name];
-          const name = candidates.find((value) => typeof value === "string" && value.trim())?.trim();
-          return [uid, name] as const;
-        } catch {
-          return [uid, undefined] as const;
+  public static async getAllUserCommunications(
+    pageSize = 50,
+    cursor?: QueryDocumentSnapshot<DocumentData>
+  ): Promise<{ messages: CommunicationMessage[]; nextCursor?: QueryDocumentSnapshot<DocumentData>; hasMore: boolean }> {
+    return timedQuery({ name: "getAllUserCommunications", component: "AdminInboxWorkspace", expectedMax: pageSize }, async () => {
+      try {
+        const constraints = [orderBy("createdAt", "desc"), ...(cursor ? [startAfter(cursor)] : []), limit(pageSize)];
+        const commsQuery = query(collectionGroup(db, "communications"), ...constraints);
+        const snapshot = await getDocs(commsQuery);
+        const messages = snapshot.docs
+          .map((entry) => CommunicationRepository.normalizeAdminMessage(entry.data(), entry.id))
+          .filter((message) => message.source === "user");
+
+        const ownerIds = [...new Set(
+          messages.map((message) => message.ownerUserId || message.uid).filter((uid) => uid && uid !== "admin" && uid !== "bhumi")
+        )];
+        const uncachedIds = ownerIds.filter((uid) => !senderMetaCache.has(uid));
+
+        const CHUNK_SIZE = 30;
+        for (let i = 0; i < uncachedIds.length; i += CHUNK_SIZE) {
+          const chunk = uncachedIds.slice(i, i + CHUNK_SIZE);
+          const snap = await getDocs(query(collection(db, "users"), where(documentId(), "in", chunk)));
+          const found = new Set<string>();
+          snap.forEach((docSnap) => {
+            const data = docSnap.data() as Record<string, any>;
+            const candidates = [data.fullName, data.displayName, data.name, data.nama, data.profile?.fullName, data.profile?.displayName, data.profile?.name];
+            const name = candidates.find((value) => typeof value === "string" && value.trim())?.trim();
+            senderMetaCache.set(docSnap.id, name);
+            found.add(docSnap.id);
+          });
+          chunk.forEach((uid) => { if (!found.has(uid)) senderMetaCache.set(uid, undefined); });
         }
-      }));
-      const names = new Map(profiles);
-      return messages.map((message) => ({
-        ...message,
-        senderName: names.get(message.ownerUserId || message.uid) || message.senderName || message.metadata?.userName || undefined,
-      }));
-    } catch (error: any) {
-      console.error("[CommunicationRepository] Admin getAll failed:", error);
-      throw error;
-    }
+
+        const result = messages.map((message) => {
+          const uid = message.ownerUserId || message.uid;
+          return {
+            ...message,
+            senderName: senderMetaCache.get(uid) || message.senderName || message.metadata?.userName || undefined,
+          };
+        });
+
+        return { messages: result, nextCursor: snapshot.docs[snapshot.docs.length - 1], hasMore: snapshot.docs.length === pageSize };
+      } catch (error: any) {
+        console.error("[CommunicationRepository] Admin getAll failed:", error);
+        throw error;
+      }
+    });
   }
 
   /**

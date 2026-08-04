@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   AlertTriangle,
@@ -26,7 +26,7 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
-import { collection, doc, getDoc, getDocs, limit as firestoreLimit, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit as firestoreLimit, query, where, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { useAuth } from "@/context/AuthContext";
@@ -35,6 +35,7 @@ import { adminRepository } from "@/lib/repositories/adminRepository";
 import { UserProfile } from "@/lib/repositories/userRepository";
 import { AdminInboxWorkspace } from "@/components/admin/AdminInboxWorkspace";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
+import { timedQuery } from "@/lib/dev/queryInstrumentation";
 import { shouldIncludeInAdminAnalytics, getExcludedUids, isAdminExcludedAccount, deriveAdminExcludedUids } from "@/lib/admin/adminAnalyticsFilter";
 import { getHdState, type HdState, type HdStateResult } from "@/lib/humandesign/hdState";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
@@ -621,21 +622,34 @@ function resolveStandaloneHumanDesign(user: FounderUser, blueprintDoc: any): Sta
     || buildSnapshot(null, null, getHdState(null));
 }
 
+type AdminTab = "users" | "analytics" | "inbox";
+
 export default function AdminActivityPage() {
   const auth = useAuth();
   const profile = auth?.userProfile;
   const today = useMemo(() => dateKey(new Date()), []);
+  const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [range, setRange] = useState<DateRangeKey>("today");
   const [customStart, setCustomStart] = useState(today);
   const [customEnd, setCustomEnd] = useState(today);
   const [users, setUsers] = useState<FounderUser[]>([]);
+  const [usersCursor, setUsersCursor] = useState<QueryDocumentSnapshot<DocumentData> | undefined>(undefined);
+  const [usersHasMore, setUsersHasMore] = useState(false);
+  const [usersLoading, setUsersLoading] = useState(false);
   const [activities, setActivities] = useState<ActivityDoc[]>([]);
   const [analytics, setAnalytics] = useState<AnalyticsDoc[]>([]);
+  const [analyticsHitLimit, setAnalyticsHitLimit] = useState(false);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsRan, setAnalyticsRan] = useState(false);
+  const hasLoadedAnalytics = useRef(false);
   const [selectedUser, setSelectedUser] = useState<FounderUser | null>(null);
   const [selectedBlueprint, setSelectedBlueprint] = useState<BlueprintSummary | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<UserDetailData | null>(null);
   const [standaloneHd, setStandaloneHd] = useState<StandaloneHumanDesignSnapshot | null>(null);
-  const [blueprintLoading, setBlueprintLoading] = useState(false);
+  const [modalTab, setModalTab] = useState<"profile" | "activity" | "journey" | "wellness" | "billing" | "blueprint" | "device">("profile");
+  const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set());
+  const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({});
+  const [tabError, setTabError] = useState<Record<string, string | null>>({});
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "premium" | "free">("all");
   const [sortBy, setSortBy] = useState<SortField>("lastLogin");
@@ -685,23 +699,50 @@ export default function AdminActivityPage() {
 
   const [lastRefreshedAt, setLastRefreshedAt] = useState<string>("");
 
-  const loadDashboard = async () => {
-    setLoading(true);
+  const loadUsersPage = useCallback(async (reset = true) => {
+    setUsersLoading(true);
     setError(null);
     try {
-      const userRows = await adminRepository.getAllUsersForMonitoring();
+      const page = await adminRepository.getAllUsersForMonitoring(25, reset ? undefined : usersCursor);
       const testerRecordsByUid = await getFounderTesterRecordsByUids(
-        userRows.map((row: any) => String(row.uid || row.id || "")),
+        page.users.map((row: any) => String(row.uid || row.id || "")),
       ).catch(() => new Map<string, FounderTesterRecord>());
-      const normalized = userRows
+      const normalized = page.users
         .map((row: any) => normalizeUser(row, testerRecordsByUid.get(String(row.uid || row.id || "")) || null))
         .filter(Boolean) as FounderUser[];
       const excludedUids = deriveAdminExcludedUids(normalized);
       const analyticsFiltered = normalized.filter((u) => !isAdminExcludedAccount({ email: u.email, uid: u.uid, excludedUids }));
-      const [activityResult, analyticsResult] = await Promise.allSettled([
-        getDocs(query(collection(db, "user_activity"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
-        getDocs(query(collection(db, "analytics"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end))),
-      ]);
+
+      setUsers((prev) => (reset ? analyticsFiltered : [...prev, ...analyticsFiltered]));
+      setUsersCursor(page.nextCursor);
+      setUsersHasMore(page.hasMore);
+      setSourceStatus((prev) => ({
+        ...prev,
+        users: `${reset ? analyticsFiltered.length : users.length + analyticsFiltered.length} users (page 25)`,
+      }));
+      setLastRefreshedAt(new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB");
+    } catch (err) {
+      console.error("Failed to load users page:", err);
+      setError("Gagal memuat data users dari Firestore.");
+    } finally {
+      setUsersLoading(false);
+      setLoading(false);
+    }
+  }, [users.length, usersCursor]);
+
+  const loadActivityAnalytics = useCallback(async () => {
+    setAnalyticsLoading(true);
+    setAnalyticsHitLimit(false);
+    try {
+      const excludedUids = deriveAdminExcludedUids(users);
+      const [activityResult, analyticsResult] = await timedQuery(
+        { name: "loadActivityAnalytics", component: "AdminActivityPage", expectedMax: 200 },
+        async () => Promise.allSettled([
+          getDocs(query(collection(db, "user_activity"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end), firestoreLimit(100))),
+          getDocs(query(collection(db, "analytics"), where("date", ">=", rangeDates.start), where("date", "<=", rangeDates.end), firestoreLimit(100))),
+        ])
+      );
+
       const activityDocs = activityResult.status === "fulfilled"
         ? activityResult.value.docs.map((d) => ({ id: d.id, ...d.data() } as ActivityDoc)).filter((a) => a.uid && !isAdminExcludedAccount({ email: a.email, uid: a.uid, excludedUids }))
         : [];
@@ -711,96 +752,63 @@ export default function AdminActivityPage() {
             return !isAdminExcludedAccount({ email: (a as any).email, uid, excludedUids });
           })
         : [];
-      setUsers(analyticsFiltered);
+
+      const hitLimit = (activityResult.status === "fulfilled" && activityResult.value.docs.length >= 100) ||
+                       (analyticsResult.status === "fulfilled" && analyticsResult.value.docs.length >= 100);
+
       setActivities(activityDocs);
       setAnalytics(analyticsDocs);
-      setSourceStatus({
-        users: `${normalized.length} users`,
+      setAnalyticsHitLimit(hitLimit);
+      setAnalyticsRan(true);
+      setSourceStatus((prev) => ({
+        ...prev,
         activity: activityResult.status === "fulfilled" ? `${activityDocs.length} rows` : "No data: Firestore read failed",
         analytics: analyticsResult.status === "fulfilled" ? `${analyticsDocs.length} events` : "No data: Firestore read failed",
-      });
-      if (activityResult.status === "rejected" || analyticsResult.status === "rejected") {
-        console.warn("Founder Dashboard partial Firestore load", {
-          userActivity: activityResult.status === "rejected" ? activityResult.reason : "ok",
-        });
-      }
-      setLastRefreshedAt(new Date().toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" }) + " WIB");
+      }));
     } catch (err) {
-      console.error("Failed to load Founder Dashboard:", err);
-      setUsers([]);
-      setActivities([]);
-      setAnalytics([]);
-      setSourceStatus({
-        users: "No data: Firestore read failed",
-        activity: "No data",
-        analytics: "No data",
-      });
-      setError("Gagal memuat data users dari Firestore. Dashboard tidak dapat menghitung total user tanpa koleksi users.");
+      console.error("Failed to load activity analytics:", err);
     } finally {
-      setLoading(false);
+      setAnalyticsLoading(false);
     }
-  };
+  }, [rangeDates.end, rangeDates.start, users]);
+
+  const loadDashboard = useCallback(async () => {
+    setLoading(true);
+    await loadUsersPage(true);
+    if (activeTab === "analytics") {
+      await loadActivityAnalytics();
+    }
+  }, [activeTab, loadActivityAnalytics, loadUsersPage]);
 
   useEffect(() => {
-    if (isFounder) void loadDashboard();
-  }, [isFounder, rangeDates.start, rangeDates.end]);
+    if (isFounder) void loadUsersPage(true);
+  }, [isFounder]);
+
+  useEffect(() => {
+    if (isFounder && activeTab === "analytics" && (!hasLoadedAnalytics.current || rangeDates.start || rangeDates.end)) {
+      hasLoadedAnalytics.current = true;
+      void loadActivityAnalytics();
+    }
+  }, [activeTab, isFounder, loadActivityAnalytics, rangeDates.end, rangeDates.start]);
 
   const currentRequestId = useRef(0);
 
-  useEffect(() => {
-    if (!selectedUser || isAdminExcludedAccount({ email: selectedUser.email, uid: selectedUser.uid })) {
-      if (selectedUser) {
-        setSelectedUser(null);
-      }
-      setSelectedBlueprint(null);
-      setSelectedDetail(null);
-      setStandaloneHd(null);
-      setBlueprintLoading(false);
-      return;
-    }
+  // Lazy tab loader for selected user modal
+  const loadModalTab = useCallback(async (tabName: string) => {
+    if (!selectedUser || loadedTabs.has(tabName)) return;
     const reqId = ++currentRequestId.current;
     const activeUid = selectedUser.uid;
 
-    setBlueprintLoading(true);
-    const run = async () => {
-      try {
-        const [
-          blueprintResult,
-          activityResult,
-          dailyStateResult,
-          journeyRecordResult,
-          wellnessResult,
-          nestedJournalResult,
-          legacyJournalResult,
-          nestedMeditationResult,
-          legacyMeditationResult,
-          nestedAudioResult,
-          legacyAudioResult,
-        ] = await Promise.allSettled([
-          getDocData(["blueprints", selectedUser.uid]),
-          getDocData(["user_activity", `${selectedUser.uid}_${rangeDates.end}`]),
-          getDocData(["dailyStates", selectedUser.uid, "entries", rangeDates.end]),
-          getDocData(["journeyDailyRecords", selectedUser.uid, "entries", rangeDates.end]),
-          getUidRows("wellnessAssessments", selectedUser.uid),
-          getCollectionRows(["journals", selectedUser.uid, "entries"]),
-          getUidRows("journalEntries", selectedUser.uid),
-          getCollectionRows(["meditations", selectedUser.uid, "entries"]),
-          getUidRows("meditationEntries", selectedUser.uid),
-          getCollectionRows(["audioHealing", selectedUser.uid, "entries"]),
-          getUidRows("audioHealingEntries", selectedUser.uid),
-        ]);
+    setTabLoading((prev) => ({ ...prev, [tabName]: true }));
+    setTabError((prev) => ({ ...prev, [tabName]: null }));
 
-        if (reqId !== currentRequestId.current || selectedUser?.uid !== activeUid) {
-          return;
-        }
-
-        const data = blueprintResult.status === "fulfilled" ? blueprintResult.value : null;
+    try {
+      if (tabName === "blueprint") {
+        const data = await getDocData(["blueprints", selectedUser.uid]);
+        if (reqId !== currentRequestId.current || selectedUser?.uid !== activeUid) return;
         const rawBp = (data || (selectedUser.rawUser as any)?.blueprint || (selectedUser.rawUser as any)?.profile?.blueprint || (selectedUser.rawUser as any)?.profile || selectedUser.rawUser) as any;
-
-        // STANDALONE HUMAN DESIGN RESOLUTION
         const hdSnapshot = resolveStandaloneHumanDesign(selectedUser, data);
         setStandaloneHd(hdSnapshot);
-
         setSelectedBlueprint({
           lifePath: typeof rawBp?.lifePath === "string" ? rawBp.lifePath : String(rawBp?.lifePath?.display || rawBp?.lifePath?.number || "-"),
           arcana: typeof rawBp?.arcana === "string" ? rawBp.arcana : String(rawBp?.destinyMatrix?.center || rawBp?.arcana?.name || "-"),
@@ -809,40 +817,56 @@ export default function AdminActivityPage() {
           weton: typeof rawBp?.weton === "string" ? rawBp.weton : String(rawBp?.weton?.weton || rawBp?.weton?.name || "-"),
           tzolkin: typeof rawBp?.tzolkin === "string" ? rawBp.tzolkin : String(rawBp?.tzolkin?.kinName || "-"),
         });
+      } else if (tabName === "activity" || tabName === "journey" || tabName === "wellness") {
+        const [activityResult, dailyStateResult, journeyRecordResult, wellnessResult] = await Promise.allSettled([
+          getDocData(["user_activity", `${selectedUser.uid}_${rangeDates.end}`]),
+          getDocData(["dailyStates", selectedUser.uid, "entries", rangeDates.end]),
+          getDocData(["journeyDailyRecords", selectedUser.uid, "entries", rangeDates.end]),
+          getDocs(query(collection(db, "wellnessAssessments"), where("uid", "==", selectedUser.uid), firestoreLimit(20))),
+        ]);
 
-        const readRows = (result: PromiseSettledResult<any[]>): any[] => result.status === "fulfilled" ? result.value : [];
-        const notes = [
-          activityResult.status === "rejected" ? "user_activity tidak terbaca" : "",
-          dailyStateResult.status === "rejected" ? "dailyStates tidak terbaca" : "",
-          journeyRecordResult.status === "rejected" ? "journeyDailyRecords tidak terbaca" : "",
-          wellnessResult.status === "rejected" ? "wellnessAssessments tidak terbaca" : "",
-          nestedMeditationResult.status === "rejected" ? "meditations nested tidak terbaca" : "",
-          nestedAudioResult.status === "rejected" ? "audioHealing nested tidak terbaca" : "",
-        ].filter(Boolean);
+        if (reqId !== currentRequestId.current || selectedUser?.uid !== activeUid) return;
 
-        setSelectedDetail({
-          activity: activityResult.status === "fulfilled" ? activityResult.value as ActivityDoc | null : null,
-          dailyState: dailyStateResult.status === "fulfilled" ? dailyStateResult.value : null,
-          journeyRecord: journeyRecordResult.status === "fulfilled" ? journeyRecordResult.value : null,
+        const readRows = (result: PromiseSettledResult<any>): any[] =>
+          result.status === "fulfilled" && result.value?.docs ? result.value.docs.map((d: any) => d.data()) : (result.status === "fulfilled" && Array.isArray(result.value) ? result.value : []);
+
+        setSelectedDetail((prev) => ({
+          activity: activityResult.status === "fulfilled" ? (activityResult.value as ActivityDoc | null) : prev?.activity || null,
+          dailyState: dailyStateResult.status === "fulfilled" ? dailyStateResult.value : prev?.dailyState || null,
+          journeyRecord: journeyRecordResult.status === "fulfilled" ? journeyRecordResult.value : prev?.journeyRecord || null,
           wellnessAssessmentsToday: countRecordsOnDate(readRows(wellnessResult), rangeDates.end),
-          journalEntriesToday: countRecordsOnDate([...readRows(nestedJournalResult), ...readRows(legacyJournalResult)], rangeDates.end),
-          meditationEntriesToday: countRecordsOnDate([...readRows(nestedMeditationResult), ...readRows(legacyMeditationResult)], rangeDates.end),
-          audioHealingEntriesToday: countRecordsOnDate([...readRows(nestedAudioResult), ...readRows(legacyAudioResult)], rangeDates.end),
-          sourceNotes: notes,
-        });
-      } catch {
-        if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
-          setSelectedBlueprint(null);
-          setSelectedDetail(null);
-        }
-      } finally {
-        if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
-          setBlueprintLoading(false);
-        }
+          journalEntriesToday: prev?.journalEntriesToday || 0,
+          meditationEntriesToday: prev?.meditationEntriesToday || 0,
+          audioHealingEntriesToday: prev?.audioHealingEntriesToday || 0,
+          sourceNotes: [],
+        }));
       }
-    };
-    void run();
-  }, [rangeDates.end, selectedUser]);
+
+      setLoadedTabs((prev) => new Set(prev).add(tabName));
+    } catch (err: any) {
+      if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
+        setTabError((prev) => ({ ...prev, [tabName]: err?.message || "Gagal memuat data tab" }));
+      }
+    } finally {
+      if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
+        setTabLoading((prev) => ({ ...prev, [tabName]: false }));
+      }
+    }
+  }, [loadedTabs, rangeDates.end, selectedUser]);
+
+  useEffect(() => {
+    if (!selectedUser || isAdminExcludedAccount({ email: selectedUser.email, uid: selectedUser.uid })) {
+      if (selectedUser) setSelectedUser(null);
+      setSelectedBlueprint(null);
+      setSelectedDetail(null);
+      setStandaloneHd(null);
+      setLoadedTabs(new Set());
+      setModalTab("profile");
+      return;
+    }
+    // Automatically trigger loading for the active modal tab
+    void loadModalTab(modalTab);
+  }, [modalTab, selectedUser, loadModalTab]);
 
   const metrics = useMemo(() => {
     const includedUidSet = new Set(users.map((u) => u.uid));
@@ -1564,20 +1588,36 @@ export default function AdminActivityPage() {
             </div>
           </div>
         </Panel>
-        <AdminInboxWorkspace />
+        <AdminInboxWorkspace active={activeTab === "inbox"} />
       </div>
 
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelectedUser(null)}>
           <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[8px] bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
-            <div className="mb-6 flex items-start justify-between gap-4">
+            <div className="mb-4 flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6D786F]">User Detail</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#6D786F]">User Detail Summary</p>
                 <h2 className="font-serif text-2xl font-bold text-[#2F3C34]">{selectedUser.displayName}</h2>
-                <p className="text-sm text-[#6D786F]">{selectedUser.email}</p>
+                <p className="text-sm text-[#6D786F]">{selectedUser.email} · UID: {selectedUser.uid}</p>
               </div>
               <button onClick={() => setSelectedUser(null)} className="rounded-md border border-[#D9D6CC] px-3 py-2 text-sm font-semibold hover:bg-[#F7F4ED]">Close</button>
+            </div>
+
+            {/* Modal Sub-Tabs */}
+            <div className="mb-4 flex border-b border-[#E3E0D7] gap-2 overflow-x-auto text-xs font-bold">
+              {(["profile", "activity", "journey", "wellness", "billing", "blueprint", "device"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setModalTab(t)}
+                  className={`px-3 py-2 border-b-2 capitalize transition-colors ${
+                    modalTab === t ? "border-[#344139] text-[#344139] font-bold" : "border-transparent text-[#6D786F]"
+                  }`}
+                >
+                  {t} {loadedTabs.has(t) ? "✓" : tabLoading[t] ? "..." : ""}
+                </button>
+              ))}
             </div>
 
             <section className="mb-6 rounded-[8px] border border-[#E3E0D7] bg-[#FBFAF6] p-4">
@@ -1592,68 +1632,96 @@ export default function AdminActivityPage() {
               </div>
             </section>
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              {/* IDENTITY */}
-              <DetailBox title="Identity" rows={[
-                ["Nama", selectedUser.displayName],
-                ["Email", selectedUser.email],
-                ["UID", selectedUser.uid],
-                ["Tanggal Lahir", pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "tanggalLahir"]) || "No data"],
-                ["Jam Lahir", pickFirst(selectedUser.rawUser, ["birthTime", "timeOfBirth", "jamLahir"]) || "No data"],
-                ["Kota Lahir", pickFirst(selectedUser.rawUser, ["birthCity", "birthPlace", "city", "kotaLahir"]) || "No data"],
-                ["Device", pickFirst(selectedUser.rawUser, ["deviceModel", "device", "androidVersion", "osVersion"]) || "No data"],
-                ["Versi App", selectedUser.appVersion],
-              ]} />
+            {tabLoading[modalTab] && <p className="py-6 text-center text-sm text-[#6D786F]">Memuat tab {modalTab}...</p>}
+            {tabError[modalTab] && <p className="py-6 text-center text-sm text-red-600">{tabError[modalTab]}</p>}
 
-              {/* ACTIVITY */}
-              <DetailBox title="Activity" rows={[
-                ["Tgl Daftar", selectedUser.registeredAt ? formatDateTime(selectedUser.registeredAt) : "-"],
-                ["Hari Aktif", `${selectedUser.activeDays.length}`],
-                ["Last Login", formatDateTime(selectedUser.lastLogin)],
-                ["Last Seen", formatDateTime(selectedUser.lastSeen)],
-                ["Durasi Login Terakhir", selectedDetail?.activity?.totalSeconds ? `${Math.round((selectedDetail.activity.totalSeconds || 0) / 60)} menit` : "No data"],
-                ["Last Page", selectedDetail?.activity?.lastScreen || selectedUser.lastScreen || "No data"],
-                ["Navigation History", buildFlowRows(selectedUser, selectedDetail, analytics, rangeDates.end).map(([label, value]) => `${label}: ${value}`).join(" · ")],
-              ]} />
+            {!tabLoading[modalTab] && (
+              <div className="grid gap-4 lg:grid-cols-2">
+                {modalTab === "profile" && (
+                  <>
+                    <DetailBox title="Identity Summary" rows={[
+                      ["Nama", selectedUser.displayName],
+                      ["Email", selectedUser.email],
+                      ["UID", selectedUser.uid],
+                      ["Status", selectedUser.status],
+                      ["Tgl Daftar", selectedUser.registeredAt ? formatDateTime(selectedUser.registeredAt) : "-"],
+                      ["Hari Aktif", `${selectedUser.activeDays.length}`],
+                    ]} />
+                    <DetailBox title="Membership Overview" rows={formatEntitlementDisplay(selectedUser.rawUser)} />
+                  </>
+                )}
 
-              {/* JOURNEY */}
-              <DetailBox title="Journey" rows={[
-                ["Check-in", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "checkin")],
-                ["Journey Progress", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "journey")],
-                ["Wellness Progress", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "wellness")],
-                ["Today's Practice", userCompletion(selectedUser, selectedDetail, analytics, rangeDates.end)],
-                ["Last Activity", buildTimelineRows(selectedUser, selectedDetail, analytics, rangeDates.end).filter(([, value]) => value !== "No data").at(-1)?.[0] || "No data"],
-              ]} />
+                {modalTab === "activity" && (
+                  <DetailBox title="Activity (Max 20)" rows={[
+                    ["Tgl Daftar", selectedUser.registeredAt ? formatDateTime(selectedUser.registeredAt) : "-"],
+                    ["Hari Aktif", `${selectedUser.activeDays.length}`],
+                    ["Last Login", formatDateTime(selectedUser.lastLogin)],
+                    ["Last Seen", formatDateTime(selectedUser.lastSeen)],
+                    ["Durasi Login Terakhir", selectedDetail?.activity?.totalSeconds ? `${Math.round((selectedDetail.activity.totalSeconds || 0) / 60)} menit` : "No data"],
+                    ["Last Page", selectedDetail?.activity?.lastScreen || selectedUser.lastScreen || "No data"],
+                    ["Navigation History", buildFlowRows(selectedUser, selectedDetail, analytics, rangeDates.end).map(([label, value]) => `${label}: ${value}`).join(" · ")],
+                  ]} />
+                )}
 
-              {/* BLUEPRINT */}
-              <DetailBox title="Blueprint" rows={blueprintLoading ? [["Status", "Loading..."]] : [
-                ["Life Path", selectedBlueprint?.lifePath || "-"],
-                ["Arcana", selectedBlueprint?.arcana || "-"],
-                ["Human Design", standaloneHd?.type || selectedBlueprint?.humanDesign || "-"],
-                ["Weton", selectedBlueprint?.weton || "-"],
-                ["Tzolkin", selectedBlueprint?.tzolkin || "-"],
-                ["Sun Sign", selectedBlueprint?.sun || "-"],
-              ]} />
+                {modalTab === "journey" && (
+                  <DetailBox title="Journey Progress" rows={[
+                    ["Check-in", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "checkin")],
+                    ["Journey Progress", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "journey")],
+                    ["Wellness Progress", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "wellness")],
+                    ["Today's Practice", userCompletion(selectedUser, selectedDetail, analytics, rangeDates.end)],
+                    ["Last Activity", buildTimelineRows(selectedUser, selectedDetail, analytics, rangeDates.end).filter(([, value]) => value !== "No data").at(-1)?.[0] || "No data"],
+                  ]} />
+                )}
 
-              {/* HUMAN DESIGN (STANDALONE PROJECTION) */}
-              <DetailBox title="Human Design (Standalone)" rows={blueprintLoading ? [["Status", "Loading..."]] : [
-                ["Engine State", standaloneHd?.state || "PENDING"],
-                ["Type", standaloneHd?.type || (standaloneHd?.state === "PENDING" ? "Human Design sedang diproses." : "No data")],
-                ["Provenance Source", standaloneHd?.selectedSource || "Unrecorded"],
-                ["Chart Status", standaloneHd?.state === "CANONICAL"
-                  ? "Canonical gaia-hd-v1"
-                  : standaloneHd?.state === "FALLBACK_LABELED"
-                    ? `${standaloneHd.provenance === "historical" ? "Historical" : "Fallback"} — needs canonical upgrade`
-                    : standaloneHd?.state || "Pending"],
-                ["Upgrade", standaloneHd?.needsUpgrade ? "Canonical upgrade required" : "Not required"],
-                ["Diagnostic Note", standaloneHd?.diagnosticReason || "-"],
-              ]} />
+                {modalTab === "wellness" && (
+                  <DetailBox title="Wellness Assessments" rows={[
+                    ["Assessments Today", selectedDetail?.wellnessAssessmentsToday ? `${selectedDetail.wellnessAssessmentsToday} assessment` : "No data"],
+                    ["Wellness Progress", userJourneyValue(selectedUser, selectedDetail, analytics, rangeDates.end, "wellness")],
+                  ]} />
+                )}
 
-              {/* MEMBERSHIP */}
-              <div className="lg:col-span-2">
-                <DetailBox title="Membership" rows={formatEntitlementDisplay(selectedUser.rawUser)} />
+                {modalTab === "billing" && (
+                  <div className="lg:col-span-2">
+                    <DetailBox title="Membership & Entitlement" rows={formatEntitlementDisplay(selectedUser.rawUser)} />
+                  </div>
+                )}
+
+                {modalTab === "blueprint" && (
+                  <>
+                    <DetailBox title="Blueprint Summary" rows={[
+                      ["Life Path", selectedBlueprint?.lifePath || "-"],
+                      ["Arcana", selectedBlueprint?.arcana || "-"],
+                      ["Human Design", standaloneHd?.type || selectedBlueprint?.humanDesign || "-"],
+                      ["Weton", selectedBlueprint?.weton || "-"],
+                      ["Tzolkin", selectedBlueprint?.tzolkin || "-"],
+                      ["Sun Sign", selectedBlueprint?.sun || "-"],
+                    ]} />
+                    <DetailBox title="Human Design (Standalone)" rows={[
+                      ["Engine State", standaloneHd?.state || "PENDING"],
+                      ["Type", standaloneHd?.type || (standaloneHd?.state === "PENDING" ? "Human Design sedang diproses." : "No data")],
+                      ["Provenance Source", standaloneHd?.selectedSource || "Unrecorded"],
+                      ["Chart Status", standaloneHd?.state === "CANONICAL"
+                        ? "Canonical gaia-hd-v1"
+                        : standaloneHd?.state === "FALLBACK_LABELED"
+                          ? `${standaloneHd.provenance === "historical" ? "Historical" : "Fallback"} — needs canonical upgrade`
+                          : standaloneHd?.state || "Pending"],
+                      ["Upgrade", standaloneHd?.needsUpgrade ? "Canonical upgrade required" : "Not required"],
+                      ["Diagnostic Note", standaloneHd?.diagnosticReason || "-"],
+                    ]} />
+                  </>
+                )}
+
+                {modalTab === "device" && (
+                  <DetailBox title="Device Information" rows={[
+                    ["Tanggal Lahir", pickFirst(selectedUser.rawUser, ["birthDate", "dateOfBirth", "tanggalLahir"]) || "No data"],
+                    ["Jam Lahir", pickFirst(selectedUser.rawUser, ["birthTime", "timeOfBirth", "jamLahir"]) || "No data"],
+                    ["Kota Lahir", pickFirst(selectedUser.rawUser, ["birthCity", "birthPlace", "city", "kotaLahir"]) || "No data"],
+                    ["Device Model / OS", pickFirst(selectedUser.rawUser, ["deviceModel", "device", "androidVersion", "osVersion"]) || "No data"],
+                    ["Versi App", selectedUser.appVersion],
+                  ]} />
+                )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       )}

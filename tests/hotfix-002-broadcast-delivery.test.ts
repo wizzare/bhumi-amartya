@@ -63,12 +63,12 @@ async function runHotfix002Tests() {
   ];
 
   // Backup original methods
-  const origGetAllUsers = adminRepository.getAllUsersForMonitoring;
+  const origGetAllUsers = adminRepository.getAllUsersUnbounded;
   const origSave = CommunicationRepository.save;
 
   try {
-    // Mock getAllUsersForMonitoring
-    adminRepository.getAllUsersForMonitoring = async () => mockUsers as any;
+    // Mock getAllUsersUnbounded (sendBroadcast now reads via a cached call to this)
+    adminRepository.getAllUsersUnbounded = async () => mockUsers as any;
 
     let savedMessages: any[] = [];
     CommunicationRepository.save = async (msg: any) => {
@@ -174,7 +174,7 @@ async function runHotfix002Tests() {
     process.exit(0);
   } finally {
     // Restore original functions
-    adminRepository.getAllUsersForMonitoring = origGetAllUsers;
+    adminRepository.getAllUsersUnbounded = origGetAllUsers;
     CommunicationRepository.save = origSave;
     CommunicationCenterService.dispatch = origDispatch;
   }
