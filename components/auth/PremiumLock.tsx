@@ -16,6 +16,8 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
   const auth = useAuth();
   const router = useRouter();
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [checking, setChecking] = useState(true);
 
   const uid = auth?.userProfile?.uid;
   useEffect(() => {
@@ -29,10 +31,56 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
     };
   }, [uid]);
 
-  if (!auth || auth.loading) return children;
+  const userProfile = auth?.userProfile;
 
-  const { userProfile } = auth;
-  const hasAccess = getEntitlementStatus(userProfile, new Date(), testerRecord).isPremium;
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAccess() {
+      // 1. Synchronous Firestore entitlement check
+      const syncAccess = getEntitlementStatus(userProfile || null, new Date(), testerRecord).isPremium;
+      if (syncAccess) {
+        if (!cancelled) {
+          setHasAccess(true);
+          setChecking(false);
+        }
+        return;
+      }
+
+      // 2. Fallback: Signed entitlement check
+      if (userProfile?.uid) {
+        try {
+          const { getLocalSignedEntitlement, verifySignedEntitlementLocal } = await import("@/lib/billing/googlePlayBilling");
+          const token = await getLocalSignedEntitlement(userProfile.uid);
+          if (token) {
+            const isValid = await verifySignedEntitlementLocal(token, userProfile.uid);
+            if (isValid) {
+              if (!cancelled) {
+                setHasAccess(true);
+                setChecking(false);
+              }
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("[PREMIUM_LOCK] Signed token check failed:", err);
+        }
+      }
+
+      if (!cancelled) {
+        setHasAccess(false);
+        setChecking(false);
+      }
+    }
+
+    setChecking(true);
+    checkAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userProfile, testerRecord]);
+
+  if (!auth || auth.loading || checking) return <>{children}</>;
 
   if (hasAccess) {
     return <>{children}</>;
@@ -43,7 +91,7 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
       <div className="blur-[6px] pointer-events-none select-none">
         {children}
       </div>
-      
+
       <div className="absolute inset-0 z-10 flex items-center justify-center p-6">
         <div className="bg-white/90 backdrop-blur-md p-8 rounded-3xl border border-[#4F5E52]/10 shadow-xl text-center max-w-sm">
           <div className="text-2xl mb-4">✨</div>

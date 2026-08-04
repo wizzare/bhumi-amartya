@@ -16,6 +16,8 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
   const auth = useAuth();
   const router = useRouter();
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+  const [hasAccess, setHasAccess] = useState(true);
+  const [checking, setChecking] = useState(true);
 
   const uid = auth?.userProfile?.uid;
   useEffect(() => {
@@ -29,6 +31,55 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     };
   }, [uid]);
 
+  const userProfile = auth?.userProfile;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkAccess() {
+      // 1. Synchronous Firestore entitlement check
+      const syncAccess = getEntitlementStatus(userProfile || null, new Date(), testerRecord).isPremium;
+      if (syncAccess) {
+        if (!cancelled) {
+          setHasAccess(true);
+          setChecking(false);
+        }
+        return;
+      }
+
+      // 2. Fallback: Signed entitlement check
+      if (userProfile?.uid) {
+        try {
+          const { getLocalSignedEntitlement, verifySignedEntitlementLocal } = await import("@/lib/billing/googlePlayBilling");
+          const token = await getLocalSignedEntitlement(userProfile.uid);
+          if (token) {
+            const isValid = await verifySignedEntitlementLocal(token, userProfile.uid);
+            if (isValid) {
+              if (!cancelled) {
+                setHasAccess(true);
+                setChecking(false);
+              }
+              return;
+            }
+          }
+        } catch (err) {
+          console.warn("[ACCESS_GUARD] Signed token check failed:", err);
+        }
+      }
+
+      if (!cancelled) {
+        setHasAccess(false);
+        setChecking(false);
+      }
+    }
+
+    setChecking(true);
+    checkAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userProfile, testerRecord]);
+
   if (
     process.env.NODE_ENV === "development" &&
     typeof window !== "undefined" &&
@@ -37,9 +88,8 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     return <>{children}</>;
   }
 
-  if (!auth || auth.loading) return <>{children}</>;
+  if (!auth || auth.loading || checking) return <>{children}</>;
 
-  const hasAccess = getEntitlementStatus(auth.userProfile, new Date(), testerRecord).isPremium;
   if (hasAccess) return <>{children}</>;
 
   return (

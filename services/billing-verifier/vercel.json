@@ -6,5 +6,11 @@
     }
   },
   "regions": ["sin1"],
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "crons": [
+    {
+      "path": "/api/billing/reconcile",
+      "schedule": "*/5 * * * *"
+    }
+  ]
 }
