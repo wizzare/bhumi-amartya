@@ -183,14 +183,14 @@ export const adminRepository = {
     });
   },
 
-  async getTotalUserCount(): Promise<number> {
+  async getTotalUserCount(): Promise<number | null> {
     return timedQuery({ name: "getTotalUserCount", component: "adminRepository", expectedMax: 1 }, async () => {
       try {
         const snapshot = await getCountFromServer(collection(db, "users"));
         return snapshot.data().count;
       } catch (error: unknown) {
         console.error("[ADMIN REPO] getTotalUserCount failed:", error);
-        return 0;
+        return null;
       }
     });
   },

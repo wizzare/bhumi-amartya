@@ -635,6 +635,7 @@ export default function AdminActivityPage() {
   const [customEnd, setCustomEnd] = useState(today);
   const [users, setUsers] = useState<FounderUser[]>([]);
   const [globalUserCount, setGlobalUserCount] = useState<number | null>(null);
+  const [globalUserCountStatus, setGlobalUserCountStatus] = useState<FetchStatus>("idle");
   const [usersCursor, setUsersCursor] = useState<QueryDocumentSnapshot<DocumentData> | undefined>(undefined);
   const [usersHasMore, setUsersHasMore] = useState(false);
   const [usersLoading, setUsersLoading] = useState(false);
@@ -649,6 +650,7 @@ export default function AdminActivityPage() {
   const [selectedDetail, setSelectedDetail] = useState<UserDetailData | null>(null);
   const [standaloneHd, setStandaloneHd] = useState<StandaloneHumanDesignSnapshot | null>(null);
   const [modalTab, setModalTab] = useState<"profile" | "activity" | "journey" | "wellness" | "billing" | "blueprint" | "device">("profile");
+  const loadedTabsRef = useRef<Set<string>>(new Set());
   const [loadedTabs, setLoadedTabs] = useState<Set<string>>(new Set());
   const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({});
   const [tabError, setTabError] = useState<Record<string, string | null>>({});
@@ -708,7 +710,16 @@ export default function AdminActivityPage() {
     setError(null);
     try {
       if (reset) {
-        void adminRepository.getTotalUserCount().then((count) => setGlobalUserCount(count));
+        setGlobalUserCountStatus("loading");
+        void adminRepository.getTotalUserCount().then((count) => {
+          if (count !== null) {
+            setGlobalUserCount(count);
+            setGlobalUserCountStatus("loaded");
+          } else {
+            setGlobalUserCount(null);
+            setGlobalUserCountStatus("error");
+          }
+        });
       }
       const page = await adminRepository.getAllUsersForMonitoring(25, reset ? undefined : usersCursor);
       const testerRecordsByUid = await getFounderTesterRecordsByUids(
@@ -829,9 +840,38 @@ export default function AdminActivityPage() {
 
   const currentRequestId = useRef(0);
 
+  const resetUserDetailState = useCallback(() => {
+    setSelectedUser(null);
+    setSelectedBlueprint(null);
+    setSelectedDetail(null);
+    setStandaloneHd(null);
+    loadedTabsRef.current.clear();
+    setLoadedTabs((prev) => (prev.size === 0 ? prev : new Set()));
+    setModalTab("profile");
+    setTabLoading({});
+    setTabError({});
+  }, []);
+
+  const openUserDetail = useCallback((user: FounderUser) => {
+    if (isAdminExcludedAccount({ email: user.email, uid: user.uid })) return;
+    setSelectedUser(user);
+    setSelectedBlueprint(null);
+    setSelectedDetail(null);
+    setStandaloneHd(null);
+    loadedTabsRef.current.clear();
+    setLoadedTabs(new Set());
+    setModalTab("profile");
+    setTabLoading({});
+    setTabError({});
+  }, []);
+
+  const closeUserDetail = useCallback(() => {
+    resetUserDetailState();
+  }, [resetUserDetailState]);
+
   // Lazy tab loader for selected user modal
   const loadModalTab = useCallback(async (tabName: string) => {
-    if (!selectedUser || loadedTabs.has(tabName)) return;
+    if (!selectedUser || loadedTabsRef.current.has(tabName)) return;
     const reqId = ++currentRequestId.current;
     const activeUid = selectedUser.uid;
 
@@ -878,7 +918,8 @@ export default function AdminActivityPage() {
         }));
       }
 
-      setLoadedTabs((prev) => new Set(prev).add(tabName));
+      loadedTabsRef.current.add(tabName);
+      setLoadedTabs(new Set(loadedTabsRef.current));
     } catch (err: any) {
       if (reqId === currentRequestId.current && selectedUser?.uid === activeUid) {
         setTabError((prev) => ({ ...prev, [tabName]: err?.message || "Gagal memuat data tab" }));
@@ -888,21 +929,19 @@ export default function AdminActivityPage() {
         setTabLoading((prev) => ({ ...prev, [tabName]: false }));
       }
     }
-  }, [loadedTabs, rangeDates.end, selectedUser]);
+  }, [rangeDates.end, selectedUser]);
 
   useEffect(() => {
-    if (!selectedUser || isAdminExcludedAccount({ email: selectedUser.email, uid: selectedUser.uid })) {
-      if (selectedUser) setSelectedUser(null);
-      setSelectedBlueprint(null);
-      setSelectedDetail(null);
-      setStandaloneHd(null);
-      setLoadedTabs(new Set());
-      setModalTab("profile");
+    if (!selectedUser) {
+      return;
+    }
+    if (isAdminExcludedAccount({ email: selectedUser.email, uid: selectedUser.uid })) {
+      resetUserDetailState();
       return;
     }
     // Automatically trigger loading for the active modal tab
     void loadModalTab(modalTab);
-  }, [modalTab, selectedUser, loadModalTab]);
+  }, [modalTab, selectedUser, loadModalTab, resetUserDetailState]);
 
   const metrics = useMemo(() => {
     const includedUidSet = new Set(users.map((u) => u.uid));
@@ -1373,18 +1412,27 @@ export default function AdminActivityPage() {
         )}
 
         <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <MetricCard icon={<Users size={18} />} label="Total User" value={globalUserCount !== null ? globalUserCount : metrics.totalUsers} sub="global total (getCountFromServer)" comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`} trend={trendLabel(metrics.totalUserTrend)} sparkline={metrics.sparkline} tone="gold" />
+          <MetricCard
+            icon={<Users size={18} />}
+            label="Total User"
+            value={globalUserCountStatus === "loaded" && globalUserCount !== null ? globalUserCount : globalUserCountStatus === "error" ? "Total global tidak tersedia" : metrics.totalUsers}
+            sub={globalUserCountStatus === "error" ? `${users.length} user sudah dimuat (Minimal ${users.length})` : "global total (getCountFromServer)"}
+            comparison={`${signedPct(metrics.totalUserTrend)} minggu ini`}
+            trend={trendLabel(metrics.totalUserTrend)}
+            sparkline={metrics.sparkline}
+            tone="gold"
+          />
           <MetricCard icon={<UserPlus size={18} />} label="New User" value={metrics.newUsers} sub="registered users on selected date" comparison={`Yesterday: ${metrics.newUsersYesterday}`} trend={metrics.newUserTrendText} tone="sage" />
-          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={analyticsStatus === "loaded" ? metrics.dau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? trendLabel(metrics.dauTrend) : "—"} sparkline={analyticsStatus === "loaded" ? metrics.sparkline : undefined} tone="sage" />
-          <MetricCard icon={<Calendar size={18} />} label="WAU" value={analyticsStatus === "loaded" ? metrics.wau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 7-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? "7d active" : "—"} tone="cream" />
-          <MetricCard icon={<Calendar size={18} />} label="MAU" value={analyticsStatus === "loaded" ? metrics.mau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 30-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "Buka tab Analytics"} trend={analyticsStatus === "loaded" ? "30d active" : "—"} tone="cream" />
+          <MetricCard icon={<CheckCircle2 size={18} />} label="DAU" value={analyticsStatus === "loaded" ? metrics.dau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `kemarin ${metrics.dau - Math.round((metrics.dauTrend ?? 0) / 100)}` : "—"} trend={analyticsStatus === "loaded" ? trendLabel(metrics.dauTrend) : "—"} sparkline={analyticsStatus === "loaded" ? metrics.sparkline : undefined} tone="sage" />
+          <MetricCard icon={<Calendar size={18} />} label="WAU" value={analyticsStatus === "loaded" ? metrics.wau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 7-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.wau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "—"} trend={analyticsStatus === "loaded" ? "7d active" : "—"} tone="cream" />
+          <MetricCard icon={<Calendar size={18} />} label="MAU" value={analyticsStatus === "loaded" ? metrics.mau : "Belum dimuat"} sub={analyticsStatus === "loaded" ? "rolling 30-day unique active users" : "Buka tab Analytics"} comparison={analyticsStatus === "loaded" ? `${pct(metrics.mau, Math.max(1, metrics.totalUsers)) ?? 0}% base` : "—"} trend={analyticsStatus === "loaded" ? "30d active" : "—"} tone="cream" />
           <MetricCard icon={<TrendingUp size={18} />} label="Aggregate Retention D1" value={analyticsStatus === "loaded" ? (metrics.d1.value === null ? "No data" : `${metrics.d1.value}%`) : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `${metrics.d1.retained}/${metrics.d1.eligible} retained (D+1)` : "Buka tab Analytics"} comparison="cohort day 1" trend={analyticsStatus === "loaded" ? (metrics.d1.value === null ? "No data" : metrics.d1.value >= 50 ? "▲ Stable" : "▼ Watch") : "—"} tone="sage" />
           <MetricCard icon={<TrendingDown size={18} />} label="Aggregate Retention D7" value={analyticsStatus === "loaded" ? (metrics.d7.value === null ? "No data" : `${metrics.d7.value}%`) : "Belum dimuat"} sub={analyticsStatus === "loaded" ? `${metrics.d7.retained}/${metrics.d7.eligible} retained (D+7)` : "Buka tab Analytics"} comparison="cohort day 7" trend={analyticsStatus === "loaded" ? (metrics.d7.value === null ? "No data" : metrics.d7.value >= 25 ? "▲ Healthy" : "▼ Watch") : "—"} tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
-          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend="Inti Tier" tone="gold" />
-          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend="Alfa Tier" tone="gold" />
-          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub="Sample (Loaded 25 users)" comparison="Loaded users sample" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
+          <MetricCard icon={<Star size={18} />} label="Total Premium Access" value={metrics.premiumAccess} sub={`Sample dari ${users.length} user yang dimuat`} comparison="Loaded users sample" trend={metrics.premiumAccess > 0 ? "▲ Active" : "No data"} tone="cream" />
+          <MetricCard icon={<Star size={18} />} label="Google Play Paid" value={metrics.googlePlayPaid} sub={`Sample dari ${users.length} user yang dimuat`} comparison="Loaded users sample" trend={metrics.googlePlayPaid > 0 ? "▲ Verified" : "0 paid"} tone="sage" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Inti" value={metrics.penjagaInti} sub={`Sample dari ${users.length} user yang dimuat`} comparison="Loaded users sample" trend="Inti Tier" tone="gold" />
+          <MetricCard icon={<Star size={18} />} label="Penjaga Bhumi Alfa" value={metrics.penjagaAlfa} sub={`Sample dari ${users.length} user yang dimuat`} comparison="Loaded users sample" trend="Alfa Tier" tone="gold" />
+          <MetricCard icon={<Heart size={18} />} label="Paid Conversion" value={metrics.paidConversion === null ? "No data" : `${metrics.paidConversion}%`} sub={`Sample dari ${users.length} user yang dimuat`} comparison="Loaded users sample" trend={metrics.paidConversion ? "▲ Verified" : "0% paid"} tone="sage" />
         </section>
 
         <Panel title="Founder Insight" action="executive summary">
@@ -1473,7 +1521,7 @@ export default function AdminActivityPage() {
             </div>
           </Panel>
 
-          <Panel title="Churn Dashboard" action="inactive at least N days">
+          <Panel title="Churn Dashboard" action={`Sample dari ${users.length} user yang dimuat`}>
             <div className="space-y-3">
               {metrics.churn.map((row) => (
                 <div key={row.day} className={row.count === Math.max(...metrics.churn.map((item) => item.count)) && row.count > 0 ? "rounded-[8px] border border-[#D8C7A1] bg-[#FFF8E8] p-3" : ""}>
@@ -1489,7 +1537,7 @@ export default function AdminActivityPage() {
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <Panel title="Location Analytics" action="Top 5 Cities & Countries">
+          <Panel title="Location Analytics" action={`Sample dari ${users.length} user yang dimuat`}>
             <div className="space-y-4">
               <div>
                 <h4 className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-[#6D786F]">Top 5 Birth Cities</h4>
@@ -1581,7 +1629,7 @@ export default function AdminActivityPage() {
                     <td className="py-3 pr-4">
                       <button
                         type="button"
-                        onClick={() => setSelectedUser(user)}
+                        onClick={() => openUserDetail(user)}
                         className="font-semibold text-[#2F3C34] hover:underline text-left"
                       >
                         {user.displayName}
@@ -1634,7 +1682,7 @@ export default function AdminActivityPage() {
       </div>
 
       {selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setSelectedUser(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={closeUserDetail}>
           <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-[8px] bg-white p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             {/* Modal Header */}
             <div className="mb-4 flex items-start justify-between gap-4">
@@ -1643,7 +1691,7 @@ export default function AdminActivityPage() {
                 <h2 className="font-serif text-2xl font-bold text-[#2F3C34]">{selectedUser.displayName}</h2>
                 <p className="text-sm text-[#6D786F]">{selectedUser.email} · UID: {selectedUser.uid}</p>
               </div>
-              <button onClick={() => setSelectedUser(null)} className="rounded-md border border-[#D9D6CC] px-3 py-2 text-sm font-semibold hover:bg-[#F7F4ED]">Close</button>
+              <button onClick={closeUserDetail} className="rounded-md border border-[#D9D6CC] px-3 py-2 text-sm font-semibold hover:bg-[#F7F4ED]">Close</button>
             </div>
 
             {/* Modal Sub-Tabs */}

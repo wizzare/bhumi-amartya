@@ -58,7 +58,7 @@ async function runPhaseAReadReductionTests() {
 
   // Check 6 & 7: User detail modal lazy loading & single query per tab
   assert(pageFile.includes("loadModalTab = useCallback"), "page.tsx must use loadModalTab for lazy tab loading in user detail modal");
-  assert(pageFile.includes("loadedTabs.has(tabName)"), "page.tsx must check loadedTabs to ensure modal tab queries fire only once");
+  assert(pageFile.includes("loadedTabsRef.current.has(tabName)"), "page.tsx must check loadedTabsRef to ensure modal tab queries fire only once");
   assert(pageFile.includes("firestoreLimit(20)"), "page.tsx modal subcollection queries must be bounded to limit 20");
   totalAssertions += 3;
   console.log("  ✓ Items 6 & 7 PASS: User row click does not fetch subcollections; detail tabs are lazy-loaded once.");
