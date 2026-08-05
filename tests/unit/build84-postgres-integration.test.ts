@@ -95,7 +95,7 @@ async function run() {
     };
 
     db.txJobData = {
-      job_type: "SYNC_FIRESTORE_ENTITLEMENT",
+      job_type: "FIRESTORE_SYNC",
       status: "PENDING",
       attempt_count: 0,
     };
@@ -104,7 +104,7 @@ async function run() {
 
     assert.ok(db.purchase_ledger.has("hash123"), "ledger written");
     assert.ok(db.idempotency_keys.has("key123"), "event written");
-    assert.equal(db.entitlement_sync_jobs.get(1).job_type, "SYNC_FIRESTORE_ENTITLEMENT", "sync job written");
+    assert.equal(db.entitlement_sync_jobs.get(1).job_type, "FIRESTORE_SYNC", "sync job written");
   });
 
   await test("transaction rolls back cleanly on event unique constraint failure", async () => {

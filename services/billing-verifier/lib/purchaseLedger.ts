@@ -19,7 +19,7 @@ export interface LedgerTxParams {
   lastErrorCode?: string | null;
 }
 
-// Pure, testable decision: should an ACKNOWLEDGE_GOOGLE_PLAY job be enqueued?
+// Pure, testable decision: should an ACKNOWLEDGEMENT job be enqueued?
 export function shouldCreateAcknowledgementJob(params: LedgerTxParams): boolean {
   const isPurchasedAckState = params.purchaseState === "SUBSCRIPTION_STATE_ACTIVE"
     || params.purchaseState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD"
@@ -118,21 +118,21 @@ export async function executeLedgerVerificationTx(params: LedgerTxParams): Promi
       ]
     );
 
-    // 4. Insert or update entitlement sync job (SYNC_FIRESTORE_ENTITLEMENT)
+    // 4. Insert or update entitlement sync job (FIRESTORE_SYNC)
     const jobRes = await client.query(
       `INSERT INTO entitlement_sync_jobs (
         ledger_id, job_type, status, attempt_count, next_attempt_at, created_at, updated_at
-      ) VALUES ($1, 'SYNC_FIRESTORE_ENTITLEMENT', 'PENDING', 0, $2, $2, $2)
+      ) VALUES ($1, 'FIRESTORE_SYNC', 'PENDING', 0, $2, $2, $2)
        RETURNING id`,
       [hash, now.toISOString()]
     );
 
-    // 5. Insert acknowledgement job if required (ACKNOWLEDGE_GOOGLE_PLAY)
+    // 5. Insert acknowledgement job if required (ACKNOWLEDGEMENT)
     if (shouldCreateAcknowledgementJob(params)) {
       await client.query(
         `INSERT INTO entitlement_sync_jobs (
           ledger_id, job_type, status, attempt_count, next_attempt_at, created_at, updated_at
-        ) VALUES ($1, 'ACKNOWLEDGE_GOOGLE_PLAY', 'PENDING', 0, $2, $2, $2)`,
+        ) VALUES ($1, 'ACKNOWLEDGEMENT', 'PENDING', 0, $2, $2, $2)`,
         [hash, now.toISOString()]
       );
     }
@@ -164,7 +164,7 @@ export async function markLedgerSyncSuccess(tokenHashValue: string): Promise<voi
      SET status = 'COMPLETED',
          completed_at = NOW(),
          updated_at = NOW()
-     WHERE ledger_id = $1 AND job_type = 'SYNC_FIRESTORE_ENTITLEMENT'`,
+     WHERE ledger_id = $1 AND job_type = 'FIRESTORE_SYNC'`,
     [tokenHashValue]
   );
 }
@@ -184,7 +184,7 @@ export async function markLedgerSyncFailure(tokenHashValue: string, errorCode: s
      SET status = 'FAILED',
          last_error_code = $2,
          updated_at = NOW()
-     WHERE ledger_id = $1 AND job_type = 'SYNC_FIRESTORE_ENTITLEMENT'`,
+     WHERE ledger_id = $1 AND job_type = 'FIRESTORE_SYNC'`,
     [tokenHashValue, errorCode]
   );
 }
@@ -204,7 +204,7 @@ export async function updateLedgerAck(tokenHashValue: string, acknowledged: bool
        SET status = 'COMPLETED',
            completed_at = NOW(),
            updated_at = NOW()
-       WHERE ledger_id = $1 AND job_type = 'ACKNOWLEDGE_GOOGLE_PLAY'`,
+       WHERE ledger_id = $1 AND job_type = 'ACKNOWLEDGEMENT'`,
       [tokenHashValue]
     );
   }
