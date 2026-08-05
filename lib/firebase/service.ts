@@ -24,66 +24,10 @@ function toValidTimestamp(value: unknown, fallback: any): any {
 }
 import type { GaiaProfile } from '@/lib/profile/gaia/types';
 import { sanitizeForFirestore } from '@/lib/firebase/sanitizeForFirestore';
+import { stripServerOwnedAccessFields } from '@/lib/billing/serverOwnedAccessFields';
 import type { WetonBlueprint } from '@/lib/weton/types';
 import type { BaziBlueprint } from '@/lib/bazi/types';
 import type { VedicBlueprint } from '@/lib/vedic/types';
-
-const SERVER_OWNED_ACCESS_FIELDS = new Set([
-  'plan',
-  'plans',
-  'planLabel',
-  'tier',
-  'tiers',
-  'role',
-  'roles',
-  'guardianRole',
-  'badge',
-  'badges',
-  'testerBadge',
-  'guardianBadge',
-  'recognitionTier',
-  'isDeveloper',
-  'isFoundingMember',
-  'premium',
-  'isPremium',
-  'subscription',
-  'subscriptionStatus',
-  'entitlement',
-  'entitlements',
-  'membership',
-  'membershipType',
-  'memberType',
-  'membershipStartDate',
-  'membershipExpiryDate',
-  'membershipExpiresAt',
-  'billing',
-  'purchase',
-  'purchases',
-  'productId',
-  'expiryDate',
-  'accessStart',
-  'validUntil',
-  'trial',
-  'trialStartedAt',
-  'trialEndsAt',
-  'quota',
-  'limits',
-  'credits',
-  'founder',
-  'admin',
-  'staff',
-  'paid',
-  'paymentStatus',
-  'isInternalTester',
-  'excludeFromAdminAnalytics',
-  'internalTesterLabel',
-]);
-
-function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(data).filter(([key]) => !SERVER_OWNED_ACCESS_FIELDS.has(key)),
-  ) as Partial<T>;
-}
 
 // Type definitions matching the localStorage structures
 export interface UserProfile {

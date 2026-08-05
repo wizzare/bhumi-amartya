@@ -69,7 +69,7 @@ const expiredPremium = getBillingPresentation(canonicalStates[4].entitlement);
 test("expired premium does not become free", expiredPremium.state === "premium_expired" && !expiredPremium.hasAccess);
 
 const entitlementSource = readFileSync(resolve("lib/billing/entitlementService.ts"), "utf8");
-test("canonical source distinguishes explicit free from exhausted trial (time-based trial model)", entitlementSource.includes("trialEnd && now < trialEnd && !isExplicitFree"));
+test("canonical source distinguishes active from exhausted trial by trusted immutable end time", entitlementSource.includes('trialWindow.state === "invalid"') && entitlementSource.includes("trialEnd && now < trialEnd"));
 test("canonical source retains expired paid identity after trial fallback", entitlementSource.includes("if (expiredSubscriberAt)"));
 
 const premiumPage = readFileSync(resolve("app/premium-bhumi/page.tsx"), "utf8");

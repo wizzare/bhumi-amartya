@@ -5,6 +5,9 @@ const crypto = require("crypto");
 const functions = require("firebase-functions/v1");
 const { google } = require("googleapis");
 const { recordInteractiveLoginTransaction } = require("./trialLogin");
+const { buildWelcomeMessage } = require("./welcomeMessage");
+const { registerBirthdayScheduler } = require("./birthdayScheduler");
+const { registerSendBroadcastEmail } = require("./broadcastEmail");
 
 if (!admin.apps.length) {
   admin.initializeApp();
@@ -51,7 +54,10 @@ function buildNewUserGrant(user) {
     trialStartedAt: accessStart.toISOString(),
     trialEndsAt: accessUntil.toISOString(),
     subscriptionStatus: "trialing",
-    isPremium: true,
+    // Do not set isPremium here: entitlementService.getEntitlementStatus() checks
+    // isPremium before the trial-date branch, so isPremium:true here would make new
+    // trial users resolve as "Paid Premium / Google Play Billing" instead of "Trial".
+    // isPremium must only ever be written by the verified Google Play billing verifier.
     entitlements: {
       dashboard: true,
       premiumFeatures: true,
@@ -79,7 +85,74 @@ exports.assignJuly1AccessOnCreate = functions
       accessStart: payload.accessStart,
       accessUntil: payload.accessUntil,
     });
+
+    // Welcome message failure must never undo or block the trial provisioning
+    // above — it has already been written and logged by this point. Isolated
+    // in its own try/catch so a message-write problem only ever produces a
+    // MESSAGE_WRITE_FAILURE log line, never a failed/retried provisioning run.
+    try {
+      const trialStartDate = toValidDate(user.metadata && user.metadata.creationTime);
+      const trialEndDate = new Date(trialStartDate.getTime() + SEVEN_DAYS_MS);
+      const welcome = buildWelcomeMessage(user.uid, trialStartDate, trialEndDate);
+      const now = new Date().toISOString();
+
+      // Deterministic id + merge write: idempotent under Cloud Functions'
+      // at-least-once retry semantics — a retry re-confirms the same
+      // document instead of creating a duplicate welcome message.
+      await admin
+        .firestore()
+        .doc(`users/${user.uid}/communications/${welcome.id}`)
+        .set(
+          {
+            id: welcome.id,
+            uid: user.uid,
+            senderUid: "bhumi",
+            type: "welcome",
+            priority: "normal",
+            source: "system",
+            title: welcome.title,
+            summary: welcome.summary,
+            content: welcome.content,
+            createdAt: now,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            status: "queued",
+            threadId: welcome.id,
+            ownerUserId: user.uid,
+            senderRole: "system",
+            recipientRole: "user",
+            isRead: false,
+            isArchived: false,
+            isDismissed: false,
+            deliveryChannels: ["inbox"],
+            deliveryAttempts: 0,
+            metadata: {
+              schemaVersion: 1,
+              systemMessage: true,
+              trialStartedAt: trialStartDate.toISOString(),
+              trialEndsAt: trialEndDate.toISOString(),
+            },
+          },
+          { merge: true },
+        );
+
+      functions.logger.info("[WELCOME_MESSAGE_CREATED]", { uid: user.uid, messageId: welcome.id });
+    } catch (error) {
+      functions.logger.error("[MESSAGE_WRITE_FAILURE]", {
+        uid: user.uid,
+        errorName: error && error.name,
+        errorMessage: error && error.message,
+      });
+    }
   });
+
+// Backend-scheduled birthday Inbox + email delivery — see functions/
+// birthdayScheduler.js. Not login-dependent; runs once daily.
+exports.birthdayScheduler = registerBirthdayScheduler(functions, admin);
+
+// Admin-only callable for broadcasts that include the Email channel — see
+// functions/broadcastEmail.js. Inbox-only broadcasts keep using the
+// existing client-side CommunicationCenterService.sendBroadcast() path.
+exports.sendBroadcastEmail = registerSendBroadcastEmail(functions, admin);
 
 exports.recordInteractiveLogin = functions
   .region("asia-southeast2")

@@ -128,19 +128,42 @@ service cloud.firestore {
         "role",
         "roles",
         "guardianRole",
+        "adminRole",
         "badge",
         "badges",
         "testerBadge",
         "guardianBadge",
         "recognitionTier",
+        "recognitionDate",
+        "guardianCandidate",
+        "guardianApproved",
+        "guardianApprovedAt",
+        "guardianApprovedBy",
+        "isInternalTester",
+        "excludeFromAdminAnalytics",
+        "internalTesterLabel",
         "isDeveloper",
         "isFoundingMember",
+        "founder",
+        "inti",
+        "alfa",
+        "admin",
+        "staff",
         "premium",
         "isPremium",
+        "effectiveTier",
+        "premiumExpiresAt",
+        "paid",
+        "paidUntil",
+        "paymentStatus",
         "subscription",
+        "subscriptions",
         "subscriptionStatus",
+        "subscriptionState",
         "entitlement",
         "entitlements",
+        "entitlementSource",
+        "entitlementUpdatedAt",
         "membership",
         "membershipType",
         "memberType",
@@ -148,24 +171,36 @@ service cloud.firestore {
         "membershipExpiryDate",
         "membershipExpiresAt",
         "billing",
+        "billingVerified",
         "purchase",
         "purchases",
+        "purchaseState",
+        "purchaseTokenHash",
         "productId",
+        "basePlanId",
+        "packageName",
+        "provider",
+        "tokenHash",
+        "ackStatus",
+        "googlePlay",
         "expiryDate",
+        "expiresAt",
         "accessStart",
         "accessUntil",
+        "accessSource",
+        "accessSourceVersion",
         "validUntil",
         "trial",
         "trialStartedAt",
         "trialEndsAt",
+        "trialLoginCount",
+        "trialStatus",
+        "trialCompletedAt",
+        "lastSuccessfulLoginAt",
         "quota",
         "limits",
         "credits",
-        "founder",
-        "admin",
-        "staff",
-        "paid",
-        "paymentStatus"
+        "updatedBy"
       ];
     }
 
@@ -215,9 +250,53 @@ service cloud.firestore {
         allow delete: if false;
       }
 
-      match /{subcollection}/{document=**} {
-        allow read, write: if subcollection != 'communications'
-          && (isOwner(userId) || isFounderByEmail() || isFounderOrAdmin());
+      match /behaviorMemory/{documentId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && documentId == 'wellness'
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'updatedAt', 'recommendations', 'lastSeenAt', 'capacityProfile', 'contextCompletions', 'seenRecommendationKeys']);
+        allow update: if isOwner(userId)
+          && documentId == 'wellness'
+          && request.resource.data.uid == resource.data.uid
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'recommendations', 'lastSeenAt', 'capacityProfile', 'contextCompletions', 'seenRecommendationKeys']);
+        allow delete: if false;
+      }
+
+      match /weeklyRecommendations/{weekId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.weekId == weekId
+          && request.resource.data.keys().hasOnly(['uid', 'weekId', 'startDate', 'endDate', 'kabarMingguIni', 'pikiran', 'ekonomi', 'asmara', 'orangTerdekat', 'maknaBatin', 'yangLagiBerat', 'ruangBaru', 'tema', 'peluang', 'perluDijaga', 'fokus', 'saranBhumi', 'manifestasi', 'generatedAt', 'expiresAt']);
+        allow update: if isOwner(userId)
+          && request.resource.data.uid == resource.data.uid
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.weekId == resource.data.weekId
+          && resource.data.weekId == weekId
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['startDate', 'endDate', 'kabarMingguIni', 'pikiran', 'ekonomi', 'asmara', 'orangTerdekat', 'maknaBatin', 'yangLagiBerat', 'ruangBaru', 'tema', 'peluang', 'perluDijaga', 'fokus', 'saranBhumi', 'manifestasi', 'generatedAt', 'expiresAt']);
+        allow delete: if false;
+      }
+
+      match /longitudinalWellness/{documentId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId)
+          && documentId == 'current'
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['uid', 'updatedAt', 'events', 'snapshot']);
+        allow update: if isOwner(userId)
+          && documentId == 'current'
+          && request.resource.data.uid == resource.data.uid
+          && resource.data.uid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['updatedAt', 'events', 'snapshot']);
+        allow delete: if false;
+      }
+
+      // Unknown or server-owned nested user paths are denied by default.
+      // Firebase Admin SDK bypasses Firestore Rules for trusted backend writes.
+      match /{document=**} {
+        allow read, write: if false;
       }
     }
 

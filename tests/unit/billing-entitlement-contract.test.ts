@@ -23,17 +23,20 @@ const NOW = new Date("2026-07-25T00:00:00Z");
   test("null profile status is No Data", s.status === "No Data");
 }
 
-// Free user (explicit free plan)
+// OLD POLICY: legacy `plan: free` suppressed an otherwise active trial.
+// NEW CANONICAL POLICY: a trusted, exact server trial window outranks that stale label.
+// WHY CHANGE IS REQUIRED: bootstrap intentionally preserves legacy plan while writing canonical timestamps.
+// RUNTIME BEHAVIOR PROTECTED BY: plan-free users receive only their immutable server-issued window.
 {
-  const profile = { trialStartedAt: "2026-07-20T00:00:00Z", plan: "free" } as any;
+  const profile = { trialStartedAt: "2026-07-20T00:00:00Z", trialEndsAt: "2026-07-27T00:00:00Z", entitlementSource: "firebase_auth_creation_time", plan: "free" } as any;
   const s = getEntitlementStatus(profile, NOW);
-  test("explicit free plan user is not premium", s.isPremium === false);
-  test("explicit free plan reason is none", s.reason === "none");
+  test("legacy free plan with canonical active trial is premium", s.isPremium === true);
+  test("legacy free plan with canonical active trial reason is trial", s.reason === "trial");
 }
 
 // Trial active (started 3 days ago)
 {
-  const profile = { trialStartedAt: "2026-07-22T00:00:00Z", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-22T00:00:00Z", trialEndsAt: "2026-07-29T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("trial user started 3 days ago is premium", s.isPremium === true);
   test("trial user reason is trial", s.reason === "trial");
@@ -42,7 +45,7 @@ const NOW = new Date("2026-07-25T00:00:00Z");
 
 // Trial boundary: exact start (0 days elapsed)
 {
-  const profile = { trialStartedAt: "2026-07-25T00:00:00Z", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-25T00:00:00Z", trialEndsAt: "2026-08-01T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("exact trial start is still trial", s.isPremium === true && s.reason === "trial");
   test("days remaining is 7", s.daysRemaining === 7);
@@ -50,22 +53,25 @@ const NOW = new Date("2026-07-25T00:00:00Z");
 
 // Trial boundary: 8 days ago (expired)
 {
-  const profile = { trialStartedAt: "2026-07-17T00:00:00Z", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-17T00:00:00Z", trialEndsAt: "2026-07-24T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("trial started 8 days ago is not premium", s.isPremium === false);
   test("expired trial status is Trial Exhausted", s.status === "Trial Exhausted");
 }
 
-// Explicit free plan overrides trial
+// OLD POLICY: `plan: free` always overrode trial timestamps.
+// NEW CANONICAL POLICY: trusted canonical timestamps are authoritative.
+// WHY CHANGE IS REQUIRED: plan is a legacy presentation field, not trial provenance.
+// RUNTIME BEHAVIOR PROTECTED BY: only source-marked exact seven-day windows unlock access.
 {
-  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", plan: "free" } as any;
+  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", trialEndsAt: "2026-07-31T00:00:00Z", entitlementSource: "firebase_auth_creation_time", plan: "free" } as any;
   const s = getEntitlementStatus(profile, NOW);
-  test("explicit free plan denies trial", s.isPremium === false);
+  test("canonical trial outranks stale free plan", s.isPremium === true && s.reason === "trial");
 }
 
 // Active premium membership
 {
-  const profile = { membershipType: "PREMIUM", isPremium: true, membershipExpiryDate: "2026-08-01T00:00:00Z" } as any;
+  const profile = { membershipType: "PREMIUM", entitlementSource: "google_play", membershipExpiryDate: "2026-08-01T00:00:00Z" } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("active premium membership is premium", s.isPremium === true);
   test("premium reason is subscriber", s.reason === "subscriber");
@@ -73,7 +79,7 @@ const NOW = new Date("2026-07-25T00:00:00Z");
 
 // Expired premium membership
 {
-  const profile = { membershipType: "PREMIUM", isPremium: true, membershipExpiryDate: "2026-06-01T00:00:00Z", createdAt: "2026-06-01T00:00:00Z" } as any;
+  const profile = { membershipType: "PREMIUM", entitlementSource: "google_play", membershipExpiryDate: "2026-06-01T00:00:00Z", createdAt: "2026-06-01T00:00:00Z" } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("expired premium is expired subscriber", s.isPremium === false && s.status === "Expired");
 }
@@ -88,7 +94,7 @@ const NOW = new Date("2026-07-25T00:00:00Z");
 
 // Premium overrides trial
 {
-  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", membershipType: "PREMIUM", isPremium: true, membershipExpiryDate: "2026-08-01T00:00:00Z" } as any;
+  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", trialEndsAt: "2026-07-31T00:00:00Z", entitlementSource: "google_play", membershipType: "PREMIUM", membershipExpiryDate: "2026-08-01T00:00:00Z" } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("premium takes precedence over trial", s.reason === "subscriber");
 }

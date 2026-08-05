@@ -13,7 +13,7 @@ import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
-import { purchasePremiumSubscription, restorePremiumPurchases, processAndVerifyPurchaseToken } from "@/lib/billing/googlePlayBilling";
+import { purchaseAndRecoverPremium, restoreAndRecoverPremium } from "@/lib/billing/googlePlayBilling";
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
@@ -70,45 +70,15 @@ export default function PremiumBhumiPage() {
     setError(null);
     setMessage(null);
     try {
-      const result = await purchasePremiumSubscription();
-      const purchases = result?.purchases || [];
-      if (purchases.length > 0) {
-        let verifiedAny = false;
-        let lastError: string | null = null;
-
-        for (const p of purchases) {
-          if (p.purchaseToken) {
-            try {
-              const verified = await processAndVerifyPurchaseToken(p);
-              if (verified?.ok && verified?.active) {
-                verifiedAny = true;
-              }
-            } catch (vErr: any) {
-              lastError = vErr?.message || "Verifikasi server gagal.";
-            }
-          }
-        }
-
-        if (verifiedAny) {
-          setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
-          try {
-            const fresh = await auth?.refreshUserProfile?.();
-            if (!fresh?.isPremium) {
-              console.warn("[PREMIUM PURCHASE] Verifikasi sukses tapi entitlement belum konsisten — retry dalam 1s.");
-              await new Promise(r => setTimeout(r, 1000));
-              const retry = await auth?.refreshUserProfile?.();
-              if (!retry?.isPremium) {
-                console.warn("[PREMIUM PURCHASE] Premium tidak terdeteksi setelah retry — kemungkinan lag entitlement write.");
-              }
-            }
-          } catch (refreshErr) {
-            console.error("[PREMIUM PURCHASE] Gagal refresh profil setelah purchase:", refreshErr);
-          }
-          setTimeout(() => router.refresh(), 1500);
-        } else {
-          setError(lastError || "Pembelian Play Store terdeteksi, namun verifikasi server gagal. Silakan gunakan tombol Pulihkan Pembelian.");
-        }
-      }
+      const recovery = await purchaseAndRecoverPremium(async () => { await auth?.refreshUserProfile?.(); }, Boolean(isPremium));
+      if (recovery.state === "ACCESS_ACTIVE") {
+        setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
+        setTimeout(() => router.refresh(), 1500);
+      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setError("Tidak ada pembelian aktif yang dapat diverifikasi.");
+      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi tanpa membeli ulang.");
+      else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian terdeteksi, tetapi penyimpanan akses belum berhasil. Silakan coba verifikasi ulang.");
+      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
+      else setError("Pembelian ditolak oleh penyedia atau tidak lagi aktif. Gunakan Pulihkan Pembelian bila status berubah.");
     } catch (err: any) {
       if (err?.message?.includes("USER_CANCELED") || err?.code === "USER_CANCELED") {
         setMessage(null);
@@ -125,47 +95,15 @@ export default function PremiumBhumiPage() {
     setError(null);
     setMessage(null);
     try {
-      const result = await restorePremiumPurchases();
-      const purchases = result?.purchases || [];
-      if (purchases.length > 0) {
-        let verifiedAny = false;
-        let lastError: string | null = null;
-
-        for (const p of purchases) {
-          if (p.purchaseToken) {
-            try {
-              const verified = await processAndVerifyPurchaseToken(p);
-              if (verified?.ok && verified?.active) {
-                verifiedAny = true;
-              }
-            } catch (vErr: any) {
-              lastError = vErr?.message || "Verifikasi server gagal.";
-            }
-          }
-        }
-
-        if (verifiedAny) {
-          setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
-          try {
-            const fresh = await auth?.refreshUserProfile?.();
-            if (!fresh?.isPremium) {
-              console.warn("[PREMIUM RESTORE] Verifikasi sukses tapi entitlement belum konsisten — retry dalam 1s.");
-              await new Promise(r => setTimeout(r, 1000));
-              const retry = await auth?.refreshUserProfile?.();
-              if (!retry?.isPremium) {
-                console.warn("[PREMIUM RESTORE] Premium tidak terdeteksi setelah retry — kemungkinan lag entitlement write.");
-              }
-            }
-          } catch (refreshErr) {
-            console.error("[PREMIUM RESTORE] Gagal refresh profil setelah restore:", refreshErr);
-          }
-          setTimeout(() => router.refresh(), 1500);
-        } else {
-          setError(lastError || "Pembelian aktif ditemukan di Play Store, namun verifikasi server gagal. Silakan coba lagi.");
-        }
-      } else {
-        setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan.");
-      }
+      const recovery = await restoreAndRecoverPremium(async () => { await auth?.refreshUserProfile?.(); }, Boolean(isPremium));
+      if (recovery.state === "ACCESS_ACTIVE") {
+        setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
+        setTimeout(() => router.refresh(), 1500);
+      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan.");
+      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi.");
+      else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian ditemukan, tetapi akses belum tersimpan. Silakan coba pulihkan lagi.");
+      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
+      else setError("Pembelian aktif ditolak oleh penyedia. Periksa status langganan Google Play.");
     } catch (err: any) {
       setError(err?.message || t.premiumBhumi?.restoreFailed || "Pulihkan gagal. Silakan coba lagi.");
     } finally {

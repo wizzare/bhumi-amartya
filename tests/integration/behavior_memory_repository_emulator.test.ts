@@ -367,13 +367,17 @@ async function runAllTests() {
 
   // Test F5: Direct malformed client write validation
   const userMalformedDirect = await createSecondaryAuthenticatedUserDb("malformed-direct-user");
-  await setDoc(doc(userMalformedDirect.db, "users", userMalformedDirect.uid, "behaviorMemory", "wellness"), {
-    uid: userMalformedDirect.uid,
-    updatedAt: "2026-07-24",
-    invalidExtraField: "unvalidated_value",
-  });
-  const snapDirect = await getDocFromServer(doc(userMalformedDirect.db, "users", userMalformedDirect.uid, "behaviorMemory", "wellness"));
-  assert(snapDirect.exists() && snapDirect.data()?.invalidExtraField === "unvalidated_value", "Rule authorization MATCHES, rule schema validation ABSENT (direct malformed write allowed)");
+  let malformedDirectDenied = false;
+  try {
+    await setDoc(doc(userMalformedDirect.db, "users", userMalformedDirect.uid, "behaviorMemory", "wellness"), {
+      uid: userMalformedDirect.uid,
+      updatedAt: "2026-07-24",
+      invalidExtraField: "unvalidated_value",
+    });
+  } catch (err: any) {
+    malformedDirectDenied = err?.code === "permission-denied" || err?.message?.includes("PERMISSION_DENIED");
+  }
+  assert(malformedDirectDenied, "Rule schema validation rejects direct malformed client write");
 
   // SECTION G: Privacy and Logging Audit
   console.log("\n--- SECTION G: Privacy and Logging Audit ---");
@@ -396,7 +400,9 @@ async function runAllTests() {
   }
 }
 
-runAllTests().catch((err) => {
-  console.error("FATAL TEST HARNESS ERROR:", err);
-  process.exit(1);
-});
+runAllTests()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error("FATAL TEST HARNESS ERROR:", err);
+    process.exit(1);
+  });

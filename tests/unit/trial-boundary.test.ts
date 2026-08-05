@@ -28,6 +28,8 @@ const sequentialProfile = {
   uid: "seq_user_001",
   setupCompleted: true,
   trialStartedAt: T0.toISOString(),
+  trialEndsAt: new Date(T0.getTime() + 7 * DAY_MS).toISOString(),
+  entitlementSource: "firebase_auth_creation_time",
   trialLoginCount: 1,
 };
 
@@ -90,16 +92,16 @@ console.log("\n--- 2. EDGE CASES & IMMUTABILITY CONTRACT ---");
   test("Missing timestamps status is Missing Setup Timestamp", s.status === "Missing Setup Timestamp");
 }
 
-// Test: Legacy user without trialStartedAt using createdAt (registered 20 days ago)
+// Legacy creation timestamps alone are not client entitlement authority.
 {
   const legacyProfile = { uid: "u_legacy", createdAt: "2026-07-01T00:00:00Z", setupCompleted: true } as any;
   const s = getEntitlementStatus(legacyProfile, T0);
-  test("Legacy profile registered 24 days ago evaluates as expired trial", s.isPremium === false && s.status === "Trial Exhausted");
+  test("Legacy profile without canonical trial fields fails closed", s.isPremium === false && s.status === "Missing Setup Timestamp");
 }
 
 // Test: High login count on day 1 (loginCount = 50)
 {
-  const highLoginProfile = { uid: "u_high_login", trialStartedAt: T0.toISOString(), trialLoginCount: 50, setupCompleted: true } as any;
+  const highLoginProfile = { uid: "u_high_login", trialStartedAt: T0.toISOString(), trialEndsAt: new Date(T0.getTime() + 7 * DAY_MS).toISOString(), entitlementSource: "firebase_auth_creation_time", trialLoginCount: 50, setupCompleted: true } as any;
   const s = getEntitlementStatus(highLoginProfile, T0);
   test("50 logins on day 1 DOES NOT expire time-based trial early", s.isPremium === true && s.daysRemaining === 7);
 }

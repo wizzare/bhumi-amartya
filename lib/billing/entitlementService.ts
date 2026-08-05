@@ -32,6 +32,31 @@ function toDate(value?: unknown): Date | null {
   return null;
 }
 
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+
+type CanonicalTrialWindow =
+  | { state: "missing"; start: null; end: null }
+  | { state: "invalid"; start: Date | null; end: Date | null }
+  | { state: "valid"; start: Date; end: Date };
+
+export function getCanonicalTrialWindow(profile: UserProfile): CanonicalTrialWindow {
+  const rawStart = profile.trialStartedAt;
+  const rawEnd = profile.trialEndsAt;
+  if (!rawStart && !rawEnd) return { state: "missing", start: null, end: null };
+
+  const start = toDate(rawStart);
+  const end = toDate(rawEnd);
+  const source = String((profile as any).entitlementSource || "");
+  const accessSource = String((profile as any).accessSource || "");
+  const trustedSource = source === "firebase_auth_creation_time"
+    || accessSource === "firebase_auth_on_create"
+    || (profile.membershipType === "TRIAL" && profile.plan === "free_trial");
+  const exactWindow = Boolean(start && end && end.getTime() - start.getTime() === SEVEN_DAYS_MS);
+
+  if (!trustedSource || !start || !end || !exactWindow) return { state: "invalid", start, end };
+  return { state: "valid", start, end };
+}
+
 /**
  * Single entitlement source for Build 78.
  * Precedence:
@@ -162,7 +187,8 @@ export function getEntitlementStatus(
 
   // 3. Paid Subscriber (Rule Priority 3) - Authoritative Google Play status
   let expiredSubscriberAt: Date | null = null;
-  if (profile.membershipType === "PREMIUM" || profile.isPremium === true) {
+  const verifiedPaid = (profile as any).entitlementSource === "google_play" && profile.membershipType === "PREMIUM";
+  if (verifiedPaid) {
     const expiry = toDate(profile.membershipExpiryDate) || toDate(profile.accessUntil);
     if (!expiry || now < expiry) {
       return {
@@ -180,15 +206,15 @@ export function getEntitlementStatus(
   }
 
   // 4. Time-Based 7-Day Free Trial (Rule Priority 4)
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-  const trialStart = toDate(profile.trialStartedAt) || toDate(profile.accessStart) || toDate(profile.createdAt) || toDate(profile.registeredAt);
-  const trialEnd = toDate(profile.trialEndsAt) || toDate(profile.accessUntil) || (trialStart ? new Date(trialStart.getTime() + SEVEN_DAYS_MS) : null);
+  const trialWindow = getCanonicalTrialWindow(profile);
+  const trialStart = trialWindow.start;
+  const trialEnd = trialWindow.end;
 
-  const normalizedPlan = String(profile.plan || "").toLowerCase();
-  const isExplicitFree = profile.trialStatus === "free" || normalizedPlan === "free" || normalizedPlan === "expired";
+  // Canonical server-issued trial timestamps outrank all legacy plan/status
+  // labels. Expiry is determined only by the immutable canonical end time.
 
   // If no setup timestamp exists at all (trialStart is null and trialEnd is null), return explicit safe non-premium status
-  if (!trialStart && !trialEnd) {
+  if (trialWindow.state === "missing") {
     if (expiredSubscriberAt) {
       return {
         isPremium: false,
@@ -213,7 +239,32 @@ export function getEntitlementStatus(
     };
   }
 
-  if (trialEnd && now < trialEnd && !isExplicitFree) {
+  if (trialWindow.state === "invalid") {
+    if (expiredSubscriberAt) {
+      return {
+        isPremium: false,
+        reason: "none",
+        expiresAt: expiredSubscriberAt,
+        daysRemaining: 0,
+        effectiveTier: "Paid Premium (Expired)",
+        source: "Google Play Billing",
+        status: "Expired",
+        trialLoginsRemaining: null,
+      };
+    }
+    return {
+      isPremium: false,
+      reason: "none",
+      expiresAt: null,
+      daysRemaining: 0,
+      effectiveTier: "Free",
+      source: "Free Account",
+      status: "Invalid Trial Setup",
+      trialLoginsRemaining: null,
+    };
+  }
+
+  if (trialEnd && now < trialEnd) {
     const msLeft = trialEnd.getTime() - now.getTime();
     const daysRemaining = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
     return {

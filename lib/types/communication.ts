@@ -33,7 +33,9 @@ export type CommunicationType =
   | 'user-message'
   | 'admin-reply'
   | 'user-reply'
-  | 'system-birthday';
+  | 'system-birthday'
+  | 'welcome'
+  | 'app-update';
 
 export type CommunicationSource =
   | 'daily-guidance'
@@ -45,7 +47,7 @@ export type CommunicationSource =
   | 'user'
   | 'admin';
 
-export type BroadcastCategory = 'announcement' | 'news' | 'maintenance' | 'feature-update' | 'reminder';
+export type BroadcastCategory = 'announcement' | 'news' | 'maintenance' | 'feature-update' | 'reminder' | 'play-store-update';
 export interface BroadcastMessage {
   id: string;
   adminUid: string;
@@ -101,6 +103,39 @@ export interface CommunicationMessage {
   deliveryChannels: DeliveryChannel[];
   deliveryAttempts: number;
   lastDeliveredAt?: string;
+}
+
+/**
+ * Server-side (Admin SDK only) record of one email send attempt, written to
+ * the top-level `emailDeliveries/{deliveryId}` collection by
+ * functions/communicationDispatch.js. Never written from the client.
+ */
+export type EmailDeliveryStatus = 'PENDING' | 'SENDING' | 'SENT' | 'FAILED_RETRYABLE' | 'FAILED_PERMANENT' | 'BOUNCED';
+
+export interface EmailDeliveryRecord {
+  id: string;
+  uid: string;
+  category: string; // e.g. 'birthday' | 'play-store-update' | BroadcastCategory
+  sourceMessageId: string | null;
+  status: EmailDeliveryStatus;
+  attempts: number;
+  createdAt: string;
+  updatedAt: string;
+  lastAttemptAt: string | null;
+  sentAt: string | null;
+  provider: 'resend';
+  providerMessageId: string | null;
+  lastErrorReason: string | null;
+  metadata?: Record<string, any> | null;
+}
+
+/** Metadata shape for BroadcastCategory 'play-store-update' / CommunicationType 'app-update'. */
+export interface AppUpdateBroadcastMetadata {
+  versionName: string;
+  versionCode?: number;
+  playStoreUrl: string;
+  releaseNotes?: string | string[];
+  language?: 'id' | 'en';
 }
 
 /**

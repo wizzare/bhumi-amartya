@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 
-const verifierUrl = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || (process.env.NODE_ENV === "production" ? "https://bhumiamartya-fe85c.asia-southeast2.run.app" : "http://localhost:3000");
+const verifierUrl = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || (process.env.NODE_ENV === "production" ? "https://bhumi-billing-verifier.vercel.app" : "http://localhost:3000");
 
 if (process.env.STRICT_BUILD_CHECK === "true" && !process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL) {
   throw new Error("[BUILD ERROR] NEXT_PUBLIC_BILLING_VERIFIER_URL is required for production build.");

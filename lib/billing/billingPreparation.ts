@@ -16,19 +16,7 @@ export const MOANA_BILLING_BACKEND_ENDPOINTS = {
   refreshBadge: "/api/access/refresh-badge",
 } as const;
 
-export const SERVER_OWNED_ACCESS_FIELDS = [
-  "badge",
-  "plan",
-  "membership",
-  "trial",
-  "trialStartedAt",
-  "trialEndsAt",
-  "accessStart",
-  "accessUntil",
-  "subscriptionStatus",
-  "isPremium",
-  "entitlements",
-] as const;
+export { SERVER_OWNED_ACCESS_FIELDS } from "./serverOwnedAccessFields";
 
 export type MoanaBadge =
   | "Founder"
