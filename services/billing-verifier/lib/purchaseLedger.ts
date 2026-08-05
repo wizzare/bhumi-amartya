@@ -13,9 +13,19 @@ export interface LedgerTxParams {
   purchaseState: string;
   entitlementStatus: string;
   acknowledged: boolean;
+  acknowledgementRequired?: boolean;
   purchasedAt?: Date | null;
   expiresAt?: Date | null;
   lastErrorCode?: string | null;
+}
+
+// Pure, testable decision: should an ACKNOWLEDGE_GOOGLE_PLAY job be enqueued?
+export function shouldCreateAcknowledgementJob(params: LedgerTxParams): boolean {
+  const isPurchasedAckState = params.purchaseState === "SUBSCRIPTION_STATE_ACTIVE"
+    || params.purchaseState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD"
+    || params.purchaseState === "PURCHASED";
+  const ackRequired = params.acknowledgementRequired === true;
+  return isPurchasedAckState && ackRequired && params.acknowledged !== true;
 }
 
 export async function checkTokenOwnership(purchaseToken: string, uid: string): Promise<void> {
@@ -118,8 +128,7 @@ export async function executeLedgerVerificationTx(params: LedgerTxParams): Promi
     );
 
     // 5. Insert acknowledgement job if required (ACKNOWLEDGE_GOOGLE_PLAY)
-    const isPurchased = params.purchaseState === "SUBSCRIPTION_STATE_ACTIVE" || params.purchaseState === "SUBSCRIPTION_STATE_IN_GRACE_PERIOD" || params.purchaseState === "PURCHASED";
-    if (!params.acknowledged && isPurchased) {
+    if (shouldCreateAcknowledgementJob(params)) {
       await client.query(
         `INSERT INTO entitlement_sync_jobs (
           ledger_id, job_type, status, attempt_count, next_attempt_at, created_at, updated_at

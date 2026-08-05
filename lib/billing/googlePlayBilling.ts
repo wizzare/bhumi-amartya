@@ -71,8 +71,18 @@ const BhumiBilling = registerPlugin<BillingPlugin>("BhumiBilling");
 const AppPlugin = registerPlugin<any>("App");
 const SecureStoragePlugin = registerPlugin<SecureStorage>("SecureStorage");
 
+// Test-only platform override. Guarded by NODE_ENV and never reachable in a
+// real web/browser runtime (web still fails closed below). Lets unit tests run
+// the client verification path under Node without a native Capacitor runtime.
+function currentPlatform(): string {
+  if (process.env.NODE_ENV === "test" && process.env.BHUMI_TEST_PLATFORM === "android") {
+    return "android";
+  }
+  return Capacitor.getPlatform();
+}
+
 export function isGooglePlayBillingAvailable() {
-  return Capacitor.getPlatform() === "android" && Capacitor.isNativePlatform();
+  return currentPlatform() === "android" && Capacitor.isNativePlatform();
 }
 
 let isAutoRecoveryInitialized = false;
@@ -400,7 +410,7 @@ function str2ab(str: string): ArrayBuffer {
 
 export async function verifySignedEntitlementLocal(token: string, currentUid: string): Promise<boolean> {
   try {
-    if (Capacitor.getPlatform() === "web") {
+    if (currentPlatform() === "web") {
       return false; // Fail closed on Web: no offline local verification permitted
     }
 
@@ -465,11 +475,12 @@ export async function verifySignedEntitlementLocal(token: string, currentUid: st
     }
 
     // Verify ECDSA signature
-    if (typeof window === "undefined" || !window.crypto || !window.crypto.subtle) {
+    const cryptoSubtle = typeof window !== "undefined" ? window.crypto?.subtle : globalThis.crypto?.subtle;
+    if (!cryptoSubtle) {
       return false;
     }
 
-    const key = await window.crypto.subtle.importKey(
+    const key = await cryptoSubtle.importKey(
       "spki",
       binaryDer,
       { name: "ECDSA", namedCurve: "P-256" },
@@ -482,7 +493,7 @@ export async function verifySignedEntitlementLocal(token: string, currentUid: st
 
     const signatureBuffer = new Uint8Array(signatureBytes);
 
-    return await window.crypto.subtle.verify(
+    return await cryptoSubtle.verify(
       { name: "ECDSA", hash: { name: "SHA-256" } },
       key,
       signatureBuffer,

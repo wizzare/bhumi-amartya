@@ -75,6 +75,7 @@ async function processVerifiedRequest(req: VercelRequest, context: StageLogConte
       purchaseState: state,
       entitlementStatus: ledgerStatus,
       acknowledged: subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
+      acknowledgementRequired: acknowledgementPending,
       expiresAt: entitlement.date,
     });
 
