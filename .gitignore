@@ -71,8 +71,6 @@ capacitor-www/
 next-env.d.ts
 
 # Android generated/local
-android/gradlew
-android/gradlew.bat
 android/astro-current-screen.png
 
 # Signing credentials (never commit)
