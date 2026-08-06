@@ -12,6 +12,18 @@ export const config = { runtime: "nodejs", maxDuration: 60 };
 const MAX_JOBS_PER_RUN = 25;
 const MAX_ATTEMPTS = 10;
 
+type ClaimedJob = { id: number; ledger_id: string; job_type: string; attempt_count: number };
+type LedgerRow = {
+  firebase_uid: string;
+  provider: string;
+  product_id: string;
+  purchase_token_ciphertext: string;
+  purchase_token_iv: string;
+  purchase_token_tag: string;
+  encryption_key_version: string;
+  acknowledged: boolean;
+};
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Cron authentication: reject missing/invalid secret
   const cronSecret = process.env.CRON_SECRET;
@@ -27,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const workerId = `worker-${randomUUID().slice(0, 8)}`;
 
   // Atomic claim: FOR UPDATE SKIP LOCKED prevents concurrent workers from processing the same job
-  const claimResult = await pool.query(
+  const claimResult = await pool.query<ClaimedJob>(
     `UPDATE entitlement_sync_jobs
      SET status = 'PROCESSING',
          locked_at = NOW(),
@@ -58,8 +70,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     try {
       // Fetch ledger row with encrypted token data
-      const ledgerRes = await pool.query(
-        `SELECT firebase_uid, provider, product_id, package_name,
+      const ledgerRes = await pool.query<LedgerRow>(
+        `SELECT firebase_uid, provider, product_id,
                 purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
                 encryption_key_version, acknowledged
          FROM purchase_ledger WHERE token_hash = $1`,

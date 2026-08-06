@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { getDbPool } from "../lib/neon";
+import type { BillingDbPool } from "../lib/db";
 
-export async function runMigrations(): Promise<void> {
-  const pool = getDbPool();
-  const client = await pool.connect();
+// Injectable migration entry point. When pool is omitted, the default
+// production Neon-backed pool is used. When a pool is supplied (integration
+// tests), it is used as-is and is never closed by this function.
+export async function runMigrations(pool?: BillingDbPool): Promise<void> {
+  const dbPool = pool ?? getDbPool();
+  const client = await dbPool.connect();
 
   try {
     // Acquire a transaction-level advisory lock using a unique big integer
@@ -56,7 +60,10 @@ export async function runMigrations(): Promise<void> {
 if (require.main === module) {
   // Load local environment vars if needed during dev
   require("dotenv").config();
+  // CLI owns the pool it creates; close it after a successful run so the
+  // process exits cleanly. On failure, the migration already failed closed.
   runMigrations()
+    .then(() => getDbPool().end?.())
     .then(() => {
       console.log("[MIGRATOR] Process completed.");
       process.exit(0);

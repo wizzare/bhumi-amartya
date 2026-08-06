@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { getDbPool } from "./neon";
 import { tokenHash } from "./security";
 import { encryptToken } from "./encryption";
+import type { BillingDbPool } from "./db";
 
 export interface LedgerTxParams {
   uid: string;
@@ -37,7 +38,14 @@ export async function checkTokenOwnership(purchaseToken: string, uid: string): P
   }
 }
 
-export async function executeLedgerVerificationTx(params: LedgerTxParams): Promise<{ hash: string; jobId: number }> {
+export interface LedgerTxDependencies {
+  pool?: BillingDbPool;
+}
+
+export async function executeLedgerVerificationTx(
+  params: LedgerTxParams,
+  dependencies?: LedgerTxDependencies,
+): Promise<{ hash: string; jobId: number }> {
   const hash = tokenHash(params.purchaseToken);
   const encrypted = encryptToken(params.purchaseToken, {
     uid: params.uid,
@@ -45,7 +53,8 @@ export async function executeLedgerVerificationTx(params: LedgerTxParams): Promi
     provider: params.provider,
   });
 
-  const pool = getDbPool();
+  // Default path uses the production Neon pool; tests inject pg.Pool.
+  const pool = dependencies?.pool ?? getDbPool();
   const client = await pool.connect();
 
   try {
@@ -118,26 +127,49 @@ export async function executeLedgerVerificationTx(params: LedgerTxParams): Promi
       ]
     );
 
-    // 4. Insert or update entitlement sync job (FIRESTORE_SYNC)
+    // 4. Insert entitlement sync job (FIRESTORE_SYNC) — idempotent on replay.
+    //    Guard with NOT EXISTS so re-verifying the same token never piles up
+    //    duplicate jobs.
     const jobRes = await client.query(
       `INSERT INTO entitlement_sync_jobs (
         ledger_id, job_type, status, attempt_count, next_attempt_at, created_at, updated_at
-      ) VALUES ($1, 'FIRESTORE_SYNC', 'PENDING', 0, $2, $2, $2)
-       RETURNING id`,
+      )
+      SELECT $1::varchar(64), 'FIRESTORE_SYNC', 'PENDING', 0, $2::timestamptz, $2::timestamptz, $2::timestamptz
+      WHERE NOT EXISTS (
+        SELECT 1 FROM entitlement_sync_jobs WHERE ledger_id = $1::varchar(64) AND job_type = 'FIRESTORE_SYNC'
+      )
+      RETURNING id`,
       [hash, now.toISOString()]
     );
 
-    // 5. Insert acknowledgement job if required (ACKNOWLEDGEMENT)
+    // 5. Insert acknowledgement job if required (ACKNOWLEDGEMENT) — idempotent on replay
     if (shouldCreateAcknowledgementJob(params)) {
       await client.query(
         `INSERT INTO entitlement_sync_jobs (
           ledger_id, job_type, status, attempt_count, next_attempt_at, created_at, updated_at
-        ) VALUES ($1, 'ACKNOWLEDGEMENT', 'PENDING', 0, $2, $2, $2)`,
+        )
+        SELECT $1::varchar(64), 'ACKNOWLEDGEMENT', 'PENDING', 0, $2::timestamptz, $2::timestamptz, $2::timestamptz
+        WHERE NOT EXISTS (
+          SELECT 1 FROM entitlement_sync_jobs WHERE ledger_id = $1::varchar(64) AND job_type = 'ACKNOWLEDGEMENT'
+        )`,
         [hash, now.toISOString()]
       );
     }
 
-    const jobId = jobRes.rows[0].id;
+    let jobId: number;
+    if (jobRes.rows.length > 0) {
+      jobId = Number(jobRes.rows[0].id);
+    } else {
+      // Replay: FIRESTORE_SYNC job already exists — return its id
+      const existingRes = await client.query(
+        "SELECT id FROM entitlement_sync_jobs WHERE ledger_id = $1 AND job_type = 'FIRESTORE_SYNC'",
+        [hash]
+      );
+      jobId = Number(existingRes.rows[0].id);
+    }
+    if (!Number.isFinite(jobId)) {
+      throw new Error("LEDGER_JOB_ID_INVALID");
+    }
 
     await client.query("COMMIT");
     return { hash, jobId };
