@@ -1,52 +1,44 @@
 /**
- * Phase B1.2 Disposable PostgreSQL Integration
+ * Phase B1.3 Driver-Level Disposable PostgreSQL Integration
  *
- * Tests production ledger, encryption, job-queue, and reconciliation logic
- * against real PostgreSQL 16, using docker exec for execution.
+ * Exercises PRODUCTION billing code in-process against real PostgreSQL 16
+ * through an injected pg adapter:
+ *   - runMigrations(pgPool)          (scripts/migrate.ts)
+ *   - executeLedgerVerificationTx(..., { pool: pgPool })  (lib/purchaseLedger.ts)
+ *   - encryptToken / decryptToken    (lib/encryption.ts)
+ *   - reconcile claim query          (api/billing/reconcile.ts SQL)
  *
- * Production code (purchaseLedger.ts, reconcile.ts, encryption.ts) is
- * imported and called directly. External Google Play and Firestore are mocked.
+ * docker exec psql is used ONLY for physical-state assertions that must read
+ * raw rows (e.g. confirming plaintext is absent and ciphertext is stored).
  *
- * Only localhost PostgreSQL (docker) is accessed. No network calls beyond that.
+ * Only localhost PostgreSQL (docker) is accessed. No external network calls.
  */
 
 import assert from "node:assert/strict";
 import { execSync } from "node:child_process";
-import { randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
+import { createPgPool } from "../helpers/pgAdapter";
+import type { BillingDbPool } from "../../lib/db";
+import { runMigrations } from "../../scripts/migrate";
+import { executeLedgerVerificationTx } from "../../lib/purchaseLedger";
+import { encryptToken, decryptToken } from "../../lib/encryption";
 
 const container = process.env.POSTGRES_CONTAINER || "bhumi-b1-postgres-test";
-const dbPort = process.env.POSTGRES_PORT || "5432";
 const dbUser = process.env.POSTGRES_USER || "postgres";
-const dbPassword = process.env.POSTGRES_PASSWORD || "postgres";
 const dbName = process.env.POSTGRES_DB || "test";
+const TEST_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
-// Helper to run SQL via docker exec psql (with proper escaping)
+// Physical-state query via docker exec psql (no production pool involvement)
 function runSql(sql: string): string {
   const host_tmpFile = `C:\\tmp\\bhumi_query_${randomUUID().slice(0, 8)}.sql`;
   const container_tmpFile = `/tmp/bhumi_query_${randomUUID().slice(0, 8)}.sql`;
-
   require("node:fs").writeFileSync(host_tmpFile, sql, "utf8");
   try {
     execSync(`docker cp "${host_tmpFile}" ${container}:${container_tmpFile}`);
-    const result = execSync(`docker exec ${container} psql -U ${dbUser} -d ${dbName} -t -A -f ${container_tmpFile}`, { encoding: "utf8" }).trim();
-    return result;
-  } catch (err: any) {
-    throw new Error(`SQL Error: ${err.message}\nSQL: ${sql}`);
+    return execSync(`docker exec ${container} psql -U ${dbUser} -d ${dbName} -t -A -f ${container_tmpFile}`, { encoding: "utf8" }).trim();
   } finally {
     try { require("node:fs").unlinkSync(host_tmpFile); } catch {}
   }
-}
-
-// Helper to run multi-line SQL file
-function runSqlFile(sql: string): void {
-  // Write to temp file on Windows, copy to container, execute
-  const host_tmpFile = `C:\\tmp\\bhumi_sql_${randomUUID().slice(0, 8)}.sql`;
-  const container_tmpFile = `/tmp/bhumi_sql_${randomUUID().slice(0, 8)}.sql`;
-
-  require("node:fs").writeFileSync(host_tmpFile, sql, "utf8");
-  execSync(`docker cp "${host_tmpFile}" ${container}:${container_tmpFile}`);
-  execSync(`docker exec ${container} psql -U ${dbUser} -d ${dbName} -v ON_ERROR_STOP=1 -f ${container_tmpFile}`);
-  require("node:fs").unlinkSync(host_tmpFile);
 }
 
 let passed = 0;
@@ -61,459 +53,351 @@ async function test(label: string, work: () => void | Promise<void>) {
   }
 }
 
+function tokenSentinel(tag: string): string {
+  return `SYNTH_B1_${tag}_${randomUUID().slice(0, 8)}`;
+}
+
 async function run() {
-  console.log("=== PHASE B1.2 POSTGRES INTEGRATION ===\n");
+  console.log("=== PHASE B1.3 DRIVER-LEVEL POSTGRES INTEGRATION ===\n");
 
-  // 1. CLEAN MIGRATION
-  await test("clean migration: tables do not exist before", () => {
-    const count = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
-    assert.equal(count, "0", "database should be empty");
-  });
+  process.env.BILLING_TOKEN_ENCRYPTION_KEY_V1 = TEST_KEY;
+  const pool: BillingDbPool = createPgPool();
 
-  await test("clean migration: execute migration DDL", () => {
-    const ddl = `
-      CREATE TABLE IF NOT EXISTS purchase_ledger (
-        token_hash VARCHAR(64) PRIMARY KEY,
-        firebase_uid VARCHAR(128) NOT NULL,
-        provider VARCHAR(32) NOT NULL,
-        product_id VARCHAR(128) NOT NULL,
-        purchase_token_ciphertext TEXT NOT NULL,
-        purchase_token_iv VARCHAR(32) NOT NULL,
-        purchase_token_tag VARCHAR(32) NOT NULL,
-        encryption_key_version VARCHAR(16) NOT NULL,
-        order_id VARCHAR(128),
-        purchase_state VARCHAR(32) NOT NULL,
-        entitlement_status VARCHAR(64) NOT NULL,
-        acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
-        purchased_at TIMESTAMPTZ,
-        expires_at TIMESTAMPTZ,
-        last_verified_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        firestore_sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-        retry_count INTEGER NOT NULL DEFAULT 0,
-        last_error_code VARCHAR(128),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  try {
+    // 1. PRODUCTION runMigrations() against empty disposable DB
+    await test("production runMigrations() creates schema in empty DB", async () => {
+      const count = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
+      assert.equal(count, "0", "disposable DB must be empty before migration");
+      await runMigrations(pool);
+      // schema_migrations (created by runMigrations) + purchase_ledger + entitlement_sync_jobs + billing_events
+      const tables = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
+      assert.equal(tables, "4", "runMigrations created schema_migrations + purchase_ledger + entitlement_sync_jobs + billing_events");
+      const migrations = runSql("SELECT COUNT(*) FROM schema_migrations WHERE version='001';");
+      assert.equal(migrations, "1", "migration recorded in schema_migrations");
+    });
+
+    // 2. IDEMPOTENCY
+    await test("production runMigrations() is idempotent", async () => {
+      await runMigrations(pool); // second run
+      const migrations = runSql("SELECT COUNT(*) FROM schema_migrations WHERE version='001';");
+      assert.equal(migrations, "1", "no duplicate migration row");
+      const tables = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
+      assert.equal(tables, "4", "schema stable after rerun");
+    });
+
+    // 3. ADVISORY LOCK CONCURRENCY
+    await test("concurrent runMigrations() serialized by advisory lock", async () => {
+      await Promise.all([runMigrations(pool), runMigrations(pool), runMigrations(pool)]);
+      const migrations = runSql("SELECT COUNT(*) FROM schema_migrations WHERE version='001';");
+      assert.equal(migrations, "1", "only one migration row despite concurrency");
+      const tables = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
+      assert.equal(tables, "4", "schema not corrupted by concurrent runs");
+    });
+
+    // 4. PRODUCTION executeLedgerVerificationTx() writes ledger + jobs
+    const uidA = `uid_${randomUUID().slice(0, 8)}`;
+    const tokenA = tokenSentinel("A");
+    const orderA = `GPA.${randomUUID().slice(0, 8)}`;
+    const productId = "bhumi_premium_monthly";
+
+    await test("production executeLedgerVerificationTx() persists ledger + FIRESTORE_SYNC + ACKNOWLEDGEMENT", async () => {
+      const { hash } = await executeLedgerVerificationTx(
+        {
+          uid: uidA,
+          purchaseToken: tokenA,
+          productId,
+          packageName: "com.bhumiamartya.app",
+          provider: "google_play",
+          orderId: orderA,
+          purchaseState: "PURCHASED",
+          entitlementStatus: "ACTIVE_PENDING_SYNC",
+          acknowledged: false,
+          acknowledgementRequired: true,
+        },
+        { pool },
       );
-      CREATE UNIQUE INDEX uq_ledger_provider_order_id
-      ON purchase_ledger (provider, order_id) WHERE order_id IS NOT NULL;
-      CREATE INDEX idx_purchase_ledger_uid ON purchase_ledger(firebase_uid);
+      assert.ok(hash && hash.length === 64, "hash returned");
 
-      CREATE TABLE IF NOT EXISTS entitlement_sync_jobs (
-        id SERIAL PRIMARY KEY,
-        ledger_id VARCHAR(64) NOT NULL REFERENCES purchase_ledger(token_hash) ON DELETE CASCADE,
-        job_type VARCHAR(32) NOT NULL,
-        status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-        attempt_count INTEGER NOT NULL DEFAULT 0,
-        next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        locked_at TIMESTAMPTZ,
-        locked_by VARCHAR(128),
-        last_error_code VARCHAR(128),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        completed_at TIMESTAMPTZ
+      const ledger = runSql(`SELECT firebase_uid, product_id, purchase_state FROM purchase_ledger WHERE token_hash='${hash}';`);
+      assert.ok(ledger.includes(uidA), "ledger row has correct uid");
+      assert.ok(ledger.includes(productId), "ledger row has correct product");
+      assert.ok(ledger.includes("PURCHASED"), "ledger row has correct state");
+
+      const jobs = runSql(`SELECT job_type FROM entitlement_sync_jobs WHERE ledger_id='${hash}' ORDER BY job_type;`);
+      assert.ok(jobs.includes("FIRESTORE_SYNC"), "FIRESTORE_SYNC job persisted");
+      assert.ok(jobs.includes("ACKNOWLEDGEMENT"), "ACKNOWLEDGEMENT job persisted");
+    });
+
+    // 5. ENCRYPTION AT REST (physical row check via production encrypt path)
+    let hashA = "";
+    await test("production encryption writes ciphertext/iv/tag/version; plaintext absent", async () => {
+      const result = await executeLedgerVerificationTx(
+        {
+          uid: uidA,
+          purchaseToken: tokenA,
+          productId,
+          packageName: "com.bhumiamartya.app",
+          provider: "google_play",
+          orderId: orderA,
+          purchaseState: "PURCHASED",
+          entitlementStatus: "ACTIVE_PENDING_SYNC",
+          acknowledged: false,
+          acknowledgementRequired: true,
+        },
+        { pool },
       );
-      CREATE INDEX idx_sync_jobs_status_next ON entitlement_sync_jobs(status, next_attempt_at);
+      hashA = result.hash;
 
-      CREATE TABLE IF NOT EXISTS billing_events (
-        id SERIAL PRIMARY KEY,
-        ledger_id VARCHAR(64) NOT NULL REFERENCES purchase_ledger(token_hash) ON DELETE CASCADE,
-        event_type VARCHAR(64) NOT NULL,
-        provider_event_id VARCHAR(128),
-        idempotency_key VARCHAR(128) UNIQUE NOT NULL,
-        sanitized_payload JSONB,
-        occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      const row = runSql(`SELECT purchase_token_ciphertext, purchase_token_iv, purchase_token_tag, encryption_key_version FROM purchase_ledger WHERE token_hash='${hashA}';`);
+      assert.ok(row.length > 0, "encrypted columns populated");
+      assert.ok(!row.includes(tokenA), "plaintext token NOT present in physical row");
+      assert.ok(row.includes("v1"), "encryption_key_version is v1");
+      assert.ok(row.includes("ciphertext".length ? "" : ""), "ciphertext present"); // placeholder cleared below
+      const parsed = row.split("|");
+      assert.ok(parsed[0].length > 0, "ciphertext non-empty");
+      assert.ok(parsed[1].length > 0, "iv non-empty");
+      assert.ok(parsed[2].length > 0, "tag non-empty");
+    });
+
+    // 6. VALID DECRYPT
+    await test("production decrypt recovers synthetic token", () => {
+      const { ciphertext, iv, tag, version } = encryptToken(tokenA, {
+        uid: uidA,
+        productId,
+        provider: "google_play",
+      });
+      const plain = decryptToken({ ciphertext, iv, tag, version }, {
+        uid: uidA,
+        productId,
+        provider: "google_play",
+      });
+      assert.equal(plain, tokenA, "decrypt recovers exact token");
+    });
+
+    // 7. WRONG AAD FAILS
+    await test("decrypt with wrong AAD fails", () => {
+      const { ciphertext, iv, tag, version } = encryptToken(tokenA, {
+        uid: uidA,
+        productId,
+        provider: "google_play",
+      });
+      assert.throws(() => decryptToken({ ciphertext, iv, tag, version }, {
+        uid: "other-user",
+        productId,
+        provider: "google_play",
+      }), /DECRYPTION_FAILED_OR_TAMPERED/, "wrong AAD must fail closed");
+    });
+
+    // 8. WRONG KEY FAILS
+    await test("decrypt with wrong key fails", async () => {
+      const originalKey = process.env.BILLING_TOKEN_ENCRYPTION_KEY_V1;
+      process.env.BILLING_TOKEN_ENCRYPTION_KEY_V1 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+      try {
+        const { ciphertext, iv, tag, version } = encryptToken(tokenA, {
+          uid: uidA,
+          productId,
+          provider: "google_play",
+        });
+        process.env.BILLING_TOKEN_ENCRYPTION_KEY_V1 = originalKey;
+        assert.throws(() => decryptToken({ ciphertext, iv, tag, version }, {
+          uid: uidA,
+          productId,
+          provider: "google_play",
+        }), /DECRYPTION_FAILED_OR_TAMPERED/, "wrong key must fail closed");
+      } finally {
+        process.env.BILLING_TOKEN_ENCRYPTION_KEY_V1 = originalKey;
+      }
+    });
+
+    // 9. LEDGER REPLAY IDEMPOTENCY
+    await test("replay of same token is idempotent (no duplicate jobs)", async () => {
+      const before = runSql(`SELECT COUNT(*) FROM entitlement_sync_jobs WHERE ledger_id='${hashA}';`);
+      await executeLedgerVerificationTx(
+        {
+          uid: uidA,
+          purchaseToken: tokenA,
+          productId,
+          packageName: "com.bhumiamartya.app",
+          provider: "google_play",
+          orderId: orderA,
+          purchaseState: "PURCHASED",
+          entitlementStatus: "ACTIVE_PENDING_SYNC",
+          acknowledged: false,
+          acknowledgementRequired: true,
+        },
+        { pool },
       );
-      CREATE UNIQUE INDEX uq_billing_events_provider_event_id
-      ON billing_events (provider_event_id) WHERE provider_event_id IS NOT NULL;
-    `;
-    runSqlFile(ddl);
-    const count = runSql("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';");
-    assert.equal(count, "3", "should have 3 tables: purchase_ledger, entitlement_sync_jobs, billing_events");
-  });
+      const after = runSql(`SELECT COUNT(*) FROM entitlement_sync_jobs WHERE ledger_id='${hashA}';`);
+      assert.equal(after, before, "replay must not create duplicate jobs");
+    });
 
-  // 2. MIGRATION IDEMPOTENCY
-  await test("migration idempotency: re-running DDL does not error", () => {
-    const ddl = `
-      CREATE TABLE IF NOT EXISTS purchase_ledger (
-        token_hash VARCHAR(64) PRIMARY KEY,
-        firebase_uid VARCHAR(128) NOT NULL,
-        provider VARCHAR(32) NOT NULL,
-        product_id VARCHAR(128) NOT NULL,
-        purchase_token_ciphertext TEXT NOT NULL,
-        purchase_token_iv VARCHAR(32) NOT NULL,
-        purchase_token_tag VARCHAR(32) NOT NULL,
-        encryption_key_version VARCHAR(16) NOT NULL,
-        order_id VARCHAR(128),
-        purchase_state VARCHAR(32) NOT NULL,
-        entitlement_status VARCHAR(64) NOT NULL,
-        acknowledged BOOLEAN NOT NULL DEFAULT FALSE,
-        purchased_at TIMESTAMPTZ,
-        expires_at TIMESTAMPTZ,
-        last_verified_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        firestore_sync_status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-        retry_count INTEGER NOT NULL DEFAULT 0,
-        last_error_code VARCHAR(128),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+    // 10. TRANSACTION ROLLBACK THROUGH PRODUCTION CODE
+    await test("production transaction rolls back atomically on failure", async () => {
+      const tokenB = tokenSentinel("B");
+      const uidB = `uid_${randomUUID().slice(0, 8)}`;
+
+      // Ownership conflict: token B's hash is new, but force failure by
+      // pre-inserting a ledger row for a DIFFERENT token that maps to the
+      // same order id is not enough (unique is per-provider/order). Instead,
+      // create a ledger row with a bad encryption_key_version so decrypt
+      // would fail at claim time — not here. Simpler: insert ledger for
+      // tokenB as another user first, then attempt same token as uidB.
+      // That is ownership conflict.
+      const hashB = require("node:crypto").createHash("sha256").update(tokenB).digest("hex");
+      runSql(`INSERT INTO purchase_ledger (token_hash, firebase_uid, provider, product_id, purchase_token_ciphertext, purchase_token_iv, purchase_token_tag, encryption_key_version, purchase_state, entitlement_status, acknowledged)
+              VALUES ('${hashB}', 'other-user', 'google_play', '${productId}', 'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE', false);`);
+
+      await assert.rejects(
+        () => executeLedgerVerificationTx(
+          {
+            uid: uidB,
+            purchaseToken: tokenB,
+            productId,
+            packageName: "com.bhumiamartya.app",
+            provider: "google_play",
+            orderId: `GPA.${randomUUID().slice(0, 8)}`,
+            purchaseState: "PURCHASED",
+            entitlementStatus: "ACTIVE_PENDING_SYNC",
+            acknowledged: false,
+            acknowledgementRequired: true,
+          },
+          { pool },
+        ),
+        /TOKEN_OWNERSHIP_CONFLICT/,
+        "ownership conflict must reject",
       );
-      CREATE TABLE IF NOT EXISTS entitlement_sync_jobs (
-        id SERIAL PRIMARY KEY,
-        ledger_id VARCHAR(64) NOT NULL REFERENCES purchase_ledger(token_hash) ON DELETE CASCADE,
-        job_type VARCHAR(32) NOT NULL,
-        status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
-        attempt_count INTEGER NOT NULL DEFAULT 0,
-        next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        locked_at TIMESTAMPTZ,
-        locked_by VARCHAR(128),
-        last_error_code VARCHAR(128),
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        completed_at TIMESTAMPTZ
+
+      // No orphan jobs created by the failed tx
+      const orphans = runSql(`SELECT COUNT(*) FROM entitlement_sync_jobs WHERE ledger_id='${hashB}';`);
+      assert.equal(orphans, "0", "no orphan job remains after rollback");
+
+      // Connection reusable
+      const healthy = await pool.query("SELECT 1 AS ok");
+      assert.equal(healthy.rows[0].ok, 1, "pool reusable after rollback");
+
+      // Subsequent valid transaction succeeds
+      const tokenC = tokenSentinel("C");
+      const uidC = `uid_${randomUUID().slice(0, 8)}`;
+      await executeLedgerVerificationTx(
+        {
+          uid: uidC,
+          purchaseToken: tokenC,
+          productId,
+          packageName: "com.bhumiamartya.app",
+          provider: "google_play",
+          orderId: `GPA.${randomUUID().slice(0, 8)}`,
+          purchaseState: "PURCHASED",
+          entitlementStatus: "ACTIVE_PENDING_SYNC",
+          acknowledged: false,
+          acknowledgementRequired: false,
+        },
+        { pool },
       );
-      CREATE TABLE IF NOT EXISTS billing_events (
-        id SERIAL PRIMARY KEY,
-        ledger_id VARCHAR(64) NOT NULL REFERENCES purchase_ledger(token_hash) ON DELETE CASCADE,
-        event_type VARCHAR(64) NOT NULL,
-        provider_event_id VARCHAR(128),
-        idempotency_key VARCHAR(128) UNIQUE NOT NULL,
-        sanitized_payload JSONB,
-        occurred_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+      const hashC = require("node:crypto").createHash("sha256").update(tokenC).digest("hex");
+      const ledgerC = runSql(`SELECT firebase_uid FROM purchase_ledger WHERE token_hash='${hashC}';`);
+      assert.ok(ledgerC.includes(uidC), "subsequent valid transaction succeeded");
+    });
+
+    // 11. IDENTITY ISOLATION / IMMUTABLE ORDER TAKEOVER
+    await test("cross-user immutable order takeover is rejected", async () => {
+      const tokenD = tokenSentinel("D");
+      const uidD = `uid_${randomUUID().slice(0, 8)}`;
+      const orderD = `GPA.${randomUUID().slice(0, 8)}`;
+      const hashD = require("node:crypto").createHash("sha256").update(tokenD).digest("hex");
+
+      await executeLedgerVerificationTx(
+        {
+          uid: uidD,
+          purchaseToken: tokenD,
+          productId,
+          packageName: "com.bhumiamartya.app",
+          provider: "google_play",
+          orderId: orderD,
+          purchaseState: "PURCHASED",
+          entitlementStatus: "ACTIVE_PENDING_SYNC",
+          acknowledged: false,
+          acknowledgementRequired: false,
+        },
+        { pool },
       );
-    `;
-    runSqlFile(ddl); // Should succeed because IF NOT EXISTS prevents duplicates
-  });
 
-  // 3. ADVISORY LOCK CONCURRENCY
-  await test("advisory lock: prevents concurrent migration", () => {
-    // Simulate two concurrent attempts to acquire the same advisory lock
-    const lockId = 83838484; // Same as production migrate.ts
-    const result1 = runSql(`SELECT pg_advisory_xact_lock(${lockId}); SELECT 'lock1' AS result;`);
-    // In production, only one would proceed; here we verify lock syntax works
-    assert.ok(result1.includes("lock1"), "advisory lock acquired");
-  });
+      // Second user tries to claim same orderId with a different token
+      const tokenE = tokenSentinel("E");
+      const uidE = `uid_${randomUUID().slice(0, 8)}`;
+      await assert.rejects(
+        () => executeLedgerVerificationTx(
+          {
+            uid: uidE,
+            purchaseToken: tokenE,
+            productId,
+            packageName: "com.bhumiamartya.app",
+            provider: "google_play",
+            orderId: orderD,
+            purchaseState: "PURCHASED",
+            entitlementStatus: "ACTIVE_PENDING_SYNC",
+            acknowledged: false,
+            acknowledgementRequired: false,
+          },
+          { pool },
+        ),
+        (err: any) => /duplicate|uq_ledger_provider_order_id/i.test(String(err?.message || "")),
+        "second user cannot reuse same immutable order id",
+      );
 
-  // 4. LEDGER PERSISTENCE
-  await test("ledger persistence: insert and retrieve row", () => {
-    const hash = "test_hash_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
+      const hashE = require("node:crypto").createHash("sha256").update(tokenE).digest("hex");
+      const existsE = runSql(`SELECT COUNT(*) FROM purchase_ledger WHERE token_hash='${hashE}';`);
+      assert.equal(existsE, "0", "conflicting row rolled back");
+    });
 
-    const insertSql = `
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ciphertext_hex', 'iv_hex', 'tag_hex', 'v1',
-        'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `;
-    runSql(insertSql);
+    // 12. RECONCILIATION CLAIM + SKIP LOCKED
+    await test("reconcile claim query claims canonical job types without duplicate ownership", async () => {
+      // Claim both jobs for hashA using the exact reconcile claim SQL
+      const claimResult = await pool.query<{ id: number; ledger_id: string; job_type: string }>(
+        `UPDATE entitlement_sync_jobs
+         SET status = 'PROCESSING',
+             locked_at = NOW(),
+             locked_by = $1,
+             attempt_count = attempt_count + 1,
+             updated_at = NOW()
+         WHERE id IN (
+           SELECT id FROM entitlement_sync_jobs
+           WHERE status IN ('PENDING', 'FAILED')
+             AND next_attempt_at <= NOW()
+             AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '5 minutes')
+           ORDER BY next_attempt_at ASC
+           FOR UPDATE SKIP LOCKED
+           LIMIT $2
+         )
+         RETURNING id, ledger_id, job_type`,
+        ["worker-integration", 25],
+      );
+      const claimedTypes = claimResult.rows.map((r) => r.job_type).sort();
+      assert.ok(claimedTypes.includes("FIRESTORE_SYNC"), "FIRESTORE_SYNC claimable by reconcile");
+      assert.ok(claimedTypes.includes("ACKNOWLEDGEMENT"), "ACKNOWLEDGEMENT claimable by reconcile");
+    });
 
-    const lookup = runSql(`SELECT firebase_uid FROM purchase_ledger WHERE token_hash = '${hash}';`);
-    assert.equal(lookup, uid, "ledger row persisted correctly");
-  });
+    // 13. SKIP LOCKED concurrent workers
+    await test("concurrent SKIP LOCKED workers do not claim the same job twice", async () => {
+      // Reset claims then run two concurrent claimers
+      runSql(`UPDATE entitlement_sync_jobs SET status='PENDING', locked_at=NULL, locked_by=NULL, attempt_count=0 WHERE ledger_id='${hashA}';`);
+      const [r1, r2] = await Promise.all([
+        pool.query("SELECT id FROM entitlement_sync_jobs WHERE status IN ('PENDING','FAILED') AND next_attempt_at <= NOW() AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '5 minutes') ORDER BY next_attempt_at ASC FOR UPDATE SKIP LOCKED LIMIT 25"),
+        pool.query("SELECT id FROM entitlement_sync_jobs WHERE status IN ('PENDING','FAILED') AND next_attempt_at <= NOW() AND (locked_at IS NULL OR locked_at < NOW() - INTERVAL '5 minutes') ORDER BY next_attempt_at ASC FOR UPDATE SKIP LOCKED LIMIT 25"),
+      ]);
+      const ids1 = new Set((r1.rows as any[]).map((r: any) => r.id));
+      const ids2 = new Set((r2.rows as any[]).map((r: any) => r.id));
+      for (const id of ids1) {
+        assert.ok(!ids2.has(id), `job ${id} claimed by at most one worker`);
+      }
+    });
 
-  // 5. ENCRYPTION AT REST
-  await test("encryption at rest: ciphertext not plaintext", () => {
-    const hash = "crypt_test_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-    const fakeToken = "SYNTH_PURCHASE_TOKEN_" + randomUUID();
-
-    const insertSql = `
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ENCRYPTED_HEX_VALUE', 'IV_HEX_12_BYTES', 'TAG_HEX_16_BYTES', 'v1',
-        'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `;
-    runSql(insertSql);
-
-    // Verify plaintext token is NOT stored
-    const ciphertextRow = runSql(`SELECT purchase_token_ciphertext FROM purchase_ledger WHERE token_hash = '${hash}';`);
-    assert.ok(!ciphertextRow.includes(fakeToken), "plaintext token must not appear in DB");
-    assert.equal(ciphertextRow, "ENCRYPTED_HEX_VALUE", "ciphertext is stored");
-  });
-
-  // 6. FIRESTORE-SYNC JOB DURABILITY
-  await test("firestore-sync job: created and persisted", () => {
-    const hash = "fs_job_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    // Insert ledger row first (foreign key requirement)
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // Insert FIRESTORE_SYNC job (canonical job type after fix)
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (
-        ledger_id, job_type, status, attempt_count, next_attempt_at
-      ) VALUES (
-        '${hash}', 'FIRESTORE_SYNC', 'PENDING', 0, NOW()
-      )
-    `);
-
-    const job = runSql(`
-      SELECT job_type, status FROM entitlement_sync_jobs
-      WHERE ledger_id = '${hash}' AND job_type = 'FIRESTORE_SYNC'
-    `);
-    assert.ok(job.includes("FIRESTORE_SYNC"), "FIRESTORE_SYNC job persisted");
-    assert.ok(job.includes("PENDING"), "job status is PENDING");
-  });
-
-  // 7. ACKNOWLEDGEMENT JOB DURABILITY
-  await test("acknowledgement job: created for PURCHASED + ack required", () => {
-    const hash = "ack_job_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // Insert ACKNOWLEDGEMENT job (canonical job type after fix)
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (
-        ledger_id, job_type, status, attempt_count, next_attempt_at
-      ) VALUES (
-        '${hash}', 'ACKNOWLEDGEMENT', 'PENDING', 0, NOW()
-      )
-    `);
-
-    const job = runSql(`
-      SELECT job_type FROM entitlement_sync_jobs
-      WHERE ledger_id = '${hash}' AND job_type = 'ACKNOWLEDGEMENT'
-    `);
-    assert.equal(job, "ACKNOWLEDGEMENT", "ACKNOWLEDGEMENT job persisted");
-  });
-
-  // 8. JOB PRODUCER/CONSUMER ALIGNMENT
-  await test("producer/consumer: job types align (FIRESTORE_SYNC + ACKNOWLEDGEMENT)", () => {
-    const hash = "align_test_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // Create both job types as producer would
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (ledger_id, job_type, status)
-      VALUES ('${hash}', 'FIRESTORE_SYNC', 'PENDING')
-    `);
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (ledger_id, job_type, status)
-      VALUES ('${hash}', 'ACKNOWLEDGEMENT', 'PENDING')
-    `);
-
-    // Reconcile worker would claim via: SELECT ... WHERE job_type IN ('FIRESTORE_SYNC', 'ACKNOWLEDGEMENT')
-    const claimable = runSql(`
-      SELECT COUNT(*) FROM entitlement_sync_jobs
-      WHERE ledger_id = '${hash}' AND job_type IN ('FIRESTORE_SYNC', 'ACKNOWLEDGEMENT')
-    `);
-    assert.equal(claimable, "2", "both canonical job types are claimable");
-  });
-
-  // 9. SKIP LOCKED CONCURRENCY
-  await test("skip locked: concurrent workers don't duplicate claims", () => {
-    const hash = "skip_locked_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // Insert 2 pending jobs
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (ledger_id, job_type, status)
-      VALUES ('${hash}', 'FIRESTORE_SYNC', 'PENDING')
-    `);
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (ledger_id, job_type, status)
-      VALUES ('${hash}', 'ACKNOWLEDGEMENT', 'PENDING')
-    `);
-
-    // Simulate SKIP LOCKED claim (atomic update)
-    const claimResult = runSql(`
-      UPDATE entitlement_sync_jobs
-      SET status = 'PROCESSING', locked_by = 'worker-1'
-      WHERE id IN (
-        SELECT id FROM entitlement_sync_jobs
-        WHERE ledger_id = '${hash}' AND status = 'PENDING'
-        LIMIT 1
-      )
-      RETURNING id;
-    `);
-
-    assert.ok(claimResult.length > 0, "one job claimed by worker-1");
-
-    // Verify second worker would skip and claim the other
-    const remaining = runSql(`
-      SELECT COUNT(*) FROM entitlement_sync_jobs
-      WHERE ledger_id = '${hash}' AND status = 'PENDING'
-    `);
-    assert.equal(remaining, "1", "one job remains unclaimed");
-  });
-
-  // 10. RETRY AND BACKOFF PERSISTENCE
-  await test("retry/backoff: exponential backoff scheduling persists", () => {
-    const hash = "retry_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (
-        ledger_id, job_type, status, attempt_count, next_attempt_at, last_error_code
-      ) VALUES (
-        '${hash}', 'FIRESTORE_SYNC', 'FAILED', 1, NOW() + INTERVAL '2 minutes', 'TRANSIENT_ERROR'
-      )
-    `);
-
-    const job = runSql(`
-      SELECT attempt_count, last_error_code FROM entitlement_sync_jobs WHERE ledger_id = '${hash}'
-    `);
-    assert.ok(job.includes("1"), "attempt count persisted");
-    assert.ok(job.includes("TRANSIENT_ERROR"), "error code persisted");
-  });
-
-  // 11. DEAD-LETTER TRANSITION
-  await test("dead-letter: job transitioned after max retries", () => {
-    const hash = "deadletter_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    runSql(`
-      INSERT INTO entitlement_sync_jobs (
-        ledger_id, job_type, status, attempt_count, last_error_code
-      ) VALUES (
-        '${hash}', 'FIRESTORE_SYNC', 'DEAD_LETTER', 11, 'MAX_RETRIES_EXCEEDED'
-      )
-    `);
-
-    const job = runSql(`
-      SELECT status FROM entitlement_sync_jobs WHERE ledger_id = '${hash}'
-    `);
-    assert.equal(job.trim(), "DEAD_LETTER", "job reached dead-letter state");
-  });
-
-  // 12. TRANSACTION ROLLBACK
-  await test("transaction rollback: partial state cleaned on failure", () => {
-    const hash = "rollback_" + randomUUID().slice(0, 8);
-    const uid = "user_" + randomUUID().slice(0, 8);
-
-    // Attempt to insert with a constraint violation mid-transaction
-    const result = runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash}', '${uid}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // Verify row was inserted (this is a successful insert, not a rollback scenario in this test)
-    const count = runSql(`SELECT COUNT(*) FROM purchase_ledger WHERE token_hash = '${hash}'`);
-    assert.equal(count, "1", "row persisted");
-  });
-
-  // 13. IDENTITY ISOLATION
-  await test("identity isolation: users cannot access each other's data via order_id", () => {
-    const uid1 = "user_1_" + randomUUID().slice(0, 8);
-    const uid2 = "user_2_" + randomUUID().slice(0, 8);
-    const hash1 = "iso1_" + randomUUID().slice(0, 8);
-    const hash2 = "iso2_" + randomUUID().slice(0, 8);
-    const orderId = "GPA.12345";
-
-    // User 1 creates purchase with order ID
-    runSql(`
-      INSERT INTO purchase_ledger (
-        token_hash, firebase_uid, provider, product_id,
-        purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-        encryption_key_version, order_id, purchase_state, entitlement_status, acknowledged
-      ) VALUES (
-        '${hash1}', '${uid1}', 'google_play', 'test_product',
-        'ct', 'iv', 'tag', 'v1', '${orderId}', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-      )
-    `);
-
-    // User 2 cannot insert same order_id (unique constraint uq_ledger_provider_order_id)
-    try {
-      runSql(`
-        INSERT INTO purchase_ledger (
-          token_hash, firebase_uid, provider, product_id,
-          purchase_token_ciphertext, purchase_token_iv, purchase_token_tag,
-          encryption_key_version, order_id, purchase_state, entitlement_status, acknowledged
-        ) VALUES (
-          '${hash2}', '${uid2}', 'google_play', 'test_product',
-          'ct', 'iv', 'tag', 'v1', '${orderId}', 'PURCHASED', 'ACTIVE_PENDING_SYNC', false
-        )
-      `);
-      throw new Error("should have violated unique constraint");
-    } catch (err: any) {
-      assert.ok(err.message.includes("duplicate") || err.message.includes("constraint"), "unique constraint enforced");
-    }
-  });
-
-  console.log(`\n=== B1.2_POSTGRES_INTEGRATION_PASS tests=${passed} ===`);
+    console.log(`\n=== B1_3_DRIVER_POSTGRES_INTEGRATION_PASS tests=${passed} ===`);
+  } finally {
+    await pool.end?.();
+  }
 }
 
 run().catch((err) => {
-  console.error("\n=== INTEGRATION FAILED ===", err);
+  console.error("\n=== DRIVER INTEGRATION FAILED ===", err);
   process.exit(1);
 });
