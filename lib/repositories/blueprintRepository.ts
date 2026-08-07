@@ -7,6 +7,7 @@ import { calculateLifePath } from "@/lib/calculations/calculateLifePath";
 import { calculateDestinyMatrix } from "@/lib/calculations/calculateDestinyMatrix";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -200,6 +201,17 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     }
   } catch (err) {
     console.warn("[BLUEPRINT REPO] Transition check for hdDismissedAt failed:", err);
+  }
+
+  // HOTFIX: last-write safety guard — canonical must never be overwritten.
+  try {
+    const latestSnap = await getDoc(blueprintRef);
+    if (latestSnap.exists() && isCanonicalHumanDesign((latestSnap.data() as Partial<Blueprint>)?.humanDesign)) {
+      console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.", { uid });
+      return;
+    }
+  } catch (err) {
+    console.warn("[HD WRITE GUARD] Latest read check failed; continuing with guarded save path.", { uid, err });
   }
 
   const normalizedPayload = normalizeBlueprint(uid, {

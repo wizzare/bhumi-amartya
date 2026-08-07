@@ -4,6 +4,7 @@ import { getAuth, UserRecord } from "firebase-admin/auth";
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { createHash } from "crypto";
 import { getHdState } from "../lib/humandesign/hdState";
+import { isCanonicalHumanDesign } from "../lib/humandesign/hdAudit";
 
 function getAdmin() {
   if (getApps().length) return { db: getFirestore(), auth: getAuth() };
@@ -282,6 +283,14 @@ async function runMassRecovery() {
           const bpRef = db.collection("blueprints").doc(candidate.uid);
           const bpSnap = await bpRef.get();
           const existingBp = bpSnap.exists ? bpSnap.data() || {} : {};
+
+          // HOTFIX: last-write safety guard — canonical must never be overwritten.
+          // Re-read the latest document and abort if a canonical chart already
+          // exists (closes the race between pre-filter and set).
+          if (existingBp?.humanDesign && isCanonicalHumanDesign(existingBp.humanDesign)) {
+            console.warn(`[HD WRITE GUARD] Canonical chart already exists. Skipping UID ${candidate.uid}.`);
+            return { ok: false, hashedUid, guarded: true };
+          }
 
           await bpRef.set({
             ...existingBp,

@@ -11,6 +11,7 @@ import {
   calculateHumanDesignProfileFromBirthData,
 } from "./calculateHumanDesignType";
 import type { HumanDesignActivation } from "./types";
+import { buildHdRetryMetadata } from "./hdRetry";
 
 export type HumanDesignTypeResult = {
   type: string | null;
@@ -48,6 +49,13 @@ const isServiceUnavailable = (data: Record<string, unknown>) => {
     data.calculationStatus === "connection_error";
 };
 
+/**
+ * HOTFIX: Native TypeScript approximation is a DIAGNOSTIC ONLY — never a
+ * final/read chart. Consumers must not show it as canonical. The TS engine result
+ * is preserved under `auditCandidateType`/`auditCandidateProfile` (the repair
+ * convention) while the persisted record stays PENDING so the UI shows
+ * "Human Design sedang diproses" instead of an unverified Type.
+ */
 const createNativeTsFallbackChart = (profile: HumanDesignBirthProfile): HumanDesignChart | null => {
   if (!profile.birthDate || !profile.birthTime) return null;
   const tsResult = calculateHumanDesignTypeFromBirthData(
@@ -69,16 +77,19 @@ const createNativeTsFallbackChart = (profile: HumanDesignBirthProfile): HumanDes
   const centers = emptyHumanDesignCenters();
 
   return {
-    type: tsResult.type,
-    strategy: tsResult.type === "Generator" || tsResult.type === "Manifesting Generator" ? "To Respond" : (tsResult.type === "Manifestor" ? "To Inform" : (tsResult.type === "Projector" ? "Wait for Invitation" : "Wait a Lunar Cycle")),
-    authority: "Emotional",
-    profile: tsProfile || "1/3",
-    definition: tsResult.definition || "Single Definition",
+    type: null,
+    strategy: null,
+    authority: null,
+    profile: null,
+    definition: tsResult.definition || null,
     incarnationCross: { name: null, gates: [] },
     centers,
     gates: tsResult.activeGates || [],
     channels: tsResult.channels || [],
-    diagnostic: null,
+    diagnostic: {
+      raw_personality_gates: [],
+      raw_design_gates: [],
+    },
     personalityActivations: [],
     designActivations: [],
     raw_personality_gates: [],
@@ -89,15 +100,18 @@ const createNativeTsFallbackChart = (profile: HumanDesignBirthProfile): HumanDes
     motivation: null,
     environment: null,
     perspective: null,
-    status: "ready",
+    status: "pending",
     source: "local-fallback",
-    accuracy: "verified",
-    calculationQuality: "verified",
+    accuracy: "approximate",
+    calculationQuality: "fallback_approximation",
     hdEngineVersion: HD_ENGINE_VERSION,
-    hdAuditStatus: "validated",
+    hdAuditStatus: "pending",
+    note: "Human Design sedang diproses.",
     generatedAt: now,
     updatedAt: now,
-    calculationStatus: "completed",
+    calculationStatus: "pending",
+    auditCandidateType: tsResult.type,
+    auditCandidateProfile: tsProfile || null,
   };
 };
 
@@ -278,9 +292,14 @@ export async function calculateWithHdkit(
 
     const data = await response.json();
     if (data && typeof data === "object" && isServiceUnavailable(data as Record<string, unknown>)) {
+      const chart = createServiceUnavailableChart(data as Record<string, unknown>);
       const fallback = createNativeTsFallbackChart(profile);
-      if (fallback) return fallback;
-      return createServiceUnavailableChart(data as Record<string, unknown>);
+      if (fallback) {
+        // HOTFIX: keep approximation as diagnostic only (PENDING); never final.
+        const retry = buildHdRetryMetadata({ reason: "service_unavailable", code: "service_unavailable" }, 0);
+        return { ...fallback, ...retry };
+      }
+      return { ...chart, ...buildHdRetryMetadata({ reason: "service_unavailable", code: "service_unavailable" }, 0) };
     }
 
     if (!response.ok) {
@@ -355,8 +374,13 @@ export async function calculateWithHdkit(
     const message = error instanceof Error ? error.message : String(error);
     console.warn("[HD KIT ADAPTER] Failed to call Python engine:", message);
     const fallback = createNativeTsFallbackChart(profile);
-    if (fallback) return fallback;
-    return createPendingHumanDesignChart("Human Design sedang diproses.");
+    if (fallback) {
+      // HOTFIX: approximation is diagnostic only (PENDING); never final.
+      const retry = buildHdRetryMetadata({ reason: message, code: "connection_error" }, 0);
+      return { ...fallback, ...retry };
+    }
+    const pending = createPendingHumanDesignChart("Human Design sedang diproses.");
+    return { ...pending, ...buildHdRetryMetadata({ reason: message, code: "connection_error" }, 0) };
   }
 }
 

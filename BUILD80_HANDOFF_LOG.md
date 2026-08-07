@@ -5,6 +5,23 @@
 > baru di ATAS (paling baru di atas). JANGAN edit/hapus entri lama.
 > Untuk keadaan terkini, lihat `BUILD80_STATUS.md`.
 
+## 2026-08-07 -- Build 85 source-of-truth correction: standalone Founder Dashboard is a SEPARATE repository
+
+Agent: Claude Code
+Starting HEAD: 942d84e6851af5cd773ddf1b8a0f9c1e446d47f3
+Ending HEAD: 942d84e6851af5cd773ddf1b8a0f9c1e446d47f3
+
+Work completed:
+- Corrected project source of truth: the standalone web Founder Dashboard lives in a SEPARATE repository (`C:\tmp\bhumi-founder-dashboard`, branch `main`), NOT inside this app/billing repository. Earlier audits wrongly assumed a partial dashboard might exist in this repo.
+- Updated `CLAUDE.md` (added repository map, Build 85 scope, legacy `app/admin/**` reference-only policy, MINIMAL DIFF rule).
+- Updated `TODO.md` (added Build 85 current-scope section: P0 Trial Presentation Fix, P1 Billing B1.4.1 continuation/status check, P1 Founder Dashboard handoff note only; preserved Build 80 historical section and its `## 1. Status Legend` header).
+- Updated `SOT.md` (new Section 0 Repositories and Build 85 Context; supersedes stale Build 80 snapshot header; corrected the Admin dashboard row to legacy-reference-only).
+- NO feature code changed. NO refactor. NO files moved. No new admin app created. Human Design untouched. Founder Dashboard repo untouched.
+
+Validation: N/A (documentation only). Production data reads: 0. Production data writes: 0.
+
+Exact next task: STOP AND WAIT FOR FOUNDER REVIEW of the documentation update before any Build 85 code.
+
 ## 2026-07-24 -- Founder-approved Bucket C discard and canonical HD read-only verification
 
 Agent: Codex

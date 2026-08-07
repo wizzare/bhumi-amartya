@@ -1,5 +1,71 @@
 # Bhumi Amartya Build 80 TODO
 
+---
+
+# BUILD 85 — CURRENT SCOPE
+
+**Worktree:** `C:\tmp\bhumi-build83-access-hotfix`
+**Branch:** `hotfix/build84-access-recovery`
+**HEAD before Build 85 work:** `942d84e6851af5cd773ddf1b8a0f9c1e446d47f3`
+
+> Project source of truth for repositories: see **CLAUDE.md**. The standalone Founder Dashboard lives in a SEPARATE repository (`C:\tmp\bhumi-founder-dashboard`) — do NOT implement dashboard work from this repo.
+
+## P0 — Trial Presentation Fix (USER APP) — ✅ DONE
+
+| File | Status | Notes |
+|---|---|---|
+| `app/upgrade/page.tsx` | DONE | Canonical entitlement (`getEntitlementStatus()`); UI states TRIAL / PREMIUM / FREE. No redesign. |
+| `app/premium-bhumi/page.tsx` | DONE | Active-trial label renders "Trial"; paid renders "Premium Bhumi"; free renders "Penghuni Bhumi (Gratis)". |
+
+- Regression cover: `tests/unit/build85-trial-presentation.test.ts` (TRIAL / PREMIUM / FREE, tsx EXIT 0).
+
+## P1-D — Welcome / Entry Screen — ✅ DONE
+
+| Option | Status | Notes |
+|---|---|---|
+| Tagline | DONE | `Ruang Untuk Pulang dan Kenali Diri` |
+| Primary CTA | DONE | `Mulai Perjalanan` → `Pengguna Baru` |
+| Secondary CTA | DONE | "Saya Sudah Punya Akun" as real button (same style family) |
+| Version label | DONE | `CLOSED BETA V1.0`/`Versi 4` removed; bottom shows ONLY `Indonesia | English` with safe-area spacing |
+| Language placeholder | DONE | Non-functional `Indonesia | English` (V5 prep, no localization system) |
+
+- Viewport-verified headless @ 375×812 — fully visible, no clipping (`app/page.tsx`).
+
+## P1 — Billing B1.4.1 (Category A executed 2026-08-08)
+
+**Status: PARTIAL — 12/13 PASS, 1 PHYSICAL DEVICE VERIFICATION REMAINING. NOT a Build 85 RC blocker.**
+
+- 12/13 requirements proven in Category A (non-Android): single-flight, restore cooldown, cached entitlement, TTL, offline grace, grace expiry, UID/context mismatch, invalid signature, malformed entitlement, future timestamp, clock rollback, stale-cache-online — all PASS (see below).
+- 1/13 remains **secure-storage persistence after force-stop** (Option-A androidTest harness `android/app/src/androidTest/java/com/bhumiamartya/app/harness/` SOURCE-PRESENT but not executed, results dir empty). Requires physical Android device. Do NOT run QEMU.
+- Manifest tested: `build84-offline-grace` (7), `build84-accessrecovery.behavior` (14), `build84-verifier-timeout-retry` (10), `build84-paid-orchestration` (13), `scripts/qa/b14-preflight-loader.mjs`. All EXIT 0.
+- `billing-entitlement-contract.test.ts` + `trial-boundary.test.ts`: NOT VERIFIED — legacy env/import-order precondition; OUT OF B1.4.1 SCOPE.
+
+## P1 — Review & Rating Prompt (IMPLEMENTED / STATIC VERIFIED / RUNTIME E2E NOT VERIFIED)
+
+- ✅ Existing review-prompt implementation exists: `lib/rating/reviewTriggerService.ts` (eligibility + localStorage state), `components/rating/DashboardReviewPrompt.tsx` (dashboard-entry trigger), `components/rating/ReviewDialog.tsx` (modal), `android/app/src/main/java/com/bhumiamartya/app/ReviewPlugin.java` (Google Play in-app review), validator `scripts/validateDashboardReviewPrompt.ts`.
+- ✅ **Eligibility threshold is already 3 days (not 7)** — `REVIEW_LIMITS` MIN_INSTALL_DAYS / MIN_LOGIN_DAYS / MIN_SESSIONS all `3`; cooldown `30` days. Git history (commit `05539a8`) shows no 7-day threshold ever existed.
+- ✅ Dashboard entry wiring confirmed — `<DashboardReviewPrompt/>` mounted in `components/dashboard/DashboardClient.tsx`, gated on `/dashboard`, `dashboardReady`, `blockedByModal`.
+- ✅ Anti-repeat state confirmed — `bhumi_review_prompt_shown`, `bhumi_review_next_prompt_date` (30d), `bhumi_review_prompt_opt_out`, `bhumi_review_action_requested_at`.
+- ✅ Positive review action confirmed — native Play in-app review (`requestReview`), web fallback to Play Store listing, `PROMPT_SHOWN`+cooldown after success.
+- **NO CODE CHANGE REQUIRED.** No functional bug proven.
+- ⏳ Manual authenticated smoke test on a physical Android device remains a pre-production check (runtime E2E not executed on emulator — no authorized test account; env-resource constraints).
+
+## P1 — Founder Dashboard (HANDOFF NOTE ONLY)
+
+- Single line only, as handoff note: the standalone Founder Dashboard lives at `C:\tmp\bhumi-founder-dashboard`, branch `main`.
+- Do NOT add Founder Dashboard implementation tasks into this repository's TODO.
+- Future dashboard work continues in the separate repository. When trial status rendering is added there, it must use canonical entitlement: **TRIAL / PREMIUM / FREE**, not raw membership strings.
+
+## Post-release maintenance — TypeScript 6 configuration (DO NOT CHANGE DURING BUILD 85)
+
+- Safely migrate `services/billing-verifier/tsconfig.json` away from deprecated `moduleResolution: "node"`/`"node10"` only after verifying billing verifier runtime/module compatibility.
+- Safely remove or replace deprecated root `tsconfig.json` `baseUrl` only after verifying all path resolution/runtime compatibility.
+- Current build, typecheck, and tests pass; no tsconfig change is authorized during Build 85.
+
+---
+
+# BUILD 80 (FROZEN — historical context below)
+
 ## 1. Status Legend
 
 - DONE

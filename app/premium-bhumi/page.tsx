@@ -63,7 +63,8 @@ export default function PremiumBhumiPage() {
   // the "days left" text consistent with the actual access decision.
   const accessUntil = entitlement?.expiresAt || null;
   const daysLeft = profile && isTrial ? (entitlement?.daysRemaining ?? 0) : 0;
-  const accountLabel = badge || (isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
+  const accountLabel = badge
+    || (isTrial ? "Trial" : isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
 
   const handleSubscribe = async () => {
     setPurchasing(true);

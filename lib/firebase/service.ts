@@ -1,6 +1,7 @@
 import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, limit, getDocs, updateDoc, deleteDoc, serverTimestamp, documentId } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
+import { isCanonicalHumanDesign } from '@/lib/humandesign/hdAudit';
 
 /**
  * P0 HOTFIX: Safely converts various date formats to Firestore Timestamp.
@@ -369,12 +370,26 @@ export class FirebaseService {
     try {
       this.logFirestore("setDoc", "blueprints", blueprint.uid);
       const blueprintRef = doc(db, 'blueprints', blueprint.uid);
+
+      // HOTFIX: last-write safety guard — canonical must never be overwritten.
+      // Re-read the latest document and abort if a canonical chart already exists.
+      try {
+        const latestSnap = await getDoc(blueprintRef);
+        const latestHd = latestSnap.exists() ? (latestSnap.data() as { humanDesign?: unknown })?.humanDesign : undefined;
+        if (isCanonicalHumanDesign(latestHd)) {
+          console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.", { uid: blueprint.uid });
+          return false;
+        }
+      } catch (readErr) {
+        console.warn("[HD WRITE GUARD] Latest read check failed; continuing with guarded save path.", { uid: blueprint.uid, readErr });
+      }
+
       const blueprintData = {
         ...blueprint,
         createdAt: toValidTimestamp(blueprint.createdAt, serverTimestamp()),
         updatedAt: serverTimestamp()
       };
-      
+
       await setDoc(blueprintRef, sanitizeForFirestore(blueprintData));
       return true;
     } catch (error) {

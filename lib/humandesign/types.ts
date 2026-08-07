@@ -104,6 +104,14 @@ export type HumanDesignChart = {
   needsUpgrade?: boolean;
   hdEngineVersion?: string;
   hdAuditStatus?: "validated" | "pending" | "invalid";
+  retryCount?: number;
+  lastAttempt?: string;
+  nextRetryAt?: string;
+  lastError?: string | null;
+  lastErrorCode?: string | null;
+  retryReason?: string | null;
+  auditCandidateType?: string | null;
+  auditCandidateProfile?: string | null;
 };
 
 export type HumanDesignBirthProfile = {

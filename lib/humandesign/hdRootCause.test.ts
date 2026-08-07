@@ -59,7 +59,7 @@ test("python service connection refused returns pending chart with missing_type 
   assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
-test("adapter preserves service unavailable diagnostic as pending chart", async () => {
+test("HOTFIX: service unavailable with full birth data stays PENDING (TS diagnostic, never final)", async () => {
   globalThis.fetch = async () => new Response(JSON.stringify({
     type: null,
     status: "service_unavailable",
@@ -79,12 +79,44 @@ test("adapter preserves service unavailable diagnostic as pending chart", async 
     longitude: 106.8,
   });
 
+  // HOTFIX: the approximation is a diagnostic only — PENDING, never READY.
   assert.equal(result.status, "pending");
   assert.equal(result.type, null);
-  assert.equal(result.source, "human-design-py");
-  assert.equal(result.calculationStatus, "service_unavailable");
-  assert.equal(result.calculationQuality, "service_unavailable");
-  assert.equal(getHumanDesignCanonicalFailureReason(result), "service_unavailable");
+  assert.notEqual(result.status, "ready", "HOTFIX: must never report a chart as ready on failure");
+  assert.equal(result.calculationQuality, "fallback_approximation");
+  assert.equal(isCanonicalHumanDesign(result), false, "HOTFIX: fallback must never classify as canonical");
+  assert.ok(result.retryCount !== undefined, "HOTFIX: retry metadata should be attached on failure");
+  assert.ok(result.nextRetryAt !== undefined, "HOTFIX: nextRetryAt should be present for the scheduler");
+});
+
+test("HOTFIX: missing birth time is blocked before the service call (never READY)", async () => {
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    type: null,
+    status: "service_unavailable",
+    source: "human-design-py",
+    hdEngineVersion: HD_ENGINE_VERSION,
+    calculationStatus: "service_unavailable",
+    calculationQuality: "service_unavailable",
+    note: "Human Design service is not reachable.",
+  }), {
+    status: 503,
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const result = await calculateHumanDesign({
+    birthDate: "1990-01-01",
+    // no birthTime -> wrapper blocks before reaching the canonical service
+    birthCity: "Jakarta",
+    timezone: "+07:00",
+  });
+
+  // HOTFIX: incomplete input is never exposed as a ready/final chart.
+  assert.equal(result.status, "pending");
+  assert.equal(result.type, null);
+  assert.notEqual(result.status, "ready", "HOTFIX: must never be readable as ready on missing input");
+  assert.equal(result.source, "pending");
+  assert.equal(result.calculationStatus, "pending");
+  assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
 test("valid python service response maps to canonical ready chart", async () => {

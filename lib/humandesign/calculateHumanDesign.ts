@@ -76,6 +76,13 @@ export async function calculateHumanDesign(
       return result;
     }
 
+    if (result.status === "pending" && result.type == null) {
+      // HOTFIX: preserve the adapter's non-final chart (diagnostic + retry
+      // metadata) instead of replacing it with a fresh pending record.
+      logHumanDesignAudit(profile, result, result.source || "unverified-result");
+      return result;
+    }
+
     const pending = createPendingHumanDesignChart("Human Design sedang diproses.");
     logHumanDesignAudit(profile, pending, result.source || "unverified-result");
     return pending;

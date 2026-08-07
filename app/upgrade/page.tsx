@@ -14,6 +14,7 @@ import {
   type GooglePlayProduct,
   type GooglePlayPurchase,
 } from "@/lib/billing/googlePlayBilling";
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 
 type PurchaseState = "idle" | "loading" | "success" | "error";
 
@@ -25,8 +26,19 @@ export default function UpgradePage() {
   const billingAvailable = useMemo(() => isGooglePlayBillingAvailable(), []);
 
   const activeUntil = useMemo(() => formatAccessUntil((auth?.userProfile as any)?.accessUntil), [auth?.userProfile]);
-  const isPremium = String((auth?.userProfile as any)?.plan || "").toLowerCase() === "premium"
-    || String((auth?.userProfile as any)?.membershipType || "").toLowerCase() === "premium";
+  // Canonical entitlement source (Build 85 P0): active trial and premium both
+  // count as premium access; status label distinguishes TRIAL / PREMIUM / FREE.
+  const entitlement = useMemo(
+    () => getEntitlementStatus(auth?.userProfile || null, new Date(), null),
+    [auth?.userProfile],
+  );
+  const isPremium = entitlement.isPremium;
+  const statusLabel =
+    !isPremium
+      ? "Free"
+      : entitlement.reason === "trial"
+        ? "Trial"
+        : "Premium";
   const price = product?.offers
     ?.find((offer) => offer.basePlanId === "monthly")
     ?.pricingPhases?.[0]?.formattedPrice
@@ -113,7 +125,7 @@ export default function UpgradePage() {
           <div className="flex items-start justify-between gap-4 border-b border-[#E8E1D3] pb-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#7B8776]">Status</p>
-              <p className="mt-2 text-2xl font-semibold text-[#2F4438]">{isPremium ? "Premium aktif" : "Free / Trial"}</p>
+              <p className="mt-2 text-2xl font-semibold text-[#2F4438]">{statusLabel}</p>
             </div>
             <p className="rounded-[8px] border border-[#D8D0C3] px-3 py-2 text-right text-sm font-semibold text-[#4F5E52]">
               {activeUntil || "Belum aktif"}

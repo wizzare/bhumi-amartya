@@ -2,12 +2,27 @@
 
 **Status:** ACTIVE CANONICAL
 **Product Generation:** V4
-**Current Development Target:** Build 80
-**Snapshot Branch:** `feature/build80-cloudflare-telemetry-v1`
-**Snapshot Checkpoint:** `755ec66195426e49adefed614d369fd143315bef`
-**Last Updated:** 2026-07-24
+**Current Development Target:** Build 85
+**Current Authorized Worktree:** `C:\tmp\bhumi-build83-access-hotfix`
+**Current Branch:** `hotfix/build84-access-recovery`
+**Known HEAD before Build 85 work:** `942d84e6851af5cd773ddf1b8a0f9c1e446d47f3`
+**Founder Dashboard:** SEPARATE repository — `C:\tmp\bhumi-founder-dashboard` (branch `main`). Do NOT recreate inside this app repository.
+**Last Updated:** 2026-08-07
 **Owner:** Founder, Bhumi Amartya
-**Update Rule:** Update only through evidence-backed governance commits.
+**Update Rule:** Update only through evidence-backed governance commits (Founder-authorized documentation updates excepted).
+
+## 0. Repositories and Build 85 Context (override of stale Build 80 header below)
+
+> This section supersedes the stale Build 80 snapshot fields in the header and Section 5/6. See **CLAUDE.md** for the authoritative repository map.
+
+- **Repository 1 — APP / BILLING (this repo):** `C:\tmp\bhumi-build83-access-hotfix`. Contains the Bhumi user application, Android app, billing (client + `services/billing-verifier`), Human Design, and legacy `app/admin/**`.
+- **Repository 2 — FOUNDER DASHBOARD (separate):** `C:\tmp\bhumi-founder-dashboard`, branch `main`. Standalone web Founder Dashboard. NOT part of the app repository; do not recreate or implement it from the app repo.
+- **Human Design:** canonical fallback incident CLOSED. Do not modify unless a regression is directly proven.
+- **Billing:** B1.1–B1.4 PASS. **B1.4.1 unfinished** (runtime proof for restore/silent-restore, cooldown, secure-storage, TTL, offline grace, signature/entitlement validity, clock rollback). Founder approved OPTION A (debug/androidTest-only synthetic entitlement seam, prod behavior unchanged). Do not claim complete without an execution report.
+- **Build 85 scope:** (A) P0 Trial Presentation Fix in user app — `app/upgrade/page.tsx`, `app/premium-bhumi/page.tsx`; backend/Firestore/billing trial logic correct, presentation-only bug, canonical entitlement source, UI states TRIAL / PREMIUM / FREE; (B) P1 Billing B1.4.1 continuation/status check; (C) P1 Founder Dashboard handoff note only.
+- **Legacy `app/admin/**`:** LEGACY REFERENCE ONLY. No new features; no cosmetic fixes; touch only if a production blocker requires it or to support migration.
+- **Broadcast Commit 3 (Founder Dashboard):** HOLD / unfinished — pending uncommitted work remains in the dashboard repo; do not touch from the app repo.
+- **Policy:** MINIMAL DIFF — no refactor/redesign/move unless authorized.
 
 ## 1. Purpose
 
@@ -66,7 +81,7 @@ Eight verified deterministic engines. No evidence of 10 or 11 implemented applic
 | Billing | COMMITTED IMPLEMENTATION (client); PENDING (backend deployment) | Backend not deployed |
 | Trial | COMMITTED IMPLEMENTATION | 7-login trial |
 | Tester entitlement | COMMITTED IMPLEMENTATION | |
-| Admin dashboard | COMMITTED IMPLEMENTATION | Stale-snapshot fix NOT PRESENT in Build 80 |
+| Admin dashboard | COMMITTED IMPLEMENTATION (legacy in-app admin) | **SUPERSEDED**: operational admin moved to the SEPARATE Founder Dashboard repo (`C:\tmp\bhumi-founder-dashboard`). `app/admin/**` here is LEGACY REFERENCE ONLY. Stale-snapshot fix from Build 80 applies to legacy only. |
 | Analytics and telemetry | COMMITTED IMPLEMENTATION | |
 | Behavior Memory | EMULATOR VERIFIED | 53/53 PASS; schema validation ABSENT; data sensitivity MEDIUM |
 | Share cards | COMMITTED IMPLEMENTATION | |

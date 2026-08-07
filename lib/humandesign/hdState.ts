@@ -96,11 +96,29 @@ export function getHdState(value: unknown, options: HdStateOptions = {}): HdStat
     return result("CANONICAL", type, "canonical", "canonical");
   }
 
+  // HOTFIX: a live calculation in progress must be PROCESSING, never fallback.
+  // Only settled (ready/verified) non-canonical records are FALLBACK_LABELED.
+  const isSettled = ["ready", "verified", "needs_verified_engine"].includes(status);
+  if (status === "pending" || calculationStatus === "pending") {
+    const attemptMs = getAttemptMs(hd);
+    const now = options.now ?? Date.now();
+    if (attemptMs !== null && now - attemptMs >= HD_PENDING_TTL_MS) {
+      return result("RETRIABLE_ERROR", type, "pending", "pending_ttl_exceeded");
+    }
+    return result("PENDING", type, "pending", status || calculationStatus || "pending");
+  }
+
   const isHistorical = Boolean(type && engineVersion !== HD_ENGINE_VERSION);
   const isLocalFallback = source === "local-fallback"
     || source === "fallback_approximation"
     || quality === "fallback_approximation";
-  if (isHistorical || isLocalFallback || (Boolean(type) && ["ready", "verified", "needs_verified_engine"].includes(status))) {
+  if (isLocalFallback) {
+    // HOTFIX: any local approximation is a fallback, even one without an engine
+    // version or one tagged ready. Historical label is reserved for genuine
+    // legacy-build charts (other sources), never a failed local calculation.
+    return result("FALLBACK_LABELED", type, "local_fallback", "noncanonical_fallback", true);
+  }
+  if (isHistorical || (Boolean(type) && isSettled)) {
     return result(
       "FALLBACK_LABELED",
       type,

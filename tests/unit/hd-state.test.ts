@@ -54,6 +54,18 @@ const terminalErrorState = getHdState({
 equal(terminalErrorState.state, "TERMINAL_ERROR", "error without a type is terminal, not partial");
 equal(terminalErrorState.type, null, "terminal error preserves null type");
 
+const pendingDiagnostic = getHdState({
+  type: null,
+  status: "pending",
+  source: "local-fallback",
+  calculationQuality: "fallback_approximation",
+  hdEngineVersion: "gaia-hd-v1",
+  updatedAt: new Date().toISOString(),
+});
+equal(pendingDiagnostic.state, "PENDING", "HOTFIX: live pending diagnostic is PROCESSING, not fallback");
+equal(pendingDiagnostic.type, null, "pending diagnostic hides the TS approximation");
+equal(isCanonicalHumanDesign(pendingDiagnostic), false, "pending diagnostic is never canonical");
+
 const pendingAt = Date.parse("2026-01-01T00:00:00.000Z");
 equal(
   getHdState({ status: "pending", type: null, updatedAt: new Date(pendingAt).toISOString() }, { now: pendingAt + HD_PENDING_TTL_MS - 1 }).state,

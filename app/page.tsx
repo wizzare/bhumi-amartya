@@ -98,7 +98,7 @@ export default function LandingPage() {
       <h1 className="text-4xl font-serif text-[#4F5E52] mb-4">Bhumi Amartya</h1>
 
       <p className="max-w-xs text-[#7B8776] leading-relaxed mb-12">
-        Ruang harian untuk mengenali diri, membaca ritme hidup, dan menjalani praktik batin sesuai jati dirimu.
+        Ruang Untuk Pulang dan Kenali Diri
       </p>
 
       <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -106,20 +106,22 @@ export default function LandingPage() {
           onClick={handleMulai}
           className="bhumi-button w-full"
         >
-          Mulai Perjalanan
+          Pengguna Baru
         </button>
 
         <button
           onClick={handlePunyaAkun}
-          className="w-full py-4 text-[#4F5E52] font-medium text-sm hover:underline"
+          className="w-full rounded-2xl border border-[#4F5E52] bg-white px-5 py-4 font-semibold text-[#4F5E52] transition hover:bg-[#F5F1E8]"
         >
           Saya Sudah Punya Akun
         </button>
       </div>
 
-      <p className="mt-12 text-[10px] text-[#7B8776]/50 uppercase tracking-widest font-mono">
-        Closed Beta v1.0
-      </p>
+      <div className="mt-12 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center">
+        <p className="text-xs text-[#7B8776]">
+          Indonesia | English
+        </p>
+      </div>
     </main>
   );
 }
