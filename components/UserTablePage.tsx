@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 import { useUserTableData } from '@/hooks/useUserTableData';
 import { formatDateTime, formatRelative, NormalizedUser } from '@/lib/analytics';
 import { UserDetailDrawer } from '@/components/UserDetailDrawer';
@@ -20,21 +20,36 @@ function activeLoginDays(user: NormalizedUser): number | null {
   return null;
 }
 
+function historicalGuardian(user: NormalizedUser) {
+  const raw = user.raw || {};
+  const badge = `${raw.testerBadge || ''} ${raw.badge || ''} ${raw.guardianBadge || ''} ${raw.guardianRole || ''}`.toLowerCase();
+  if (badge.includes('alfa')) return 'Penjaga Alfa';
+  if (badge.includes('inti') || badge.includes('core_guardian')) return 'Penjaga Inti';
+  return '';
+}
+
+function accessDisplay(user: NormalizedUser) {
+  const guardian = historicalGuardian(user);
+  if (user.plan === 'Founder') return { primary: 'Founder', secondary: 'Lifetime', cls: 'gold' };
+  if (user.plan === 'Google Play Paid') return { primary: 'Premium', secondary: 'Aktif', cls: 'green' };
+  if (user.plan === 'Trial') return { primary: 'Trial', secondary: 'Aktif', cls: 'gold' };
+  if (user.plan === 'Penjaga Inti') return { primary: 'Penjaga Inti', secondary: 'Akses aktif', cls: 'green' };
+  if (user.plan === 'Penjaga Alfa') return { primary: 'Penjaga Alfa', secondary: 'Akses aktif', cls: 'green' };
+  if (user.plan === 'Expired Grant') return { primary: 'Free', secondary: guardian ? `${guardian} selesai` : 'Grant selesai', cls: 'gray' };
+  if (user.plan === 'Expired Paid') return { primary: 'Free', secondary: 'Premium selesai', cls: 'gray' };
+  if (user.plan === 'Pending Verification') return { primary: 'Pending', secondary: 'Verifikasi billing', cls: 'gold' };
+  if (user.plan === 'Data Incomplete') return { primary: 'Perlu cek', secondary: 'Data entitlement', cls: 'red' };
+  return { primary: 'Free', secondary: 'Trial selesai', cls: 'gray' };
+}
+
 export function UserTablePage() {
   const table = useUserTableData();
-  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [plan, setPlan] = useState('all');
   const [selectedUser, setSelectedUser] = useState<NormalizedUser | null>(null);
 
   const plans = useMemo(() => Array.from(new Set(table.rows.map((user) => user.plan))).sort(), [table.rows]);
-  const rows = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    return table.rows.filter((user) => {
-      const searchHit = !needle || `${user.name} ${user.email} ${user.birthCity} ${user.country}`.toLowerCase().includes(needle);
-      const planHit = plan === 'all' || user.plan === plan;
-      return searchHit && planHit;
-    });
-  }, [plan, search, table.rows]);
+  const rows = useMemo(() => table.rows.filter((user) => plan === 'all' || user.plan === plan), [plan, table.rows]);
 
   const newestLogin = table.rows.reduce((max, user) => Math.max(max, user.lastLoginAt), 0);
   const oldestLogin = table.rows.reduce((min, user) => {
@@ -42,12 +57,23 @@ export function UserTablePage() {
     return !min ? user.lastLoginAt : Math.min(min, user.lastLoginAt);
   }, 0);
 
+  const submitSearch = (event: FormEvent) => {
+    event.preventDefault();
+    void table.search(searchInput);
+  };
+
+  const clearSearch = () => {
+    setSearchInput('');
+    setPlan('all');
+    table.clearSearch();
+  };
+
   return (
     <div className="page">
       <div className="page-heading">
         <div>
           <h1>Data User</h1>
-          <p>Maksimal 10 user per request. Deleted, archived, tester, dan duplikat UID/email dikeluarkan sebelum ditampilkan.</p>
+          <p>Maksimal 10 user per page/request. Nama dapat diklik untuk membuka profil dan blueprint secara lazy + session-cached.</p>
         </div>
         <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
       </div>
@@ -55,51 +81,54 @@ export function UserTablePage() {
       {table.error && <div className="error-box" style={{ marginBottom: 12 }}>{table.error}</div>}
 
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-label">Page</div><div className="kpi-value">{table.page}</div><div className="kpi-foot"><span>cursor pagination</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Mode</div><div className="kpi-value" style={{fontSize:16}}>{table.searchMode ? 'Search' : `Page ${table.page}`}</div><div className="kpi-foot"><span>{table.searchMode ? table.searchTerm : 'cursor pagination'}</span></div></div>
         <div className="kpi-card"><div className="kpi-label">User Loaded</div><div className="kpi-value">{table.loading ? '—' : table.rows.length}</div><div className="kpi-foot"><span>max {table.pageSize}</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Firestore Reads</div><div className="kpi-value">{table.loading ? '—' : table.readsThisPage}</div><div className="kpi-foot"><span>0 bila dari cache</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Newest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{newestLogin ? formatRelative(newestLogin) : '—'}</div><div className="kpi-foot"><span>halaman ini</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Oldest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{oldestLogin ? formatRelative(oldestLogin) : '—'}</div><div className="kpi-foot"><span>halaman ini</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Firestore Reads</div><div className="kpi-value">{table.loading ? '—' : table.readsThisPage}</div><div className="kpi-foot"><span>{table.searchSource === 'founder-cache' ? 'search dari shared cache' : '0 bila cache tersedia'}</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Newest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{newestLogin ? formatRelative(newestLogin) : '—'}</div><div className="kpi-foot"><span>{table.searchMode?'hasil search':'halaman ini'}</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Oldest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{oldestLogin ? formatRelative(oldestLogin) : '—'}</div><div className="kpi-foot"><span>{table.searchMode?'hasil search':'halaman ini'}</span></div></div>
       </div>
 
       <section className="panel">
         <div className="panel-head">
           <div>
             <div className="panel-title">User Table</div>
-            <span className="panel-subtitle">Urutan latest login. Previous page memakai cache dan tidak membaca Firestore lagi.</span>
+            <span className="panel-subtitle">Urutan latest login. Previous page dan hasil search yang pernah dibuka memakai session cache.</span>
           </div>
           <span className="source-badge">10 / REQUEST</span>
         </div>
         <div className="panel-body">
-          <div className="toolbar">
-            <input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter 10 user yang sedang tampil…" />
+          <form className="toolbar" onSubmit={submitSearch}>
+            <input className="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Cari nama atau email seluruh user…" />
+            <button className="btn" type="submit" disabled={table.loading}>Cari</button>
+            {table.searchMode && <button className="btn" type="button" onClick={clearSearch}>Kembali ke tabel</button>}
             <select className="select" value={plan} onChange={(event) => setPlan(event.target.value)}>
-              <option value="all">Semua Plan</option>
+              <option value="all">Semua Status Akses</option>
               {plans.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
             <span style={{ fontSize: 9, color: '#7c8a82' }}>{rows.length} ditampilkan</span>
-          </div>
+          </form>
 
           <div className="notice" style={{ marginBottom: 12 }}>
-            Hari Login = jumlah hari aktif unik dari `participationMetrics.activeDays`, bukan jumlah event login. Klik nama untuk membuka detail; blueprint hanya dibaca sekali per UID lalu disimpan di session cache.
+            Hari Login = jumlah hari aktif unik, bukan jumlah event login. Search hanya dijalankan saat Enter/Cari. Bila Executive sudah memuat user, search memakai shared cache dengan 0 Firestore read; hasil search yang sama juga dicache selama sesi.
           </div>
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Hari Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Birth City</th></tr></thead>
+              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Hari Login</th><th>Session</th><th>Akses Saat Ini</th><th>Aktivitas</th><th>App</th><th>Birth City</th></tr></thead>
               <tbody>
                 {rows.map((user) => {
                   const days = activeLoginDays(user);
+                  const access = accessDisplay(user);
                   return <tr key={user.uid}>
-                    <td><button type="button" onClick={()=>setSelectedUser(user)} style={{border:0,background:'transparent',padding:0,color:'#2f7555',font: 'inherit',fontWeight:800,cursor:'pointer',textDecoration:'underline',textUnderlineOffset:2}}>{user.name}</button></td>
+                    <td><button type="button" onClick={()=>setSelectedUser(user)} style={{border:0,background:'transparent',padding:0,color:'#2f7555',font:'inherit',fontWeight:800,cursor:'pointer',textDecoration:'underline',textUnderlineOffset:2}}>{user.name}</button></td>
                     <td>{user.email || '—'}</td>
                     <td>{formatDateTime(user.registeredAt)}</td>
                     <td>{formatDateTime(user.firstLoginAt)}</td>
                     <td title={formatDateTime(user.lastLoginAt)}>{formatRelative(user.lastLoginAt)}</td>
                     <td title={formatDateTime(user.lastSeenAt)}>{formatRelative(user.lastSeenAt)}</td>
-                    <td>{days ?? '—'}</td>
+                    <td><b>{days ?? '—'}</b></td>
                     <td>{user.sessionCount}</td>
-                    <td><span className={`pill ${user.plan === 'Google Play Paid' ? 'green' : user.plan === 'Founder' ? 'gold' : 'gray'}`}>{user.plan}</span></td>
+                    <td><span className={`pill ${access.cls}`}>{access.primary}</span><div style={{fontSize:8,color:'#87948c',marginTop:3,whiteSpace:'nowrap'}}>{access.secondary}</div></td>
                     <td><span className={`pill ${statusClass(user.status)}`}>{user.status}</span></td>
                     <td>{user.appVersion} / {user.buildNumber}</td>
                     <td>{user.birthCity || '—'}</td>
@@ -109,13 +138,13 @@ export function UserTablePage() {
             </table>
           </div>
 
-          {!table.loading && !rows.length && <div className="empty">Tidak ada user pada halaman/filter ini.</div>}
+          {!table.loading && !rows.length && <div className="empty">Tidak ada user yang cocok.</div>}
 
-          <div className="toolbar" style={{ justifyContent: 'flex-end', marginTop: 12, marginBottom: 0 }}>
+          {!table.searchMode && <div className="toolbar" style={{ justifyContent: 'flex-end', marginTop: 12, marginBottom: 0 }}>
             <button className="btn" disabled={table.loading || table.page <= 1} onClick={table.previous}>Previous</button>
             <span style={{ fontSize: 9, color: '#7c8a82' }}>Page {table.page}</span>
             <button className="btn" disabled={table.loading || !table.hasMore} onClick={table.next}>Next</button>
-          </div>
+          </div>}
         </div>
       </section>
 
