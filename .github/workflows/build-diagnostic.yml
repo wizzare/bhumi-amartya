@@ -14,8 +14,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Capture environment
+        run: |
+          node --version > environment.log 2>&1 || true
+          npm --version >> environment.log 2>&1 || true
       - name: Install
-        run: npm install > install.log 2>&1
+        run: npm install > install.log 2>&1 || true
       - name: Typecheck
         run: npx tsc --noEmit > typecheck.log 2>&1 || true
       - name: Build
@@ -26,7 +30,8 @@ jobs:
         with:
           name: build-diagnostic-logs
           path: |
+            environment.log
             install.log
             typecheck.log
             build.log
-          if-no-files-found: error
+          if-no-files-found: warn
