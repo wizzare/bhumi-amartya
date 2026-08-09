@@ -16,6 +16,8 @@ export type NormalizedUser = {
   subscriptionStatus: string;
   status: 'Active' | 'Cooling' | 'At Risk' | 'Dormant' | 'Never Active';
   city: string;
+  birthCity: string;
+  environmentCity: string;
   province: string;
   country: string;
   appVersion: string;
@@ -33,6 +35,14 @@ export function asTime(value: any): number {
   if (typeof value?.toDate === 'function') return value.toDate().getTime();
   if (typeof value?.seconds === 'number') return value.seconds * 1000;
   return 0;
+}
+
+export function cleanLocationLabel(value: any): string {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  const lower = text.toLowerCase();
+  if (['unknown', 'no data', 'n/a', 'null', 'undefined', '-', '—'].includes(lower)) return '';
+  return text;
 }
 
 export function isDeletedOrArchived(raw: RawUser): boolean {
@@ -56,12 +66,35 @@ const ID_CITIES = ['jakarta','bandung','surabaya','yogyakarta','jogja','denpasar
 const MY_CITIES = ['kuala lumpur','penang','pulau pinang','johor','johor bahru','selangor','shah alam','petaling jaya','malacca','melaka','ipoh','sabah','sarawak','kuching'];
 
 export function inferProfileCountry(countryRaw: any, cityRaw: any, provinceRaw: any): string {
-  const country = String(countryRaw || '').trim();
-  if (country && country.toLowerCase() !== 'no data') return country;
+  const country = cleanLocationLabel(countryRaw);
+  if (country) return country;
   const haystack = `${cityRaw || ''} ${provinceRaw || ''}`.toLowerCase();
   if (ID_CITIES.some((x) => haystack.includes(x))) return 'Indonesia';
   if (MY_CITIES.some((x) => haystack.includes(x))) return 'Malaysia';
   return 'Unknown';
+}
+
+export function resolveBirthCity(raw: RawUser): string {
+  return cleanLocationLabel(
+    raw.birthCity || raw.birthPlace || raw.placeOfBirth || raw.birthLocation?.city || raw.profile?.birthCity || raw.city
+  );
+}
+
+export function resolveEnvironmentCity(raw: RawUser): string {
+  return cleanLocationLabel(
+    raw.lastEnvironmentCity ||
+    raw.environmentCity ||
+    raw.currentCity ||
+    raw.locationCity ||
+    raw.lastKnownCity ||
+    raw.geoCity ||
+    raw.currentLocation?.city ||
+    raw.lastLocation?.city ||
+    raw.location?.city ||
+    raw.environmentContext?.city ||
+    raw.environmentContext?.location?.city ||
+    raw.environment?.city
+  );
 }
 
 export function classifyAccess(raw: RawUser): string {
@@ -98,9 +131,10 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
   const lastSeenAt = Math.max(asTime(raw.lastSeen), asTime(pm.lastSeen), lastLoginAt);
   const days = lastSeenAt ? (Date.now() - lastSeenAt) / 86400000 : Infinity;
   const status: NormalizedUser['status'] = !lastSeenAt ? 'Never Active' : days <= 2 ? 'Active' : days <= 6 ? 'Cooling' : days <= 13 ? 'At Risk' : 'Dormant';
-  const city = String(raw.city || raw.birthCity || raw.birthPlace || raw.placeOfBirth || '').trim() || 'Unknown';
-  const province = String(raw.province || raw.state || raw.birthProvince || '').trim() || 'Unknown';
-  const country = inferProfileCountry(raw.country || raw.birthCountry, city, province);
+  const birthCity = resolveBirthCity(raw);
+  const environmentCity = resolveEnvironmentCity(raw);
+  const province = cleanLocationLabel(raw.birthProvince || raw.province || raw.state) || 'Unknown';
+  const country = inferProfileCountry(raw.birthCountry || raw.country, birthCity, province);
   return {
     uid,
     name: String(raw.fullName || raw.displayName || raw.name || 'Tanpa Nama'),
@@ -116,7 +150,9 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
     accessUntil: Math.max(asTime(raw.accessUntil), asTime(raw.membershipExpiryDate), asTime(raw.trialEndsAt), asTime(raw.testerExpiresAt)),
     subscriptionStatus: String(raw.subscriptionStatus || raw.entitlement?.status || '—'),
     status,
-    city,
+    city: birthCity || 'Unknown',
+    birthCity,
+    environmentCity,
     province,
     country,
     appVersion: String(pm.appVersion || raw.appVersion || raw.versionName || '—'),
