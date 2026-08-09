@@ -1,0 +1,60 @@
+name: Build Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Capture environment
+        run: |
+          node --version > environment.log 2>&1 || true
+          npm --version >> environment.log 2>&1 || true
+      - name: Install
+        run: npm install > install.log 2>&1 || true
+      - name: Typecheck
+        run: npx tsc --noEmit > typecheck.log 2>&1 || true
+      - name: Build
+        run: npm run build > build.log 2>&1 || true
+      - name: Comment diagnostics
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Build Diagnostic'
+            echo ''
+            echo '**Environment**'
+            echo '```text'
+            tail -n 20 environment.log 2>/dev/null || true
+            echo '```'
+            echo ''
+            echo '**Install (tail)**'
+            echo '```text'
+            tail -n 40 install.log 2>/dev/null || true
+            echo '```'
+            echo ''
+            echo '**Typecheck (tail)**'
+            echo '```text'
+            tail -n 100 typecheck.log 2>/dev/null || true
+            echo '```'
+            echo ''
+            echo '**Build (tail)**'
+            echo '```text'
+            tail -n 120 build.log 2>/dev/null || true
+            echo '```'
+          } > diagnostic-comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file diagnostic-comment.md
