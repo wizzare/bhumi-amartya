@@ -12,6 +12,8 @@ export type NormalizedUser = {
   sessionCount: number;
   totalSeconds: number;
   plan: string;
+  accessUntil: number;
+  subscriptionStatus: string;
   status: 'Active' | 'Cooling' | 'At Risk' | 'Dormant' | 'Never Active';
   city: string;
   province: string;
@@ -21,7 +23,7 @@ export type NormalizedUser = {
   raw: RawUser;
 };
 
-function asTime(value: any): number {
+export function asTime(value: any): number {
   if (!value) return 0;
   if (typeof value === 'number') return value > 1e12 ? value : value * 1000;
   if (typeof value === 'string') {
@@ -62,6 +64,31 @@ export function inferProfileCountry(countryRaw: any, cityRaw: any, provinceRaw: 
   return 'Unknown';
 }
 
+export function classifyAccess(raw: RawUser): string {
+  const email = String(raw.email || '').toLowerCase();
+  const role = String(raw.role || '').toLowerCase();
+  const membership = String(raw.membershipType || raw.membership || raw.plan || '').toLowerCase();
+  const subscription = String(raw.subscriptionStatus || '').toLowerCase();
+  const badge = `${raw.testerBadge || ''} ${raw.badge || ''} ${raw.guardianBadge || ''}`.toLowerCase();
+  const entitlementSource = String(raw.entitlement?.source || raw.accessSource || '').toLowerCase();
+  const loginCount = Number(raw.participationMetrics?.loginCount ?? raw.loginCount ?? 0) || 0;
+
+  const founder = email === 'wizzare@gmail.com' || role === 'founder' || badge.includes('founder');
+  const inti = badge.includes('inti') || badge.includes('core_guardian');
+  const alfa = badge.includes('alfa');
+  const verifiedPaid = raw.billingVerified === true || Boolean(raw.purchaseToken) || entitlementSource.includes('google_play') || entitlementSource.includes('play_billing') || (raw.isPremium === true && membership.includes('premium') && !inti && !alfa);
+  const trial = subscription.includes('trial') || membership.includes('trial') || (loginCount > 0 && loginCount <= 7 && raw.isPremium === true && !verifiedPaid && !inti && !alfa);
+  const unknownLegacy = raw.isPremium === true && !verifiedPaid && !inti && !alfa && !trial && !founder;
+
+  if (founder) return 'Founder';
+  if (verifiedPaid) return 'Google Play Paid';
+  if (inti) return 'Penjaga Inti';
+  if (alfa) return 'Penjaga Alfa';
+  if (trial) return 'Trial';
+  if (unknownLegacy) return 'Unknown Legacy';
+  return 'Free';
+}
+
 export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
   const pm = raw.participationMetrics || {};
   const registeredCandidates = [raw.createdAt, raw.registeredAt, raw.joinedAt, raw.firstLoginAt, pm.firstLoginAt].map(asTime).filter(Boolean);
@@ -74,9 +101,6 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
   const city = String(raw.city || raw.birthCity || raw.birthPlace || raw.placeOfBirth || '').trim() || 'Unknown';
   const province = String(raw.province || raw.state || raw.birthProvince || '').trim() || 'Unknown';
   const country = inferProfileCountry(raw.country || raw.birthCountry, city, province);
-  const membership = String(raw.membershipType || raw.membership || raw.plan || '').toLowerCase();
-  const badge = String(raw.badge || raw.testerBadge || '').toLowerCase();
-  const plan = raw.role === 'founder' || String(raw.email || '').toLowerCase() === 'wizzare@gmail.com' ? 'Founder' : raw.isPremium || membership.includes('premium') ? 'Premium' : badge.includes('inti') ? 'Penjaga Inti' : badge.includes('alfa') ? 'Penjaga Alfa' : membership.includes('trial') || raw.subscriptionStatus === 'trial' ? 'Trial' : 'Free';
   return {
     uid,
     name: String(raw.fullName || raw.displayName || raw.name || 'Tanpa Nama'),
@@ -88,7 +112,9 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
     loginCount: Number(pm.loginCount ?? raw.loginCount ?? 0) || 0,
     sessionCount: Number(pm.sessionCount ?? raw.sessionCount ?? 0) || 0,
     totalSeconds: Number(pm.totalSeconds ?? raw.totalSeconds ?? 0) || 0,
-    plan,
+    plan: classifyAccess(raw),
+    accessUntil: Math.max(asTime(raw.accessUntil), asTime(raw.membershipExpiryDate), asTime(raw.trialEndsAt), asTime(raw.testerExpiresAt)),
+    subscriptionStatus: String(raw.subscriptionStatus || raw.entitlement?.status || '—'),
     status,
     city,
     province,
@@ -118,7 +144,7 @@ export function formatRelative(ms: number): string {
   const min = Math.floor(diff / 60000);
   if (min < 1) return 'baru saja';
   if (min < 60) return `${min}m lalu`;
-  const h = Math.floor(min/60);
+  const h = Math.floor(min / 60);
   if (h < 24) return `${h}j lalu`;
-  return `${Math.floor(h/24)}h lalu`;
+  return `${Math.floor(h / 24)}h lalu`;
 }
