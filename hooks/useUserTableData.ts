@@ -1,9 +1,10 @@
 'use client';
 
-import { collection, getDocs, limit, orderBy, query, startAfter } from 'firebase/firestore';
+import { collection, endAt, getDocs, limit, orderBy, query, startAfter, startAt } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
+import { peekFounderDataCache } from '@/hooks/useFounderData';
 
 const PAGE_SIZE = 10;
 
@@ -13,7 +14,14 @@ type CachedPage = {
   hasMore: boolean;
 };
 
+type CachedSearch = {
+  rows: NormalizedUser[];
+  source: 'founder-cache' | 'firestore';
+};
+
 let pageCache: CachedPage[] = [];
+const searchCache = new Map<string, CachedSearch>();
+const searchRequests = new Map<string, Promise<CachedSearch>>();
 
 function canonicalUid(docId: string, raw: Record<string, any>) {
   return String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || docId).trim() || docId;
@@ -38,6 +46,101 @@ function priorIdentities(pageIndex: number) {
   return seen;
 }
 
+function normalizeSearchTerm(value: string) {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function titleCase(value: string) {
+  return value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
+}
+
+function dedupeRows(rows: NormalizedUser[]) {
+  const unique = new Map<string, NormalizedUser>();
+  rows.forEach((user) => {
+    const identity = identityFor(user.uid, user.raw || {});
+    const current = unique.get(identity);
+    if (!current || Math.max(user.lastLoginAt, user.lastSeenAt) > Math.max(current.lastLoginAt, current.lastSeenAt)) {
+      unique.set(identity, user);
+    }
+  });
+  return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
+}
+
+async function prefixQuery(field: string, prefix: string) {
+  const snap = await getDocs(query(
+    collection(db, 'users'),
+    orderBy(field),
+    startAt(prefix),
+    endAt(`${prefix}\uf8ff`),
+    limit(PAGE_SIZE),
+  ));
+
+  return snap.docs
+    .map((doc) => ({ id: doc.id, raw: doc.data() as Record<string, any> }))
+    .filter(({ raw }) => isIncludedRealUser(raw))
+    .map(({ id, raw }) => normalizeUser(canonicalUid(id, raw), raw));
+}
+
+async function fetchSearch(term: string): Promise<CachedSearch> {
+  const key = normalizeSearchTerm(term);
+  const founderCache = peekFounderDataCache();
+
+  if (founderCache) {
+    const rows = founderCache.users
+      .filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key))
+      .sort((a, b) => b.lastLoginAt - a.lastLoginAt)
+      .slice(0, PAGE_SIZE);
+    return { rows, source: 'founder-cache' };
+  }
+
+  const collected: NormalizedUser[] = [];
+  const original = term.trim().replace(/\s+/g, ' ');
+  const variants = Array.from(new Set([original, titleCase(original), original.toLowerCase()].filter(Boolean)));
+
+  if (key.includes('@')) {
+    collected.push(...await prefixQuery('email', key));
+  } else {
+    for (const variant of variants.slice(0, 2)) {
+      collected.push(...await prefixQuery('fullName', variant));
+      if (dedupeRows(collected).length >= PAGE_SIZE) break;
+    }
+
+    if (dedupeRows(collected).length < PAGE_SIZE) {
+      for (const variant of variants.slice(0, 2)) {
+        collected.push(...await prefixQuery('displayName', variant));
+        if (dedupeRows(collected).length >= PAGE_SIZE) break;
+      }
+    }
+
+    if (dedupeRows(collected).length < PAGE_SIZE) {
+      collected.push(...await prefixQuery('email', key));
+    }
+  }
+
+  const needle = key;
+  const rows = dedupeRows(collected).filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(needle));
+  return { rows, source: 'firestore' };
+}
+
+async function getSearch(term: string) {
+  const key = normalizeSearchTerm(term);
+  const cached = searchCache.get(key);
+  if (cached) return { ...cached, cached: true };
+
+  const inflight = searchRequests.get(key);
+  if (inflight) return { ...(await inflight), cached: true };
+
+  const request = fetchSearch(term);
+  searchRequests.set(key, request);
+  try {
+    const result = await request;
+    searchCache.set(key, result);
+    return { ...result, cached: false };
+  } finally {
+    searchRequests.delete(key);
+  }
+}
+
 export function useUserTableData() {
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<NormalizedUser[]>(pageCache[0]?.rows || []);
@@ -45,6 +148,9 @@ export function useUserTableData() {
   const [loading, setLoading] = useState(!pageCache[0]);
   const [error, setError] = useState('');
   const [readsThisPage, setReadsThisPage] = useState(0);
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchSource, setSearchSource] = useState<'founder-cache' | 'firestore' | ''>('');
 
   const loadPage = useCallback(async (targetPage: number, force = false) => {
     setLoading(true);
@@ -60,6 +166,9 @@ export function useUserTableData() {
         setHasMore(cached.hasMore);
         setPage(targetPage);
         setReadsThisPage(0);
+        setSearchMode(false);
+        setSearchTerm('');
+        setSearchSource('');
         return;
       }
 
@@ -69,6 +178,7 @@ export function useUserTableData() {
         setHasMore(false);
         setPage(targetPage);
         setReadsThisPage(0);
+        setSearchMode(false);
         return;
       }
 
@@ -100,6 +210,9 @@ export function useUserTableData() {
       setHasMore(nextPage.hasMore);
       setPage(targetPage);
       setReadsThisPage(snap.docs.length);
+      setSearchMode(false);
+      setSearchTerm('');
+      setSearchSource('');
     } catch (e: any) {
       setError(e?.message || 'Gagal membaca halaman user.');
     } finally {
@@ -107,17 +220,77 @@ export function useUserTableData() {
     }
   }, []);
 
+  const search = useCallback(async (term: string) => {
+    const normalized = normalizeSearchTerm(term);
+    if (normalized.length < 2) {
+      setError('Masukkan minimal 2 karakter untuk mencari nama/email.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const result = await getSearch(term);
+      setRows(result.rows);
+      setSearchMode(true);
+      setSearchTerm(term.trim());
+      setSearchSource(result.source);
+      setReadsThisPage(result.cached || result.source === 'founder-cache' ? 0 : result.rows.length);
+      setHasMore(false);
+    } catch (e: any) {
+      setError(e?.message || 'Gagal mencari user.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const clearSearch = useCallback(() => {
+    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
+    setSearchMode(false);
+    setSearchTerm('');
+    setSearchSource('');
+    setError('');
+    if (cached) {
+      setRows(cached.rows);
+      setHasMore(cached.hasMore);
+      setReadsThisPage(0);
+      return;
+    }
+    void loadPage(1);
+  }, [loadPage, page]);
+
   useEffect(() => { if (!pageCache[0]) void loadPage(1); }, [loadPage]);
 
   const next = useCallback(() => {
-    if (!loading && hasMore) void loadPage(page + 1);
-  }, [hasMore, loadPage, loading, page]);
+    if (!loading && !searchMode && hasMore) void loadPage(page + 1);
+  }, [hasMore, loadPage, loading, page, searchMode]);
 
   const previous = useCallback(() => {
-    if (!loading && page > 1) void loadPage(page - 1);
-  }, [loadPage, loading, page]);
+    if (!loading && !searchMode && page > 1) void loadPage(page - 1);
+  }, [loadPage, loading, page, searchMode]);
 
-  const refresh = useCallback(() => { void loadPage(1, true); }, [loadPage]);
+  const refresh = useCallback(() => {
+    setSearchMode(false);
+    setSearchTerm('');
+    setSearchSource('');
+    void loadPage(1, true);
+  }, [loadPage]);
 
-  return { rows, page, hasMore, loading, error, readsThisPage, next, previous, refresh, pageSize: PAGE_SIZE };
+  return {
+    rows,
+    page,
+    hasMore,
+    loading,
+    error,
+    readsThisPage,
+    next,
+    previous,
+    refresh,
+    pageSize: PAGE_SIZE,
+    search,
+    clearSearch,
+    searchMode,
+    searchTerm,
+    searchSource,
+  };
 }
