@@ -25,6 +25,12 @@ export type NormalizedUser = {
   raw: RawUser;
 };
 
+const INTI_CANONICAL_START = Date.parse('2026-06-29T00:00:00+07:00');
+const INTI_CANONICAL_EXPIRY = Date.parse('2026-08-30T00:00:00+07:00');
+const ALFA_CANONICAL_START = Date.parse('2026-06-29T00:00:00+07:00');
+const ALFA_CANONICAL_EXPIRY = Date.parse('2026-07-30T00:00:00+07:00');
+const GENERAL_TRIAL_MS = 7 * 24 * 60 * 60 * 1000;
+
 export function asTime(value: any): number {
   if (!value) return 0;
   if (typeof value === 'number') return value > 1e12 ? value : value * 1000;
@@ -35,6 +41,18 @@ export function asTime(value: any): number {
   if (typeof value?.toDate === 'function') return value.toDate().getTime();
   if (typeof value?.seconds === 'number') return value.seconds * 1000;
   return 0;
+}
+
+function maxTime(...values: any[]): number {
+  return Math.max(0, ...values.map(asTime));
+}
+
+function rawRegisteredAt(raw: RawUser): number {
+  const pm = raw.participationMetrics || {};
+  const values = [raw.createdAt, raw.registeredAt, raw.joinedAt, raw.firstLoginAt, pm.firstLoginAt]
+    .map(asTime)
+    .filter(Boolean);
+  return values.length ? Math.min(...values) : 0;
 }
 
 export function cleanLocationLabel(value: any): string {
@@ -97,29 +115,122 @@ export function resolveEnvironmentCity(raw: RawUser): string {
   );
 }
 
+function badgeKind(raw: RawUser): 'inti' | 'alfa' | '' {
+  const badge = `${raw.testerBadge || ''} ${raw.badge || ''} ${raw.guardianBadge || ''} ${raw.guardianRole || ''}`.toLowerCase();
+  if (badge.includes('inti') || badge.includes('core_guardian')) return 'inti';
+  if (badge.includes('alfa')) return 'alfa';
+  return '';
+}
+
+function entitlementSource(raw: RawUser): string {
+  return `${raw.entitlement?.source || ''} ${raw.accessSource || ''} ${raw.sourceBadge || ''}`.toLowerCase();
+}
+
+function resolveGrantWindow(raw: RawUser, kind: 'inti' | 'alfa') {
+  const source = entitlementSource(raw);
+  const dedicatedExpiry = maxTime(raw.testerExpiresAt, raw.grantExpiresAt, raw.guardianExpiresAt);
+  const dedicatedStart = maxTime(raw.grantStartsAt, raw.accessStart, raw.testerStartsAt);
+  const sourceExplicitlyGrant = source.includes('grant') || source.includes('tester') || source.includes('guardian') || source.includes('community');
+  const sourceExpiry = sourceExplicitlyGrant ? maxTime(raw.accessUntil, raw.membershipExpiryDate) : 0;
+  const sourceStart = sourceExplicitlyGrant ? maxTime(raw.accessStart, raw.grantStartsAt) : 0;
+
+  if (kind === 'inti') {
+    return {
+      start: dedicatedStart || sourceStart || INTI_CANONICAL_START,
+      expiry: dedicatedExpiry || sourceExpiry || INTI_CANONICAL_EXPIRY,
+    };
+  }
+
+  return {
+    start: dedicatedStart || sourceStart || ALFA_CANONICAL_START,
+    expiry: dedicatedExpiry || sourceExpiry || ALFA_CANONICAL_EXPIRY,
+  };
+}
+
+function hasVerifiedPaidProof(raw: RawUser): boolean {
+  const source = entitlementSource(raw);
+  return raw.billingVerified === true ||
+    Boolean(raw.purchaseToken) ||
+    Boolean(raw.purchaseTokenHash) ||
+    source.includes('google_play') ||
+    source.includes('play_billing') ||
+    source.includes('billing_verifier');
+}
+
+function paidExpiry(raw: RawUser): number {
+  return maxTime(
+    raw.paidThrough,
+    raw.gracePeriodUntil,
+    raw.entitlement?.accessUntil,
+    raw.entitlement?.expiresAt,
+    raw.membershipExpiryDate,
+    raw.accessUntil,
+  );
+}
+
+function trialExpiry(raw: RawUser): number {
+  const explicit = maxTime(raw.trialEndsAt, raw.entitlement?.trialEndsAt);
+  if (explicit) return explicit;
+  const registered = rawRegisteredAt(raw);
+  return registered ? registered + GENERAL_TRIAL_MS : 0;
+}
+
 export function classifyAccess(raw: RawUser): string {
+  const now = Date.now();
   const email = String(raw.email || '').toLowerCase();
   const role = String(raw.role || '').toLowerCase();
   const membership = String(raw.membershipType || raw.membership || raw.plan || '').toLowerCase();
-  const subscription = String(raw.subscriptionStatus || '').toLowerCase();
+  const subscription = String(raw.subscriptionStatus || raw.entitlement?.status || '').toLowerCase();
   const badge = `${raw.testerBadge || ''} ${raw.badge || ''} ${raw.guardianBadge || ''}`.toLowerCase();
-  const entitlementSource = String(raw.entitlement?.source || raw.accessSource || '').toLowerCase();
-  const loginCount = Number(raw.participationMetrics?.loginCount ?? raw.loginCount ?? 0) || 0;
+  const kind = badgeKind(raw);
 
   const founder = email === 'wizzare@gmail.com' || role === 'founder' || badge.includes('founder');
-  const inti = badge.includes('inti') || badge.includes('core_guardian');
-  const alfa = badge.includes('alfa');
-  const verifiedPaid = raw.billingVerified === true || Boolean(raw.purchaseToken) || entitlementSource.includes('google_play') || entitlementSource.includes('play_billing') || (raw.isPremium === true && membership.includes('premium') && !inti && !alfa);
-  const trial = subscription.includes('trial') || membership.includes('trial') || (loginCount > 0 && loginCount <= 7 && raw.isPremium === true && !verifiedPaid && !inti && !alfa);
-  const unknownLegacy = raw.isPremium === true && !verifiedPaid && !inti && !alfa && !trial && !founder;
-
   if (founder) return 'Founder';
-  if (verifiedPaid) return 'Google Play Paid';
-  if (inti) return 'Penjaga Inti';
-  if (alfa) return 'Penjaga Alfa';
-  if (trial) return 'Trial';
-  if (unknownLegacy) return 'Unknown Legacy';
+
+  let expiredGrant = false;
+  if (kind) {
+    const grant = resolveGrantWindow(raw, kind);
+    const active = grant.expiry > now && (!grant.start || grant.start <= now);
+    if (active) return kind === 'inti' ? 'Penjaga Inti' : 'Penjaga Alfa';
+    expiredGrant = grant.expiry > 0 && grant.expiry <= now;
+  }
+
+  const paidProof = hasVerifiedPaidProof(raw);
+  const pendingPaid = paidProof && (
+    subscription.includes('pending') ||
+    String(raw.billingStatus || '').toLowerCase().includes('pending') ||
+    String(raw.purchaseState || '').toLowerCase().includes('pending')
+  );
+  const paidUntil = paidExpiry(raw);
+  if (paidProof && !pendingPaid && paidUntil > now) return 'Google Play Paid';
+
+  const explicitTrial = subscription.includes('trial') || membership.includes('trial');
+  const generalTrialUntil = trialExpiry(raw);
+  if (!paidProof && !kind && generalTrialUntil > now) return 'Trial';
+  if (explicitTrial && generalTrialUntil > now) return 'Trial';
+
+  if (pendingPaid) return 'Pending Verification';
+  if (expiredGrant) return 'Expired Grant';
+  if (paidProof && paidUntil > 0 && paidUntil <= now) return 'Expired Paid';
+  if (paidProof && !paidUntil) return 'Data Incomplete';
+
+  const unverifiedPremium = raw.isPremium === true || membership.includes('premium');
+  if (unverifiedPremium) return 'Data Incomplete';
+
   return 'Free';
+}
+
+export function resolveAccessUntil(raw: RawUser, plan: string): number {
+  const kind = badgeKind(raw);
+  if (plan === 'Founder') return 0;
+  if ((plan === 'Penjaga Inti' || plan === 'Penjaga Alfa' || plan === 'Expired Grant') && kind) {
+    return resolveGrantWindow(raw, kind).expiry;
+  }
+  if (plan === 'Google Play Paid' || plan === 'Expired Paid' || plan === 'Pending Verification' || plan === 'Data Incomplete') {
+    return paidExpiry(raw) || maxTime(raw.accessUntil, raw.membershipExpiryDate);
+  }
+  if (plan === 'Trial') return trialExpiry(raw);
+  return 0;
 }
 
 export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
@@ -135,6 +246,7 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
   const environmentCity = resolveEnvironmentCity(raw);
   const province = cleanLocationLabel(raw.birthProvince || raw.province || raw.state) || 'Unknown';
   const country = inferProfileCountry(raw.birthCountry || raw.country, birthCity, province);
+  const plan = classifyAccess(raw);
   return {
     uid,
     name: String(raw.fullName || raw.displayName || raw.name || 'Tanpa Nama'),
@@ -146,8 +258,8 @@ export function normalizeUser(uid: string, raw: RawUser): NormalizedUser {
     loginCount: Number(pm.loginCount ?? raw.loginCount ?? 0) || 0,
     sessionCount: Number(pm.sessionCount ?? raw.sessionCount ?? 0) || 0,
     totalSeconds: Number(pm.totalSeconds ?? raw.totalSeconds ?? 0) || 0,
-    plan: classifyAccess(raw),
-    accessUntil: Math.max(asTime(raw.accessUntil), asTime(raw.membershipExpiryDate), asTime(raw.trialEndsAt), asTime(raw.testerExpiresAt)),
+    plan,
+    accessUntil: resolveAccessUntil(raw, plan),
     subscriptionStatus: String(raw.subscriptionStatus || raw.entitlement?.status || '—'),
     status,
     city: birthCity || 'Unknown',
