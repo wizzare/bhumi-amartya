@@ -17,6 +17,7 @@ type CachedPage = {
 type CachedSearch = {
   rows: NormalizedUser[];
   source: 'founder-cache' | 'firestore';
+  reads: number;
 };
 
 let pageCache: CachedPage[] = [];
@@ -75,10 +76,12 @@ async function prefixQuery(field: string, prefix: string) {
     limit(PAGE_SIZE),
   ));
 
-  return snap.docs
+  const rows = snap.docs
     .map((doc) => ({ id: doc.id, raw: doc.data() as Record<string, any> }))
     .filter(({ raw }) => isIncludedRealUser(raw))
     .map(({ id, raw }) => normalizeUser(canonicalUid(id, raw), raw));
+
+  return { rows, reads: Math.max(1, snap.docs.length) };
 }
 
 async function fetchSearch(term: string): Promise<CachedSearch> {
@@ -90,36 +93,42 @@ async function fetchSearch(term: string): Promise<CachedSearch> {
       .filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key))
       .sort((a, b) => b.lastLoginAt - a.lastLoginAt)
       .slice(0, PAGE_SIZE);
-    return { rows, source: 'founder-cache' };
+    return { rows, source: 'founder-cache', reads: 0 };
   }
 
   const collected: NormalizedUser[] = [];
+  let reads = 0;
   const original = term.trim().replace(/\s+/g, ' ');
   const variants = Array.from(new Set([original, titleCase(original), original.toLowerCase()].filter(Boolean)));
 
+  const append = async (field:string, prefix:string) => {
+    const result = await prefixQuery(field, prefix);
+    reads += result.reads;
+    collected.push(...result.rows);
+  };
+
   if (key.includes('@')) {
-    collected.push(...await prefixQuery('email', key));
+    await append('email', key);
   } else {
     for (const variant of variants.slice(0, 2)) {
-      collected.push(...await prefixQuery('fullName', variant));
+      await append('fullName', variant);
       if (dedupeRows(collected).length >= PAGE_SIZE) break;
     }
 
     if (dedupeRows(collected).length < PAGE_SIZE) {
       for (const variant of variants.slice(0, 2)) {
-        collected.push(...await prefixQuery('displayName', variant));
+        await append('displayName', variant);
         if (dedupeRows(collected).length >= PAGE_SIZE) break;
       }
     }
 
     if (dedupeRows(collected).length < PAGE_SIZE) {
-      collected.push(...await prefixQuery('email', key));
+      await append('email', key);
     }
   }
 
-  const needle = key;
-  const rows = dedupeRows(collected).filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(needle));
-  return { rows, source: 'firestore' };
+  const rows = dedupeRows(collected).filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key));
+  return { rows, source: 'firestore', reads };
 }
 
 async function getSearch(term: string) {
@@ -235,7 +244,7 @@ export function useUserTableData() {
       setSearchMode(true);
       setSearchTerm(term.trim());
       setSearchSource(result.source);
-      setReadsThisPage(result.cached || result.source === 'founder-cache' ? 0 : result.rows.length);
+      setReadsThisPage(result.cached ? 0 : result.reads);
       setHasMore(false);
     } catch (e: any) {
       setError(e?.message || 'Gagal mencari user.');
