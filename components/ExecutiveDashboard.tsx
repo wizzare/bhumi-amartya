@@ -32,6 +32,12 @@ function dayKeys(n: number) {
   return out;
 }
 
+function validCity(value:string) {
+  const text=String(value||'').trim();
+  if(!text) return false;
+  return !['unknown','no data','n/a','null','undefined','-','—'].includes(text.toLowerCase());
+}
+
 export function ExecutiveDashboard() {
   const { users, activities, loading, error, lastRefresh, refresh } = useFounderData();
   const now = Date.now();
@@ -64,22 +70,26 @@ export function ExecutiveDashboard() {
     return [...m.entries()].map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
   }, [users]);
 
-  const cities = useMemo(() => {
-    const m = new Map<string,number>(); users.forEach(u=>m.set(u.city,(m.get(u.city)||0)+1));
+  const birthCities = useMemo(() => {
+    const m = new Map<string,number>();
+    users.forEach((u)=>{ if(validCity(u.birthCity)) m.set(u.birthCity,(m.get(u.birthCity)||0)+1); });
     return [...m.entries()].map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value).slice(0,7);
   }, [users]);
 
-  const countries = useMemo(() => {
-    const m = new Map<string,number>(); users.forEach(u=>m.set(u.country,(m.get(u.country)||0)+1));
+  const environmentCities = useMemo(() => {
+    const m = new Map<string,number>();
+    users.forEach((u)=>{ if(validCity(u.environmentCity)) m.set(u.environmentCity,(m.get(u.environmentCity)||0)+1); });
     return [...m.entries()].map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value).slice(0,7);
   }, [users]);
 
+  const knownBirthUsers=users.filter((u)=>validCity(u.birthCity)).length;
+  const knownEnvironmentUsers=users.filter((u)=>validCity(u.environmentCity)).length;
   const palette = ['#2f7555','#5f6fd3','#c4a15d','#7e62b3','#78938a','#bd5b5b'];
 
   return <div className="page">
     <div className="page-heading">
       <div><h1>Executive Overview</h1></div>
-      <div className="toolbar" style={{marginBottom:0}}><span className="source-badge">BHUMI DB • LIVE</span><span className="source-badge play">PLAY • {play.snapshot}</span><button className="btn" onClick={()=>void refresh()}>Refresh</button></div>
+      <div className="toolbar" style={{marginBottom:0}}><span className="source-badge">BHUMI DB • CACHED</span><span className="source-badge play">PLAY • {play.snapshot}</span><button className="btn" onClick={()=>void refresh()}>Refresh</button></div>
     </div>
 
     {error && <div className="error-box" style={{marginBottom:12}}>{error}</div>}
@@ -106,9 +116,9 @@ export function ExecutiveDashboard() {
     </div>
 
     <div className="grid-3">
-      <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile/Birth Cities</div><span className="panel-subtitle">Bukan current location</span></div><span className="source-badge warn">PROFILE</span></div><div className="panel-body"><div className="stat-list">{cities.map(x=><div className="stat-row" key={x.name}><span className="stat-name">{x.name}</span><div className="progress"><span style={{width:`${pct(x.value,users.length)}%`}}/></div><span className="stat-value">{x.value}</span></div>)}</div></div></section>
-      <section className="panel"><div className="panel-head"><div><div className="panel-title">Profile Country</div><span className="panel-subtitle">Explicit/inferred from profile fields</span></div><span className="source-badge warn">PROFILE</span></div><div className="panel-body"><div className="stat-list">{countries.map(x=><div className="stat-row" key={x.name}><span className="stat-name">{x.name}</span><div className="progress"><span style={{width:`${pct(x.value,users.length)}%`}}/></div><span className="stat-value">{x.value}</span></div>)}</div></div></section>
-      <section className="panel"><div className="panel-head"><div><div className="panel-title">Data Quality</div><span className="panel-subtitle">Sumber dan freshness</span></div></div><div className="panel-body"><div className="stat-list"><div className="stat-row"><span className="stat-name">Users loaded</span><div className="progress"><span style={{width:users.length?'100%':'0%'}}/></div><span className="stat-value">{users.length}</span></div><div className="stat-row"><span className="stat-name">30D activity docs</span><div className="progress"><span style={{width:activities.length?'100%':'0%'}}/></div><span className="stat-value">{activities.length}</span></div></div><div className="notice" style={{marginTop:14}}>Deleted, archived, QA/test users dikeluarkan sebelum agregasi. Last refresh: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString('id-ID') : '—'}.</div></div></section>
+      <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile / Birth Cities</div><span className="panel-subtitle">Unknown dikeluarkan dari ranking</span></div><span className="source-badge warn">PROFILE</span></div><div className="panel-body"><div className="stat-list">{birthCities.map((x)=><div className="stat-row" key={x.name}><span className="stat-name">{x.name}</span><div className="progress"><span style={{width:`${pct(x.value,Math.max(1,knownBirthUsers))}%`}}/></div><span className="stat-value">{x.value}</span></div>)}</div>{!birthCities.length&&<div className="empty">Belum ada birth city valid.</div>}</div></section>
+      <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Environment / GPS Cities</div><span className="panel-subtitle">Kota kondisi lingkungan terakhir yang tersimpan</span></div><span className="source-badge">ENVIRONMENT</span></div><div className="panel-body"><div className="stat-list">{environmentCities.map((x)=><div className="stat-row" key={x.name}><span className="stat-name">{x.name}</span><div className="progress"><span style={{width:`${pct(x.value,Math.max(1,knownEnvironmentUsers))}%`}}/></div><span className="stat-value">{x.value}</span></div>)}</div>{!environmentCities.length&&<div className="notice">GPS digunakan aplikasi untuk Kondisi Lingkungan, tetapi Environment City belum ditemukan sebagai field persisted di user document. Dashboard tidak memakai birth city sebagai pengganti.</div>}</div></section>
+      <section className="panel"><div className="panel-head"><div><div className="panel-title">Data Quality</div><span className="panel-subtitle">Sumber, missing location, dan freshness</span></div></div><div className="panel-body"><div className="stat-list"><div className="stat-row"><span className="stat-name">Users loaded</span><div className="progress"><span style={{width:users.length?'100%':'0%'}}/></div><span className="stat-value">{users.length}</span></div><div className="stat-row"><span className="stat-name">Birth city known</span><div className="progress"><span style={{width:`${pct(knownBirthUsers,users.length)}%`}}/></div><span className="stat-value">{knownBirthUsers}</span></div><div className="stat-row"><span className="stat-name">GPS city persisted</span><div className="progress"><span style={{width:`${pct(knownEnvironmentUsers,users.length)}%`}}/></div><span className="stat-value">{knownEnvironmentUsers}</span></div></div><div className="notice" style={{marginTop:14}}>Shared session cache aktif. Pindah menu tidak membaca dataset yang sama lagi. Last refresh: {lastRefresh ? new Date(lastRefresh).toLocaleTimeString('id-ID') : '—'}.</div></div></section>
     </div>
   </div>;
 }
