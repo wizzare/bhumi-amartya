@@ -17,7 +17,7 @@ export function UserTablePage() {
   const rows = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return table.rows.filter((user) => {
-      const searchHit = !needle || `${user.name} ${user.email} ${user.birthCity} ${user.environmentCity} ${user.country}`.toLowerCase().includes(needle);
+      const searchHit = !needle || `${user.name} ${user.email} ${user.birthCity} ${user.country}`.toLowerCase().includes(needle);
       const planHit = plan === 'all' || user.plan === plan;
       return searchHit && planHit;
     });
@@ -68,12 +68,12 @@ export function UserTablePage() {
           </div>
 
           <div className="notice" style={{ marginBottom: 12 }}>
-            Search dan filter hanya bekerja pada 10 user yang sudah dimuat. Environment City hanya membaca field kota yang sudah tersimpan; dashboard tidak meminta GPS pengguna dan tidak membaca collection tambahan.
+            Search dan filter hanya bekerja pada 10 user yang sudah dimuat agar tidak memicu query besar ke Firestore.
           </div>
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Birth City</th><th>Environment City</th></tr></thead>
+              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Birth City</th></tr></thead>
               <tbody>
                 {rows.map((user) => (
                   <tr key={user.uid}>
@@ -89,7 +89,6 @@ export function UserTablePage() {
                     <td><span className={`pill ${statusClass(user.status)}`}>{user.status}</span></td>
                     <td>{user.appVersion} / {user.buildNumber}</td>
                     <td>{user.birthCity || '—'}</td>
-                    <td>{user.environmentCity || '—'}</td>
                   </tr>
                 ))}
               </tbody>
