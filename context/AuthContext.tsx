@@ -3,7 +3,12 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, browserLocalPersistence, onAuthStateChanged, setPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
-import { ensureMinimalUserProfile, signOut as signOutAction } from '@/lib/auth/authActions';
+import {
+  ensureMinimalUserProfile,
+  isServerIssuedProfilePending,
+  ServerIssuedProfilePendingError,
+  signOut as signOutAction,
+} from '@/lib/auth/authActions';
 import { UserProfile, userRepository } from '@/lib/repositories/userRepository';
 import { clearBhumiSessionForSignOut } from '@/lib/auth/onboardingIntent';
 import { storageProvider } from '@/lib/storage/storageProvider';
@@ -34,6 +39,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const PROFILE_LOAD_TIMEOUT_MS = 5000;
+const SERVER_PROFILE_LOAD_TIMEOUT_MS = 15000;
 let nextAuthEffectInstanceId = 0;
 
 const isEmulatorMode = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
@@ -78,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setProfileLoading(true);
     try {
       const guardedOutcome = await resolveCurrentAuthOperation(
-        () => resolveProfileLoad(ensureMinimalUserProfile(firebaseUser), PROFILE_LOAD_TIMEOUT_MS),
+        () => resolveProfileLoad(ensureMinimalUserProfile(firebaseUser), SERVER_PROFILE_LOAD_TIMEOUT_MS),
         isCurrentRefresh,
       );
       if (guardedOutcome.status === "stale") return null;
@@ -88,10 +94,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserProfile(outcome.value);
         return outcome.value;
       } else if (outcome.status === "missing") {
+        if (isServerIssuedProfilePending(firebaseUser, null)) throw new ServerIssuedProfilePendingError();
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
         return null;
       } else if (outcome.status === "timeout") {
+        if (isServerIssuedProfilePending(firebaseUser, null)) throw new ServerIssuedProfilePendingError();
         console.warn("Auth profile refresh timed out.", { elapsedMs: outcome.elapsedMs });
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
@@ -99,6 +107,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfileError("Profil masih disiapkan. Silakan coba lagi.");
         return null;
       } else {
+        if (outcome.error instanceof ServerIssuedProfilePendingError) throw outcome.error;
         console.error("Auth profile refresh error:", outcome.error);
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
@@ -109,6 +118,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       if (!isCurrentRefresh()) return null;
       setUserProfile(null);
+      if (error instanceof ServerIssuedProfilePendingError) {
+        setProfileError("Profil sedang disiapkan. Mohon tunggu.");
+        return null;
+      }
       if (!isCurrentRefresh()) return null;
       setProfileError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
       throw error;
@@ -137,7 +150,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Safety timeout to resolve loading state if Firebase hangs
     const safetyTimeout = setTimeout(() => {
-      if (!cancelled && authLoading) {
+      if (!cancelled) {
         console.warn("[LOADING TIMEOUT]", {
           source: "AuthContext",
           reason: "firebase_auth_not_ready_after_8s",
@@ -189,8 +202,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           if (!isActive()) return;
           setUser(firebaseUser);
           if (!isActive()) return;
-          setAuthLoading(false);
-          if (!isActive()) return;
           setProfileError(null);
 
           if (!firebaseUser) {
@@ -199,6 +210,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUserProfile(null);
             if (!isActive()) return;
             setProfileLoading(false);
+            setAuthLoading(false);
             return;
           }
 
@@ -209,6 +221,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUserProfile(null);
             if (!isActive()) return;
             setProfileLoading(false);
+            setAuthLoading(false);
             return;
           }
 
@@ -219,7 +232,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const guardedPrimaryOutcome = await resolveCurrentAuthOperation(
               () => resolveProfileLoad(
                 ensureMinimalUserProfile(firebaseUser),
-                PROFILE_LOAD_TIMEOUT_MS,
+                SERVER_PROFILE_LOAD_TIMEOUT_MS,
               ),
               isActive,
             );
@@ -264,6 +277,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
 
             if (!isActive()) return;
+
+            if (isServerIssuedProfilePending(firebaseUser, profile)) {
+              throw new ServerIssuedProfilePendingError();
+            }
 
             if (profile && profile.uid !== firebaseUser.uid) {
               console.error("[USER DATA MISMATCH BLOCKED]", {
@@ -335,6 +352,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
           } catch (error) {
             if (!isActive()) return;
+            if (error instanceof ServerIssuedProfilePendingError) {
+              setUserProfile(null);
+              setProfileError("Profil sedang disiapkan. Mohon tunggu.");
+              return;
+            }
             console.error("Auth profile loading error:", error);
 
             // Final fallback: try local-only storage just in case
@@ -361,6 +383,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } finally {
             if (isActive()) {
               setProfileLoading(false);
+              setAuthLoading(false);
             }
           }
         },

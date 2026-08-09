@@ -38,6 +38,9 @@ type NativeGoogleAuthWithLegacyOptions = typeof FirebaseAuthentication & {
 };
 
 export const GOOGLE_POPUP_TIMEOUT_MS = 35_000;
+const SERVER_PROFILE_WAIT_TIMEOUT_MS = 10_000;
+const SERVER_PROFILE_POLL_INTERVAL_MS = 250;
+const FIRST_LOGIN_CLOCK_SKEW_MS = 60_000;
 
 export class GooglePopupTimeoutError extends Error {
   readonly code = "auth/popup-timeout";
@@ -46,6 +49,55 @@ export class GooglePopupTimeoutError extends Error {
     super(`Google sign-in popup did not settle within ${timeoutMs}ms.`);
     this.name = "GooglePopupTimeoutError";
   }
+}
+
+export class ServerIssuedProfilePendingError extends Error {
+  constructor() {
+    super("Server-issued access profile is still pending.");
+    this.name = "ServerIssuedProfilePendingError";
+  }
+}
+
+function hasHigherServerEntitlement(profile: UserProfile | null): boolean {
+  if (!profile) return false;
+  if (profile.membershipType === "LIFETIME") return true;
+  if (profile.membershipType === "PREMIUM" && (profile as any).entitlementSource === "google_play") return true;
+  const badge = profile.testerBadge || (profile as any).badge;
+  return badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
+}
+
+export function isServerIssuedProfilePending(
+  user: User,
+  profile: UserProfile | null,
+  nowMs = Date.now(),
+): boolean {
+  const creationMs = Date.parse(user.metadata?.creationTime || "");
+  const lastSignInMs = Date.parse(user.metadata?.lastSignInTime || "");
+  const firstLogin = Number.isFinite(creationMs)
+    && Number.isFinite(lastSignInMs)
+    && Math.abs(lastSignInMs - creationMs) <= FIRST_LOGIN_CLOCK_SKEW_MS;
+  if (!firstLogin || nowMs < creationMs) return false;
+  if (hasHigherServerEntitlement(profile)) return false;
+  return !profile?.trialStartedAt || !profile?.trialEndsAt;
+}
+
+async function waitForServerIssuedProfile(user: User, initialProfile: UserProfile): Promise<UserProfile> {
+  let profile = initialProfile;
+  const deadline = Date.now() + SERVER_PROFILE_WAIT_TIMEOUT_MS;
+
+  while (isServerIssuedProfilePending(user, profile) && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, SERVER_PROFILE_POLL_INTERVAL_MS));
+    try {
+      profile = (await userRepository.getUserProfile(user.uid)) ?? profile;
+    } catch {
+      // Keep waiting for the server-owned profile until the bounded deadline.
+    }
+  }
+
+  if (isServerIssuedProfilePending(user, profile)) {
+    throw new ServerIssuedProfilePendingError();
+  }
+  return profile;
 }
 
 export function waitForGooglePopupResult<T>(operation: Promise<T>, timeoutMs = GOOGLE_POPUP_TIMEOUT_MS): Promise<T> {
@@ -164,7 +216,8 @@ export const ensureMinimalUserProfile = async (user: User) => {
       displayName: user.displayName ?? existingProfile.displayName ?? existingProfile.fullName ?? "",
       role: existingProfile.guardianRole || existingProfile.role || "user",
     });
-    return (await userRepository.getUserProfile(user.uid)) ?? existingProfile;
+    const refreshedProfile = (await userRepository.getUserProfile(user.uid)) ?? existingProfile;
+    return waitForServerIssuedProfile(user, refreshedProfile);
   }
 
   const minimalProfile = buildMinimalUserProfile(user, now);
@@ -186,7 +239,7 @@ export const ensureMinimalUserProfile = async (user: User) => {
     blueprintStatus: createdProfile.blueprintStatus,
     source: "ensureMinimalUserProfile",
   });
-  return createdProfile;
+  return waitForServerIssuedProfile(user, createdProfile);
 };
 
 export const signInWithGoogle = async (options?: {
