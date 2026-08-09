@@ -23,7 +23,6 @@ type FounderCache = {
   fetchedAt: number;
 };
 
-const CACHE_TTL_MS = 30 * 60 * 1000;
 let sharedCache: FounderCache | null = null;
 let sharedRequest: Promise<FounderCache> | null = null;
 
@@ -116,8 +115,7 @@ async function fetchFounderData(): Promise<FounderCache> {
 }
 
 async function getFounderData(force = false) {
-  const cacheValid = sharedCache && Date.now() - sharedCache.fetchedAt < CACHE_TTL_MS;
-  if (!force && cacheValid) return sharedCache as FounderCache;
+  if (!force && sharedCache) return sharedCache;
   if (!force && sharedRequest) return sharedRequest;
 
   sharedRequest = fetchFounderData();
