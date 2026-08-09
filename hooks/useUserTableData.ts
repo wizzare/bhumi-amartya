@@ -6,7 +6,7 @@ import { db } from '@/lib/firebase';
 import { isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
 
 const PAGE_SIZE = 10;
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 30 * 60 * 1000;
 
 type CachedPage = {
   rows: NormalizedUser[];
