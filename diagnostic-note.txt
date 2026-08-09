@@ -1,0 +1,1 @@
+Temporary branch used to diagnose Vercel/Next.js build failures. Safe to remove after build passes.
