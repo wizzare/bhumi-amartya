@@ -5,41 +5,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { asTime } from '@/lib/analytics';
 
-export type AdminMessage = {
-  id:string;
-  uid:string;
-  title:string;
-  content:string;
-  summary:string;
-  createdAt:number;
-  isRead:boolean;
-  status:string;
-  senderRole:string;
-  recipientRole:string;
-  parentMessageId:string;
-  threadId:string;
-  type:string;
-  raw:Record<string,any>;
-};
+export type AdminMessage = { id:string; uid:string; title:string; content:string; summary:string; createdAt:number; isRead:boolean; status:string; senderRole:string; recipientRole:string; parentMessageId:string; threadId:string; type:string; raw:Record<string,any>; };
+export type BroadcastLog = { id:string; title:string; content:string; createdAt:number; targetGroups:string[]; status:string; stats:Record<string,any>; raw:Record<string,any>; };
+type CommunicationsCache = { messages: AdminMessage[]; broadcasts: BroadcastLog[]; fetchedAt: number; };
 
-export type BroadcastLog = {
-  id:string;
-  title:string;
-  content:string;
-  createdAt:number;
-  targetGroups:string[];
-  status:string;
-  stats:Record<string,any>;
-  raw:Record<string,any>;
-};
-
-type CommunicationsCache = {
-  messages: AdminMessage[];
-  broadcasts: BroadcastLog[];
-  fetchedAt: number;
-};
-
-const CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_MESSAGES = 100;
 const MAX_BROADCASTS = 100;
 let sharedCache: CommunicationsCache | null = null;
@@ -56,20 +25,15 @@ async function fetchCommunications(): Promise<CommunicationsCache> {
     const x:any = doc.data();
     const uid = String(x.ownerUserId || x.uid || x.senderUid || x.userId || '').trim();
     const row: AdminMessage = {
-      id: doc.id,
-      uid,
+      id: doc.id, uid,
       title: String(x.title || x.subject || 'Tanpa judul'),
       content: String(x.content || x.message || x.summary || ''),
       summary: String(x.summary || ''),
       createdAt: Math.max(asTime(x.createdAt), asTime(x.updatedAt)),
-      isRead: Boolean(x.isRead),
-      status: String(x.status || 'active'),
-      senderRole: String(x.senderRole || ''),
-      recipientRole: String(x.recipientRole || ''),
-      parentMessageId: String(x.parentMessageId || ''),
-      threadId: String(x.threadId || ''),
-      type: String(x.type || 'user-message'),
-      raw: x,
+      isRead: Boolean(x.isRead), status: String(x.status || 'active'),
+      senderRole: String(x.senderRole || ''), recipientRole: String(x.recipientRole || ''),
+      parentMessageId: String(x.parentMessageId || ''), threadId: String(x.threadId || ''),
+      type: String(x.type || 'user-message'), raw: x,
     };
     const key = `${uid}|${row.threadId || row.parentMessageId || row.id}|${row.id}`;
     if (!messageMap.has(key)) messageMap.set(key, row);
@@ -99,20 +63,14 @@ async function fetchCommunications(): Promise<CommunicationsCache> {
 }
 
 async function getCommunications(force = false) {
-  const cacheValid = sharedCache && Date.now() - sharedCache.fetchedAt < CACHE_TTL_MS;
-  if (!force && cacheValid) return sharedCache as CommunicationsCache;
+  if (!force && sharedCache) return sharedCache;
   if (!force && sharedRequest) return sharedRequest;
-
   sharedRequest = fetchCommunications();
-  try {
-    sharedCache = await sharedRequest;
-    return sharedCache;
-  } finally {
-    sharedRequest = null;
-  }
+  try { sharedCache = await sharedRequest; return sharedCache; }
+  finally { sharedRequest = null; }
 }
 
-export function useCommunications(allowedUids:Set<string>){
+export function useCommunications(allowedUids:Set<string>) {
   const [allMessages, setAllMessages] = useState<AdminMessage[]>(sharedCache?.messages || []);
   const [broadcasts, setBroadcasts] = useState<BroadcastLog[]>(sharedCache?.broadcasts || []);
   const [loading,setLoading] = useState(!sharedCache);
@@ -120,44 +78,24 @@ export function useCommunications(allowedUids:Set<string>){
   const allowedKey = useMemo(() => [...allowedUids].sort().join('|'), [allowedUids]);
 
   const refresh = useCallback(async(force = true) => {
-    if (!allowedUids.size) {
-      setAllMessages([]);
-      setBroadcasts([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setError('');
+    if (!allowedUids.size) { setAllMessages([]); setBroadcasts([]); setLoading(false); return; }
+    setLoading(true); setError('');
     try {
       const data = await getCommunications(force);
-      setAllMessages(data.messages);
-      setBroadcasts(data.broadcasts);
-    } catch (e:any) {
-      setError(e?.message || 'Gagal membaca communications.');
-    } finally {
-      setLoading(false);
-    }
+      setAllMessages(data.messages); setBroadcasts(data.broadcasts);
+    } catch (e:any) { setError(e?.message || 'Gagal membaca communications.'); }
+    finally { setLoading(false); }
   }, [allowedKey]);
 
   useEffect(() => {
-    if (!allowedUids.size) {
-      setAllMessages([]);
-      setBroadcasts([]);
-      setLoading(false);
-      return;
-    }
+    if (!allowedUids.size) { setAllMessages([]); setBroadcasts([]); setLoading(false); return; }
     void (async () => {
-      setLoading(!sharedCache);
-      setError('');
+      setLoading(!sharedCache); setError('');
       try {
         const data = await getCommunications(false);
-        setAllMessages(data.messages);
-        setBroadcasts(data.broadcasts);
-      } catch (e:any) {
-        setError(e?.message || 'Gagal membaca communications.');
-      } finally {
-        setLoading(false);
-      }
+        setAllMessages(data.messages); setBroadcasts(data.broadcasts);
+      } catch (e:any) { setError(e?.message || 'Gagal membaca communications.'); }
+      finally { setLoading(false); }
     })();
   }, [allowedKey]);
 
@@ -166,13 +104,5 @@ export function useCommunications(allowedUids:Set<string>){
     .filter((message) => message.recipientRole.toLowerCase() === 'admin' || message.senderRole.toLowerCase() === 'user'),
   [allMessages, allowedKey]);
 
-  return {
-    messages,
-    broadcasts,
-    loading,
-    error,
-    refresh,
-    maxMessages: MAX_MESSAGES,
-    maxBroadcasts: MAX_BROADCASTS,
-  };
+  return { messages, broadcasts, loading, error, refresh, maxMessages: MAX_MESSAGES, maxBroadcasts: MAX_BROADCASTS };
 }
