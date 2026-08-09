@@ -98,8 +98,35 @@ function profileDate(value:any) {
   return ms?new Intl.DateTimeFormat('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'long',year:'numeric'}).format(new Date(ms)):String(value);
 }
 
+function activeLoginDays(user: NormalizedUser): number | null {
+  const raw=user.raw||{};
+  const value=raw.participationMetrics?.activeDays ?? raw.activeDays;
+  if(Array.isArray(value)) return new Set(value.map((item)=>String(item||'').trim()).filter(Boolean)).size;
+  if(typeof value==='number'&&Number.isFinite(value)) return Math.max(0,Math.floor(value));
+  return null;
+}
+
+function accessLabel(user: NormalizedUser) {
+  const raw=user.raw||{};
+  const badge=`${raw.testerBadge||''} ${raw.badge||''} ${raw.guardianBadge||''} ${raw.guardianRole||''}`.toLowerCase();
+  if(user.plan==='Founder') return 'Founder / Lifetime';
+  if(user.plan==='Google Play Paid') return 'Premium / Aktif';
+  if(user.plan==='Trial') return 'Trial / Aktif';
+  if(user.plan==='Penjaga Inti') return 'Penjaga Inti / Aktif';
+  if(user.plan==='Penjaga Alfa') return 'Penjaga Alfa / Aktif';
+  if(user.plan==='Expired Grant') {
+    if(badge.includes('alfa')) return 'Free / Penjaga Alfa selesai';
+    if(badge.includes('inti')||badge.includes('core_guardian')) return 'Free / Penjaga Inti selesai';
+    return 'Free / Grant selesai';
+  }
+  if(user.plan==='Expired Paid') return 'Free / Premium selesai';
+  if(user.plan==='Pending Verification') return 'Pending / Verifikasi billing';
+  if(user.plan==='Data Incomplete') return 'Perlu cek / Data entitlement';
+  return 'Free / Trial selesai';
+}
+
 function Field({label,value}:{label:string;value:any}) {
-  return <div style={{padding:'9px 10px',border:'1px solid #e7ece9',borderRadius:8,background:'#fbfcfb'}}><div style={{fontSize:8,color:'#87948c',textTransform:'uppercase',letterSpacing:'.04em',marginBottom:3}}>{label}</div><div style={{fontSize:10,fontWeight:650,color:'#32453b',wordBreak:'break-word'}}>{value || '—'}</div></div>;
+  return <div style={{padding:'9px 10px',border:'1px solid #e7ece9',borderRadius:8,background:'#fbfcfb'}}><div style={{fontSize:8,color:'#87948c',textTransform:'uppercase',letterSpacing:'.04em',marginBottom:3}}>{label}</div><div style={{fontSize:10,fontWeight:650,color:'#32453b',wordBreak:'break-word'}}>{value ?? '—'}</div></div>;
 }
 
 export function UserDetailDrawer({user,onClose}:Props) {
@@ -111,6 +138,7 @@ export function UserDetailDrawer({user,onClose}:Props) {
   const birthTime=raw.birthTime||raw.timeOfBirth||raw.birthHour;
   const blueprintStatus=blueprint.data?.status||raw.blueprintStatus||'—';
   const storedSystems=SYSTEMS.filter((system)=>firstValue(blueprint.data,system.keys)!==undefined).length;
+  const loginDays=activeLoginDays(user);
 
   return <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(21,32,26,.36)',display:'flex',justifyContent:'flex-end'}} onMouseDown={(event)=>{if(event.target===event.currentTarget)onClose();}}>
     <aside style={{width:'min(760px,96vw)',height:'100vh',background:'#fff',boxShadow:'-12px 0 30px rgba(21,32,26,.16)',overflowY:'auto'}}>
@@ -120,7 +148,7 @@ export function UserDetailDrawer({user,onClose}:Props) {
       </div>
 
       <div style={{padding:18,display:'grid',gap:14}}>
-        <div className="notice"><b>Read cost detail:</b> profile = 0 read tambahan karena memakai dokumen yang sudah dimuat di tabel. Blueprint = {blueprint.fromCache?'0 read (session cache)':blueprint.loading?'maks. 1 read sedang dimuat':'maks. 1 read pada pembukaan pertama'}. Klik ulang user yang sama tidak membaca blueprint lagi selama sesi dashboard.</div>
+        <div className="notice"><b>Read cost detail:</b> profil = 0 read tambahan karena memakai dokumen user yang sudah dimuat. Blueprint = {blueprint.fromCache?'0 read (session cache)':blueprint.loading?'maks. 1 read sedang dimuat':'maks. 1 read pada pembukaan pertama'}. Klik ulang UID yang sama tidak membaca blueprint lagi selama sesi.</div>
 
         <section className="panel">
           <div className="panel-head"><div><div className="panel-title">Identitas & Data Lahir</div><span className="panel-subtitle">Dari user document yang sudah dimuat bersama tabel.</span></div><span className="source-badge">0 EXTRA READ</span></div>
@@ -130,9 +158,9 @@ export function UserDetailDrawer({user,onClose}:Props) {
         </section>
 
         <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Account & Access</div><span className="panel-subtitle">Status akun saat ini.</span></div></div>
+          <div className="panel-head"><div><div className="panel-title">Account & Access</div><span className="panel-subtitle">Status akses saat ini, bukan badge historis.</span></div></div>
           <div className="panel-body"><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:8}}>
-            <Field label="Plan" value={user.plan}/><Field label="Subscription" value={user.subscriptionStatus}/><Field label="Access Until" value={user.accessUntil?formatDateTime(user.accessUntil):user.plan==='Founder'?'Selamanya':'—'}/><Field label="Tanggal Daftar" value={formatDateTime(user.registeredAt)}/><Field label="First Login" value={formatDateTime(user.firstLoginAt)}/><Field label="Last Login" value={formatDateTime(user.lastLoginAt)}/><Field label="Login Count" value={user.loginCount}/><Field label="Session Count" value={user.sessionCount}/><Field label="App / Build" value={`${user.appVersion} / ${user.buildNumber}`}/><Field label="Activity Status" value={user.status}/>
+            <Field label="Akses Saat Ini" value={accessLabel(user)}/><Field label="Subscription" value={user.subscriptionStatus}/><Field label="Access Until" value={user.accessUntil?formatDateTime(user.accessUntil):user.plan==='Founder'?'Selamanya':'—'}/><Field label="Tanggal Daftar" value={formatDateTime(user.registeredAt)}/><Field label="First Login" value={formatDateTime(user.firstLoginAt)}/><Field label="Last Login" value={formatDateTime(user.lastLoginAt)}/><Field label="Hari Login" value={loginDays}/><Field label="Session Count" value={user.sessionCount}/><Field label="App / Build" value={`${user.appVersion} / ${user.buildNumber}`}/><Field label="Activity Status" value={user.status}/>
           </div></div>
         </section>
 
