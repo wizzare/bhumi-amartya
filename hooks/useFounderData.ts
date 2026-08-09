@@ -23,7 +23,7 @@ type FounderCache = {
   fetchedAt: number;
 };
 
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 30 * 60 * 1000;
 let sharedCache: FounderCache | null = null;
 let sharedRequest: Promise<FounderCache> | null = null;
 
@@ -112,11 +112,7 @@ async function fetchFounderData(): Promise<FounderCache> {
     });
   });
 
-  return {
-    users,
-    activities: Array.from(uniqueActivity.values()),
-    fetchedAt: Date.now(),
-  };
+  return { users, activities: Array.from(uniqueActivity.values()), fetchedAt: Date.now() };
 }
 
 async function getFounderData(force = false) {
