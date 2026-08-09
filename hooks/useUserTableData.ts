@@ -6,7 +6,6 @@ import { db } from '@/lib/firebase';
 import { isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
 
 const PAGE_SIZE = 10;
-const CACHE_TTL_MS = 30 * 60 * 1000;
 
 type CachedPage = {
   rows: NormalizedUser[];
@@ -15,7 +14,6 @@ type CachedPage = {
 };
 
 let pageCache: CachedPage[] = [];
-let cacheStartedAt = 0;
 
 function canonicalUid(docId: string, raw: Record<string, any>) {
   return String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || docId).trim() || docId;
@@ -42,9 +40,9 @@ function priorIdentities(pageIndex: number) {
 
 export function useUserTableData() {
   const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<NormalizedUser[]>([]);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<NormalizedUser[]>(pageCache[0]?.rows || []);
+  const [hasMore, setHasMore] = useState(pageCache[0]?.hasMore || false);
+  const [loading, setLoading] = useState(!pageCache[0]);
   const [error, setError] = useState('');
   const [readsThisPage, setReadsThisPage] = useState(0);
 
@@ -53,11 +51,7 @@ export function useUserTableData() {
     setError('');
 
     try {
-      const expired = !cacheStartedAt || Date.now() - cacheStartedAt > CACHE_TTL_MS;
-      if (force || expired) {
-        pageCache = [];
-        cacheStartedAt = Date.now();
-      }
+      if (force) pageCache = [];
 
       const pageIndex = Math.max(0, targetPage - 1);
       const cached = pageCache[pageIndex];
@@ -113,7 +107,7 @@ export function useUserTableData() {
     }
   }, []);
 
-  useEffect(() => { void loadPage(1); }, [loadPage]);
+  useEffect(() => { if (!pageCache[0]) void loadPage(1); }, [loadPage]);
 
   const next = useCallback(() => {
     if (!loading && hasMore) void loadPage(page + 1);
@@ -125,16 +119,5 @@ export function useUserTableData() {
 
   const refresh = useCallback(() => { void loadPage(1, true); }, [loadPage]);
 
-  return {
-    rows,
-    page,
-    hasMore,
-    loading,
-    error,
-    readsThisPage,
-    next,
-    previous,
-    refresh,
-    pageSize: PAGE_SIZE,
-  };
+  return { rows, page, hasMore, loading, error, readsThisPage, next, previous, refresh, pageSize: PAGE_SIZE };
 }
