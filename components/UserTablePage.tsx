@@ -2,16 +2,29 @@
 
 import { useMemo, useState } from 'react';
 import { useUserTableData } from '@/hooks/useUserTableData';
-import { formatDateTime, formatRelative } from '@/lib/analytics';
+import { formatDateTime, formatRelative, NormalizedUser } from '@/lib/analytics';
+import { UserDetailDrawer } from '@/components/UserDetailDrawer';
 
 function statusClass(status: string) {
   return status === 'Active' ? 'green' : status === 'Cooling' ? 'gold' : status === 'At Risk' ? 'red' : 'gray';
+}
+
+function activeLoginDays(user: NormalizedUser): number | null {
+  const raw = user.raw || {};
+  const value = raw.participationMetrics?.activeDays ?? raw.activeDays;
+  if (Array.isArray(value)) {
+    const unique = new Set(value.map((item) => String(item || '').trim()).filter(Boolean));
+    return unique.size;
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.max(0, Math.floor(value));
+  return null;
 }
 
 export function UserTablePage() {
   const table = useUserTableData();
   const [search, setSearch] = useState('');
   const [plan, setPlan] = useState('all');
+  const [selectedUser, setSelectedUser] = useState<NormalizedUser | null>(null);
 
   const plans = useMemo(() => Array.from(new Set(table.rows.map((user) => user.plan))).sort(), [table.rows]);
   const rows = useMemo(() => {
@@ -68,29 +81,30 @@ export function UserTablePage() {
           </div>
 
           <div className="notice" style={{ marginBottom: 12 }}>
-            Search dan filter hanya bekerja pada 10 user yang sudah dimuat agar tidak memicu query besar ke Firestore.
+            Hari Login = jumlah hari aktif unik dari `participationMetrics.activeDays`, bukan jumlah event login. Klik nama untuk membuka detail; blueprint hanya dibaca sekali per UID lalu disimpan di session cache.
           </div>
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Birth City</th></tr></thead>
+              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Hari Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Birth City</th></tr></thead>
               <tbody>
-                {rows.map((user) => (
-                  <tr key={user.uid}>
-                    <td><b>{user.name}</b></td>
+                {rows.map((user) => {
+                  const days = activeLoginDays(user);
+                  return <tr key={user.uid}>
+                    <td><button type="button" onClick={()=>setSelectedUser(user)} style={{border:0,background:'transparent',padding:0,color:'#2f7555',font: 'inherit',fontWeight:800,cursor:'pointer',textDecoration:'underline',textUnderlineOffset:2}}>{user.name}</button></td>
                     <td>{user.email || '—'}</td>
                     <td>{formatDateTime(user.registeredAt)}</td>
                     <td>{formatDateTime(user.firstLoginAt)}</td>
                     <td title={formatDateTime(user.lastLoginAt)}>{formatRelative(user.lastLoginAt)}</td>
                     <td title={formatDateTime(user.lastSeenAt)}>{formatRelative(user.lastSeenAt)}</td>
-                    <td>{user.loginCount}</td>
+                    <td>{days ?? '—'}</td>
                     <td>{user.sessionCount}</td>
                     <td><span className={`pill ${user.plan === 'Google Play Paid' ? 'green' : user.plan === 'Founder' ? 'gold' : 'gray'}`}>{user.plan}</span></td>
                     <td><span className={`pill ${statusClass(user.status)}`}>{user.status}</span></td>
                     <td>{user.appVersion} / {user.buildNumber}</td>
                     <td>{user.birthCity || '—'}</td>
-                  </tr>
-                ))}
+                  </tr>;
+                })}
               </tbody>
             </table>
           </div>
@@ -104,6 +118,8 @@ export function UserTablePage() {
           </div>
         </div>
       </section>
+
+      <UserDetailDrawer user={selectedUser} onClose={()=>setSelectedUser(null)} />
     </div>
   );
 }
