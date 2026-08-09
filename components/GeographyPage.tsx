@@ -5,8 +5,7 @@ import { useFounderData } from '@/hooks/useFounderData';
 import { pct } from '@/lib/analytics';
 
 type Point = { name:string; country:string; value:number; lat:number; lng:number };
-
-type LocationView = 'environment' | 'profile' | 'play' | 'usage';
+type LocationView = 'profile' | 'play' | 'usage';
 
 const CITY_COORDS: Record<string,[number,number]> = {
   'jakarta':[-6.2088,106.8456], 'jakarta selatan':[-6.2615,106.8106], 'jakarta pusat':[-6.1862,106.8341],
@@ -18,8 +17,7 @@ const CITY_COORDS: Record<string,[number,number]> = {
   'surakarta':[-7.5666,110.8167], 'medan':[3.5952,98.6722], 'makassar':[-5.1477,119.4327],
   'palembang':[-2.9909,104.7566], 'kuala lumpur':[3.1390,101.6869], 'penang':[5.4141,100.3288],
   'pulau pinang':[5.4141,100.3288], 'johor bahru':[1.4927,103.7414], 'shah alam':[3.0738,101.5183],
-  'petaling jaya':[3.1073,101.6067], 'kuching':[1.5533,110.3592], 'ipoh':[4.5975,101.0901],
-  'melaka':[2.1896,102.2501],
+  'petaling jaya':[3.1073,101.6067], 'kuching':[1.5533,110.3592], 'ipoh':[4.5975,101.0901], 'melaka':[2.1896,102.2501],
 };
 const COUNTRY_COORDS: Record<string,[number,number]> = {
   'indonesia':[-2.3,118.0], 'malaysia':[4.2,102.0], 'singapore':[1.3521,103.8198], 'australia':[-25.2744,133.7751],
@@ -45,10 +43,10 @@ function ProfileMap({ points }: { points:Point[] }) {
       const L:any=(mod as any).default||mod;
       map=L.map(el.current,{zoomControl:true,attributionControl:true}).setView([0,108],2);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap'}).addTo(map);
-      points.forEach(p=>{
-        const radius=Math.max(6,Math.min(24,6+Math.sqrt(p.value)*2));
-        L.circleMarker([p.lat,p.lng],{radius,weight:2,color:'#24533d',fillColor:'#4f9b73',fillOpacity:.72})
-          .bindPopup(`<b>${p.name}</b><br>${p.value} user`).addTo(map);
+      points.forEach((point)=>{
+        const radius=Math.max(6,Math.min(24,6+Math.sqrt(point.value)*2));
+        L.circleMarker([point.lat,point.lng],{radius,weight:2,color:'#24533d',fillColor:'#4f9b73',fillOpacity:.72})
+          .bindPopup(`<b>${point.name}</b><br>${point.value} user`).addTo(map);
       });
     });
     return()=>{mounted=false;if(map) map.remove();};
@@ -56,10 +54,10 @@ function ProfileMap({ points }: { points:Point[] }) {
   return <div ref={el} className="map-wrap" />;
 }
 
-function buildCityRows(users:any[], key:'birthCity'|'environmentCity') {
+function buildCityRows(users:any[]) {
   const map = new Map<string,{value:number,country:string}>();
   users.forEach((user)=>{
-    const city=String(user[key]||'').trim();
+    const city=String(user.birthCity||'').trim();
     if(!validCity(city)) return;
     const previous=map.get(city)||{value:0,country:user.country||''};
     map.set(city,{value:previous.value+1,country:user.country||previous.country||''});
@@ -78,7 +76,7 @@ function buildPoints(rows:{name:string;country:string;value:number}[]) {
 
 export function GeographyPage(){
   const { users, loading, error, refresh }=useFounderData();
-  const [view,setView]=useState<LocationView>('environment');
+  const [view,setView]=useState<LocationView>('profile');
 
   const countryRows=useMemo(()=>{
     const map=new Map<string,number>();
@@ -86,54 +84,23 @@ export function GeographyPage(){
     return [...map.entries()].map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
   },[users]);
 
-  const birthCityRows=useMemo(()=>buildCityRows(users,'birthCity'),[users]);
-  const environmentCityRows=useMemo(()=>buildCityRows(users,'environmentCity'),[users]);
+  const birthCityRows=useMemo(()=>buildCityRows(users),[users]);
   const birthPoints=useMemo(()=>buildPoints(birthCityRows),[birthCityRows]);
-  const environmentPoints=useMemo(()=>buildPoints(environmentCityRows),[environmentCityRows]);
-
   const missingBirthCity=users.filter((user)=>!validCity(user.birthCity)).length;
-  const missingEnvironmentCity=users.filter((user)=>!validCity(user.environmentCity)).length;
   const unknownCountry=countryRows.find((row)=>row.name==='Unknown')?.value||0;
 
   return <div className="page">
     <div className="page-heading">
-      <div><h1>User Geography</h1><p>GPS/environment city, birth city, Google Play geography, dan usage geography dipisahkan agar tidak tercampur.</p></div>
+      <div><h1>User Geography</h1><p>Birth/profile geography, Google Play geography, dan usage geography dipisahkan berdasarkan sumber datanya.</p></div>
       <button className="btn" onClick={()=>void refresh()}>Refresh Internal</button>
     </div>
     {error&&<div className="error-box" style={{marginBottom:12}}>{error}</div>}
 
     <div className="range-tabs" style={{marginBottom:14}}>
-      <button className={view==='environment'?'active':''} onClick={()=>setView('environment')}>Environment / GPS</button>
       <button className={view==='profile'?'active':''} onClick={()=>setView('profile')}>Profile / Birth</button>
       <button className={view==='play'?'active':''} onClick={()=>setView('play')}>Google Play</button>
       <button className={view==='usage'?'active':''} onClick={()=>setView('usage')}>Usage / GA4</button>
     </div>
-
-    {view==='environment'&&<>
-      <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-label">Real Users</div><div className="kpi-value">{loading?'—':users.length}</div><div className="kpi-foot"><span>shared cached base</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Environment Cities</div><div className="kpi-value">{environmentCityRows.length}</div><div className="kpi-foot"><span>named cities only</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Users With GPS City</div><div className="kpi-value">{users.length-missingEnvironmentCity}</div><div className="kpi-foot"><span>already persisted</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Location Not Persisted</div><div className="kpi-value">{missingEnvironmentCity}</div><div className="kpi-foot"><span>data quality only</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Map Points</div><div className="kpi-value">{environmentPoints.length}</div><div className="kpi-foot"><span>city-level only</span></div></div>
-      </div>
-
-      <div className="grid-2">
-        <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Environment / GPS City Map</div><span className="panel-subtitle">Dashboard menampilkan kota saja; koordinat mentah tidak ditampilkan.</span></div><span className="source-badge">ENVIRONMENT</span></div>
-          {environmentPoints.length?<ProfileMap points={environmentPoints}/>:<div className="empty">Belum ada Environment City yang tersimpan di user document.</div>}
-        </section>
-        <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Top Environment Cities</div><span className="panel-subtitle">Unknown / No Data tidak pernah masuk ranking.</span></div></div>
-          <div className="panel-body"><div className="stat-list">{environmentCityRows.slice(0,12).map((row)=><div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{width:`${pct(row.value,Math.max(1,users.length-missingEnvironmentCity))}%`}}/></div><span className="stat-value">{row.value}</span></div>)}</div>{!environmentCityRows.length&&<div className="notice">GPS memang dipakai aplikasi untuk Kondisi Lingkungan, tetapi kota terakhir belum terlihat sebagai field persisted pada user data yang dashboard baca. Dashboard tidak akan menebak dari birth city.</div>}</div>
-        </section>
-      </div>
-
-      <section className="panel">
-        <div className="panel-head"><div><div className="panel-title">Environment City Table</div><span className="panel-subtitle">City-level aggregation only. Missing location dipisahkan dari ranking.</span></div></div>
-        <div className="table-wrap"><table><thead><tr><th>City</th><th>Users</th><th>% Known GPS City</th></tr></thead><tbody>{environmentCityRows.slice(0,50).map((row)=><tr key={row.name}><td><b>{row.name}</b></td><td>{row.value}</td><td>{pct(row.value,Math.max(1,users.length-missingEnvironmentCity))}%</td></tr>)}</tbody></table></div>
-      </section>
-    </>}
 
     {view==='profile'&&<>
       <div className="kpi-grid">
@@ -145,15 +112,15 @@ export function GeographyPage(){
       </div>
 
       <div className="grid-2">
-        <section className="panel"><div className="panel-head"><div><div className="panel-title">Birth City Map</div><span className="panel-subtitle">Birth/profile location only, bukan current GPS.</span></div><span className="source-badge warn">PROFILE</span></div><ProfileMap points={birthPoints}/></section>
-        <section className="panel"><div className="panel-head"><div><div className="panel-title">Country Distribution</div><span className="panel-subtitle">Unknown country tetap dipisahkan sebagai data-quality category.</span></div></div><div className="panel-body"><div className="stat-list">{countryRows.filter((row)=>row.name!=='Unknown').map((row)=><div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{width:`${pct(row.value,users.length)}%`}}/></div><span className="stat-value">{row.value}</span></div>)}</div></div></section>
+        <section className="panel"><div className="panel-head"><div><div className="panel-title">Birth City Map</div><span className="panel-subtitle">Birth/profile location only.</span></div><span className="source-badge warn">PROFILE</span></div><ProfileMap points={birthPoints}/></section>
+        <section className="panel"><div className="panel-head"><div><div className="panel-title">Country Distribution</div><span className="panel-subtitle">Unknown country dipisahkan sebagai data-quality category.</span></div></div><div className="panel-body"><div className="stat-list">{countryRows.filter((row)=>row.name!=='Unknown').map((row)=><div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{width:`${pct(row.value,users.length)}%`}}/></div><span className="stat-value">{row.value}</span></div>)}</div></div></section>
       </div>
 
-      <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile / Birth Cities</div><span className="panel-subtitle">Unknown / No Data dikeluarkan sepenuhnya dari tabel ranking.</span></div></div><div className="table-wrap"><table><thead><tr><th>City</th><th>Country</th><th>Users</th><th>% Known Birth City</th></tr></thead><tbody>{birthCityRows.slice(0,30).map((row)=><tr key={row.name}><td><b>{row.name}</b></td><td>{row.country||'—'}</td><td>{row.value}</td><td>{pct(row.value,Math.max(1,users.length-missingBirthCity))}%</td></tr>)}</tbody></table></div></section>
+      <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile / Birth Cities</div><span className="panel-subtitle">Unknown / No Data tidak masuk tabel ranking.</span></div></div><div className="table-wrap"><table><thead><tr><th>City</th><th>Country</th><th>Users</th><th>% Known Birth City</th></tr></thead><tbody>{birthCityRows.slice(0,30).map((row)=><tr key={row.name}><td><b>{row.name}</b></td><td>{row.country||'—'}</td><td>{row.value}</td><td>{pct(row.value,Math.max(1,users.length-missingBirthCity))}%</td></tr>)}</tbody></table></div></section>
     </>}
 
-    {view==='play'&&<div className="grid-2"><section className="panel"><div className="panel-head"><div><div className="panel-title">Google Play Country / Region</div><span className="panel-subtitle">Google Play reporting source</span></div><span className="source-badge play">PLAY</span></div><div className="panel-body"><div className="notice"><b>Multi-country sudah terkonfirmasi dari Play Console.</b><br/>Setelah reporting/API/export tersambung, tabel dan world map di sini akan terisi otomatis.</div></div></section><section className="panel"><div className="panel-head"><div><div className="panel-title">Interpretation Rule</div></div></div><div className="panel-body"><div className="notice">Google Play geography, current GPS/environment city, dan birth city adalah sumber yang berbeda dan tidak direkonsiliasi 1:1.</div></div></section></div>}
+    {view==='play'&&<div className="grid-2"><section className="panel"><div className="panel-head"><div><div className="panel-title">Google Play Country / Region</div><span className="panel-subtitle">Google Play reporting source</span></div><span className="source-badge play">PLAY</span></div><div className="panel-body"><div className="notice"><b>Multi-country sudah terkonfirmasi dari Play Console.</b><br/>Setelah reporting/API/export tersambung, tabel dan world map di sini akan terisi otomatis.</div></div></section><section className="panel"><div className="panel-head"><div><div className="panel-title">Interpretation Rule</div></div></div><div className="panel-body"><div className="notice">Google Play geography dan birth/profile geography adalah sumber berbeda dan tidak direkonsiliasi 1:1.</div></div></section></div>}
 
-    {view==='usage'&&<div className="grid-2"><section className="panel"><div className="panel-head"><div><div className="panel-title">Usage Geography</div><span className="panel-subtitle">GA4 Country / Region / City</span></div><span className="source-badge">GA4</span></div><div className="panel-body"><div className="notice">Ini akan menjadi geography aktivitas agregat. Connector GA4 Data API / BigQuery belum dipasang pada repo baru.</div></div></section><section className="panel"><div className="panel-head"><div><div className="panel-title">Target View</div></div></div><div className="panel-body"><div className="notice">World → Country → Region → City. Tetap dipisahkan dari GPS Environment City per user.</div></div></section></div>}
+    {view==='usage'&&<div className="grid-2"><section className="panel"><div className="panel-head"><div><div className="panel-title">Usage Geography</div><span className="panel-subtitle">GA4 Country / Region / City</span></div><span className="source-badge">GA4</span></div><div className="panel-body"><div className="notice">Ini akan menjadi geography aktivitas agregat. Connector GA4 Data API / BigQuery belum dipasang pada repo baru.</div></div></section><section className="panel"><div className="panel-head"><div><div className="panel-title">Target View</div></div></div><div className="panel-body"><div className="notice">World → Country → Region → City berdasarkan usage analytics saat connector tersedia.</div></div></section></div>}
   </div>;
 }
