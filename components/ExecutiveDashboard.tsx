@@ -78,7 +78,7 @@ export function ExecutiveDashboard() {
 
   return <div className="page">
     <div className="page-heading">
-      <div><h1>Executive Overview</h1><p>Data internal Bhumi + snapshot Google Play. Setiap sumber dipisahkan agar tidak terjadi salah denominator.</p></div>
+      <div><h1>Executive Overview</h1></div>
       <div className="toolbar" style={{marginBottom:0}}><span className="source-badge">BHUMI DB • LIVE</span><span className="source-badge play">PLAY • {play.snapshot}</span><button className="btn" onClick={()=>void refresh()}>Refresh</button></div>
     </div>
 
