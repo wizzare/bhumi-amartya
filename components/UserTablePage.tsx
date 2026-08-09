@@ -1,57 +1,109 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useFounderData } from '@/hooks/useFounderData';
-import { formatDateTime, formatRelative, startOfToday } from '@/lib/analytics';
+import { useUserTableData } from '@/hooks/useUserTableData';
+import { formatDateTime, formatRelative } from '@/lib/analytics';
 
-function statusClass(status:string){return status==='Active'?'green':status==='Cooling'?'gold':status==='At Risk'?'red':'gray';}
+function statusClass(status: string) {
+  return status === 'Active' ? 'green' : status === 'Cooling' ? 'gold' : status === 'At Risk' ? 'red' : 'gray';
+}
 
-export function UserTablePage(){
-  const { users, loading, error, refresh } = useFounderData();
-  const [q,setQ]=useState('');
-  const [plan,setPlan]=useState('all');
-  const [page,setPage]=useState(1);
-  const perPage=25;
-  const now=Date.now();
-  const today=startOfToday();
+export function UserTablePage() {
+  const table = useUserTableData();
+  const [search, setSearch] = useState('');
+  const [plan, setPlan] = useState('all');
 
-  const sorted=useMemo(()=>[...users].sort((a,b)=>b.lastLoginAt-a.lastLoginAt || b.lastSeenAt-a.lastSeenAt),[users]);
-  const filtered=useMemo(()=>sorted.filter(u=>{
-    const hit=!q || `${u.name} ${u.email} ${u.city} ${u.country}`.toLowerCase().includes(q.toLowerCase());
-    const planHit=plan==='all'||u.plan===plan;
-    return hit&&planHit;
-  }),[sorted,q,plan]);
-  const totalPages=Math.max(1,Math.ceil(filtered.length/perPage));
-  const rows=filtered.slice((page-1)*perPage,page*perPage);
-  const firstToday=users.filter(u=>u.firstLoginAt>=today).length;
-  const first30=users.filter(u=>u.firstLoginAt>=now-30*60000).length;
-  const login30=users.filter(u=>u.lastLoginAt>=now-30*60000).length;
-  const active30=users.filter(u=>u.lastSeenAt>=now-30*60000).length;
-  const plans=[...new Set(users.map(u=>u.plan))].sort();
+  const plans = useMemo(() => Array.from(new Set(table.rows.map((user) => user.plan))).sort(), [table.rows]);
+  const rows = useMemo(() => {
+    const needle = search.trim().toLowerCase();
+    return table.rows.filter((user) => {
+      const searchHit = !needle || `${user.name} ${user.email} ${user.city} ${user.country}`.toLowerCase().includes(needle);
+      const planHit = plan === 'all' || user.plan === plan;
+      return searchHit && planHit;
+    });
+  }, [plan, search, table.rows]);
 
-  return <div className="page">
-    <div className="page-heading"><div><h1>Data User</h1><p>Tabel user kanonik. Deleted/archived/tester tidak pernah masuk denominator atau baris tabel.</p></div><button className="btn" onClick={()=>void refresh()}>Refresh</button></div>
-    {error&&<div className="error-box" style={{marginBottom:12}}>{error}</div>}
-    <div className="kpi-grid">
-      <div className="kpi-card"><div className="kpi-label">Total Real User</div><div className="kpi-value">{loading?'—':users.length}</div><div className="kpi-foot"><span>Included UIDs</span><span className="source-badge">BHUMI DB</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">First Login Hari Ini</div><div className="kpi-value">{firstToday}</div><div className="kpi-foot"><span>00:00 WIB → sekarang</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">First Login ≤30 Menit</div><div className="kpi-value">{first30}</div><div className="kpi-foot"><span>newly activated</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Latest Login ≤30 Menit</div><div className="kpi-value">{login30}</div><div className="kpi-foot"><span>sorted newest first</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Active / Last Seen ≤30m</div><div className="kpi-value">{active30}</div><div className="kpi-foot"><span>presence proxy</span></div></div>
-    </div>
+  const newestLogin = table.rows.reduce((max, user) => Math.max(max, user.lastLoginAt), 0);
+  const oldestLogin = table.rows.reduce((min, user) => {
+    if (!user.lastLoginAt) return min;
+    return !min ? user.lastLoginAt : Math.min(min, user.lastLoginAt);
+  }, 0);
 
-    <section className="panel">
-      <div className="panel-head"><div><div className="panel-title">User Table</div><span className="panel-subtitle">Nama, Email, Tanggal Daftar, First Login, Last Login, Last Seen, Login Count, Session Count, Plan, Status</span></div><span className="source-badge">LIVE</span></div>
-      <div className="panel-body">
-        <div className="toolbar">
-          <input className="search" value={q} onChange={e=>{setQ(e.target.value);setPage(1)}} placeholder="Cari nama, email, kota, negara…" />
-          <select className="select" value={plan} onChange={e=>{setPlan(e.target.value);setPage(1)}}><option value="all">Semua Plan</option>{plans.map(x=><option key={x} value={x}>{x}</option>)}</select>
-          <span style={{fontSize:9,color:'#7c8a82'}}>{filtered.length} user</span>
+  return (
+    <div className="page">
+      <div className="page-heading">
+        <div>
+          <h1>Data User</h1>
+          <p>Maksimal 10 user per request. Deleted, archived, tester, dan duplikat UID/email dikeluarkan sebelum ditampilkan.</p>
         </div>
-        <div className="table-wrap"><table><thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Profile City</th></tr></thead><tbody>{rows.map(u=><tr key={u.uid}><td><b>{u.name}</b></td><td>{u.email||'—'}</td><td>{formatDateTime(u.registeredAt)}</td><td>{formatDateTime(u.firstLoginAt)}</td><td title={formatDateTime(u.lastLoginAt)}>{formatRelative(u.lastLoginAt)}</td><td title={formatDateTime(u.lastSeenAt)}>{formatRelative(u.lastSeenAt)}</td><td>{u.loginCount}</td><td>{u.sessionCount}</td><td><span className={`pill ${u.plan==='Premium'?'green':u.plan==='Founder'?'gold':'gray'}`}>{u.plan}</span></td><td><span className={`pill ${statusClass(u.status)}`}>{u.status}</span></td><td>{u.appVersion} / {u.buildNumber}</td><td>{u.city}</td></tr>)}</tbody></table></div>
-        {!loading&&!rows.length&&<div className="empty">Tidak ada user yang cocok dengan filter.</div>}
-        <div className="toolbar" style={{justifyContent:'flex-end',marginTop:12,marginBottom:0}}><button className="btn" disabled={page<=1} onClick={()=>setPage(p=>p-1)}>Previous</button><span style={{fontSize:9,color:'#7c8a82'}}>Page {page} / {totalPages}</span><button className="btn" disabled={page>=totalPages} onClick={()=>setPage(p=>p+1)}>Next</button></div>
+        <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
       </div>
-    </section>
-  </div>;
+
+      {table.error && <div className="error-box" style={{ marginBottom: 12 }}>{table.error}</div>}
+
+      <div className="kpi-grid">
+        <div className="kpi-card"><div className="kpi-label">Page</div><div className="kpi-value">{table.page}</div><div className="kpi-foot"><span>cursor pagination</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">User Loaded</div><div className="kpi-value">{table.loading ? '—' : table.rows.length}</div><div className="kpi-foot"><span>max {table.pageSize}</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Firestore Reads</div><div className="kpi-value">{table.loading ? '—' : table.readsThisPage}</div><div className="kpi-foot"><span>0 bila dari cache</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Newest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{newestLogin ? formatRelative(newestLogin) : '—'}</div><div className="kpi-foot"><span>halaman ini</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Oldest Login</div><div className="kpi-value" style={{ fontSize: 16 }}>{oldestLogin ? formatRelative(oldestLogin) : '—'}</div><div className="kpi-foot"><span>halaman ini</span></div></div>
+      </div>
+
+      <section className="panel">
+        <div className="panel-head">
+          <div>
+            <div className="panel-title">User Table</div>
+            <span className="panel-subtitle">Urutan latest login. Previous page memakai cache dan tidak membaca Firestore lagi.</span>
+          </div>
+          <span className="source-badge">10 / REQUEST</span>
+        </div>
+        <div className="panel-body">
+          <div className="toolbar">
+            <input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Filter 10 user yang sedang tampil…" />
+            <select className="select" value={plan} onChange={(event) => setPlan(event.target.value)}>
+              <option value="all">Semua Plan</option>
+              {plans.map((item) => <option key={item} value={item}>{item}</option>)}
+            </select>
+            <span style={{ fontSize: 9, color: '#7c8a82' }}>{rows.length} ditampilkan</span>
+          </div>
+
+          <div className="notice" style={{ marginBottom: 12 }}>
+            Search dan filter bekerja pada 10 user di halaman saat ini supaya tidak memicu query besar. Untuk pencarian user tertentu nanti kita buat exact lookup terpisah berdasarkan email/UID.
+          </div>
+
+          <div className="table-wrap">
+            <table>
+              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Login</th><th>Session</th><th>Plan</th><th>Status</th><th>App</th><th>Profile City</th></tr></thead>
+              <tbody>
+                {rows.map((user) => (
+                  <tr key={user.uid}>
+                    <td><b>{user.name}</b></td>
+                    <td>{user.email || '—'}</td>
+                    <td>{formatDateTime(user.registeredAt)}</td>
+                    <td>{formatDateTime(user.firstLoginAt)}</td>
+                    <td title={formatDateTime(user.lastLoginAt)}>{formatRelative(user.lastLoginAt)}</td>
+                    <td title={formatDateTime(user.lastSeenAt)}>{formatRelative(user.lastSeenAt)}</td>
+                    <td>{user.loginCount}</td>
+                    <td>{user.sessionCount}</td>
+                    <td><span className={`pill ${user.plan === 'Google Play Paid' ? 'green' : user.plan === 'Founder' ? 'gold' : 'gray'}`}>{user.plan}</span></td>
+                    <td><span className={`pill ${statusClass(user.status)}`}>{user.status}</span></td>
+                    <td>{user.appVersion} / {user.buildNumber}</td>
+                    <td>{user.city}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {!table.loading && !rows.length && <div className="empty">Tidak ada user pada halaman/filter ini.</div>}
+
+          <div className="toolbar" style={{ justifyContent: 'flex-end', marginTop: 12, marginBottom: 0 }}>
+            <button className="btn" disabled={table.loading || table.page <= 1} onClick={table.previous}>Previous</button>
+            <span style={{ fontSize: 9, color: '#7c8a82' }}>Page {table.page}</span>
+            <button className="btn" disabled={table.loading || !table.hasMore} onClick={table.next}>Next</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }
