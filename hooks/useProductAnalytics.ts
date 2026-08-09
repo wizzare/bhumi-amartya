@@ -21,7 +21,6 @@ type AnalyticsCache = {
   days: number;
 };
 
-const CACHE_TTL_MS = 30 * 60 * 1000;
 const MAX_ANALYTICS_DOCS = 1000;
 const cacheByDays = new Map<number, AnalyticsCache>();
 const requestByDays = new Map<number, Promise<AnalyticsCache>>();
@@ -68,7 +67,7 @@ async function fetchAnalytics(days: number): Promise<AnalyticsCache> {
 
 async function getAnalytics(days: number, force = false) {
   const cached = cacheByDays.get(days);
-  if (!force && cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached;
+  if (!force && cached) return cached;
   const inflight = requestByDays.get(days);
   if (!force && inflight) return inflight;
 
