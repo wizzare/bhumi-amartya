@@ -17,6 +17,10 @@ type CachedPage = {
 let pageCache: CachedPage[] = [];
 let cacheStartedAt = 0;
 
+function canonicalUid(docId: string, raw: Record<string, any>) {
+  return String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || docId).trim() || docId;
+}
+
 function identityFor(docId: string, raw: Record<string, any>) {
   const authId = String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || '').trim();
   if (authId) return `uid:${authId}`;
@@ -88,7 +92,7 @@ export function useUserTableData() {
         if (!isIncludedRealUser(raw)) return;
         const identity = identityFor(doc.id, raw);
         if (seen.has(identity) || unique.has(identity)) return;
-        unique.set(identity, normalizeUser(doc.id, raw));
+        unique.set(identity, normalizeUser(canonicalUid(doc.id, raw), raw));
       });
 
       const nextPage: CachedPage = {
