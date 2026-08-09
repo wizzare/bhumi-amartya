@@ -26,6 +26,10 @@ type FounderCache = {
 let sharedCache: FounderCache | null = null;
 let sharedRequest: Promise<FounderCache> | null = null;
 
+export function peekFounderDataCache(): FounderCache | null {
+  return sharedCache;
+}
+
 function dateKey(offsetDays = 0) {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
