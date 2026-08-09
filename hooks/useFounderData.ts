@@ -40,7 +40,7 @@ export function useFounderData() {
         .map(({ uid, raw }) => normalizeUser(uid, raw));
       const allowedUids = new Set(realUsers.map((u) => u.uid));
 
-      const start = dateKey(-30);
+      const start = dateKey(-90);
       const end = dateKey(0);
       const activitySnap = await getDocs(query(collection(db, 'user_activity'), where('date', '>=', start), where('date', '<=', end)));
       const activity = activitySnap.docs.map((d) => {
@@ -69,8 +69,6 @@ export function useFounderData() {
   }, []);
 
   useEffect(() => { void refresh(); }, [refresh]);
-
   const byUid = useMemo(() => new Map(users.map((u) => [u.uid, u])), [users]);
-
   return { users, activities, byUid, loading, error, lastRefresh, refresh };
 }
