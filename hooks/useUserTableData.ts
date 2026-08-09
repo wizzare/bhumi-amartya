@@ -67,6 +67,24 @@ function dedupeRows(rows: NormalizedUser[]) {
   return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
 }
 
+function founderCachedPage(targetPage: number): CachedPage | null {
+  const founderCache = peekFounderDataCache();
+  if (!founderCache) return null;
+
+  const sorted = [...founderCache.users].sort((a, b) => {
+    const loginDelta = b.lastLoginAt - a.lastLoginAt;
+    if (loginDelta) return loginDelta;
+    return b.lastSeenAt - a.lastSeenAt;
+  });
+  const start = Math.max(0, targetPage - 1) * PAGE_SIZE;
+  const rows = sorted.slice(start, start + PAGE_SIZE);
+  return {
+    rows,
+    lastDoc: null,
+    hasMore: start + PAGE_SIZE < sorted.length,
+  };
+}
+
 async function prefixQuery(field: string, prefix: string) {
   const snap = await getDocs(query(
     collection(db, 'users'),
@@ -151,10 +169,11 @@ async function getSearch(term: string) {
 }
 
 export function useUserTableData() {
+  const founderPageOne = founderCachedPage(1);
   const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<NormalizedUser[]>(pageCache[0]?.rows || []);
-  const [hasMore, setHasMore] = useState(pageCache[0]?.hasMore || false);
-  const [loading, setLoading] = useState(!pageCache[0]);
+  const [rows, setRows] = useState<NormalizedUser[]>(founderPageOne?.rows || pageCache[0]?.rows || []);
+  const [hasMore, setHasMore] = useState(founderPageOne?.hasMore || pageCache[0]?.hasMore || false);
+  const [loading, setLoading] = useState(!founderPageOne && !pageCache[0]);
   const [error, setError] = useState('');
   const [readsThisPage, setReadsThisPage] = useState(0);
   const [searchMode, setSearchMode] = useState(false);
@@ -167,6 +186,20 @@ export function useUserTableData() {
 
     try {
       if (force) pageCache = [];
+
+      if (!force) {
+        const shared = founderCachedPage(targetPage);
+        if (shared) {
+          setRows(shared.rows);
+          setHasMore(shared.hasMore);
+          setPage(targetPage);
+          setReadsThisPage(0);
+          setSearchMode(false);
+          setSearchTerm('');
+          setSearchSource('founder-cache');
+          return;
+        }
+      }
 
       const pageIndex = Math.max(0, targetPage - 1);
       const cached = pageCache[pageIndex];
@@ -221,7 +254,7 @@ export function useUserTableData() {
       setReadsThisPage(snap.docs.length);
       setSearchMode(false);
       setSearchTerm('');
-      setSearchSource('');
+      setSearchSource('firestore');
     } catch (e: any) {
       setError(e?.message || 'Gagal membaca halaman user.');
     } finally {
@@ -254,11 +287,21 @@ export function useUserTableData() {
   }, []);
 
   const clearSearch = useCallback(() => {
-    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
     setSearchMode(false);
     setSearchTerm('');
-    setSearchSource('');
     setError('');
+
+    const shared = founderCachedPage(page);
+    if (shared) {
+      setRows(shared.rows);
+      setHasMore(shared.hasMore);
+      setReadsThisPage(0);
+      setSearchSource('founder-cache');
+      return;
+    }
+
+    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
+    setSearchSource('');
     if (cached) {
       setRows(cached.rows);
       setHasMore(cached.hasMore);
@@ -268,7 +311,18 @@ export function useUserTableData() {
     void loadPage(1);
   }, [loadPage, page]);
 
-  useEffect(() => { if (!pageCache[0]) void loadPage(1); }, [loadPage]);
+  useEffect(() => {
+    const shared = founderCachedPage(1);
+    if (shared) {
+      setRows(shared.rows);
+      setHasMore(shared.hasMore);
+      setReadsThisPage(0);
+      setSearchSource('founder-cache');
+      setLoading(false);
+      return;
+    }
+    if (!pageCache[0]) void loadPage(1);
+  }, [loadPage]);
 
   const next = useCallback(() => {
     if (!loading && !searchMode && hasMore) void loadPage(page + 1);
