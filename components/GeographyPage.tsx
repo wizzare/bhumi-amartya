@@ -6,6 +6,8 @@ import { pct } from '@/lib/analytics';
 
 type Point = { name:string; country:string; value:number; lat:number; lng:number };
 
+type Props = { embedded?: boolean };
+
 const CITY_COORDS: Record<string,[number,number]> = {
   'jakarta':[-6.2088,106.8456], 'jakarta selatan':[-6.2615,106.8106], 'jakarta pusat':[-6.1862,106.8341],
   'jakarta barat':[-6.1674,106.7637], 'jakarta timur':[-6.2250,106.9004], 'jakarta utara':[-6.1384,106.8636],
@@ -73,7 +75,7 @@ function buildPoints(rows:{name:string;country:string;value:number}[]) {
   }).filter(Boolean) as Point[];
 }
 
-export function GeographyPage(){
+export function GeographyPage({ embedded = false }: Props){
   const { users, loading, error, refresh }=useFounderData();
 
   const countryRows=useMemo(()=>{
@@ -85,27 +87,34 @@ export function GeographyPage(){
   const birthCityRows=useMemo(()=>buildCityRows(users),[users]);
   const birthPoints=useMemo(()=>buildPoints(birthCityRows),[birthCityRows]);
   const missingBirthCity=users.filter((user)=>!validCity(user.birthCity)).length;
-  const unknownCountry=countryRows.find((row)=>row.name==='Unknown')?.value||0;
+  const knownBirthCity=Math.max(0,users.length-missingBirthCity);
+  const namedCountries=countryRows.filter((row)=>row.name!=='Unknown').length;
 
-  return <div className="page">
-    <div className="page-heading">
-      <div><h1>User Geography</h1><p>Geografi profil berdasarkan negara dan kota lahir. Google Play geography tetap berada di menu Google Play.</p></div>
-      <button className="btn" onClick={()=>void refresh()}>Refresh</button>
-    </div>
+  return <div className={embedded ? '' : 'page'}>
+    {embedded ? (
+      <div className="toolbar" style={{justifyContent:'space-between',marginBottom:12}}>
+        <span className="source-badge">GEOGRAPHY · SHARED CACHE</span>
+        <button className="btn" onClick={()=>void refresh()}>Refresh Geography</button>
+      </div>
+    ) : (
+      <div className="page-heading">
+        <div><h1>User Geography</h1><p>Geografi profil berdasarkan negara dan kota lahir.</p></div>
+        <button className="btn" onClick={()=>void refresh()}>Refresh</button>
+      </div>
+    )}
     {error&&<div className="error-box" style={{marginBottom:12}}>{error}</div>}
 
     <div className="kpi-grid">
-      <div className="kpi-card"><div className="kpi-label">Named Countries</div><div className="kpi-value">{loading?'—':countryRows.filter((row)=>row.name!=='Unknown').length}</div><div className="kpi-foot"><span>profile-derived</span></div></div>
+      <div className="kpi-card"><div className="kpi-label">Birth City Coverage</div><div className="kpi-value">{loading?'—':`${pct(knownBirthCity,users.length)}%`}</div><div className="kpi-foot"><span>{knownBirthCity} known • {missingBirthCity} missing</span></div></div>
+      <div className="kpi-card"><div className="kpi-label">Named Countries</div><div className="kpi-value">{loading?'—':namedCountries}</div><div className="kpi-foot"><span>profile-derived</span></div></div>
       <div className="kpi-card"><div className="kpi-label">Named Birth Cities</div><div className="kpi-value">{loading?'—':birthCityRows.length}</div><div className="kpi-foot"><span>valid city labels</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Missing Birth City</div><div className="kpi-value">{loading?'—':missingBirthCity}</div><div className="kpi-foot"><span>tidak masuk ranking</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Unknown Country</div><div className="kpi-value">{loading?'—':unknownCountry}</div><div className="kpi-foot"><span>{pct(unknownCountry,users.length)}%</span></div></div>
     </div>
 
     <div className="grid-2">
       <section className="panel"><div className="panel-head"><div><div className="panel-title">Birth City Map</div><span className="panel-subtitle">Unknown / No Data tidak diplot.</span></div><span className="source-badge warn">PROFILE</span></div><ProfileMap points={birthPoints}/></section>
-      <section className="panel"><div className="panel-head"><div><div className="panel-title">Country Distribution</div><span className="panel-subtitle">Unknown dipisahkan sebagai data-quality category.</span></div></div><div className="panel-body"><div className="stat-list">{countryRows.filter((row)=>row.name!=='Unknown').map((row)=><div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{width:`${pct(row.value,users.length)}%`}}/></div><span className="stat-value">{row.value}</span></div>)}</div></div></section>
+      <section className="panel"><div className="panel-head"><div><div className="panel-title">Country Distribution</div><span className="panel-subtitle">Hanya negara bernama yang masuk distribusi.</span></div></div><div className="panel-body"><div className="stat-list">{countryRows.filter((row)=>row.name!=='Unknown').map((row)=><div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{width:`${pct(row.value,users.length)}%`}}/></div><span className="stat-value">{row.value}</span></div>)}</div></div></section>
     </div>
 
-    <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile / Birth Cities</div><span className="panel-subtitle">Unknown / No Data tidak masuk tabel ranking.</span></div></div><div className="table-wrap"><table><thead><tr><th>City</th><th>Country</th><th>Users</th><th>% Known Birth City</th></tr></thead><tbody>{birthCityRows.slice(0,30).map((row)=><tr key={row.name}><td><b>{row.name}</b></td><td>{row.country||'—'}</td><td>{row.value}</td><td>{pct(row.value,Math.max(1,users.length-missingBirthCity))}%</td></tr>)}</tbody></table></div></section>
+    <section className="panel"><div className="panel-head"><div><div className="panel-title">Top Profile / Birth Cities</div><span className="panel-subtitle">Unknown / No Data tidak masuk tabel ranking.</span></div></div><div className="table-wrap"><table><thead><tr><th>City</th><th>Country</th><th>Users</th><th>% Known Birth City</th></tr></thead><tbody>{birthCityRows.slice(0,20).map((row)=><tr key={row.name}><td><b>{row.name}</b></td><td>{row.country||'—'}</td><td>{row.value}</td><td>{pct(row.value,Math.max(1,knownBirthCity))}%</td></tr>)}</tbody></table></div></section>
   </div>;
 }
