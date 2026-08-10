@@ -67,17 +67,6 @@ function dedupeRows(rows: NormalizedUser[]) {
   return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
 }
 
-function sharedRowsForPage(targetPage: number) {
-  const cache = peekFounderDataCache();
-  if (!cache) return null;
-  const sorted = [...cache.users].sort((a, b) => (b.lastLoginAt - a.lastLoginAt) || (b.lastSeenAt - a.lastSeenAt));
-  const start = Math.max(0, targetPage - 1) * PAGE_SIZE;
-  return {
-    rows: sorted.slice(start, start + PAGE_SIZE),
-    hasMore: start + PAGE_SIZE < sorted.length,
-  };
-}
-
 async function prefixQuery(field: string, prefix: string) {
   const snap = await getDocs(query(
     collection(db, 'users'),
@@ -179,20 +168,6 @@ export function useUserTableData() {
     try {
       if (force) pageCache = [];
 
-      if (!force) {
-        const shared = sharedRowsForPage(targetPage);
-        if (shared) {
-          setRows(shared.rows);
-          setHasMore(shared.hasMore);
-          setPage(targetPage);
-          setReadsThisPage(0);
-          setSearchMode(false);
-          setSearchTerm('');
-          setSearchSource('founder-cache');
-          return;
-        }
-      }
-
       const pageIndex = Math.max(0, targetPage - 1);
       const cached = pageCache[pageIndex];
       if (cached && !force) {
@@ -279,19 +254,11 @@ export function useUserTableData() {
   }, []);
 
   const clearSearch = useCallback(() => {
+    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
     setSearchMode(false);
     setSearchTerm('');
-    setError('');
-    const shared = sharedRowsForPage(page);
-    if (shared) {
-      setRows(shared.rows);
-      setHasMore(shared.hasMore);
-      setReadsThisPage(0);
-      setSearchSource('founder-cache');
-      return;
-    }
-    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
     setSearchSource('');
+    setError('');
     if (cached) {
       setRows(cached.rows);
       setHasMore(cached.hasMore);
@@ -301,18 +268,7 @@ export function useUserTableData() {
     void loadPage(1);
   }, [loadPage, page]);
 
-  useEffect(() => {
-    const shared = sharedRowsForPage(1);
-    if (shared) {
-      setRows(shared.rows);
-      setHasMore(shared.hasMore);
-      setReadsThisPage(0);
-      setSearchSource('founder-cache');
-      setLoading(false);
-      return;
-    }
-    if (!pageCache[0]) void loadPage(1);
-  }, [loadPage]);
+  useEffect(() => { if (!pageCache[0]) void loadPage(1); }, [loadPage]);
 
   const next = useCallback(() => {
     if (!loading && !searchMode && hasMore) void loadPage(page + 1);
