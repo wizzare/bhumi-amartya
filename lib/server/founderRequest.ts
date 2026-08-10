@@ -1,5 +1,4 @@
-import { FOUNDER_EMAIL } from '@/lib/firebase';
-
+const FOUNDER_EMAIL = 'wizzare@gmail.com';
 const FIREBASE_API_KEY = process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyBpggqO_lvH9m4nmYqvRl1r02tO9260z-A';
 
 type LookupResponse = {
@@ -23,7 +22,7 @@ export async function verifyFounderRequest(request: Request) {
     const data = await response.json() as LookupResponse;
     const user = data.users?.[0];
     const email = String(user?.email || '').trim().toLowerCase();
-    if (!email || email !== FOUNDER_EMAIL.toLowerCase()) {
+    if (!email || email !== FOUNDER_EMAIL) {
       return { ok: false as const, status: 403, reason: 'founder_only' };
     }
 
