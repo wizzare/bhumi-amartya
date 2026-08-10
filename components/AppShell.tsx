@@ -4,15 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Activity, BarChart3, CircleDollarSign, Globe2, Inbox, LayoutDashboard,
-  LogOut, Megaphone, Radio, Store, Users
+  LogOut, Megaphone, Store, Users
 } from 'lucide-react';
 import { founderLogout } from './AuthGate';
 
 const sections = [
   { label: 'OVERVIEW', items: [{ href: '/', text: 'Executive', icon: LayoutDashboard }] },
   { label: 'BHUMI INTERNAL', items: [
-    { href: '/users', text: 'Data User', icon: Users },
-    { href: '/login-activity', text: 'Login Activity', icon: Radio },
+    { href: '/users', text: 'Users', icon: Users },
     { href: '/analytics', text: 'Activation & Engagement', icon: BarChart3 },
     { href: '/retention', text: 'Retention', icon: Activity },
     { href: '/geography', text: 'User Geography', icon: Globe2 },
