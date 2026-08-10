@@ -1,5 +1,5 @@
-import { UserTablePage } from '@/components/UserTablePage';
+import { UsersPage } from '@/components/UsersPage';
 
 export default function Page(){
-  return <UserTablePage />;
+  return <UsersPage />;
 }
