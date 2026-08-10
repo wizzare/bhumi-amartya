@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { useFounderData } from '@/hooks/useFounderData';
+import { useFounderUsers } from '@/hooks/useFounderData';
 import { pct } from '@/lib/analytics';
 
 type Point = { name:string; country:string; value:number; lat:number; lng:number };
@@ -76,7 +76,7 @@ function buildPoints(rows:{name:string;country:string;value:number}[]) {
 }
 
 export function GeographyPage({ embedded = false }: Props){
-  const { users, loading, error, refresh }=useFounderData();
+  const { users, loading, error, refresh }=useFounderUsers();
 
   const countryRows=useMemo(()=>{
     const map=new Map<string,number>();
@@ -93,7 +93,7 @@ export function GeographyPage({ embedded = false }: Props){
   return <div className={embedded ? '' : 'page'}>
     {embedded ? (
       <div className="toolbar" style={{justifyContent:'space-between',marginBottom:12}}>
-        <span className="source-badge">GEOGRAPHY · SHARED CACHE</span>
+        <span className="source-badge">GEOGRAPHY · USER CACHE</span>
         <button className="btn" onClick={()=>void refresh()}>Refresh Geography</button>
       </div>
     ) : (
