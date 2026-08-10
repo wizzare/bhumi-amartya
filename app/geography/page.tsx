@@ -1,5 +1,5 @@
-import { GeographyPage } from '@/components/GeographyPage';
+import { redirect } from 'next/navigation';
 
 export default function Page(){
-  return <GeographyPage />;
+  redirect('/users');
 }
