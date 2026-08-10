@@ -10,8 +10,9 @@ const JOURNEY_EVENTS = new Set(['open_journey','practice_completed','daily_compl
 const DAILY_EVENTS = new Set(['practice_completed','daily_completion_reached']);
 
 type FunnelRow = { name: string; count: number; stepRate: number; baseRate: number };
+type Props = { embedded?: boolean };
 
-export function AnalyticsPage() {
+export function AnalyticsPage({ embedded = false }: Props) {
   const founder = useFounderData();
   const allowed = useMemo(() => new Set(founder.users.map((u) => u.uid)), [founder.users]);
   const analytics = useProductAnalytics(allowed, 90);
@@ -85,25 +86,25 @@ export function AnalyticsPage() {
 
   const total = founder.users.length;
   const firstLogin = funnel.find((row) => row.name === 'First Login')?.count || 0;
-  const dashboard = funnel.find((row) => row.name === 'Dashboard')?.count || 0;
-  const profile = funnel.find((row) => row.name === 'Profile')?.count || 0;
 
   return (
-    <div className="page">
-      <div className="page-heading">
-        <div>
-          <h1>Activation & Engagement</h1>
-          <p>Fokus pada seberapa jauh user bergerak dari first login sampai memakai fitur inti.</p>
+    <div className={embedded ? '' : 'page'}>
+      {embedded ? (
+        <div className="toolbar" style={{justifyContent:'space-between',marginBottom:12}}>
+          <span className="source-badge">ACTIVATION · SHARED CACHE</span>
+          <button className="btn" onClick={() => { void founder.refresh(); void analytics.refresh(); }}>Refresh Activation</button>
         </div>
-        <button className="btn" onClick={() => { void founder.refresh(); void analytics.refresh(); }}>Refresh</button>
-      </div>
+      ) : (
+        <div className="page-heading">
+          <div><h1>Activation & Engagement</h1><p>Seberapa jauh user bergerak dari first login sampai memakai fitur inti.</p></div>
+          <button className="btn" onClick={() => { void founder.refresh(); void analytics.refresh(); }}>Refresh</button>
+        </div>
+      )}
 
       {(founder.error || analytics.error) && <div className="error-box" style={{ marginBottom: 12 }}>{founder.error || analytics.error}</div>}
 
       <div className="kpi-grid">
         <div className="kpi-card"><div className="kpi-label">First Login Rate</div><div className="kpi-value">{pct(firstLogin, total)}%</div><div className="kpi-foot"><span>{firstLogin} user</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Dashboard Activation</div><div className="kpi-value">{pct(dashboard, total)}%</div><div className="kpi-foot"><span>{dashboard} user</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Profile Reach</div><div className="kpi-value">{pct(profile, total)}%</div><div className="kpi-foot"><span>{profile} user</span></div></div>
         <div className="kpi-card"><div className="kpi-label">Daily Practice Reach</div><div className="kpi-value">{pct(signals.daily.size, total)}%</div><div className="kpi-foot"><span>{signals.daily.size} user</span></div></div>
       </div>
 
@@ -114,7 +115,7 @@ export function AnalyticsPage() {
         </section>
 
         <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Feature Reach</div><span className="panel-subtitle">Historical reach pada telemetry yang tersedia.</span></div></div>
+          <div className="panel-head"><div><div className="panel-title">Feature Reach</div><span className="panel-subtitle">Historical reach pada telemetry yang tersedia; tidak harus mengikuti funnel.</span></div></div>
           <div className="panel-body"><div className="stat-list">{featureReach.map((row) => <div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{ width: `${Math.min(100, pct(row.count, total))}%` }} /></div><span className="stat-value">{row.count}</span></div>)}</div></div>
         </section>
       </div>
