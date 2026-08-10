@@ -1,4 +1,5 @@
 import { createSign } from 'node:crypto';
+import { headers } from 'next/headers';
 
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const STS_URL = 'https://sts.googleapis.com/v1/token';
@@ -30,6 +31,18 @@ function wifCredentials() {
   const providerId = String(process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID || '').trim();
   if (!projectNumber || !serviceAccountEmail || !poolId || !providerId) return null;
   return { projectNumber, serviceAccountEmail, poolId, providerId };
+}
+
+async function resolveOidcToken(explicitToken = '') {
+  if (explicitToken) return explicitToken;
+  const envToken = String(process.env.VERCEL_OIDC_TOKEN || '').trim();
+  if (envToken) return envToken;
+  try {
+    const requestHeaders = await headers();
+    return String(requestHeaders.get('x-vercel-oidc-token') || '').trim();
+  } catch {
+    return '';
+  }
 }
 
 export function googlePlayCredentialStatus() {
@@ -109,7 +122,7 @@ async function getWifAccessToken(oidcToken: string) {
     throw new Error(`GOOGLE_STS_FAILED:${stsResponse.status}:${detail.slice(0, 160)}`);
   }
 
-  const stsData = await stsResponse.json() as { access_token?: string; expires_in?: number };
+  const stsData = await stsResponse.json() as { access_token?: string };
   if (!stsData.access_token) throw new Error('GOOGLE_STS_TOKEN_MISSING');
 
   const impersonationResponse = await fetch(
@@ -147,7 +160,7 @@ export async function getGoogleAccessToken(oidcToken = '') {
   if (!wif && !key) throw new Error('GOOGLE_PLAY_AUTH_MISSING');
 
   const next = wif
-    ? await getWifAccessToken(oidcToken)
+    ? await getWifAccessToken(await resolveOidcToken(oidcToken))
     : await getKeyAccessToken();
 
   tokenCache = next;
