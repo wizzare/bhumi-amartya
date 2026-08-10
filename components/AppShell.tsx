@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Activity, BarChart3, CircleDollarSign, Globe2, HeartPulse, Inbox, LayoutDashboard,
-  LogOut, Megaphone, Radio, ShieldCheck, Store, Users
+  Activity, BarChart3, CircleDollarSign, Globe2, Inbox, LayoutDashboard,
+  LogOut, Megaphone, Radio, Store, Users
 } from 'lucide-react';
 import { founderLogout } from './AuthGate';
 
@@ -25,9 +25,6 @@ const sections = [
   { label: 'GOOGLE PLAY', items: [
     { href: '/google-play', text: 'Play Overview', icon: Store },
     { href: '/google-play/acquisition', text: 'Acquisition', icon: BarChart3 },
-    { href: '/google-play/monetization', text: 'Monetization', icon: CircleDollarSign },
-    { href: '/google-play/vitals', text: 'Android Vitals', icon: HeartPulse },
-    { href: '/google-play/releases', text: 'Releases', icon: ShieldCheck },
   ]},
 ];
 
