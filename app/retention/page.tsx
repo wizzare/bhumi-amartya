@@ -1,5 +1,5 @@
-import { RetentionPage } from '@/components/RetentionPage';
+import { redirect } from 'next/navigation';
 
 export default function Page(){
-  return <RetentionPage />;
+  redirect('/analytics');
 }
