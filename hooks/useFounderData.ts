@@ -17,17 +17,35 @@ export type ActivityDoc = {
   buildNumber?: string;
 };
 
+type UsersCache = {
+  users: NormalizedUser[];
+  fetchedAt: number;
+};
+
+type ActivityCache = {
+  activities: ActivityDoc[];
+  fetchedAt: number;
+  usersFetchedAt: number;
+};
+
 type FounderCache = {
   users: NormalizedUser[];
   activities: ActivityDoc[];
   fetchedAt: number;
 };
 
-let sharedCache: FounderCache | null = null;
-let sharedRequest: Promise<FounderCache> | null = null;
+let sharedUsersCache: UsersCache | null = null;
+let sharedUsersRequest: Promise<UsersCache> | null = null;
+let sharedActivityCache: ActivityCache | null = null;
+let sharedActivityRequest: Promise<ActivityCache> | null = null;
 
 export function peekFounderDataCache(): FounderCache | null {
-  return sharedCache;
+  if (!sharedUsersCache) return null;
+  return {
+    users: sharedUsersCache.users,
+    activities: sharedActivityCache?.activities || [],
+    fetchedAt: Math.max(sharedUsersCache.fetchedAt, sharedActivityCache?.fetchedAt || 0),
+  };
 }
 
 function dateKey(offsetDays = 0) {
@@ -52,7 +70,7 @@ function userFreshness(user: NormalizedUser) {
   return Math.max(user.lastSeenAt, user.lastLoginAt, user.registeredAt);
 }
 
-async function fetchFounderData(): Promise<FounderCache> {
+async function fetchFounderUsers(): Promise<UsersCache> {
   const usersSnap = await getDocs(collection(db, 'users'));
   const uniqueUsers = new Map<string, NormalizedUser>();
 
@@ -70,8 +88,23 @@ async function fetchFounderData(): Promise<FounderCache> {
     }
   });
 
-  const users = Array.from(uniqueUsers.values());
-  const allowedUids = new Set(users.map((user) => user.uid));
+  return { users: Array.from(uniqueUsers.values()), fetchedAt: Date.now() };
+}
+
+async function getFounderUsers(force = false) {
+  if (!force && sharedUsersCache) return sharedUsersCache;
+  if (!force && sharedUsersRequest) return sharedUsersRequest;
+
+  sharedUsersRequest = fetchFounderUsers();
+  try {
+    sharedUsersCache = await sharedUsersRequest;
+    return sharedUsersCache;
+  } finally {
+    sharedUsersRequest = null;
+  }
+}
+
+async function fetchFounderActivities(allowedUids: Set<string>, usersFetchedAt: number): Promise<ActivityCache> {
   const start = dateKey(-90);
   const end = dateKey(0);
   const activitySnap = await getDocs(query(collection(db, 'user_activity'), where('date', '>=', start), where('date', '<=', end)));
@@ -115,37 +148,80 @@ async function fetchFounderData(): Promise<FounderCache> {
     });
   });
 
-  return { users, activities: Array.from(uniqueActivity.values()), fetchedAt: Date.now() };
+  return { activities: Array.from(uniqueActivity.values()), fetchedAt: Date.now(), usersFetchedAt };
 }
 
-async function getFounderData(force = false) {
-  if (!force && sharedCache) return sharedCache;
-  if (!force && sharedRequest) return sharedRequest;
+async function getFounderActivities(users: UsersCache, force = false) {
+  if (!force && sharedActivityCache && sharedActivityCache.usersFetchedAt === users.fetchedAt) return sharedActivityCache;
+  if (!force && sharedActivityRequest) return sharedActivityRequest;
 
-  sharedRequest = fetchFounderData();
+  const allowedUids = new Set(users.users.map((user) => user.uid));
+  sharedActivityRequest = fetchFounderActivities(allowedUids, users.fetchedAt);
   try {
-    sharedCache = await sharedRequest;
-    return sharedCache;
+    sharedActivityCache = await sharedActivityRequest;
+    return sharedActivityCache;
   } finally {
-    sharedRequest = null;
+    sharedActivityRequest = null;
   }
 }
 
-export function useFounderData() {
-  const [users, setUsers] = useState<NormalizedUser[]>(sharedCache?.users || []);
-  const [activities, setActivities] = useState<ActivityDoc[]>(sharedCache?.activities || []);
-  const [loading, setLoading] = useState(!sharedCache);
+export function useFounderUsers() {
+  const [users, setUsers] = useState<NormalizedUser[]>(sharedUsersCache?.users || []);
+  const [loading, setLoading] = useState(!sharedUsersCache);
   const [error, setError] = useState('');
-  const [lastRefresh, setLastRefresh] = useState<number>(sharedCache?.fetchedAt || 0);
+  const [lastRefresh, setLastRefresh] = useState<number>(sharedUsersCache?.fetchedAt || 0);
 
   const refresh = useCallback(async (force = true) => {
     setLoading(true);
     setError('');
     try {
-      const data = await getFounderData(force);
+      const data = await getFounderUsers(force);
       setUsers(data.users);
-      setActivities(data.activities);
       setLastRefresh(data.fetchedAt);
+    } catch (e: any) {
+      setError(e?.message || 'Gagal membaca data user Founder.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(!sharedUsersCache);
+      setError('');
+      try {
+        const data = await getFounderUsers(false);
+        setUsers(data.users);
+        setLastRefresh(data.fetchedAt);
+      } catch (e: any) {
+        setError(e?.message || 'Gagal membaca data user Founder.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const byUid = useMemo(() => new Map(users.map((user) => [user.uid, user])), [users]);
+  return { users, byUid, loading, error, lastRefresh, refresh };
+}
+
+export function useFounderData() {
+  const initial = peekFounderDataCache();
+  const [users, setUsers] = useState<NormalizedUser[]>(initial?.users || []);
+  const [activities, setActivities] = useState<ActivityDoc[]>(initial?.activities || []);
+  const [loading, setLoading] = useState(!(sharedUsersCache && sharedActivityCache));
+  const [error, setError] = useState('');
+  const [lastRefresh, setLastRefresh] = useState<number>(initial?.fetchedAt || 0);
+
+  const refresh = useCallback(async (force = true) => {
+    setLoading(true);
+    setError('');
+    try {
+      const userData = await getFounderUsers(force);
+      const activityData = await getFounderActivities(userData, force);
+      setUsers(userData.users);
+      setActivities(activityData.activities);
+      setLastRefresh(Math.max(userData.fetchedAt, activityData.fetchedAt));
     } catch (e: any) {
       setError(e?.message || 'Gagal membaca data Founder.');
     } finally {
@@ -155,13 +231,14 @@ export function useFounderData() {
 
   useEffect(() => {
     void (async () => {
-      setLoading(!sharedCache);
+      setLoading(!(sharedUsersCache && sharedActivityCache));
       setError('');
       try {
-        const data = await getFounderData(false);
-        setUsers(data.users);
-        setActivities(data.activities);
-        setLastRefresh(data.fetchedAt);
+        const userData = await getFounderUsers(false);
+        const activityData = await getFounderActivities(userData, false);
+        setUsers(userData.users);
+        setActivities(activityData.activities);
+        setLastRefresh(Math.max(userData.fetchedAt, activityData.fetchedAt));
       } catch (e: any) {
         setError(e?.message || 'Gagal membaca data Founder.');
       } finally {
