@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { NormalizedUser, asTime, formatDateTime } from '@/lib/analytics';
 import { useUserBlueprintDetail } from '@/hooks/useUserBlueprintDetail';
+import { sendFounderMessage } from '@/lib/communicationsWrite';
 
 type Props = {
   user: NormalizedUser | null;
@@ -124,6 +126,11 @@ function BlueprintLine({label,value}:{label:string;value:string}){
 
 export function UserDetailDrawer({user,onClose}:Props) {
   const blueprint = useUserBlueprintDetail(user?.uid || null);
+  const [messageOpen,setMessageOpen]=useState(false);
+  const [messageTitle,setMessageTitle]=useState('');
+  const [messageContent,setMessageContent]=useState('');
+  const [messageState,setMessageState]=useState('');
+  const [sendingMessage,setSendingMessage]=useState(false);
   if (!user) return null;
 
   const raw=user.raw||{};
@@ -134,6 +141,24 @@ export function UserDetailDrawer({user,onClose}:Props) {
   const hd=humanDesignValues(blueprint.data);
   const natal=natalValues(blueprint.data);
   const lifePath=lifePathValue(blueprint.data);
+
+  const sendPersonal=async()=>{
+    if(!messageTitle.trim()||!messageContent.trim()||sendingMessage) return;
+    const label=user.email||user.name||user.uid;
+    if(!window.confirm(`Kirim pesan personal ke ${label}?`)) return;
+    setSendingMessage(true);
+    setMessageState('');
+    try{
+      await sendFounderMessage({targetUid:user.uid,title:messageTitle,content:messageContent});
+      setMessageTitle('');
+      setMessageContent('');
+      setMessageState('Pesan personal terkirim ke Inbox user. Tidak ada refetch Firestore otomatis.');
+    }catch(error:any){
+      setMessageState(error?.message||'Gagal mengirim pesan personal.');
+    }finally{
+      setSendingMessage(false);
+    }
+  };
 
   return <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(21,32,26,.36)',display:'flex',justifyContent:'flex-end'}} onMouseDown={(event)=>{if(event.target===event.currentTarget)onClose();}}>
     <aside style={{width:'min(760px,96vw)',height:'100vh',background:'#fff',boxShadow:'-12px 0 30px rgba(21,32,26,.16)',overflowY:'auto'}}>
@@ -157,6 +182,20 @@ export function UserDetailDrawer({user,onClose}:Props) {
           <div className="panel-body"><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:8}}>
             <Field label="Akses Saat Ini" value={accessLabel(user)}/><Field label="Subscription" value={user.subscriptionStatus}/><Field label="Access Until" value={user.accessUntil?formatDateTime(user.accessUntil):user.plan==='Founder'?'Selamanya':'—'}/><Field label="Tanggal Daftar" value={formatDateTime(user.registeredAt)}/><Field label="First Login" value={formatDateTime(user.firstLoginAt)}/><Field label="Last Login" value={formatDateTime(user.lastLoginAt)}/><Field label="Hari Login" value={loginDays}/><Field label="Session Count" value={user.sessionCount}/><Field label="App / Build" value={`${user.appVersion} / ${user.buildNumber}`}/><Field label="Activity Status" value={user.status}/>
           </div></div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <div><div className="panel-title">Pesan Personal</div><span className="panel-subtitle">Langsung ke Inbox user ini.</span></div>
+            <button className="btn" onClick={()=>{setMessageOpen((value)=>!value);setMessageState('');}}>{messageOpen?'Tutup':'Tulis Pesan'}</button>
+          </div>
+          {messageOpen&&<div className="panel-body">
+            <div className="notice" style={{marginBottom:10}}><b>Penerima:</b> {user.name} · {user.email||user.uid}</div>
+            <input className="search" style={{maxWidth:'none',width:'100%',marginBottom:10}} value={messageTitle} onChange={(event)=>setMessageTitle(event.target.value)} placeholder="Judul pesan" maxLength={160}/>
+            <textarea value={messageContent} onChange={(event)=>setMessageContent(event.target.value)} placeholder="Isi pesan personal…" maxLength={5000} style={{width:'100%',minHeight:120,border:'1px solid var(--line)',borderRadius:8,padding:11,fontSize:11,resize:'vertical'}}/>
+            {messageState&&<div className="notice" style={{marginTop:9}}>{messageState}</div>}
+            <div className="toolbar" style={{justifyContent:'flex-end',marginTop:9,marginBottom:0}}><span style={{fontSize:9,color:'#87948c'}}>{messageContent.length}/5000</span><button className="btn primary" disabled={!messageTitle.trim()||!messageContent.trim()||sendingMessage} onClick={()=>void sendPersonal()}>{sendingMessage?'Mengirim…':'Kirim Pesan'}</button></div>
+          </div>}
         </section>
 
         <section className="panel">
