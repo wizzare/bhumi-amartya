@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { useFounderData } from '@/hooks/useFounderData';
+import { useFounderUsers } from '@/hooks/useFounderData';
 import { pct } from '@/lib/analytics';
 
 const order = [
@@ -22,7 +22,7 @@ const colors=['#2f7555','#5f6fd3','#c4a15d','#7e62b3','#78938a','#bd5b5b','#9f7f
 type Props = { embedded?: boolean };
 
 export function PremiumPage({ embedded = false }: Props){
-  const {users,loading,error,refresh}=useFounderData();
+  const {users,loading,error,refresh}=useFounderUsers();
   const counts=useMemo(()=>{
     const map=new Map<string,number>();
     order.forEach((name)=>map.set(name,0));
@@ -42,7 +42,7 @@ export function PremiumPage({ embedded = false }: Props){
   return <div className={embedded ? '' : 'page'}>
     {embedded ? (
       <div className="toolbar" style={{justifyContent:'space-between',marginBottom:12}}>
-        <span className="source-badge">ACCESS · SHARED CACHE</span>
+        <span className="source-badge">ACCESS · USER CACHE</span>
         <button className="btn" onClick={()=>void refresh()}>Refresh Access</button>
       </div>
     ) : (
