@@ -35,8 +35,9 @@ type CohortRow = {
   d7: RetentionValue;
   d30: RetentionValue;
 };
+type Props = { embedded?: boolean };
 
-export function RetentionPage() {
+export function RetentionPage({ embedded = false }: Props) {
   const { users, activities, loading, error, refresh } = useFounderData();
 
   const activityByUid = useMemo(() => {
@@ -93,18 +94,19 @@ export function RetentionPage() {
       }));
   }, [users, activityByUid, coverage.minDate, coverage.maxDate]);
 
-  const returning7 = useMemo(() => users.filter((user) => user.lastSeenAt >= Date.now() - 7 * 86400000).length, [users]);
-  const returning30 = useMemo(() => users.filter((user) => user.lastSeenAt >= Date.now() - 30 * 86400000).length, [users]);
-
   return (
-    <div className="page">
-      <div className="page-heading">
-        <div>
-          <h1>Retention</h1>
-          <p>D1, D7, D30 per UID dan registration cohort. N/A berarti telemetry belum mencakup tanggal target.</p>
+    <div className={embedded ? '' : 'page'}>
+      {embedded ? (
+        <div className="toolbar" style={{justifyContent:'space-between',marginBottom:12}}>
+          <span className="source-badge">RETENTION · 90D CACHE</span>
+          <button className="btn" onClick={() => void refresh()}>Refresh Retention</button>
         </div>
-        <button className="btn" onClick={() => void refresh()}>Refresh</button>
-      </div>
+      ) : (
+        <div className="page-heading">
+          <div><h1>Retention</h1><p>D1, D7, D30 per UID dan registration cohort.</p></div>
+          <button className="btn" onClick={() => void refresh()}>Refresh</button>
+        </div>
+      )}
 
       {error && <div className="error-box" style={{ marginBottom: 12 }}>{error}</div>}
 
@@ -116,13 +118,11 @@ export function RetentionPage() {
             <div className="kpi-foot"><span>{item.retained}/{item.eligible} eligible</span></div>
           </div>
         ))}
-        <div className="kpi-card"><div className="kpi-label">Returning ≤7D</div><div className="kpi-value">{returning7}</div><div className="kpi-foot"><span>{pct(returning7, users.length)}% user base</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Returning ≤30D</div><div className="kpi-value">{returning30}</div><div className="kpi-foot"><span>{pct(returning30, users.length)}% user base</span></div></div>
       </div>
 
       <section className="panel">
         <div className="panel-head">
-          <div><div className="panel-title">Retention by Registration Week</div><span className="panel-subtitle">Satu view saja: rate sekaligus retained/eligible base.</span></div>
+          <div><div className="panel-title">Retention by Registration Week</div><span className="panel-subtitle">Rate sekaligus retained/eligible base. N/A berarti telemetry belum mencakup tanggal target.</span></div>
           <span className="source-badge">90D ACTIVITY</span>
         </div>
         <div className="panel-body">
