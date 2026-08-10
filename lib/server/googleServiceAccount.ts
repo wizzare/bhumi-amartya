@@ -10,6 +10,7 @@ const DEFAULT_WIF = {
   poolId: 'vercel',
   providerId: 'vercel-bhumi',
 };
+const DEFAULT_REPORT_BUCKET = 'pubsite_prod_4753825950500775050';
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/playdeveloperreporting',
   'https://www.googleapis.com/auth/devstorage.read_only',
@@ -57,7 +58,7 @@ export function googlePlayCredentialStatus() {
   return {
     serviceAccount: Boolean(key || wif),
     authMode: wif ? 'wif' as const : key ? 'key' as const : 'missing' as const,
-    reportBucket: Boolean(String(process.env.GOOGLE_PLAY_REPORT_BUCKET || '').trim()),
+    reportBucket: Boolean(String(process.env.GOOGLE_PLAY_REPORT_BUCKET || DEFAULT_REPORT_BUCKET).trim()),
   };
 }
 
