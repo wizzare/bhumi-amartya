@@ -83,46 +83,28 @@ export function AnalyticsPage() {
     { name: 'Daily Practice', count: signals.daily.size },
   ], [signals]);
 
-  const topEvents = useMemo(() => {
-    const aggregate = new Map<string, { events: number; users: Set<string> }>();
-    analytics.events.forEach((event) => {
-      if (!event.eventName) return;
-      const row = aggregate.get(event.eventName) || { events: 0, users: new Set<string>() };
-      row.events += 1;
-      row.users.add(event.uid);
-      aggregate.set(event.eventName, row);
-    });
-    return Array.from(aggregate.entries())
-      .map(([name, row]) => ({ name, events: row.events, users: row.users.size }))
-      .sort((a, b) => b.users - a.users || b.events - a.events)
-      .slice(0, 15);
-  }, [analytics.events]);
-
   const total = founder.users.length;
   const firstLogin = funnel.find((row) => row.name === 'First Login')?.count || 0;
   const dashboard = funnel.find((row) => row.name === 'Dashboard')?.count || 0;
+  const profile = funnel.find((row) => row.name === 'Profile')?.count || 0;
 
   return (
     <div className="page">
       <div className="page-heading">
         <div>
           <h1>Activation & Engagement</h1>
-          <p>Funnel dan feature reach dari data internal Bhumi.</p>
+          <p>Fokus pada seberapa jauh user bergerak dari first login sampai memakai fitur inti.</p>
         </div>
-        <div className="toolbar" style={{ marginBottom: 0 }}>
-          <span className="source-badge">LIVE INTERNAL</span>
-          <button className="btn" onClick={() => { void founder.refresh(); void analytics.refresh(); }}>Refresh</button>
-        </div>
+        <button className="btn" onClick={() => { void founder.refresh(); void analytics.refresh(); }}>Refresh</button>
       </div>
 
       {(founder.error || analytics.error) && <div className="error-box" style={{ marginBottom: 12 }}>{founder.error || analytics.error}</div>}
 
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-label">Real User Base</div><div className="kpi-value">{total}</div><div className="kpi-foot"><span>deleted/test excluded</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">First Login Rate</div><div className="kpi-value">{pct(firstLogin, total)}%</div><div className="kpi-foot"><span>{firstLogin} users</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Dashboard Activation</div><div className="kpi-value">{pct(dashboard, total)}%</div><div className="kpi-foot"><span>{dashboard} users</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Daily Practice Reach</div><div className="kpi-value">{pct(signals.daily.size, total)}%</div><div className="kpi-foot"><span>{signals.daily.size} users</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">90D Analytics Events</div><div className="kpi-value">{analytics.events.length}</div><div className="kpi-foot"><span>filtered UIDs only</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">First Login Rate</div><div className="kpi-value">{pct(firstLogin, total)}%</div><div className="kpi-foot"><span>{firstLogin} user</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Dashboard Activation</div><div className="kpi-value">{pct(dashboard, total)}%</div><div className="kpi-foot"><span>{dashboard} user</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Profile Reach</div><div className="kpi-value">{pct(profile, total)}%</div><div className="kpi-foot"><span>{profile} user</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Daily Practice Reach</div><div className="kpi-value">{pct(signals.daily.size, total)}%</div><div className="kpi-foot"><span>{signals.daily.size} user</span></div></div>
       </div>
 
       <div className="grid-2">
@@ -136,11 +118,6 @@ export function AnalyticsPage() {
           <div className="panel-body"><div className="stat-list">{featureReach.map((row) => <div className="stat-row" key={row.name}><span className="stat-name">{row.name}</span><div className="progress"><span style={{ width: `${Math.min(100, pct(row.count, total))}%` }} /></div><span className="stat-value">{row.count}</span></div>)}</div></div>
         </section>
       </div>
-
-      <section className="panel">
-        <div className="panel-head"><div><div className="panel-title">Top Analytics Events</div><span className="panel-subtitle">Unique user reach dan volume event.</span></div><span className="source-badge">90D</span></div>
-        <div className="table-wrap"><table><thead><tr><th>Event</th><th>Unique Users</th><th>Events</th><th>% User Base</th></tr></thead><tbody>{topEvents.map((event) => <tr key={event.name}><td><b>{event.name}</b></td><td>{event.users}</td><td>{event.events}</td><td>{pct(event.users, total)}%</td></tr>)}</tbody></table></div>
-      </section>
     </div>
   );
 }
