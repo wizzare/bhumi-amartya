@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useFounderData } from '@/hooks/useFounderData';
+import { useFounderUsers } from '@/hooks/useFounderData';
 import { useCommunications } from '@/hooks/useCommunications';
 import { formatDateTime, formatRelative } from '@/lib/analytics';
 import { sendFounderMessage } from '@/lib/communicationsWrite';
 
 export function InboxPage() {
-  const founder = useFounderData();
+  const founder = useFounderUsers();
   const allowed = useMemo(() => new Set(founder.users.map((user) => user.uid)), [founder.users]);
   const comm = useCommunications(allowed);
   const [selectedId, setSelectedId] = useState('');
@@ -51,7 +51,6 @@ export function InboxPage() {
   }, [founder.users, recipientQuery, recipientUid]);
 
   const last24Hours = comm.messages.filter((message) => message.createdAt >= Date.now() - 86400000).length;
-  const threadCount = new Set(comm.messages.map((message) => message.threadId || message.parentMessageId || message.id)).size;
   const uniqueUsers = new Set(comm.messages.map((message) => message.uid)).size;
   const unread = comm.messages.filter((message) => !message.isRead).length;
   const pageError = founder.error || comm.error;
@@ -135,7 +134,7 @@ export function InboxPage() {
       {composeOpen && (
         <section className="panel" style={{ marginBottom: 14 }}>
           <div className="panel-head">
-            <div><div className="panel-title">Kirim Pesan Personal</div><span className="panel-subtitle">Satu user saja. Recipient dipilih dari shared user cache.</span></div>
+            <div><div className="panel-title">Kirim Pesan Personal</div><span className="panel-subtitle">Satu user saja. Recipient dipilih dari user cache.</span></div>
             <span className="source-badge">1 WRITE</span>
           </div>
           <div className="panel-body">
@@ -184,11 +183,9 @@ export function InboxPage() {
       )}
 
       <div className="kpi-grid">
-        <div className="kpi-card"><div className="kpi-label">Messages</div><div className="kpi-value">{comm.loading ? '—' : comm.messages.length}</div><div className="kpi-foot"><span>real users only</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Last 24 Hours</div><div className="kpi-value">{last24Hours}</div><div className="kpi-foot"><span>incoming activity</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">User Threads</div><div className="kpi-value">{threadCount}</div><div className="kpi-foot"><span>thread grouping</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Unique Users</div><div className="kpi-value">{uniqueUsers}</div><div className="kpi-foot"><span>senders</span></div></div>
-        <div className="kpi-card"><div className="kpi-label">Unread Flag</div><div className="kpi-value">{unread}</div><div className="kpi-foot"><span>raw flag</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Unread</div><div className="kpi-value">{comm.loading ? '—' : unread}</div><div className="kpi-foot"><span>perlu perhatian</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">Pesan 24 Jam</div><div className="kpi-value">{comm.loading ? '—' : last24Hours}</div><div className="kpi-foot"><span>incoming activity</span></div></div>
+        <div className="kpi-card"><div className="kpi-label">User Mengirim</div><div className="kpi-value">{comm.loading ? '—' : uniqueUsers}</div><div className="kpi-foot"><span>unique senders</span></div></div>
       </div>
 
       <div className="grid-2">
