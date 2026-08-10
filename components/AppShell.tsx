@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Activity, BarChart3, CircleDollarSign, Globe2, Inbox, LayoutDashboard,
-  LogOut, Megaphone, Store, Users
+  BarChart3, Inbox, LayoutDashboard, LogOut, Megaphone, Store, Users
 } from 'lucide-react';
 import { founderLogout } from './AuthGate';
 
@@ -12,10 +11,7 @@ const sections = [
   { label: 'OVERVIEW', items: [{ href: '/', text: 'Executive', icon: LayoutDashboard }] },
   { label: 'BHUMI INTERNAL', items: [
     { href: '/users', text: 'Users', icon: Users },
-    { href: '/analytics', text: 'Activation & Engagement', icon: BarChart3 },
-    { href: '/retention', text: 'Retention', icon: Activity },
-    { href: '/geography', text: 'User Geography', icon: Globe2 },
-    { href: '/premium', text: 'Premium & Trial', icon: CircleDollarSign },
+    { href: '/analytics', text: 'Engagement', icon: BarChart3 },
   ]},
   { label: 'COMMUNICATION', items: [
     { href: '/inbox', text: 'Inbox', icon: Inbox },
