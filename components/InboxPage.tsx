@@ -2,14 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import { useFounderUsers } from '@/hooks/useFounderData';
-import { useCommunications } from '@/hooks/useCommunications';
+import { useInboxMessages } from '@/hooks/useCommunications';
 import { formatDateTime, formatRelative } from '@/lib/analytics';
 import { sendFounderMessage } from '@/lib/communicationsWrite';
 
 export function InboxPage() {
   const founder = useFounderUsers();
   const allowed = useMemo(() => new Set(founder.users.map((user) => user.uid)), [founder.users]);
-  const comm = useCommunications(allowed);
+  const comm = useInboxMessages(allowed);
   const [selectedId, setSelectedId] = useState('');
   const [query, setQuery] = useState('');
   const [replyText, setReplyText] = useState('');
