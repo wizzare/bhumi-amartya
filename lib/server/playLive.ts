@@ -2,6 +2,7 @@ import { playCountryHistory, playCountryLatest, playSnapshot } from '@/lib/playS
 import { getGoogleAccessToken, googlePlayCredentialStatus } from '@/lib/server/googleServiceAccount';
 
 const PACKAGE_NAME = process.env.GOOGLE_PLAY_PACKAGE_NAME || 'com.bhumiamartya.app';
+const REPORT_BUCKET = process.env.GOOGLE_PLAY_REPORT_BUCKET || 'pubsite_prod_4753825950500775050';
 
 type CsvRow = Record<string, string>;
 type CountryRow = { country: string; users: number; pct: number };
@@ -92,7 +93,7 @@ function monthKeys() {
 }
 
 function reportBucket() {
-  return String(process.env.GOOGLE_PLAY_REPORT_BUCKET || '').trim().replace(/^gs:\/\//, '').replace(/\/$/, '');
+  return String(REPORT_BUCKET).trim().replace(/^gs:\/\//, '').replace(/\/$/, '');
 }
 
 async function fetchGcsObject(token: string, objectName: string) {
