@@ -67,20 +67,13 @@ function dedupeRows(rows: NormalizedUser[]) {
   return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
 }
 
-function founderCachedPage(targetPage: number): CachedPage | null {
-  const founderCache = peekFounderDataCache();
-  if (!founderCache) return null;
-
-  const sorted = [...founderCache.users].sort((a, b) => {
-    const loginDelta = b.lastLoginAt - a.lastLoginAt;
-    if (loginDelta) return loginDelta;
-    return b.lastSeenAt - a.lastSeenAt;
-  });
+function sharedRowsForPage(targetPage: number) {
+  const cache = peekFounderDataCache();
+  if (!cache) return null;
+  const sorted = [...cache.users].sort((a, b) => (b.lastLoginAt - a.lastLoginAt) || (b.lastSeenAt - a.lastSeenAt));
   const start = Math.max(0, targetPage - 1) * PAGE_SIZE;
-  const rows = sorted.slice(start, start + PAGE_SIZE);
   return {
-    rows,
-    lastDoc: null,
+    rows: sorted.slice(start, start + PAGE_SIZE),
     hasMore: start + PAGE_SIZE < sorted.length,
   };
 }
@@ -169,11 +162,10 @@ async function getSearch(term: string) {
 }
 
 export function useUserTableData() {
-  const founderPageOne = founderCachedPage(1);
   const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<NormalizedUser[]>(founderPageOne?.rows || pageCache[0]?.rows || []);
-  const [hasMore, setHasMore] = useState(founderPageOne?.hasMore || pageCache[0]?.hasMore || false);
-  const [loading, setLoading] = useState(!founderPageOne && !pageCache[0]);
+  const [rows, setRows] = useState<NormalizedUser[]>(pageCache[0]?.rows || []);
+  const [hasMore, setHasMore] = useState(pageCache[0]?.hasMore || false);
+  const [loading, setLoading] = useState(!pageCache[0]);
   const [error, setError] = useState('');
   const [readsThisPage, setReadsThisPage] = useState(0);
   const [searchMode, setSearchMode] = useState(false);
@@ -188,7 +180,7 @@ export function useUserTableData() {
       if (force) pageCache = [];
 
       if (!force) {
-        const shared = founderCachedPage(targetPage);
+        const shared = sharedRowsForPage(targetPage);
         if (shared) {
           setRows(shared.rows);
           setHasMore(shared.hasMore);
@@ -290,8 +282,7 @@ export function useUserTableData() {
     setSearchMode(false);
     setSearchTerm('');
     setError('');
-
-    const shared = founderCachedPage(page);
+    const shared = sharedRowsForPage(page);
     if (shared) {
       setRows(shared.rows);
       setHasMore(shared.hasMore);
@@ -299,7 +290,6 @@ export function useUserTableData() {
       setSearchSource('founder-cache');
       return;
     }
-
     const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
     setSearchSource('');
     if (cached) {
@@ -312,7 +302,7 @@ export function useUserTableData() {
   }, [loadPage, page]);
 
   useEffect(() => {
-    const shared = founderCachedPage(1);
+    const shared = sharedRowsForPage(1);
     if (shared) {
       setRows(shared.rows);
       setHasMore(shared.hasMore);
