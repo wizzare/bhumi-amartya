@@ -102,7 +102,10 @@ async function fetchGcsObject(token: string, objectName: string) {
   const url = `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(objectName)}?alt=media`;
   const response = await fetch(url, { headers: { authorization: `Bearer ${token}` }, cache: 'no-store' });
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`GCS_REPORT_${response.status}`);
+  if (!response.ok) {
+    const detail = (await response.text().catch(() => '')).replace(/\s+/g, ' ').trim();
+    throw new Error(`GCS_REPORT_${response.status}${detail ? `: ${detail.slice(0, 320)}` : ''}`);
+  }
   return decodeReport(await response.arrayBuffer());
 }
 
