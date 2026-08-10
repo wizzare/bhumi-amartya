@@ -9,83 +9,63 @@ type Props = {
   onClose: () => void;
 };
 
-type SystemSpec = { label: string; keys: string[] };
+function at(source:any,path:string){
+  return path.split('.').reduce((value,key)=>value!==null&&value!==undefined?value[key]:undefined,source);
+}
 
-const SYSTEMS: SystemSpec[] = [
-  { label: 'Life Path / Numerology', keys: ['lifePath', 'numerology'] },
-  { label: 'Human Design', keys: ['humanDesign'] },
-  { label: 'Natal Chart', keys: ['natalChart', 'astrology'] },
-  { label: 'Destiny Matrix', keys: ['destinyMatrix', 'destiny_matrix'] },
-  { label: 'Weton', keys: ['weton'] },
-  { label: 'BaZi', keys: ['bazi', 'baZi'] },
-  { label: 'Vedic Astrology', keys: ['vedic', 'vedicAstrology'] },
-  { label: 'Tzolkin', keys: ['tzolkin'] },
-  { label: 'Whole Sign', keys: ['wholeSign', 'wholeSignChart'] },
-  { label: 'Astrocartography', keys: ['astrocartography', 'astroCartography'] },
-  { label: 'Zi Wei Dou Shu', keys: ['ziWei', 'ziwei', 'ziWeiDouShu'] },
-];
-
-function firstValue(source: Record<string, any> | null, keys: string[]) {
-  if (!source) return undefined;
-  for (const key of keys) {
-    if (source[key] !== undefined && source[key] !== null) return source[key];
+function first(source:any,paths:string[]){
+  for(const path of paths){
+    const value=at(source,path);
+    if(value!==undefined&&value!==null&&value!=='') return value;
   }
   return undefined;
 }
 
-function labelKey(key: string) {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function scalar(value: any): string {
-  if (value === null || value === undefined || value === '') return '';
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
-  if (Array.isArray(value)) {
-    const simple = value.filter((item) => ['string', 'number', 'boolean'].includes(typeof item)).slice(0, 5);
-    return simple.length ? simple.join(', ') : `${value.length} item`;
-  }
-  if (typeof value === 'object') {
-    for (const key of ['name', 'value', 'type', 'sign', 'label', 'title', 'number', 'status']) {
-      if (value[key] !== undefined && ['string', 'number', 'boolean'].includes(typeof value[key])) return String(value[key]);
+function text(value:any):string{
+  if(value===undefined||value===null||value==='') return '—';
+  if(typeof value==='string'||typeof value==='number'||typeof value==='boolean') return String(value);
+  if(Array.isArray(value)) return value.map((item)=>text(item)).filter((item)=>item!=='—').join(' · ')||'—';
+  if(typeof value==='object'){
+    for(const key of ['name','label','title','value','number','sign','type']){
+      if(value[key]!==undefined&&value[key]!==null&&value[key]!=='') return String(value[key]);
     }
   }
-  return '';
+  return '—';
 }
 
-function systemFacts(value: any) {
-  if (value === null || value === undefined) return [] as { key:string; value:string }[];
-  if (typeof value !== 'object') return [{ key: 'Value', value: String(value) }];
+function lifePathValue(data:any){
+  return text(first(data,[
+    'lifePath','lifePathNumber','numerology.lifePath','numerology.lifePathNumber','numerology.number','numerology.value'
+  ]));
+}
 
-  const preferred = [
-    'lifePath', 'lifePathNumber', 'number', 'type', 'strategy', 'authority', 'profile', 'definition',
-    'sunSign', 'moonSign', 'ascendant', 'risingSign', 'midheaven', 'mc',
-    'center', 'centerArcana', 'karmicTail', 'money', 'love',
-    'weton', 'totalNeptu', 'wuku', 'dayMaster', 'currentLuckCycle',
-    'lagna', 'nakshatra', 'currentMahadasha', 'currentAntardasha',
-    'kin', 'tone', 'solarSeal', 'wavespell', 'lifePalace', 'bodyPalace', 'bureau', 'status',
-  ];
+function destinyValues(data:any){
+  const dm=first(data,['destinyMatrix','destiny_matrix'])||data;
+  const center=text(first(dm,[
+    'centerArcana','arcanaCenter','center','center.number','center.value','matrixCenter','coreArcana'
+  ]));
+  const karmic=text(first(dm,[
+    'karmicTile','karmicTail','karmic_tile','karmic_tail','karmaTile','karmaTail'
+  ]));
+  return {center,karmic};
+}
 
-  const seen = new Set<string>();
-  const rows: { key:string; value:string }[] = [];
-  const add = (key:string, raw:any) => {
-    if (seen.has(key)) return;
-    const text = scalar(raw);
-    if (!text) return;
-    seen.add(key);
-    rows.push({ key: labelKey(key), value: text });
-  };
+function humanDesignValues(data:any){
+  const hd=first(data,['humanDesign','human_design'])||data;
+  const type=text(first(hd,['type','energyType','designType']));
+  const profile=text(first(hd,['profile','profileLine','profileLines']));
+  const cross=text(first(hd,[
+    'incarnationCross.name','incarnationCross','incarnation_cross.name','incarnation_cross','cross.name','cross','incarnation'
+  ]));
+  return {type,profile,cross};
+}
 
-  preferred.forEach((key) => add(key, value[key]));
-  Object.keys(value).forEach((key) => {
-    if (rows.length >= 6) return;
-    if (['raw', 'meta', 'planets', 'gates', 'channels', 'centers', 'aspects', 'houses', 'lines', 'palaces'].includes(key)) return;
-    add(key, value[key]);
-  });
-
-  return rows.slice(0, 6);
+function natalValues(data:any){
+  const natal=first(data,['natalChart','astrology','natal_chart'])||data;
+  const sun=text(first(natal,['sunSign','sun.sign','planets.sun.sign','sun','placements.sun.sign']));
+  const moon=text(first(natal,['moonSign','moon.sign','planets.moon.sign','moon','placements.moon.sign']));
+  const asc=text(first(natal,['ascendant','risingSign','asc','angles.ascendant.sign','angles.ascendant','rising.sign']));
+  return {sun,moon,asc};
 }
 
 function profileDate(value:any) {
@@ -129,6 +109,19 @@ function Field({label,value}:{label:string;value:any}) {
   return <div style={{padding:'9px 10px',border:'1px solid #e7ece9',borderRadius:8,background:'#fbfcfb'}}><div style={{fontSize:8,color:'#87948c',textTransform:'uppercase',letterSpacing:'.04em',marginBottom:3}}>{label}</div><div style={{fontSize:10,fontWeight:650,color:'#32453b',wordBreak:'break-word'}}>{value ?? '—'}</div></div>;
 }
 
+function BlueprintCard({title,children}:{title:string;children:React.ReactNode}){
+  return <div style={{border:'1px solid #e6ece8',borderRadius:10,padding:12,background:'#fff'}}>
+    <div style={{fontSize:10,fontWeight:800,color:'#30453a',marginBottom:9}}>{title}</div>
+    <div style={{display:'grid',gap:6}}>{children}</div>
+  </div>;
+}
+
+function BlueprintLine({label,value}:{label:string;value:string}){
+  return <div style={{display:'grid',gridTemplateColumns:'92px 1fr',gap:10,borderTop:'1px solid #f0f3f1',paddingTop:6,fontSize:9}}>
+    <span style={{color:'#7b8981'}}>{label}</span><b style={{color:'#32453b',wordBreak:'break-word'}}>{value}</b>
+  </div>;
+}
+
 export function UserDetailDrawer({user,onClose}:Props) {
   const blueprint = useUserBlueprintDetail(user?.uid || null);
   if (!user) return null;
@@ -136,9 +129,11 @@ export function UserDetailDrawer({user,onClose}:Props) {
   const raw=user.raw||{};
   const birthDate=raw.birthDate||raw.dateOfBirth||raw.dob;
   const birthTime=raw.birthTime||raw.timeOfBirth||raw.birthHour;
-  const blueprintStatus=blueprint.data?.status||raw.blueprintStatus||'—';
-  const storedSystems=SYSTEMS.filter((system)=>firstValue(blueprint.data,system.keys)!==undefined).length;
   const loginDays=activeLoginDays(user);
+  const destiny=destinyValues(blueprint.data);
+  const hd=humanDesignValues(blueprint.data);
+  const natal=natalValues(blueprint.data);
+  const lifePath=lifePathValue(blueprint.data);
 
   return <div style={{position:'fixed',inset:0,zIndex:1000,background:'rgba(21,32,26,.36)',display:'flex',justifyContent:'flex-end'}} onMouseDown={(event)=>{if(event.target===event.currentTarget)onClose();}}>
     <aside style={{width:'min(760px,96vw)',height:'100vh',background:'#fff',boxShadow:'-12px 0 30px rgba(21,32,26,.16)',overflowY:'auto'}}>
@@ -148,7 +143,7 @@ export function UserDetailDrawer({user,onClose}:Props) {
       </div>
 
       <div style={{padding:18,display:'grid',gap:14}}>
-        <div className="notice"><b>Read cost detail:</b> profil = 0 read tambahan karena memakai dokumen user yang sudah dimuat. Blueprint = {blueprint.fromCache?'0 read (session cache)':blueprint.loading?'maks. 1 read sedang dimuat':'maks. 1 read pada pembukaan pertama'}. Klik ulang UID yang sama tidak membaca blueprint lagi selama sesi.</div>
+        <div className="notice"><b>Read cost detail:</b> profil = 0 read tambahan. Blueprint = {blueprint.fromCache?'0 read (session cache)':blueprint.loading?'maks. 1 read sedang dimuat':'maks. 1 read pada pembukaan pertama'}. Klik ulang UID yang sama tidak membaca blueprint lagi selama sesi.</div>
 
         <section className="panel">
           <div className="panel-head"><div><div className="panel-title">Identitas & Data Lahir</div><span className="panel-subtitle">Dari user document yang sudah dimuat bersama tabel.</span></div><span className="source-badge">0 EXTRA READ</span></div>
@@ -165,24 +160,30 @@ export function UserDetailDrawer({user,onClose}:Props) {
         </section>
 
         <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Blueprint User</div><span className="panel-subtitle">`blueprints/{user.uid}` · lazy load per user.</span></div><span className="source-badge">{blueprint.fromCache?'CACHE':'LAZY'}</span></div>
+          <div className="panel-head"><div><div className="panel-title">Blueprint Ringkas</div><span className="panel-subtitle">4 sistem utama untuk membaca profil user dengan cepat.</span></div><span className="source-badge">{blueprint.fromCache?'CACHE':'LAZY'}</span></div>
           <div className="panel-body">
             {blueprint.loading&&<div className="empty">Memuat blueprint user…</div>}
             {blueprint.error&&<div className="error-box">{blueprint.error}</div>}
             {!blueprint.loading&&!blueprint.error&&!blueprint.data&&<div className="empty">Blueprint belum tersimpan untuk user ini.</div>}
-            {blueprint.data&&<>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:8,marginBottom:12}}><Field label="Blueprint Status" value={String(blueprintStatus)}/><Field label="Sistem Tersimpan" value={`${storedSystems} / ${SYSTEMS.length}`}/><Field label="Detail Cache" value={blueprint.fromCache?'Session cache':'Loaded once'}/></div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:10}}>
-                {SYSTEMS.map((system)=>{
-                  const value=firstValue(blueprint.data,system.keys);
-                  const facts=systemFacts(value);
-                  return <div key={system.label} style={{border:'1px solid #e6ece8',borderRadius:9,padding:11,background:value!==undefined?'#fff':'#fafbfa'}}>
-                    <div style={{display:'flex',justifyContent:'space-between',gap:8,marginBottom:7}}><b style={{fontSize:10}}>{system.label}</b><span className={`pill ${value!==undefined?'green':'gray'}`}>{value!==undefined?'Ada':'Belum ada'}</span></div>
-                    {value!==undefined&&facts.length>0?<div style={{display:'grid',gap:5}}>{facts.map((fact)=><div key={fact.key} style={{display:'flex',justifyContent:'space-between',gap:10,fontSize:9,borderTop:'1px solid #f0f3f1',paddingTop:5}}><span style={{color:'#7b8981'}}>{fact.key}</span><b style={{textAlign:'right',maxWidth:'58%',wordBreak:'break-word'}}>{fact.value}</b></div>)}</div>:value!==undefined?<div style={{fontSize:9,color:'#7b8981'}}>Data tersimpan; struktur detail tidak diringkas di dashboard.</div>:<div style={{fontSize:9,color:'#9aa49e'}}>Tidak ditemukan pada dokumen blueprint.</div>}
-                  </div>;
-                })}
-              </div>
-            </>}
+            {blueprint.data&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:10}}>
+              <BlueprintCard title="Life Path">
+                <BlueprintLine label="Life Path" value={lifePath}/>
+              </BlueprintCard>
+              <BlueprintCard title="Destiny Matrix">
+                <BlueprintLine label="Arcana Center" value={destiny.center}/>
+                <BlueprintLine label="Karmic Tile" value={destiny.karmic}/>
+              </BlueprintCard>
+              <BlueprintCard title="Human Design">
+                <BlueprintLine label="Type" value={hd.type}/>
+                <BlueprintLine label="Cross" value={hd.cross}/>
+                <BlueprintLine label="Profile" value={hd.profile}/>
+              </BlueprintCard>
+              <BlueprintCard title="Natal Chart">
+                <BlueprintLine label="Sun" value={natal.sun}/>
+                <BlueprintLine label="Moon" value={natal.moon}/>
+                <BlueprintLine label="Ascendant" value={natal.asc}/>
+              </BlueprintCard>
+            </div>}
           </div>
         </section>
       </div>
