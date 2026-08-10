@@ -1,5 +1,5 @@
-import { PremiumPage } from '@/components/PremiumPage';
+import { redirect } from 'next/navigation';
 
 export default function Page(){
-  return <PremiumPage />;
+  redirect('/users');
 }
