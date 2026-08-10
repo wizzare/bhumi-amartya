@@ -68,12 +68,14 @@ export function UserTablePage() {
     table.clearSearch();
   };
 
+  const openUser = (user: NormalizedUser) => setSelectedUser(user);
+
   return (
     <div className="page">
       <div className="page-heading">
         <div>
           <h1>Data User</h1>
-          <p>Maksimal 10 user per page/request. Nama dapat diklik untuk membuka profil dan blueprint secara lazy + session-cached.</p>
+          <p>Maksimal 10 user per page/request. Klik nama, baris, atau tombol Lihat untuk membuka profil + blueprint.</p>
         </div>
         <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
       </div>
@@ -99,7 +101,7 @@ export function UserTablePage() {
         <div className="panel-body">
           <form className="toolbar" onSubmit={submitSearch}>
             <input className="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Cari nama atau email seluruh user…" />
-            <button className="btn" type="submit" disabled={table.loading}>Cari</button>
+            <button className="btn primary" type="submit" disabled={table.loading}>Cari</button>
             {table.searchMode && <button className="btn" type="button" onClick={clearSearch}>Kembali ke tabel</button>}
             <select className="select" value={plan} onChange={(event) => setPlan(event.target.value)}>
               <option value="all">Semua Status Akses</option>
@@ -109,18 +111,18 @@ export function UserTablePage() {
           </form>
 
           <div className="notice" style={{ marginBottom: 12 }}>
-            Hari Login = jumlah hari aktif unik, bukan jumlah event login. Search hanya dijalankan saat Enter/Cari. Bila Executive sudah memuat user, search memakai shared cache dengan 0 Firestore read; hasil search yang sama juga dicache selama sesi.
+            Hari Login = jumlah hari aktif unik, bukan jumlah event login. Email lengkap dicari dengan exact match terlebih dahulu. Klik user tidak membaca ulang dokumen profil; blueprint hanya lazy-load sekali per UID lalu dicache selama sesi.
           </div>
 
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Hari Login</th><th>Session</th><th>Akses Saat Ini</th><th>Aktivitas</th><th>App</th><th>Birth City</th></tr></thead>
+              <thead><tr><th>Nama</th><th>Email</th><th>Tgl Daftar</th><th>First Login</th><th>Last Login</th><th>Last Seen</th><th>Hari Login</th><th>Session</th><th>Akses Saat Ini</th><th>Aktivitas</th><th>App</th><th>Birth City</th><th>Detail</th></tr></thead>
               <tbody>
                 {rows.map((user) => {
                   const days = activeLoginDays(user);
                   const access = accessDisplay(user);
-                  return <tr key={user.uid}>
-                    <td><button type="button" onClick={()=>setSelectedUser(user)} style={{border:0,background:'transparent',padding:0,color:'#2f7555',font:'inherit',fontWeight:800,cursor:'pointer',textDecoration:'underline',textUnderlineOffset:2}}>{user.name}</button></td>
+                  return <tr key={user.uid} onClick={() => openUser(user)} style={{cursor:'pointer'}}>
+                    <td><button type="button" onClick={(event)=>{event.stopPropagation();openUser(user);}} style={{border:0,background:'transparent',padding:0,color:'#2f7555',font:'inherit',fontWeight:800,cursor:'pointer',textDecoration:'underline',textUnderlineOffset:2}}>{user.name}</button></td>
                     <td>{user.email || '—'}</td>
                     <td>{formatDateTime(user.registeredAt)}</td>
                     <td>{formatDateTime(user.firstLoginAt)}</td>
@@ -132,6 +134,7 @@ export function UserTablePage() {
                     <td><span className={`pill ${statusClass(user.status)}`}>{user.status}</span></td>
                     <td>{user.appVersion} / {user.buildNumber}</td>
                     <td>{user.birthCity || '—'}</td>
+                    <td><button className="btn" type="button" onClick={(event)=>{event.stopPropagation();openUser(user);}}>Lihat</button></td>
                   </tr>;
                 })}
               </tbody>
