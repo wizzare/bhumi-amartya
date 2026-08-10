@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { useFounderData } from '@/hooks/useFounderData';
+import { useFounderUsers } from '@/hooks/useFounderData';
 import { useCommunications } from '@/hooks/useCommunications';
 import { formatDateTime } from '@/lib/analytics';
 
@@ -9,7 +9,7 @@ const PREMIUM_PLANS = new Set(['Google Play Paid','Penjaga Inti','Penjaga Alfa',
 const FREE_PLANS = new Set(['Free','Expired Grant','Expired Paid']);
 
 export function BroadcastPage(){
-  const founder=useFounderData();
+  const founder=useFounderUsers();
   const allowed=useMemo(()=>new Set(founder.users.map(u=>u.uid)),[founder.users]);
   const comm=useCommunications(allowed);
   const [audience,setAudience]=useState('all');
