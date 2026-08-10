@@ -1,6 +1,6 @@
 'use client';
 
-import { collection, endAt, getDocs, limit, orderBy, query, startAfter, startAt } from 'firebase/firestore';
+import { collection, endAt, getDocs, limit, orderBy, query, startAfter, startAt, where } from 'firebase/firestore';
 import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
@@ -8,17 +8,8 @@ import { peekFounderDataCache } from '@/hooks/useFounderData';
 
 const PAGE_SIZE = 10;
 
-type CachedPage = {
-  rows: NormalizedUser[];
-  lastDoc: any | null;
-  hasMore: boolean;
-};
-
-type CachedSearch = {
-  rows: NormalizedUser[];
-  source: 'founder-cache' | 'firestore';
-  reads: number;
-};
+type CachedPage = { rows: NormalizedUser[]; lastDoc: any | null; hasMore: boolean };
+type CachedSearch = { rows: NormalizedUser[]; source: 'founder-cache' | 'firestore'; reads: number };
 
 let pageCache: CachedPage[] = [];
 const searchCache = new Map<string, CachedSearch>();
@@ -39,10 +30,7 @@ function identityFor(docId: string, raw: Record<string, any>) {
 function priorIdentities(pageIndex: number) {
   const seen = new Set<string>();
   for (let i = 0; i < pageIndex; i += 1) {
-    pageCache[i]?.rows.forEach((user) => {
-      const raw = user.raw || {};
-      seen.add(identityFor(user.uid, raw));
-    });
+    pageCache[i]?.rows.forEach((user) => seen.add(identityFor(user.uid, user.raw || {})));
   }
   return seen;
 }
@@ -67,6 +55,18 @@ function dedupeRows(rows: NormalizedUser[]) {
   return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
 }
 
+function docsToRows(docs: any[]) {
+  return docs
+    .map((doc) => ({ id: doc.id, raw: doc.data() as Record<string, any> }))
+    .filter(({ raw }) => isIncludedRealUser(raw))
+    .map(({ id, raw }) => normalizeUser(canonicalUid(id, raw), raw));
+}
+
+async function exactQuery(field: string, value: string) {
+  const snap = await getDocs(query(collection(db, 'users'), where(field, '==', value), limit(PAGE_SIZE)));
+  return { rows: docsToRows(snap.docs), reads: Math.max(1, snap.docs.length) };
+}
+
 async function prefixQuery(field: string, prefix: string) {
   const snap = await getDocs(query(
     collection(db, 'users'),
@@ -75,13 +75,7 @@ async function prefixQuery(field: string, prefix: string) {
     endAt(`${prefix}\uf8ff`),
     limit(PAGE_SIZE),
   ));
-
-  const rows = snap.docs
-    .map((doc) => ({ id: doc.id, raw: doc.data() as Record<string, any> }))
-    .filter(({ raw }) => isIncludedRealUser(raw))
-    .map(({ id, raw }) => normalizeUser(canonicalUid(id, raw), raw));
-
-  return { rows, reads: Math.max(1, snap.docs.length) };
+  return { rows: docsToRows(snap.docs), reads: Math.max(1, snap.docs.length) };
 }
 
 async function fetchSearch(term: string): Promise<CachedSearch> {
@@ -90,7 +84,7 @@ async function fetchSearch(term: string): Promise<CachedSearch> {
 
   if (founderCache) {
     const rows = founderCache.users
-      .filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key))
+      .filter((user) => user.email.toLowerCase() === key || `${user.name} ${user.email}`.toLowerCase().includes(key))
       .sort((a, b) => b.lastLoginAt - a.lastLoginAt)
       .slice(0, PAGE_SIZE);
     return { rows, source: 'founder-cache', reads: 0 };
@@ -101,30 +95,36 @@ async function fetchSearch(term: string): Promise<CachedSearch> {
   const original = term.trim().replace(/\s+/g, ' ');
   const variants = Array.from(new Set([original, titleCase(original), original.toLowerCase()].filter(Boolean)));
 
-  const append = async (field:string, prefix:string) => {
+  const appendExact = async (field: string, value: string) => {
+    const result = await exactQuery(field, value);
+    reads += result.reads;
+    collected.push(...result.rows);
+  };
+
+  const appendPrefix = async (field: string, prefix: string) => {
     const result = await prefixQuery(field, prefix);
     reads += result.reads;
     collected.push(...result.rows);
   };
 
   if (key.includes('@')) {
-    await append('email', key);
+    for (const candidate of Array.from(new Set([original, key]))) {
+      await appendExact('email', candidate);
+      if (dedupeRows(collected).length) break;
+    }
+    if (!dedupeRows(collected).length) await appendPrefix('email', key);
   } else {
     for (const variant of variants.slice(0, 2)) {
-      await append('fullName', variant);
+      await appendPrefix('fullName', variant);
       if (dedupeRows(collected).length >= PAGE_SIZE) break;
     }
-
     if (dedupeRows(collected).length < PAGE_SIZE) {
       for (const variant of variants.slice(0, 2)) {
-        await append('displayName', variant);
+        await appendPrefix('displayName', variant);
         if (dedupeRows(collected).length >= PAGE_SIZE) break;
       }
     }
-
-    if (dedupeRows(collected).length < PAGE_SIZE) {
-      await append('email', key);
-    }
+    if (dedupeRows(collected).length < PAGE_SIZE) await appendPrefix('email', key);
   }
 
   const rows = dedupeRows(collected).filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key));
@@ -135,7 +135,6 @@ async function getSearch(term: string) {
   const key = normalizeSearchTerm(term);
   const cached = searchCache.get(key);
   if (cached) return { ...cached, cached: true };
-
   const inflight = searchRequests.get(key);
   if (inflight) return { ...(await inflight), cached: true };
 
@@ -164,10 +163,8 @@ export function useUserTableData() {
   const loadPage = useCallback(async (targetPage: number, force = false) => {
     setLoading(true);
     setError('');
-
     try {
       if (force) pageCache = [];
-
       const pageIndex = Math.max(0, targetPage - 1);
       const cached = pageCache[pageIndex];
       if (cached && !force) {
@@ -195,7 +192,6 @@ export function useUserTableData() {
       const q = previous?.lastDoc
         ? query(base, orderBy('participationMetrics.lastLoginAt', 'desc'), startAfter(previous.lastDoc), limit(PAGE_SIZE))
         : query(base, orderBy('participationMetrics.lastLoginAt', 'desc'), limit(PAGE_SIZE));
-
       const snap = await getDocs(q);
       const seen = priorIdentities(pageIndex);
       const unique = new Map<string, NormalizedUser>();
@@ -213,7 +209,6 @@ export function useUserTableData() {
         lastDoc: snap.docs[snap.docs.length - 1] || null,
         hasMore: snap.docs.length === PAGE_SIZE,
       };
-
       pageCache[pageIndex] = nextPage;
       setRows(nextPage.rows);
       setHasMore(nextPage.hasMore);
@@ -235,7 +230,6 @@ export function useUserTableData() {
       setError('Masukkan minimal 2 karakter untuk mencari nama/email.');
       return;
     }
-
     setLoading(true);
     setError('');
     try {
@@ -286,20 +280,8 @@ export function useUserTableData() {
   }, [loadPage]);
 
   return {
-    rows,
-    page,
-    hasMore,
-    loading,
-    error,
-    readsThisPage,
-    next,
-    previous,
-    refresh,
-    pageSize: PAGE_SIZE,
-    search,
-    clearSearch,
-    searchMode,
-    searchTerm,
-    searchSource,
+    rows, page, hasMore, loading, error, readsThisPage,
+    next, previous, refresh, pageSize: PAGE_SIZE,
+    search, clearSearch, searchMode, searchTerm, searchSource,
   };
 }
