@@ -42,7 +42,9 @@ function accessDisplay(user: NormalizedUser) {
   return { primary: 'Free', secondary: 'Trial selesai', cls: 'gray' };
 }
 
-export function UserTablePage() {
+type Props = { embedded?: boolean };
+
+export function UserTablePage({ embedded = false }: Props) {
   const table = useUserTableData();
   const [searchInput, setSearchInput] = useState('');
   const [plan, setPlan] = useState('all');
@@ -71,14 +73,21 @@ export function UserTablePage() {
   const openUser = (user: NormalizedUser) => setSelectedUser(user);
 
   return (
-    <div className="page">
-      <div className="page-heading">
-        <div>
-          <h1>Data User</h1>
-          <p>Maksimal 10 user per page/request. Klik nama, baris, atau tombol Lihat untuk membuka profil + blueprint.</p>
+    <div className={embedded ? '' : 'page'}>
+      {embedded ? (
+        <div className="toolbar" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
+          <span className="source-badge">USER TABLE · 10 / REQUEST</span>
+          <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
         </div>
-        <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
-      </div>
+      ) : (
+        <div className="page-heading">
+          <div>
+            <h1>Data User</h1>
+            <p>Maksimal 10 user per page/request. Klik nama, baris, atau tombol Lihat untuk membuka profil + blueprint.</p>
+          </div>
+          <button className="btn" onClick={table.refresh}>Refresh Page 1</button>
+        </div>
+      )}
 
       {table.error && <div className="error-box" style={{ marginBottom: 12 }}>{table.error}</div>}
 
