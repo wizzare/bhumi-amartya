@@ -1,5 +1,5 @@
-import { LoginActivityPage } from '@/components/LoginActivityPage';
+import { redirect } from 'next/navigation';
 
 export default function Page(){
-  return <LoginActivityPage />;
+  redirect('/users');
 }
