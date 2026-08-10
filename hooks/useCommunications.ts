@@ -7,21 +7,21 @@ import { asTime } from '@/lib/analytics';
 
 export type AdminMessage = { id:string; uid:string; title:string; content:string; summary:string; createdAt:number; isRead:boolean; status:string; senderRole:string; recipientRole:string; parentMessageId:string; threadId:string; type:string; raw:Record<string,any>; };
 export type BroadcastLog = { id:string; title:string; content:string; createdAt:number; targetGroups:string[]; status:string; stats:Record<string,any>; raw:Record<string,any>; };
-type CommunicationsCache = { messages: AdminMessage[]; broadcasts: BroadcastLog[]; fetchedAt: number; };
+type MessageCache = { messages: AdminMessage[]; fetchedAt: number; };
+type BroadcastCache = { broadcasts: BroadcastLog[]; fetchedAt: number; };
 
 const MAX_MESSAGES = 100;
 const MAX_BROADCASTS = 100;
-let sharedCache: CommunicationsCache | null = null;
-let sharedRequest: Promise<CommunicationsCache> | null = null;
+let sharedMessageCache: MessageCache | null = null;
+let sharedMessageRequest: Promise<MessageCache> | null = null;
+let sharedBroadcastCache: BroadcastCache | null = null;
+let sharedBroadcastRequest: Promise<BroadcastCache> | null = null;
 
-async function fetchCommunications(): Promise<CommunicationsCache> {
-  const [msgSnap, broadcastSnap] = await Promise.all([
-    getDocs(query(collectionGroup(db, 'communications'), orderBy('createdAt', 'desc'), limit(MAX_MESSAGES))),
-    getDocs(query(collection(db, 'broadcasts'), orderBy('createdAt', 'desc'), limit(MAX_BROADCASTS))),
-  ]);
-
+async function fetchMessages(): Promise<MessageCache> {
+  const snap = await getDocs(query(collectionGroup(db, 'communications'), orderBy('createdAt', 'desc'), limit(MAX_MESSAGES)));
   const messageMap = new Map<string, AdminMessage>();
-  msgSnap.docs.forEach((doc) => {
+
+  snap.docs.forEach((doc) => {
     const x:any = doc.data();
     const uid = String(x.ownerUserId || x.uid || x.senderUid || x.userId || '').trim();
     const row: AdminMessage = {
@@ -39,8 +39,25 @@ async function fetchCommunications(): Promise<CommunicationsCache> {
     if (!messageMap.has(key)) messageMap.set(key, row);
   });
 
+  return {
+    messages: Array.from(messageMap.values()).sort((a, b) => b.createdAt - a.createdAt),
+    fetchedAt: Date.now(),
+  };
+}
+
+async function getMessages(force = false) {
+  if (!force && sharedMessageCache) return sharedMessageCache;
+  if (!force && sharedMessageRequest) return sharedMessageRequest;
+  sharedMessageRequest = fetchMessages();
+  try { sharedMessageCache = await sharedMessageRequest; return sharedMessageCache; }
+  finally { sharedMessageRequest = null; }
+}
+
+async function fetchBroadcasts(): Promise<BroadcastCache> {
+  const snap = await getDocs(query(collection(db, 'broadcasts'), orderBy('createdAt', 'desc'), limit(MAX_BROADCASTS)));
   const broadcastMap = new Map<string, BroadcastLog>();
-  broadcastSnap.docs.forEach((doc) => {
+
+  snap.docs.forEach((doc) => {
     const x:any = doc.data();
     const row: BroadcastLog = {
       id: doc.id,
@@ -56,45 +73,39 @@ async function fetchCommunications(): Promise<CommunicationsCache> {
   });
 
   return {
-    messages: Array.from(messageMap.values()).sort((a, b) => b.createdAt - a.createdAt),
     broadcasts: Array.from(broadcastMap.values()).sort((a, b) => b.createdAt - a.createdAt),
     fetchedAt: Date.now(),
   };
 }
 
-async function getCommunications(force = false) {
-  if (!force && sharedCache) return sharedCache;
-  if (!force && sharedRequest) return sharedRequest;
-  sharedRequest = fetchCommunications();
-  try { sharedCache = await sharedRequest; return sharedCache; }
-  finally { sharedRequest = null; }
+async function getBroadcasts(force = false) {
+  if (!force && sharedBroadcastCache) return sharedBroadcastCache;
+  if (!force && sharedBroadcastRequest) return sharedBroadcastRequest;
+  sharedBroadcastRequest = fetchBroadcasts();
+  try { sharedBroadcastCache = await sharedBroadcastRequest; return sharedBroadcastCache; }
+  finally { sharedBroadcastRequest = null; }
 }
 
-export function useCommunications(allowedUids:Set<string>) {
-  const [allMessages, setAllMessages] = useState<AdminMessage[]>(sharedCache?.messages || []);
-  const [broadcasts, setBroadcasts] = useState<BroadcastLog[]>(sharedCache?.broadcasts || []);
-  const [loading,setLoading] = useState(!sharedCache);
+export function useInboxMessages(allowedUids:Set<string>) {
+  const [allMessages, setAllMessages] = useState<AdminMessage[]>(sharedMessageCache?.messages || []);
+  const [loading,setLoading] = useState(!sharedMessageCache);
   const [error,setError] = useState('');
   const allowedKey = useMemo(() => [...allowedUids].sort().join('|'), [allowedUids]);
 
   const refresh = useCallback(async(force = true) => {
-    if (!allowedUids.size) { setAllMessages([]); setBroadcasts([]); setLoading(false); return; }
+    if (!allowedUids.size) { setAllMessages([]); setLoading(false); return; }
     setLoading(true); setError('');
-    try {
-      const data = await getCommunications(force);
-      setAllMessages(data.messages); setBroadcasts(data.broadcasts);
-    } catch (e:any) { setError(e?.message || 'Gagal membaca communications.'); }
+    try { setAllMessages((await getMessages(force)).messages); }
+    catch (e:any) { setError(e?.message || 'Gagal membaca Inbox.'); }
     finally { setLoading(false); }
   }, [allowedKey]);
 
   useEffect(() => {
-    if (!allowedUids.size) { setAllMessages([]); setBroadcasts([]); setLoading(false); return; }
+    if (!allowedUids.size) { setAllMessages([]); setLoading(false); return; }
     void (async () => {
-      setLoading(!sharedCache); setError('');
-      try {
-        const data = await getCommunications(false);
-        setAllMessages(data.messages); setBroadcasts(data.broadcasts);
-      } catch (e:any) { setError(e?.message || 'Gagal membaca communications.'); }
+      setLoading(!sharedMessageCache); setError('');
+      try { setAllMessages((await getMessages(false)).messages); }
+      catch (e:any) { setError(e?.message || 'Gagal membaca Inbox.'); }
       finally { setLoading(false); }
     })();
   }, [allowedKey]);
@@ -104,5 +115,44 @@ export function useCommunications(allowedUids:Set<string>) {
     .filter((message) => message.recipientRole.toLowerCase() === 'admin' || message.senderRole.toLowerCase() === 'user'),
   [allMessages, allowedKey]);
 
-  return { messages, broadcasts, loading, error, refresh, maxMessages: MAX_MESSAGES, maxBroadcasts: MAX_BROADCASTS };
+  return { messages, loading, error, refresh, maxMessages: MAX_MESSAGES };
+}
+
+export function useBroadcastHistory() {
+  const [broadcasts, setBroadcasts] = useState<BroadcastLog[]>(sharedBroadcastCache?.broadcasts || []);
+  const [loading,setLoading] = useState(!sharedBroadcastCache);
+  const [error,setError] = useState('');
+
+  const refresh = useCallback(async(force = true) => {
+    setLoading(true); setError('');
+    try { setBroadcasts((await getBroadcasts(force)).broadcasts); }
+    catch (e:any) { setError(e?.message || 'Gagal membaca broadcast history.'); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(!sharedBroadcastCache); setError('');
+      try { setBroadcasts((await getBroadcasts(false)).broadcasts); }
+      catch (e:any) { setError(e?.message || 'Gagal membaca broadcast history.'); }
+      finally { setLoading(false); }
+    })();
+  }, []);
+
+  return { broadcasts, loading, error, refresh, maxBroadcasts: MAX_BROADCASTS };
+}
+
+// Compatibility hook for any legacy caller that still needs both datasets.
+export function useCommunications(allowedUids:Set<string>) {
+  const inbox = useInboxMessages(allowedUids);
+  const history = useBroadcastHistory();
+  return {
+    messages: inbox.messages,
+    broadcasts: history.broadcasts,
+    loading: inbox.loading || history.loading,
+    error: inbox.error || history.error,
+    refresh: async () => { await Promise.all([inbox.refresh(true), history.refresh(true)]); },
+    maxMessages: MAX_MESSAGES,
+    maxBroadcasts: MAX_BROADCASTS,
+  };
 }
