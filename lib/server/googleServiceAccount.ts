@@ -4,6 +4,12 @@ import { headers } from 'next/headers';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const STS_URL = 'https://sts.googleapis.com/v1/token';
 const IAM_CREDENTIALS_URL = 'https://iamcredentials.googleapis.com/v1';
+const DEFAULT_WIF = {
+  projectNumber: '59259824153',
+  serviceAccountEmail: 'bhumi-founder-play-reports@bhumiamartya-fe85c.iam.gserviceaccount.com',
+  poolId: 'vercel',
+  providerId: 'vercel-bhumi',
+};
 const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/playdeveloperreporting',
   'https://www.googleapis.com/auth/devstorage.read_only',
@@ -25,10 +31,10 @@ function keyCredentials() {
 }
 
 function wifCredentials() {
-  const projectNumber = String(process.env.GCP_PROJECT_NUMBER || '').trim();
-  const serviceAccountEmail = String(process.env.GCP_SERVICE_ACCOUNT_EMAIL || '').trim();
-  const poolId = String(process.env.GCP_WORKLOAD_IDENTITY_POOL_ID || '').trim();
-  const providerId = String(process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID || '').trim();
+  const projectNumber = String(process.env.GCP_PROJECT_NUMBER || DEFAULT_WIF.projectNumber).trim();
+  const serviceAccountEmail = String(process.env.GCP_SERVICE_ACCOUNT_EMAIL || DEFAULT_WIF.serviceAccountEmail).trim();
+  const poolId = String(process.env.GCP_WORKLOAD_IDENTITY_POOL_ID || DEFAULT_WIF.poolId).trim();
+  const providerId = String(process.env.GCP_WORKLOAD_IDENTITY_POOL_PROVIDER_ID || DEFAULT_WIF.providerId).trim();
   if (!projectNumber || !serviceAccountEmail || !poolId || !providerId) return null;
   return { projectNumber, serviceAccountEmail, poolId, providerId };
 }
