@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useFounderData } from '@/hooks/useFounderData';
-import { formatDateTime, pct } from '@/lib/analytics';
+import { pct } from '@/lib/analytics';
 
 const order = [
   'Google Play Paid',
@@ -52,11 +52,6 @@ export function PremiumPage(){
     });
     return [...map.entries()].map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
   },[users]);
-
-  const expiring=useMemo(()=>users
-    .filter((user)=>user.accessUntil>0 && ['Google Play Paid','Penjaga Inti','Penjaga Alfa','Trial','Expired Grant','Expired Paid'].includes(user.plan))
-    .sort((a,b)=>a.accessUntil-b.accessUntil)
-    .slice(0,40),[users]);
 
   return <div className="page">
     <div className="page-heading">
@@ -119,11 +114,5 @@ export function PremiumPage(){
         </div>
       </section>
     </div>
-
-    <section className="panel">
-      <div className="panel-head"><div><div className="panel-title">Access Expiry Monitor</div><span className="panel-subtitle">Active dan expired fixed-term access. Tidak ada expiry kosong yang dianggap lifetime.</span></div></div>
-      <div className="table-wrap"><table><thead><tr><th>User</th><th>Current Category</th><th>Subscription Status</th><th>Access Until</th></tr></thead><tbody>{expiring.map((user)=><tr key={user.uid}><td><b>{user.name}</b><br/><span style={{color:'#87948c'}}>{user.email}</span></td><td>{user.plan}</td><td>{user.subscriptionStatus}</td><td>{formatDateTime(user.accessUntil)}</td></tr>)}</tbody></table></div>
-      {!expiring.length&&<div className="empty">Belum ada expiry timestamp yang bisa ditampilkan.</div>}
-    </section>
   </div>;
 }
