@@ -1,5 +1,5 @@
-import { AnalyticsPage } from '@/components/AnalyticsPage';
+import { EngagementPage } from '@/components/EngagementPage';
 
 export default function Page(){
-  return <AnalyticsPage />;
+  return <EngagementPage />;
 }
