@@ -195,18 +195,22 @@ async function runTests() {
   }
   console.log("PASS: Test D - PURCHASED = 1 -> processed");
 
-  // Test E: PENDING = 2 -> not processed
+  // Test E: PENDING = 2 → PAYMENT_PENDING (processed as transitional, not passed to verifier)
   verifiedTokens.length = 0;
+  const pendingVerifyMock = async (p: { purchaseToken?: string }) => {
+    verifiedTokens.push(p.purchaseToken!);
+    return { ok: true, active: false, status: "SUBSCRIPTION_PENDING" };
+  };
   const testE = await recoverAndRefreshPremiumPurchases(
     [{ purchaseToken: "token-pending-2", products: ["bhumi_premium_monthly"], purchaseState: 2 }],
     "bhumi_premium_monthly",
-    mockVerify,
+    pendingVerifyMock,
     mockRefresh
   );
-  if (testE.state !== "NO_ACTIVE_PURCHASE" || verifiedTokens.length !== 0) {
-    throw new Error(`Test E FAILED: expected PENDING=2 to NOT be processed`);
+  if (testE.state !== "PAYMENT_PENDING" || testE.permanentFailures !== 0 || testE.pendingCount !== 1) {
+    throw new Error(`Test E FAILED: expected PENDING=2 to yield PAYMENT_PENDING with pendingCount=1, got state=${testE.state} permanentFailures=${testE.permanentFailures} pendingCount=${testE.pendingCount}`);
   }
-  console.log("PASS: Test E - PENDING = 2 -> not processed");
+  console.log("PASS: Test E - PENDING = 2 → PAYMENT_PENDING (transitional, no Premium)");
 
   // Test F: UNSPECIFIED = 0 -> not processed
   verifiedTokens.length = 0;

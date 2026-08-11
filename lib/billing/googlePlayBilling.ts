@@ -219,6 +219,9 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
   if (!purchase.purchaseToken) {
     throw new Error("Purchase token tidak tersedia.");
   }
+  if (purchase.purchaseState === 2) {
+    return { ok: true, active: false, status: "SUBSCRIPTION_PENDING", accessUntil: "" };
+  }
   if (purchase.purchaseState !== undefined && purchase.purchaseState !== 1) {
     return { ok: false, active: false, purchaseState: purchase.purchaseState, accessUntil: "" };
   }

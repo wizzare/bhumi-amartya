@@ -52,7 +52,7 @@ export async function recoverAndRefreshPremiumPurchases(
   const eligible = purchases.filter((purchase) =>
     purchase.products?.includes(productId) &&
     Boolean(purchase.purchaseToken) &&
-    (purchase.purchaseState === 1 || purchase.purchaseState === undefined)
+    (purchase.purchaseState === 1 || purchase.purchaseState === 2 || purchase.purchaseState === undefined)
   );
   let verified = 0;
   let retryableFailures = 0;
