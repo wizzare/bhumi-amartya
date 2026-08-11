@@ -5,6 +5,7 @@ import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { BuildInfo, getRuntimeBuildInfo, hasBuildInfoChanged } from "@/lib/config/buildInfo";
 import type { GaiaProfile } from "@/lib/profile/gaia/types";
+import { stripServerOwnedAccessFields } from "@/lib/billing/serverOwnedAccessFields";
 
 export type BaselineWellnessProfile = {
   bodyScore: number;
@@ -128,64 +129,6 @@ export type UserProfile = {
   createdAt: Timestamp;
   updatedAt: Timestamp;
 };
-
-const SERVER_OWNED_ACCESS_FIELDS = new Set([
-  "plan",
-  "plans",
-  "planLabel",
-  "tier",
-  "tiers",
-  "role",
-  "roles",
-  "guardianRole",
-  "badge",
-  "badges",
-  "testerBadge",
-  "guardianBadge",
-  "recognitionTier",
-  "isDeveloper",
-  "isFoundingMember",
-  "premium",
-  "isPremium",
-  "subscription",
-  "subscriptionStatus",
-  "entitlement",
-  "entitlements",
-  "membership",
-  "membershipType",
-  "memberType",
-  "membershipStartDate",
-  "membershipExpiryDate",
-  "membershipExpiresAt",
-  "billing",
-  "purchase",
-  "purchases",
-  "productId",
-  "expiryDate",
-  "accessStart",
-  "accessUntil",
-  "validUntil",
-  "trial",
-  "trialStartedAt",
-  "trialEndsAt",
-  "quota",
-  "limits",
-  "credits",
-  "founder",
-  "admin",
-  "staff",
-  "paid",
-  "paymentStatus",
-  "isInternalTester",
-  "excludeFromAdminAnalytics",
-  "internalTesterLabel",
-]);
-
-function stripServerOwnedAccessFields<T extends Record<string, unknown>>(data: T): Partial<T> {
-  return Object.fromEntries(
-    Object.entries(data).filter(([key]) => !SERVER_OWNED_ACCESS_FIELDS.has(key)),
-  ) as Partial<T>;
-}
 
 const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
   const userRef = doc(db, "users", uid);

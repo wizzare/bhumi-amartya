@@ -1,6 +1,7 @@
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { createNextStaticRscAliases } from './fix-next-static-rsc-paths.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -15,6 +16,7 @@ const env = {
   NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN: 'false',
   NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN: 'false',
   NEXT_PUBLIC_ENABLE_FOUNDER_PRE_RELEASE_QA: 'false',
+  NEXT_PUBLIC_WEB_APP_URL: 'https://bhumi-amartya-clean.vercel.app',
   NODE_ENV: 'production'
 };
 
@@ -40,8 +42,10 @@ const nextBuild = spawn(nextBin, ['build'], {
   cwd: rootDir
 });
 
-nextBuild.on('close', (code) => {
+nextBuild.on('close', async (code) => {
   if (code === 0) {
+    const aliases = await createNextStaticRscAliases(resolve(rootDir, 'out'));
+    console.log(`Next static RSC aliases created: ${aliases}`);
     console.log('\nProduction build completed successfully.\n');
   } else {
     console.error(`\nProduction build failed with code ${code}.\n`);

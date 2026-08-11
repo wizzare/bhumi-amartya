@@ -21,7 +21,45 @@ type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInpu
   date?: string;
   astrologyToday?: string | null;
   generatedAt?: string;
+  memoryHash?: string;
 };
+
+const CORS_ALLOWED_METHODS = "POST, OPTIONS";
+const CORS_ALLOWED_HEADERS = "Content-Type";
+
+function allowedCorsOrigin(request: Request): string | null {
+  const origin = request.headers.get("origin");
+  if (!origin) return null;
+  const allowedOrigins = new Set([
+    "https://localhost",
+    ...(process.env.ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  ]);
+  return allowedOrigins.has(origin) ? origin : null;
+}
+
+function corsHeaders(request: Request, existing?: HeadersInit): Headers {
+  const headers = new Headers(existing);
+  const origin = allowedCorsOrigin(request);
+  if (origin) headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Access-Control-Allow-Methods", CORS_ALLOWED_METHODS);
+  headers.set("Access-Control-Allow-Headers", CORS_ALLOWED_HEADERS);
+  headers.set("Vary", "Origin");
+  return headers;
+}
+
+function corsJson(request: Request, body: unknown, init: ResponseInit = {}) {
+  return NextResponse.json(body, { ...init, headers: corsHeaders(request, init.headers) });
+}
+
+export async function OPTIONS(request: Request) {
+  if (request.headers.get("origin") && !allowedCorsOrigin(request)) {
+    return new NextResponse(null, { status: 403 });
+  }
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -175,7 +213,8 @@ export async function POST(request: Request) {
 
     if (normalized.missingReason) {
       console.error("[DAILY_GUIDANCE_BAD_REQUEST]", normalized.missingReason);
-      return NextResponse.json(
+      return corsJson(
+        request,
         { ok: false, reason: normalized.missingReason },
         { status: 400 },
       );
@@ -189,7 +228,12 @@ export async function POST(request: Request) {
       profile: input.profile,
       blueprint: input.blueprint,
       date: localDateKey,
-      generate: () => generateDailyGuidanceForRequest(input),
+      generate: async () => {
+        const generated = await generateDailyGuidanceForRequest(input);
+        return typeof body?.memoryHash === "string" && body.memoryHash
+          ? { ...generated, memoryHash: body.memoryHash }
+          : generated;
+      },
     });
 
     if (result.status !== "success" || !result.guidance) {
@@ -204,7 +248,7 @@ export async function POST(request: Request) {
       date: input.localDateKey,
       hasGuidance: Boolean(guidance),
     });
-    return NextResponse.json(apiResponse);
+    return corsJson(request, apiResponse);
   } catch (error) {
     console.error("Daily guidance API failed:", error);
     if (process.env.NODE_ENV === "development" && error instanceof Error) {
@@ -212,7 +256,8 @@ export async function POST(request: Request) {
     }
     const apiResponse = { ok: false, reason: "ai_failed" satisfies DailyGuidanceErrorReason };
     console.log("[DAILY_GUIDANCE_RESPONSE_SUMMARY]", apiResponse);
-    return NextResponse.json(
+    return corsJson(
+      request,
       apiResponse,
       { status: 500 },
     );

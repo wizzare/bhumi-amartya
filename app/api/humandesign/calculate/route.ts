@@ -6,6 +6,42 @@ import { readFileSync, existsSync } from "fs";
 
 const CANONICAL_HD_API_URL = "https://bhumi-human-design-api.vercel.app/calculate";
 const HD_REQUEST_TIMEOUT_MS = 15_000;
+const CORS_ALLOWED_METHODS = "POST, OPTIONS";
+const CORS_ALLOWED_HEADERS = "Authorization, Content-Type, X-Firebase-AppCheck";
+
+function allowedCorsOrigin(request: Request): string | null {
+  const origin = request.headers.get("origin");
+  if (!origin) return null;
+  const allowedOrigins = new Set([
+    "https://localhost",
+    ...(process.env.ALLOWED_ORIGINS || "")
+      .split(",")
+      .map((value) => value.trim())
+      .filter(Boolean),
+  ]);
+  return allowedOrigins.has(origin) ? origin : null;
+}
+
+function corsHeaders(request: Request, existing?: HeadersInit): Headers {
+  const headers = new Headers(existing);
+  const origin = allowedCorsOrigin(request);
+  if (origin) headers.set("Access-Control-Allow-Origin", origin);
+  headers.set("Access-Control-Allow-Methods", CORS_ALLOWED_METHODS);
+  headers.set("Access-Control-Allow-Headers", CORS_ALLOWED_HEADERS);
+  headers.set("Vary", "Origin");
+  return headers;
+}
+
+function corsJson(request: Request, body: unknown, init: ResponseInit = {}) {
+  return NextResponse.json(body, { ...init, headers: corsHeaders(request, init.headers) });
+}
+
+export async function OPTIONS(request: Request) {
+  if (request.headers.get("origin") && !allowedCorsOrigin(request)) {
+    return new NextResponse(null, { status: 403 });
+  }
+  return new NextResponse(null, { status: 204, headers: corsHeaders(request) });
+}
 
 // Simple in-memory rate limiting map: ip -> { count, resetTime } (Defense-in-depth)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
@@ -108,7 +144,8 @@ export async function POST(request: Request) {
     // 1. Abuse protection / Rate limiting (Defense-in-depth)
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
     if (!checkRateLimit(ip)) {
-      return NextResponse.json(
+      return corsJson(
+        request,
         { status: "error", calculationStatus: "retriable_error", note: "Too many requests. Rate limit exceeded." },
         {
           status: 429,
@@ -122,7 +159,8 @@ export async function POST(request: Request) {
     // 2. Route Authentication & Authorization Verification
     const authResult = await verifyRequestAuthentication(request);
     if (!authResult.authenticated) {
-      return NextResponse.json(
+      return corsJson(
+        request,
         { status: "error", calculationStatus: "unauthorized", note: authResult.errorNote || "Authentication failed." },
         {
           status: authResult.status || 401,
@@ -136,7 +174,8 @@ export async function POST(request: Request) {
     // 3. Body parsing
     const body = await request.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return NextResponse.json(
+      return corsJson(
+        request,
         { status: "error", calculationStatus: "missing_input", note: "Invalid JSON body." },
         {
           status: 400,
@@ -156,7 +195,8 @@ export async function POST(request: Request) {
 
     // 4. Payload validation
     if (!isValidDateStr(birthDate) || !isValidTimeStr(birthTime) || !birthPlace) {
-      return NextResponse.json(
+      return corsJson(
+        request,
         { status: "error", calculationStatus: "missing_input", note: "Valid birthDate (YYYY-MM-DD), birthTime (HH:mm), and birthPlace are required." },
         {
           status: 400,
@@ -197,7 +237,8 @@ export async function POST(request: Request) {
     } catch (fetchErr: any) {
       const isTimeout = fetchErr?.name === "AbortError";
       console.warn(`[HD API ROUTE] External call failed: ${isTimeout ? "TIMEOUT" : "CONNECTION_ERROR"}`);
-      return NextResponse.json(
+      return corsJson(
+        request,
         {
           status: "error",
           calculationStatus: isTimeout ? "timeout" : "connection_error",
@@ -217,7 +258,8 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       console.warn(`[HD API ROUTE] External API returned HTTP status ${response.status}`);
-      return NextResponse.json(
+      return corsJson(
+        request,
         {
           status: "error",
           calculationStatus: "service_unavailable",
@@ -241,7 +283,7 @@ export async function POST(request: Request) {
       source: "human-design-py",
       hdAuditStatus: "validated",
     };
-    return NextResponse.json(canonicalData, {
+    return corsJson(request, canonicalData, {
       status: 200,
       headers: {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -249,7 +291,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[HD API ROUTE] Unexpected server error in HD calculation route");
-    return NextResponse.json(
+    return corsJson(
+      request,
       { status: "error", calculationStatus: "service_unavailable", note: "Internal server error during Human Design calculation." },
       {
         status: 500,

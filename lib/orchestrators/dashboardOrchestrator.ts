@@ -7,6 +7,7 @@ import type { DashboardData } from "@/lib/data/types";
 import type { UserProfile } from "@/lib/types/user";
 import type { Blueprint } from "@/lib/types/blueprint";
 import type { DailyGuidanceInput, DailyGuidanceOutput } from "@/lib/orchestrators/types";
+import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
 
 export interface DashboardOrchestratorConfig {
   userProfile: UserProfile;
@@ -87,7 +88,7 @@ export class DashboardOrchestrator {
 
   private async requestDailyGuidance(input: DailyGuidanceInput): Promise<DailyGuidanceOutput | null> {
     try {
-      const response = await fetch("/api/ai/daily-guidance", {
+      const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

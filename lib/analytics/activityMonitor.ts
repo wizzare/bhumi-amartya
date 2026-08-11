@@ -1,5 +1,5 @@
 import { doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebase";
+import { auth, db } from "@/lib/firebase/firebase";
 import { APP_VERSION } from "@/src/lib/version";
 import { App } from "@capacitor/app";
 
@@ -20,6 +20,10 @@ function getLocalDateString(): string {
 
 let cachedBuildNumber: string | null = null;
 
+function isCurrentAuthenticatedUser(uid: string): boolean {
+  return Boolean(uid && auth.currentUser?.uid === uid);
+}
+
 async function getBuildNumber(): Promise<string> {
   if (cachedBuildNumber !== null) return cachedBuildNumber;
   try {
@@ -32,11 +36,12 @@ async function getBuildNumber(): Promise<string> {
 }
 
 export async function trackAppOpen(payload: UserActivityPayload, isNewSession: boolean) {
-  if (!payload.uid) return;
+  if (!isCurrentAuthenticatedUser(payload.uid)) return;
   const dateStr = getLocalDateString();
   const docId = `${payload.uid}_${dateStr}`;
   const docRef = doc(db, "user_activity", docId);
   const buildNum = await getBuildNumber();
+  if (!isCurrentAuthenticatedUser(payload.uid)) return;
   console.log("[ActivityTracker] write attempt", { action: "trackAppOpen", docId, uid: payload.uid });
 
   const updateData: any = {
@@ -66,11 +71,12 @@ export async function trackAppOpen(payload: UserActivityPayload, isNewSession: b
 }
 
 export async function trackScreenChange(payload: UserActivityPayload, screenName: string) {
-  if (!payload.uid) return;
+  if (!isCurrentAuthenticatedUser(payload.uid)) return;
   const dateStr = getLocalDateString();
   const docId = `${payload.uid}_${dateStr}`;
   const docRef = doc(db, "user_activity", docId);
   const buildNum = await getBuildNumber();
+  if (!isCurrentAuthenticatedUser(payload.uid)) return;
   console.log("[ActivityTracker] write attempt", { action: "trackScreenChange", docId, uid: payload.uid, screenName });
 
   try {
@@ -92,11 +98,12 @@ export async function trackScreenChange(payload: UserActivityPayload, screenName
 }
 
 export async function trackSessionDuration(payload: UserActivityPayload, seconds: number) {
-  if (!payload.uid || seconds <= 0) return;
+  if (!isCurrentAuthenticatedUser(payload.uid) || seconds <= 0) return;
   const dateStr = getLocalDateString();
   const docId = `${payload.uid}_${dateStr}`;
   const docRef = doc(db, "user_activity", docId);
   const buildNum = await getBuildNumber();
+  if (!isCurrentAuthenticatedUser(payload.uid)) return;
   console.log("[ActivityTracker] write attempt", { action: "trackSessionDuration", docId, uid: payload.uid, seconds });
 
   try {

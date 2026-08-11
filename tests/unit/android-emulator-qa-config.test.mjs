@@ -20,10 +20,11 @@ assert.match(mainManifest, /android:usesCleartextTraffic="false"/, "main/release
 assert.match(debugManifest, /android:networkSecurityConfig="@xml\/network_security_config"/);
 assert.match(debugNetworkSecurity, /<base-config cleartextTrafficPermitted="false" \/>/);
 assert.match(debugNetworkSecurity, /<domain includeSubdomains="false">10\.0\.2\.2<\/domain>/);
-assert.equal((debugNetworkSecurity.match(/<domain /g) ?? []).length, 1, "only the Android host alias may allow cleartext");
+assert.match(debugNetworkSecurity, /<domain includeSubdomains="false">127\.0\.0\.1<\/domain>/);
+assert.equal((debugNetworkSecurity.match(/<domain /g) ?? []).length, 2, "only Android emulator and adb-reverse loopback hosts may allow cleartext");
 assert.doesNotMatch(
   debugNetworkSecurity,
   /googleapis\.com|cloudfunctions\.net|play\.googleapis\.com|androidpublisher\.googleapis\.com/,
 );
 
-console.log("android emulator QA config: 9 assertions passed");
+console.log("android emulator QA config: 10 assertions passed");

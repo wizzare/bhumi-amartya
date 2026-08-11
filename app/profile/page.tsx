@@ -138,13 +138,15 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 min-[350px]:grid-cols-2">
         {cards.map(c => (
           <Link key={c.title} href={c.href} className="bhumi-card border-none bg-white p-4 shadow-sm transition-transform active:scale-95">
             <div className="flex items-start gap-3">
               <div className="shrink-0 pt-0.5 text-2xl">{c.icon}</div>
               <div className="min-w-0">
-                <h3 className="font-semibold text-[#4F5E52]">{c.title}</h3>
+                <h3 className="font-semibold text-[#4F5E52]">
+                  {c.title === "Astrocartography" ? <>Astro<br />cartography</> : c.title}
+                </h3>
                 <p className="mt-1 text-xs text-[#7B8776]">{c.desc}</p>
               </div>
             </div>

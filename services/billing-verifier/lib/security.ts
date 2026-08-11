@@ -12,6 +12,9 @@ export function previewDryRunEnabled() {
 
 export function originAllowed(origin?: string) {
   if (!origin) return true;
-  const allowed = (process.env.ALLOWED_ORIGINS || "capacitor://localhost,http://localhost").split(",").map((value) => value.trim()).filter(Boolean);
+  const allowed = [
+    "https://localhost",
+    ...(process.env.ALLOWED_ORIGINS || "capacitor://localhost,http://localhost").split(",").map((value) => value.trim()).filter(Boolean),
+  ];
   return allowed.includes(origin);
 }

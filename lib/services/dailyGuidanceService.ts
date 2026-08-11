@@ -27,6 +27,7 @@ import { calculateProgressMetrics } from "@/lib/engines/progressCalculationEngin
 import { dailyIntelligenceEngine } from "@/lib/engines/dailyIntelligenceEngine";
 import { dailyGuidanceEngine } from "@/lib/engines/dailyGuidanceEngine";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
+import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
 export { createDailyGuidanceServiceCore } from "./dailyGuidanceServiceCore";
 
 export interface DailyGuidanceResult {
@@ -350,6 +351,7 @@ async function executeGetOrGenerateDailyGuidance(params: {
     journeyMemory: journeyLearning,
     previousGuidance,
     environmentContext: envContext,
+    memoryHash: generateMemoryHash(memoryContext),
   };
 
   // 4. The API route supplies this callback so the shared service owns the
@@ -380,7 +382,7 @@ async function executeGetOrGenerateDailyGuidance(params: {
     }
   } else {
     try {
-      const response = await fetch("/api/ai/daily-guidance", {
+      const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

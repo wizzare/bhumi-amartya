@@ -69,6 +69,8 @@ import { WeeklyGuidanceCard } from "@/components/dashboard/WeeklyGuidanceCard";
 import { buildWeeklyGuidance } from "@/lib/weeklyGuidance/weeklyGuidanceEngine";
 import type { WeeklyGuidance } from "@/lib/weeklyGuidance/types";
 import { DashboardReviewPrompt } from "@/components/rating/DashboardReviewPrompt";
+import { TrialWelcomePopup } from "@/components/dashboard/TrialWelcomePopup";
+import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
 
 function withCanonicalDailyConclusion(
   guidance: DailyGuidance,
@@ -424,9 +426,10 @@ export function DashboardClient() {
         journeyMemory: journeyLearning,
         previousGuidance,
         environmentContext: envContext,
+        memoryHash: generateMemoryHash(memoryContext),
       };
 
-      const response = await fetch("/api/ai/daily-guidance", {
+      const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -782,6 +785,7 @@ export function DashboardClient() {
   return (
     <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
       <AppNav />
+      {auth?.userProfile ? <TrialWelcomePopup profile={auth.userProfile} /> : null}
 
       <DashboardReviewPrompt
         profile={profile}

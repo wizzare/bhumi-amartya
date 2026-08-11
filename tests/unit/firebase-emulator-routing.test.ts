@@ -43,6 +43,7 @@ test("Android Auth uses the host emulator alias", androidEndpoints.auth.host ===
 test("Android Firestore uses the host emulator alias", androidEndpoints.firestore.host === "10.0.2.2");
 test("Android Functions uses the host emulator alias", androidEndpoints.functions.host === "10.0.2.2");
 test("physical Android accepts an explicit private LAN host", resolveFirebaseEmulatorHost({ platform: "android", nativeHost: "192.168.1.8" }) === "192.168.1.8");
+test("physical Android accepts adb reverse loopback", resolveFirebaseEmulatorHost({ platform: "android", nativeHost: "127.0.0.1" }) === "127.0.0.1");
 test("Android without an explicit host fails closed", (() => {
   try {
     resolveFirebaseEmulatorHost({ platform: "android", nativeHost: "" });

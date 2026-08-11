@@ -51,6 +51,12 @@ async function runTests() {
 
     // 3. Token Valid / Dev Bypass -> 200 OK
     {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(JSON.stringify({ type: "Projector", profile: "2/4" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+
       const req = new Request("http://localhost:3000/api/humandesign/calculate", {
         method: "POST",
         headers: {
@@ -63,6 +69,8 @@ async function runTests() {
       test("Dev Bypass / Valid Token returns HTTP 200 OK", res.status === 200);
       const data = await res.json();
       test("Response contains canonical quality metadata", data.calculationQuality === "verified");
+
+      globalThis.fetch = originalFetch;
     }
 
     // 4. Payload Invalid -> 400 Bad Request
@@ -104,6 +112,12 @@ async function runTests() {
 
     // 6. Rate Limit -> 429 Too Many Requests
     {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response("{}", {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+
       let lastRes: Response | null = null;
       for (let i = 0; i < 25; i++) {
         const req = new Request("http://localhost:3000/api/humandesign/calculate", {
@@ -118,6 +132,8 @@ async function runTests() {
         lastRes = await POST(req);
       }
       test("Excessive Requests (25x) triggers HTTP 429 Rate Limit", lastRes?.status === 429);
+
+      globalThis.fetch = originalFetch;
     }
 
   } finally {

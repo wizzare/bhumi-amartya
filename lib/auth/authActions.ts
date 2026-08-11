@@ -81,11 +81,18 @@ export function isServerIssuedProfilePending(
   return !profile?.trialStartedAt || !profile?.trialEndsAt;
 }
 
-async function waitForServerIssuedProfile(user: User, initialProfile: UserProfile): Promise<UserProfile> {
+async function waitForServerIssuedProfile(
+  user: User,
+  initialProfile: UserProfile,
+  profileWasJustCreated = false,
+): Promise<UserProfile> {
   let profile = initialProfile;
   const deadline = Date.now() + SERVER_PROFILE_WAIT_TIMEOUT_MS;
+  const isPending = () => profileWasJustCreated
+    ? !hasHigherServerEntitlement(profile) && (!profile.trialStartedAt || !profile.trialEndsAt)
+    : isServerIssuedProfilePending(user, profile);
 
-  while (isServerIssuedProfilePending(user, profile) && Date.now() < deadline) {
+  while (isPending() && Date.now() < deadline) {
     await new Promise((resolve) => setTimeout(resolve, SERVER_PROFILE_POLL_INTERVAL_MS));
     try {
       profile = (await userRepository.getUserProfile(user.uid)) ?? profile;
@@ -94,7 +101,7 @@ async function waitForServerIssuedProfile(user: User, initialProfile: UserProfil
     }
   }
 
-  if (isServerIssuedProfilePending(user, profile)) {
+  if (isPending()) {
     throw new ServerIssuedProfilePendingError();
   }
   return profile;
@@ -239,7 +246,7 @@ export const ensureMinimalUserProfile = async (user: User) => {
     blueprintStatus: createdProfile.blueprintStatus,
     source: "ensureMinimalUserProfile",
   });
-  return waitForServerIssuedProfile(user, createdProfile);
+  return waitForServerIssuedProfile(user, createdProfile, true);
 };
 
 export const signInWithGoogle = async (options?: {
@@ -262,7 +269,7 @@ export const signInWithGoogle = async (options?: {
       const nativeAuth = FirebaseAuthentication as NativeGoogleAuthWithLegacyOptions;
       const result = await nativeAuth.signInWithGoogle({
         webClientId: WEB_CLIENT_ID,
-        useCredentialManager: false,
+        useCredentialManager: true,
       });
 
       console.log("[NATIVE GOOGLE AUTH RESULT SUCCESS]", {

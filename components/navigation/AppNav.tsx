@@ -3,11 +3,9 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Shield, Sprout, User } from "lucide-react";
+import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Sprout, User } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
-import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/lib/data/translations";
-import { getLocalUserSession } from "@/lib/auth/getLocalUserSession";
 
 type NavLabelKey = keyof typeof translations.id.nav;
 type NavItem = {
@@ -30,21 +28,12 @@ const UTILITY_NAV_ITEMS: NavItem[] = [
   { Icon: Crown, labelKey: "profile" as any, label: "Premium Bhumi", href: "/premium-bhumi" },
 ];
 
-const ADMIN_ITEM: NavItem = { Icon: Shield, labelKey: "admin", href: "/admin/activity" };
-
 export function AppNav() {
   const pathname = usePathname();
-  const auth = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const localProfile = getLocalUserSession().profile;
-  const activeProfile = auth?.userProfile ?? localProfile ?? null;
-  const isAdmin = isFounderOrAdminAccount(activeProfile);
-
-  const moreItems = useMemo(() => {
-    return isAdmin ? [...UTILITY_NAV_ITEMS, ADMIN_ITEM] : UTILITY_NAV_ITEMS;
-  }, [isAdmin]);
+  const moreItems = UTILITY_NAV_ITEMS;
 
   const desktopNavItems = useMemo(() => {
     return [...PRIMARY_NAV_ITEMS];
@@ -191,17 +180,4 @@ export function AppNav() {
       </div>
     </nav>
   );
-}
-
-function isFounderAccount(profile: any): boolean {
-  if (!profile) return false;
-  if (profile.guardianRole === "founder" || profile.role === "founder") return true;
-
-  const email = profile.email?.trim().toLowerCase();
-  return email === "wizzare@gmail.com";
-}
-
-function isFounderOrAdminAccount(profile: any): boolean {
-  if (!profile) return false;
-  return isFounderAccount(profile) || profile.guardianRole === "admin" || profile.role === "admin";
 }

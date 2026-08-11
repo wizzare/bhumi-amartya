@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
+import { Capacitor } from "@capacitor/core";
 import {
   GooglePopupTimeoutError,
   handleGoogleRedirectResult,
@@ -50,11 +51,13 @@ function LoginContent() {
   useEffect(() => {
     let active = true;
 
-    void handleGoogleRedirectResult().catch((err) => {
-      console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
-      if (!active) return;
-      setError(getGoogleLoginErrorMessage(err));
-    });
+    if (!Capacitor.isNativePlatform()) {
+      void handleGoogleRedirectResult().catch((err) => {
+        console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
+        if (!active) return;
+        setError(getGoogleLoginErrorMessage(err));
+      });
+    }
 
     return () => {
       active = false;
@@ -111,7 +114,9 @@ function LoginContent() {
       console.error("[CRITICAL AUTH ERROR - RAW]", err);
       const code = (err as { code?: string })?.code;
       setError(getGoogleLoginErrorMessage(err));
-      setShowRedirectFallback(code === "auth/popup-timeout" || code === "auth/popup-blocked");
+      if (!Capacitor.isNativePlatform()) {
+        setShowRedirectFallback(code === "auth/popup-timeout" || code === "auth/popup-blocked");
+      }
     } finally {
       setLoginLoading(false);
     }

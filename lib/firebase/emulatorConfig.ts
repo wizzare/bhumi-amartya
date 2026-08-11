@@ -5,6 +5,7 @@ import { connectFunctionsEmulator } from "firebase/functions";
 
 const WEB_EMULATOR_HOST = "127.0.0.1";
 const ANDROID_EMULATOR_HOST = "10.0.2.2";
+const ANDROID_USB_REVERSE_HOST = "127.0.0.1";
 const EMULATOR_PORT_AUTH = 9099;
 const EMULATOR_PORT_FIRESTORE = 8080;
 const EMULATOR_PORT_FUNCTIONS = 5001;
@@ -78,8 +79,8 @@ export function resolveFirebaseEmulatorHost(options: FirebaseEmulatorEndpointOpt
       "Firebase emulator mode on Android requires an explicit NEXT_PUBLIC_FIREBASE_EMULATOR_HOST.",
     );
   }
-  if (nativeHost !== ANDROID_EMULATOR_HOST && !isPrivateLanIpv4(nativeHost)) {
-    throw new Error("Firebase emulator mode on Android requires 10.0.2.2 or an explicit private LAN IPv4 host.");
+  if (nativeHost !== ANDROID_EMULATOR_HOST && nativeHost !== ANDROID_USB_REVERSE_HOST && !isPrivateLanIpv4(nativeHost)) {
+    throw new Error("Firebase emulator mode on Android requires 10.0.2.2, 127.0.0.1 via adb reverse, or an explicit private LAN IPv4 host.");
   }
   return nativeHost;
 }

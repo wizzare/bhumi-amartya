@@ -384,11 +384,22 @@ export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: a
     emotionalFocus: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.emotionalFocus) || "Kehadiran", seenCounts) || "",
     spiritualFocus: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.spiritualFocus) || "Kejernihan", seenCounts) || "",
     groundedAction: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.groundedAction) || CATEGORY_SPECIFIC_FALLBACK_INSIGHTS.general, seenCounts) || "",
-    companionReflection: guidance.companionReflection
-      ? {
-          preview: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.companionReflection.preview) || CATEGORY_SPECIFIC_FALLBACK_INSIGHTS.general, seenCounts) || "",
-          fullReflection: deconflictBlacklistPhrases(normalizeUserFacingText(guidance.companionReflection.fullReflection) || CATEGORY_SPECIFIC_FALLBACK_INSIGHTS.general, seenCounts) || "",
-        }
-      : undefined,
+    companionReflection: {
+      preview: deconflictBlacklistPhrases(
+        normalizeUserFacingText(guidance.companionReflection?.preview)
+        || normalizeUserFacingText(guidance.dailyNoteText)
+        || soulReflectionText
+        || CATEGORY_SPECIFIC_FALLBACK_INSIGHTS.general,
+        seenCounts,
+      ) || "",
+      fullReflection: deconflictBlacklistPhrases(
+        normalizeUserFacingText(guidance.companionReflection?.fullReflection)
+        || normalizeUserFacingText(guidance.soulReflectionText)
+        || normalizeUserFacingText(guidance.aiInsight)
+        || soulReflectionText
+        || CATEGORY_SPECIFIC_FALLBACK_INSIGHTS.general,
+        seenCounts,
+      ) || "",
+    },
   };
 }

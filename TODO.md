@@ -56,6 +56,80 @@
 - Do NOT add Founder Dashboard implementation tasks into this repository's TODO.
 - Future dashboard work continues in the separate repository. When trial status rendering is added there, it must use canonical entitlement: **TRIAL / PREMIUM / FREE**, not raw membership strings.
 
+---
+
+# REMAINING WORK — BUILD 86 AND FOLLOW-UP
+
+## P0 — BUILD 86 — NEW USER ACCESS HOTFIX
+
+- Fix first-login profile/bootstrap sequencing.
+- Physical Android verification:
+  - Profile PASS.
+  - Wellness PASS.
+  - Journey PASS.
+
+## P1 — BILLING CHECK — PHYSICAL ANDROID
+
+- Investigate the paid user who is still shown as Gratis.
+- Reproduce the Restore Purchase error on the physical USB device.
+- Trace the complete state pipeline:
+  - Google Play Billing.
+  - Android plugin.
+  - Billing verifier.
+  - Firestore entitlement.
+  - App entitlement.
+  - UI.
+- Do not initiate a new real purchase.
+- Do not mutate production data without Founder approval.
+- Fix only the first proven failing layer.
+- Verify that the paid user becomes Premium correctly.
+
+## P1 — FOUNDER / ADMIN DASHBOARD — FINISH
+
+- Continue the existing standalone dashboard work in `C:\tmp\bhumi-founder-dashboard`.
+- Verify the existing approved dashboard commits and worktree state.
+- Finish the remaining dashboard functionality.
+- Push `main`.
+- Deploy to Vercel.
+- Configure and verify `dashboard.bhumiamartya.my.id`.
+- Smoke test users, analytics, inbox, broadcast preview/send protection, and entitlement display.
+- Do not send a real broadcast during testing.
+
+## P1 — BUILD 86 — REMOVE ADMIN PAGES FROM MOBILE APP
+
+After the Build 86 access hotfix and billing verification are complete:
+
+- Remove the legacy admin/dashboard pages from the mobile app.
+- Keep all Admin functionality only in the standalone Founder Dashboard:
+  - Repository: `C:\tmp\bhumi-founder-dashboard`.
+  - Production: `dashboard.bhumiamartya.my.id`.
+- In the mobile app repository:
+  - Remove active `app/admin/**` pages and routes.
+  - Remove navigation and menu links that can open Admin pages.
+  - Remove dead imports and references caused specifically by this removal.
+  - Do not move Admin functionality back into the mobile app.
+  - Do not redesign unrelated navigation.
+  - Do not delete shared services or components that remain in use elsewhere.
+- Verify:
+  - The normal user app builds successfully.
+  - No `/admin` page is reachable in Build 86.
+  - No Admin menu or link remains in the mobile UI.
+  - The standalone Founder Dashboard continues independently.
+
+## Build 86 Execution Priority
+
+1. P0 — Build 86 new-user access hotfix.
+2. P1 — Billing physical-device check and fix.
+3. P1 — Founder Dashboard completion.
+4. P1 — Remove legacy Admin pages from the mobile app.
+5. Build the signed AAB with `versionCode 86`, then proceed to production release only after all required verification passes.
+
+## Scope Guard
+
+- Do not implement anything else.
+- Do not reopen completed Human Design work.
+- Do not refactor unrelated code.
+
 ## Post-release maintenance — TypeScript 6 configuration (DO NOT CHANGE DURING BUILD 85)
 
 - Safely migrate `services/billing-verifier/tsconfig.json` away from deprecated `moduleResolution: "node"`/`"node10"` only after verifying billing verifier runtime/module compatibility.

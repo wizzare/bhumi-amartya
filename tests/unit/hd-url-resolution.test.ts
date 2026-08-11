@@ -32,6 +32,8 @@ function test(label: string, condition: boolean, detail?: string) {
   const url = getHdApiUrl({ isNative: true, isProd: true, isWindow: true });
   test("Capacitor Android resolves absolute HTTPS URL", url.startsWith("https://") && url.includes("/api/humandesign/calculate"));
   test("Capacitor Android DOES NOT resolve relative path", !url.startsWith("/api/"));
+  test("Capacitor Android uses the current deployed web service", url === "https://bhumi-amartya-clean.vercel.app/api/humandesign/calculate");
+  test("Capacitor Android excludes the obsolete service hostname", !url.includes("bhumi-amartya.vercel.app"));
 }
 
 // 4. Capacitor iOS Native App

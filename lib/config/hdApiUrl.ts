@@ -27,7 +27,7 @@ export function getHdApiUrl(options?: {
 
   // Rule: Native Capacitor Android / iOS APK MUST ALWAYS use absolute HTTPS backend endpoint.
   if (isNative) {
-    const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL || "https://bhumi-amartya.vercel.app";
+    const webAppUrl = process.env.NEXT_PUBLIC_WEB_APP_URL || "https://bhumi-amartya-clean.vercel.app";
     return `${webAppUrl.replace(/\/$/, "")}/api/humandesign/calculate`;
   }
 

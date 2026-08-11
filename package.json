@@ -2,11 +2,17 @@
   "name": "bhumi-amartya-clean",
   "version": "4.4.5",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "overrides": {
+    "node-gyp": "^10.3.1"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 -p 3000",
     "dev:prod": "node scripts/run-dev.mjs prod",
     "dev:emulator": "node scripts/run-dev.mjs emulator",
-    "build": "next build",
+    "build": "next build --webpack && node scripts/fix-next-static-rsc-paths.mjs",
     "build:prod": "node scripts/run-prod-build.mjs",
     "start": "next start",
     "lint": "eslint app components lib src",

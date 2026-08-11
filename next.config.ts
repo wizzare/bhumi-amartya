@@ -8,8 +8,8 @@ if (process.env.STRICT_BUILD_CHECK === "true" && !process.env.NEXT_PUBLIC_BILLIN
 
 const nextConfig: NextConfig = {
   /* config options here */
-  output: 'export',
-  trailingSlash: true,
+  output: process.env.VERCEL ? undefined : 'export',
+  trailingSlash: process.env.VERCEL ? false : true,
   // @ts-ignore
   allowedDevOrigins: ['192.168.1.8', '192.168.1.11', 'localhost'],
   images: {
