@@ -19,15 +19,20 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import android.os.Handler;
+import android.os.Looper;
 
 @CapacitorPlugin(name = "BhumiBilling")
 public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListener {
     private static final String PREMIUM_PRODUCT_ID = "bhumi_premium_monthly";
     private static final String PREMIUM_BASE_PLAN_ID = "monthly";
+    private static final int MAX_QUERY_RETRIES = 3;
+    private static final long RETRY_DELAY_MS = 500L;
 
     private BillingClient billingClient;
     private ProductDetails premiumProductDetails;
     private PluginCall pendingPurchaseCall;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Override
     public void load() {
@@ -110,19 +115,7 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
         }
 
         if (responseCode == BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED) {
-            QueryPurchasesParams params = QueryPurchasesParams.newBuilder()
-                .setProductType(BillingClient.ProductType.SUBS)
-                .build();
-            billingClient.queryPurchasesAsync(params, (queryResult, existingPurchases) -> {
-                if (queryResult.getResponseCode() == BillingClient.BillingResponseCode.OK && existingPurchases != null) {
-                    JSObject result = new JSObject();
-                    result.put("alreadyOwned", true);
-                    result.put("purchases", purchasesToJson(existingPurchases));
-                    call.resolve(result);
-                } else {
-                    call.reject("Item already owned, but purchase retrieval failed.", "ITEM_ALREADY_OWNED_FETCH_FAILED");
-                }
-            });
+            fetchOwnedPurchasesWithRetry(call, 1);
             return;
         }
 
@@ -131,7 +124,36 @@ public class BhumiBillingPlugin extends Plugin implements PurchasesUpdatedListen
             return;
         }
 
-        call.reject("Purchase failed: " + billingResult.getDebugMessage(), String.valueOf(responseCode));
+        call.reject("Status transaksi: " + billingResult.getDebugMessage() + " (Kode: " + responseCode + ")", String.valueOf(responseCode));
+    }
+
+    private void fetchOwnedPurchasesWithRetry(PluginCall call, int attempt) {
+        QueryPurchasesParams params = QueryPurchasesParams.newBuilder()
+            .setProductType(BillingClient.ProductType.SUBS)
+            .build();
+
+        billingClient.queryPurchasesAsync(params, (queryResult, existingPurchases) -> {
+            boolean hasPurchases = queryResult.getResponseCode() == BillingClient.BillingResponseCode.OK
+                && existingPurchases != null
+                && !existingPurchases.isEmpty();
+
+            if (hasPurchases) {
+                JSObject result = new JSObject();
+                result.put("alreadyOwned", true);
+                result.put("purchases", purchasesToJson(existingPurchases));
+                call.resolve(result);
+                return;
+            }
+
+            if (attempt < MAX_QUERY_RETRIES) {
+                mainHandler.postDelayed(() -> fetchOwnedPurchasesWithRetry(call, attempt + 1), RETRY_DELAY_MS);
+            } else {
+                JSObject result = new JSObject();
+                result.put("alreadyOwned", true);
+                result.put("purchases", purchasesToJson(existingPurchases != null ? existingPurchases : new ArrayList<>()));
+                call.resolve(result);
+            }
+        });
     }
 
     private void ensureConnected(PluginCall call, Runnable onConnected) {
