@@ -76,6 +76,7 @@ export default function PremiumBhumiPage() {
         setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
         setTimeout(() => router.refresh(), 1500);
       } else if (recovery.state === "NO_ACTIVE_PURCHASE") setError("Tidak ada pembelian aktif yang dapat diverifikasi.");
+      else if (recovery.state === "PAYMENT_PENDING") setError("Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
       else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi tanpa membeli ulang.");
       else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian terdeteksi, tetapi penyimpanan akses belum berhasil. Silakan coba verifikasi ulang.");
       else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
@@ -101,6 +102,7 @@ export default function PremiumBhumiPage() {
         setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
         setTimeout(() => router.refresh(), 1500);
       } else if (recovery.state === "NO_ACTIVE_PURCHASE") setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan.");
+      else if (recovery.state === "PAYMENT_PENDING") setError("Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
       else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi.");
       else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian ditemukan, tetapi akses belum tersimpan. Silakan coba pulihkan lagi.");
       else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");

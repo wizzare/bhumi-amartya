@@ -3,6 +3,7 @@ export type RecoverablePurchase = { purchaseToken?: string; products?: string[];
 export type PremiumRecoveryState =
   | "ACCESS_ACTIVE"
   | "NO_ACTIVE_PURCHASE"
+  | "PAYMENT_PENDING"
   | "RETRYABLE_VERIFICATION_FAILURE"
   | "PERMANENT_VERIFICATION_FAILURE"
   | "PERSISTENCE_FAILURE"
@@ -16,6 +17,7 @@ export type PremiumRecoveryResult = {
   accessActive: boolean;
   retryableFailures: number;
   permanentFailures: number;
+  pendingCount: number;
   errorCode?: PremiumRecoveryState;
 };
 
@@ -26,7 +28,7 @@ export type PremiumPurchaseResult = {
 
 type RecoveryDependencies = {
   productId: string;
-  verify: (purchase: RecoverablePurchase) => Promise<{ ok: boolean; active: boolean }>;
+  verify: (purchase: RecoverablePurchase) => Promise<{ ok: boolean; active: boolean; status?: string }>;
   refresh: () => Promise<void>;
   existingAccessActive?: boolean;
 };
@@ -56,6 +58,7 @@ export async function recoverAndRefreshPremiumPurchases(
   let retryableFailures = 0;
   let permanentFailures = 0;
   let persistenceFailures = 0;
+  let pendingCount = 0;
 
   for (const purchase of eligible) {
     const token = purchase.purchaseToken!;
@@ -63,8 +66,13 @@ export async function recoverAndRefreshPremiumPurchases(
     tokens.add(token);
     try {
       const result = await verify(purchase);
-      if (result.ok && result.active) verified++;
-      else permanentFailures++;
+      if (result.ok && result.active) {
+        verified++;
+      } else if (result.ok && !result.active && result.status === "SUBSCRIPTION_PENDING") {
+        pendingCount++;
+      } else {
+        permanentFailures++;
+      }
     } catch (error) {
       const kind = classifyFailure(error);
       if (kind === "retryable") retryableFailures++;
@@ -73,7 +81,7 @@ export async function recoverAndRefreshPremiumPurchases(
     }
   }
 
-  const base = { attempted: tokens.size, verified, retryableFailures, permanentFailures };
+  const base = { attempted: tokens.size, verified, retryableFailures, permanentFailures, pendingCount };
   if (verified > 0) {
     try {
       // The verifier response is returned only after its idempotent persistence;
@@ -89,9 +97,11 @@ export async function recoverAndRefreshPremiumPurchases(
     ? "PERSISTENCE_FAILURE"
     : retryableFailures > 0
       ? "RETRYABLE_VERIFICATION_FAILURE"
-      : permanentFailures > 0
-        ? "PERMANENT_VERIFICATION_FAILURE"
-        : "NO_ACTIVE_PURCHASE";
+      : pendingCount > 0
+        ? "PAYMENT_PENDING"
+        : permanentFailures > 0
+          ? "PERMANENT_VERIFICATION_FAILURE"
+          : "NO_ACTIVE_PURCHASE";
   return { ...base, state, errorCode: state, verifiedAny: false, accessActive: existingAccessActive };
 }
 
