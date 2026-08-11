@@ -219,8 +219,32 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
   if (!purchase.purchaseToken) {
     throw new Error("Purchase token tidak tersedia.");
   }
+  if (purchase.purchaseState !== undefined && purchase.purchaseState !== 1) {
+    return { ok: false, active: false, purchaseState: purchase.purchaseState, accessUntil: "" };
+  }
 
-  const currentUser = auth.currentUser;
+  let currentUser = auth.currentUser;
+  if (!currentUser && typeof (auth as any).authStateReady === "function") {
+    await (auth as any).authStateReady().catch(() => {});
+    currentUser = auth.currentUser;
+  }
+  if (!currentUser && typeof auth.onAuthStateChanged === "function") {
+    await new Promise<void>((resolve) => {
+      let unsubscribe: (() => void) | undefined;
+      const timer = setTimeout(() => {
+        if (unsubscribe) unsubscribe();
+        resolve();
+      }, 3000);
+      unsubscribe = auth.onAuthStateChanged((user) => {
+        if (user) {
+          clearTimeout(timer);
+          if (unsubscribe) unsubscribe();
+          resolve();
+        }
+      });
+    }).catch(() => {});
+    currentUser = auth.currentUser;
+  }
   if (!currentUser) throw new Error("AUTH_MISSING");
 
   try {

@@ -1,4 +1,4 @@
-export type RecoverablePurchase = { purchaseToken?: string; products?: string[] };
+export type RecoverablePurchase = { purchaseToken?: string; products?: string[]; purchaseState?: number };
 
 export type PremiumRecoveryState =
   | "ACCESS_ACTIVE"
@@ -47,7 +47,11 @@ export async function recoverAndRefreshPremiumPurchases(
   existingAccessActive = false,
 ): Promise<PremiumRecoveryResult> {
   const tokens = new Set<string>();
-  const eligible = purchases.filter((purchase) => purchase.products?.includes(productId) && Boolean(purchase.purchaseToken));
+  const eligible = purchases.filter((purchase) =>
+    purchase.products?.includes(productId) &&
+    Boolean(purchase.purchaseToken) &&
+    (purchase.purchaseState === 1 || purchase.purchaseState === undefined)
+  );
   let verified = 0;
   let retryableFailures = 0;
   let permanentFailures = 0;
