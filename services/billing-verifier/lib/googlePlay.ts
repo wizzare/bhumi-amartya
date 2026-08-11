@@ -14,7 +14,7 @@ import {
   withTimeout,
 } from "./timeout";
 
-type LineItem = { productId?: string; expiryTime?: string; autoRenewingPlan?: { basePlanId?: string } };
+type LineItem = { productId?: string; expiryTime?: string; autoRenewingPlan?: { basePlanId?: string }; offerDetails?: { basePlanId?: string; offerId?: string | null } };
 type Subscription = { subscriptionState?: string; acknowledgementState?: string; lineItems?: LineItem[] };
 type VoidedPurchase = { purchaseToken?: string };
 type VoidedPurchasesResponse = { voidedPurchases?: VoidedPurchase[] };
@@ -121,5 +121,7 @@ export async function checkVoidedPurchase(purchaseToken: string, context: Google
 }
 
 export function validateProduct(item?: LineItem) {
-  return item?.productId === PRODUCT_ID && (!item.autoRenewingPlan?.basePlanId || item.autoRenewingPlan.basePlanId === BASE_PLAN_ID);
+  if (!item || item.productId !== PRODUCT_ID) return false;
+  const basePlanId = item.offerDetails?.basePlanId || item.autoRenewingPlan?.basePlanId;
+  return !basePlanId || basePlanId === BASE_PLAN_ID;
 }
