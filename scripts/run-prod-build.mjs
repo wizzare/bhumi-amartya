@@ -17,8 +17,14 @@ const env = {
   NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN: 'false',
   NEXT_PUBLIC_ENABLE_FOUNDER_PRE_RELEASE_QA: 'false',
   NEXT_PUBLIC_WEB_APP_URL: 'https://bhumi-amartya-clean.vercel.app',
+  NEXT_PUBLIC_BILLING_VERIFIER_URL: process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || 'https://bhumi-billing-verifier.vercel.app',
   NODE_ENV: 'production'
 };
+
+if (!env.NEXT_PUBLIC_BILLING_VERIFIER_URL) {
+  console.error('\nERROR: NEXT_PUBLIC_BILLING_VERIFIER_URL is required for production build.\n');
+  process.exit(1);
+}
 
 // Explicitly unset emulator host variables to prevent any inheritance
 delete env.FIREBASE_AUTH_EMULATOR_HOST;
