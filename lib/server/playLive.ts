@@ -405,7 +405,7 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
     } catch (error) { warnings.push(error instanceof Error ? error.message : 'GOOGLE_AUTH_FAILED'); }
   } else warnings.push('Google Play service account belum dikonfigurasi.');
 
-  const overview = {
+  const overview: PlayDashboardData['overview'] = {
     installs: installsData?.installs || playSnapshot.installs,
     activeDevices: installsData?.activeDevices || playSnapshot.activeDevices,
     audience: installsData?.audience || playSnapshot.audience,
