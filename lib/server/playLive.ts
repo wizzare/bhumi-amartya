@@ -1,3 +1,4 @@
+import { inflateRawSync } from 'node:zlib';
 import { playCountryHistory, playCountryLatest, playSnapshot } from '@/lib/playSnapshot';
 import { getGoogleAccessToken, googlePlayCredentialStatus } from '@/lib/server/googleServiceAccount';
 
@@ -7,6 +8,7 @@ const REPORT_BUCKET = process.env.GOOGLE_PLAY_REPORT_BUCKET || 'pubsite_prod_475
 type CsvRow = Record<string, string>;
 type CountryRow = { country: string; users: number; pct: number };
 type HistoryRow = { date: string; total: number; Indonesia?: number };
+type EarningsData = { amount: number; currency: string; month: string };
 
 export type PlayDashboardData = {
   mode: 'live' | 'partial' | 'snapshot';
@@ -14,7 +16,7 @@ export type PlayDashboardData = {
   dataDate: string;
   overview: {
     installs: number; activeDevices: number; audience: number; firstOpens: number;
-    dau: number; mau: number; revenueUsd: number; rating: number;
+    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; rating: number;
     crashRate: number | null; anrRate: number | null;
   };
   acquisition: {
@@ -25,7 +27,7 @@ export type PlayDashboardData = {
   history: HistoryRow[];
   liveFields: string[];
   snapshotFields: string[];
-  sources: { reports: boolean; vitals: boolean; reportBucketConfigured: boolean; serviceAccountConfigured: boolean };
+  sources: { reports: boolean; financial: boolean; vitals: boolean; reportBucketConfigured: boolean; serviceAccountConfigured: boolean };
   warnings: string[];
 };
 
@@ -58,14 +60,14 @@ function parseCsv(text: string): CsvRow[] {
   return rows.slice(1).filter((r) => r.some((v) => v.trim())).map((r) => Object.fromEntries(headers.map((h, index) => [h, String(r[index] || '').trim()])));
 }
 
-function decodeReport(buffer: ArrayBuffer) {
-  const bytes = new Uint8Array(buffer);
+function decodeReport(input: ArrayBuffer | Uint8Array) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
   const utf16 = bytes.length >= 2 && ((bytes[0] === 0xff && bytes[1] === 0xfe) || bytes.filter((_, i) => i % 2 === 1 && bytes[i] === 0).length > Math.min(20, bytes.length / 8));
   return new TextDecoder(utf16 ? 'utf-16le' : 'utf-8').decode(bytes).replace(/^\uFEFF/, '');
 }
 
 function num(value: unknown) {
-  const parsed = Number(String(value ?? '').replace(/[%,$]/g, '').replace(/\s/g, ''));
+  const parsed = Number(String(value ?? '').replace(/[%,$]/g, '').replace(/\s/g, '').replace(/,/g, ''));
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
@@ -82,10 +84,10 @@ function sum(rows: CsvRow[], names: string[]) {
   return rows.reduce((total, row) => total + num(field(row, names)), 0);
 }
 
-function monthKeys() {
+function monthKeys(count = 2) {
   const result: string[] = [];
   const d = new Date();
-  for (let i = 0; i < 2; i += 1) {
+  for (let i = 0; i < count; i += 1) {
     const x = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - i, 1));
     result.push(`${x.getUTCFullYear()}${String(x.getUTCMonth() + 1).padStart(2, '0')}`);
   }
@@ -96,7 +98,7 @@ function reportBucket() {
   return String(REPORT_BUCKET).trim().replace(/^gs:\/\//, '').replace(/\/$/, '');
 }
 
-async function fetchGcsObject(token: string, objectName: string) {
+async function fetchGcsBytes(token: string, objectName: string, errorCode = 'GCS_REPORT') {
   const bucket = reportBucket();
   if (!bucket) return null;
   const url = `https://storage.googleapis.com/storage/v1/b/${encodeURIComponent(bucket)}/o/${encodeURIComponent(objectName)}?alt=media`;
@@ -104,9 +106,14 @@ async function fetchGcsObject(token: string, objectName: string) {
   if (response.status === 404) return null;
   if (!response.ok) {
     const detail = (await response.text().catch(() => '')).replace(/\s+/g, ' ').trim();
-    throw new Error(`GCS_REPORT_${response.status}${detail ? `: ${detail.slice(0, 320)}` : ''}`);
+    throw new Error(`${errorCode}_${response.status}${detail ? `: ${detail.slice(0, 320)}` : ''}`);
   }
-  return decodeReport(await response.arrayBuffer());
+  return new Uint8Array(await response.arrayBuffer());
+}
+
+async function fetchGcsObject(token: string, objectName: string) {
+  const bytes = await fetchGcsBytes(token, objectName);
+  return bytes ? decodeReport(bytes) : null;
 }
 
 async function latestMonthlyReport(token: string, makeName: (month: string) => string) {
@@ -115,6 +122,75 @@ async function latestMonthlyReport(token: string, makeName: (month: string) => s
     if (text) return parseCsv(text);
   }
   return [];
+}
+
+function unzipFirstCsv(bytes: Uint8Array) {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const minEocd = Math.max(0, bytes.byteLength - 65557);
+  let eocd = -1;
+  for (let i = bytes.byteLength - 22; i >= minEocd; i -= 1) {
+    if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('PLAY_FINANCIAL_ZIP_INVALID');
+
+  const centralSize = view.getUint32(eocd + 12, true);
+  const centralOffset = view.getUint32(eocd + 16, true);
+  const centralEnd = Math.min(bytes.byteLength, centralOffset + centralSize);
+  const decoder = new TextDecoder('utf-8');
+
+  for (let p = centralOffset; p + 46 <= centralEnd;) {
+    if (view.getUint32(p, true) !== 0x02014b50) break;
+    const compression = view.getUint16(p + 10, true);
+    const compressedSize = view.getUint32(p + 20, true);
+    const nameLength = view.getUint16(p + 28, true);
+    const extraLength = view.getUint16(p + 30, true);
+    const commentLength = view.getUint16(p + 32, true);
+    const localOffset = view.getUint32(p + 42, true);
+    const name = decoder.decode(bytes.subarray(p + 46, p + 46 + nameLength));
+
+    if (name.toLowerCase().endsWith('.csv')) {
+      if (localOffset + 30 > bytes.byteLength || view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('PLAY_FINANCIAL_ZIP_ENTRY_INVALID');
+      const localNameLength = view.getUint16(localOffset + 26, true);
+      const localExtraLength = view.getUint16(localOffset + 28, true);
+      const dataStart = localOffset + 30 + localNameLength + localExtraLength;
+      const dataEnd = dataStart + compressedSize;
+      if (dataEnd > bytes.byteLength) throw new Error('PLAY_FINANCIAL_ZIP_ENTRY_TRUNCATED');
+      const compressed = bytes.subarray(dataStart, dataEnd);
+      if (compression === 0) return decodeReport(compressed);
+      if (compression === 8) return decodeReport(inflateRawSync(compressed));
+      throw new Error(`PLAY_FINANCIAL_ZIP_COMPRESSION_${compression}`);
+    }
+    p += 46 + nameLength + extraLength + commentLength;
+  }
+  return null;
+}
+
+async function latestEarningsReport(token: string) {
+  for (const month of monthKeys(3)) {
+    const bytes = await fetchGcsBytes(token, `earnings/earnings_${month}.zip`, 'GCS_FINANCIAL');
+    if (!bytes) continue;
+    const text = unzipFirstCsv(bytes);
+    if (text) return { rows: parseCsv(text), month };
+  }
+  return null;
+}
+
+function earningsMetrics(rows: CsvRow[], month: string): EarningsData | null {
+  const appRows = rows.filter((row) => field(row, ['Package ID']).trim() === PACKAGE_NAME);
+  const currencyTotals = new Map<string, number>();
+  appRows.forEach((row) => {
+    const transactionType = field(row, ['Transaction Type']).trim().toLowerCase();
+    if (transactionType !== 'charge' && transactionType !== 'charge refund') return;
+    const currency = field(row, ['Merchant Currency']).trim().toUpperCase();
+    if (!currency) return;
+    const amount = num(field(row, ['Amount (Merchant Currency)']));
+    currencyTotals.set(currency, (currencyTotals.get(currency) || 0) + amount);
+  });
+
+  const nonEmpty = [...currencyTotals.entries()].filter(([, amount]) => Number.isFinite(amount));
+  if (nonEmpty.length !== 1) return null;
+  const [currency, amount] = nonEmpty[0];
+  return { amount: Math.round(amount * 100) / 100, currency, month };
 }
 
 function countryName(value: string) {
@@ -238,12 +314,14 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
   const status = googlePlayCredentialStatus();
   const warnings: string[] = [];
   const liveFields: string[] = [];
-  const snapshotFields = new Set(['firstOpens', 'dau', 'mau', 'revenueUsd', 'rating']);
+  const snapshotFields = new Set(['firstOpens', 'dau', 'mau', 'rating']);
   let installsData: ReturnType<typeof installMetrics> | null = null;
   let storeData: ReturnType<typeof storeMetrics> = null;
+  let earningsData: EarningsData | null = null;
   let crashRate: number | null = null;
   let anrRate: number | null = null;
   let reports = false;
+  let financial = false;
   let vitals = false;
 
   if (status.serviceAccount) {
@@ -258,6 +336,15 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
           if (storeRows.length) { storeData = storeMetrics(storeRows); reports = true; ['storeVisitorsAvg','storeAcquisitionsAvg','storeConversion'].forEach((x) => liveFields.push(x)); }
           else warnings.push('Store performance report belum ditemukan.');
         } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_REPORT_FAILED'); }
+
+        try {
+          const earningsReport = await latestEarningsReport(token);
+          if (earningsReport) {
+            earningsData = earningsMetrics(earningsReport.rows, earningsReport.month);
+            if (earningsData) { financial = true; liveFields.push('revenueUsd'); }
+            else warnings.push('Earnings report ditemukan, tetapi revenue Bhumi tidak dapat diringkas menjadi satu merchant currency.');
+          } else warnings.push('Earnings report belum tersedia untuk 3 bulan terakhir.');
+        } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_FINANCIAL_FAILED'); }
       } else warnings.push('GOOGLE_PLAY_REPORT_BUCKET belum dikonfigurasi.');
 
       try {
@@ -277,7 +364,9 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
     firstOpens: playSnapshot.firstOpens,
     dau: playSnapshot.dau,
     mau: playSnapshot.mau,
-    revenueUsd: playSnapshot.revenueUsd,
+    revenueUsd: earningsData?.amount ?? playSnapshot.revenueUsd,
+    revenueCurrency: earningsData?.currency || 'USD',
+    revenuePeriod: earningsData?.month || playSnapshot.kpiDate,
     rating: playSnapshot.rating,
     crashRate,
     anrRate,
@@ -291,10 +380,11 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
   };
   if (!installsData) ['installs','activeDevices','audience','userAcquisitionsAvg','userLossAvg','countries','history'].forEach((x) => snapshotFields.add(x));
   if (!storeData) ['storeVisitorsAvg','storeAcquisitionsAvg','storeConversion'].forEach((x) => snapshotFields.add(x));
+  if (!earningsData) snapshotFields.add('revenueUsd');
   if (crashRate === null) snapshotFields.add('crashRate');
   if (anrRate === null) snapshotFields.add('anrRate');
 
-  const live = reports || vitals;
+  const live = reports || financial || vitals;
   const mode: PlayDashboardData['mode'] = live ? (snapshotFields.size ? 'partial' : 'live') : 'snapshot';
   return {
     mode,
@@ -306,7 +396,7 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
     history: installsData?.history || playCountryHistory,
     liveFields,
     snapshotFields: [...snapshotFields],
-    sources: { reports, vitals, reportBucketConfigured: status.reportBucket, serviceAccountConfigured: status.serviceAccount },
+    sources: { reports, financial, vitals, reportBucketConfigured: status.reportBucket, serviceAccountConfigured: status.serviceAccount },
     warnings,
   };
 }
