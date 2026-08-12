@@ -135,14 +135,49 @@ tr:hover td { background: #fafcfb; }
 }
 @media (max-width: 680px) {
   .shell { display: block; }
-  .sidebar { position: fixed; z-index: 60; bottom: 0; top: auto; height: 58px; width: 100%; display: flex; align-items: center; overflow-x: auto; overflow-y: hidden; padding: 6px; }
+  .sidebar {
+    position: fixed;
+    z-index: 60;
+    bottom: 0;
+    top: auto;
+    height: calc(58px + env(safe-area-inset-bottom));
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+  }
+  .sidebar::-webkit-scrollbar { display: none; }
+  .sidebar > div:not(.brand) { display: contents; }
   .brand, .nav-label { display: none; }
-  .nav-link { min-width: 48px; margin: 0 2px; }
-  .main-wrap { padding-bottom: 64px; }
-  .topbar { padding: 0 14px; }
+  .nav-link {
+    flex: 0 0 52px;
+    min-width: 52px;
+    height: 46px;
+    justify-content: center;
+    margin: 0 1px;
+    padding: 9px 8px;
+  }
+  .nav-link.active { box-shadow: inset 0 -3px 0 #d0ac64; }
+  .main-wrap { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+  .topbar { height: 54px; padding: 0 10px; gap: 8px; }
+  .topbar-title { min-width: 0; font-size: 13px; line-height: 1.1; }
+  .topbar-meta { flex: 0 0 auto; gap: 6px; }
+  .topbar-meta > span { display: none; }
+  .founder-chip { padding: 0; border: 0; background: transparent; }
+  .founder-chip span { display: none; }
+  .founder-avatar { width: 28px; height: 28px; }
+  .topbar .btn { padding: 7px 8px; }
   .page { padding: 16px 12px 26px; }
   .page-heading { align-items: flex-start; flex-direction: column; }
+  .page-heading > .toolbar { width: 100%; justify-content: space-between; }
   .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .kpi-card { padding: 13px 12px; }
   .kpi-value { font-size: 22px; }
+  .kpi-foot { align-items: flex-start; }
   .grid-2, .grid-3 { gap: 10px; }
 }
