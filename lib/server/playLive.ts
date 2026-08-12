@@ -8,7 +8,8 @@ const REPORT_BUCKET = process.env.GOOGLE_PLAY_REPORT_BUCKET || 'pubsite_prod_475
 type CsvRow = Record<string, string>;
 type CountryRow = { country: string; users: number; pct: number };
 type HistoryRow = { date: string; total: number; Indonesia?: number };
-type EarningsData = { amount: number; currency: string; month: string };
+type RevenueSource = 'earnings' | 'estimated_sales';
+type RevenueData = { amount: number; currency: string; month: string; source: RevenueSource };
 
 export type PlayDashboardData = {
   mode: 'live' | 'partial' | 'snapshot';
@@ -16,7 +17,7 @@ export type PlayDashboardData = {
   dataDate: string;
   overview: {
     installs: number; activeDevices: number; audience: number; firstOpens: number;
-    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; rating: number;
+    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; revenueSource: RevenueSource | 'snapshot'; rating: number;
     crashRate: number | null; anrRate: number | null;
   };
   acquisition: {
@@ -175,7 +176,17 @@ async function latestEarningsReport(token: string) {
   return null;
 }
 
-function earningsMetrics(rows: CsvRow[], month: string): EarningsData | null {
+async function latestSalesReport(token: string) {
+  for (const month of monthKeys(2)) {
+    const bytes = await fetchGcsBytes(token, `sales/salesreport_${month}.zip`, 'GCS_SALES');
+    if (!bytes) continue;
+    const text = unzipFirstCsv(bytes);
+    if (text) return { rows: parseCsv(text), month };
+  }
+  return null;
+}
+
+function earningsMetrics(rows: CsvRow[], month: string): RevenueData | null {
   const appRows = rows.filter((row) => field(row, ['Package ID']).trim() === PACKAGE_NAME);
   const currencyTotals = new Map<string, number>();
   appRows.forEach((row) => {
@@ -190,7 +201,28 @@ function earningsMetrics(rows: CsvRow[], month: string): EarningsData | null {
   const nonEmpty = [...currencyTotals.entries()].filter(([, amount]) => Number.isFinite(amount));
   if (nonEmpty.length !== 1) return null;
   const [currency, amount] = nonEmpty[0];
-  return { amount: Math.round(amount * 100) / 100, currency, month };
+  return { amount: Math.round(amount * 100) / 100, currency, month, source: 'earnings' };
+}
+
+function salesMetrics(rows: CsvRow[], month: string): RevenueData | null {
+  const appRows = rows.filter((row) => field(row, ['Package ID']).trim() === PACKAGE_NAME);
+  const currencyTotals = new Map<string, number>();
+  appRows.forEach((row) => {
+    const financialStatus = field(row, ['Financial Status']).trim().toLowerCase();
+    const isCharge = financialStatus === 'charged';
+    const isRefund = financialStatus === 'refund' || financialStatus === 'partial refund' || financialStatus.includes('refund');
+    if (!isCharge && !isRefund) return;
+    const currency = field(row, ['Currency of Sale', 'Sale Currency']).trim().toUpperCase();
+    if (!currency) return;
+    const rawAmount = Math.abs(num(field(row, ['Charged Amount', 'Amount Charged'])));
+    const signedAmount = isRefund ? -rawAmount : rawAmount;
+    currencyTotals.set(currency, (currencyTotals.get(currency) || 0) + signedAmount);
+  });
+
+  const nonEmpty = [...currencyTotals.entries()].filter(([, amount]) => Number.isFinite(amount));
+  if (nonEmpty.length !== 1) return null;
+  const [currency, amount] = nonEmpty[0];
+  return { amount: Math.round(amount * 100) / 100, currency, month, source: 'estimated_sales' };
 }
 
 function countryName(value: string) {
@@ -317,7 +349,7 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
   const snapshotFields = new Set(['firstOpens', 'dau', 'mau', 'rating']);
   let installsData: ReturnType<typeof installMetrics> | null = null;
   let storeData: ReturnType<typeof storeMetrics> = null;
-  let earningsData: EarningsData | null = null;
+  let revenueData: RevenueData | null = null;
   let crashRate: number | null = null;
   let anrRate: number | null = null;
   let reports = false;
@@ -338,13 +370,29 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
         } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_REPORT_FAILED'); }
 
         try {
-          const earningsReport = await latestEarningsReport(token);
-          if (earningsReport) {
-            earningsData = earningsMetrics(earningsReport.rows, earningsReport.month);
-            if (earningsData) { financial = true; liveFields.push('revenueUsd'); }
-            else warnings.push('Earnings report ditemukan, tetapi revenue Bhumi tidak dapat diringkas menjadi satu merchant currency.');
-          } else warnings.push('Earnings report belum tersedia untuk 3 bulan terakhir.');
-        } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_FINANCIAL_FAILED'); }
+          const salesReport = await latestSalesReport(token);
+          if (salesReport) {
+            revenueData = salesMetrics(salesReport.rows, salesReport.month);
+            if (!revenueData) warnings.push('Estimated sales report ditemukan, tetapi revenue Bhumi tidak dapat diringkas menjadi satu sale currency.');
+          }
+        } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_SALES_FAILED'); }
+
+        if (!revenueData) {
+          try {
+            const earningsReport = await latestEarningsReport(token);
+            if (earningsReport) {
+              revenueData = earningsMetrics(earningsReport.rows, earningsReport.month);
+              if (!revenueData) warnings.push('Earnings report ditemukan, tetapi revenue Bhumi tidak dapat diringkas menjadi satu merchant currency.');
+            }
+          } catch (error) { warnings.push(error instanceof Error ? error.message : 'PLAY_FINANCIAL_FAILED'); }
+        }
+
+        if (revenueData) {
+          financial = true;
+          liveFields.push('revenueUsd');
+        } else {
+          warnings.push('Financial report belum tersedia; Revenue masih memakai snapshot fallback.');
+        }
       } else warnings.push('GOOGLE_PLAY_REPORT_BUCKET belum dikonfigurasi.');
 
       try {
@@ -364,9 +412,10 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
     firstOpens: playSnapshot.firstOpens,
     dau: playSnapshot.dau,
     mau: playSnapshot.mau,
-    revenueUsd: earningsData?.amount ?? playSnapshot.revenueUsd,
-    revenueCurrency: earningsData?.currency || 'USD',
-    revenuePeriod: earningsData?.month || playSnapshot.kpiDate,
+    revenueUsd: revenueData?.amount ?? playSnapshot.revenueUsd,
+    revenueCurrency: revenueData?.currency || 'USD',
+    revenuePeriod: revenueData?.month || playSnapshot.kpiDate,
+    revenueSource: revenueData?.source || 'snapshot',
     rating: playSnapshot.rating,
     crashRate,
     anrRate,
@@ -380,7 +429,7 @@ export async function loadPlayDashboardData(): Promise<PlayDashboardData> {
   };
   if (!installsData) ['installs','activeDevices','audience','userAcquisitionsAvg','userLossAvg','countries','history'].forEach((x) => snapshotFields.add(x));
   if (!storeData) ['storeVisitorsAvg','storeAcquisitionsAvg','storeConversion'].forEach((x) => snapshotFields.add(x));
-  if (!earningsData) snapshotFields.add('revenueUsd');
+  if (!revenueData) snapshotFields.add('revenueUsd');
   if (crashRate === null) snapshotFields.add('crashRate');
   if (anrRate === null) snapshotFields.add('anrRate');
 
