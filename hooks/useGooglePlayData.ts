@@ -9,7 +9,7 @@ export type PlayData = {
   dataDate: string;
   overview: {
     installs: number; activeDevices: number; audience: number; firstOpens: number;
-    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; rating: number;
+    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; revenueSource: 'earnings' | 'estimated_sales' | 'snapshot'; rating: number;
     crashRate: number | null; anrRate: number | null;
   };
   acquisition: {
