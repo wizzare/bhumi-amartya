@@ -9,7 +9,7 @@ export type PlayData = {
   dataDate: string;
   overview: {
     installs: number; activeDevices: number; audience: number; firstOpens: number;
-    dau: number; mau: number; revenueUsd: number; rating: number;
+    dau: number; mau: number; revenueUsd: number; revenueCurrency: string; revenuePeriod: string; rating: number;
     crashRate: number | null; anrRate: number | null;
   };
   acquisition: {
@@ -20,7 +20,7 @@ export type PlayData = {
   history: Array<{ date: string; total: number; Indonesia?: number }>;
   liveFields: string[];
   snapshotFields: string[];
-  sources: { reports: boolean; vitals: boolean; reportBucketConfigured: boolean; serviceAccountConfigured: boolean };
+  sources: { reports: boolean; financial: boolean; vitals: boolean; reportBucketConfigured: boolean; serviceAccountConfigured: boolean };
   warnings: string[];
 };
 
