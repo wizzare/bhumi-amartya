@@ -8,11 +8,19 @@ function badge(mode: 'live'|'partial'|'snapshot') {
 }
 
 function money(amount: number, currency: string) {
+  if (currency === 'USD') return `$${amount.toFixed(2)}`;
+  if (currency === 'IDR') return `Rp${Math.round(amount).toLocaleString('id-ID')}`;
   try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 2 }).format(amount);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 2 }).format(amount);
   } catch {
-    return `${currency || 'USD'} ${amount.toFixed(2)}`;
+    return `${currency || 'USD'} ${amount.toLocaleString('id-ID', { maximumFractionDigits: 2 })}`;
   }
+}
+
+function revenueFoot(source: 'earnings'|'estimated_sales'|'snapshot'|undefined, period: string | undefined) {
+  if (source === 'estimated_sales') return `estimated sales · ${period || '—'}`;
+  if (source === 'earnings') return `finalized earnings · ${period || '—'}`;
+  return 'snapshot fallback';
 }
 
 export function PlayOverviewPage(){
@@ -30,7 +38,7 @@ export function PlayOverviewPage(){
       <div className="kpi-card"><div className="kpi-label">Active Devices</div><div className="kpi-value">{d?.activeDevices ?? '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('activeDevices')?'live report':'snapshot fallback'}</span></div></div>
       <div className="kpi-card"><div className="kpi-label">Audience</div><div className="kpi-value">{d?.audience ?? '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('audience')?'live report':'snapshot fallback'}</span></div></div>
       <div className="kpi-card"><div className="kpi-label">First Opens</div><div className="kpi-value">{d?.firstOpens ?? '—'}</div><div className="kpi-foot"><span>snapshot until export mapped</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Revenue</div><div className="kpi-value">{d ? money(d.revenueUsd, d.revenueCurrency) : '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('revenueUsd') ? `finalized earnings · ${d?.revenuePeriod || '—'}` : 'snapshot fallback'}</span></div></div>
+      <div className="kpi-card"><div className="kpi-label">Revenue</div><div className="kpi-value">{d ? money(d.revenueUsd, d.revenueCurrency) : '—'}</div><div className="kpi-foot"><span>{revenueFoot(d?.revenueSource, d?.revenuePeriod)}</span></div></div>
     </div>
 
     <div className="kpi-grid">
