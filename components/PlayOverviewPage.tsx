@@ -7,6 +7,14 @@ function badge(mode: 'live'|'partial'|'snapshot') {
   return mode === 'live' ? 'LIVE' : mode === 'partial' ? 'PARTIAL LIVE' : 'SNAPSHOT';
 }
 
+function money(amount: number, currency: string) {
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD', maximumFractionDigits: 2 }).format(amount);
+  } catch {
+    return `${currency || 'USD'} ${amount.toFixed(2)}`;
+  }
+}
+
 export function PlayOverviewPage(){
   const { data, loading, error, refresh } = useGooglePlayData();
   const d = data?.overview;
@@ -22,7 +30,7 @@ export function PlayOverviewPage(){
       <div className="kpi-card"><div className="kpi-label">Active Devices</div><div className="kpi-value">{d?.activeDevices ?? '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('activeDevices')?'live report':'snapshot fallback'}</span></div></div>
       <div className="kpi-card"><div className="kpi-label">Audience</div><div className="kpi-value">{d?.audience ?? '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('audience')?'live report':'snapshot fallback'}</span></div></div>
       <div className="kpi-card"><div className="kpi-label">First Opens</div><div className="kpi-value">{d?.firstOpens ?? '—'}</div><div className="kpi-foot"><span>snapshot until export mapped</span></div></div>
-      <div className="kpi-card"><div className="kpi-label">Revenue</div><div className="kpi-value">{d ? `$${d.revenueUsd.toFixed(2)}` : '—'}</div><div className="kpi-foot"><span>snapshot until financial export mapped</span></div></div>
+      <div className="kpi-card"><div className="kpi-label">Revenue</div><div className="kpi-value">{d ? money(d.revenueUsd, d.revenueCurrency) : '—'}</div><div className="kpi-foot"><span>{data?.liveFields.includes('revenueUsd') ? `finalized earnings · ${d?.revenuePeriod || '—'}` : 'snapshot fallback'}</span></div></div>
     </div>
 
     <div className="kpi-grid">
