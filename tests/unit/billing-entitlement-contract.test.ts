@@ -1,5 +1,6 @@
 import assert from "node:assert";
 import { getEntitlementStatus } from "../../lib/billing/entitlementService";
+import type { FounderTesterRecord } from "../../lib/billing/founderTesterSourceOfTruth";
 
 console.log("▶ Running Billing Entitlement Contract Tests\n");
 
@@ -12,6 +13,23 @@ function test(label: string, condition: boolean, detail?: string) {
 }
 
 const NOW = new Date("2026-07-25T00:00:00Z");
+
+// Live-scenario dates: Widya Gustina's entitlement check (2026-08-16) and the
+// canonical Inti grant end (2026-08-30T00:00:00+07:00 == 2026-08-29T17:00:00Z).
+const WIDYA_NOW = new Date("2026-08-16T00:30:00Z");
+const INTI_CANONICAL_END_UTC = new Date("2026-08-29T17:00:00Z");
+const AFTER_INTI_END = new Date("2026-09-05T00:00:00Z");
+
+const intiTesterRecord: FounderTesterRecord = {
+  uid: "ydKZoZuehlewy93U3vrK8abIHS42",
+  registeredAt: "2026-06-17",
+  activeDays: 7,
+  badge: "Penjaga Bhumi Inti",
+  sourceBadge: "Inti",
+  membership: "PREMIUM_2_MONTHS",
+  premiumMonths: 2,
+  trialDays: null,
+};
 
 // ========== TEST CASES ==========
 
@@ -113,6 +131,115 @@ const NOW = new Date("2026-07-25T00:00:00Z");
   const s = getEntitlementStatus(profile, NOW);
   test("Alfa badge grants premium", s.isPremium === true);
   test("Alfa badge reason is alfa_badge", s.reason === "alfa_badge");
+}
+
+// ========== BUILD 98 HOTFIX: tester/founder grant must not be killed by
+// ========== a stale, unrelated Google Play expiry on the same document. ==========
+
+// CASE A (live Widya scenario): active canonical Inti testerRecord + expired
+// Google Play subscription on the same profile. The expired subscription's
+// accessUntil (2026-08-13) must NOT shorten the canonical Inti grant which
+// runs until 2026-08-30T00:00:00+07:00. Must evaluate PREMIUM (inti_badge).
+{
+  const profile = {
+    uid: intiTesterRecord.uid,
+    membershipType: "PREMIUM",
+    membership: "GOOGLE_PLAY_PREMIUM",
+    plan: "premium",
+    membershipExpiryDate: "2026-08-13T03:36:40.602Z",
+    accessUntil: "2026-08-13T03:36:40.602Z", // stale Play-expiry overwrite (live data)
+    entitlementSource: "google_play",
+    testerBadge: "Penjaga Bhumi Inti",
+    badge: "Penghuni Bhumi",
+  } as any;
+  const s = getEntitlementStatus(profile, WIDYA_NOW, intiTesterRecord);
+  test("A: stale Play expiry does NOT kill active Inti tester grant", s.isPremium === true, `got isPremium=${s.isPremium}`);
+  test("A: reason is inti_badge (tester grant), not subscriber", s.reason === "inti_badge", `got reason=${s.reason}`);
+  test("A: expiresAt is canonical Inti grant end", s.expiresAt?.getTime() === INTI_CANONICAL_END_UTC.getTime(), `got ${s.expiresAt?.toISOString()}`);
+}
+
+// CASE B: active canonical Inti testerRecord + active Google Play subscription
+// -> still PREMIUM, Inti grant (higher priority) wins.
+{
+  const profile = {
+    uid: intiTesterRecord.uid,
+    membershipType: "PREMIUM",
+    membership: "GOOGLE_PLAY_PREMIUM",
+    plan: "premium",
+    membershipExpiryDate: "2026-09-13T03:36:40.602Z",
+    accessUntil: "2026-09-13T03:36:40.602Z",
+    entitlementSource: "google_play",
+    testerBadge: "Penjaga Bhumi Inti",
+    badge: "Penghuni Bhumi",
+  } as any;
+  const s = getEntitlementStatus(profile, WIDYA_NOW, intiTesterRecord);
+  test("B: active Play + active tester grant -> PREMIUM via inti_badge", s.isPremium === true && s.reason === "inti_badge", `got reason=${s.reason}`);
+}
+
+// CASE C: no tester badge + active Google Play subscription -> PREMIUM (subscriber)
+{
+  const profile = {
+    uid: "user-active-play",
+    membershipType: "PREMIUM",
+    membership: "GOOGLE_PLAY_PREMIUM",
+    plan: "premium",
+    membershipExpiryDate: "2026-09-13T03:36:40.602Z",
+    accessUntil: "2026-09-13T03:36:40.602Z",
+    entitlementSource: "google_play",
+  } as any;
+  const s = getEntitlementStatus(profile, WIDYA_NOW, null);
+  test("C: no badge + active Play -> PREMIUM (subscriber)", s.isPremium === true && s.reason === "subscriber", `got reason=${s.reason}`);
+}
+
+// CASE D: no tester badge + expired Google Play subscription -> EXPIRED
+{
+  const profile = {
+    uid: "user-expired-play",
+    membershipType: "PREMIUM",
+    membership: "GOOGLE_PLAY_PREMIUM",
+    plan: "premium",
+    membershipExpiryDate: "2026-08-13T03:36:40.602Z",
+    accessUntil: "2026-08-13T03:36:40.602Z",
+    entitlementSource: "google_play",
+    trialStartedAt: "2026-07-15T00:00:00Z",
+    trialEndsAt: "2026-07-22T00:00:00Z",
+  } as any;
+  const s = getEntitlementStatus(profile, WIDYA_NOW, null);
+  test("D: no badge + expired Play -> NOT premium", s.isPremium === false, `got isPremium=${s.isPremium}`);
+  test("D: expired Play status is Expired (Paid Premium (Expired))", s.status === "Expired", `got status=${s.status}`);
+}
+
+// CASE E: EXPIRED tester grant (now after canonical Inti end) must still deny.
+// A later profile.accessUntil would extend the grant (max() semantics).
+{
+  const profile = {
+    uid: intiTesterRecord.uid,
+    accessUntil: "2026-08-13T03:36:40.602Z", // STALE, earlier than canonical end
+    testerBadge: "Penjaga Bhumi Inti",
+  } as any;
+  const s = getEntitlementStatus(profile, AFTER_INTI_END, intiTesterRecord);
+  test("E: Inti tester grant after canonical end + stale accessUntil -> denied", s.isPremium === false, `got isPremium=${s.isPremium}`);
+  test("E: denied grant effectiveTier marks Inti (Expired)", s.effectiveTier === "Penjaga Bhumi Inti (Expired)", `got ${s.effectiveTier}`);
+
+  const extendedProfile = {
+    uid: intiTesterRecord.uid,
+    accessUntil: "2026-09-20T00:00:00+07:00", // explicit grant beyond canonical end
+    testerBadge: "Penjaga Bhumi Inti",
+  } as any;
+  const s2 = getEntitlementStatus(extendedProfile, AFTER_INTI_END, intiTesterRecord);
+  test("E2: explicit accessUntil beyond canonical end still extends the grant", s2.isPremium === true && s2.reason === "inti_badge", `got reason=${s2.reason}`);
+}
+
+// CASE F: no tester badge + no valid paid subscription + no valid trial -> FREE
+{
+  const profile = {
+    uid: "user-free",
+    trialStartedAt: "2026-07-01T00:00:00Z",
+    trialEndsAt: "2026-07-08T00:00:00Z",
+    entitlementSource: "firebase_auth_creation_time",
+  } as any;
+  const s = getEntitlementStatus(profile, WIDYA_NOW, null);
+  test("F: no badge + expired trial -> FREE", s.isPremium === false && s.status === "Trial Exhausted", `got isPremium=${s.isPremium} status=${s.status}`);
 }
 
 // Purchase token ownership validation contract

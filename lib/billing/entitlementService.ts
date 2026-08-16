@@ -1,7 +1,13 @@
 import { UserProfile } from "../repositories/userRepository";
 import { isPrivilegedUser } from "../auth/privilegedUser";
 import { isGaiaAccessOverrideActive } from "./gaiaAccess";
-import type { FounderTesterRecord } from "./founderTesterSourceOfTruth";
+import {
+  ALFA_ACCESS_UNTIL,
+  ALFA_GRANT_STARTS_AT,
+  INTI_ACCESS_UNTIL,
+  INTI_GRANT_STARTS_AT,
+  type FounderTesterRecord,
+} from "./founderTesterSourceOfTruth";
 
 export type EntitlementStatus = {
   isPremium: boolean;
@@ -132,8 +138,20 @@ export function getEntitlementStatus(
   }
   if (effectiveBadge === "Penjaga Bhumi Inti" || effectiveBadge === "Penjaga Bhumi Alfa") {
     const isInti = effectiveBadge === "Penjaga Bhumi Inti";
-    const startStr = "2026-06-29T00:00:00+07:00";
-    const untilStr = profile.accessUntil ? String(profile.accessUntil) : (isInti ? "2026-08-30T00:00:00+07:00" : "2026-07-30T00:00:00+07:00");
+    const startStr = isInti ? INTI_GRANT_STARTS_AT : ALFA_GRANT_STARTS_AT;
+    const canonicalUntilStr = isInti ? INTI_ACCESS_UNTIL : ALFA_ACCESS_UNTIL;
+    // A stale `profile.accessUntil` (e.g. an expired Google Play expiry persisted
+    // by the verifier on the same document) MUST NOT shorten an active canonical
+    // tester/founder grant. Take the LATER of (canonical grant window,
+    // profile.accessUntil) so an explicit grant is never killed by an unrelated,
+    // expired subscription timestamp on the same document. Tests / explicit
+    // grants that extend the window beyond the canonical end remain green via
+    // the max() semantics.
+    const profileUntilStr = profile.accessUntil ? String(profile.accessUntil) : null;
+    const untilStr =
+      profileUntilStr && new Date(profileUntilStr) > new Date(canonicalUntilStr)
+        ? profileUntilStr
+        : canonicalUntilStr;
     const startDate = new Date(startStr);
     const untilDate = new Date(untilStr);
 
