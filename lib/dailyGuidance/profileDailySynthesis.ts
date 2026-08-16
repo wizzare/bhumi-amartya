@@ -226,7 +226,6 @@ function buildDailyCategories(input: {
     challenges: "untuk bagian yang terasa berat",
     opportunities: "untuk ruang baru yang terbuka",
   };
-  const stateTone = state === "limited" ? "dengan lembut" : "dengan mantap";
   const accent = (key: string) => {
     const label = accentLabel[key] ?? "untuk langkahmu";
     return `${plan(`${key}:accent-a`, [
@@ -247,6 +246,10 @@ function buildDailyCategories(input: {
   };
   const adviceAccent = (key: string) => {
     const label = accentLabel[key] ?? "untuk langkahmu";
+    const closing = state === "limited"
+      ? plan(`${key}:advice-closing-limited`, ["dengan lembut", "secara perlahan", "dengan tenang"])
+      : plan(`${key}:advice-closing-ready`, ["secara utuh", "dengan yakin", "dengan jernih"]);
+
     return `${plan(`${key}:advice-accent-a`, [
     "pilih ringan",
     "ukur kecil",
@@ -261,7 +264,7 @@ function buildDailyCategories(input: {
     "ambil napas",
     "bicara jernih",
     "buat bukti",
-  ])} ${stateTone}`;
+  ])} ${closing}`;
   };
   const context = state === "limited"
     ? "Hari ini lebih sehat dijalani dengan langkah yang sederhana, karena beberapa hal masih perlu kamu lihat pelan-pelan."
