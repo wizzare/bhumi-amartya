@@ -170,16 +170,22 @@ function eclipticLongitude(body: Astronomy.Body, date: Date): number {
   return Astronomy.Ecliptic(Astronomy.GeoVector(body, date, true)).elon;
 }
 
+// HD gate-mandala anchoring (BUG 3 FIX).
+// Canonical convention: Gate 41 begins at 02°00′00″ Aquarius (302°00′00″ ecliptic),
+// i.e. +58° from 0° Aries. This matches the hdkit reference library vendored at
+// lib/humandesign/hdkit/models/bodygraph.ts:985-1008 (getActivationFromDecimalDegrees).
+const GATE_MANDALA_OFFSET_DEGREES = 58;
+
 function gateFromLongitude(longitude: number): number {
-  // Standard HD Mandala Offset: Gate 41 starts at 19° 15' Aquarius (319.25°)
-  // adjusted = (longitude + 360 - 319.25) % 360
-  // or (longitude + 40.75) % 360
-  const adjusted = normalizeDegrees(longitude + 40.75);
+  // Gate 41 starts at 2°00' Aquarius (302°).
+  // adjusted = (longitude + 360 - 302) % 360 == (longitude + 58) % 360
+  const adjusted = normalizeDegrees(longitude + GATE_MANDALA_OFFSET_DEGREES);
   return gateOrder[Math.floor((adjusted / 360) * 64)];
 }
 
 function lineFromLongitude(longitude: number): number {
-  const adjusted = normalizeDegrees(longitude + 40.75);
+  // Same canonical +58° anchoring as gateFromLongitude above.
+  const adjusted = normalizeDegrees(longitude + GATE_MANDALA_OFFSET_DEGREES);
   const gateProgress = (adjusted / 360) * 64;
   const gateFraction = gateProgress % 1;
   return Math.floor(gateFraction * 6) + 1;
