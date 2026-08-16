@@ -3,9 +3,10 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Sprout, User } from "lucide-react";
+import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Sprout, User, Activity } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
+import { useAuth } from "@/context/AuthContext";
 
 type NavLabelKey = keyof typeof translations.id.nav;
 type NavItem = {
@@ -33,7 +34,16 @@ export function AppNav() {
   const { language } = useLanguage();
   const t = translations[language];
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const moreItems = UTILITY_NAV_ITEMS;
+  const auth = useAuth();
+  const profile = auth?.userProfile;
+
+  const moreItems = useMemo(() => {
+    const items = [...UTILITY_NAV_ITEMS];
+    if (profile?.guardianRole === "founder" || profile?.email?.trim().toLowerCase() === "wizzare@gmail.com") {
+      items.push({ Icon: Activity, label: "Auth Diagnostics", href: "/admin/diagnostics", labelKey: "profile" as any });
+    }
+    return items;
+  }, [profile]);
 
   const desktopNavItems = useMemo(() => {
     return [...PRIMARY_NAV_ITEMS];

@@ -12,6 +12,8 @@ import {
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
+import { classifyGoogleSignInError } from "./classifyGoogleSignInError";
+import { recordGoogleSignInDiagnostic } from "./authTelemetry";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
 
@@ -260,6 +262,7 @@ export const signInWithGoogle = async (options?: {
   if (isNative) {
     try {
       const WEB_CLIENT_ID = "59259824153-vldlev9s91l6sss3ulqbh8mnaah4n4c9.apps.googleusercontent.com";
+      const useCredentialManager = true;
       console.log("[NATIVE GOOGLE AUTH START]", {
         platform,
         webClientId: WEB_CLIENT_ID,
@@ -267,10 +270,19 @@ export const signInWithGoogle = async (options?: {
       });
 
       const nativeAuth = FirebaseAuthentication as NativeGoogleAuthWithLegacyOptions;
-      const result = await nativeAuth.signInWithGoogle({
-        webClientId: WEB_CLIENT_ID,
-        useCredentialManager: true,
-      });
+
+      let result: NativeGoogleSignInResult;
+      try {
+        result = await nativeAuth.signInWithGoogle({
+          webClientId: WEB_CLIENT_ID,
+          useCredentialManager,
+        });
+      } catch (nativeError) {
+        void recordGoogleSignInDiagnostic(
+          classifyGoogleSignInError(nativeError, "NATIVE_GOOGLE_SIGN_IN", useCredentialManager)
+        );
+        throw nativeError;
+      }
 
       console.log("[NATIVE GOOGLE AUTH RESULT SUCCESS]", {
         hasCredential: !!result?.credential,
@@ -284,7 +296,11 @@ export const signInWithGoogle = async (options?: {
 
       if (!idToken && !accessToken) {
         console.error("[NATIVE GOOGLE AUTH ERROR] Missing tokens", result);
-        throw new Error("Native Google sign-in did not return idToken/accessToken.");
+        const tokenError = new Error("Native Google sign-in did not return idToken/accessToken.");
+        void recordGoogleSignInDiagnostic(
+          classifyGoogleSignInError(tokenError, "ID_TOKEN_RETRIEVAL", useCredentialManager)
+        );
+        throw tokenError;
       }
 
       const credential = GoogleAuthProvider.credential(idToken, accessToken);
@@ -292,7 +308,16 @@ export const signInWithGoogle = async (options?: {
         hasIdToken: !!idToken,
         hasAccessToken: !!accessToken,
       });
-      await signInWithCredential(auth, credential);
+
+      try {
+        await signInWithCredential(auth, credential);
+      } catch (firebaseError) {
+        void recordGoogleSignInDiagnostic(
+          classifyGoogleSignInError(firebaseError, "FIREBASE_CREDENTIAL_EXCHANGE", useCredentialManager)
+        );
+        throw firebaseError;
+      }
+
       console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native" });
       return;
     } catch (error) {

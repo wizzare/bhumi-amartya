@@ -448,8 +448,13 @@ service cloud.firestore {
     }
 
     match /analytics/{docId} {
-      allow create: if isSignedIn()
-        && (!("uid" in request.resource.data) || request.resource.data.uid == request.auth.uid || request.resource.data.uid == null);
+      // Allow unauthenticated writes ONLY for Google Sign-In failure diagnostics.
+      // This is necessary to capture telemetry for new users who fail to sign in.
+      allow create: if (
+          request.resource.data.eventType == "google_signin_failed"
+        ) || (
+          isSignedIn() && (!("uid" in request.resource.data) || request.resource.data.uid == request.auth.uid || request.resource.data.uid == null)
+        );
       allow read, update, delete: if isFounderByEmail() || isFounderOrAdmin();
     }
 
