@@ -4,11 +4,11 @@ import { resolve } from "node:path";
 import { evaluateAppUpdateStatus, type RemoteVersionConfig } from "../../lib/services/appUpdatePolicy.ts";
 
 function androidBuild(versionCode: number, platform = "android") {
-  return { versionName: "4.4.4", versionCode, buildNumber: String(versionCode), platform };
+  return { versionName: "4.4.15", versionCode, buildNumber: String(versionCode), platform };
 }
 
 function config(overrides: Partial<RemoteVersionConfig> = {}): RemoteVersionConfig {
-  return { minimumSupportedVersionCode: 80, latestVersion: "4.4.4", forceUpdate: true, updateUrl: "market://details?id=com.bhumiamartya.app", ...overrides };
+  return { minimumSupportedVersionCode: 99, latestVersion: "4.4.15", forceUpdate: true, updateUrl: "market://details?id=com.bhumiamartya.app", ...overrides };
 }
 
 let passed = 0;
@@ -19,112 +19,114 @@ function test(label: string, condition: boolean) {
   else { failed++; console.error(`FAIL: ${label}`); }
 }
 
-// BUILD 78 — forced update
+// BUILD BELOW MINIMUM — forced update (Build 93, the prior release)
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78), config());
-  test("build 78: isOutdated", status.isOutdated === true);
-  test("build 78: minimumBuild is 80", status.minimumBuild === 80);
-  test("build 78: currentBuild is 78", status.currentBuild === 78);
-  test("build 78: policy is immediate_required", status.policy === "immediate_required");
-  test("build 78: configSource is firestore", status.configSource === "firestore");
+  const status = evaluateAppUpdateStatus(androidBuild(93), config());
+  test("build 93: isOutdated", status.isOutdated === true);
+  test("build 93: minimumBuild is 99", status.minimumBuild === 99);
+  test("build 93: currentBuild is 93", status.currentBuild === 93);
+  test("build 93: policy is immediate_required", status.policy === "immediate_required");
+  test("build 93: configSource is firestore", status.configSource === "firestore");
 }
 
-// BUILD 79 — forced update
+// BUILD AT BOUNDARY BELOW — Build 98 blocked
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), config());
-  test("build 79: isOutdated", status.isOutdated === true);
-  test("build 79: minimumBuild is 80", status.minimumBuild === 80);
-  test("build 79: policy is immediate_required", status.policy === "immediate_required");
+  const status = evaluateAppUpdateStatus(androidBuild(98), config());
+  test("build 98: isOutdated", status.isOutdated === true);
+  test("build 98: minimumBuild is 99", status.minimumBuild === 99);
+  test("build 98: policy is immediate_required", status.policy === "immediate_required");
 }
 
-// BUILD 80 — allowed
+// BUILD 99 — supported (boundary equality)
 {
-  const status = evaluateAppUpdateStatus(androidBuild(80), config());
-  test("build 80: not outdated", status.isOutdated === false);
-  test("build 80: policy is no_update", status.policy === "no_update");
+  const status = evaluateAppUpdateStatus(androidBuild(99), config());
+  test("build 99: not outdated", status.isOutdated === false);
+  test("build 99: minimumBuild is 99", status.minimumBuild === 99);
+  test("build 99: currentBuild is 99", status.currentBuild === 99);
+  test("build 99: policy is no_update", status.policy === "no_update");
 }
 
-// BUILD 81 — allowed
+// BUILD 100 — supported (above minimum)
 {
-  const status = evaluateAppUpdateStatus(androidBuild(81), config());
-  test("build 81: not outdated", status.isOutdated === false);
-  test("build 81: policy is no_update", status.policy === "no_update");
+  const status = evaluateAppUpdateStatus(androidBuild(100), config());
+  test("build 100: not outdated", status.isOutdated === false);
+  test("build 100: policy is no_update", status.policy === "no_update");
 }
 
-// EXACT BOUNDARY: build 79 with remote min 79 — fallback 80 overrides
+// EXACT BOUNDARY: build 98 with remote min 98 — fallback 99 overrides
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), config({ minimumSupportedVersionCode: 79 }));
-  test("boundary: fallback 80 caps remote min 79", status.minimumBuild === 80);
-  test("boundary: build 79 < 80 still outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(98), config({ minimumSupportedVersionCode: 98 }));
+  test("boundary: fallback 99 caps remote min 98", status.minimumBuild === 99);
+  test("boundary: build 98 < 99 still outdated", status.isOutdated === true);
 }
 
-// EXACT BOUNDARY: build 79 with minimum 80
+// EXACT BOUNDARY: build 98 with minimum 99
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), config({ minimumSupportedVersionCode: 80 }));
-  test("boundary: build 79 with minimum 80 is outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(98), config({ minimumSupportedVersionCode: 99 }));
+  test("boundary: build 98 with minimum 99 is outdated", status.isOutdated === true);
 }
 
 // NO FORCE UPDATE FLAG: build below minimum but forceUpdate not set
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78), { minimumSupportedVersionCode: 80 });
+  const status = evaluateAppUpdateStatus(androidBuild(93), { minimumSupportedVersionCode: 99 });
   test("no force flag: still outdated because below minimum", status.isOutdated === true);
   test("no force flag: policy immediate_required", status.policy === "immediate_required");
 }
 
 // FALLBACK LOCAL FAILSAFE: no remote config
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78), null);
-  test("no remote: uses local failsafe (80)", status.minimumBuild === 80);
-  test("no remote: build 78 < 80 is outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(93), null);
+  test("no remote: uses local failsafe (99)", status.minimumBuild === 99);
+  test("no remote: build 93 < 99 is outdated", status.isOutdated === true);
   test("no remote: configSource is local-failsafe", status.configSource === "local-failsafe");
 }
 
-// FALLBACK: build 79 blocked with no remote config
+// FALLBACK: build 98 blocked with no remote config
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), null);
-  test("fallback 79: isOutdated", status.isOutdated === true);
-  test("fallback 79: policy immediate_required", status.policy === "immediate_required");
+  const status = evaluateAppUpdateStatus(androidBuild(98), null);
+  test("fallback 98: isOutdated", status.isOutdated === true);
+  test("fallback 98: policy immediate_required", status.policy === "immediate_required");
 }
 
-// FALLBACK: build 80 allowed with no remote config
+// FALLBACK: build 99 allowed with no remote config
 {
-  const status = evaluateAppUpdateStatus(androidBuild(80), null);
-  test("fallback 80: not outdated", status.isOutdated === false);
-  test("fallback 80: policy no_update", status.policy === "no_update");
+  const status = evaluateAppUpdateStatus(androidBuild(99), null);
+  test("fallback 99: not outdated", status.isOutdated === false);
+  test("fallback 99: policy no_update", status.policy === "no_update");
 }
 
-// FALLBACK: build 81 allowed with no remote config
+// FALLBACK: build 100 allowed with no remote config
 {
-  const status = evaluateAppUpdateStatus(androidBuild(81), null);
-  test("fallback 81: not outdated", status.isOutdated === false);
-  test("fallback 81: policy no_update", status.policy === "no_update");
+  const status = evaluateAppUpdateStatus(androidBuild(100), null);
+  test("fallback 100: not outdated", status.isOutdated === false);
+  test("fallback 100: policy no_update", status.policy === "no_update");
 }
 
-// Build 80 never blocks itself regardless of config
+// Build 99 never blocks itself regardless of config
 {
-  const status = evaluateAppUpdateStatus(androidBuild(80), config({ minimumSupportedVersionCode: 80 }));
-  test("build 80 with minimum 80 not outdated", status.isOutdated === false);
+  const status = evaluateAppUpdateStatus(androidBuild(99), config({ minimumSupportedVersionCode: 99 }));
+  test("build 99 with minimum 99 not outdated", status.isOutdated === false);
 }
 
 // MALFORMED CONFIG: string version codes
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), { minimumSupportedVersionCode: "80", latestVersion: "4.4.4", forceUpdate: true });
-  test("malformed string: parses string min build", status.minimumBuild === 80);
+  const status = evaluateAppUpdateStatus(androidBuild(98), { minimumSupportedVersionCode: "99", latestVersion: "4.4.15", forceUpdate: true });
+  test("malformed string: parses string min build", status.minimumBuild === 99);
   test("malformed string: isOutdated", status.isOutdated === true);
 }
 
-// MALFORMED CONFIG: NaN version code falls back to 80
+// MALFORMED CONFIG: NaN version code falls back to 99
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), { minimumSupportedVersionCode: "abc", latestVersion: "4.4.4", forceUpdate: true });
-  test("malformed NaN: falls back to local failsafe 80", status.minimumBuild === 80);
-  test("malformed NaN: build 79 < 80 outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(98), { minimumSupportedVersionCode: "abc", latestVersion: "4.4.15", forceUpdate: true });
+  test("malformed NaN: falls back to local failsafe 99", status.minimumBuild === 99);
+  test("malformed NaN: build 98 < 99 outdated", status.isOutdated === true);
 }
 
-// TIMEOUT-style null remote config uses fallback 80
+// TIMEOUT-style null remote config uses fallback 99
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), null);
-  test("timeout null: fallback 80 is min", status.minimumBuild === 80);
-  test("timeout null: build 79 outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(98), null);
+  test("timeout null: fallback 99 is min", status.minimumBuild === 99);
+  test("timeout null: build 98 outdated", status.isOutdated === true);
 }
 
 // Missing native result never creates a blank screen (tested via VersionChecker source)
@@ -136,43 +138,43 @@ function test(label: string, condition: boolean) {
 
 // MISSING UPDATE URL: uses default
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78), config({ updateUrl: undefined }));
+  const status = evaluateAppUpdateStatus(androidBuild(93), config({ updateUrl: undefined }));
   test("missing URL: uses default Play Store URL", status.updateUrl === "market://details?id=com.bhumiamartya.app");
 }
 
-// EMPTY CONFIG: no fields at all — uses fallback 80
+// EMPTY CONFIG: no fields at all — uses fallback 99
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78), {});
-  test("empty config: falls back to local failsafe 80", status.minimumBuild === 80);
-  test("empty config: build 78 < 80 outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(93), {});
+  test("empty config: falls back to local failsafe 99", status.minimumBuild === 99);
+  test("empty config: build 93 < 99 outdated", status.isOutdated === true);
 }
 
 // PLATFORM WEB: not affected by Android-only constraints
 {
-  const status = evaluateAppUpdateStatus(androidBuild(78, "web"), config());
+  const status = evaluateAppUpdateStatus(androidBuild(93, "web"), config());
   test("web platform: ignores Android remote minimum", status.minimumBuild === 0);
-  test("web platform: build 78 is not outdated", status.isOutdated === false);
+  test("web platform: build 93 is not outdated", status.isOutdated === false);
   test("web platform: Android force update is not immediate_required", status.policy === "no_update");
   test("web platform: Android remote config is not a version gate source", status.configSource === "default");
 }
 
 // OLDER CONFIG SCHEMA: minimumBuild instead of minimumSupportedVersionCode
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), { minimumBuild: 80, latestVersion: "4.4.4", forceUpdate: true });
-  test("legacy schema: minimumBuild field works", status.minimumBuild === 80);
+  const status = evaluateAppUpdateStatus(androidBuild(98), { minimumBuild: 99, latestVersion: "4.4.15", forceUpdate: true });
+  test("legacy schema: minimumBuild field works", status.minimumBuild === 99);
   test("legacy schema: isOutdated", status.isOutdated === true);
 }
 
-// LEGACY forceUpdate without minimumBuild — falls back to 80
+// LEGACY forceUpdate without minimumBuild — falls back to 99
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), { forceUpdate: true });
-  test("legacy force without min: falls back to 80", status.minimumBuild === 80);
-  test("legacy force without min: build 79 < 80 outdated", status.isOutdated === true);
+  const status = evaluateAppUpdateStatus(androidBuild(98), { forceUpdate: true });
+  test("legacy force without min: falls back to 99", status.minimumBuild === 99);
+  test("legacy force without min: build 98 < 99 outdated", status.isOutdated === true);
 }
 
 // AUTHENTICATED SESSION: version check doesn't depend on auth state
 {
-  const status = evaluateAppUpdateStatus(androidBuild(79), config());
+  const status = evaluateAppUpdateStatus(androidBuild(98), config());
   test("auth independence: version check works same for any auth state", status.isOutdated === true);
 }
 
@@ -187,7 +189,7 @@ function test(label: string, condition: boolean) {
 {
   const checkerSource = readFileSync(resolve("components/global/VersionChecker.tsx"), "utf8");
   test("VersionChecker: forced update path renders UpdateRequiredScreen", checkerSource.includes("UpdateRequiredScreen"));
-  test("VersionChecker: non-outdated path renders children", checkerSource.includes("<>{children}</>"));
+  test("VersionChecker: non-outdated path renders children", checkerSource.includes("return <>{children}</>"));
 }
 
 // UPDATE URL is the official Play Store destination
