@@ -82,32 +82,49 @@ export function computeTrialWindow(profile: TrialProfile, now = new Date()) {
   return { start, end };
 }
 
-export function isTrialExpired(profile: TrialProfile, now = new Date()): boolean {
+export function isTrialExpired(
+  profile: TrialProfile,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
   if (isGaiaAccessOverrideActive(now)) return false;
   if (hasActivePremiumMembership(profile, now)) return false;
   if (String(profile.plan).toLowerCase() === "expired") return true;
-  return isExpiredUser(profile as BadgeAccessProfile, now);
+  return isExpiredUser(profile as BadgeAccessProfile, now, testerRecord);
 }
 
-function hasLifetimeOrActiveAccess(profile: TrialProfile, now = new Date()): boolean {
-  if (isExpiredUser(profile as BadgeAccessProfile, now)) return false;
+function hasLifetimeOrActiveAccess(
+  profile: TrialProfile,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
+  if (isExpiredUser(profile as BadgeAccessProfile, now, testerRecord)) return false;
   if (hasActivePremiumMembership(profile, now)) return true;
-  return hasActiveBadgeAccess(profile as BadgeAccessProfile, now);
+  return hasActiveBadgeAccess(profile as BadgeAccessProfile, now, testerRecord);
 }
 
-export function getTrialDaysLeft(profile: TrialProfile, now = new Date()): number {
+export function getTrialDaysLeft(
+  profile: TrialProfile,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): number {
   if (isGaiaAccessOverrideActive(now)) return 999;
   if (hasActivePremiumMembership(profile, now)) return 999;
-  if (getCurrentBadge(profile as BadgeAccessProfile) === "Founder") return 999;
-  if (!isTrialUser(profile as BadgeAccessProfile, now)) return 0;
+  if (getCurrentBadge(profile as BadgeAccessProfile, testerRecord) === "Founder") return 999;
+  if (!isTrialUser(profile as BadgeAccessProfile, now, testerRecord)) return 0;
 
   const { end } = computeTrialWindow(profile, now);
   const diff = end.getTime() - now.getTime();
   return Math.max(0, Math.ceil(diff / 86_400_000));
 }
 
-export function hasFeatureAccess(profile: TrialProfile, feature: FeatureKey, now = new Date()): boolean {
+export function hasFeatureAccess(
+  profile: TrialProfile,
+  feature: FeatureKey,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
   if (feature === "dashboard") return true;
   if (isGaiaAccessOverrideActive(now)) return true;
-  return hasLifetimeOrActiveAccess(profile, now);
+  return hasLifetimeOrActiveAccess(profile, now, testerRecord);
 }

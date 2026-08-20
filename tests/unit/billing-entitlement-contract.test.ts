@@ -272,5 +272,130 @@ const intiTesterRecord: FounderTesterRecord = {
   test("null expiry denies entitlement", buildEntitlementDecision("SUBSCRIPTION_STATE_ACTIVE", null).active === false);
 }
 
+// --- PARALLEL RESOLVER vs CANONICAL RESOLVER (WIDYA FIX) ---
+//
+// Build 99 / Build 100 introduced two parallel entitlement resolvers:
+//   - canonical: lib/billing/entitlementService.ts#getEntitlementStatus
+//   - parallel:  lib/billing/accessControl.ts#hasFeatureAccess (used by 8 live pages)
+//
+// Widya case regression: live profile has stale Google Play Firestore
+// (membershipExpiryDate = 2026-08-13, today = 2026-08-20) BUT active canonical
+// Inti tester grant (until 2026-08-30). Both resolvers MUST agree that access
+// is granted today and denied only after the canonical Inti grant end.
+import { hasFeatureAccess, type TrialProfile } from "../../lib/billing/accessControl";
+{
+  const WIDYA_FIX_NOW = new Date("2026-08-20T00:00:00Z");
+  const widyaProfile = {
+    uid: "ydKZoZuehlewy93U3vrK8abIHS42",
+    membershipType: "PREMIUM",
+    membership: "GOOGLE_PLAY_PREMIUM",
+    plan: "premium",
+    membershipExpiryDate: "2026-08-13T03:36:40.602Z", // STALE Play Firestore
+    accessUntil: "2026-08-13T03:36:40.602Z",          // STALE Play Firestore
+    entitlementSource: "google_play",
+    testerBadge: "Penjaga Bhumi Inti",
+    badge: "Penghuni Bhumi",
+    email: "whedhea37@gmail.com",
+  } as any;
+
+  const canonical = getEntitlementStatus(widyaProfile, WIDYA_FIX_NOW, intiTesterRecord);
+  const parallelWithRecord = hasFeatureAccess(widyaProfile as TrialProfile, "audioHealing", WIDYA_FIX_NOW, intiTesterRecord);
+  const parallelNoRecordButBadgeMirror = hasFeatureAccess(widyaProfile as TrialProfile, "audioHealing", WIDYA_FIX_NOW, null);
+
+  test("PARALLEL: Widya + testerRecord today -> grants access (matches canonical)",
+    parallelWithRecord === true && canonical.isPremium === true,
+    `parallel=${parallelWithRecord} canonical=${canonical.isPremium}`,
+  );
+  test("PARALLEL: Widya WITHOUT testerRecord but WITH profile.testerBadge mirror -> still grants access (defensive fallback)",
+    parallelNoRecordButBadgeMirror === true,
+    `got ${parallelNoRecordButBadgeMirror}`,
+  );
+  test("PARALLEL: Widya + testerRecord tomorrow after Inti end -> denies access",
+    hasFeatureAccess(widyaProfile as TrialProfile, "audioHealing", AFTER_INTI_END, intiTesterRecord) === false,
+  );
+  test("PARALLEL: Widya + testerRecord 5 days after Inti end -> denies access",
+    hasFeatureAccess(widyaProfile as TrialProfile, "audioHealing", new Date("2026-09-05T00:00:00Z"), intiTesterRecord) === false,
+  );
+  test("PARALLEL: profile lacking BOTH testerRecord AND profile.testerBadge -> denies (gate stays closed)",
+    hasFeatureAccess({ ...widyaProfile, testerBadge: null } as TrialProfile, "audioHealing", WIDYA_FIX_NOW, null) === false,
+  );
+  test("PARALLEL: canonical and parallel agree on all 4 premium features today (audioHealing/meditation/journal/weeklyReport)",
+    ["audioHealing", "meditation", "journal", "weeklyReport"].every(
+      (f) => hasFeatureAccess(widyaProfile as TrialProfile, f as any, WIDYA_FIX_NOW, intiTesterRecord) === true,
+    ),
+  );
+}
+
+// --- MULTI-SOURCE ENTITLEMENT UNION (WIDYA REGRESSION GUARD) ---
+{
+  const WIDYA_TEST_NOW = new Date("2026-08-20T00:00:00Z");
+
+  const profile = {
+    uid: "whedhea37",
+    entitlementSource: "google_play",
+    membershipType: "PREMIUM",
+    accessUntil: "2026-09-13T00:00:00Z",
+    membershipExpiryDate: "2026-09-13T00:00:00Z",
+    testerBadge: "Penjaga Bhumi Inti",
+  } as any;
+  const testerRecord = { badge: "Penjaga Bhumi Inti" } as any;
+
+  const sA = getEntitlementStatus(profile, WIDYA_TEST_NOW, testerRecord);
+  test("UNION A: tester + billing both active -> PREMIUM", sA.isPremium === true, "got isPremium=" + sA.isPremium);
+  test(
+    "UNION A: effective expiry === billing (Sep 13)",
+    sA.expiresAt && sA.expiresAt.toISOString() === "2026-09-13T00:00:00.000Z",
+    "got " + (sA.expiresAt && sA.expiresAt.toISOString()),
+  );
+
+  const sB = getEntitlementStatus(profile, new Date("2026-09-05T00:00:00Z"), testerRecord);
+  test("UNION B: expired tester + active billing -> PREMIUM", sB.isPremium === true, "got isPremium=" + sB.isPremium);
+  test(
+    "UNION B: effective expiry === billing (Sep 13)",
+    sB.expiresAt && sB.expiresAt.toISOString() === "2026-09-13T00:00:00.000Z",
+    "got " + (sB.expiresAt && sB.expiresAt.toISOString()),
+  );
+
+  const expiredBillingProfile = {
+    uid: "whedhea37",
+    entitlementSource: "google_play",
+    membershipType: "PREMIUM",
+    accessUntil: "2026-08-15T00:00:00Z",
+    membershipExpiryDate: "2026-08-15T00:00:00Z",
+    testerBadge: "Penjaga Bhumi Inti",
+  } as any;
+  const sC = getEntitlementStatus(expiredBillingProfile, WIDYA_TEST_NOW, testerRecord);
+  test("UNION C: active tester + expired billing -> PREMIUM", sC.isPremium === true, "got isPremium=" + sC.isPremium);
+  test(
+    "UNION C: effective expiry === tester canonical end",
+    sC.expiresAt && sC.expiresAt.toISOString() === INTI_CANONICAL_END_UTC.toISOString(),
+    "got " + (sC.expiresAt && sC.expiresAt.toISOString()),
+  );
+
+  const sD = getEntitlementStatus(expiredBillingProfile, new Date("2026-09-20T00:00:00Z"), testerRecord);
+  test("UNION D: both expired -> NOT PREMIUM", sD.isPremium === false, "got isPremium=" + sD.isPremium);
+
+  const lifetimeProfile = {
+    uid: "founder1",
+    role: "founder",
+    entitlementSource: "google_play",
+    membershipType: "PREMIUM",
+    accessUntil: "2026-09-13T00:00:00Z",
+  } as any;
+  const sF = getEntitlementStatus(lifetimeProfile, WIDYA_TEST_NOW, null);
+  test("UNION F: lifetime + billing -> PREMIUM, expiresAt null", sF.isPremium === true && sF.expiresAt === null, "got isPremium=" + sF.isPremium + " expiresAt=" + sF.expiresAt);
+
+  const trialPaidProfile = {
+    uid: "trialpaid",
+    entitlementSource: "google_play",
+    membershipType: "PREMIUM",
+    accessUntil: "2026-09-13T00:00:00Z",
+    trialStartedAt: "2026-08-15T00:00:00Z",
+    trialEndsAt: "2026-08-22T00:00:00Z",
+  } as any;
+  const sG = getEntitlementStatus(trialPaidProfile, WIDYA_TEST_NOW, null);
+  test("UNION G: trial + paid active -> PREMIUM until paid expiry", sG.isPremium === true && sG.expiresAt?.toISOString() === "2026-09-13T00:00:00.000Z", "got " + (sG.expiresAt && sG.expiresAt.toISOString()));
+}
+
 console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed`);
 if (failed > 0) process.exit(1);

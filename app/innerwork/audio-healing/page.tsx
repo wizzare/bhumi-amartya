@@ -10,6 +10,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { APP_MODE } from "@/lib/config/appMode";
 import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
@@ -64,6 +65,7 @@ function AudioHealingExperience() {
   const [reflection, setReflection] = useState<AudioHealingReflection | null>(null);
   const [saved, setSaved] = useState(false);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
 
   useEffect(() => {
     const initialize = async () => {
@@ -71,7 +73,9 @@ function AudioHealingExperience() {
       if (resolved.isLoading) return;
       if (resolved.isMissing) return;
       if (!resolved.profile) return;
-      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "audioHealing"));
+      const record = await getFounderTesterRecord((resolved.profile as any).uid).catch(() => null);
+      setTesterRecord(record);
+      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "audioHealing", new Date(), record));
     };
     void initialize();
   }, [auth]);

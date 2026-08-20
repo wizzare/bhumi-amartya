@@ -8,6 +8,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
 import { hasFeatureAccess, type TrialProfile } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { useAuth } from "@/context/AuthContext";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
@@ -80,6 +81,7 @@ export default function MeditationPage() {
   const [error, setError] = useState<string | null>(null);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
   const [zoneBContext, setZoneBContext] = useState<ZoneBContext | null>(null);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
 
   useEffect(() => {
     trackEvent("meditation_open");
@@ -95,7 +97,9 @@ export default function MeditationPage() {
         return;
       }
       if (!resolved.profile) return;
-      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "meditation"));
+      const record = await getFounderTesterRecord((resolved.profile as any).uid).catch(() => null);
+      setTesterRecord(record);
+      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as TrialProfile, "meditation", new Date(), record));
       let parsedBlueprint = await storageProvider.getUserBlueprint();
       if (auditUser && !parsedBlueprint) {
         const { getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");

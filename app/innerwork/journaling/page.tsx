@@ -51,6 +51,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { hasFeatureAccess } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
@@ -127,6 +128,7 @@ export default function JournalPage() {
   const [localInsight, setLocalInsight] = useState<LocalJournalInsight | null>(null);
   const [localSaved, setLocalSaved] = useState(false);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const zoneBSearch = useSyncExternalStore(
     () => () => {},
     () => window.location.search,
@@ -158,7 +160,9 @@ export default function JournalPage() {
         }
 
         const profile = resolved.profile as Record<string, unknown> | null;
-        setIsWellnessLocked(!hasFeatureAccess(profile as any, "journal"));
+        const record = await getFounderTesterRecord((profile as any)?.uid).catch(() => null);
+        setTesterRecord(record);
+        setIsWellnessLocked(!hasFeatureAccess(profile as any, "journal", new Date(), record));
 
         let blueprint = await storageProvider.getUserBlueprint();
         if (auditUser && !blueprint) {

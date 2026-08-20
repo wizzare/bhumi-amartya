@@ -1,5 +1,7 @@
 export const MOANA_BILLING_RUNTIME_ENABLED = false;
 
+import { ALFA_ACCESS_UNTIL, INTI_ACCESS_UNTIL } from "./founderTesterSourceOfTruth";
+
 export const MOANA_PLAY_BILLING_PRODUCT_IDS = {
   monthly: "TODO_PLAY_CONSOLE_MONTHLY_SUBSCRIPTION_ID",
   yearly: "TODO_PLAY_CONSOLE_YEARLY_SUBSCRIPTION_ID",
@@ -101,14 +103,21 @@ function readBadge(value?: string | null): MoanaBadge | null {
   return badges.includes(normalized as MoanaBadge) ? normalized as MoanaBadge : null;
 }
 
-export function getCurrentBadge(profile?: BadgeAccessProfile | null): MoanaBadge | null {
-  if (!profile) return null;
-  return readBadge(profile.badge) || readBadge(profile.testerBadge);
+export function getCurrentBadge(
+  profile?: BadgeAccessProfile | null,
+  testerRecord?: { badge?: string | null } | null
+): MoanaBadge | null {
+  if (!profile && !testerRecord) return null;
+  return readBadge(testerRecord?.badge) || readBadge(profile?.badge) || readBadge(profile?.testerBadge);
 }
 
-export function isTrialUser(profile?: BadgeAccessProfile | null, now = new Date()): boolean {
+export function isTrialUser(
+  profile?: BadgeAccessProfile | null,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
   if (!profile) return false;
-  const badge = getCurrentBadge(profile);
+  const badge = getCurrentBadge(profile, testerRecord);
   const accessUntil = toDate(profile.accessUntil);
   if (badge !== "Penjaga Bhumi") return false;
   const membership = String(profile.membership ?? profile.membershipType ?? profile.plan ?? "").toLowerCase();
@@ -116,40 +125,64 @@ export function isTrialUser(profile?: BadgeAccessProfile | null, now = new Date(
   return Boolean(accessUntil && now.getTime() <= accessUntil.getTime());
 }
 
-export function isExpiredUser(profile?: BadgeAccessProfile | null, now = new Date()): boolean {
-  if (!profile) return true;
-  const badge = getCurrentBadge(profile);
+// Canonical grant windows for tester-backed badges. Kept in sync with
+// lib/billing/founderTesterSourceOfTruth.ts. When testerRecord is present
+// AND grants a canonical Inti/Alfa window, that window wins over a stale
+// profile.accessUntil (e.g. stale Google Play Firestore overwrite).
+const TESTER_CANONICAL_WINDOWS: Record<string, { start: string; until: string }> = {
+  "Penjaga Bhumi Inti": { start: "2026-06-29T00:00:00+07:00", until: INTI_ACCESS_UNTIL },
+  "Penjaga Bhumi Alfa": { start: "2026-06-29T00:00:00+07:00", until: ALFA_ACCESS_UNTIL },
+};
+
+export function isExpiredUser(
+  profile?: BadgeAccessProfile | null,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
+  if (!profile && !testerRecord) return true;
+  const badge = getCurrentBadge(profile, testerRecord);
   if (badge === "Founder") return false;
-  if (badge === "Penjaga Bhumi Inti") {
-    const accessUntil = toDate(profile.accessUntil) || new Date("2026-08-30T00:00:00+07:00");
-    const start = new Date("2026-06-29T00:00:00+07:00");
-    return now.getTime() < start.getTime() || now.getTime() >= accessUntil.getTime();
+  if (badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa") {
+    const canonical = TESTER_CANONICAL_WINDOWS[badge];
+    const profileUntil = toDate(profile?.accessUntil);
+    // Prefer the LATER of (canonical, profile.accessUntil) so an explicit
+    // grant extension wins, but never let a STALE earlier Firestore value
+    // shorten the canonical grant.
+    const canonicalUntil = new Date(canonical.until);
+    const effectiveUntil = profileUntil && profileUntil.getTime() > canonicalUntil.getTime()
+      ? profileUntil
+      : canonicalUntil;
+    const start = new Date(canonical.start);
+    return now.getTime() < start.getTime() || now.getTime() >= effectiveUntil.getTime();
   }
-  if (badge === "Penjaga Bhumi Alfa") {
-    const accessUntil = toDate(profile.accessUntil) || new Date("2026-07-30T00:00:00+07:00");
-    const start = new Date("2026-06-29T00:00:00+07:00");
-    return now.getTime() < start.getTime() || now.getTime() >= accessUntil.getTime();
-  }
-  const accessUntil = toDate(profile.accessUntil);
+  const accessUntil = toDate(profile?.accessUntil);
   if (!accessUntil) return true;
   if (now.getTime() >= accessUntil.getTime()) return true;
-  const membership = String(profile.membership ?? profile.membershipType ?? profile.plan ?? "").toLowerCase();
+  const membership = String(profile?.membership ?? profile?.membershipType ?? profile?.plan ?? "").toLowerCase();
   if (membership === "expired") return true;
-  return String(profile.subscriptionStatus ?? "").toLowerCase() === "expired";
+  return String(profile?.subscriptionStatus ?? "").toLowerCase() === "expired";
 }
 
-export function hasActiveBadgeAccess(profile?: BadgeAccessProfile | null, now = new Date()): boolean {
-  const badge = getCurrentBadge(profile);
-  if (!badge || isExpiredUser(profile, now)) return false;
+export function hasActiveBadgeAccess(
+  profile?: BadgeAccessProfile | null,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
+  const badge = getCurrentBadge(profile, testerRecord);
+  if (!badge || isExpiredUser(profile, now, testerRecord)) return false;
   if (badge === "Founder") return true;
   if (badge === "Penjaga Bhumi Inti") return true;
   if (badge === "Penjaga Bhumi Alfa") return true;
-  if (badge === "Penjaga Bhumi") return isTrialUser(profile, now);
+  if (badge === "Penjaga Bhumi") return isTrialUser(profile, now, testerRecord);
   return false;
 }
 
-export function canAccessPremiumFeature(profile?: BadgeAccessProfile | null, now = new Date()): boolean {
-  return hasActiveBadgeAccess(profile, now);
+export function canAccessPremiumFeature(
+  profile?: BadgeAccessProfile | null,
+  now = new Date(),
+  testerRecord?: { badge?: string | null } | null,
+): boolean {
+  return hasActiveBadgeAccess(profile, now, testerRecord);
 }
 
 export async function refreshBadgeFromServer(): Promise<{

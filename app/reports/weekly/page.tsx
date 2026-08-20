@@ -6,6 +6,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { hasFeatureAccess } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 import {
   createWeeklySoulReportFromStorage,
@@ -20,6 +21,7 @@ export default function WeeklyReportPage() {
   const [report, setReport] = useState<WeeklySoulReportOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
 
   useEffect(() => {
     const initialize = async () => {
@@ -30,7 +32,9 @@ export default function WeeklyReportPage() {
         setLoading(false);
         return;
       }
-      setLocked(!hasFeatureAccess(resolved.profile as any, "weeklyReport"));
+      const record = await getFounderTesterRecord((resolved.profile as any)?.uid).catch(() => null);
+      setTesterRecord(record);
+      setLocked(!hasFeatureAccess(resolved.profile as any, "weeklyReport", new Date(), record));
       await syncDerivedCacheFromStorageProvider({
         profile: resolved.profile as object,
         source: "weeklyReport",

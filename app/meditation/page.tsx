@@ -9,6 +9,7 @@ import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
 import { safeJsonParse } from "@/lib/storage/safeJson";
 import { hasFeatureAccess } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { useAuth } from "@/context/AuthContext";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
@@ -68,6 +69,7 @@ export default function MeditationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
+  const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
 
   useEffect(() => {
     trackEvent("meditation_open");
@@ -82,7 +84,9 @@ export default function MeditationPage() {
         router.replace("/setup");
         return;
       }
-      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as any, "meditation"));
+      const record = await getFounderTesterRecord((resolved.profile as any)?.uid).catch(() => null);
+      setTesterRecord(record);
+      setIsWellnessLocked(!hasFeatureAccess(resolved.profile as any, "meditation", new Date(), record));
       const parsedBlueprint = await storageProvider.getUserBlueprint();
 
       if (!resolved.profile || !parsedBlueprint) {
