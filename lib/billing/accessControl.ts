@@ -7,6 +7,32 @@ import {
   type BadgeAccessProfile,
 } from "@/lib/billing/billingPreparation";
 
+// ============================================================================
+// CANONICAL ENTITLEMENT ARCHITECTURE RULE (Build 99+, enforced 2026-08-20)
+// ============================================================================
+// There MUST be exactly ONE source of truth for premium-access decisions in
+// the app: lib/billing/entitlementService.ts#getEntitlementStatus(profile,
+// now, testerRecord). It implements multi-source union semantics
+// (Founder > Tester > Paid > Trial > Free).
+//
+// This file (lib/billing/accessControl.ts) is a THIN DERIVATIVE for cases
+// where a page only needs a boolean gate (e.g. localFeatureAccess checks).
+// It MUST stay in sync with the canonical resolver. If you change union
+// semantics, change it in BOTH files.
+//
+// Rules:
+//   1. hasFeatureAccess MUST be called with a `testerRecord` parameter
+//      whenever the user has a uid. Pages fetch it via getFounderTesterRecord.
+//   2. Adding new FeatureKey values: add to FeatureKey AND add to the test
+//      suite (tests/unit/billing-entitlement-contract.test.ts) at the same
+//      time.
+//   3. NEVER add a new entitlement reader. If you need a new gate, route it
+//      through getEntitlementStatus and read its `isPremium` field.
+//
+// See: WIDYA_CASE_AUDIT_FINDINGS_2026_08_20.md (root cause #2)
+//      Build 99/100 regression guard in billing-entitlement-contract.test.ts
+// ============================================================================
+
 export type TrialPlan = "trial" | "pro" | "expired";
 
 export type TrialProfile = {
