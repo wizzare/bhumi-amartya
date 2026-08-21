@@ -395,6 +395,30 @@ import { hasFeatureAccess, type TrialProfile } from "../../lib/billing/accessCon
   } as any;
   const sG = getEntitlementStatus(trialPaidProfile, WIDYA_TEST_NOW, null);
   test("UNION G: trial + paid active -> PREMIUM until paid expiry", sG.isPremium === true && sG.expiresAt?.toISOString() === "2026-09-13T00:00:00.000Z", "got " + (sG.expiresAt && sG.expiresAt.toISOString()));
+
+  // UNION H: PREMIUM membershipType + entitlementSource=null + no tester -> NOT premium
+  // The "stale Fs label" case (cohort H): Fs says PREMIUM but no Play source, no tester grant.
+  // Resolver must NOT blindly trust Fs membershipType; must verify source.
+  const fakePremiumNoSource = {
+    uid: "ghost-premium",
+    membershipType: "PREMIUM",
+    entitlementSource: null,
+    membershipExpiryDate: "2099-01-01T00:00:00Z",
+    accessUntil: "2099-01-01T00:00:00Z",
+  } as any;
+  const sH = getEntitlementStatus(fakePremiumNoSource, WIDYA_TEST_NOW, null);
+  test("UNION H: Fs PREMIUM but no Play source + no tester -> NOT premium (resolver is source-strict)", sH.isPremium === false, "got isPremium=" + sH.isPremium);
+
+  // UNION I: PREMIUM + google_play source but no expiry -> NOT premium
+  const premiumNoExpiry = {
+    uid: "premium-no-expiry",
+    membershipType: "PREMIUM",
+    entitlementSource: "google_play",
+    membershipExpiryDate: null,
+    accessUntil: null,
+  } as any;
+  const sI = getEntitlementStatus(premiumNoExpiry, WIDYA_TEST_NOW, null);
+  test("UNION I: PREMIUM + google_play source but no expiry -> NOT premium (resolver needs verifiable expiry)", sI.isPremium === false, "got isPremium=" + sI.isPremium);
 }
 
 console.log(`\n${passed + failed} tests, ${passed} passed, ${failed} failed`);

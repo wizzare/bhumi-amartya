@@ -175,11 +175,14 @@ export function getEntitlementStatus(
   }
 
   // 3. Paid Subscriber (Rule Priority 3) - Authoritative Google Play status
+  // Defensive: Google Play always returns an expiryTime for ACTIVE subscriptions.
+  // A `google_play` source without a verifiable expiry is treated as NOT premium
+  // (corrupt/partial state) — never silently promoted to lifetime.
   const verifiedPaid = (profile as any).entitlementSource === "google_play" && profile.membershipType === "PREMIUM";
   let expiredSubscriberAt: Date | null = null;
   if (verifiedPaid) {
     const expiry = toDate(profile.membershipExpiryDate) || toDate(profile.accessUntil);
-    if (!expiry || now < expiry) {
+    if (expiry && now < expiry) {
       activeEntitlements.push({
         isPremium: true,
         reason: "subscriber",
