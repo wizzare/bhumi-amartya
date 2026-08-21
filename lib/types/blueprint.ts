@@ -3,6 +3,8 @@ import type { WetonBlueprint } from "@/lib/weton/types";
 import type { BaziBlueprint } from "@/lib/bazi/types";
 import type { VedicBlueprint } from "@/lib/vedic/types";
 import type { TzolkinBlueprint } from "@/lib/tzolkin/types";
+import type { AstrocartographyResult } from "@/lib/astrocartography/types";
+import type { ZiWeiResult } from "@/lib/zi-wei/types";
 import type { CanonicalIdentity } from "@/lib/types/canonical";
 
 export type BlueprintStatus = "missing" | "generating" | "ready" | "stale" | "error";
@@ -169,6 +171,8 @@ export interface Blueprint {
   bazi?: BaziBlueprint;
   vedic?: VedicBlueprint;
   tzolkin?: TzolkinBlueprint;
+  astrocartography?: AstrocartographyResult;
+  ziWei?: ZiWeiResult;
   canonicalIdentity?: CanonicalIdentity;
   generatedAt: string;
   updatedAt: string;

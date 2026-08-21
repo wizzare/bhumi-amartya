@@ -13,7 +13,8 @@ import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
 import { classifyGoogleSignInError } from "./classifyGoogleSignInError";
-import { recordGoogleSignInDiagnostic } from "./authTelemetry";
+import { recordGoogleSignInDiagnostic, recordAuthEvent } from "./authTelemetry";
+import { bootstrapCanonicalAccess } from "../billing/canonicalAccessBootstrap";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
 
@@ -212,6 +213,19 @@ export function buildMissingMinimalProfilePatch(
 export const ensureMinimalUserProfile = async (user: User) => {
   const existingProfile = await userRepository.getUserProfile(user.uid);
   const now = Timestamp.now();
+
+  let bootstrapResult: { ok: boolean; outcome: string } | null = null;
+  const needsBootstrap = !existingProfile || !existingProfile.trialStartedAt || !existingProfile.trialEndsAt;
+  if (needsBootstrap) {
+    console.log("[TRIAL BOOTSTRAP TRIGGERED] UID:", user.uid);
+    try {
+      const getToken = typeof user.getIdToken === "function" ? user.getIdToken.bind(user) : async () => "";
+      bootstrapResult = await bootstrapCanonicalAccess(user.uid, getToken, async () => {});
+    } catch (e) {
+      console.warn("[TRIAL BOOTSTRAP FAILED DURING ENSURE_PROFILE]", e);
+    }
+  }
+
   if (existingProfile) {
     const missingFieldsPatch = buildMissingMinimalProfilePatch(
       existingProfile,
@@ -226,6 +240,13 @@ export const ensureMinimalUserProfile = async (user: User) => {
       role: existingProfile.guardianRole || existingProfile.role || "user",
     });
     const refreshedProfile = (await userRepository.getUserProfile(user.uid)) ?? existingProfile;
+    if (needsBootstrap && bootstrapResult?.ok === false) {
+      console.warn("[TRIAL BOOTSTRAP FAILED] Skipping waitForServerIssuedProfile for existing user to prevent lockout.");
+      return refreshedProfile;
+    }
+    // ponytail: This branch handles existing users. The logic for new users below already ensures a minimal profile is created.
+    // The existing user might have a partial profile or an expired trial that needs reconciliation, but shouldn't be blocked.
+    // Add when: more robust reconciliation for existing users with partial/expired profiles.
     return waitForServerIssuedProfile(user, refreshedProfile);
   }
 
@@ -238,6 +259,13 @@ export const ensureMinimalUserProfile = async (user: User) => {
     role: "user",
     registered: true,
   });
+
+  void recordAuthEvent(
+    "USER_DOCUMENT_CREATED",
+    { stage: "ensureMinimalUserProfile", isNewUser: true, hasProfile: true },
+    user.uid,
+  );
+
   const createdProfile = (await userRepository.getUserProfile(user.uid)) ?? minimalProfile;
   console.log("[PROFILE CREATED]", {
     uid: user.uid,
@@ -248,6 +276,10 @@ export const ensureMinimalUserProfile = async (user: User) => {
     blueprintStatus: createdProfile.blueprintStatus,
     source: "ensureMinimalUserProfile",
   });
+  if (bootstrapResult?.ok === false) {
+    console.warn("[TRIAL BOOTSTRAP FAILED] Skipping waitForServerIssuedProfile for new user to prevent lockout.");
+    return createdProfile;
+  }
   return waitForServerIssuedProfile(user, createdProfile, true);
 };
 
@@ -258,6 +290,23 @@ export const signInWithGoogle = async (options?: {
   const platform = Capacitor.getPlatform();
   console.log("[AUTH PLATFORM]", { platform, isNative });
   console.log("[CAPACITOR IS_NATIVE]", isNative);
+
+  // Telemetry: signup or login started (the API does not distinguish, but
+  // we label based on whether Firebase already has a current user).
+  const alreadyAuthenticated = !!auth.currentUser;
+  void recordAuthEvent(
+    alreadyAuthenticated ? "AUTH_LOGIN_STARTED" : "AUTH_SIGNUP_STARTED",
+    { stage: isNative ? "native" : "web_popup" },
+  );
+  try {
+
+  // Telemetry: signup or login started (the API does not distinguish, but
+  // we label based on whether Firebase already has a current user).
+  const alreadyAuthenticated = !!auth.currentUser;
+  void recordAuthEvent(
+    alreadyAuthenticated ? "AUTH_LOGIN_STARTED" : "AUTH_SIGNUP_STARTED",
+    { stage: isNative ? "native" : "web_popup" },
+  );
 
   if (isNative) {
     try {
@@ -315,10 +364,19 @@ export const signInWithGoogle = async (options?: {
         void recordGoogleSignInDiagnostic(
           classifyGoogleSignInError(firebaseError, "FIREBASE_CREDENTIAL_EXCHANGE", useCredentialManager)
         );
+        void recordAuthEvent(
+          "AUTH_SIGNUP_FAILED",
+          {
+            stage: "FIREBASE_CREDENTIAL_EXCHANGE",
+            errorClass: (firebaseError as any)?.name || "Error",
+            errorCode: (firebaseError as any)?.code || null,
+          },
+        );
         throw firebaseError;
       }
 
       console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native" });
+      void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange" });
       return;
     } catch (error) {
       console.error("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
@@ -344,6 +402,18 @@ export const signInWithGoogle = async (options?: {
   console.log("[GOOGLE AUTH START]", { method: "signInWithPopup" });
   await waitForGooglePopupResult(signInWithPopup(auth, googleProvider));
   console.log("[GOOGLE AUTH RESULT]", { status: "success" });
+  void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "web_popup" });
+  } catch (error) {
+    void recordAuthEvent(
+      alreadyAuthenticated ? "AUTH_LOGIN_FAILED" : "AUTH_SIGNUP_FAILED",
+      {
+        stage: isNative ? "native_google_auth" : "web_popup",
+        errorClass: (error as any)?.name || "Error",
+        errorCode: (error as any)?.code || null,
+      },
+    );
+    throw error;
+  }
 };
 
 export const signInWithGoogleRedirect = async (options?: {

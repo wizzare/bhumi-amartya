@@ -1,3 +1,15 @@
+
+> ⚠️ SUPERSEDED — V5 DOCUMENTATION RECONCILIATION
+
+> This document represents an earlier V5 planning state.
+> It is retained for historical provenance.
+> It is NOT the current source of truth.
+>
+> See:
+> - V5_SOURCE_OF_TRUTH.md
+> - V5_PRD.md
+> - V5_TODO.md
+> - V5_DECISION_LOG.md
 # SoT V5 Bhumi Amartya Aplikasi
 
 **Status:** Canonical
@@ -100,3 +112,4 @@ This document is the definitive source of truth (SoT) for all multilingual and c
 ---
 
 *Document created on 2026‑07‑19.*
+

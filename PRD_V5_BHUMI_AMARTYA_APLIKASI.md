@@ -1,3 +1,15 @@
+
+> ⚠️ SUPERSEDED — V5 DOCUMENTATION RECONCILIATION
+
+> This document represents an earlier V5 planning state.
+> It is retained for historical provenance.
+> It is NOT the current source of truth.
+>
+> See:
+> - V5_SOURCE_OF_TRUTH.md
+> - V5_PRD.md
+> - V5_TODO.md
+> - V5_DECISION_LOG.md
 # PRD V5 Bhumi Amartya Aplikasi
 
 **Status:** Draft
@@ -118,3 +130,4 @@ Deliver multilingual support for Bhumi Amartya V5 across eight locales (`id-ID`,
 ---
 
 *Document created on 2026‑07‑20.*
+

@@ -5,6 +5,7 @@ import calculateSunSign from "../calculations/calculateSunSign";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride";
 import { calculateNatalBasicsAsync } from "@/lib/astrology/calculateNatalBasics";
+import { calculateAstrocartography } from "@/lib/astrocartography/calculateAstrocartography";
 import { Blueprint } from "../types/blueprint";
 import { auth } from "@/lib/firebase/firebase";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -71,6 +72,16 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     timezone,
   });
 
+  const astrocartography = calculateAstrocartography({
+    birthDate,
+    birthTime,
+    birthCity,
+    birthCountry,
+    latitude,
+    longitude,
+    timezone,
+  }, natalBasics);
+
   console.log("[ASTROLOGY INPUT]", {
     birthDate,
     birthTime,
@@ -80,6 +91,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     longitude,
     timezone,
     natalBasics,
+    astrocartography,
   });
 
   const natalChart = {
@@ -136,6 +148,8 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     bazi,
     vedic,
     tzolkin,
+    astrocartography,
+    // ziWei is not generated here because it requires gender, which is not on BlueprintInput
   };
 
   // Add metadata for the full Blueprint type

@@ -13,6 +13,7 @@ import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
+import { calculateAstrocartography } from "@/lib/astrocartography/calculateAstrocartography";
 
 const userBlueprintDoc = (uid: string) => doc(db, "blueprints", uid);
 const userBlueprintPath = (uid: string) => `blueprints/${uid}`;
@@ -154,6 +155,16 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
     calculatedAt: (savedHumanDesign as any)?.calculatedAt ?? null,
   };
 
+  const hasCompleteBirthInput =
+    Boolean(birthDate && input.birthTime && typeof input.latitude === "number" && typeof input.longitude === "number" && input.timezone);
+  const astrocartography = data.astrocartography ?? (hasCompleteBirthInput
+    ? calculateAstrocartography(
+        { birthDate, birthTime: input.birthTime, birthCity: input.birthCity, birthCountry: input.birthCountry,
+          latitude: input.latitude, longitude: input.longitude, timezone: input.timezone },
+        astrology as never,
+      )
+    : undefined);
+
   return {
     uid,
     status: data.status ?? "ready",
@@ -172,6 +183,9 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
     weton,
     bazi,
     vedic,
+    astrocartography,
+    // ziWei preserved from stored data; not recomputed (requires gender not present on input)
+    ziWei: data.ziWei,
     generatedAt: data.generatedAt ?? new Date().toISOString(),
     updatedAt: data.updatedAt ?? new Date().toISOString(),
   };

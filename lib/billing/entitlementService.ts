@@ -300,6 +300,11 @@ export function getEntitlementStatus(
   }
 
   // No active entitlements. Fallback to expired/free states.
+  const expiredTester = expiredEntitlements.find(e => e.source === "Explicit Grant");
+  if (expiredTester) {
+    return expiredTester;
+  }
+
   if (expiredSubscriberAt) {
     return expiredEntitlements.find(e => e.source === "Google Play Billing")!;
   }

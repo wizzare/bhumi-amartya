@@ -90,7 +90,8 @@ function getCanonicalTrialWindow(profile) {
   const accessSource = String(profile?.accessSource || "");
   const trustedSource = source === "firebase_auth_creation_time"
     || accessSource === "firebase_auth_on_create"
-    || (profile?.membershipType === "TRIAL" && profile?.plan === "free_trial");
+    || (profile?.membershipType === "TRIAL" && profile?.plan === "free_trial")
+    || (profile?.membershipType === "PREMIUM" && profile?.plan === "free_trial");
   const exactWindow = Boolean(start && end && end.getTime() - start.getTime() === SEVEN_DAYS_MS);
   if (!trustedSource || !start || !end || !exactWindow) return { state: "invalid", start, end };
   return { state: "valid", start, end };
@@ -195,6 +196,29 @@ function propose(profile, testerRecord) {
   }
 
   if (e.isPremium) {
+    if (e.reason === "trial") {
+      const proposed = {
+        membershipType: "TRIAL",
+        membershipExpiryDate: e.expiresAt ? e.expiresAt.toISOString() : null,
+        accessUntil: e.expiresAt ? e.expiresAt.toISOString() : null,
+        entitlementSource: profile?.entitlementSource || "firebase_auth_creation_time",
+        subscriptionStatus: "trialing",
+      };
+      // Check if Fs already matches the proposed state
+      const matchesExpiry = e.expiresAt
+        ? (new Date(profile?.membershipExpiryDate).getTime() === e.expiresAt.getTime() ||
+           new Date(profile?.accessUntil).getTime() === e.expiresAt.getTime())
+        : (profile?.membershipExpiryDate == null && profile?.accessUntil == null);
+      const isAligned =
+        profile?.membershipType === "TRIAL" &&
+        profile?.subscriptionStatus === "trialing" &&
+        matchesExpiry;
+      return {
+        state: isAligned ? "no-op" : "upgrade",
+        writes: proposed,
+      };
+    }
+
     const source = e.reason === "subscriber" ? "google_play" : (profile?.entitlementSource || "tester_grant");
     const proposed = {
       membershipType: "PREMIUM",

@@ -10,6 +10,7 @@ import {
   signOut as signOutAction,
 } from '@/lib/auth/authActions';
 import { UserProfile, userRepository } from '@/lib/repositories/userRepository';
+import { recordAuthEvent } from '@/lib/auth/authTelemetry';
 import { clearBhumiSessionForSignOut } from '@/lib/auth/onboardingIntent';
 import { storageProvider } from '@/lib/storage/storageProvider';
 import { processMembershipGrant } from '@/lib/billing/membershipLogic';
@@ -182,6 +183,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             authStateUid,
             auth.currentUser?.uid ?? null,
           );
+          // Telemetry: auth state established (success or unauthenticated).
+          if (firebaseUser) {
+            void recordAuthEvent(
+              "AUTH_LOGIN_COMPLETED",
+              { hasProfile: false, isNewUser: false },
+              firebaseUser.uid,
+            );
+          }
+          void recordAuthEvent("AUTH_STATE_ESTABLISHED", undefined, firebaseUser?.uid);
           console.info("[AUTH] onAuthStateChanged", {
             uid: firebaseUser?.uid ?? null,
             email: firebaseUser?.email ?? null,
@@ -242,6 +252,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (!isActive()) return;
 
             let profile: UserProfile | null = primaryOutcome.status === "success" ? primaryOutcome.value : null;
+
+            void recordAuthEvent(
+              "PROFILE_LOADED",
+              {
+                hasProfile: !!profile,
+                isNewUser: profile ? !(profile as any).trialEndsAt : undefined,
+                stage: primaryOutcome.status,
+                durationMs: (primaryOutcome as any).elapsedMs,
+              },
+              firebaseUser.uid,
+            );
 
             if (profile) {
               const saveResult = await resolveCurrentAuthOperation(
@@ -353,11 +374,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           } catch (error) {
             if (!isActive()) return;
             if (error instanceof ServerIssuedProfilePendingError) {
+              void recordAuthEvent(
+                "PROFILE_LOAD_FAILED",
+                {
+                  stage: "server_profile_pending",
+                  errorClass: "ServerIssuedProfilePendingError",
+                  errorCode: "PROFILE_PENDING",
+                },
+                firebaseUser.uid,
+              );
               setUserProfile(null);
               setProfileError("Profil sedang disiapkan. Mohon tunggu.");
               return;
             }
             console.error("Auth profile loading error:", error);
+            void recordAuthEvent(
+              "PROFILE_LOAD_FAILED",
+              {
+                stage: "primary_load",
+                errorClass: (error as any)?.name || "Error",
+                errorCode: (error as any)?.code || null,
+              },
+              firebaseUser?.uid,
+            );
 
             // Final fallback: try local-only storage just in case
             const guardedFallbackOutcome = await resolveCurrentAuthOperation(
