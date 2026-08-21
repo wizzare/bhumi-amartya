@@ -104,28 +104,15 @@ export function getEntitlementStatus(
     };
   }
 
+  const activeEntitlements: EntitlementStatus[] = [];
+  const expiredEntitlements: EntitlementStatus[] = [];
+
   // 1. Founder (Rule Priority 1) - Lifetime bypass
-  if (isPrivilegedUser(profile) || profile.membershipType === "LIFETIME") {
-    return {
-      isPremium: true,
-      reason: "founder",
-      expiresAt: null,
-      daysRemaining: null,
-      effectiveTier: "Founder (Lifetime)",
-      source: "Founder Privileged",
-      status: "Active",
-      trialLoginsRemaining: null,
-    };
-  }
-
-  // 2. Badge & Tester Grant (Rule Priority 2) - Inti, Alfa, or active Tester Registry record
-  // testerRecord must be fetched by the caller (async Firestore lookup keyed by uid)
-  // and passed in here; this function stays synchronous.
   const badge = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge;
-
   const effectiveBadge = testerRecord?.badge || badge;
-  if (effectiveBadge === "Founder") {
-    return {
+  
+  if (isPrivilegedUser(profile) || profile.membershipType === "LIFETIME" || effectiveBadge === "Founder") {
+    activeEntitlements.push({
       isPremium: true,
       reason: "founder",
       expiresAt: null,
@@ -134,19 +121,14 @@ export function getEntitlementStatus(
       source: "Founder Privileged",
       status: "Active",
       trialLoginsRemaining: null,
-    };
+    });
   }
+
+  // 2. Badge & Tester Grant (Rule Priority 2)
   if (effectiveBadge === "Penjaga Bhumi Inti" || effectiveBadge === "Penjaga Bhumi Alfa") {
     const isInti = effectiveBadge === "Penjaga Bhumi Inti";
     const startStr = isInti ? INTI_GRANT_STARTS_AT : ALFA_GRANT_STARTS_AT;
     const canonicalUntilStr = isInti ? INTI_ACCESS_UNTIL : ALFA_ACCESS_UNTIL;
-    // A stale `profile.accessUntil` (e.g. an expired Google Play expiry persisted
-    // by the verifier on the same document) MUST NOT shorten an active canonical
-    // tester/founder grant. Take the LATER of (canonical grant window,
-    // profile.accessUntil) so an explicit grant is never killed by an unrelated,
-    // expired subscription timestamp on the same document. Tests / explicit
-    // grants that extend the window beyond the canonical end remain green via
-    // the max() semantics.
     const profileUntilStr = profile.accessUntil ? String(profile.accessUntil) : null;
     const untilStr =
       profileUntilStr && new Date(profileUntilStr) > new Date(canonicalUntilStr)
@@ -155,25 +137,19 @@ export function getEntitlementStatus(
     const startDate = new Date(startStr);
     const untilDate = new Date(untilStr);
 
-    let status = "Active";
-    if (now < startDate) status = "Scheduled";
-    else if (now >= untilDate) status = "Expired";
-
     if (now >= startDate && now < untilDate) {
-      const daysRemaining = Math.max(0, Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
-      return {
+      activeEntitlements.push({
         isPremium: true,
         reason: isInti ? "inti_badge" : "alfa_badge",
         expiresAt: untilDate,
-        daysRemaining,
+        daysRemaining: Math.max(0, Math.ceil((untilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))),
         effectiveTier: isInti ? "Penjaga Bhumi Inti" : "Penjaga Bhumi Alfa",
         source: "Explicit Grant",
-        status,
+        status: "Active",
         trialLoginsRemaining: null,
-      };
-    }
-    if (now >= untilDate) {
-      return {
+      });
+    } else if (now >= untilDate) {
+      expiredEntitlements.push({
         isPremium: false,
         reason: "none",
         expiresAt: untilDate,
@@ -182,16 +158,11 @@ export function getEntitlementStatus(
         source: "Explicit Grant",
         status: "Expired",
         trialLoginsRemaining: null,
-      };
+      });
     }
-    // NOTE: if now < startDate (grant scheduled but not yet started), execution
-    // intentionally falls through to Priority 3/4 below. See merge review notes
-    // for build82-integration: this is a pre-existing structural gap, currently
-    // unreachable since INTI_GRANT_STARTS_AT/ALFA_GRANT_STARTS_AT are both fixed
-    // in the past. Flagged as a follow-up hardening item, not fixed here.
   }
   if (effectiveBadge === "Penjaga Bhumi" && testerRecord) {
-    return {
+    activeEntitlements.push({
       isPremium: true,
       reason: "subscriber",
       expiresAt: null,
@@ -200,16 +171,16 @@ export function getEntitlementStatus(
       source: "Explicit Grant",
       status: "Active",
       trialLoginsRemaining: null,
-    };
+    });
   }
 
   // 3. Paid Subscriber (Rule Priority 3) - Authoritative Google Play status
-  let expiredSubscriberAt: Date | null = null;
   const verifiedPaid = (profile as any).entitlementSource === "google_play" && profile.membershipType === "PREMIUM";
+  let expiredSubscriberAt: Date | null = null;
   if (verifiedPaid) {
     const expiry = toDate(profile.membershipExpiryDate) || toDate(profile.accessUntil);
     if (!expiry || now < expiry) {
-      return {
+      activeEntitlements.push({
         isPremium: true,
         reason: "subscriber",
         expiresAt: expiry,
@@ -218,34 +189,30 @@ export function getEntitlementStatus(
         source: "Google Play Billing",
         status: "Active",
         trialLoginsRemaining: null,
-      };
+      });
+    } else {
+      expiredSubscriberAt = expiry;
+      expiredEntitlements.push({
+        isPremium: false,
+        reason: "none",
+        expiresAt: expiry,
+        daysRemaining: 0,
+        effectiveTier: "Paid Premium (Expired)",
+        source: "Google Play Billing",
+        status: "Expired",
+        trialLoginsRemaining: null,
+      });
     }
-    expiredSubscriberAt = expiry;
   }
 
   // 4. Time-Based 7-Day Free Trial (Rule Priority 4)
   const trialWindow = getCanonicalTrialWindow(profile);
   const trialStart = trialWindow.start;
   const trialEnd = trialWindow.end;
+  let invalidTrialState: EntitlementStatus | null = null;
 
-  // Canonical server-issued trial timestamps outrank all legacy plan/status
-  // labels. Expiry is determined only by the immutable canonical end time.
-
-  // If no setup timestamp exists at all (trialStart is null and trialEnd is null), return explicit safe non-premium status
   if (trialWindow.state === "missing") {
-    if (expiredSubscriberAt) {
-      return {
-        isPremium: false,
-        reason: "none",
-        expiresAt: expiredSubscriberAt,
-        daysRemaining: 0,
-        effectiveTier: "Paid Premium (Expired)",
-        source: "Google Play Billing",
-        status: "Expired",
-        trialLoginsRemaining: null,
-      };
-    }
-    return {
+    invalidTrialState = {
       isPremium: false,
       reason: "none",
       expiresAt: null,
@@ -255,22 +222,8 @@ export function getEntitlementStatus(
       status: "Missing Setup Timestamp",
       trialLoginsRemaining: null,
     };
-  }
-
-  if (trialWindow.state === "invalid") {
-    if (expiredSubscriberAt) {
-      return {
-        isPremium: false,
-        reason: "none",
-        expiresAt: expiredSubscriberAt,
-        daysRemaining: 0,
-        effectiveTier: "Paid Premium (Expired)",
-        source: "Google Play Billing",
-        status: "Expired",
-        trialLoginsRemaining: null,
-      };
-    }
-    return {
+  } else if (trialWindow.state === "invalid") {
+    invalidTrialState = {
       isPremium: false,
       reason: "none",
       expiresAt: null,
@@ -280,12 +233,10 @@ export function getEntitlementStatus(
       status: "Invalid Trial Setup",
       trialLoginsRemaining: null,
     };
-  }
-
-  if (trialEnd && now < trialEnd) {
+  } else if (trialEnd && now < trialEnd) {
     const msLeft = trialEnd.getTime() - now.getTime();
     const daysRemaining = Math.max(1, Math.ceil(msLeft / (1000 * 60 * 60 * 24)));
-    return {
+    activeEntitlements.push({
       isPremium: true,
       reason: "trial",
       expiresAt: trialEnd,
@@ -294,24 +245,70 @@ export function getEntitlementStatus(
       source: "7-Day Trial",
       status: "Active",
       trialLoginsRemaining: `Sisa Trial: ${daysRemaining} Hari`,
-    };
-  }
-
-  if (expiredSubscriberAt) {
-    return {
+    });
+  } else if (trialEnd && now >= trialEnd) {
+    expiredEntitlements.push({
       isPremium: false,
       reason: "none",
-      expiresAt: expiredSubscriberAt,
+      expiresAt: trialEnd,
       daysRemaining: 0,
-      effectiveTier: "Paid Premium (Expired)",
-      source: "Google Play Billing",
-      status: "Expired",
-      trialLoginsRemaining: null,
+      effectiveTier: "Free (Trial Exhausted)",
+      source: "Free Account",
+      status: "Trial Exhausted",
+      trialLoginsRemaining: "Sisa Trial: 0 Hari",
+    });
+  }
+
+  // --- MULTI-SOURCE ENTITLEMENT UNIONING ---
+  if (activeEntitlements.length > 0) {
+    // If any active entitlement is lifetime (expiresAt === null), it wins entirely.
+    const lifetime = activeEntitlements.find(e => e.expiresAt === null);
+    if (lifetime) return lifetime;
+
+    // Otherwise, find the one with the LATEST expiry date.
+    let latestExpiryEntitlement = activeEntitlements[0];
+    for (const entitlement of activeEntitlements) {
+      if (entitlement.expiresAt && latestExpiryEntitlement.expiresAt && entitlement.expiresAt > latestExpiryEntitlement.expiresAt) {
+        latestExpiryEntitlement = entitlement;
+      }
+    }
+
+    // Preserve the highest precedence tier/reason, but apply the latest expiry.
+    // Precedence: founder > inti_badge/alfa_badge > subscriber > trial
+    const reasonPrecedence = { "founder": 1, "inti_badge": 2, "alfa_badge": 2, "subscriber": 3, "trial": 4, "override": 5, "none": 6 };
+    let highestTierEntitlement = activeEntitlements[0];
+    for (const entitlement of activeEntitlements) {
+      if (reasonPrecedence[entitlement.reason] < reasonPrecedence[highestTierEntitlement.reason]) {
+        highestTierEntitlement = entitlement;
+      }
+    }
+
+    const effectiveDaysRemaining = latestExpiryEntitlement.expiresAt
+      ? Math.max(0, Math.ceil((latestExpiryEntitlement.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+      : null;
+
+    return {
+      ...highestTierEntitlement,
+      expiresAt: latestExpiryEntitlement.expiresAt,
+      daysRemaining: effectiveDaysRemaining,
+      trialLoginsRemaining:
+        highestTierEntitlement.reason === "trial" ? `Sisa Trial: ${effectiveDaysRemaining} Hari` : null,
     };
   }
 
-  // 5. Everyone Else - Free account
+  // No active entitlements. Fallback to expired/free states.
+  if (expiredSubscriberAt) {
+    return expiredEntitlements.find(e => e.source === "Google Play Billing")!;
+  }
+  
+  if (invalidTrialState) {
+    return invalidTrialState;
+  }
+
   const isTrialExhausted = Boolean(trialEnd && now >= trialEnd);
+  const trialExpiredFallback = expiredEntitlements.find(e => e.source === "Free Account" && e.status === "Trial Exhausted");
+  if (trialExpiredFallback) return trialExpiredFallback;
+
   return {
     isPremium: false,
     reason: "none",

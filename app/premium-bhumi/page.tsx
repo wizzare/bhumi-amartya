@@ -49,7 +49,7 @@ export default function PremiumBhumiPage() {
     loadProfile();
   }, [auth, router]);
 
-  const badge = profile ? getCurrentBadge(profile) : null;
+  const badge = profile ? getCurrentBadge(profile, testerRecord) : null;
   const entitlement = profile ? getEntitlementStatus(profile, new Date(), testerRecord) : null;
   const presentation = getBillingPresentation(entitlement);
   const isPremium = presentation.state === "premium_active";

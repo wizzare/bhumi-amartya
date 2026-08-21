@@ -317,8 +317,8 @@ export default function SettingsPage() {
   const effectiveEmail = googleEmail || email;
 
   const resolvedBadge = useMemo(() => {
-    return getCurrentBadge(originalProfile as any) || "Penghuni Bhumi";
-  }, [originalProfile]);
+    return getCurrentBadge(originalProfile as any, testerRecord) || "Penghuni Bhumi";
+  }, [originalProfile, testerRecord]);
 
   const entitlement = useMemo(() => {
     return getEntitlementStatus(originalProfile as any, new Date(), testerRecord);
