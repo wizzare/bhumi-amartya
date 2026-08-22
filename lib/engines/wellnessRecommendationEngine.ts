@@ -5,6 +5,7 @@ import type { PreferenceWeightMap } from "@/lib/intelligence/recommendationPrefe
 import type { CapacityAdjustmentMap } from "@/lib/intelligence/recommendationCapacityEngine";
 import type { ContextBoostMap } from "@/lib/intelligence/recommendationContextEngine";
 import type { AkashiWellnessContext } from "@/lib/intelligence/wellnessAkashiContext";
+import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 export type RecommendationPeriod = "morning" | "afternoon" | "evening";
 export type RecommendationPriority = "PRIMARY" | "SECONDARY" | "OPTIONAL" | "MICRO";
@@ -86,6 +87,18 @@ export interface WellnessPackages {
   evening: WellnessPackage;
 }
 
+export interface JourneyCompactContext {
+  helpedCategories?: string[];
+  recentlySkippedIds?: string[];
+  yesterdaySummary?: {
+    totalCompleted: number;
+    completionRate: number;
+    journalCompleted: boolean;
+    meditationCompleted: boolean;
+    audioCompleted: boolean;
+  };
+}
+
 export interface SelectWellnessPackagesInput {
   snapshot: WellnessSnapshot;
   preferences?: UserWellnessPreferences;
@@ -98,6 +111,7 @@ export interface SelectWellnessPackagesInput {
   lastSeenAt?: Record<string, string>;
   akashiContext?: AkashiWellnessContext;
   akashiContextRevision?: string;
+  journeyContext?: JourneyCompactContext;
 }
 
 export interface WellnessRecommendation {
@@ -288,7 +302,16 @@ function scoreCandidate(
   const lowEnergyFit = energy <= 4 && (item.energyLevel === "low" || item.estimatedDuration <= 10) ? 8 : 0;
   const lastSeen = input.lastSeenAt?.[item.id];
   const recencyPenalty = lastSeen && now - new Date(lastSeen).getTime() < 48 * 60 * 60 * 1000 ? -16 : 0;
-  return contextScore + preference + capacity + context + day + astro + akashi + environmental.score + explicitPreference + domainPreference + lowEnergyFit + recencyPenalty;
+  const journeyHelpedBoost = input.journeyContext?.helpedCategories?.includes(item.domain) ? 4 : 0;
+  const journeySkipPenalty = input.journeyContext?.recentlySkippedIds?.includes(item.id) ? -6 : 0;
+  return contextScore + preference + capacity + context + day + astro + akashi + environmental.score + explicitPreference + domainPreference + lowEnergyFit + recencyPenalty + journeyHelpedBoost + journeySkipPenalty;
+}
+
+export function calculateCandidateScore(
+  item: LibraryRecommendation,
+  input: SelectWellnessPackagesInput,
+): number {
+  return scoreCandidate(item, input, Date.now());
 }
 
 function akashiScore(item: LibraryRecommendation, context?: AkashiWellnessContext): number {
@@ -338,8 +361,9 @@ function safetyAdjustmentFor(snapshot: WellnessSnapshot): string {
 function selectForPeriod(period: RecommendationPeriod, input: SelectWellnessPackagesInput, used: Set<string>): PackageRecommendation[] {
   const health = normalizeHealth(input.snapshot.healthCondition);
   const now = Date.now();
+  const targetLocalDate = input.environment?.localDate || getLocalDateKey(new Date(now), "Asia/Jakarta");
   const completedToday = new Set((input.history ?? [])
-    .filter((item) => item.completedAt.slice(0, 10) === input.snapshot.updatedAt.slice(0, 10))
+    .filter((item) => item.completedAt.slice(0, 10) === targetLocalDate)
     .map((item) => item.recommendationId));
   const candidates = WELLNESS_RECOMMENDATION_LIBRARY
     .filter((item) => item.recommendedTime === "flexible" || item.recommendedTime === period)
