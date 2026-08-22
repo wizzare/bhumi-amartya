@@ -584,7 +584,15 @@ export function WellnessPageClient() {
         if (snapshot?.checkInCompleted) {
           const dailyContext = await loadCanonicalWellnessContext(result.date);
           const akashiContext = buildAkashiWellnessContext(profile, snapshot);
-          const curated = await loadWellnessCuration(activeUid, result.date, snapshot, undefined, dailyContext, akashiContext).catch(() => null);
+          const curated = await loadWellnessCuration(
+            activeUid,
+            result.date,
+            snapshot,
+            undefined,
+            dailyContext,
+            akashiContext,
+            result.journeyIntelligence.recentPracticePatterns,
+          ).catch(() => null);
           setCuration(curated);
         } else {
           setCuration(null);

@@ -7,7 +7,8 @@ import {
   EnvironmentalContext,
   PackageRecommendation,
   RECOMMENDATION_ELIGIBILITY_VERSION,
-  isRecommendationEligible
+  isRecommendationEligible,
+  JourneyCompactContext
 } from "@/lib/engines/wellnessRecommendationEngine";
 import { WELLNESS_RECOMMENDATION_LIBRARY } from "@/lib/data/wellnessRecommendationLibrary";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
@@ -29,6 +30,59 @@ import type { AkashiWellnessContext } from "@/lib/intelligence/wellnessAkashiCon
 const CROSS_DAY_HISTORY_MAX = 30;
 /** Maximum age (days) of cross-day history entries to consider. */
 const CROSS_DAY_HISTORY_MAX_DAYS = 14;
+
+/**
+ * Maps Section 4 / Journey practice categories to library domains for M4-01 journeyContext scoring.
+ * Only categories with at least one corresponding library domain are included.
+ */
+const PRACTICE_CATEGORY_TO_DOMAIN: Record<string, string> = {
+  journaling: "mind",
+  meditation: "meditation",
+  yoga: "physical",
+  workout: "physical",
+  audioHealing: "sound",
+  manifestation: "mind",
+  healthyFood: "natural-living",
+};
+
+/**
+ * Builds JourneyCompactContext from persisted recentPracticePatterns.
+ * Returns minimal context with only fields that drive M4-01 scoring:
+ * - helpedCategories: library domains where practiceHelped === true
+ * - recentlySkippedIds: library item ids where skipped === true
+ */
+function buildJourneyCompactContext(patterns: Array<{
+  practiceId: string;
+  practiceCategory: string;
+  practiceHelped: boolean | null;
+  reflectionResult?: string;
+}>): JourneyCompactContext {
+  const helpedDomains = new Set<string>();
+  const skippedIds = new Set<string>();
+
+  for (const p of patterns ?? []) {
+    const domain = PRACTICE_CATEGORY_TO_DOMAIN[p.practiceCategory];
+    if (!domain) continue;
+
+    if (p.practiceHelped === true) {
+      helpedDomains.add(domain);
+    }
+
+    // Persisted skipped comes from innerworkCompletion.skipped or reflection with negative signal
+    // Reflection negative keywords used in logWellnessSection4Practice: "berat|susah"
+    const isSkipped = p.reflectionResult && /berat|susah/i.test(p.reflectionResult);
+    if (isSkipped) {
+      // Map category to library item ids for this domain
+      const matchingItems = WELLNESS_RECOMMENDATION_LIBRARY.filter((item) => item.domain === domain);
+      matchingItems.forEach((item) => skippedIds.add(item.id));
+    }
+  }
+
+  return {
+    helpedCategories: Array.from(helpedDomains),
+    recentlySkippedIds: Array.from(skippedIds),
+  };
+}
 
 export interface CuratedRecommendation extends PackageRecommendation {
   humanPriority: string;
@@ -358,7 +412,13 @@ export async function loadWellnessCuration(
   snapshot: WellnessSnapshot,
   preferences?: UserWellnessPreferences,
   environment?: EnvironmentalContext,
-  akashiContext?: AkashiWellnessContext
+  akashiContext?: AkashiWellnessContext,
+  recentPracticePatterns?: Array<{
+    practiceId: string;
+    practiceCategory: string;
+    practiceHelped: boolean | null;
+    reflectionResult?: string;
+  }>
 ): Promise<WellnessCurationState> {
   const dailyState = await dailyStateRepository.getDailyState(uid, date);
   const completedActivityIds = dailyState?.completedActivityIds || [];
@@ -464,6 +524,7 @@ export async function loadWellnessCuration(
     contextBoosts,
     lastSeenAt,
     akashiContext,
+    journeyContext: recentPracticePatterns ? buildJourneyCompactContext(recentPracticePatterns) : undefined,
   });
 
   const curatedPackages = {
