@@ -23,7 +23,7 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
   useEffect(() => {
     if (!uid) return;
     let cancelled = false;
-    getFounderTesterRecord(uid).then((record) => {
+    getFounderTesterRecord(uid).catch(() => null).then((record) => {
       if (!cancelled) setTesterRecord(record);
     });
     return () => {
