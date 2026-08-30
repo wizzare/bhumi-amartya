@@ -46,6 +46,10 @@ export function routeStateToPath(routeState: UserRouteState): string | null {
   return null;
 }
 
+// Landing-page CTA decision lives in its own import-free module so it can be
+// unit-tested without pulling in AuthContext / storageProvider.
+export { decideLandingCtaRoute, type LandingCtaRoute } from "@/lib/auth/landingCtaRoute";
+
 function withBlueprintTimeout(blueprintPromise: Promise<UserBlueprint | null>) {
   return Promise.race([
     blueprintPromise,

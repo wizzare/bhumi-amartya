@@ -138,8 +138,29 @@ async function main(): Promise<void> {
     await userModule.userRepository.upsertUserProfile(uid, recoveryProfile as never);
     const profileBefore = await userModule.userRepository.getUserProfile(uid);
     assert.equal(profileBefore?.blueprintStatus, "recovery_required", "fixture must start in recovery_required");
+    // The landing CTA routing is now centralised in decideLandingCtaRoute
+    // (lib/auth/landingCtaRoute.ts): an incomplete / confirmed-missing profile
+    // still resolves to "setup" -> router.push("/setup"), while a profile READ
+    // error resolves to "reauth" (never "setup"). Assert the invariant against
+    // the real helper rather than a brittle app/page.tsx code shape.
+    const { decideLandingCtaRoute } = await import("../../lib/auth/landingCtaRoute");
+    assert.equal(
+      decideLandingCtaRoute({ authUser: { uid }, profile: { setupCompleted: false } }),
+      "setup",
+      "incomplete profile must return to existing setup UI",
+    );
+    assert.equal(
+      decideLandingCtaRoute({ authUser: { uid }, profile: null, profileError: null }),
+      "setup",
+      "confirmed-missing profile must route to setup",
+    );
+    assert.notEqual(
+      decideLandingCtaRoute({ authUser: { uid }, profile: null, profileError: "read timeout" }),
+      "setup",
+      "profile read error must NOT route to first-time setup",
+    );
     const landingSource = await readFile(path.join(process.cwd(), "app/page.tsx"), "utf8");
-    assert.match(landingSource, /else if \(auth\?\.userProfile\?\.setupCompleted\)[\s\S]*?router\.push\("\/dashboard"\)[\s\S]*?else[\s\S]*?router\.push\("\/setup"\)/, "incomplete recovery profile must return to existing setup UI");
+    assert.match(landingSource, /decideLandingCtaRoute\(/, "landing CTAs must route via the shared decision helper");
     const setupSource = await readFile(path.join(process.cwd(), "app/setup/page.tsx"), "utf8");
     assert.match(setupSource, /blueprintStatus:\s*"recovery_required"/, "setup UI must preserve recovery_required on failed blueprint write");
     assert.match(setupSource, /blueprintStatus:\s*bpSaved\s*\?\s*\("ready"/, "setup UI must set ready after a successful normal resubmit");

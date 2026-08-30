@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { decideLandingCtaRoute } from "@/lib/auth/landingCtaRoute";
 import { useEffect, useState } from "react";
 
 export default function LandingPage() {
@@ -34,36 +35,44 @@ export default function LandingPage() {
     }
   }, [auth?.authStateResolved, auth?.profileLoading, auth?.user, auth?.userProfile?.setupCompleted, router]);
 
-  const handleMulai = () => {
-    if (auth?.loading) return;
-
-    console.log("[LANDING CTA] Mulai Perjalanan");
-    if (!auth?.user) {
-      console.log("[LANDING ROUTE DECISION] No Auth -> /login?next=/setup");
-      router.push("/login?next=/setup");
-    } else if (auth?.userProfile?.setupCompleted) {
-      console.log("[LANDING ROUTE DECISION] Setup Completed -> /dashboard");
-      router.push("/dashboard");
-    } else {
-      console.log("[LANDING ROUTE DECISION] Setup Incomplete -> /setup");
-      router.push("/setup");
+  // Both CTAs share one canonical decision. A failed profile READ (profileError)
+  // is never treated as "profile missing" -> an existing user is not sent to
+  // first-time /setup; they re-authenticate instead (READ ERROR != MISSING).
+  const routeFromLandingCta = (loginNext: string) => {
+    const decision = decideLandingCtaRoute({
+      authLoading: auth?.loading,
+      profileLoading: auth?.profileLoading,
+      authUser: auth?.user,
+      profile: auth?.userProfile,
+      profileError: auth?.profileError,
+    });
+    console.log("[LANDING ROUTE DECISION]", decision);
+    switch (decision) {
+      case "wait":
+        return;
+      case "login":
+        router.push(`/login?next=${loginNext}`);
+        return;
+      case "reauth":
+        router.push("/login?next=/dashboard");
+        return;
+      case "dashboard":
+        router.push("/dashboard");
+        return;
+      case "setup":
+        router.push("/setup");
+        return;
     }
   };
 
-  const handlePunyaAkun = () => {
-    if (auth?.loading) return;
+  const handleMulai = () => {
+    console.log("[LANDING CTA] Mulai Perjalanan");
+    routeFromLandingCta("/setup");
+  };
 
+  const handlePunyaAkun = () => {
     console.log("[LANDING CTA] Saya Sudah Punya Akun");
-    if (!auth?.user) {
-      console.log("[LANDING ROUTE DECISION] No Auth -> /login?next=/dashboard");
-      router.push("/login?next=/dashboard");
-    } else if (auth?.userProfile?.setupCompleted) {
-      console.log("[LANDING ROUTE DECISION] Setup Completed -> /dashboard");
-      router.push("/dashboard");
-    } else {
-      console.log("[LANDING ROUTE DECISION] Setup Incomplete -> /setup");
-      router.push("/setup");
-    }
+    routeFromLandingCta("/dashboard");
   };
 
   if (auth?.loading) {

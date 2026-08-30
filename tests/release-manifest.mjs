@@ -43,6 +43,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "Auth landing CTA routing (read error != profile missing)",
+    file: "tests/unit/auth-landing-route.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Billing server state machine (mocked reimplementation)",
     file: "tests/unit/billing_server_state_machine.test.ts",
     kind: "node",
