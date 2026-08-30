@@ -37,6 +37,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "App update policy (numeric versionCode eligibility)",
+    file: "tests/unit/app-update-policy.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Billing server state machine (mocked reimplementation)",
     file: "tests/unit/billing_server_state_machine.test.ts",
     kind: "node",

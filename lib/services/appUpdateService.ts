@@ -70,7 +70,9 @@ export async function checkAppUpdateStatus(): Promise<AppUpdateStatus> {
     if (native.downloaded || native.downloading || native.immediateInProgress || native.available) {
       const nativeState = native.state || (native.downloaded ? "downloaded" : native.downloading ? "downloading" : native.immediateInProgress ? "immediate_in_progress" : native.immediateAllowed ? "immediate_required" : "available");
       const immediate = native.immediateAllowed === true || native.immediateInProgress === true;
-      return { currentBuild: buildInfo.versionCode, minimumBuild: buildInfo.versionCode, latestVersion: buildInfo.versionName, isOutdated: immediate && nativeState === "immediate_required", updateUrl: "market://details?id=com.bhumiamartya.app", configSource: "default", nativeState, policy: immediate ? "immediate_required" : "flexible_available" };
+      // Google Play only surfaces available/downloaded/immediate for a strictly
+      // newer versionCode, so this branch does not need a numeric guard.
+      return { currentBuild: buildInfo.versionCode, minimumBuild: buildInfo.versionCode, latestVersion: buildInfo.versionName, latestVersionName: null, latestVersionCode: null, isOutdated: immediate && nativeState === "immediate_required", updateUrl: "market://details?id=com.bhumiamartya.app", configSource: "default", nativeState, policy: immediate ? "immediate_required" : "flexible_available" };
     }
   }
   let remoteConfig: RemoteVersionConfig | null = null;

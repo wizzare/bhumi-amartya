@@ -4,20 +4,6 @@ import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { checkAppUpdateStatus, completeFlexibleUpdate, resumeImmediateUpdate, startFlexibleUpdate, startImmediateUpdate, type AppUpdateStatus } from "@/lib/services/appUpdateService";
 import { UpdateRequiredScreen } from "./UpdateRequiredScreen";
-import { CURRENT_VERSION_NAME } from "@/lib/config/buildInfo";
-
-// simple version comparison
-function compareVersions(a: string, b: string) {
-  const pa = a.split('.').map(v => parseInt(v.replace(/[^0-9]/g, ''), 10) || 0);
-  const pb = b.split('.').map(v => parseInt(v.replace(/[^0-9]/g, ''), 10) || 0);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const na = pa[i] || 0;
-    const nb = pb[i] || 0;
-    if (na > nb) return 1;
-    if (na < nb) return -1;
-  }
-  return 0;
-}
 
 export function VersionChecker({ children }: { children: React.ReactNode }) {
   const [updateStatus, setUpdateStatus] = useState<AppUpdateStatus | null>(null);
@@ -36,11 +22,11 @@ export function VersionChecker({ children }: { children: React.ReactNode }) {
         if (status.nativeState === "downloaded") setIsOptionalOpen(true);
         else if (status.nativeState === "available") setIsOptionalOpen(true);
         else if (status.nativeState === "immediate_in_progress") setIsOptionalOpen(false);
-        else if (!status.isOutdated) {
-          const latestVer = status.latestVersion || "0.0.0";
-          if (compareVersions(CURRENT_VERSION_NAME, latestVer) < 0) {
-            setIsOptionalOpen(true);
-          }
+        else if (!status.isOutdated && status.policy === "flexible_available") {
+          // Optional update eligibility is decided numerically in
+          // evaluateAppUpdateStatus (candidate versionCode > installed).
+          // Never re-derive it from display-name comparison here.
+          setIsOptionalOpen(true);
         }
       } catch (err) {
         console.warn("[VERSION CHECKER] Failed to check for updates:", err);
@@ -100,7 +86,7 @@ export function VersionChecker({ children }: { children: React.ReactNode }) {
       <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-6 backdrop-blur-sm">
         <div className="max-w-sm w-full bg-white p-6 rounded-3xl shadow-xl text-center border border-[#E8E9E5]">
           <h2 className="text-xl font-bold text-[#4F5E52] mb-3">Versi terbaru tersedia</h2>
-          <p className="text-sm text-[#7B8776] mb-6">Versi {updateStatus.latestVersion} telah tersedia. Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
+          <p className="text-sm text-[#7B8776] mb-6">{updateStatus.latestVersionName ? `Versi ${updateStatus.latestVersionName} telah tersedia. ` : "Versi terbaru telah tersedia. "}Dapatkan fitur terbaru dan pengalaman yang lebih baik.</p>
           <div className="flex flex-col gap-2">
             {updateStatus.nativeState === "downloaded" ? (
               <button type="button" disabled={updateAction === "completing"} onClick={async () => { setUpdateAction("completing"); const result = await completeFlexibleUpdate(); if (result === "failed") setUpdateAction("failed"); }} className="block w-full bg-[#4F5E52] text-white rounded-2xl py-3 font-semibold text-sm">{updateAction === "completing" ? "Menyelesaikan…" : "Selesaikan pembaruan"}</button>
