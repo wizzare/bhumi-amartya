@@ -14,12 +14,6 @@ import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateAstrocartography } from "@/lib/astrocartography/calculateAstrocartography";
-import { classifyBlueprintWriteError, isTransientBlueprintWriteCode } from "@/lib/blueprint/blueprintWriteDiagnostics";
-
-const MAX_TRANSIENT_RETRIES = 2;
-const RETRY_BACKOFF_BASE_MS = 250;
-
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const userBlueprintDoc = (uid: string) => doc(db, "blueprints", uid);
 const userBlueprintPath = (uid: string) => `blueprints/${uid}`;
@@ -266,27 +260,10 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     inputHash: (payload as any).humanDesign?.inputHash ?? null,
   });
 
-  let attempt = 0;
-  while (true) {
-    try {
-      await debugFirestoreOperation(
-        { operation: "setDoc", path: userBlueprintPath(uid), uid, payloadKeys: Object.keys(payload as object) },
-        () => setDoc(blueprintRef, payload, { merge: true }),
-      );
-      return;
-    } catch (err: unknown) {
-      const classifiedCode = classifyBlueprintWriteError(err);
-      const isTransient = isTransientBlueprintWriteCode(classifiedCode);
-      if (isTransient && attempt < MAX_TRANSIENT_RETRIES) {
-        attempt++;
-        const backoffMs = RETRY_BACKOFF_BASE_MS * Math.pow(2, attempt - 1);
-        console.warn(`[BLUEPRINT REPO SAVE] Transient write failure (${classifiedCode}). Retrying ${attempt}/${MAX_TRANSIENT_RETRIES} in ${backoffMs}ms...`);
-        await delay(backoffMs);
-        continue;
-      }
-      throw err;
-    }
-  }
+  await debugFirestoreOperation(
+    { operation: "setDoc", path: userBlueprintPath(uid), uid, payloadKeys: Object.keys(payload as object) },
+    () => setDoc(blueprintRef, payload, { merge: true }),
+  );
 };
 
 const getUserBlueprint = async (uid: string): Promise<Blueprint | null> => {
