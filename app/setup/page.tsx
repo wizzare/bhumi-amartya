@@ -250,9 +250,10 @@ export default function SetupPage() {
           bpSaved = true;
         } else {
           console.error("[SETUP] Blueprint save failed:", err);
-          // Mark recovery_required in profile payload
-          const recoveryProfile = { ...profilePayload, setupCompleted: false, blueprintStatus: "recovery_required" as any, updatedAt: Timestamp.now() };
-          await userRepository.upsertUserProfile(uid, recoveryProfile).catch(() => {});
+          // Move to recovery_required — but never downgrade an already-finalized
+          // profile (DEFECT-8D-2): a stale / cross-tab / delayed failure here must
+          // not undo a concurrent successful finalize.
+          await userRepository.markBlueprintRecoveryRequired(uid, profilePayload).catch(() => {});
           throw new Error("Gagal menyimpan blueprint. Data kelahiranmu telah tersimpan, silakan coba lagi.");
         }
       }

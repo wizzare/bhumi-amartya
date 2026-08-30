@@ -162,7 +162,11 @@ async function main(): Promise<void> {
     const landingSource = await readFile(path.join(process.cwd(), "app/page.tsx"), "utf8");
     assert.match(landingSource, /decideLandingCtaRoute\(/, "landing CTAs must route via the shared decision helper");
     const setupSource = await readFile(path.join(process.cwd(), "app/setup/page.tsx"), "utf8");
-    assert.match(setupSource, /blueprintStatus:\s*"recovery_required"/, "setup UI must preserve recovery_required on failed blueprint write");
+    // A failed blueprint write must move the profile to recovery_required, but via
+    // the guarded writer (userRepository.markBlueprintRecoveryRequired) so a stale /
+    // cross-tab failure cannot downgrade an already-ready profile (DEFECT-8D-2).
+    assert.match(setupSource, /markBlueprintRecoveryRequired\(/, "setup UI must route a failed blueprint write through the guarded recovery-required writer");
+    assert.match(setupSource, /"recovery_required"/, "setup UI must still know the recovery_required state");
     assert.match(setupSource, /blueprintStatus:\s*bpSaved\s*\?\s*\("ready"/, "setup UI must set ready after a successful normal resubmit");
 
     const originalLog = console.log;

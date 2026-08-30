@@ -1,5 +1,5 @@
 import { db } from "../firebase/firebase";
-import { doc, getDoc, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, runTransaction, serverTimestamp, setDoc, Timestamp } from "firebase/firestore";
 import { BlueprintStatus } from "@/lib/types/blueprint";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
@@ -196,6 +196,46 @@ const updateEmotionalState = async (uid: string, state: Partial<UserProfile["emo
   );
 };
 
+export type RecoveryRequiredOutcome = "ALREADY_READY" | "RECOVERY_REQUIRED_WRITTEN";
+
+/**
+ * DEFECT-8D-2 guard. The setup/blueprint failure path must move the profile to
+ * `{ setupCompleted: false, blueprintStatus: "recovery_required" }` — EXCEPT when
+ * the profile is already finalized (`setupCompleted === true && blueprintStatus
+ * === "ready"`). A stale / cross-tab / delayed failure attempt must never
+ * downgrade an already-ready profile. The check + write run in one Firestore
+ * transaction so a concurrent finalize forces a retry that re-observes "ready".
+ * Only this one failure transition is guarded; general `upsertUserProfile`
+ * semantics are unchanged. Missing profile ⇒ the recovery state is created so a
+ * new user's failed setup stays recoverable.
+ */
+const markBlueprintRecoveryRequired = async (
+  uid: string,
+  profileData: Partial<UserProfile> = {},
+): Promise<RecoveryRequiredOutcome> => {
+  const userRef = doc(db, "users", uid);
+  return debugFirestoreOperation(
+    { operation: "runTransaction", path: `users/${uid}`, uid, payloadKeys: ["setupCompleted", "blueprintStatus"] },
+    () =>
+      runTransaction(db, async (tx): Promise<RecoveryRequiredOutcome> => {
+        const snap = await tx.get(userRef);
+        const current = snap.exists() ? (snap.data() as Partial<UserProfile>) : null;
+        if (current && current.setupCompleted === true && current.blueprintStatus === "ready") {
+          return "ALREADY_READY";
+        }
+        const payload = stripServerOwnedAccessFields({
+          ...profileData,
+          uid,
+          setupCompleted: false,
+          blueprintStatus: "recovery_required" as BlueprintStatus,
+          updatedAt: Timestamp.now(),
+        });
+        tx.set(userRef, sanitizeForFirestore(payload), { merge: true });
+        return "RECOVERY_REQUIRED_WRITTEN";
+      }),
+  );
+};
+
 const updateBlueprintStatus = async (uid: string, status: UserProfile["blueprintStatus"]) => {
   const userRef = doc(db, "users", uid);
   const path = `users/${uid}`;
@@ -292,4 +332,5 @@ export const userRepository = {
   recordJournalProgress,
   updateEmotionalState,
   updateBlueprintStatus,
+  markBlueprintRecoveryRequired,
 };

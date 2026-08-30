@@ -90,4 +90,12 @@ export const releaseSuites = [
     kind: "emulator",
     evidence: "STRONG_REAL_SDK",
   },
+  {
+    // Hot-swaps emulator security rules for failure injection and restores them
+    // in teardown; kept last so a restore fault cannot affect other suites.
+    name: "Setup/recovery state machine (states B-I, partial write, restart, monotonic recovery-required, blueprint owner uid)",
+    file: "tests/integration/setup-recovery-state-machine-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
 ];
