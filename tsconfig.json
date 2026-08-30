@@ -38,6 +38,7 @@
     "audit",
     "scratch",
     "scripts",
+    "services",
     "scratch_run_verification.ts",
     "playwright*.config.ts",
     "tests",
