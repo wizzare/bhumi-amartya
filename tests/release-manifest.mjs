@@ -55,6 +55,18 @@ export const releaseSuites = [
     evidence: "STRONG_REAL_SDK",
   },
   {
+    name: "Firestore sanitizer non-finite policy (unit matrix)",
+    file: "tests/unit/firestore-sanitizer.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
+    name: "Firestore sanitizer non-finite policy (real SDK: SDK accepts raw non-finite, sanitized payloads read back clean)",
+    file: "tests/integration/firestore-sanitizer-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
+  {
     name: "Billing server state machine (mocked reimplementation)",
     file: "tests/unit/billing_server_state_machine.test.ts",
     kind: "node",
