@@ -9,7 +9,8 @@
     "build": "tsc --noEmit",
     "lint": "eslint api lib",
     "db:migrate": "tsx scripts/migrate.ts",
-    "test:postgres:integration": "tsx tests/integration/postgres-self-healing.integration.test.ts"
+    "test:postgres:integration": "tsx tests/integration/postgres-self-healing.integration.test.ts",
+    "test:billing:runtime": "tsx tests/integration/billing-runtime.integration.test.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
