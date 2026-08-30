@@ -14,11 +14,19 @@ import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateAstrocartography } from "@/lib/astrocartography/calculateAstrocartography";
+import { classifyBlueprintWriteError, isTransientBlueprintWriteCode } from "@/lib/blueprint/blueprintWriteDiagnostics";
+
+const MAX_TRANSIENT_RETRIES = 2;
+const RETRY_BACKOFF_BASE_MS = 250;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const userBlueprintDoc = (uid: string) => doc(db, "blueprints", uid);
 const userBlueprintPath = (uid: string) => `blueprints/${uid}`;
 
-const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint => {
+// Exported solely so deterministic payload-limit tests exercise the exact
+// normalizer used immediately before the Firestore write.
+export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint => {
   const input = data.input ?? {
     birthDate: "",
     birthTime: "12:00",
@@ -191,6 +199,15 @@ const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Blueprint =>
   };
 };
 
+// Astrocartography contains GeoCoordinate[][], which Firestore rejects as a
+// directly nested array. It is deterministic from the persisted birth input
+// and natal chart, so keep it in the runtime Blueprint but never persist it.
+export const omitAstrocartographyForPersistence = (blueprint: Blueprint): Omit<Blueprint, "astrocartography"> => {
+  const persistableBlueprint = { ...blueprint };
+  delete persistableBlueprint.astrocartography;
+  return persistableBlueprint;
+};
+
 const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => {
   const blueprintRef = userBlueprintDoc(uid);
   const ensuredHumanDesign = blueprint.humanDesign ?? createPendingHumanDesignChart(
@@ -232,8 +249,9 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     ...blueprint,
     humanDesign: ensuredHumanDesign,
   });
+  const persistableBlueprint = omitAstrocartographyForPersistence(normalizedPayload);
   const payload = sanitizeForFirestore({
-    ...normalizedPayload,
+    ...persistableBlueprint,
     uid,
     updatedAt: Timestamp.now(),
     generatedAt: Timestamp.now(),
@@ -248,10 +266,27 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     inputHash: (payload as any).humanDesign?.inputHash ?? null,
   });
 
-  await debugFirestoreOperation(
-    { operation: "setDoc", path: userBlueprintPath(uid), uid, payloadKeys: Object.keys(payload as object) },
-    () => setDoc(blueprintRef, payload, { merge: true }),
-  );
+  let attempt = 0;
+  while (true) {
+    try {
+      await debugFirestoreOperation(
+        { operation: "setDoc", path: userBlueprintPath(uid), uid, payloadKeys: Object.keys(payload as object) },
+        () => setDoc(blueprintRef, payload, { merge: true }),
+      );
+      return;
+    } catch (err: unknown) {
+      const classifiedCode = classifyBlueprintWriteError(err);
+      const isTransient = isTransientBlueprintWriteCode(classifiedCode);
+      if (isTransient && attempt < MAX_TRANSIENT_RETRIES) {
+        attempt++;
+        const backoffMs = RETRY_BACKOFF_BASE_MS * Math.pow(2, attempt - 1);
+        console.warn(`[BLUEPRINT REPO SAVE] Transient write failure (${classifiedCode}). Retrying ${attempt}/${MAX_TRANSIENT_RETRIES} in ${backoffMs}ms...`);
+        await delay(backoffMs);
+        continue;
+      }
+      throw err;
+    }
+  }
 };
 
 const getUserBlueprint = async (uid: string): Promise<Blueprint | null> => {
