@@ -1,3 +1,5 @@
+import { check, runSuite } from "../helpers/assertHarness";
+
 type SubscriptionDecision = {
   active: boolean;
   entitlementStatus: string;
@@ -28,22 +30,22 @@ function runTests() {
 
   // Test 1: PENDING
   const d1 = buildEntitlementDecision("SUBSCRIPTION_STATE_PENDING", Date.now() + 10000);
-  console.assert(d1.active === false, "Test 1 Failed: PENDING must not be active");
+  check(d1.active === false, "Test 1 Failed: PENDING must not be active");
   console.log("✓ Test 1 Passed: PENDING state does not grant entitlement.");
 
   // Test 2: ACTIVE
   const d2 = buildEntitlementDecision("SUBSCRIPTION_STATE_ACTIVE", Date.now() + 86400000);
-  console.assert(d2.active === true, "Test 2 Failed: ACTIVE must be active");
+  check(d2.active === true, "Test 2 Failed: ACTIVE must be active");
   console.log("✓ Test 2 Passed: ACTIVE state grants entitlement.");
 
   // Test 3: Idempotent same UID
   const c1 = validateTokenOwnership({ uid: "user_123" }, "user_123");
-  console.assert(c1.ok === true && c1.idempotent === true, "Test 3 Failed: Same UID must be idempotent");
+  check(c1.ok === true && c1.idempotent === true, "Test 3 Failed: Same UID must be idempotent");
   console.log("✓ Test 3 Passed: Re-verifying same token by same UID is idempotent.");
 
   // Test 4: Rejected different UID
   const c2 = validateTokenOwnership({ uid: "user_123" }, "user_456");
-  console.assert(c2.ok === false, "Test 4 Failed: Different UID must be rejected");
+  check(c2.ok === false, "Test 4 Failed: Different UID must be rejected");
   console.log("✓ Test 4 Passed: Token registered to another UID is rejected.");
 
   console.log("\n==================================================");
@@ -51,4 +53,4 @@ function runTests() {
   console.log("==================================================");
 }
 
-runTests();
+runSuite("billing_server_state_machine", runTests);

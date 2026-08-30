@@ -1,4 +1,5 @@
 import { recoverUserBlueprint } from "../../lib/engines/blueprintRecoveryEngine";
+import { check } from "../helpers/assertHarness";
 
 async function runConcurrentEmulatorTest() {
   console.log("==================================================");
@@ -29,8 +30,8 @@ async function runConcurrentEmulatorTest() {
   console.log(`[Runtime 2 Result] Blueprint type: ${result2.type}, LifePath: ${result2.lifePath.number}`);
   console.log(`Execution time: ${duration}ms`);
 
-  console.assert(result1 === result2, "FAILED: Runtimes produced different objects or duplicated work.");
-  console.assert(result1.humanDesign.status === "pending", "FAILED: HD status must be pending.");
+  check(result1 === result2, "FAILED: Runtimes produced different objects or duplicated work.");
+  check(result1.humanDesign.status === "pending", "FAILED: HD status must be pending.");
 
   console.log("\n==================================================");
   console.log("DUAL RUNTIME CONCURRENT RECOVERY TEST PASSED");

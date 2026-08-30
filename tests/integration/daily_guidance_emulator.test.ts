@@ -373,5 +373,14 @@ export async function runDailyGuidanceEmulatorTests() {
 }
 
 if (require.main === module) {
-  runDailyGuidanceEmulatorTests();
+  // Test-infra hardening: the entrypoint previously neither propagated a
+  // rejection to a non-zero exit nor terminated the process on success (open
+  // Firestore emulator handles kept the event loop alive -> the suite hung
+  // after printing its pass banner). Force a deterministic exit code.
+  runDailyGuidanceEmulatorTests()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error("DAILY_GUIDANCE_EMULATOR_FAIL", err instanceof Error ? err.stack || err.message : String(err));
+      process.exit(1);
+    });
 }
