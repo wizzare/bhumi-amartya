@@ -97,6 +97,12 @@ export const releaseSuites = [
     evidence: "STRONG_REAL_SDK",
   },
   {
+    name: "Persistence E2E — journal / journey / memory lifecycle (real repositories, restart reads, cross-user denial, data-shape, size)",
+    file: "tests/integration/persistence-journal-journey-memory-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
+  {
     // Hot-swaps emulator security rules for failure injection and restores them
     // in teardown; kept last so a restore fault cannot affect other suites.
     name: "Setup/recovery state machine (states B-I, partial write, restart, monotonic recovery-required, blueprint owner uid)",
