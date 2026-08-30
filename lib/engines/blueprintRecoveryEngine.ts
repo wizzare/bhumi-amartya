@@ -143,13 +143,25 @@ export async function recoverUserBlueprint(
             const sfDoc = await transaction.get(docRef);
             if (sfDoc.exists() && ((sfDoc.data() as any)?.type || (sfDoc.data() as any)?.lifePath)) {
               console.log(`[ATOMIC RECOVERY TRANSACTION] Document already exists for UID ${uid}. Preserving.`);
-              finalBp = sfDoc.data();
+              const existing = sfDoc.data() as any;
+              // DEFECT-8D-1 backfill: non-destructively add the owner uid to a
+              // blueprint an earlier recovery persisted without one. Only the
+              // uid field is merged — no calculated blueprint field is touched.
+              if (!existing?.uid) {
+                transaction.set(docRef, { uid }, { merge: true });
+              }
+              finalBp = { ...existing, uid };
               return;
             }
 
             const basicBlueprint = await generateBasicBlueprintFast(profile);
-            transaction.set(docRef, basicBlueprint, { merge: true });
-            finalBp = basicBlueprint;
+            // DEFECT-8D-1: persist the canonical owner (the recovery/path uid,
+            // never a body-derived value) so the persisted shape matches
+            // blueprintRepository.saveUserBlueprint and storageProvider's
+            // ownership guard accepts the recovered blueprint.
+            const ownedBlueprint = { ...basicBlueprint, uid };
+            transaction.set(docRef, ownedBlueprint, { merge: true });
+            finalBp = ownedBlueprint;
           });
         }
       } catch (txError) {
@@ -160,9 +172,10 @@ export async function recoverUserBlueprint(
         // Offline / fallback path
         const existingDoc = await blueprintRepository.getUserBlueprint(uid).catch(() => null);
         if (existingDoc && ((existingDoc as any).type || (existingDoc as any).lifePath)) {
-          finalBp = existingDoc;
+          finalBp = { ...(existingDoc as any), uid };
         } else {
-          finalBp = await generateBasicBlueprintFast(profile);
+          // DEFECT-8D-1: same canonical-owner uid on the offline/fallback path.
+          finalBp = { ...(await generateBasicBlueprintFast(profile)), uid };
           await blueprintRepository.saveUserBlueprint(uid, finalBp).catch(() => {});
         }
       }
