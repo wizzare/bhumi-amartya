@@ -31,6 +31,12 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "Firestore rules deploy guard self-tests (dirty/detached/wrong-project source is refused)",
+    file: "tests/unit/guard-firestore-rules-deploy.test.ts",
+    kind: "node",
+    evidence: "STATIC_GUARD",
+  },
+  {
     name: "Blueprint read timeout settlement",
     file: "tests/unit/blueprint-timeout-settlement.test.ts",
     kind: "node",

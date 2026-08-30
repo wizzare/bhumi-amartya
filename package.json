@@ -28,6 +28,8 @@
     "test:release": "firebase emulators:exec --project demo-release-suite --only firestore,auth \"node scripts/run-release-tests.mjs\"",
     "test:release:no-emulator": "node scripts/run-release-tests.mjs --skip-emulator",
     "test:release:selftest": "node scripts/run-release-tests.mjs --self-test",
+    "guard:firestore-rules": "node scripts/guard-firestore-rules-deploy.mjs",
+    "deploy:firestore-rules:prod": "node scripts/guard-firestore-rules-deploy.mjs --prod --project bhumiamartya-fe85c && firebase deploy --only firestore:rules --project bhumiamartya-fe85c",
     "test": "npm run test:release",
     "android:sync": ".\\node_modules\\.bin\\cap.cmd sync android",
     "android:open": ".\\node_modules\\.bin\\cap.cmd open android",
