@@ -1,13 +1,43 @@
 /**
- * DEFECT-2A-2 regression — user-path ownership on {userId}-keyed collections.
+ * DEFECT-2A-2 regression — user-path ownership on {userId}-keyed collections,
+ * plus PRODUCTION-PRESERVED rule blocks re-added during the 2026-08-26 rules
+ * reconciliation (fcmTokens, telemetry_events, journalMemoryCandidates) whose
+ * live contracts must not silently regress on the next repo->prod deploy.
  * Real Firebase Web SDK + Firestore/Auth emulator + real firestore.rules.
- * Two synthetic anonymous identities. Hard-fail (exit non-zero on any miss).
- * No production project id, no real user data.
+ * Two synthetic anonymous identities + one unauthenticated client.
+ * Hard-fail (exit non-zero on any miss). No production project id, no real user data.
  */
 import assert from "node:assert/strict";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, Timestamp } from "firebase/firestore";
-import { deleteApp } from "firebase/app";
-import { createAuthenticatedUserDb, clearEmulatorFirestoreData } from "../helpers/dailyGuidanceEmulatorHelper";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  Timestamp,
+  getFirestore,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
+import { initializeApp, deleteApp } from "firebase/app";
+import {
+  createAuthenticatedUserDb,
+  clearEmulatorFirestoreData,
+  TEST_PROJECT_ID,
+  EXPECTED_FIRESTORE_PORT,
+} from "../helpers/dailyGuidanceEmulatorHelper";
+
+/** Unauthenticated Firestore client on the same synthetic project (request.auth == null). */
+function createUnauthenticatedDb() {
+  const app = initializeApp(
+    { apiKey: "fake-emulator-api-key-12345", projectId: TEST_PROJECT_ID, appId: "1:1234567890:web:abcdef123456" },
+    `unauth-app-${Date.now()}-${Math.random()}`,
+  );
+  const db = getFirestore(app);
+  const hostEnv = process.env.FIRESTORE_EMULATOR_HOST || `127.0.0.1:${EXPECTED_FIRESTORE_PORT}`;
+  const [host, portStr] = hostEnv.split(":");
+  connectFirestoreEmulator(db, host || "127.0.0.1", parseInt(portStr || "8080", 10));
+  return { app, db };
+}
 
 const cls = (e: unknown) => {
   const x = e as { code?: string; message?: string };
@@ -93,11 +123,94 @@ async function main() {
   await expectDeny("§10 blueprints/{A} B write denied", () =>
     setDoc(doc(B.db, "blueprints", A.uid), { uid: B.uid }, { merge: true }));
 
+  // ==========================================================================
+  // PRODUCTION-PRESERVED BLOCKS — reconciliation guard.
+  // These match blocks exist in the live production ruleset and were re-added
+  // during rules reconciliation. The contracts asserted below are the CURRENT
+  // live contracts (no redesign); they exist so a future repo->prod deploy
+  // cannot silently drop the block.
+  // ==========================================================================
+  console.log(`\nDEFECT_2A2_OWNER_ISOLATION_SUBTOTAL passed=${passed} failed=${failed}`);
+
+  // ---- §11 users/{uid}/fcmTokens/{tokenId} : owner (isOwner(uid)) only ----
+  const fcmA = (tid: string, db = A.db) => doc(db, "users", A.uid, "fcmTokens", tid);
+  await expectAllow("§11 fcmTokens/{A} A create own", () =>
+    setDoc(fcmA("tokA1"), { token: "tok-A-1", platform: "web", updatedAt: now }));
+  await expectAllow("§11 fcmTokens/{A} A read own", async () => {
+    const s = await getDoc(fcmA("tokA1"));
+    assert.equal(s.exists(), true);
+  });
+  await expectAllow("§11 fcmTokens/{A} A update own", () => updateDoc(fcmA("tokA1"), { token: "tok-A-1b" }));
+  await expectAllow("§11 fcmTokens/{A} A delete own", () => deleteDoc(fcmA("tokA1")));
+  await setDoc(fcmA("tokA1"), { token: "tok-A-1", platform: "web", updatedAt: now });
+  await expectDeny("§11 fcmTokens/{A} B read", () => getDoc(fcmA("tokA1", B.db)));
+  await expectDeny("§11 fcmTokens/{A} B create under A", () => setDoc(fcmA("tokB1", B.db), { token: "hijack" }));
+  await expectDeny("§11 fcmTokens/{A} B merge", () => setDoc(fcmA("tokA1", B.db), { token: "hijack" }, { merge: true }));
+  await expectDeny("§11 fcmTokens/{A} B delete", () => deleteDoc(fcmA("tokA1", B.db)));
+  {
+    const s = await getDoc(fcmA("tokA1"));
+    assert.equal(s.exists(), true, "fcmTokens/{A} lost after cross-user attempts");
+    assert.equal((s.data() as { token?: string }).token, "tok-A-1", "fcmTokens/{A} token mutated by user B");
+  }
+
+  // ---- §12 telemetry_events/{docId} : pre-auth allowlist + authed lifecycle create; founder-only read ----
+  const { app: unauthApp, db: unauthDb } = createUnauthenticatedDb();
+  const teReq = { appVersion: "5.0.0", versionCode: 100, platform: "web", timestamp: now };
+  await expectAllow("§12 telemetry_events unauth pre-auth create (AUTH_SIGNUP_STARTED, uidHash null)", () =>
+    setDoc(doc(unauthDb, "telemetry_events", "te-preauth-1"), { eventType: "AUTH_SIGNUP_STARTED", uidHash: null, ...teReq }));
+  await expectDeny("§12 telemetry_events unauth non-allowlist eventType denied", () =>
+    setDoc(doc(unauthDb, "telemetry_events", "te-bad-evt"), { eventType: "AUTH_LOGIN_COMPLETED", uidHash: null, ...teReq }));
+  await expectDeny("§12 telemetry_events unauth missing required key (platform) denied", () =>
+    setDoc(doc(unauthDb, "telemetry_events", "te-missing-key"), {
+      eventType: "AUTH_SIGNUP_STARTED", uidHash: null, appVersion: "5.0.0", versionCode: 100, timestamp: now,
+    }));
+  await expectDeny("§12 telemetry_events unauth extra key outside hasOnly denied", () =>
+    setDoc(doc(unauthDb, "telemetry_events", "te-extra-key"), {
+      eventType: "AUTH_SIGNUP_STARTED", uidHash: null, ...teReq, injected: "x",
+    }));
+  await expectDeny("§12 telemetry_events unauth malformed uidHash denied", () =>
+    setDoc(doc(unauthDb, "telemetry_events", "te-bad-hash"), { eventType: "AUTH_SIGNUP_STARTED", uidHash: "NOTHEX!!", ...teReq }));
+  await expectAllow("§12 telemetry_events authed lifecycle create (8-hex uidHash, any eventType)", () =>
+    setDoc(doc(A.db, "telemetry_events", "te-authed-1"), { eventType: "AUTH_LOGIN_COMPLETED", uidHash: "0a1b2c3d", ...teReq }));
+  await expectDeny("§12 telemetry_events authed create with null uidHash + non-allowlist eventType denied", () =>
+    setDoc(doc(A.db, "telemetry_events", "te-authed-2"), { eventType: "AUTH_LOGIN_COMPLETED", uidHash: null, ...teReq }));
+  await expectDeny("§12 telemetry_events non-founder read denied", () =>
+    getDoc(doc(A.db, "telemetry_events", "te-preauth-1")));
+  await expectDeny("§12 telemetry_events non-founder update denied", () =>
+    setDoc(doc(A.db, "telemetry_events", "te-preauth-1"), { platform: "tampered" }, { merge: true }));
+  await deleteApp(unauthApp).catch(() => {});
+
+  // ---- §13 journalMemoryCandidates/{uid} (+ /candidates/{cid}) : owner (isOwner(uid)) only ----
+  const jmcA = (db = A.db) => doc(db, "journalMemoryCandidates", A.uid);
+  const jmcCand = (cid: string, db = A.db) => doc(db, "journalMemoryCandidates", A.uid, "candidates", cid);
+  await expectAllow("§13 journalMemoryCandidates/{A} A write own", () =>
+    setDoc(jmcA(), { uid: A.uid, updatedAt: now }, { merge: true }));
+  await expectAllow("§13 journalMemoryCandidates/{A} A read own", async () => {
+    const s = await getDoc(jmcA());
+    assert.equal(s.exists(), true);
+  });
+  await expectAllow("§13 journalMemoryCandidates/{A}/candidates A write own", () =>
+    setDoc(jmcCand("c1"), { text: "candidate", createdAt: now }));
+  await expectAllow("§13 journalMemoryCandidates/{A}/candidates A read own", async () => {
+    const s = await getDoc(jmcCand("c1"));
+    assert.equal(s.exists(), true);
+  });
+  await expectDeny("§13 journalMemoryCandidates/{A} B read", () => getDoc(jmcA(B.db)));
+  await expectDeny("§13 journalMemoryCandidates/{A} B write", () =>
+    setDoc(jmcA(B.db), { uid: B.uid, hijack: true }, { merge: true }));
+  await expectDeny("§13 journalMemoryCandidates/{A}/candidates B read", () => getDoc(jmcCand("c1", B.db)));
+  await expectDeny("§13 journalMemoryCandidates/{A}/candidates B write under A", () =>
+    setDoc(jmcCand("c2", B.db), { text: "hijack" }));
+
   await clearEmulatorFirestoreData();
   await deleteApp(A.app).catch(() => {});
   await deleteApp(B.app).catch(() => {});
 
   console.log("\n" + log.join("\n"));
+  console.log(
+    `\nPRODUCTION_PRESERVED_BLOCKS ${failed === 0 ? "PASS" : "FAIL"} ` +
+      `(fcmTokens + telemetry_events + journalMemoryCandidates)`,
+  );
   console.log(`\nFIRESTORE_OWNER_ISOLATION ${failed === 0 ? "PASS" : "FAIL"} passed=${passed} failed=${failed}`);
   process.exit(failed === 0 ? 0 : 1);
 }

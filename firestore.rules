@@ -293,6 +293,10 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /fcmTokens/{tokenId} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
+
       // Unknown or server-owned nested user paths are denied by default.
       // Firebase Admin SDK bypasses Firestore Rules for trusted backend writes.
       match /{document=**} {
@@ -462,10 +466,42 @@ service cloud.firestore {
       allow read, update, delete: if isFounderByEmail() || isFounderOrAdmin();
     }
 
+    // PRODUCTION-PRESERVED RULE (deployed 2026-08-01, ruleset 28759450):
+    // user_activity is actively written by lib/analytics/activityMonitor.ts
+    // (ActivityTracker mounted in app/layout.tsx). Preserved verbatim during
+    // reconciliation so deploying repo rules cannot break live writers.
     match /user_activity/{docId} {
       allow create, update: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
       allow read, delete: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+    }
+
+    match /telemetry_events/{docId} {
+      // Allow unauthenticated writes for sign-up/state diagnostics
+      // pre-auth events may have uidHash as null or an 8-char hash string
+      allow create: if (
+          request.resource.data.eventType in ["AUTH_SIGNUP_STARTED", "AUTH_SIGNUP_FAILED", "AUTH_STATE_ESTABLISHED"]
+        ) && (
+          request.resource.data.uidHash == null || (request.resource.data.uidHash is string && request.resource.data.uidHash.matches("^[0-9a-f]{8}$"))
+        ) && (
+          request.resource.data.timestamp is timestamp
+        ) && (
+          request.resource.data.keys().hasAll(["eventType", "uidHash", "appVersion", "versionCode", "platform", "timestamp"]) &&
+          request.resource.data.keys().hasOnly(["eventType", "uidHash", "appVersion", "versionCode", "platform", "timestamp", "correlationId", "metadata"])
+        );
+
+      // Allow authenticated writes for all auth lifecycle events
+      allow create: if isSignedIn() && (
+          request.resource.data.uidHash is string && request.resource.data.uidHash.matches("^[0-9a-f]{8}$")
+        ) && (
+          request.resource.data.timestamp is timestamp
+        ) && (
+          request.resource.data.keys().hasAll(["eventType", "uidHash", "appVersion", "versionCode", "platform", "timestamp"]) &&
+          request.resource.data.keys().hasOnly(["eventType", "uidHash", "appVersion", "versionCode", "platform", "timestamp", "correlationId", "metadata"])
+        );
+
+      // Founder/Admin read access
+      allow read, update, delete: if isFounderOrAdmin();
     }
 
     // PUBLIC CONFIG (Version Checker, etc)
@@ -491,6 +527,14 @@ service cloud.firestore {
     match /adminRoleRegistry/{uid} {
       allow read: if isOwner(uid) || isAdminActor();
       allow write: if false;
+    }
+
+    match /journalMemoryCandidates/{userId} {
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+
+      match /candidates/{candidateId} {
+        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      }
     }
   }
 }

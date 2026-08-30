@@ -49,7 +49,7 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
-    name: "Firestore owner isolation (user-path ownership, cross-user denial)",
+    name: "Firestore owner isolation + production-preserved blocks (user-path ownership, cross-user denial, fcmTokens/telemetry_events/journalMemoryCandidates contracts)",
     file: "tests/integration/firestore-owner-isolation-emulator.test.ts",
     kind: "emulator",
     evidence: "STRONG_REAL_SDK",
