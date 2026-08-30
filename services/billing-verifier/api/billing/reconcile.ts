@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "node:crypto";
 import { getDbPool } from "../../lib/neon";
 import { decryptToken, type EncryptedData } from "../../lib/encryption";
-import { createGooglePlayRequestContext, fetchSubscription, acknowledgeSubscription, validateProduct } from "../../lib/googlePlay";
+import { createGooglePlayRequestContext, fetchSubscription, acknowledgeSubscription } from "../../lib/googlePlay";
 import { decision, markEntitlementAcknowledged, persistEntitlement } from "../../lib/entitlement";
 import { sendJson } from "../../lib/response";
 import { correlationId } from "../../lib/timeout";

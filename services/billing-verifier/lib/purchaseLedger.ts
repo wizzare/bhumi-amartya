@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { getDbPool } from "./neon";
 import { tokenHash } from "./security";
 import { encryptToken } from "./encryption";
