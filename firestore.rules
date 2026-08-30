@@ -411,12 +411,15 @@ service cloud.firestore {
       allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
     }
 
+    // Path is keyed by {userId}: ownership must be the document path, not a
+    // body `uid` field. `uidMatches("uid")` here let user B write coll/{A}
+    // with `{ uid: B }` (DEFECT-2A-2). Owner writes already target coll/{authUid}.
     match /healingMemory/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /journeyData/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
     }
 
     match /weeklyReports/{reportId} {
@@ -435,8 +438,9 @@ service cloud.firestore {
       allow list: if (isSignedIn() && resource.data.uid == request.auth.uid) || isFounderByEmail() || isFounderOrAdmin();
     }
 
+    // Path is keyed by {userId}: see healingMemory/journeyData note (DEFECT-2A-2).
     match /notifications/{userId} {
-      allow read, write: if isOwner(userId) || uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
 
       match /{document=**} {
         allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();

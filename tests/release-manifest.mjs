@@ -49,6 +49,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "Firestore owner isolation (user-path ownership, cross-user denial)",
+    file: "tests/integration/firestore-owner-isolation-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
+  {
     name: "Billing server state machine (mocked reimplementation)",
     file: "tests/unit/billing_server_state_machine.test.ts",
     kind: "node",
