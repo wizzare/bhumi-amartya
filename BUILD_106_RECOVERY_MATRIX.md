@@ -113,3 +113,49 @@ Other important evidence:
 The Build 106 release gate is closed while any requirement remains `MISSING`, `PARTIAL`, `PRESENT_BUT_REGRESSED`, `RECOVERY_REQUIRED`, `RECOVERED_UNVERIFIED`, `NEW_IMPLEMENTATION_REQUIRED`, or `BLOCKED` without Founder-approved deferral.
 
 Do not convert a requirement to `PASS` merely because code was copied or committed. `PASS` requires executed verification appropriate to the requirement.
+
+---
+
+## Worktrees (Build 106)
+
+| Role | Path | Branch @ HEAD | Mutability |
+|---|---|---|---|
+| Forensic evidence (a.k.a. "protected recovery worktree" in Master SOT §6) | `C:\tmp\bhumi-build83-access-hotfix` | `feat/build99` @ `57479c928…` + ~366 dirty entries | **READ ONLY** |
+| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `d7a679a` (base) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
+
+Local branch `recovery/build106-product-continuity` created 2026-09-02, tracking
+`origin/recovery/build106-product-continuity` (remote HEAD `d7a679ab98a7583e34fc11fb58da4ec462cd945f`).
+
+---
+
+## V5 documentation provenance ledger (Phase 2A — 2026-09-02)
+
+Method: for each document, compared the CP-036 blob against (a) the latest agent checkpoint
+`d2cb236` (2026-09-02) and (b) the protected forensic worktree's untracked copy; checked Build 105
+(`8fc3c23`) for any competing committed version; checked checkpoint `3a4b08b` (2026-08-31).
+
+Result: **single-source, zero drift.** For all eight documents the CP-036 blob SHA is byte-identical
+to both `d2cb236` and the forensic worktree. Build 105 contains none of them. Checkpoint `3a4b08b`
+holds only empty (`e69de29`) placeholders and is not a source. Adopted verbatim from CP-036 into the
+recovery branch — no body rewrite (historical requirements preserved).
+
+| Document | Source | Adopted blob SHA | Recovery status | Superseded / stale sub-content flagged (NOT rewritten) |
+|---|---|---|---|---|
+| `V5_SOURCE_OF_TRUTH.md` | CP-036 `036225f` | `970cc767…` | RECOVERED_VERIFIED (provenance) | §4 stray "6 target locales" phrasing — CURRENT canonical scope is 3 (id/en/ms) + 3 deferred, D-V5-35. §6 "V4 Closure Requirements" OPEN list predates Build 105 hardening — reconcile per item during the relevant recovery step; Master SOT wins. |
+| `V5_PRD.md` | CP-036 `036225f` | `8bbaf34e…` | RECOVERED_VERIFIED (provenance) | Canonical source of the `R-PRD-01..46` text used by this matrix. Consistent with Master SOT §3. No stale content found. |
+| `V5_DATA_MODEL.md` | CP-036 `036225f` | `dc21c258…` | RECOVERED_VERIFIED (provenance) | §6 acceptance "supports all six canonical locales" — stale; CURRENT = 3 + 3 deferred (D-V5-35). `journalType` enum shows `spiritual`; V5 SOT/PRD rename fifth mode to `SPIRITUAL_AWAKENING` (display "Spiritual Awakening", directive J0-01) — internal key value to be resolved in recovery Step 4. Code-fence prefixes are corrupted in the snapshot (cosmetic). |
+| `V5_DECISION_LOG.md` | CP-036 `036225f` | `4e8c8f56…` | RECOVERED_VERIFIED (provenance) | Full decision reconciliation deferred to the recovery steps that consume each decision (localization = Step 3, journaling = Step 4, astro = Step 6, environment = Step 7). |
+| `V5_TODO.md` | CP-036 `036225f` | `bfd6f13d…` | RECOVERED_VERIFIED (provenance) | Historical phased task list (P0–P8). Superseded as an execution driver by this matrix + Master SOT §7 recovery order; retained as context. |
+| `V5_CBT_JOURNAL_DESIGN.md` | CP-036 `036225f` | `c36749b3…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 4 (Journaling/CBT). |
+| `V5_I18N_SPEC.md` | CP-036 `036225f` | `30f688ac…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 3 (Localization). Confirm CURRENT scope id/en/ms + fallback active→en→id-ID against D-V5-35. |
+| `DOCUMENTATION_INDEX.md` | CP-036 `036225f` (then reconciled) | adopted then edited on the recovery branch | RECONCILED | Added Build 106 authority block; fixed stale "Six canonical locales" and "D-V5-01..12" index cells; expanded historical/superseded table. |
+
+`RECOVERED_VERIFIED (provenance)` means the file's origin is proven and it was adopted intact. It
+does **not** mean every requirement inside has been implemented or tested — those still track through
+the `R-01..R-46` rows above.
+
+Broader `V5_*.md` set referenced by `V5_SOURCE_OF_TRUTH.md` §8 (e.g. `V5_DAILY_RHYTHM_SPEC.md`,
+`V5_JOURNAL_INNER_WORK_SPEC.md`, `V5_MEMORY_LIVING_INTELLIGENCE_SPEC.md`,
+`V5_EXPERIENCE_ARCHITECTURE.md`, `V5_NOTIFICATION_FCM_SPEC.md`, `V5_SECURITY_PRIVACY.md`, …) remains
+available in CP-036 and will be adopted with the same provenance method when its recovery step is
+reached.
