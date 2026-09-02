@@ -6,22 +6,22 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Codex continuity snapshot (2026-09-02)
+## Codex continuity snapshot after Step 8 (2026-09-02)
 
 ```text
 NEXT_PRIMARY_AGENT                = CODEX
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_STEP7_DOCS    = 02935170e89c4e79625fc8a6b663237d318f871c
+CURRENT_HEAD_BEFORE_STEP8_DOCS    = d106cb7649860b39fe03485d9a04db98bda1c924
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = Step 8 — Notifications / privacy / remaining canonical requirements
+NEXT_SAFE_ACTION                  = Step 9 — Premium copy / price
 ```
 
-`CURRENT_HEAD_BEFORE_STEP7_DOCS` is the clean implementation/test HEAD before this matrix and the
+`CURRENT_HEAD_BEFORE_STEP8_DOCS` is the clean implementation/test HEAD before this matrix and the
 continuity handoff were updated. After checkout, use `git rev-parse HEAD` for the newer docs commit.
 
-### Steps 1–7 status
+### Steps 1–8 status
 
 | Step | Recovery unit | Status at handoff | Remaining/deferred boundary |
 |---|---|---|---|
@@ -32,24 +32,26 @@ continuity handoff were updated. After checkout, use `git rev-parse HEAD` for th
 | 5 | Memory / Daily Context / Daily Note | **RECOVERED_VERIFIED (pipeline/contract)** | DS-M1, DS-M2, DS-M3, and the `upsertFromEntry` call site in DS-J2 remain. |
 | 6 | Astrology synthesis / regressions | **RECOVERED_VERIFIED (unit/core)** | DS-DC1 is DONE; DS-A1, DS-A2, and Astro browser UI evidence remain open. |
 | 7 | Environment / Schumann | **RECOVERED_VERIFIED (unit/integration contract); browser deferred** | R-43, R-44, and R-46 verified; R-45 UI/contract verified by source + unit but browser rendering remains DS-E1. DS-I2 is DONE. |
+| 8 | Notifications / privacy / remaining canonical requirements | **PARTIAL_COMPLETION_VERIFIED (contract/source); external/UI gates deferred** | Notification/privacy/Daily Rhythm/decay contracts pass. DS-R1, DS-N1, and DS-P1 retain consumer UI, backend delivery, and privacy acceptance work. |
 
-Step 7 was completed by Codex with file/hunk-level provenance reconciliation; no wholesale checkpoint
-merge or protected-worktree copy was used.
+Step 8 was completed by Codex with file/hunk-level provenance reconciliation and explicit rejection
+of unsafe historical behavior; no wholesale checkpoint merge or protected-worktree copy was used.
 
 ### Last recorded test evidence
 
-Fresh Step-7 evidence produced by Codex on 2026-09-02:
+Fresh Step-8 evidence produced by Codex on 2026-09-02:
 
-- `v5-environment-context.test.ts`: **29 passed, 0 failed**, EXIT 0;
-- DS-I2 `v5-i18n.test.ts`: **28 passed, 0 failed**, EXIT 0;
-- priority/integration regressions: `v5-05-daily-context` **7 checks**, `v5-daily-synthesis`
-  **22 passed**, and `build106-i18n-foundation` **108 assertions**, all EXIT 0;
-- `tsc --noEmit --incremental false`: EXIT 0. The first plain `tsc --noEmit` attempt exited 1 only
-  because incremental mode tried to write blocked `tsconfig.tsbuildinfo`; no artifact was created;
-- scoped ESLint: EXIT 0, **0 errors / 4 pre-existing warnings** in the Environment page/card;
-- release runner without emulator after DS-I2: **PASS=10 FAIL=0 SKIPPED=8 TOTAL=18**, EXIT 0;
-- full local Firestore + Auth emulator suite after the final Step-7 source changes and before the
-  DS-I2-only test commit: **PASS=17 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
+- `build106-step8-contracts.test.ts`: **63 assertions**, EXIT 0;
+- retained focused regressions: `build106-journal-contracts` **38 assertions**,
+  `v5-05-daily-context` **7 checks**, and `behavior_sync_logger_privacy` **15/15**, all EXIT 0;
+- `build106-memory-pipeline`, `v5-03-journaling-acceptance`, and the focused Step-8 dependencies:
+  all EXIT 0;
+- `tsc --noEmit --incremental false`: EXIT 0;
+- scoped ESLint: EXIT 0, **0 errors / 9 warnings** (pre-existing warnings in touched legacy files;
+  no lint errors);
+- release runner without emulator: **PASS=11 FAIL=0 SKIPPED=8 TOTAL=19**, EXIT 0;
+- full local Firestore + Auth emulator suite: **PASS=19 FAIL=0 SKIPPED=0 TOTAL=19**,
+  `RELEASE_TESTS_PASS`, EXIT 0.
 
 No browser/device/production proof was produced. Starting Next dev would create `.next`, which was
 outside this task's explicit no-build-artifact boundary.
@@ -57,16 +59,17 @@ outside this task's explicit no-build-artifact boundary.
 ### Open gates at handoff
 
 - Deferred register still open: DS-J1, DS-J2, DS-J3, DS-I1, DS-2C1, DS-2C2,
-  DS-GATE07, DS-M1, DS-M2, DS-M3, DS-A1, DS-A2, and DS-E1. DS-DC1 and DS-I2 are DONE.
+  DS-GATE07, DS-M1, DS-M2, DS-M3 (partial), DS-A1, DS-A2, DS-E1, DS-R1, DS-N1,
+  and DS-P1. DS-DC1 and DS-I2 are DONE.
 - R-45 browser rendering evidence remains open as DS-E1; do not promote it to full PASS yet.
 - Genuine fresh non-sample account browser acceptance remains externally blocked (DS-GATE07).
 - Browser evidence remains open for the reconciled onboarding/locale/Astro surfaces.
-- Steps 8–12 and full R-PRD-01..46 reconciliation remain open.
+- Steps 9–12 and full R-PRD-01..46 reconciliation remain open.
 - Versioning, build artifact creation, deploy, publish, and release-ready claims remain unauthorized.
 
 Canonical continuation marker:
 
-`NEXT_SAFE_ACTION = Step 8 — Notifications / privacy / remaining canonical requirements`
+`NEXT_SAFE_ACTION = Step 9 — Premium copy / price`
 
 ## Status vocabulary
 
@@ -84,38 +87,38 @@ Canonical continuation marker:
 
 | ID | Requirement | Build 105 | Recovery source | Build 106 status | Required evidence |
 |---|---|---|---|---|---|
-| R-01 | Adaptive orientation | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-02 | Optional need discovery | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
+| R-01 | Adaptive orientation | PARTIAL | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | `resolveOrientation` covers new/same-day/next-day/3/7/30-day states; Step-8 assertions pass. Dashboard wiring/browser acceptance deferred. |
+| R-02 | Optional need discovery | PARTIAL | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | `getNeedOptions` preserves seven optional choices and adaptively reduces familiar-user choices to three; UI remains deferred. |
 | R-03 | Check-in + Memory -> Daily Note | PARTIAL | CP-036 Daily Context | CONTRACT RECOVERED (unit); surfacing = DS-M2, astro wiring = DS-A1 | `lib/dailyContext/buildDailyContext.ts` — canonical 5-source priority builder (User Input > Wellness > Confirmed Memory > Astro > Env; higher never overridden). `v5-05-daily-context` (7 checks). Astro source now typed to the real `DailyAstroSynthesis` (DS-DC1 DONE). Daily-note text is surfaced on Dashboard via `SoulReflectionCard`/`catatanSummary`; dedicated card = DS-M2; the Daily Context → Catatan wiring = DS-A1. |
-| R-04 | Tiny Step inline | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-05 | Optional user paths | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-06 | Do Nothing valid | PRESENT_CORRECT | Build 105 | PRESERVE | regression test |
-| R-07 | Evening reflection | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | timezone/browser test |
-| R-08 | No checklist/streak Dashboard | PRESENT_CORRECT | Build 105 | PRESERVE | regression test |
-| R-09 | Returning context | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-10 | Graceful Daily Rhythm failures | PARTIAL | CP-036 | RECOVERY_REQUIRED | fallback tests |
+| R-04 | Tiny Step inline | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | Three-locale invitational `buildTinyStep`; inline Daily Note consumer/browser deferred. |
+| R-05 | Optional user paths | PARTIAL | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | Equal `learn/reflect/journal/explore/comfort/do-nothing` path contract; UI choice surface deferred. |
+| R-06 | Do Nothing valid | PRESENT_CORRECT | Build 105 | PRESERVED + VERIFIED (unit contract) | `availablePaths()` contains `do-nothing`; no mandatory completion added. |
+| R-07 | Evening reflection | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; wiring = DS-R1 | Offered only 18:00–21:59 local and only after journaling; timezone/browser consumer deferred. |
+| R-08 | No checklist/streak Dashboard | PRESENT_CORRECT | Build 105 + new copy correction | COPY RECONCILED (static/unit); browser = DS-R1 | `DailyUserFlowGuide` changed from “Recommended/Disarankan” task framing to optional spaces; footer no longer demands a next-day return. |
+| R-09 | Returning context | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | Orientation state contract covers return windows; themed greeting rendering remains deferred. |
+| R-10 | Graceful Daily Rhythm failures | PARTIAL | CP-036 requirement; no usable runtime source | CONTRACT NEWLY_IMPLEMENTED; consumer = DS-R1 | id/en/ms AI/network/empty fallbacks tested; actual Dashboard error-state wiring/browser acceptance deferred. |
 | R-11 | Shared journal model + discriminator | MISSING | CP-036 | RECOVERED_VERIFIED (contract) | `JournalType` union + optional `journalType?` discriminator + `cbt/emotion/guided/spiritual` payloads in `lib/data/types.ts` + `lib/journal/localJournal.ts` `LocalJournalEntry`. `v5-03-journaling-acceptance` 1.1/2.*/3.*/1.11 + `build106-journal-contracts`. |
 | R-12 | Five journal modes | MISSING | CP-036 | CONTRACT RECOVERED; UI DEFERRED | `JournalType = FREE\|CBT\|EMOTION\|GUIDED\|SPIRITUAL_AWAKENING` (J0-01: uppercase `SPIRITUAL_AWAKENING`, not `spiritual`). i18n `journaling.modes` (5) in all 3 bundles (Step 3). The 5-mode radiogroup UI (`app/wellness/journaling/page.tsx`) is the deferred journaling-UI sub-step. |
 | R-13 | Structured safe CBT | MISSING | CP-036 | RECOVERED_VERIFIED (contract) | `JournalEntry.cbt` = Situation / Automatic Thought / Interpretation / Evidence For+Against / Alternative Perspective / Underlying Need / Next Step / Reflection Summary (R-PRD-13). Non-diagnostic enforced by `journalSafety.sanitizeAIOutput`. `build106-journal-contracts` AI-contract block. CBT UI = deferred sub-step. |
-| R-14 | Comfort Mode | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | Its own concept — not journaling data contract. |
+| R-14 | Comfort Mode | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | Comfort is an equal path; tired/overwhelmed/unknown resolve to Comfort; notification policy suppresses non-return categories. Full interaction state/browser remains new UI work. |
 | R-15 | Draft autosave/conflict | MISSING | CP-036 | CONTRACT RECOVERED; wiring DEFERRED | `localJournal.ts` `savePerModeDraft` / `loadPerModeDraft` / `clearPerModeDraft` + `getScopedDraftKey(JOURNAL_DRAFT_PREFIX:${journalType}:${uid})` mode-isolated, timestamped. `v5-03-journaling-acceptance` 6.5/6.6. 30s autosave wiring is in the deferred journaling page. |
 | R-16 | Journal history/search/filter/export | MISSING | CP-036 partial | CONTRACT RECOVERED; UI/export DEFERRED | `localJournal.ts` `loadLocalJournalEntries` (multi-entry, newest-first — legacy per-day singleton removed), `getJournalHistoryGroupedByWeek`, `getEntriesByType`. history/search/filter/export UI in the deferred page. |
-| R-17 | Continue Yesterday | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | New implementation, later. |
+| R-17 | Continue Yesterday | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | `canContinueYesterday` accepts only the prior local-calendar-day draft; selector wiring/browser deferred. |
 | R-18 | Mood trend | PARTIAL | existing components | RECONCILE (not Step 4) | Existing components; reconcile later. |
 | R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `lib/journal/journalSafety.ts` `crisisScanJournalText` (id/en/ms keywords) → resource card + `shouldSuppressAI`; `journalAIContract.ts` `generateJournalAIResponse` reflective-only (2-4 sentences), crisis → `{suppressed, provenance:"none"}`, `sanitizeAIOutput` strips diagnostic language. `build106-journal-contracts` + `v5-03-journaling-acceptance` §7/§8. |
-| R-20 | Entry privacy | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | New implementation, later. |
+| R-20 | Entry privacy | MISSING | none proven | PARTIAL COMPLETION (new contract/enforcement); UI = DS-P1 | New per-entry `locked/hiddenFromHistory/localOnly/excludeFromMemory` contract. Local-only is rejected by cloud repository; local-only/excluded content is blocked before Memory extraction. Unlock/hide controls and browser acceptance remain deferred. |
 | R-21 | Useful Memory continuity | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); Dashboard UI = DS-M1 | Step 4 extraction + Step 5 `lib/repositories/memoryCandidateRepository.ts` (Firestore `journalMemoryCandidates/{uid}/candidates/{id}` + local cache; `upsertFromEntry` evidence accumulation, `getActiveCandidates`) + `lib/memory/memoryPatternAggregator.ts` (`aggregateForJourney`) + `lib/livingIntelligence/memoryCompiler.ts` hunk (active candidates → `dominantThemes` supplement, capped 8). `build106-memory-pipeline` (23). |
 | R-22 | No automatic raw sensitive storage | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | `extractMemorySignals` stores a bounded grounded `snippet` (~40 chars crisis / ~80 normal), never full raw text; `MemoryCandidateEvidence.provenance` distinguishes `user-written` / `ai-interpretation` / `ai-insight`. `build106-journal-contracts` snippet-bounded block. |
 | R-23 | Memory visibility/control | MISSING | CP-036 `app/journey/memory` | CRUD CONTRACT RECOVERED (unit); Dashboard UI = DS-M1 | `memoryCandidateRepository` `confirm` / `correct` (user label) / `dismiss` / `deleteCandidate` state machine (PENDING→CONFIRMED/CORRECTED/DISMISSED). `build106-memory-pipeline` control block. The visual Memory Dashboard (`app/journey/memory/page.tsx` + `MemoryCandidateCard` + `useTranslation` wiring + `/journey` link) is DS-M1. |
 | R-24 | Context-aware retrieval | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `getActiveCandidates` (CONFIRMED/CORRECTED only) feeds `memoryCompiler` `dominantThemes` (confidence ≥ 0.4) and `buildDailyContext` priority-3 `confirmedMemory`. `build106-memory-pipeline` + `v5-05-daily-context`. |
 | R-25 | Journal->Memory->Insight->Experience | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); entry-point wiring = DS-J2 | Journal → `extractMemorySignals` → `memoryCandidateRepository.upsertFromEntry` → `aggregateForJourney` / `memoryCompiler` / `buildDailyContext`. `build106-memory-pipeline`. `upsertFromEntry` is *called* from the journaling save flow — that call site lands with DS-J2. |
 | R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | Step 4 (`isPromotable` ≥3, non-diagnostic `groundedThemeLabel`, crisis suppresses extraction) + Step 5: DISMISSED excluded from `getActiveCandidates` / `aggregateForJourney`; a dismissed theme keeps accumulating evidence but does **not** silently re-promote. `build106-memory-pipeline`. |
-| R-27 | 90-day decay/pinning | MISSING | CP-036 (pinning) + new (decay) | PINNING RECOVERED (contract); decay = NEW_IMPLEMENTATION_REQUIRED | `MemoryCandidate.pinned?` bypasses the ≥3 promotion gate in `aggregateForJourney` (`build106-memory-pipeline` R-27 block). 90-day time-decay of unreinforced themes is not yet implemented — new work, later. |
-| R-28 | Weekly/monthly reflection | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | opt-in + synthesis tests |
+| R-27 | 90-day decay/pinning | MISSING | CP-036 (pinning) + new (decay) | RECOVERED + NEW COMPLETION VERIFIED (unit) | Pinning remains recovered. Step 8 adds canonical 90-day inactivity decay; pinned candidates bypass it; invalid/stale unpinned candidates are excluded. |
+| R-28 | Weekly/monthly reflection | MISSING | none proven | PARTIAL COMPLETION (new eligibility contract); synthesis/UI = DS-M3 | Opt-in + activity + Sunday/first-of-month eligibility tested; synthesis, persistence, and rendered flow remain open. |
 | R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
 | R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
 | R-31 | AI in user locale | PARTIAL | CP-036 | DEFERRED to AI step | Out of localization-foundation scope; tracked for the AI recovery step. |
-| R-32 | Localized notifications | MISSING | CP-036 scheduler | DEFERRED to notifications step (8) | Out of localization-foundation scope. |
+| R-32 | Localized notifications | MISSING | CP-036 partial + Step-8 corrections | PARTIAL COMPLETION VERIFIED; external delivery = DS-N1 | id/en/ms copy, explicit opt-in default, timezone quiet hours, Comfort/low-energy/dismissal suppression, frequency/absence gates, real web-token-only registration, owner-scoped fail-closed persistence, SW, and Android local scheduling are covered. No fake fallback token or false FCM-sent claim. Backend FCM sender, VAPID/browser round-trip, native remote push, per-category settings UI, and device delivery acceptance remain open. |
 | R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
 | R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
 | R-35 | Single Daily Astro synthesis | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/dailyAstroSynthesis.ts` `buildDailyAstroSynthesis` — ONE object (sky/moon/westernEvents/eastern/eclipses/majorCycles), `sourceVersion` stamped, composes the already-proven engines. `AstroTodayCard.tsx` now renders it. `v5-daily-synthesis` (22) + `v5-astro-core` (20) + `build106-astro-regressions` (29). |
@@ -361,6 +364,68 @@ changes **PASS=17 FAIL=0 SKIPPED=0**. Browser rendering is DS-E1 because this ta
 Deferred: DS-E1 only for the Step-7 browser surface. DS-I1 remains the broader post-recovery
 `useTranslation()` migration and is not part of Step 7.
 
+## Notifications / privacy / remaining canonical requirements (Step 8 — 2026-09-02)
+
+Scope: R-01, R-02, R-04..R-10, R-14, R-17, R-20, R-27, R-28, and R-32. The
+audit compared Build 105, CP-036, checkpoint `d2cb236`, and the protected forensic worktree. No
+historical source was adopted merely because it existed.
+
+### Historical-source recovery
+
+- Five canonical requirement documents were recovered intact from CP-036 after their blobs were
+  proven identical in checkpoint `d2cb236` and the forensic worktree: `V5_NOTIFICATION_FCM_SPEC.md`,
+  `V5_SECURITY_PRIVACY.md`, `V5_DAILY_RHYTHM_SPEC.md`, `V5_EXPERIENCE_ARCHITECTURE.md`, and
+  `V5_COMFORT_MODE_UX_SPEC.md`. Their exact hashes are in the provenance ledger below.
+- `lib/notifications/quietHours.ts`, the FCM registration/token-repository foundations, and
+  `public/firebase-messaging-sw.js` began from byte-identified CP-036 source, then were reconciled
+  to current fail-closed/privacy rules.
+- Historical notification scheduler/history/inbox-bridge tests and account-deletion modules were
+  **not adopted**: the notification path could mint a fake `local_*` token and record inbox creation
+  as delivery without an FCM sender; account deletion remains incomplete against the current data
+  inventory. This is historical evidence, not current completion proof.
+
+### New implementation required and completed in Step 8
+
+- `lib/notifications/notificationPolicy.ts` adds id/en/ms copy, explicit opt-in defaults, quiet-hour,
+  Comfort/low-energy/dismissal suppression, absence return, frequency, and deduplication contracts.
+- `lib/dailyRhythm/runtime.ts` adds adaptive orientation/needs, equal optional paths including
+  Comfort and Do Nothing, invitational Tiny Steps, Continue Yesterday, contextual evening
+  reflection, graceful fallbacks, and weekly/monthly eligibility contracts.
+- `lib/journal/privacy.ts` plus repository/extraction enforcement adds per-entry locked/hidden/
+  local-only/exclude-from-Memory semantics; local-only entries cannot be written to cloud storage.
+- Unpinned Memory candidates now decay after 90 inactive days; pinning remains the recovered
+  exception. Auth diagnostics no longer print raw UID/email/path/error objects. Reminder and
+  Dashboard copy was reconciled to no-pressure/no-guilt language.
+
+Source commit: `901ad94` (`feat(build106): recover notification and privacy contracts`). Test commit:
+`d106cb7` (`test(build106): verify Step 8 safety contracts`).
+
+### Partial completion — do not promote to PASS
+
+- R-32 has policy, local scheduling, real-web-token-only registration, fail-closed persistence, and
+  service-worker contracts; it does not have a trusted backend FCM sender, native remote-push
+  configuration, or browser/device delivery proof (DS-N1).
+- R-20 has data contracts and repository/Memory enforcement; it does not yet have entry controls,
+  unlock/hide UX, history filtering acceptance, or complete account-deletion coverage (DS-P1).
+- R-28 has opt-in/activity/date eligibility only; synthesis, persistence, and rendered weekly/
+  monthly reflection remain DS-M3.
+- R-01/R-02/R-04..R-10/R-14/R-17 have verified runtime/copy contracts but their complete consumer
+  UI and browser acceptance remain DS-R1.
+
+### Deferred browser / external acceptance
+
+- DS-R1 owns Daily Rhythm/Comfort consumer UI and browser acceptance.
+- DS-N1 owns trusted remote notification delivery, configuration, truthful delivery history, and
+  browser/device proof.
+- DS-P1 owns entry-privacy UI and complete deletion/privacy acceptance.
+- No browser/device/production read or write occurred. A local Next browser run was not started
+  because it would create `.next`, prohibited by this task's no-build-artifact boundary.
+
+Evidence: Step-8 focused contract suite **63 assertions**, EXIT 0; focused journal/Daily Context/
+privacy regressions EXIT 0; TypeScript EXIT 0; scoped ESLint EXIT 0 (**0 errors / 9 pre-existing
+warnings**); no-emulator release runner **PASS=11 FAIL=0 SKIPPED=8 TOTAL=19**; full local synthetic
+Firestore/Auth emulator runner **PASS=19 FAIL=0 SKIPPED=0 TOTAL=19**, `RELEASE_TESTS_PASS`.
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -403,11 +468,14 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | **External** — needs an authorized authenticated test account + signup browser driver. Founder/ops to schedule. | BLOCKED (external) |
 | **DS-M1** | Memory Dashboard UI: recover `app/journey/memory/page.tsx` (83L, CP-036) + `components/journey/MemoryCandidateCard` + `app/journey/page.tsx` link; needs `useTranslation()` (react-i18next) wiring — **prereq DS-I1**. Plus browser + CRUD E2E. | R-23 (visual visibility/control), R-21 (browser) | Build 106 — Memory-Dashboard UI sub-step, scheduled with DS-J1/DS-J2 (Inner Work / Journey surfaces land together); DS-I1 first. | OPEN |
 | **DS-M2** | "Daily Note on Dashboard" reconciliation: CP-036 keeps `DailyNoteV2` on Profile and surfaces daily-note text on Dashboard via `catatanSummary`/`SoulReflectionCard`. Decide whether Master SOT §5 "Daily Note absent from Dashboard" requires a dedicated Dashboard card; if yes, design + wire it. | R-03 (Dashboard surfacing), Master SOT §5 | Build 106 — Founder reconciliation decision, then Daily Rhythm / Dashboard step. | OPEN (decision) |
-| **DS-M3** | 90-day memory time-decay of unreinforced themes (R-27) and opt-in weekly/monthly reflection synthesis (R-28) — new implementation (`MemoryCandidate.pinned?`/`lastSeenAt` fields already present). | R-27, R-28 | Build 106 — new-implementation, after the feature-recovery steps. | OPEN |
+| **DS-M3** | Complete opt-in weekly/monthly reflection synthesis, persistence, and rendered experience. Step 8 completed the 90-day unpinned decay (R-27) and reflection eligibility gates only. | R-28; R-27 no longer gated | Build 106 — Daily Rhythm/Memory consumer work. | **PARTIAL** — decay + eligibility DONE; synthesis/persistence/UI OPEN. |
 | **DS-DC1** | `lib/dailyContext/buildDailyContext.ts` `DailyAstroSynthesis` type stub → real import. | R-03 (astro source typing) | Step 6 (Astrology). | **DONE (Step 6, 2026-09-02)** — now `import type { DailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis"`; `build106-astro-regressions` DS-DC1 block, tsc EXIT 0. |
 | **DS-A1** | R-36 consumer wiring: pass `buildDailyAstroSynthesis()` / `astroContextFromSynthesis()` / `weeklyAstroContextFromSynthesis()` into the call sites — `components/dashboard/DashboardClient.tsx` (Catatan Hari Ini, T-ASTRO-08; ~6 lines but embedded in a file with Phase-2C edits), `components/wellness/WellnessPageClient.tsx` + `lib/services/wellnessDailyIntelligence.ts` (~111-line diff) wellness curation, `lib/weeklyGuidance/weeklyGuidanceEngine.ts` (~22-line clean hunk: `astroContext?` param + one lens line). | R-36 (integration) | Build 106 — astro-integration sub-step, per-file hunk reconciliation; `weeklyGuidanceEngine` hunk is low-risk and could land first. | OPEN |
 | **DS-A2** | Major-cycle scope beyond eclipses — `DailyAstroSynthesis.majorCycles` is `{ openScope: true }` by contract (D-V5-26 / handover §5.4): only canonical V5 signals may be added, none invented. Define + wire the allowed large-cycle signals if/when the Founder ratifies them. | R-35 (completeness) | Build 106 — Founder decision, then wire. | OPEN (decision) |
 | **DS-E1** | Browser rendering of Environment/Schumann with mocked geolocation/providers: unavailable USGS must not show `Stabil`; validate none/snapshot/partial/stale/full Schumann states, model/provenance labels, three-layer order, and no merged NOAA+Schumann energy score. | R-45 (browser), R-44 (rendered unavailable state) | Build 106 — verification Step 11, when a local Next runtime/build artifact is authorized. | OPEN (current task prohibited `.next` / build artifacts) |
+| **DS-R1** | Wire and render the Step-8 Daily Rhythm contracts: adaptive greeting/orientation, optional needs and equal paths, inline Tiny Step, Continue Yesterday, evening reflection, Comfort interaction, truthful failure states, and weekly/monthly reflection consumer. Add browser acceptance. | R-01, R-02, R-04..R-10, R-14, R-17, R-28 | Build 106 — consumer/UI work in Steps 10–11; browser only when local runtime artifacts are authorized. | OPEN |
+| **DS-N1** | Implement a trusted backend FCM sender/scheduler, per-category notification controls, VAPID web round-trip, Android remote-push plugin/configuration, token lifecycle acceptance, and truthful delivery history; verify in browser/device. | R-32 | Build 106 — notification external/integration acceptance; requires authorized configuration and device/browser test. | OPEN (external/configuration + implementation) |
+| **DS-P1** | Add entry-level lock/unlock, hide-from-history, local-only, and exclude-from-Memory UI; verify filtering/export behavior; reconcile account deletion with the complete data inventory, realtime deletion, entitlement cleanup, and acceptance evidence. | R-20 and privacy/deletion acceptance | Build 106 — privacy consumer and account-deletion hardening before final verification. | OPEN |
 
 ---
 
@@ -416,10 +484,10 @@ for its requirement; the release gate stays closed on all of them.
 | Role | Path | Branch @ HEAD | Mutability |
 |---|---|---|---|
 | Forensic evidence (a.k.a. "protected recovery worktree" in Master SOT §6) | `C:\tmp\bhumi-build83-access-hotfix` | `feat/build99` @ `57479c928…` + ~366 dirty entries | **READ ONLY** |
-| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `0293517` (Step-7 implementation/test baseline before docs) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
+| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `d106cb7` (Step-8 implementation/test baseline before docs) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
 
 Local branch `recovery/build106-product-continuity` created 2026-09-02. Its remote branch remains at
-`d7a679ab98a7583e34fc11fb58da4ec462cd945f`; local recovery work through Step 7 is ahead and has not
+`d7a679ab98a7583e34fc11fb58da4ec462cd945f`; local recovery work through Step 8 is ahead and has not
 been pushed by this task.
 
 ---
@@ -430,10 +498,10 @@ Method: for each document, compared the CP-036 blob against (a) the latest agent
 `d2cb236` (2026-09-02) and (b) the protected forensic worktree's untracked copy; checked Build 105
 (`8fc3c23`) for any competing committed version; checked checkpoint `3a4b08b` (2026-08-31).
 
-Result: **single-source, zero drift.** For all eight documents the CP-036 blob SHA is byte-identical
-to both `d2cb236` and the forensic worktree. Build 105 contains none of them. Checkpoint `3a4b08b`
-holds only empty (`e69de29`) placeholders and is not a source. Adopted verbatim from CP-036 into the
-recovery branch — no body rewrite (historical requirements preserved).
+Result: **single-source, zero drift.** The first eight documents and the five Step-8 documents have
+CP-036 blob SHAs byte-identical to both `d2cb236` and the forensic worktree. Build 105 contains none
+of them. Checkpoint `3a4b08b` holds only empty (`e69de29`) placeholders and is not a source. They
+were adopted verbatim from CP-036 — no body rewrite (historical requirements preserved).
 
 | Document | Source | Adopted blob SHA | Recovery status | Superseded / stale sub-content flagged (NOT rewritten) |
 |---|---|---|---|---|
@@ -445,13 +513,16 @@ recovery branch — no body rewrite (historical requirements preserved).
 | `V5_CBT_JOURNAL_DESIGN.md` | CP-036 `036225f` | `c36749b3…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 4 (Journaling/CBT). |
 | `V5_I18N_SPEC.md` | CP-036 `036225f` | `30f688ac…` | RECONCILED (Step 3, 2026-09-02) | Foundation recovered per this doc (§1 CURRENT id/en/ms per D-V5-35; §2 i18next + `src/locales/{tag}/translation.json` + active→en→id-ID fallback; §4 switcher persists). SUPERSEDED sub-content: §4 "All **six** locale dictionaries exist" — pre-D-V5-35 wording; CURRENT scope is 3 + 3 DEFERRED. §3 "retire `normalizeLocale.ts`" — the CP-036 implementation instead rebuilt it safely at `lib/locale/normalizeLocale.ts`; implementation is authority. Full `useTranslation()` component migration (§3) deferred to a later sprint. |
 | `DOCUMENTATION_INDEX.md` | CP-036 `036225f` (then reconciled) | adopted then edited on the recovery branch | RECONCILED | Added Build 106 authority block; fixed stale "Six canonical locales" and "D-V5-01..12" index cells; expanded historical/superseded table. |
+| `V5_NOTIFICATION_FCM_SPEC.md` | CP-036 `036225f` | `19dd9e0c…` | RECOVERED_VERIFIED (provenance); implementation PARTIAL | "6 supported locales" is stale; current scope is id/en/ms per D-V5-35. Actual sender/browser/device acceptance remains DS-N1. |
+| `V5_SECURITY_PRIVACY.md` | CP-036 `036225f` | `939c59c7…` | RECOVERED_VERIFIED (provenance); implementation PARTIAL | Requirements remain canonical; implementation status is governed by matrix rows. Entry privacy is partial and account deletion remains incomplete (DS-P1). |
+| `V5_DAILY_RHYTHM_SPEC.md` | CP-036 `036225f` | `58d98eee…` | RECOVERED_VERIFIED (provenance); runtime PARTIAL | Step 8 implements/test-covers runtime contracts; full consumer UI/browser remains DS-R1. |
+| `V5_EXPERIENCE_ARCHITECTURE.md` | CP-036 `036225f` | `75027637…` | RECOVERED_VERIFIED (provenance); reconciled by matrix | Six-locale references are stale. "We missed you" conflicts with current no-guilt policy and must not be implemented; Step-8 neutral return copy governs. |
+| `V5_COMFORT_MODE_UX_SPEC.md` | CP-036 `036225f` | `9a6442c6…` | RECOVERED_VERIFIED (provenance); runtime PARTIAL | Historical reconstruction-authority note is preserved. Contract exists; full Comfort interaction/browser acceptance remains DS-R1. |
 
 `RECOVERED_VERIFIED (provenance)` means the file's origin is proven and it was adopted intact. It
 does **not** mean every requirement inside has been implemented or tested — those still track through
 the `R-01..R-46` rows above.
 
-Broader `V5_*.md` set referenced by `V5_SOURCE_OF_TRUTH.md` §8 (e.g. `V5_DAILY_RHYTHM_SPEC.md`,
-`V5_JOURNAL_INNER_WORK_SPEC.md`, `V5_MEMORY_LIVING_INTELLIGENCE_SPEC.md`,
-`V5_EXPERIENCE_ARCHITECTURE.md`, `V5_NOTIFICATION_FCM_SPEC.md`, `V5_SECURITY_PRIVACY.md`, …) remains
-available in CP-036 and will be adopted with the same provenance method when its recovery step is
-reached.
+Broader `V5_*.md` documents not yet adopted (for example `V5_JOURNAL_INNER_WORK_SPEC.md` and
+`V5_MEMORY_LIVING_INTELLIGENCE_SPEC.md`) remain available in CP-036 and will be adopted with the
+same provenance method when their recovery step is reached.
