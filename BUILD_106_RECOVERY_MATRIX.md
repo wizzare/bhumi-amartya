@@ -6,18 +6,25 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Continuity snapshot — after Step 12 (Claude Code, 2026-09-02)
+## Continuity snapshot — handover Claude Code → Codex after Step 12 (2026-09-02)
 
 ```text
-CURRENT_PRIMARY_AGENT             = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12)
-CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_STEP12_DOCS   = 15428ba  (docs(v5): ratify D-V5-36 — narrative-prose fallback ms -> id)
-BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
-BUILD_106_ARTIFACT                = DOES_NOT_EXIST
-BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = close DS-2C3 (setup-page mount guard) -> re-run the RC-2 rendered browser pass for DS-E1 / DS-J4 / DS-AI1 en-ms -> DS-AI1-themes -> then Step 13 (version bump / artifact, Founder approval only)
+NEXT_PRIMARY_AGENT               = CODEX
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12)
+CURRENT_BRANCH                   = recovery/build106-product-continuity
+CURRENT_HEAD                     = 8617155  (docs(build106): Step 12 acceptance) — the handover-docs commit is newer; resolve with `git rev-parse HEAD`
+BUILD_106_PHASE                  = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
+BUILD_106_ARTIFACT               = DOES_NOT_EXIST
+BUILD_106_RELEASE_GATE           = CLOSED
+STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
+GATE_07 / RC-1                  = ACCEPTED (emulator-hydration)
+RC-2                            = PARTIAL
+RC-12 / DS-2C3                  = OPEN and RELEASE-CRITICAL
+DS-AI1-themes                   = OPEN (residual, low-priority)
+NEXT_SAFE_ACTION                = close DS-2C3 → rerun RC-2 rendered browser verification → Step 13
 ```
+
+Operational snapshot: `BUILD_106_HANDOFF.md` (Claude Code → Codex).
 
 Step 12 (genuine fresh-account acceptance + RC-2 rendered browser verification): AUDIT → VERIFY
 → REPORT, no product code changed. **D-V5-36 ratified** (narrative-prose `ms → id` fallback,

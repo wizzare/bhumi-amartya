@@ -340,6 +340,14 @@ prior GATE_07 evidence class, still not a production/device run.
 RC-3..RC-8 unchanged — FCM infra, Memory Dashboard, journal draft/history, Comfort Mode,
 adaptive check-in, security/privacy audit.
 
+**Handover (2026-09-02).** Primary agent → **CODEX** after Step 12. `NEXT_SAFE_ACTION = close
+DS-2C3 → rerun RC-2 rendered browser verification → Step 13`. Branch
+`recovery/build106-product-continuity`; HEAD at handover `8617155` (the handover-docs commit is
+newer). Step 12 acceptance = ACCEPTED (emulator-hydration); GATE_07 / RC-1 = ACCEPTED; RC-2 =
+PARTIAL; **RC-12 / DS-2C3 = OPEN and release-critical**; DS-AI1-themes = open residual. No
+product code change, version bump, build, deploy, publish, push, or production write in the
+handover.
+
 ---
 
 ## 12. Step 10 conclusion

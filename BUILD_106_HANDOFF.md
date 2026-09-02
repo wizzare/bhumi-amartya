@@ -1,32 +1,49 @@
-# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF (CLAUDE CODE)
+# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF (CLAUDE CODE → CODEX)
 
-Status: CLAUDE CODE CONTINUITY SNAPSHOT AFTER STEP 12 (D-V5-36 ratified; genuine fresh-account acceptance @ emulator-hydration; RC-2 partial) — next action is DS-2C3 then the DS-E1/DS-J4/DS-AI1 rendered pass
+Status: HANDOVER CLAUDE CODE → CODEX after Step 12. Step 12 acceptance = ACCEPTED. Next primary agent is CODEX.
 Date: 2026-09-02
 
 ```text
-NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+NEXT_PRIMARY_AGENT               = CODEX
 PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_HANDOFF_DOCS = 15428ba  (docs(v5): ratify D-V5-36 — narrative-prose fallback ms -> id)
+CURRENT_HEAD                     = 8617155  (docs(build106): Step 12 — genuine fresh-account acceptance @ emulator-hydration; RC-2 partial)
+CURRENT_HEAD_BEFORE_HANDOVER_DOCS = 8617155   (the commit carrying THIS handover-docs update is the newer HEAD — resolve with `git rev-parse HEAD` after checkout)
 BUILD_106_PHASE                  = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT              = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE          = CLOSED
-NEXT_SAFE_ACTION                = close DS-2C3 (setup-page mount guard) -> re-run RC-2 rendered pass for DS-E1 / DS-J4 / DS-AI1 en-ms -> DS-AI1-themes -> Step 13 (version bump / artifact, Founder approval only)
+STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
+GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run still the ideal final proof
+RC-2                            = PARTIAL (onboarding + Premium + locale switcher verified; DS-E1 / DS-J4 / DS-AI1 rendered NOT reached)
+RC-12 / DS-2C3                  = OPEN and RELEASE-CRITICAL (`/setup` has no mount guard for an already-complete user; blocks the DS-E1/DS-J4/DS-AI1 rendered browser pass)
+DS-AI1-themes                   = OPEN — residual low-priority i18n follow-up (NOT release-critical on its own)
+NEXT_SAFE_ACTION                = close DS-2C3 → rerun RC-2 rendered browser verification → Step 13
 ```
 
-`CURRENT_HEAD_BEFORE_HANDOFF_DOCS` is the implementation/test HEAD verified for this snapshot.
-Steps 9 and 10 changed only product copy (one line, Step 9) and documentation/tests; the commit
-carrying this file is the newest docs HEAD — resolve with `git rev-parse HEAD` after checkout.
+## Handover snapshot — what Claude Code did (Steps 9–12)
 
-## Verified worktree state
+- **Step 9** — Premium copy / price (R-42): Rp25.000 display + live Play `formattedPrice` authority (`b341c82`). RECOVERED_VERIFIED (unit + static + Step-12 rendered browser).
+- **Step 10** — Full R-PRD-01..46 reconciliation (`ecc5ed6`): canonical `BUILD_106_RECONCILIATION_REPORT.md`; all 46 reconciled, zero UNKNOWN, zero false PASS; assigned **DS-J4** ← R-18 and **DS-AI1** ← R-31; enumerated RC-1..RC-11.
+- **Step 11** — owned-gap closure + local-logic close (`1a686db`, `6e16274`, `ff52611`, `2528df1`):
+  - **DS-2C1 DONE / RC-10 CLOSED** — `firebaseService.getUserProfile` propagates read failures (`null` = absent doc only); non-routing callers keep tolerance via `.catch(() => null)`; state-machine "I" step rewritten + green.
+  - **DS-AI1 local logic CLOSED** — daily-guidance prompt `outputLanguageRule` + `attributionRule`; id/en/ms carried end to end; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); `localDailyGuidanceFallback` wrapper `ms → id`.
+  - **DS-J4 local logic CLOSED** — rendered streak UI removed + `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term; milestone `"7 Hari Aktif"`).
+  - Full emulator suite **PASS=23/23** `RELEASE_TESTS_PASS`; state-machine `passed=33 failed=0`.
+- **D-V5-36 ratified** (`15428ba`) — narrative-prose `ms → id` fallback (translation-KEY fallback unchanged).
+- **Step 12** — genuine fresh-account acceptance + RC-2 rendered browser (`8617155`, AUDIT → VERIFY → REPORT, **no product code changed**): see §11.2 of the reconciliation report and the "Step 12" section of the matrix.
+
+## Verified worktree state (at handover)
 
 ```text
 authorized worktree   = C:\tmp\bhumi-build106-recovery
 branch                = recovery/build106-product-continuity
-HEAD (pre-Step12-docs) = 15428ba  docs(v5): ratify D-V5-36 — narrative-prose fallback ms -> id
+HEAD                  = 8617155  docs(build106): Step 12 — genuine fresh-account acceptance @ emulator-hydration; RC-2 partial
+                        (this handover-docs commit is the newer HEAD — use `git rev-parse HEAD`)
 forensic worktree     = C:\tmp\bhumi-build83-access-hotfix  (feat/build99 @ 57479c9, 366 dirty) — READ ONLY, untouched
 worktree status       = clean
+versionCode           = 105 (unchanged; no version bump)
+BUILD_106_ARTIFACT    = DOES_NOT_EXIST
 ```
 
 Step 9 (Premium copy / price, R-42) — the uncommitted partial start left at the Codex → Claude
@@ -35,23 +52,25 @@ locale bundles, and CP-036, and **adopted** in `b341c82`. Step 10 (Full R-PRD-01
 reconciliation) is a docs/audit pass — canonical deliverable `BUILD_106_RECONCILIATION_REPORT.md`
 plus matrix updates; no product code changed.
 
-## Canonical authority and reading order
+## Canonical authority and reading order (for CODEX)
 
 The repository Markdown set is the authority. Read in order before any further work:
 
-1. `BUILD_106_MASTER_SOT.md` — primary canonical product/recovery authority.
-2. `BUILD_106_RECOVERY_MATRIX.md` — canonical status, evidence, deferred-work, and gate ledger.
-3. `BUILD_106_RECONCILIATION_REPORT.md` — Step 10 canonical R-PRD-01..46 reconciliation + the
-   RC-1..RC-12 release-critical gap list (§11.1 Step 11, §11.2 Step 12).
-4. `BUILD_106_AGENT_PROTOCOL.md` — mandatory recovery, safety, and evidence procedure.
-5. `BUILD_106_HANDOFF.md` — this operational snapshot (not a higher authority than the above).
-6. `CLAUDE.md` — Claude Code operational entrypoint (mandatory reading order, worktree rules,
-   build/release lock). Valid again for Claude Code; on any conflict the Build 106 Markdown wins.
-7. `AGENTS.md` / `RULES.md` — repository operating constraints where not superseded above.
+1. `AGENTS.md` — agent operating contract (authorized worktree/branch, audit-before-edit,
+   minimal diff, evidence discipline, git safety, release restrictions).
+2. `BUILD_106_MASTER_SOT.md` — primary canonical product/recovery authority.
+3. `BUILD_106_RECOVERY_MATRIX.md` — canonical status, evidence, deferred-work, and gate ledger.
+4. `BUILD_106_RECONCILIATION_REPORT.md` — canonical R-PRD-01..46 reconciliation + the
+   **RC-1..RC-12** release-critical gap list (§11.1 Step 11, §11.2 Step 12).
+5. `BUILD_106_AGENT_PROTOCOL.md` — mandatory recovery, safety, and evidence procedure.
+6. `BUILD_106_HANDOFF.md` — this operational snapshot (not a higher authority than the above).
+7. `RULES.md` — engineering/product invariants where not superseded above.
+8. `CLAUDE.md` — Claude Code's operational entrypoint; Codex is not bound by it, but its
+   build/release lock and worktree rules restate the same Build 106 constraints.
 
-Claude AgentMemory (`C:\Users\shein\.claude\projects\C--Users-shein-bhumi-amartya-clean\memory\`)
-may be used as supplementary continuity, but the repository Markdown remains authority on any
-conflict, and the work must be reconstructable from the repo alone.
+Claude AgentMemory (`C:\Users\shein\.claude\projects\...\memory\`) is Claude Code's supplementary
+continuity and is **not required** for Codex. Everything needed is in the repo Markdown; the work
+must be reconstructable from the repo alone. On any conflict, the Build 106 Markdown wins.
 
 ## Continuity state — Steps 1–12
 
@@ -140,32 +159,42 @@ Detailed definitions and owners are in the matrix **Deferred sub-steps register*
 No production read/write, build artifact, deploy, publish, push, or version bump occurred in
 Steps 9–12.
 
-## Claude Code continuation boundary
+## CODEX continuation boundary
 
-Next, Claude Code must:
+Before any edit:
 
-1. Re-verify the authorized worktree path, branch, `git rev-parse HEAD`, and `git status --short`.
-2. Read the canonical Build 106 files above (+ `BUILD_106_RECONCILIATION_REPORT.md` §11.1/§11.2,
-   `CLAUDE.md`).
-3. **Close DS-2C3** — add a mount-time authoritative-reconcile / redirect guard to
-   `app/setup/page.tsx` for an already-complete user, and extend the cold-nav reconcile to
-   `AccessGuard` / `lib/auth/resolveActiveProfile.ts` so gated feature pages don't bounce a
-   genuine complete user to `/setup` on a cold hard-nav. Add a regression test. `AUDIT → ANALYZE
-   → FIX → VERIFY`.
-4. **Re-run the RC-2 rendered browser pass** (same emulator-hydration setup) for **DS-E1**
-   (`/dashboard/environment` Schumann three-layer, no fabricated `Stabil`), **DS-J4**
+1. Verify `git branch --show-current` = `recovery/build106-product-continuity`, `git rev-parse HEAD`
+   = the handover-docs commit (this file), and `git status --short` = clean.
+2. Read the canonical Build 106 files in the order above (+ `BUILD_106_RECONCILIATION_REPORT.md`
+   §11.1 / §11.2). Do not treat Claude AgentMemory as required input.
+3. Do **not** work Step 13 or bump the version. Do **not** mutate the forensic worktree
+   `C:\tmp\bhumi-build83-access-hotfix`.
+
+Then, in order:
+
+4. **Close DS-2C3 (RC-12 — release-critical).** `app/setup/page.tsx` has no mount-time guard for an
+   already-`setupCompleted` user, so a gated *feature* page bouncing a cold-AuthContext hard-nav to
+   `/setup` strands a genuine complete user there. Add a mount-time authoritative reconcile /
+   redirect on `/setup`, and extend the cold-nav reconcile to `AccessGuard` /
+   `lib/auth/resolveActiveProfile.ts` so gated feature pages don't bounce a genuine complete user
+   to `/setup` on a cold hard-nav. Add a regression test. `AUDIT → ANALYZE → FIX → VERIFY`.
+5. **Re-run the RC-2 rendered browser verification** (emulator-hydration setup: `firebase emulators:start
+   --only auth,firestore --project demo-build106-qa` + `next dev` with an ephemeral `.env.local`
+   carrying `NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`; drive the browser; then delete `.next` +
+   `.env.local` + `firebase-debug.log` / `firestore-debug.log`; worktree clean; **no `next build`**)
+   for **DS-E1** (`/dashboard/environment` — Schumann three-layer, no fabricated `Stabil`), **DS-J4**
    (`/insights` — no streak section, "days active" framing), and **DS-AI1** (dashboard daily
-   guidance rendered in `en` and `ms`). Ephemeral `.next` + `.env.local`; delete afterward;
-   worktree clean; no `next build`.
-5. **DS-AI1-themes** — low-priority i18n follow-up (deep theme-label dictionaries + full
-   `localDailyGuidanceFallback` ms), after the browser pass.
-6. Then **Step 13** — version bump / Build 106 artifact — **Founder approval only**, and only once
-   all RC items and the Master SOT §8 gates are satisfied.
-7. Preserve all Step 1–12 work. Do not silently promote any deferred gate to `PASS`.
-8. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`. Update the matrix, reconciliation report, this
-   handoff, and AgentMemory after each pass.
+   guidance rendered in `en` and `ms`). These pages are only reachable once DS-2C3 is closed.
+6. **DS-AI1-themes** — residual low-priority i18n follow-up (Indonesian-only theme-label
+   dictionaries + full `localDailyGuidanceFallback` ms). Not release-critical on its own.
+7. Then **Step 13** — version bump / Build 106 artifact — **Founder approval only**, and only once
+   every RC-1..RC-12 item and the Master SOT §8 gates are satisfied.
+8. Preserve all Step 1–12 work. Do not silently promote any deferred gate to `PASS`.
+9. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`. Update the matrix, reconciliation report, this
+   handoff after each pass. End every Founder-facing report with `STOP AND WAIT FOR FOUNDER REVIEW`.
 
-`NEXT_SAFE_ACTION = close DS-2C3 → re-run the RC-2 rendered browser pass for DS-E1 / DS-J4 / DS-AI1 en-ms → DS-AI1-themes → Step 13 (Founder approval only)`
+`NEXT_SAFE_ACTION = close DS-2C3 → rerun RC-2 rendered browser verification → Step 13`
+`NEXT_PRIMARY_AGENT = CODEX`
 
 `BUILD_106_RECOVERY_IN_PROGRESS`
 
