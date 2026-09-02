@@ -72,29 +72,48 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 
 This is a release-blocking gate independent of the numbered product requirement rows.
 
-Current state: `REGRESSED`.
+Current state: `IN_PROGRESS` — race + monotonicity fixed and unit-proven (Phase 2B, 2026-09-02);
+fresh-account acceptance + emulator/browser passes still required before `PASS`.
 
-Must prove all of the following:
+Root cause (VERIFIED): `ensureMinimalUserProfile()` (`lib/auth/authActions.ts`) decided
+create-vs-reconcile from a `getUserProfile` read taken *before* an unbounded
+`await bootstrapCanonicalAccess(...)`. When that await outlived AuthContext's
+`SERVER_PROFILE_LOAD_TIMEOUT_MS` (15s) the user could finish `/setup` in the gap; the late
+call then resumed on its stale `null` observation and ran
+`upsertUserProfile(uid, buildMinimalUserProfile(...))` — a shallow `{merge:true}` write of
+`setupCompleted:false`, `blueprintStatus:"missing"`, empty birth fields — over the finalized
+profile. Every route guard (`userRouteState.ts:37`, `landingCtaRoute.ts:32`,
+`DashboardClient.tsx:614`) then sent the user back to `/setup`.
 
-- New Firebase/Google user profile bootstrap cannot overwrite newer completed setup.
-- Bootstrap has bounded behavior and cannot leave a stale continuation capable of resetting state.
-- `setupCompleted` and `blueprintStatus` transition monotonically.
-- AuthContext is refreshed/re-read after setup completion before final routing.
-- Server-authoritative profile/blueprint state wins over localStorage.
-- Missing profile is distinguished from read error.
-- Dashboard recovery finalizes profile state consistently.
-- Fresh arbitrary valid birth data generates/persists the required blueprint schema.
-- Sample/dev-audit paths are not used as proof.
+| Requirement | Status | Evidence |
+|---|---|---|
+| Bootstrap cannot overwrite newer completed setup | FIXED (unit) | `ensureMinimalUserProfile` re-reads authoritative state *after* the bootstrap await (only when `needsBootstrap`) and routes a raced call into the existing-profile reconcile path, never the create/clobber branch. `tests/unit/build106-new-user-lifecycle.test.ts` TEST_1 (`calls.upsert === 0`, finalized profile intact). |
+| Stale continuation cannot reset state | FIXED (unit) | Reconcile now goes through `userRepository.reconcileMinimalProfile()` — read + `guardMonotonicProfilePatch` + write in one Firestore `runTransaction`, so a concurrent finalize forces a retry that re-observes the finalized state. TEST_6 (concurrent calls converge). |
+| `setupCompleted` / `blueprintStatus` monotonic | FIXED (unit) | `lib/auth/profileMonotonicity.ts` `guardMonotonicProfilePatch` strips `setupCompleted:false` / `onboardingCompleted:false` / `baselineWellnessCompleted:false` when persisted is `true`, and `blueprintStatus:"missing"` when persisted is any advanced state; also protects non-empty birth strings and non-null lat/long/tz/country. TEST_2, TEST_3. RED/GREEN contrast recorded (Build 105 shallow-merge regresses; guard preserves). |
+| AuthContext refreshed after setup before routing | RECOVERED (static) | `app/setup/page.tsx` `finalizeSetup` awaits `auth.refreshUserProfile()` before `router.replace("/dashboard")` — recovered from historical commit `0f0ad14e`. TEST_5 (source-order assertion). Runtime E2E pending. |
+| Server-authoritative wins over localStorage | OPEN | `finalizeSetup` still verifies against `localStorage(bhumiProfile:${uid})` (`app/setup/page.tsx:316`). Not yet changed. |
+| Missing profile distinguished from read error | HELD (VERIFIED) | `userRepository.getUserProfile` throws on read failure / returns `null` only for a genuinely absent doc; `ensureMinimalUserProfile` propagates the throw (AuthContext maps `status:"error"` distinctly). TEST_4. |
+| Dashboard recovery finalizes profile state | OPEN | `DashboardClient.tsx:614` bails to setup on `setupCompleted !== true` without an authoritative server reconcile. Deferred — the race that produced the inconsistency is now closed upstream. |
+| Fresh birth data → persisted blueprint schema | OPEN | Requires fresh-account acceptance run. |
+| Sample/dev-audit not used as proof | HELD | Audit-mock seam catalogued (`lib/dailyGuidance/auditMocks.ts` `getMockProfile`/`getMockBlueprint`); the new tests use synthetic non-mock identities only. |
 
 Required tests:
 
-1. deterministic bootstrap-timeout / late-completion race;
-2. fresh-user setup success;
-3. blueprint generation failure;
-4. final-profile write failure;
-5. recovery-required transition;
-6. dashboard recovery finalization;
-7. pre-existing persisted user regression protection.
+1. deterministic bootstrap-timeout / late-completion race — **DONE** (TEST_1, EXIT 0);
+2. fresh-user setup success — pending (fresh-account acceptance);
+3. blueprint generation failure — pending (`setup_and_blueprint_recovery.test.ts`, emulator);
+4. final-profile write failure — pending (emulator);
+5. recovery-required transition — covered by existing `markBlueprintRecoveryRequired` guard; emulator re-run pending;
+6. dashboard recovery finalization — pending;
+7. pre-existing persisted user regression protection — **DONE** (`auth-minimal-profile-preservation.test.ts` updated, EXIT 0) + TEST_2/TEST_3.
+
+Focused unit evidence (2026-09-02, `tsx --import ./tests/helpers/releaseTestEnv.mjs`):
+
+- `tests/unit/build106-new-user-lifecycle.test.ts` — 56 assertions, EXIT 0
+- `tests/unit/auth-minimal-profile-preservation.test.ts` — 8 assertions, EXIT 0
+- `tests/unit/auth-profile-load-outcome.test.ts` — 19 assertions, EXIT 0
+- `tests/unit/auth-landing-route.test.ts` — 22 assertions, EXIT 0
+- `npx tsc --noEmit` — EXIT 0, 0 errors
 
 ## Historical source identifiers
 

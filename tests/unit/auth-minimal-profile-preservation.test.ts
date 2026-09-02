@@ -2,6 +2,7 @@ import assert from "node:assert";
 
 import { ensureMinimalUserProfile } from "../../lib/auth/authActions.ts";
 import { userRepository, type UserProfile } from "../../lib/repositories/userRepository.ts";
+import { guardMonotonicProfilePatch } from "../../lib/auth/profileMonotonicity.ts";
 
 let assertionCount = 0;
 
@@ -60,6 +61,7 @@ delete (existingProfile as Partial<UserProfile>).healingProgress;
 async function run(): Promise<void> {
   const originalGetUserProfile = userRepository.getUserProfile;
   const originalUpsertUserProfile = userRepository.upsertUserProfile;
+  const originalReconcileMinimalProfile = userRepository.reconcileMinimalProfile;
   const originalUpdatePresence = userRepository.updatePresence;
   let persistedProfile = existingProfile as UserProfile;
   let persistedPatch: Partial<UserProfile> | null = null;
@@ -68,6 +70,15 @@ async function run(): Promise<void> {
   userRepository.upsertUserProfile = async (_uid, patch) => {
     persistedPatch = patch;
     persistedProfile = { ...persistedProfile, ...patch };
+  };
+  // Build 106: the existing-profile reconcile now runs through the transactional
+  // monotonicity guard. Stand in for it with the real guard + a merge.
+  userRepository.reconcileMinimalProfile = async (_uid, patch) => {
+    const guarded = guardMonotonicProfilePatch(persistedProfile, patch);
+    persistedPatch = guarded;
+    const keys = Object.keys(guarded);
+    if (keys.length > 0) persistedProfile = { ...persistedProfile, ...guarded };
+    return keys;
   };
   userRepository.updatePresence = async () => undefined;
 
@@ -81,6 +92,7 @@ async function run(): Promise<void> {
   } finally {
     userRepository.getUserProfile = originalGetUserProfile;
     userRepository.upsertUserProfile = originalUpsertUserProfile;
+    userRepository.reconcileMinimalProfile = originalReconcileMinimalProfile;
     userRepository.updatePresence = originalUpdatePresence;
   }
 

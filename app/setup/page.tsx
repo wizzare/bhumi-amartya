@@ -283,7 +283,15 @@ export default function SetupPage() {
         }
       }
 
-      // 5. Explicit Owner Repair (Ensure Firestore write for wizzare@gmail.com)
+      // 5. Refresh AuthContext so route guards see the finalized profile
+      // (setupCompleted / blueprintStatus) before we route. The redirect must not
+      // occur against a stale AuthContext value. Historical provenance: 0f0ad14e
+      // ("await auth.refreshUserProfile() before redirect; failure blocks redirect").
+      if (auth?.refreshUserProfile) {
+        await auth.refreshUserProfile();
+      }
+
+      // 6. Explicit Owner Repair (Ensure Firestore write for wizzare@gmail.com)
       try {
         const { repairOwnerHumanDesign } = await import("@/lib/humandesign/ownerOverride");
         await repairOwnerHumanDesign(uid, effectiveUser.email || "");

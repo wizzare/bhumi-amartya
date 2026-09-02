@@ -211,11 +211,11 @@ export function buildMissingMinimalProfilePatch(
 }
 
 export const ensureMinimalUserProfile = async (user: User) => {
-  const existingProfile = await userRepository.getUserProfile(user.uid);
+  const initialProfile = await userRepository.getUserProfile(user.uid);
   const now = Timestamp.now();
 
   let bootstrapResult: { ok: boolean; outcome: string } | null = null;
-  const needsBootstrap = !existingProfile || !existingProfile.trialStartedAt || !existingProfile.trialEndsAt;
+  const needsBootstrap = !initialProfile || !initialProfile.trialStartedAt || !initialProfile.trialEndsAt;
   if (needsBootstrap) {
     console.log("[TRIAL BOOTSTRAP TRIGGERED] UID:", user.uid);
     try {
@@ -226,13 +226,27 @@ export const ensureMinimalUserProfile = async (user: User) => {
     }
   }
 
+  // Build 106 new-user lifecycle guard (Master SOT §4.1). `bootstrapCanonicalAccess`
+  // can outlive the AuthContext load timeout; the user may finish `/setup` while it
+  // runs. When a bootstrap await happened, decide create-vs-reconcile from
+  // authoritative state read *after* it — never from `initialProfile` — so a late
+  // call cannot resurrect the profile-missing branch and overwrite a finalized
+  // profile. Returning users with a complete profile skip the extra read.
+  const existingProfile = needsBootstrap
+    ? ((await userRepository.getUserProfile(user.uid)) ?? initialProfile)
+    : initialProfile;
+
   if (existingProfile) {
     const missingFieldsPatch = buildMissingMinimalProfilePatch(
       existingProfile,
       buildMinimalUserProfile(user, now),
     );
     if (Object.keys(missingFieldsPatch).length > 0) {
-      await userRepository.upsertUserProfile(user.uid, missingFieldsPatch);
+      // Transactional reconcile: the read + monotonicity guard + write run in one
+      // Firestore transaction, so a concurrent finalize forces a retry that
+      // re-observes the finalized state (setupCompleted / blueprintStatus / birth
+      // fields are never moved backwards).
+      await userRepository.reconcileMinimalProfile(user.uid, missingFieldsPatch);
     }
     await userRepository.updatePresence(user.uid, {
       email: user.email || existingProfile.email || "",

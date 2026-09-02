@@ -6,6 +6,7 @@ import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { BuildInfo, getRuntimeBuildInfo, hasBuildInfoChanged } from "@/lib/config/buildInfo";
 import type { GaiaProfile } from "@/lib/profile/gaia/types";
 import { stripServerOwnedAccessFields } from "@/lib/billing/serverOwnedAccessFields";
+import { guardMonotonicProfilePatch } from "@/lib/auth/profileMonotonicity";
 
 export type BaselineWellnessProfile = {
   bodyScore: number;
@@ -236,6 +237,43 @@ const markBlueprintRecoveryRequired = async (
   );
 };
 
+/**
+ * Build 106 new-user lifecycle guard (Master SOT §4.1 / Recovery Matrix new-user gate).
+ *
+ * Applies a "fill genuinely-absent fields only" reconciliation patch inside a
+ * single Firestore transaction and strips any key that would move the profile
+ * backwards (`guardMonotonicProfilePatch`). Running read + guard + write in one
+ * transaction means a concurrent `/setup` finalize forces a retry that
+ * re-observes the finalized state, so a late-resuming `ensureMinimalUserProfile`
+ * (whose `bootstrapCanonicalAccess` await outlived the AuthContext load timeout)
+ * can never overwrite completed setup, birth data, or a ready blueprint.
+ * Returns the keys actually written; empty when the guarded patch was a no-op.
+ */
+const reconcileMinimalProfile = async (
+  uid: string,
+  patch: Partial<UserProfile>,
+): Promise<string[]> => {
+  const userRef = doc(db, "users", uid);
+  return debugFirestoreOperation(
+    { operation: "runTransaction", path: `users/${uid}`, uid, payloadKeys: Object.keys(patch) },
+    () =>
+      runTransaction(db, async (tx): Promise<string[]> => {
+        const snap = await tx.get(userRef);
+        const current = snap.exists() ? (snap.data() as Partial<UserProfile>) : null;
+        const guarded = guardMonotonicProfilePatch(current, patch);
+        const writeKeys = Object.keys(guarded);
+        if (writeKeys.length === 0) return [];
+        const payload = stripServerOwnedAccessFields({
+          ...guarded,
+          uid,
+          updatedAt: Timestamp.now(),
+        });
+        tx.set(userRef, sanitizeForFirestore(payload), { merge: true });
+        return writeKeys;
+      }),
+  );
+};
+
 const updateBlueprintStatus = async (uid: string, status: UserProfile["blueprintStatus"]) => {
   const userRef = doc(db, "users", uid);
   const path = `users/${uid}`;
@@ -333,4 +371,5 @@ export const userRepository = {
   updateEmotionalState,
   updateBlueprintStatus,
   markBlueprintRecoveryRequired,
+  reconcileMinimalProfile,
 };
