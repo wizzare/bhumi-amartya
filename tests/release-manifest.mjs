@@ -67,6 +67,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "Build 106 Step 9 Premium display price and live Google Play authority",
+    file: "tests/unit/v5-08-premium-residual.test.ts",
+    kind: "node",
+    evidence: "STATIC_GUARD",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",

@@ -271,7 +271,7 @@ export default function PremiumBhumiPage() {
           </div>
 
           <p className="text-xs text-[#9BB89A] text-center">
-            {t.premiumBhumi?.subscriptionNote || "Langganan bulanan Rp50.000/bulan. Dapat dibatalkan kapan saja melalui Google Play."}
+            {t.premiumBhumi?.subscriptionNote || "Langganan bulanan Rp25.000/bulan. Dapat dibatalkan kapan saja melalui Google Play."}
           </p>
         </section>
 

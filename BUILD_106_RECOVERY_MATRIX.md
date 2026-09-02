@@ -134,7 +134,7 @@ Canonical continuation marker:
 | R-39 | Dynamic eclipses | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/calculateEclipses.ts` (astronomy-engine, Meeus) `findNextGlobalEclipse` / `findNextVisibleEclipse` (null without observer coords — honest unavailable, D-V5-29). `KNOWN_ECLIPSES` array **retired** from `lib/data/astronomicalEvents.ts`; `astroAwarenessEngine.ts` uses `buildUpcomingEclipseEvents`. `AstroTodayCard.tsx` hardcoded "12/28 Agustus 2026" dates + `daysUntil("2026-…")` countdown **removed**; Global Next + Local/Visible Next cards. `v5-astro-core` + `build106-astro-regressions` R-39 block. |
 | R-40 | No Blueprint group in Astro | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | The `{ id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini", … activations.slice(0, 5) }` group and the `Zap` import **removed** from `AstroTodayCard.tsx`. Blueprint activations still feed `buildTransitNarrative` context but are not a standalone Astro group. `build106-astro-regressions` R-40 block. Browser UI check pending. |
 | R-41 | Astro non-diagnostic lens | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVED (unit) | `astroContextFromSynthesis` tags describe the sky (`{body}-retrograde`, `{body}-in-{sign}`, intensity enum), never the user's condition; `majorCycles: { openScope: true }` (no invented signals, D-V5-26). `build106-astro-regressions` R-41 block. |
-| R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | UI/store-price test |
+| R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit + static); device render = DS-PR1 | Display price `Rp25.000/bulan` (id/ms) / `Rp25.000/month` (en) in all three `src/locales/*` bundles (Step 3); `app/premium-bhumi/page.tsx:274` fallback `Rp50.000`→`Rp25.000` (byte-identical to CP-036). No `Rp50.000` in any current user-facing source. `app/upgrade/page.tsx` renders the live Google Play `formattedPrice` for base plan `monthly` (`|| "Google Play"` neutral last), no hardcoded monetary string; native bridge emits `formattedPrice`. `tests/unit/v5-08-premium-residual.test.ts` (46 assertions, in release manifest). Rendered device proof of the live price = DS-PR1. |
 | R-43 | Canonical environment sources | PARTIAL | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit/source) | `service.tsx`: Open-Meteo weather/AQ, astronomy-engine Sun/Moon/circadian, USGS seismic, NOAA SWPC Kp, and Schumann Resonance Live. Each source remains a distinct domain. `v5-environment-context` 29/29. |
 | R-44 | Provenance/unavailable honesty | PRESENT_BUT_REGRESSED | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit) | Every returned domain has source/status/observedAt; unavailable remote providers stay unavailable. USGS outage no longer fabricates `Stabil`; non-finite/out-of-range Schumann/Kp values fail closed. Exact unavailable copy is localized. |
 | R-45 | Three-layer Schumann | MISSING | CP-036 + reconciled corrections | CONTRACT/UI RECOVERED_VERIFIED (unit/static); browser = DS-E1 | Model-labelled SR1–SR5 snapshot, honest local 24h accumulation/window states, graph component, provenance/freshness, Bhumi interpretation, spiritual lens, grounding practice, and non-deterministic disclaimer. `v5-environment-context` + DS-I2 pass; browser rendering remains open. |
@@ -432,6 +432,58 @@ privacy regressions EXIT 0; TypeScript EXIT 0; scoped ESLint EXIT 0 (**0 errors 
 warnings**); no-emulator release runner **PASS=11 FAIL=0 SKIPPED=8 TOTAL=19**; full local synthetic
 Firestore/Auth emulator runner **PASS=19 FAIL=0 SKIPPED=0 TOTAL=19**, `RELEASE_TESTS_PASS`.
 
+## Premium copy / price (canonical recovery order Step 9 — 2026-09-02)
+
+Scope: R-42 (R-PRD-42 / D-V5-32) — canonical monthly subscription **display** price
+`Rp25.000/bulan` across all subscription surfaces; the real Google Play charge is governed by Play
+Console (`bhumi_premium_monthly` / base plan `monthly`) and is never spoofed client-side; where a
+live Play `formattedPrice` is shown it wins over the copy.
+
+Continued from an uncommitted partial Step 9 start left at handoff. Audited against `V5_PRD.md`
+R-PRD-42, `V5_DECISION_LOG.md` D-V5-32, the recovered locale bundles, and CP-036; adopted.
+
+State (working tree, verified):
+
+- **Display price** — `premiumBhumi.subscriptionNote` = `Rp25.000/bulan` (`id-ID`, `ms-MY`) /
+  `Rp25.000/month` (`en-US`) in all three `src/locales/*` bundles (recovered Step 3). The
+  `app/premium-bhumi/page.tsx:274` fallback string is `Rp50.000` → `Rp25.000` — **byte-identical to
+  the CP-036 line** (file/hunk reconciliation, not an invention).
+- **No stale price** — zero `Rp50.000` / `50.000` in any current user-facing source (`app/`,
+  `components/`, `lib/`, `src/locales/`).
+- **Live Play price wins** — `app/upgrade/page.tsx` renders
+  `product.offers.find(basePlanId === "monthly").pricingPhases[0].formattedPrice
+  || offers[0]…formattedPrice || "Google Play"` via `<Row label="Harga" value={price} />`; no
+  hardcoded monetary string (`!/Rp\s?\d/`). The native bridge
+  (`BhumiBillingPlugin.java`) emits `phaseJson.put("formattedPrice", phase.getFormattedPrice())`.
+- **No entitlement / billing regression** — `getEntitlementStatus` remains the single authority in
+  `PremiumLock` / `AccessGuard`; founder/tester/subscriber/trial/free priority, Premium-state UI
+  (active / trial / free / pending / cancelled / retryable / persistence-failure / expired /
+  restore), canonical Google Play product IDs, and the purchase/verify flows are unchanged; no
+  client-side `isPremium: true` bypass; no `DATABASE_URL` / `purchaseToken` / `BillingResponseCode`
+  in the UI.
+
+Recovered / reconciled:
+
+- `tests/unit/v5-08-premium-residual.test.ts` — recovered from CP-036 (which had 18 terse checks)
+  and **reconciled** to a 46-assertion static acceptance guard adding the native `formattedPrice`
+  bridge, canonical Google Play ID (`bhumi_premium_monthly` / `monthly` /
+  `com.bhumiamartya.app`), and purchase/verify-flow-preservation checks. **46 assertions, EXIT 0.**
+- `tests/release-manifest.mjs` — added the entry
+  "Build 106 Step 9 Premium display price and live Google Play authority" (`node` / `STATIC_GUARD`).
+  CP-036 had no `tests/release-manifest.mjs`; this is Build-106 test infra.
+- `app/premium-bhumi/page.tsx` — the one-line fallback-copy hunk (as above).
+
+No product-logic change beyond the fallback string; billing, entitlement, and Android sources were
+read only, never modified.
+
+Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0; `v5-08-premium-residual` **46 assertions EXIT 0**;
+i18n / daily-context / astro / auth regressions EXIT 0; no-emulator release runner
+**PASS=12 FAIL=0 SKIPPED=8 TOTAL=20** (Step-9 suite PASS); full release suite + Firestore/Auth
+emulator **PASS=20 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
+
+Deferred: **DS-PR1** — rendered device/browser proof of the display price + live Play
+`formattedPrice` substitution (no production purchase). R-42 is not full `PASS` until DS-PR1.
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -482,6 +534,7 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-R1** | Wire and render the Step-8 Daily Rhythm contracts: adaptive greeting/orientation, optional needs and equal paths, inline Tiny Step, Continue Yesterday, evening reflection, Comfort interaction, truthful failure states, and weekly/monthly reflection consumer. Add browser acceptance. | R-01, R-02, R-04..R-10, R-14, R-17, R-28 | Build 106 — consumer/UI work in Steps 10–11; browser only when local runtime artifacts are authorized. | OPEN |
 | **DS-N1** | Implement a trusted backend FCM sender/scheduler, per-category notification controls, VAPID web round-trip, Android remote-push plugin/configuration, token lifecycle acceptance, and truthful delivery history; verify in browser/device. | R-32 | Build 106 — notification external/integration acceptance; requires authorized configuration and device/browser test. | OPEN (external/configuration + implementation) |
 | **DS-P1** | Add entry-level lock/unlock, hide-from-history, local-only, and exclude-from-Memory UI; verify filtering/export behavior; reconcile account deletion with the complete data inventory, realtime deletion, entitlement cleanup, and acceptance evidence. | R-20 and privacy/deletion acceptance | Build 106 — privacy consumer and account-deletion hardening before final verification. | OPEN |
+| **DS-PR1** | Rendered device/browser proof of the Premium display price: the `Rp25.000` copy shows on the Premium + Upgrade surfaces, and a real Google Play `formattedPrice` (base plan `monthly`) replaces the copy when the native product is available, with a neutral fallback when it is not. No production purchase. | R-42 (rendered) | Build 106 — verification Step 11 / device QA, when a local runtime / Play sandbox is authorized. | OPEN |
 
 ---
 
