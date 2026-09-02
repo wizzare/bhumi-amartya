@@ -10,6 +10,7 @@ import { emotionalMemoryRepository } from "../repositories/emotionalMemoryReposi
 import { dailyGuidanceRepository } from "../repositories/dailyGuidanceRepository";
 import { meditationRepository } from "../repositories/meditationRepository";
 import { audioHealingRepository } from "../repositories/audioHealingRepository";
+import { memoryCandidateRepository } from "../repositories/memoryCandidateRepository";
 
 export interface MemoryCompilerOptions {
   windowDays?: number; // Configurable window (default 30)
@@ -48,7 +49,8 @@ export class MemoryCompiler {
       recentGuidance,
       reflectionHistory,
       meditations,
-      audioHealings
+      audioHealings,
+      memoryCandidatesRaw
     ] = await Promise.all([
       safeFetch(journeyRepository.getDailyMemory(uid), {
         yesterday: null,
@@ -77,6 +79,7 @@ export class MemoryCompiler {
       safeFetch(reflectionRepository.getRecentWeeklyReflections(uid, 4), []),
       safeFetch(meditationRepository.getMeditationEntries(uid, windowDays), []),
       safeFetch(audioHealingRepository.getAudioHealingEntries(uid, windowDays), []),
+      safeFetch(memoryCandidateRepository.getActiveCandidates(uid), []),
     ]);
 
     // Narrative continuity matching
@@ -118,6 +121,10 @@ export class MemoryCompiler {
       });
     }
 
+    // V5-04: memoryCandidates are active (non-dismissed) candidates; also surface as dominantThemes supplement
+    const memoryCandidates = (memoryCandidatesRaw as any[]) || [];
+    const memoryDerivedThemes = memoryCandidates.filter((c: any) => c.confidence >= 0.4).map((c: any) => c.theme) || [];
+
     // Assemble the complete immutable-by-contract MemoryContext snapshot
     const memoryContext: MemoryContext = {
       journeyNarrative,
@@ -128,9 +135,12 @@ export class MemoryCompiler {
       practiceInsights: (dailyMemory.practiceInsights as any) || {},
       recentPracticePatterns: (dailyMemory.practiceInsights as any)?.patterns || [],
       progressMarkers,
-      dominantThemes: emotionalMemory.recurringThemes?.map((t: any) => t.theme) || [],
+      dominantThemes: [...(emotionalMemory.recurringThemes?.map((t: any) => t.theme) || []), ...memoryDerivedThemes].slice(0, 8),
       recurringWounds: emotionalMemory.recurringWounds?.map((w: any) => w.wound) || [],
       healingEdges: emotionalMemory.nextHealingEdge ? [emotionalMemory.nextHealingEdge] : [],
+
+      // V5-04 extension (non-breaking, cast)
+      ...({ memoryCandidates } as any),
 
       // Structured history placeholders for future sprint/module compatibility
       today: todayState || null,

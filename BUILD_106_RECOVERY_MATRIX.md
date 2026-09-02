@@ -23,7 +23,7 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 |---|---|---|---|---|---|
 | R-01 | Adaptive orientation | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-02 | Optional need discovery | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-03 | Check-in + Memory -> Daily Note | PARTIAL | CP-036 Daily Context | RECOVERY_REQUIRED | unit + browser |
+| R-03 | Check-in + Memory -> Daily Note | PARTIAL | CP-036 Daily Context | CONTRACT RECOVERED (unit); Daily-Note surfacing = DS-M2 | `lib/dailyContext/buildDailyContext.ts` — canonical 5-source priority builder (User Input > Wellness > Confirmed Memory > Astro > Env; higher never overridden by lower). `tests/unit/v5-05-daily-context.test.ts` (7 checks). The `catatanSummary` daily-note text is already surfaced on Dashboard via `SoulReflectionCard`; a dedicated Dashboard Daily Note card vs the Profile `DailyNoteV2` mount is DS-M2. |
 | R-04 | Tiny Step inline | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-05 | Optional user paths | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-06 | Do Nothing valid | PRESENT_CORRECT | Build 105 | PRESERVE | regression test |
@@ -41,13 +41,13 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 | R-18 | Mood trend | PARTIAL | existing components | RECONCILE (not Step 4) | Existing components; reconcile later. |
 | R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `lib/journal/journalSafety.ts` `crisisScanJournalText` (id/en/ms keywords) → resource card + `shouldSuppressAI`; `journalAIContract.ts` `generateJournalAIResponse` reflective-only (2-4 sentences), crisis → `{suppressed, provenance:"none"}`, `sanitizeAIOutput` strips diagnostic language. `build106-journal-contracts` + `v5-03-journaling-acceptance` §7/§8. |
 | R-20 | Entry privacy | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | New implementation, later. |
-| R-21 | Useful Memory continuity | PARTIAL | CP-036 | JOURNAL-SIDE RECOVERED; storage/retrieval = step 5 | `lib/journal/journalMemoryExtraction.ts` `extractMemorySignals` (mode-aware FREE/CBT/EMOTION/GUIDED/SPIRITUAL_AWAKENING); `lib/memory/memoryCandidate.ts` contract (provenance / confidence / promotable). `build106-journal-contracts`. Memory Dashboard + persistence = step 5. |
+| R-21 | Useful Memory continuity | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); Dashboard UI = DS-M1 | Step 4 extraction + Step 5 `lib/repositories/memoryCandidateRepository.ts` (Firestore `journalMemoryCandidates/{uid}/candidates/{id}` + local cache; `upsertFromEntry` evidence accumulation, `getActiveCandidates`) + `lib/memory/memoryPatternAggregator.ts` (`aggregateForJourney`) + `lib/livingIntelligence/memoryCompiler.ts` hunk (active candidates → `dominantThemes` supplement, capped 8). `build106-memory-pipeline` (23). |
 | R-22 | No automatic raw sensitive storage | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | `extractMemorySignals` stores a bounded grounded `snippet` (~40 chars crisis / ~80 normal), never full raw text; `MemoryCandidateEvidence.provenance` distinguishes `user-written` / `ai-interpretation` / `ai-insight`. `build106-journal-contracts` snippet-bounded block. |
-| R-23 | Memory visibility/control | MISSING | CP-036 `app/journey/memory` | DEFERRED to step 5 | `app/journey/memory/page.tsx` — Memory/Daily Context step. |
-| R-24 | Context-aware retrieval | PARTIAL | CP-036 | DEFERRED to step 5 | Retrieval side — Memory step. |
-| R-25 | Journal->Memory->Insight->Experience | PARTIAL | CP-036 | JOURNAL+EXTRACTION side recovered; pipeline end = step 5 | `journalMemoryExtraction` + `memoryCandidate` are the journal→candidate half. |
-| R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | `memoryCandidate.isPromotable` (no auto-promotion of one-offs, ≥3 required — §5), `groundedThemeLabel` non-diagnostic, crisis suppresses extraction. `build106-journal-contracts` thresholds block. |
-| R-27 | 90-day decay/pinning | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (step 5) | `MemoryCandidate.pinned?` field present; decay lifecycle = Memory step. |
+| R-23 | Memory visibility/control | MISSING | CP-036 `app/journey/memory` | CRUD CONTRACT RECOVERED (unit); Dashboard UI = DS-M1 | `memoryCandidateRepository` `confirm` / `correct` (user label) / `dismiss` / `deleteCandidate` state machine (PENDING→CONFIRMED/CORRECTED/DISMISSED). `build106-memory-pipeline` control block. The visual Memory Dashboard (`app/journey/memory/page.tsx` + `MemoryCandidateCard` + `useTranslation` wiring + `/journey` link) is DS-M1. |
+| R-24 | Context-aware retrieval | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `getActiveCandidates` (CONFIRMED/CORRECTED only) feeds `memoryCompiler` `dominantThemes` (confidence ≥ 0.4) and `buildDailyContext` priority-3 `confirmedMemory`. `build106-memory-pipeline` + `v5-05-daily-context`. |
+| R-25 | Journal->Memory->Insight->Experience | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); entry-point wiring = DS-J2 | Journal → `extractMemorySignals` → `memoryCandidateRepository.upsertFromEntry` → `aggregateForJourney` / `memoryCompiler` / `buildDailyContext`. `build106-memory-pipeline`. `upsertFromEntry` is *called* from the journaling save flow — that call site lands with DS-J2. |
+| R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | Step 4 (`isPromotable` ≥3, non-diagnostic `groundedThemeLabel`, crisis suppresses extraction) + Step 5: DISMISSED excluded from `getActiveCandidates` / `aggregateForJourney`; a dismissed theme keeps accumulating evidence but does **not** silently re-promote. `build106-memory-pipeline`. |
+| R-27 | 90-day decay/pinning | MISSING | CP-036 (pinning) + new (decay) | PINNING RECOVERED (contract); decay = NEW_IMPLEMENTATION_REQUIRED | `MemoryCandidate.pinned?` bypasses the ≥3 promotion gate in `aggregateForJourney` (`build106-memory-pipeline` R-27 block). 90-day time-decay of unreinforced themes is not yet implemented — new work, later. |
 | R-28 | Weekly/monthly reflection | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | opt-in + synthesis tests |
 | R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
 | R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
@@ -185,6 +185,44 @@ Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0 (`localJournal` + `journalRepos
 
 Deferred: journaling-UI sub-step (`app/wellness/journaling/page.tsx`, redirects, legacy stubs, 30s autosave wiring, history/search/filter/export UI, `SafetyActionCard` wiring); R-21/R-23/R-24/R-25/R-27 Memory-storage/retrieval/dashboard/decay → step 5; R-14 Comfort Mode / R-17 Continue Yesterday / R-18 Mood trend / R-20 Entry privacy → their own steps.
 
+## Memory / Daily Context / Daily Note (canonical recovery order Step 5 — 2026-09-02)
+
+Scope: the Memory **persistence + retrieval + aggregation pipeline** and the **Daily
+Context** builder. The visual Memory Dashboard is a deferred UI sub-step (DS-M1); the
+"dedicated Dashboard Daily Note card" is a reconciliation question (DS-M2).
+
+Recovered verbatim from CP-036 (`036225f`), blob-SHA verified:
+
+- `lib/dailyContext/buildDailyContext.ts` (129L) — `buildDailyContext` canonical 5-source priority resolver (**User Input > Wellness > Confirmed Memory > Astro > Env**; higher never overridden by lower); `shouldApplyMemory`. Output feeds Catatan Hari Ini / Wellness curation / Panduan Minggu. The one `import type { DailyAstroSynthesis }` is locally stubbed to `any` (marked — reconcile in Step 6; the builder only reads astro as a weak 4th-priority source via `as any`).
+- `lib/memory/memoryPatternAggregator.ts` (49L) — `aggregateForJourney` (filter to `isPromotable` ≥3 **or `pinned`**, exclude `DISMISSED`, sort by confidence); `conciseJourneyNote` (id/en/ms, non-diagnostic).
+- `lib/repositories/memoryCandidateRepository.ts` (204L) — Firestore `journalMemoryCandidates/{uid}/candidates/{id}` + `bhumiMemoryCandidates:{uid}` local cache (offline, cloud-wins); `getCandidates` / `getActiveCandidates` (CONFIRMED+CORRECTED) / `getNonDismissedCandidates`; `upsertFromEntry` (mode-aware via `extractMemorySignals`, evidence accumulation slice(-10), crisis-suppressed skip); `confirm` / `correct(label)` / `dismiss` / `deleteCandidate` state machine; dismissed themes keep accumulating evidence but never silently re-promote.
+- `tests/unit/v5-05-daily-context.test.ts` (51L) — 5-source priority (7 checks), EXIT 0.
+
+Hunk-recovered:
+
+- `lib/livingIntelligence/memoryCompiler.ts` (166→174L) — `+ import memoryCandidateRepository`; `+ safeFetch(getActiveCandidates(uid), [])` into the `Promise.all`; active candidates with confidence ≥ 0.4 supplement `dominantThemes` (capped 8); `memoryCandidates` added to the `MemoryContext` snapshot (cast, non-breaking).
+
+New:
+
+- `tests/unit/build106-memory-pipeline.test.ts` (23 assertions, EXIT 0) — one-off = PENDING (no auto-promotion); evidence accumulation across modes/dates; aggregator promotes ≥3-evidence / pinned only, excludes DISMISSED; confirm/correct/dismiss control; dismissed keeps evidence but stays dismissed; pinned one-off surfaces; `conciseJourneyNote` locale + non-diagnostic.
+
+Not recovered: `scripts/validateDailyNoteV2MirrorContract.ts` — its `./validateDailyNoteV2Helpers` dependency is absent from CP-036 (broken snapshot). Skipped.
+
+`DailyNoteV2` component (224L) is **identical** in Build 105 and CP-036 and is mounted on
+`app/profile/page.tsx:377` in both. CP-036's `DashboardClient.tsx` composition is identical to
+Build 105's (`SafetyActionCard → GuardianIdentityCard → SoulReflectionCard → AstroTodayCard →
+EnvironmentContextCard → WeeklyGuidanceCard → DailyUserFlowGuide`) and surfaces the daily-note
+text via `catatanSummary` on `SoulReflectionCard`. Whether the Master SOT §5 "Daily Note absent
+from Dashboard" item requires a *dedicated* card beyond that is DS-M2.
+
+Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0 (memoryCompiler hunk drop-in — no ripple);
+12 unit suites EXIT 0; full release suite + Firestore/Auth emulator PASS=16 FAIL=0 SKIPPED=0
+("Persistence E2E journal/journey/memory" + "journalMemoryCandidates contracts" PASS).
+
+Deferred: DS-M1 (Memory Dashboard UI), DS-M2 (Dashboard Daily Note reconciliation), R-27 90-day
+time-decay (new implementation), R-28 weekly/monthly reflection (new implementation),
+`upsertFromEntry` call site (lands with DS-J2), Step-6 astro type reconciliation in `buildDailyContext`.
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -225,6 +263,10 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up, before final R-01..46 reconciliation. | OPEN |
 | **DS-2C2** | Real-browser Playwright E2E of the 3 reconciled onboarding surfaces (setup / dashboard boot / login) + the locale switcher + locale persistence round-trip. | GATE_07, R-33/R-34 (browser) | Build 106 — verification step (11) / fresh-account acceptance. | OPEN |
 | **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | **External** — needs an authorized authenticated test account + signup browser driver. Founder/ops to schedule. | BLOCKED (external) |
+| **DS-M1** | Memory Dashboard UI: recover `app/journey/memory/page.tsx` (83L, CP-036) + `components/journey/MemoryCandidateCard` + `app/journey/page.tsx` link; needs `useTranslation()` (react-i18next) wiring — **prereq DS-I1**. Plus browser + CRUD E2E. | R-23 (visual visibility/control), R-21 (browser) | Build 106 — Memory-Dashboard UI sub-step, scheduled with DS-J1/DS-J2 (Inner Work / Journey surfaces land together); DS-I1 first. | OPEN |
+| **DS-M2** | "Daily Note on Dashboard" reconciliation: CP-036 keeps `DailyNoteV2` on Profile and surfaces daily-note text on Dashboard via `catatanSummary`/`SoulReflectionCard`. Decide whether Master SOT §5 "Daily Note absent from Dashboard" requires a dedicated Dashboard card; if yes, design + wire it. | R-03 (Dashboard surfacing), Master SOT §5 | Build 106 — Founder reconciliation decision, then Daily Rhythm / Dashboard step. | OPEN (decision) |
+| **DS-M3** | 90-day memory time-decay of unreinforced themes (R-27) and opt-in weekly/monthly reflection synthesis (R-28) — new implementation (`MemoryCandidate.pinned?`/`lastSeenAt` fields already present). | R-27, R-28 | Build 106 — new-implementation, after the feature-recovery steps. | OPEN |
+| **DS-DC1** | `lib/dailyContext/buildDailyContext.ts` `DailyAstroSynthesis` type is locally stubbed to `any`; reconcile to the real type once `lib/astrology/dailyAstroSynthesis.ts` is recovered. | R-03 (astro source typing) | **Step 6** (Astrology). | OPEN |
 
 ---
 
