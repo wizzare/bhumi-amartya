@@ -61,6 +61,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "Build 106 Step 8 notification, privacy, Daily Rhythm, and Memory decay contracts",
+    file: "tests/unit/build106-step8-contracts.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",
