@@ -15,6 +15,7 @@ import {
 import { calculateHumanDesignTypeFromBirthData } from "@/lib/humandesign/calculateHumanDesignType";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
+import { verifySetupPersisted } from "@/lib/auth/authoritativeProfileGate";
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
 import { Timestamp } from "firebase/firestore";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
@@ -314,16 +315,33 @@ export default function SetupPage() {
         await storageProvider.saveUserBlueprint(blueprint as any);
       }
 
-      // 6. Verify
-      // BUILD 31: Robust verification for Audit/Dev mode
+      // 8. Verify against AUTHORITATIVE persisted state (Build 106, Invariant D).
+      // localStorage success is not proof of persistence. Real users are verified
+      // from a fresh Firestore read of users/{uid} + blueprints/{uid}; audit/dev
+      // identities (Firestore writes permission-denied) fall back to the local mirror.
       const vProfileStr = typeof window !== 'undefined' ? localStorage.getItem(`bhumiProfile:${uid}`) : null;
       const vBlueprintStr = typeof window !== 'undefined' ? localStorage.getItem(`bhumiBlueprint:${uid}`) : null;
       const vProfile = vProfileStr ? JSON.parse(vProfileStr) : null;
       const vBlueprint = vBlueprintStr ? JSON.parse(vBlueprintStr) : null;
 
-      if (vProfile?.setupCompleted === true && vBlueprint && (vProfile.uid === uid || devUser)) {
-        console.log("[POST SETUP VERIFY PASSED]");
-        setDebug(prev => ({ ...prev, verifyStatus: "success" }));
+      // `latestBlueprint` (read above, after the blueprint save + owner repair) is
+      // already an authoritative server read of blueprints/{uid}; reuse it.
+      const serverProfile = devUser
+        ? null
+        : await userRepository.getUserProfile(uid).catch(() => null);
+
+      const verdict = verifySetupPersisted({
+        uid,
+        isAudit: Boolean(devUser),
+        serverProfile,
+        serverBlueprintPresent: Boolean(latestBlueprint),
+        localProfile: vProfile,
+        localBlueprintPresent: Boolean(vBlueprint),
+      });
+
+      if (verdict.ok) {
+        console.log("[POST SETUP VERIFY PASSED]", { source: verdict.source });
+        setDebug(prev => ({ ...prev, verifyStatus: `success:${verdict.source}` }));
 
         // Ensure audit UID is tracked for storageProvider fallback
         if (devUser) {
@@ -333,7 +351,7 @@ export default function SetupPage() {
         console.log("[SETUP ROUTE TO DASHBOARD]");
         router.replace("/dashboard/");
       } else {
-        throw new Error(`Verifikasi data gagal. Profile: ${!!vProfile}, Blueprint: ${!!vBlueprint}`);
+        throw new Error(`Verifikasi data gagal (${verdict.reason}).`);
       }
 
     } catch (err: any) {

@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth/authActions";
 import { useAuth } from "@/context/AuthContext";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { userRepository } from "@/lib/repositories/userRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { participationEngine } from "@/lib/engines/participationEngine";
 import { EmulatorQaLogin } from "@/components/dev/EmulatorQaLogin";
@@ -74,11 +75,32 @@ function LoginContent() {
       console.log("[POST LOGIN CHECK] Checking Profile and Blueprint...");
 
       try {
-        const profile = await storageProvider.getUserProfile();
+        // Prefer AuthContext's server-loaded profile over the local mirror; the
+        // mirror is cleared on sign-out, so after logout/login it is cold.
+        let profile: { uid?: string | null; setupCompleted?: boolean | null } | null =
+          (auth?.userProfile as any) ?? (await storageProvider.getUserProfile());
         const blueprint = await storageProvider.getUserBlueprint();
 
-        const setupCompleted = profile?.setupCompleted === true;
-        const blueprintExists = Boolean(blueprint);
+        let setupCompleted =
+          profile?.setupCompleted === true &&
+          (profile?.uid == null || profile?.uid === authUser.uid);
+
+        // Build 106 Invariant G/D: do not send an authenticated user with
+        // authoritative completed setup to first-time /setup just because the
+        // local mirror is cold. Confirm against the server before routing.
+        if (!setupCompleted) {
+          const server = await userRepository.getUserProfile(authUser.uid).catch(() => null);
+          if (server?.setupCompleted === true) {
+            profile = server as any;
+            setupCompleted = true;
+            await storageProvider.saveUserProfile(server as any).catch(() => {});
+          }
+        }
+
+        // When setup is authoritatively complete the dashboard boot recovers a
+        // cold blueprint on its own, so a missing local blueprint is not a
+        // reason to bounce the user back through setup.
+        const blueprintExists = Boolean(blueprint) || setupCompleted;
 
         console.log("[POST LOGIN CHECK]", {
           uid: authUser.uid,

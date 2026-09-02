@@ -19,6 +19,8 @@ import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRep
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { userRepository } from "@/lib/repositories/userRepository";
+import { reconcileCachedProfileWithServer } from "@/lib/auth/authoritativeProfileGate";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { APP_TIME_REFRESH_MS, getEnvironmentWindowKey } from "@/lib/dailyGuidance/timeOfDayGreeting";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
@@ -610,8 +612,31 @@ export function DashboardClient() {
         let p = await storageProvider.getUserProfile();
         let b = await storageProvider.getUserBlueprint() as any;
 
-        // If profile is missing or setup is incomplete, redirect to setup
-        if (!p || p.setupCompleted !== true) {
+        // Build 106 Invariant G: if the *cached* profile looks missing/incomplete
+        // for this authenticated user, reconcile against authoritative server
+        // state before routing toward /setup. A stale local mirror must not
+        // strand a user whose server profile is finalized.
+        if (!p || p.uid !== auth.user.uid || p.setupCompleted !== true) {
+          const server = await userRepository.getUserProfile(auth.user.uid).catch(() => null);
+          const reconcile = reconcileCachedProfileWithServer({
+            uid: auth.user.uid,
+            cached: p as any,
+            server: server as any,
+          });
+          if (reconcile.action === "hydrate-from-server" && reconcile.profile) {
+            console.log("[DASHBOARD BOOT] Cached profile stale; hydrated from authoritative server state.");
+            p = reconcile.profile as unknown as typeof p;
+            if (reconcile.shouldPersistCache) {
+              await storageProvider.saveUserProfile(p as any).catch(() => {});
+            }
+          } else {
+            setLoading(false);
+            clearTimeout(watchdog);
+            return;
+          }
+        }
+
+        if (!p) {
           setLoading(false);
           clearTimeout(watchdog);
           return;
