@@ -11,18 +11,17 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 ```text
 NEXT_PRIMARY_AGENT                = CODEX
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_AT_HANDOFF_PREP      = 941b37f23c30bff613a42be2f32e8620b0bef3d9
+CURRENT_HEAD_BEFORE_STEP7_DOCS    = 02935170e89c4e79625fc8a6b663237d318f871c
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = Step 7 — Environment / Schumann
+NEXT_SAFE_ACTION                  = Step 8 — Notifications / privacy / remaining canonical requirements
 ```
 
-`CURRENT_HEAD_AT_HANDOFF_PREP` is the last implementation/test commit and was the clean HEAD before
-the documentation-only handoff commit. After checkout, use `git rev-parse HEAD` to identify the
-handoff commit containing this snapshot. The handoff commit must contain documentation only.
+`CURRENT_HEAD_BEFORE_STEP7_DOCS` is the clean implementation/test HEAD before this matrix and the
+continuity handoff were updated. After checkout, use `git rev-parse HEAD` for the newer docs commit.
 
-### Steps 1–6 status
+### Steps 1–7 status
 
 | Step | Recovery unit | Status at handoff | Remaining/deferred boundary |
 |---|---|---|---|
@@ -32,26 +31,34 @@ handoff commit containing this snapshot. The handoff commit must contain documen
 | 4 | Journaling / CBT / data contracts | **RECOVERED_VERIFIED (contract)** | DS-J1, DS-J2, and DS-J3 remain; contract recovery is not UI/browser PASS. |
 | 5 | Memory / Daily Context / Daily Note | **RECOVERED_VERIFIED (pipeline/contract)** | DS-M1, DS-M2, DS-M3, and the `upsertFromEntry` call site in DS-J2 remain. |
 | 6 | Astrology synthesis / regressions | **RECOVERED_VERIFIED (unit/core)** | DS-DC1 is DONE; DS-A1, DS-A2, and Astro browser UI evidence remain open. |
+| 7 | Environment / Schumann | **RECOVERED_VERIFIED (unit/integration contract); browser deferred** | R-43, R-44, and R-46 verified; R-45 UI/contract verified by source + unit but browser rendering remains DS-E1. DS-I2 is DONE. |
 
-Step 7 has **not** been started by this handoff task.
+Step 7 was completed by Codex with file/hunk-level provenance reconciliation; no wholesale checkpoint
+merge or protected-worktree copy was used.
 
 ### Last recorded test evidence
 
-No product tests were rerun for the documentation-only handoff. The latest inherited evidence at
-the implementation/test baseline above is:
+Fresh Step-7 evidence produced by Codex on 2026-09-02:
 
-- latest focused test commit `941b37f`: four Astro suites, 20 + 22 + 11 + 29 = **82** checks/assertions, all EXIT 0;
-- latest Step-6 aggregate verification: `npx tsc --noEmit` EXIT 0; 16 unit suites EXIT 0;
-- latest full release suite with Firestore + Auth emulator: **PASS=16 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
+- `v5-environment-context.test.ts`: **29 passed, 0 failed**, EXIT 0;
+- DS-I2 `v5-i18n.test.ts`: **28 passed, 0 failed**, EXIT 0;
+- priority/integration regressions: `v5-05-daily-context` **7 checks**, `v5-daily-synthesis`
+  **22 passed**, and `build106-i18n-foundation` **108 assertions**, all EXIT 0;
+- `tsc --noEmit --incremental false`: EXIT 0. The first plain `tsc --noEmit` attempt exited 1 only
+  because incremental mode tried to write blocked `tsconfig.tsbuildinfo`; no artifact was created;
+- scoped ESLint: EXIT 0, **0 errors / 4 pre-existing warnings** in the Environment page/card;
+- release runner without emulator after DS-I2: **PASS=10 FAIL=0 SKIPPED=8 TOTAL=18**, EXIT 0;
+- full local Firestore + Auth emulator suite after the final Step-7 source changes and before the
+  DS-I2-only test commit: **PASS=17 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
 
-This is committed historical evidence, not a fresh rerun by Codex and not browser/device/production
-proof.
+No browser/device/production proof was produced. Starting Next dev would create `.next`, which was
+outside this task's explicit no-build-artifact boundary.
 
 ### Open gates at handoff
 
-- Deferred register still open: DS-J1, DS-J2, DS-J3, DS-I1, DS-I2, DS-2C1, DS-2C2,
-  DS-GATE07, DS-M1, DS-M2, DS-M3, DS-A1, and DS-A2. DS-DC1 alone is DONE.
-- R-43 through R-46 remain `RECOVERY_REQUIRED`; these are the Step 7 Environment / Schumann rows.
+- Deferred register still open: DS-J1, DS-J2, DS-J3, DS-I1, DS-2C1, DS-2C2,
+  DS-GATE07, DS-M1, DS-M2, DS-M3, DS-A1, DS-A2, and DS-E1. DS-DC1 and DS-I2 are DONE.
+- R-45 browser rendering evidence remains open as DS-E1; do not promote it to full PASS yet.
 - Genuine fresh non-sample account browser acceptance remains externally blocked (DS-GATE07).
 - Browser evidence remains open for the reconciled onboarding/locale/Astro surfaces.
 - Steps 8–12 and full R-PRD-01..46 reconciliation remain open.
@@ -59,7 +66,7 @@ proof.
 
 Canonical continuation marker:
 
-`NEXT_SAFE_ACTION = Step 7 — Environment / Schumann`
+`NEXT_SAFE_ACTION = Step 8 — Notifications / privacy / remaining canonical requirements`
 
 ## Status vocabulary
 
@@ -119,10 +126,10 @@ Canonical continuation marker:
 | R-40 | No Blueprint group in Astro | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | The `{ id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini", … activations.slice(0, 5) }` group and the `Zap` import **removed** from `AstroTodayCard.tsx`. Blueprint activations still feed `buildTransitNarrative` context but are not a standalone Astro group. `build106-astro-regressions` R-40 block. Browser UI check pending. |
 | R-41 | Astro non-diagnostic lens | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVED (unit) | `astroContextFromSynthesis` tags describe the sky (`{body}-retrograde`, `{body}-in-{sign}`, intensity enum), never the user's condition; `majorCycles: { openScope: true }` (no invented signals, D-V5-26). `build106-astro-regressions` R-41 block. |
 | R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | UI/store-price test |
-| R-43 | Canonical environment sources | PARTIAL | CP-036 | RECOVERY_REQUIRED | service/provenance tests |
-| R-44 | Provenance/unavailable honesty | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | unavailable-state tests |
-| R-45 | Three-layer Schumann | MISSING | CP-036 | RECOVERY_REQUIRED | unit + graph + browser tests |
-| R-46 | Environment as weak context | PARTIAL | CP-036 | RECOVERY_REQUIRED | integration tests |
+| R-43 | Canonical environment sources | PARTIAL | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit/source) | `service.tsx`: Open-Meteo weather/AQ, astronomy-engine Sun/Moon/circadian, USGS seismic, NOAA SWPC Kp, and Schumann Resonance Live. Each source remains a distinct domain. `v5-environment-context` 29/29. |
+| R-44 | Provenance/unavailable honesty | PRESENT_BUT_REGRESSED | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit) | Every returned domain has source/status/observedAt; unavailable remote providers stay unavailable. USGS outage no longer fabricates `Stabil`; non-finite/out-of-range Schumann/Kp values fail closed. Exact unavailable copy is localized. |
+| R-45 | Three-layer Schumann | MISSING | CP-036 + reconciled corrections | CONTRACT/UI RECOVERED_VERIFIED (unit/static); browser = DS-E1 | Model-labelled SR1–SR5 snapshot, honest local 24h accumulation/window states, graph component, provenance/freshness, Bhumi interpretation, spiritual lens, grounding practice, and non-deterministic disclaimer. `v5-environment-context` + DS-I2 pass; browser rendering remains open. |
+| R-46 | Environment as weak context | PARTIAL | Build 105 consumers + CP-036 adapters | RECOVERED_VERIFIED (unit/integration contract) | `buildAIEnvironmentContext` keeps NOAA and Schumann separate and only emits seismic state when available. Existing Daily Context priority remains user → wellness → memory → astro → environment; `v5-05-daily-context` 7 checks EXIT 0. |
 
 ## New-user lifecycle gate
 
@@ -309,8 +316,50 @@ DS-DC1 drop-in — no ripple); 16 unit suites EXIT 0; full release suite + Fires
 **PASS=16 FAIL=0 SKIPPED=0** ("Daily Guidance fail-closed" + all others PASS with the dynamic-eclipse engine).
 
 Deferred: DS-A1 (R-36 consumer wiring into Dashboard/Wellness/Weekly), DS-A2 (major-cycle scope
-beyond eclipses — Founder decision). `DS-I2` (`v5-i18n.test.ts`) still blocked on Step 7
-(`lib/environment/schumann`). Browser UI check of the Astro Today card (R-40) pending.
+beyond eclipses — Founder decision). DS-I2 is now DONE in Step 7. Browser UI check of the Astro
+Today card (R-40) remains pending.
+
+## Environment / Schumann (canonical recovery order Step 7 — 2026-09-02)
+
+Scope: R-43..R-46 plus DS-I2. Candidate blobs for the Environment page/card, service, types,
+context bridge, Schumann helpers/graph, and tests were verified identical across CP-036, checkpoint
+`d2cb236`, and the protected forensic worktree before file/hunk reconciliation. The checkpoint was
+not merged wholesale. Corrections were applied where checkpoint behavior conflicted with current
+canonical rules.
+
+Recovered and reconciled:
+
+- `lib/environment/{types,service,schumann,context_utils,index}.ts(x)` — one canonical Environment
+  contract; bounded remote calls; per-domain source/status/observedAt; Open-Meteo weather/AQ;
+  astronomy-engine Sun/Moon/circadian; USGS seismic availability separated from observed state;
+  NOAA SWPC Kp kept distinct from modelled Schumann SR data; finite/range validation; 90-second
+  polling respect; idempotent local 24h accumulation; honest none/snapshot/partial/full/stale states.
+- `components/dashboard/EnvironmentContextCard.tsx`, `SchumannGraph.tsx`, and
+  `app/dashboard/environment/page.tsx` — unavailable states no longer fabricate `Stabil`; graph
+  renders only accumulated observations; observation/model disclosure, provenance/freshness,
+  Bhumi interpretation, spiritual/energetic lens, grounding practice, and non-deterministic
+  disclaimer are separate layers.
+- `src/locales/{id-ID,en-US,ms-MY}/translation.json` — explicit localized unavailable copy.
+- `tests/unit/v5-environment-context.test.ts` (29/29) — source normalization, finite/range guards,
+  accumulation/idempotency, window states, separate NOAA/Schumann bands, layered reading, source
+  provenance, and all-provider-outage fail-closed behavior.
+- DS-I2 `tests/unit/v5-i18n.test.ts` (28/28) — three-locale bundle, Environment/Schumann labels,
+  snapshot honesty, and timezone rendering. Added to the release manifest. **DS-I2 DONE.**
+
+Canonical corrections beyond the historical checkpoint: Sun timing no longer comes from
+Open-Meteo under a `weather_api` label; circadian has its own astronomy provenance; `calm` is no
+longer cast into the canonical `quiet|mild|active|storm` union; invalid numeric provider values fail
+closed; test termination now occurs after all Schumann state assertions.
+
+Evidence: focused Environment **29 passed / 0 failed**; DS-I2 **28 / 0**; `v5-05-daily-context`
+**7 checks** confirms environment remains priority 5 after user/wellness/memory/astro; TypeScript
+EXIT 0; scoped ESLint EXIT 0 (0 errors, 4 pre-existing warnings); no-emulator release runner
+**PASS=10 FAIL=0 SKIPPED=8 TOTAL=18**; full local Firestore/Auth emulator runner after final source
+changes **PASS=17 FAIL=0 SKIPPED=0**. Browser rendering is DS-E1 because this task prohibited the
+`.next` artifact required by a local Next dev server.
+
+Deferred: DS-E1 only for the Step-7 browser surface. DS-I1 remains the broader post-recovery
+`useTranslation()` migration and is not part of Step 7.
 
 ## Historical source identifiers
 
@@ -348,7 +397,7 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-J2** | Journaling UI behaviour wiring: 5-mode radiogroup + per-mode state; 30s per-mode autosave wiring (`save/load/clearPerModeDraft` + `draftInfo` indicator); `SafetyActionCard` wiring on `crisisScanJournalText`; `zoneBContext` / `getRecommendedMode` advisory context; `<article>` history rendering; export. | R-15 (autosave wiring), R-16 (history UI), R-19 (crisis card render), R-12 | Same as DS-J1. | OPEN |
 | **DS-J3** | Restore the full `tests/unit/v5-03-journaling-acceptance.test.ts` rows removed for the contract subset (original 1.2–1.10, 4.1/4.3–4.6, 5.1–5.4/5.6–5.7, 6.1–6.4, 7.2–7.3, 8.2/8.3/8.7, 9.2, 10.5, 11.*) + browser E2E of a journaling session. | R-12, R-13, R-15, R-16, R-19 (acceptance) | With DS-J1/DS-J2. | OPEN |
 | **DS-I1** | Full `useTranslation()` migration of UI components off the `translations[language]` compat layer (V5_I18N_SPEC §3); widen the ~40 `"id"\|"en"` component prop/param types + add `ms` copy to inline dictionaries. | R-29..R-34 (full UI localization, beyond foundation) | Build 106 — localization component-migration sprint, after the feature-recovery steps. | OPEN |
-| **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | OPEN |
+| **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | **DONE (Step 7, 2026-09-02)** — 28/28, EXIT 0; suite is in the release manifest. |
 | **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up, before final R-01..46 reconciliation. | OPEN |
 | **DS-2C2** | Real-browser Playwright E2E of the 3 reconciled onboarding surfaces (setup / dashboard boot / login) + the locale switcher + locale persistence round-trip. | GATE_07, R-33/R-34 (browser) | Build 106 — verification step (11) / fresh-account acceptance. | OPEN |
 | **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | **External** — needs an authorized authenticated test account + signup browser driver. Founder/ops to schedule. | BLOCKED (external) |
@@ -358,6 +407,7 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-DC1** | `lib/dailyContext/buildDailyContext.ts` `DailyAstroSynthesis` type stub → real import. | R-03 (astro source typing) | Step 6 (Astrology). | **DONE (Step 6, 2026-09-02)** — now `import type { DailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis"`; `build106-astro-regressions` DS-DC1 block, tsc EXIT 0. |
 | **DS-A1** | R-36 consumer wiring: pass `buildDailyAstroSynthesis()` / `astroContextFromSynthesis()` / `weeklyAstroContextFromSynthesis()` into the call sites — `components/dashboard/DashboardClient.tsx` (Catatan Hari Ini, T-ASTRO-08; ~6 lines but embedded in a file with Phase-2C edits), `components/wellness/WellnessPageClient.tsx` + `lib/services/wellnessDailyIntelligence.ts` (~111-line diff) wellness curation, `lib/weeklyGuidance/weeklyGuidanceEngine.ts` (~22-line clean hunk: `astroContext?` param + one lens line). | R-36 (integration) | Build 106 — astro-integration sub-step, per-file hunk reconciliation; `weeklyGuidanceEngine` hunk is low-risk and could land first. | OPEN |
 | **DS-A2** | Major-cycle scope beyond eclipses — `DailyAstroSynthesis.majorCycles` is `{ openScope: true }` by contract (D-V5-26 / handover §5.4): only canonical V5 signals may be added, none invented. Define + wire the allowed large-cycle signals if/when the Founder ratifies them. | R-35 (completeness) | Build 106 — Founder decision, then wire. | OPEN (decision) |
+| **DS-E1** | Browser rendering of Environment/Schumann with mocked geolocation/providers: unavailable USGS must not show `Stabil`; validate none/snapshot/partial/stale/full Schumann states, model/provenance labels, three-layer order, and no merged NOAA+Schumann energy score. | R-45 (browser), R-44 (rendered unavailable state) | Build 106 — verification Step 11, when a local Next runtime/build artifact is authorized. | OPEN (current task prohibited `.next` / build artifacts) |
 
 ---
 
@@ -366,11 +416,11 @@ for its requirement; the release gate stays closed on all of them.
 | Role | Path | Branch @ HEAD | Mutability |
 |---|---|---|---|
 | Forensic evidence (a.k.a. "protected recovery worktree" in Master SOT §6) | `C:\tmp\bhumi-build83-access-hotfix` | `feat/build99` @ `57479c928…` + ~366 dirty entries | **READ ONLY** |
-| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `941b37f` (last implementation/test baseline before handoff docs) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
+| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `0293517` (Step-7 implementation/test baseline before docs) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
 
 Local branch `recovery/build106-product-continuity` created 2026-09-02. Its remote branch remains at
-`d7a679ab98a7583e34fc11fb58da4ec462cd945f`; local recovery work through Step 6 is ahead and has not
-been pushed by this handoff task.
+`d7a679ab98a7583e34fc11fb58da4ec462cd945f`; local recovery work through Step 7 is ahead and has not
+been pushed by this task.
 
 ---
 
