@@ -23,7 +23,7 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 |---|---|---|---|---|---|
 | R-01 | Adaptive orientation | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-02 | Optional need discovery | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-03 | Check-in + Memory -> Daily Note | PARTIAL | CP-036 Daily Context | CONTRACT RECOVERED (unit); Daily-Note surfacing = DS-M2 | `lib/dailyContext/buildDailyContext.ts` — canonical 5-source priority builder (User Input > Wellness > Confirmed Memory > Astro > Env; higher never overridden by lower). `tests/unit/v5-05-daily-context.test.ts` (7 checks). The `catatanSummary` daily-note text is already surfaced on Dashboard via `SoulReflectionCard`; a dedicated Dashboard Daily Note card vs the Profile `DailyNoteV2` mount is DS-M2. |
+| R-03 | Check-in + Memory -> Daily Note | PARTIAL | CP-036 Daily Context | CONTRACT RECOVERED (unit); surfacing = DS-M2, astro wiring = DS-A1 | `lib/dailyContext/buildDailyContext.ts` — canonical 5-source priority builder (User Input > Wellness > Confirmed Memory > Astro > Env; higher never overridden). `v5-05-daily-context` (7 checks). Astro source now typed to the real `DailyAstroSynthesis` (DS-DC1 DONE). Daily-note text is surfaced on Dashboard via `SoulReflectionCard`/`catatanSummary`; dedicated card = DS-M2; the Daily Context → Catatan wiring = DS-A1. |
 | R-04 | Tiny Step inline | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-05 | Optional user paths | PARTIAL | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-06 | Do Nothing valid | PRESENT_CORRECT | Build 105 | PRESERVE | regression test |
@@ -55,13 +55,13 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 | R-32 | Localized notifications | MISSING | CP-036 scheduler | DEFERRED to notifications step (8) | Out of localization-foundation scope. |
 | R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
 | R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
-| R-35 | Single Daily Astro synthesis | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | synthesis tests |
-| R-36 | Astro feeds Wellness/Catatan/Weekly | MISSING | CP-036 | RECOVERY_REQUIRED | integration tests |
-| R-37 | Variable Western events | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | variable-count tests |
-| R-38 | Current-day Tzolkin/Weton | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVE | date tests |
-| R-39 | Dynamic eclipses | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | astronomy tests |
-| R-40 | No Blueprint group in Astro | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | UI test |
-| R-41 | Astro non-diagnostic lens | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVE | copy/priority regression |
+| R-35 | Single Daily Astro synthesis | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/dailyAstroSynthesis.ts` `buildDailyAstroSynthesis` — ONE object (sky/moon/westernEvents/eastern/eclipses/majorCycles), `sourceVersion` stamped, composes the already-proven engines. `AstroTodayCard.tsx` now renders it. `v5-daily-synthesis` (22) + `v5-astro-core` (20) + `build106-astro-regressions` (29). |
+| R-36 | Astro feeds Wellness/Catatan/Weekly | MISSING | CP-036 | ADAPTERS RECOVERED (unit); consumer wiring = DS-A1 | `dailyAstroSynthesis.ts` exports `astroContextFromSynthesis` (→ `wellnessRecommendationEngine.EnvironmentalContext.astroContext`) and `weeklyAstroContextFromSynthesis`. `buildDailyContext.ts` priority-4 astro source now typed to the real `DailyAstroSynthesis`. The Dashboard/Wellness/Weekly call sites that pass the synthesis in = **DS-A1**. |
+| R-37 | Variable Western events | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/relevantWesternEvents.ts` `selectRelevantWesternEvents` — variable-count (retrograde / aspect orb ≤ 6° / ingress ≤ 3 days), never padded. `AstroTodayCard.tsx` `.slice(0, 5)` on `sky.bodies` **removed**; renders `synthesis.westernEvents`. `v5-astro-core` "quiet day yields ZERO events (no slice(0,5) padding)"; `build106-astro-regressions` R-37 block. |
+| R-38 | Current-day Tzolkin/Weton | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVED (unit) | `buildDailyAstroSynthesis` `eastern.{tzolkin,weton}` from `calculateTzolkin`/`calculateWeton` on `canonical.localDateKey` (no birth-data personalization). `v5-daily-synthesis`. |
+| R-39 | Dynamic eclipses | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/calculateEclipses.ts` (astronomy-engine, Meeus) `findNextGlobalEclipse` / `findNextVisibleEclipse` (null without observer coords — honest unavailable, D-V5-29). `KNOWN_ECLIPSES` array **retired** from `lib/data/astronomicalEvents.ts`; `astroAwarenessEngine.ts` uses `buildUpcomingEclipseEvents`. `AstroTodayCard.tsx` hardcoded "12/28 Agustus 2026" dates + `daysUntil("2026-…")` countdown **removed**; Global Next + Local/Visible Next cards. `v5-astro-core` + `build106-astro-regressions` R-39 block. |
+| R-40 | No Blueprint group in Astro | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | The `{ id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini", … activations.slice(0, 5) }` group and the `Zap` import **removed** from `AstroTodayCard.tsx`. Blueprint activations still feed `buildTransitNarrative` context but are not a standalone Astro group. `build106-astro-regressions` R-40 block. Browser UI check pending. |
+| R-41 | Astro non-diagnostic lens | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVED (unit) | `astroContextFromSynthesis` tags describe the sky (`{body}-retrograde`, `{body}-in-{sign}`, intensity enum), never the user's condition; `majorCycles: { openScope: true }` (no invented signals, D-V5-26). `build106-astro-regressions` R-41 block. |
 | R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | UI/store-price test |
 | R-43 | Canonical environment sources | PARTIAL | CP-036 | RECOVERY_REQUIRED | service/provenance tests |
 | R-44 | Provenance/unavailable honesty | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | unavailable-state tests |
@@ -221,7 +221,40 @@ Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0 (memoryCompiler hunk drop-in �
 
 Deferred: DS-M1 (Memory Dashboard UI), DS-M2 (Dashboard Daily Note reconciliation), R-27 90-day
 time-decay (new implementation), R-28 weekly/monthly reflection (new implementation),
-`upsertFromEntry` call site (lands with DS-J2), Step-6 astro type reconciliation in `buildDailyContext`.
+`upsertFromEntry` call site (lands with DS-J2). (DS-DC1 astro-type reconciliation in
+`buildDailyContext` — **DONE in Step 6**.)
+
+## Astrology (canonical recovery order Step 6 — 2026-09-02)
+
+Scope: the Astro Today surface + the canonical **Daily Astro Synthesis** + the known Build 105
+regression fixes. Deep consumer wiring (Astro → Wellness curation / Catatan Hari Ini) is DS-A1.
+
+Recovered verbatim from CP-036 (`036225f`), blob-SHA verified:
+
+- `lib/astrology/calculateEclipses.ts` (108L) — astronomy-engine (Meeus) `findNextGlobalEclipse` / `findNextVisibleEclipse` / `buildUpcomingEclipseEvents`. No hardcoded dates. `findNextVisibleEclipse` returns `null` without observer coordinates (honest unavailable — D-V5-29). **R-39.**
+- `lib/astrology/relevantWesternEvents.ts` (131L) — `selectRelevantWesternEvents` variable-count (retrograde / aspect orb ≤ 6° / ingress ≤ 3 days; the Sun appears only with a reason → count varies 0..15+, never padded); `computeAspects` pure. **R-37.**
+- `lib/astrology/dailyAstroSynthesis.ts` (159L) — `buildDailyAstroSynthesis`: ONE canonical object (sky/moonPhase/westernEvents/eastern{tzolkin,weton}/eclipses{globalNext,localVisible,localAvailable}/majorCycles{openScope:true}), `sourceVersion` stamped. Adapters `astroContextFromSynthesis` (→ `wellnessRecommendationEngine.EnvironmentalContext.astroContext`) and `weeklyAstroContextFromSynthesis`. **R-35 / R-36 (adapters).**
+- `lib/dailyGuidance/canonicalToday.ts` (148L) — `getCanonicalToday` (timezone hierarchy profile > browser > UTC; `localDateKey` for grouping, `calculationInstant` for engines), `getYesterdayCanonical`, `getCalculationInstantForLocalDate`. Dep of the synthesis.
+- `lib/data/astronomicalEvents.ts` (38L → 16L) — `KNOWN_ECLIPSES` array **retired** (comment points to the dynamic source). **R-39.**
+- `components/dashboard/AstroTodayCard.tsx` (51L → 112L) — renders `buildDailyAstroSynthesis`: western group maps `synthesis.westernEvents` (**`.slice(0, 5)` on `sky.bodies` removed** — R-37); eclipse group is `Global Next` + `Local/Visible Next` cards computed from `synthesis.eclipses`, conditionally rendered (**hardcoded "12/28 Agustus 2026" + `daysUntil("2026-…")` countdown removed** — R-39); the **`{ id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini" }` group + `Zap` import removed** (R-40); labels via `translations[language].astroToday` (i18n, Step-3 bundles).
+- `tests/unit/{v5-astro-core, v5-daily-synthesis, t-astro-10-canonical-today}.test.ts` — recovered. `t-astro-10` had a buggy `instantInTimezone` test helper (crossed a day boundary for 23:59 near a large +offset); corrected in-file (marked) — the product utility is verbatim and proven by the other two suites.
+
+Hunk-recovered:
+
+- `lib/engines/astroAwarenessEngine.ts` (180L → 195L) — `- import KNOWN_ECLIPSES` / `+ import buildUpcomingEclipseEvents`; the "5. ECLIPSES" block replaced with a dynamic `buildUpcomingEclipseEvents(baseDate, limitDays)` → `AstroEvent[]` map. **R-39.**
+- `lib/dailyContext/buildDailyContext.ts` — `type DailyAstroSynthesis = any` → `import type { DailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis"`. **DS-DC1 DONE.**
+
+New:
+
+- `tests/unit/build106-astro-regressions.test.ts` (29 assertions, EXIT 0) — pins the R-37 (no `.slice(0,5)`, renders `synthesis.westernEvents`), R-39 (no `KNOWN_ECLIPSES`, no hardcoded dates/countdown, dynamic `findNextGlobalEclipse`, honest null visibility), R-40 (no blueprint group / `Zap`), R-35 (one synthesis object, `sourceVersion`, `majorCycles.openScope`), R-38 (Tzolkin/Weton in synthesis), R-41 (lens tags describe the sky, non-diagnostic) fixes + DS-DC1 closure.
+
+Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0 (astro recovery + `astroAwarenessEngine` hunk +
+DS-DC1 drop-in — no ripple); 16 unit suites EXIT 0; full release suite + Firestore/Auth emulator
+**PASS=16 FAIL=0 SKIPPED=0** ("Daily Guidance fail-closed" + all others PASS with the dynamic-eclipse engine).
+
+Deferred: DS-A1 (R-36 consumer wiring into Dashboard/Wellness/Weekly), DS-A2 (major-cycle scope
+beyond eclipses — Founder decision). `DS-I2` (`v5-i18n.test.ts`) still blocked on Step 7
+(`lib/environment/schumann`). Browser UI check of the Astro Today card (R-40) pending.
 
 ## Historical source identifiers
 
@@ -266,7 +299,9 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-M1** | Memory Dashboard UI: recover `app/journey/memory/page.tsx` (83L, CP-036) + `components/journey/MemoryCandidateCard` + `app/journey/page.tsx` link; needs `useTranslation()` (react-i18next) wiring — **prereq DS-I1**. Plus browser + CRUD E2E. | R-23 (visual visibility/control), R-21 (browser) | Build 106 — Memory-Dashboard UI sub-step, scheduled with DS-J1/DS-J2 (Inner Work / Journey surfaces land together); DS-I1 first. | OPEN |
 | **DS-M2** | "Daily Note on Dashboard" reconciliation: CP-036 keeps `DailyNoteV2` on Profile and surfaces daily-note text on Dashboard via `catatanSummary`/`SoulReflectionCard`. Decide whether Master SOT §5 "Daily Note absent from Dashboard" requires a dedicated Dashboard card; if yes, design + wire it. | R-03 (Dashboard surfacing), Master SOT §5 | Build 106 — Founder reconciliation decision, then Daily Rhythm / Dashboard step. | OPEN (decision) |
 | **DS-M3** | 90-day memory time-decay of unreinforced themes (R-27) and opt-in weekly/monthly reflection synthesis (R-28) — new implementation (`MemoryCandidate.pinned?`/`lastSeenAt` fields already present). | R-27, R-28 | Build 106 — new-implementation, after the feature-recovery steps. | OPEN |
-| **DS-DC1** | `lib/dailyContext/buildDailyContext.ts` `DailyAstroSynthesis` type is locally stubbed to `any`; reconcile to the real type once `lib/astrology/dailyAstroSynthesis.ts` is recovered. | R-03 (astro source typing) | **Step 6** (Astrology). | OPEN |
+| **DS-DC1** | `lib/dailyContext/buildDailyContext.ts` `DailyAstroSynthesis` type stub → real import. | R-03 (astro source typing) | Step 6 (Astrology). | **DONE (Step 6, 2026-09-02)** — now `import type { DailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis"`; `build106-astro-regressions` DS-DC1 block, tsc EXIT 0. |
+| **DS-A1** | R-36 consumer wiring: pass `buildDailyAstroSynthesis()` / `astroContextFromSynthesis()` / `weeklyAstroContextFromSynthesis()` into the call sites — `components/dashboard/DashboardClient.tsx` (Catatan Hari Ini, T-ASTRO-08; ~6 lines but embedded in a file with Phase-2C edits), `components/wellness/WellnessPageClient.tsx` + `lib/services/wellnessDailyIntelligence.ts` (~111-line diff) wellness curation, `lib/weeklyGuidance/weeklyGuidanceEngine.ts` (~22-line clean hunk: `astroContext?` param + one lens line). | R-36 (integration) | Build 106 — astro-integration sub-step, per-file hunk reconciliation; `weeklyGuidanceEngine` hunk is low-risk and could land first. | OPEN |
+| **DS-A2** | Major-cycle scope beyond eclipses — `DailyAstroSynthesis.majorCycles` is `{ openScope: true }` by contract (D-V5-26 / handover §5.4): only canonical V5 signals may be added, none invented. Define + wire the allowed large-cycle signals if/when the Founder ratifies them. | R-35 (completeness) | Build 106 — Founder decision, then wire. | OPEN (decision) |
 
 ---
 

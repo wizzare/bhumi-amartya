@@ -15,10 +15,7 @@
 import type { WellnessSnapshot } from "@/lib/data/types";
 import type { DailyState } from "@/lib/repositories/dailyStateRepository";
 import type { MemoryCandidate } from "@/lib/memory/memoryCandidate";
-// Build 106: DailyAstroSynthesis is recovered in Step 6 (Astrology). This builder
-// only reads astro as a weak 4th-priority source via `as any` casts, so a
-// structural stub is sufficient here — reconcile to the real type in Step 6.
-type DailyAstroSynthesis = any;
+import type { DailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis";
 // Use generic for env to avoid coupling to specific Environment type versions
 type NormalizedEnvironment = any;
 

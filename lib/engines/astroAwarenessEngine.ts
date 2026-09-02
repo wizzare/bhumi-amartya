@@ -1,5 +1,6 @@
 import * as Astronomy from "astronomy-engine";
-import { AstroEvent, KNOWN_ECLIPSES } from "../data/astronomicalEvents";
+import { AstroEvent } from "../data/astronomicalEvents";
+import { buildUpcomingEclipseEvents } from "../astrology/calculateEclipses";
 import { calculateTzolkin } from "../tzolkin/calculateTzolkin";
 import { calculateWuku } from "../weton/calculateWeton";
 
@@ -131,12 +132,26 @@ export const astroAwarenessEngine = {
        }
     }
 
-    // 5. ECLIPSES
-    KNOWN_ECLIPSES.forEach(e => {
-       const eDate = new Date(e.date);
-       if (eDate.getTime() > baseDate.getTime() && eDate.getTime() < baseDate.getTime() + limitDays * 24 * 60 * 60 * 1000) {
-          events.push(e);
-       }
+    // 5. ECLIPSES — dynamic (T-ASTRO-01/12): astronomy-engine search, never hardcoded.
+    const eclipseInfos = buildUpcomingEclipseEvents(baseDate, limitDays);
+    eclipseInfos.forEach((info) => {
+      const isSolar = info.kind === "solar";
+      events.push({
+        id: info.id,
+        type: "eclipse",
+        subType: `${info.kind}_${info.subkind.toLowerCase()}`,
+        title: isSolar ? `Gerhana Matahari ${info.subkind}` : `Gerhana Bulan ${info.subkind}`,
+        date: info.peakUtc.toISOString(),
+        explanation: {
+          id: isSolar
+            ? "Gerhana Matahari menandai jendela untuk menata ulang arah dan awal baru."
+            : "Gerhana Bulan memberi ruang untuk melihat emosi dan pola yang perlu diintegrasikan.",
+          en: isSolar
+            ? "A solar eclipse marks a window to reset direction and begin anew."
+            : "A lunar eclipse opens space to see emotions and patterns that need integrating."
+        },
+        severity: isSolar ? "high" : "medium"
+      });
     });
 
     return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
