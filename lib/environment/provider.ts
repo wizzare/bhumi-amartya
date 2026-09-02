@@ -52,7 +52,7 @@ export class EnvironmentContextProvider implements EnvironmentProvider {
   }
 
   private emptyEarthActivity(): EnvironmentEarthActivity {
-    return { source: notConfigured("bmkg") };
+    return { status: "", dataState: "unavailable", source: notConfigured("bmkg") };
   }
 
   private emptySpaceWeather(): EnvironmentSpaceWeather {

@@ -329,7 +329,7 @@
     "allowLocation": "Allow Location",
     "settingsHint": "Or open Device Settings → Apps → Bhumi Amartya → Permissions → Location.",
     "viewDetail": "View Details",
-    "unavailable": "Not available",
+    "unavailable": "Data not available",
     "fLocation": "Location",
     "fTemperature": "Temperature",
     "fHumidity": "Humidity",

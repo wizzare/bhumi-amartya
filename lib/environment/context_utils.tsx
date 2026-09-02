@@ -17,6 +17,58 @@ export interface AIEnvironmentContext {
   moonSummary: string;
   cautionFlags: string[];
   contextSentence: string;
+  geomagneticActivity?: string;
+  kpIndex?: number | null;
+  schumannStatusLabel?: string;
+  schumannSr1Hz?: number | null;
+  schumannUpdatedAtIso?: string;
+  schumannProvenance?: "modelled-series" | "measured" | "unknown";
+}
+
+export type EnvironmentBand = "quiet" | "mild" | "active" | "storm";
+
+export interface EnvironmentBands {
+  geomagnetic: EnvironmentBand;
+  schumann: EnvironmentBand;
+}
+
+export function deriveEnvironmentBands(ctx: EnvironmentContext): EnvironmentBands {
+  const kp = ctx.spaceWeather?.kpIndex;
+  const geomagnetic: EnvironmentBand = typeof kp !== "number" || kp < 2
+    ? "quiet"
+    : kp < 3 ? "mild" : kp < 5 ? "active" : "storm";
+  const key = (ctx.schumann?.statusKey || "").toLowerCase();
+  let schumann: EnvironmentBand = "quiet";
+  if (/storm|extreme/.test(key)) schumann = "storm";
+  else if (/elevat|moderat|active/.test(key)) schumann = "active";
+  else if (typeof ctx.schumann?.intensity === "number") {
+    schumann = ctx.schumann.intensity >= 2 ? "active" : ctx.schumann.intensity >= 1.5 ? "mild" : "quiet";
+  }
+  return { geomagnetic, schumann };
+}
+
+export function buildEnvironmentSpiritualReading(
+  bands: EnvironmentBands,
+  env: {
+    spiritQuiet: string; spiritMild: string; spiritActive: string; spiritStorm: string;
+    obsNoteQuiet: string; obsNoteMild: string; obsNoteActive: string; obsNoteStorm: string;
+    practiceQuiet: string; practiceMild: string; practiceActive: string; practiceStorm: string;
+    interpNote: string;
+  },
+): { band: EnvironmentBand; observationNote: string; reading: string; practice: string; note: string } {
+  const band: EnvironmentBand = bands.geomagnetic === "storm" || bands.schumann === "storm"
+    ? "storm"
+    : bands.geomagnetic === "active" || bands.schumann === "active"
+      ? "active"
+      : bands.geomagnetic === "mild" || bands.schumann === "mild" ? "mild" : "quiet";
+  const suffix = `${band.charAt(0).toUpperCase()}${band.slice(1)}`;
+  return {
+    band,
+    observationNote: env[`obsNote${suffix}` as keyof typeof env] as string,
+    reading: env[`spirit${suffix}` as keyof typeof env] as string,
+    practice: env[`practice${suffix}` as keyof typeof env] as string,
+    note: env.interpNote,
+  };
 }
 
 export function buildAIEnvironmentContext(ctx: EnvironmentContext): AIEnvironmentContext {
@@ -48,11 +100,16 @@ export function buildAIEnvironmentContext(ctx: EnvironmentContext): AIEnvironmen
     flags.push("uv_current_low");
   }
 
-  if (ctx.earthActivity?.status === "Stabil") {
-    flags.push("earth_stable");
-  } else if (ctx.earthActivity?.status === "Ada aktivitas terdekat") {
-    flags.push("local_seismic_activity");
+  if (ctx.earthActivity?.dataState === "available") {
+    if (ctx.earthActivity.status === "Stabil") flags.push("earth_stable");
+    else if (ctx.earthActivity.status === "Ada aktivitas terdekat") flags.push("local_seismic_activity");
   }
+
+  const kp = ctx.spaceWeather?.kpIndex ?? null;
+  const geomagneticActivity = typeof kp === "number" ? ctx.spaceWeather?.geomagneticActivity : undefined;
+  if (typeof kp === "number" && kp >= 5) flags.push("geomagnetic_storm_level");
+  else if (typeof kp === "number" && kp >= 4) flags.push("geomagnetic_active");
+  if (/(storm|extreme|elevated)/i.test(ctx.schumann?.statusKey || "")) flags.push("schumann_elevated_context");
 
   const circadian = ctx.circadian?.status;
   if (circadian) {
@@ -93,11 +150,17 @@ export function buildAIEnvironmentContext(ctx: EnvironmentContext): AIEnvironmen
     airQualityLabel: aqiLabel,
     aqiValue: ctx.airQuality?.aqi || 0,
     uvLabel: uv,
-    earthActivityStatus: ctx.earthActivity?.status || "Stabil",
+    earthActivityStatus: ctx.earthActivity?.dataState === "available" ? (ctx.earthActivity.status || "—") : "Belum tersedia",
     circadianStatus: ctx.circadian ? `${ctx.circadian.status} / ${ctx.circadian.label}` : "Belum tersedia",
     sunSummary: ctx.astronomy?.subtitle || "Siklus matahari sedang terbaca",
     moonSummary: normalizeMoonPhaseLabel(ctx.moon?.phase),
     cautionFlags: flags,
-    contextSentence
+    contextSentence,
+    geomagneticActivity,
+    kpIndex: kp,
+    schumannStatusLabel: ctx.schumann?.statusLabel,
+    schumannSr1Hz: ctx.schumann?.frequencies?.[0]?.valueHz ?? null,
+    schumannUpdatedAtIso: ctx.schumann?.updatedAtIso,
+    schumannProvenance: ctx.schumann?.provenance,
   };
 }

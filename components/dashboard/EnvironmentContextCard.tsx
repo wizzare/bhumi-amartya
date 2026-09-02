@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Droplets, MapPin, Thermometer } from "lucide-react";
+import { Activity, Droplets, Globe, MapPin, Radio, Thermometer } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { translations } from "@/lib/data/translations";
 import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
@@ -54,6 +56,8 @@ function SummaryItem({
 }
 
 export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardProps) {
+  const { language } = useLanguage();
+  const t = translations[language].environment;
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [location, setLocation] = useState<EnvironmentLocation | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
@@ -122,15 +126,15 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
   return (
     <section className="mt-10 space-y-4">
       <div className="px-1">
-        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">🌍 Kondisi Lingkungan</h3>
-        <p className="mt-1 text-sm text-[#7B8776]">Kondisi dunia di sekitarmu hari ini.</p>
+        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">{"🌍 " + t.title}</h3>
+        <p className="mt-1 text-sm text-[#7B8776]">{t.subtitle}</p>
       </div>
 
       <article className="bhumi-card border-none bg-white p-5 shadow-sm">
         {permission === "denied" || permission === "prompt" ? (
           <div className="flex flex-col items-center justify-center p-4 text-center">
             <p className="text-sm font-medium text-[#7B8776] mb-4">
-              Izin lokasi belum aktif. Bhumi membutuhkan izin lokasi agar bisa membaca kondisi lingkungan terdekatmu.
+              {t.locationPermissionNeeded}
             </p>
             <div className="flex flex-col items-center gap-3">
               <button
@@ -138,11 +142,11 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
                 onClick={handleRequestLocation}
                 className="rounded-full bg-[#4F6658] px-6 py-2.5 text-xs font-bold text-white transition hover:bg-[#405247]"
               >
-                {permission === "denied" ? "Coba Lagi" : "Izinkan Lokasi"}
+                {permission === "denied" ? t.retry : t.allowLocation}
               </button>
               {permission === "denied" && (
                 <p className="text-[10px] text-[#9AA394] leading-relaxed mt-1">
-                  Atau buka Pengaturan Perangkat → Aplikasi → Bhumi Amartya → Izin → Lokasi.
+                  {t.settingsHint}
                 </p>
               )}
             </div>
@@ -150,10 +154,12 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
         ) : (
           <>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <SummaryItem icon={<MapPin size={18} />} label="Lokasi" value={formatLocation(location, permission)} />
-              <SummaryItem icon={<Thermometer size={18} />} label="Suhu" value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Belum tersedia"} />
-              <SummaryItem icon={<Droplets size={18} />} label="Kelembapan" value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : "Belum tersedia"} />
-              <SummaryItem icon={<Activity size={18} />} label="Aktivitas Bumi" value={context?.earthActivity?.status || "Stabil"} />
+              <SummaryItem icon={<MapPin size={18} />} label={t.fLocation} value={formatLocation(location, permission)} />
+              <SummaryItem icon={<Thermometer size={18} />} label={t.fTemperature} value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : t.unavailable} />
+              <SummaryItem icon={<Droplets size={18} />} label={t.fHumidity} value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : t.unavailable} />
+              <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context?.earthActivity?.dataState === "available" ? context.earthActivity.status : t.unavailable} />
+              <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context?.spaceWeather?.geomagneticActivity ?? t.unavailable} />
+              <SummaryItem icon={<Radio size={18} />} label={t.fSchumann} value={context?.schumann?.frequencies.some((item) => typeof item.valueHz === "number") ? `SR1 ${context.schumann.frequencies[0]?.valueHz ?? "—"} Hz` : t.unavailable} />
             </div>
 
             {onOpenDetail && (
@@ -162,7 +168,7 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
                 onClick={onOpenDetail}
                 className="mt-5 w-full rounded-full bg-[#4F6658] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#405247]"
               >
-                Lihat Detail
+                {t.viewDetail}
               </button>
             )}
           </>

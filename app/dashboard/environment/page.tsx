@@ -14,8 +14,16 @@ import {
   Thermometer,
   Wind,
   Zap,
-  Waves
+  Waves,
+  Activity,
+  Radio,
 } from "lucide-react";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { translations } from "@/lib/data/translations";
+import { buildEnvironmentSpiritualReading, deriveEnvironmentBands } from "@/lib/environment/context_utils";
+import { getSchumannSeries } from "@/lib/environment/service";
+import { formatSchumannLocalTimestamp, resolveSchumannUiState } from "@/lib/environment/schumann";
+import { SchumannGraph } from "@/components/dashboard/SchumannGraph";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
@@ -67,6 +75,37 @@ export default function EnvironmentDetailPage() {
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
+  const t = translations[language];
+  const locale = language === "en" ? "en-US" : language === "ms" ? "ms-MY" : "id-ID";
+  const schumannSeries = getSchumannSeries();
+  const schumann = context?.schumann;
+  const hasSchumannObservation = Boolean(schumann?.updatedAtIso || schumann?.frequencies.some((item) => typeof item.valueHz === "number"));
+  const schumannUi = resolveSchumannUiState(hasSchumannObservation ? schumann : undefined, schumannSeries);
+  const localUpdated = formatSchumannLocalTimestamp(schumann?.updatedAtIso, context?.location.timezone, undefined, locale);
+  const statusLabels: Record<string, string> = {
+    Elevated: t.environment.statusElevated,
+    Quiet: t.environment.statusQuiet,
+    Storm: t.environment.statusStorm,
+    Extreme: t.environment.statusExtreme,
+  };
+  const statusPrimary = (schumann?.statusKey && statusLabels[schumann.statusKey]) || schumann?.statusLabel || t.environment.unavailable;
+  const windowLabel = schumannUi.kind === "full"
+    ? t.environment.fullLabel
+    : schumannUi.hoursAvailable >= 0.1
+      ? t.environment.partialTpl.replace("{h}", String(schumannUi.hoursAvailable))
+      : t.environment.schumannWindowTpl.replace("{h}", String(schumannUi.hoursAvailable));
+  const snapshotMetaLine = [
+    schumannUi.startedAtIso
+      ? t.environment.startedTpl.replace("{time}", formatSchumannLocalTimestamp(schumannUi.startedAtIso, context?.location.timezone, undefined, locale))
+      : null,
+    typeof schumannUi.minutesAvailable === "number"
+      ? t.environment.minutesTpl.replace("{m}", String(Math.round(schumannUi.minutesAvailable)))
+      : null,
+  ].filter(Boolean).join(" · ");
+  const spiritual = context
+    ? buildEnvironmentSpiritualReading(deriveEnvironmentBands(context), t.environment)
+    : null;
 
   async function load() {
     setError(null);
@@ -167,7 +206,7 @@ export default function EnvironmentDetailPage() {
             <div className="space-y-4">
               <DetailItem
                 icon={<MapPin size={24} />}
-                label="Lokasi Saat Ini"
+                label={t.environment.fCurrentLocation}
                 value={context.location.cityOrRegency || "Area Terdeteksi"}
                 subValue={`${formatCoord(context.location.coordinates.latitude, true)}, ${formatCoord(context.location.coordinates.longitude, false)}`}
               />
@@ -175,13 +214,13 @@ export default function EnvironmentDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <DetailItem
                   icon={<CloudSun size={20} />}
-                  label="Cuaca"
+                  label={t.environment.fWeather}
                   value={context.weather?.condition || "Belum tersedia"}
                   subValue={context.weather?.temperatureCelsius !== undefined && context.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Menanti data sinkron"}
                 />
                 <DetailItem
                   icon={<Thermometer size={20} />}
-                  label="Suhu"
+                  label={t.environment.fTemperature}
                   value={context.weather?.temperatureCelsius !== undefined && context.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : "Belum tersedia"}
                   subValue={context.weather?.feelsLikeCelsius !== undefined && context.weather?.feelsLikeCelsius !== null ? `Terasa seperti ${context.weather.feelsLikeCelsius}°C` : undefined}
                 />
@@ -190,13 +229,13 @@ export default function EnvironmentDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <DetailItem
                   icon={<Sun size={20} />}
-                  label="Matahari"
+                  label={t.environment.fSun}
                   value={context.astronomy?.sunrise ? `Terbit ${context.astronomy.sunrise}` : "Belum tersedia"}
                   subValue={context.astronomy?.sunset ? `Terbenam ${context.astronomy.sunset}` : "Menanti siklus hari"}
                 />
                 <DetailItem
                   icon={<Moon size={20} />}
-                  label="Bulan"
+                  label={t.environment.fMoon}
                   value={normalizeMoonPhaseLabel(context.moon?.phase)}
                   subValue={context.moon?.illuminationPercent !== undefined && context.moon?.illuminationPercent !== null ? `${context.moon.illuminationPercent}% cahaya` : "Menanti fase malam"}
                 />
@@ -204,7 +243,7 @@ export default function EnvironmentDetailPage() {
 
               <DetailItem
                 icon={<Leaf size={24} />}
-                label="Kualitas Udara (AQI)"
+                label={t.environment.fAirQuality}
                 value={context.airQuality?.aqi !== undefined && context.airQuality?.aqi !== null ? `${context.airQuality.aqi} — ${context.airQuality.label}` : "Belum tersedia"}
                 subValue="Kualitas udara di sekitarmu saat ini."
               />
@@ -212,12 +251,12 @@ export default function EnvironmentDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <DetailItem
                   icon={<Wind size={20} />}
-                  label="Angin"
+                  label={t.environment.fWind}
                   value={context.weather?.windSpeedKph !== undefined && context.weather?.windSpeedKph !== null ? `${context.weather.windSpeedKph} km/jam` : "Belum tersedia"}
                 />
                 <DetailItem
                   icon={<Droplets size={20} />}
-                  label="Kelembapan"
+                  label={t.environment.fHumidity}
                   value={context.weather?.humidityPercent !== undefined && context.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : "Belum tersedia"}
                 />
               </div>
@@ -225,12 +264,12 @@ export default function EnvironmentDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <DetailItem
                   icon={<Gauge size={20} />}
-                  label="Tekanan"
+                  label={t.environment.fPressure}
                   value={context.weather?.pressureHpa !== undefined && context.weather?.pressureHpa !== null ? `${context.weather.pressureHpa} hPa` : "Belum tersedia"}
                 />
                 <DetailItem
                   icon={<Zap size={20} />}
-                  label="Indeks UV"
+                  label={t.environment.fUvIndex}
                   value={(() => {
                     const uvVal = context.weather?.uvCurrent ?? context.airQuality?.uvIndex;
                     if (uvVal === undefined || uvVal === null || Number.isNaN(uvVal)) return "Belum tersedia";
@@ -242,12 +281,85 @@ export default function EnvironmentDetailPage() {
 
               <DetailItem
                 icon={<Waves size={24} />}
-                label="Aktivitas Bumi"
-                value={context.earthActivity?.status || "Stabil"}
-                subValue={context.earthActivity?.latestEarthquake?.title || "Memantau getaran dan pergerakan tanah."}
+                label={t.environment.fEarthActivity}
+                value={context.earthActivity?.dataState === "available" ? context.earthActivity.status : t.environment.unavailable}
+                subValue={context.earthActivity?.latestEarthquake?.title || context.earthActivity?.fallbackCopy}
+              />
+              <DetailItem
+                icon={<Activity size={24} />}
+                label={t.environment.fGeomagnetic}
+                value={context.spaceWeather?.source.status === "available" ? (context.spaceWeather.geomagneticActivity || t.environment.unavailable) : t.environment.unavailable}
+                subValue={context.spaceWeather?.kpIndex !== undefined ? `Kp ${context.spaceWeather.kpIndex}` : undefined}
               />
             </div>
           ) : null}
+
+          {!loading && <section className="mt-10 space-y-4">
+            <h3 className="font-serif text-xl font-bold text-[#4F6658]">{t.environment.fSchumann}</h3>
+            {context && schumann && hasSchumannObservation && spiritual ? (
+              <>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <DetailItem
+                    icon={<Radio size={24} />}
+                    label={t.environment.schumannStatus}
+                    value={statusPrimary}
+                    subValue={`SR1 ${schumann.frequencies[0]?.valueHz ?? "—"} Hz · ${schumann.amplitudePicoTesla ?? "—"} pT`}
+                  />
+                  <DetailItem
+                    icon={<Waves size={24} />}
+                    label={t.environment.layerObservation}
+                    value={t.environment.disclosureModel}
+                    subValue={t.environment.disclosureModelNote}
+                  />
+                </div>
+
+                {schumannUi.kind === "snapshot" ? (
+                  <div className="rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] p-6 text-center">
+                    <p className="text-sm font-semibold text-[#4F6658]">{t.environment.insufficient}</p>
+                    <p className="mt-1 text-xs text-[#7B8776]">{snapshotMetaLine}</p>
+                    <p className="mt-4 text-3xl font-light text-[#A08963]">SR1 {schumann.frequencies[0]?.valueHz ?? "—"} Hz</p>
+                    <p className="text-xs text-[#7B8776]">{schumann.amplitudePicoTesla ?? "—"} pT</p>
+                    <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-[#9AA394]">{t.environment.targetWindow}</p>
+                  </div>
+                ) : schumannUi.kind === "none" ? (
+                  <DetailItem icon={<Radio size={24} />} label={t.environment.fSchumann} value={t.environment.noneAvailable} />
+                ) : (
+                  <>
+                    <SchumannGraph
+                      series={schumannSeries}
+                      amplitudeLabel={t.environment.schumannAmplitude}
+                      powerLabel={t.environment.schumannPower}
+                      windowLabel={windowLabel}
+                    />
+                    {schumannUi.kind === "partial" && <p className="text-[11px] text-[#7B8776]">{t.environment.targetWindow}</p>}
+                  </>
+                )}
+
+                <div className="space-y-1 rounded-2xl border border-[#E8E9E5] bg-white p-4">
+                  <p className="text-[11px] text-[#667064]">
+                    {t.environment.updatedLabel}: <span className="font-semibold">{localUpdated || "—"}</span>
+                    {schumannUi.kind === "stale" || schumann.source.status !== "available" ? ` · ${t.environment.lastKnownLabel} (${t.environment.notLive})` : ""}
+                  </p>
+                  <p className="text-[11px] text-[#667064]">
+                    {t.environment.srcDataLabel}: <span className="font-semibold">Schumann Resonance Live</span> ({t.environment.srcSchumannRole}) · <span className="font-semibold">NOAA SWPC</span> ({t.environment.srcNoaaRole})
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-indigo-50 bg-indigo-50/30 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7C86B4]">{t.environment.layerInterpretation}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#4A5568]">{spiritual.observationNote}</p>
+                </div>
+                <div className="rounded-2xl border border-emerald-50 bg-emerald-50/30 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500">{t.environment.layerSpiritual}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-[#4A5568]">{spiritual.reading}</p>
+                  <p className="mt-3 text-sm font-medium text-[#4F6658]">{t.environment.groundingLabel}: {spiritual.practice}</p>
+                  <p className="mt-3 text-[11px] italic text-[#8B93B8]">{spiritual.note}</p>
+                </div>
+              </>
+            ) : (
+              <DetailItem icon={<Radio size={24} />} label={t.environment.fSchumann} value={t.environment.unavailable} />
+            )}
+          </section>}
 
           <footer className="mt-16 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#9AA394]">
