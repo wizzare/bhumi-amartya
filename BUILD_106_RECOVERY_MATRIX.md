@@ -2,8 +2,64 @@
 
 Status: CANONICAL WORKING MANIFEST
 Primary authority: `BUILD_106_MASTER_SOT.md`
+Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher authority)
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
+
+## Codex continuity snapshot (2026-09-02)
+
+```text
+NEXT_PRIMARY_AGENT                = CODEX
+CURRENT_BRANCH                    = recovery/build106-product-continuity
+CURRENT_HEAD_AT_HANDOFF_PREP      = 941b37f23c30bff613a42be2f32e8620b0bef3d9
+BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
+BUILD_106_ARTIFACT                = DOES_NOT_EXIST
+BUILD_106_RELEASE_GATE            = CLOSED
+NEXT_SAFE_ACTION                  = Step 7 — Environment / Schumann
+```
+
+`CURRENT_HEAD_AT_HANDOFF_PREP` is the last implementation/test commit and was the clean HEAD before
+the documentation-only handoff commit. After checkout, use `git rev-parse HEAD` to identify the
+handoff commit containing this snapshot. The handoff commit must contain documentation only.
+
+### Steps 1–6 status
+
+| Step | Recovery unit | Status at handoff | Remaining/deferred boundary |
+|---|---|---|---|
+| 1 | Governance / canonical docs | **DONE** | Canonical authority is the Master SOT → this matrix → Agent Protocol. |
+| 2 | Genuine-new-user lifecycle | **CODE_COMPLETE / BLOCKED_ON_EXTERNAL_ACCEPTANCE** | Unit + emulator gates pass; DS-2C1, DS-2C2, and externally blocked DS-GATE07 remain. |
+| 3 | Localization foundation | **RECOVERED_VERIFIED (unit foundation)** | DS-I1 UI migration, DS-I2 Step-7-coupled suite, browser locale round-trip, R-31, and R-32 remain. |
+| 4 | Journaling / CBT / data contracts | **RECOVERED_VERIFIED (contract)** | DS-J1, DS-J2, and DS-J3 remain; contract recovery is not UI/browser PASS. |
+| 5 | Memory / Daily Context / Daily Note | **RECOVERED_VERIFIED (pipeline/contract)** | DS-M1, DS-M2, DS-M3, and the `upsertFromEntry` call site in DS-J2 remain. |
+| 6 | Astrology synthesis / regressions | **RECOVERED_VERIFIED (unit/core)** | DS-DC1 is DONE; DS-A1, DS-A2, and Astro browser UI evidence remain open. |
+
+Step 7 has **not** been started by this handoff task.
+
+### Last recorded test evidence
+
+No product tests were rerun for the documentation-only handoff. The latest inherited evidence at
+the implementation/test baseline above is:
+
+- latest focused test commit `941b37f`: four Astro suites, 20 + 22 + 11 + 29 = **82** checks/assertions, all EXIT 0;
+- latest Step-6 aggregate verification: `npx tsc --noEmit` EXIT 0; 16 unit suites EXIT 0;
+- latest full release suite with Firestore + Auth emulator: **PASS=16 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
+
+This is committed historical evidence, not a fresh rerun by Codex and not browser/device/production
+proof.
+
+### Open gates at handoff
+
+- Deferred register still open: DS-J1, DS-J2, DS-J3, DS-I1, DS-I2, DS-2C1, DS-2C2,
+  DS-GATE07, DS-M1, DS-M2, DS-M3, DS-A1, and DS-A2. DS-DC1 alone is DONE.
+- R-43 through R-46 remain `RECOVERY_REQUIRED`; these are the Step 7 Environment / Schumann rows.
+- Genuine fresh non-sample account browser acceptance remains externally blocked (DS-GATE07).
+- Browser evidence remains open for the reconciled onboarding/locale/Astro surfaces.
+- Steps 8–12 and full R-PRD-01..46 reconciliation remain open.
+- Versioning, build artifact creation, deploy, publish, and release-ready claims remain unauthorized.
+
+Canonical continuation marker:
+
+`NEXT_SAFE_ACTION = Step 7 — Environment / Schumann`
 
 ## Status vocabulary
 
@@ -310,10 +366,11 @@ for its requirement; the release gate stays closed on all of them.
 | Role | Path | Branch @ HEAD | Mutability |
 |---|---|---|---|
 | Forensic evidence (a.k.a. "protected recovery worktree" in Master SOT §6) | `C:\tmp\bhumi-build83-access-hotfix` | `feat/build99` @ `57479c928…` + ~366 dirty entries | **READ ONLY** |
-| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `d7a679a` (base) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
+| Implementation workspace | `C:\tmp\bhumi-build106-recovery` | `recovery/build106-product-continuity` @ `941b37f` (last implementation/test baseline before handoff docs) | **AUTHORIZED** — all Build 106 edits/tests/commits here |
 
-Local branch `recovery/build106-product-continuity` created 2026-09-02, tracking
-`origin/recovery/build106-product-continuity` (remote HEAD `d7a679ab98a7583e34fc11fb58da4ec462cd945f`).
+Local branch `recovery/build106-product-continuity` created 2026-09-02. Its remote branch remains at
+`d7a679ab98a7583e34fc11fb58da4ec462cd945f`; local recovery work through Step 6 is ahead and has not
+been pushed by this handoff task.
 
 ---
 
