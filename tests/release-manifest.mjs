@@ -55,6 +55,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "V5 i18n Environment and Schumann integration",
+    file: "tests/unit/v5-i18n.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",
