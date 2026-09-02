@@ -12,11 +12,11 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 CURRENT_PRIMARY_AGENT             = CLAUDE_CODE
 PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–11)
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_STEP11_DOCS   = 6e16274  (test: Step 11 guards for DS-2C1 / DS-AI1 / DS-J4)
+CURRENT_HEAD_BEFORE_STEP11_DOCS   = ff52611  (fix: Step 11 close DS-AI1 native ms synthesis + DS-J4 score/phase de-streak)
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = Step 11 (cont.) — RC-1..RC-11 browser/device/external verification, then Step 12
+NEXT_SAFE_ACTION                  = Step 12 — genuine fresh-account acceptance (DS-GATE07, external) + RC-2 primary-surface browser/device pass in a real-Firebase environment
 ```
 
 Step 9 (Premium copy / price, R-42): DONE — `RECOVERED_VERIFIED (unit + static)`. Rendered
@@ -26,12 +26,18 @@ Step 10 (Full R-PRD-01..46 reconciliation): DONE — canonical deliverable
 `BUILD_106_RECONCILIATION_REPORT.md`. All 46 reconciled, zero `UNKNOWN`, zero false `PASS`;
 two un-owned deferrals assigned (**DS-J4** ← R-18, **DS-AI1** ← R-31); RC-1..RC-11 enumerated.
 
-Step 11 (focused verification + owned-gap closure): commits `1a686db` (fix) + `6e16274` (test).
-**DS-2C1 DONE** (code + emulator); **DS-AI1 PARTIAL** (daily-guidance locale + attribution
-contract + end-to-end id/en/ms plumbing; ms-native synthesis copy + browser = remainder);
-**DS-J4 PARTIAL** (streak-pressure UI removed from rendered surfaces; score-model + browser =
-remainder). Full emulator suite **PASS=23/23** `RELEASE_TESTS_PASS`. See the "Focused
-verification + owned-gap closure" section below.
+Step 11 (focused verification + owned-gap closure): commits `1a686db` (fix) + `6e16274` (test)
++ `ff52611` (fix — native ms synthesis + engine de-streak) + docs.
+**DS-2C1 DONE** (code + emulator; RC-10 CLOSED). **DS-AI1 PARTIAL** — daily-guidance locale +
+attribution contract, end-to-end id/en/ms plumbing, and **native Bahasa Melayu** in
+`unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`);
+remainder = **DS-AI1-themes** (deep theme dicts + full fallback ms) + rendered browser (RC-2).
+**DS-J4 PARTIAL** — rendered streak UI removed + **`progressCalculationEngine` score/growth-phase
+de-streaked** (`activeDays30`, no consecutive term); remainder = `/insights` rendered browser
+(RC-2). Full emulator suite **PASS=23/23** `RELEASE_TESTS_PASS`. Local `next dev` browser QA:
+all 8 Step-11 routes compile + serve HTTP 200, no compile errors; interactive SPA rendering not
+possible without a real Firebase project (env limitation). See the "Focused verification +
+owned-gap closure" section below.
 
 After checkout, use `git rev-parse HEAD` for the newest docs commit (this matrix + the
 reconciliation report + `BUILD_106_HANDOFF.md`).
@@ -119,7 +125,7 @@ Canonical continuation marker:
 | R-15 | Draft autosave/conflict | MISSING | CP-036 | CONTRACT RECOVERED; wiring DEFERRED | `localJournal.ts` `savePerModeDraft` / `loadPerModeDraft` / `clearPerModeDraft` + `getScopedDraftKey(JOURNAL_DRAFT_PREFIX:${journalType}:${uid})` mode-isolated, timestamped. `v5-03-journaling-acceptance` 6.5/6.6. 30s autosave wiring is in the deferred journaling page. |
 | R-16 | Journal history/search/filter/export | MISSING | CP-036 partial | CONTRACT RECOVERED; UI/export DEFERRED | `localJournal.ts` `loadLocalJournalEntries` (multi-entry, newest-first — legacy per-day singleton removed), `getJournalHistoryGroupedByWeek`, `getEntriesByType`. history/search/filter/export UI in the deferred page. |
 | R-17 | Continue Yesterday | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | `canContinueYesterday` accepts only the prior local-calendar-day draft; selector wiring/browser deferred. |
-| R-18 | Mood trend | PARTIAL | existing components | PARTIAL_COMPLETION (Step 11 progressed); owner = DS-J4 | Audit (Step 11): no dedicated MoodTrend component; the mood surface is the Insights page (emotion/body-signal frequencies). **Streak-pressure UI removed** from the rendered progress surfaces — `InsightPageClient.tsx` "🔥 Streak Saat Ini" / "{n} Hari Berturut-turut" section + streak sentence in the closing message; the unmounted `SoulProgress.tsx` ("Gamified Healing" / "Healing Streak 🔥") and `HealingProgressSummary.tsx` de-streaked to "days active" / consistency framing. Guard: `tests/unit/build106-ds-j4-mood-trend-no-streak.test.ts` (21 assertions, in manifest). **DS-J4 remainder:** `lib/engines/progressCalculationEngine.ts` `consistencyScore` is still 40% consecutive-day-streak-weighted and `getGrowthPhase` gates on `streakDays`; plus the `/insights` browser check. |
+| R-18 | Mood trend | PARTIAL | existing components | PARTIAL_COMPLETION (Step 11 — local logic closed); owner = DS-J4 | No dedicated MoodTrend component; the mood surface is the Insights page. **Streak-pressure UI removed** from the rendered surfaces (`InsightPageClient.tsx` "🔥 Streak Saat Ini" / "{n} Hari Berturut-turut" section + streak sentence; unmounted `SoulProgress.tsx` / `HealingProgressSummary.tsx` de-streaked to "days active"). **Score/growth-phase logic de-streaked** — `lib/engines/progressCalculationEngine.ts` `consistencyScore` now weights frequency 30% / **active-days-in-last-30 40%** / recent-7d 30% (no consecutive-day term); `determineJourneyPhase` gates on `activeDays30`; milestone "7 Hari Bertumbuh" → "7 Hari Aktif"; `streakDays` kept as a raw metric only; new `activeDays30` field. Guard `build106-ds-j4-mood-trend-no-streak.test.ts` (26 assertions incl. behavioral: unbroken-run vs gapped same-count → identical score). **DS-J4 remainder:** the `/insights` rendered browser check (RC-2). |
 | R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `lib/journal/journalSafety.ts` `crisisScanJournalText` (id/en/ms keywords) → resource card + `shouldSuppressAI`; `journalAIContract.ts` `generateJournalAIResponse` reflective-only (2-4 sentences), crisis → `{suppressed, provenance:"none"}`, `sanitizeAIOutput` strips diagnostic language. `build106-journal-contracts` + `v5-03-journaling-acceptance` §7/§8. |
 | R-20 | Entry privacy | MISSING | none proven | PARTIAL COMPLETION (new contract/enforcement); UI = DS-P1 | New per-entry `locked/hiddenFromHistory/localOnly/excludeFromMemory` contract. Local-only is rejected by cloud repository; local-only/excluded content is blocked before Memory extraction. Unlock/hide controls and browser acceptance remain deferred. |
 | R-21 | Useful Memory continuity | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); Dashboard UI = DS-M1 | Step 4 extraction + Step 5 `lib/repositories/memoryCandidateRepository.ts` (Firestore `journalMemoryCandidates/{uid}/candidates/{id}` + local cache; `upsertFromEntry` evidence accumulation, `getActiveCandidates`) + `lib/memory/memoryPatternAggregator.ts` (`aggregateForJourney`) + `lib/livingIntelligence/memoryCompiler.ts` hunk (active candidates → `dominantThemes` supplement, capped 8). `build106-memory-pipeline` (23). |
@@ -132,7 +138,7 @@ Canonical continuation marker:
 | R-28 | Weekly/monthly reflection | MISSING | none proven | PARTIAL COMPLETION (new eligibility contract); synthesis/UI = DS-M3 | Opt-in + activity + Sunday/first-of-month eligibility tested; synthesis, persistence, and rendered flow remain open. |
 | R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
 | R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
-| R-31 | AI in user locale | PARTIAL | CP-036 | PARTIAL_COMPLETION (Step 11 progressed); owner = DS-AI1 | Journal AI path was already locale-aware (id/en/ms) + `provenance`-stamped — locked by test. Daily-guidance path (Step 11): `buildDailyGuidancePrompt` now emits a locale-keyed `outputLanguageRule` that explicitly overrides the legacy "(Bahasa Indonesia)" schema hints, plus an `attributionRule` (reflective AI companion, not authority); the id/en/ms locale is carried end to end (route → service → `dailyGuidanceEngine` → `AIGateway` → prompt registry) instead of collapsing to id; `DailyGuidanceInput/Context.language` widened to include `"ms"`. Guard: `tests/unit/build106-ds-ai1-ai-locale-attribution.test.ts` (22 assertions, in manifest). **DS-AI1 remainder:** synthesis / adaptive-practice / circadian engines stay id/en (ms → en per the canonical chain) — locale-native ms synthesis copy; and the rendered en/ms dashboard browser check (RC-9). |
+| R-31 | AI in user locale | PARTIAL | CP-036 | PARTIAL_COMPLETION (Step 11 — local logic closed); owner = DS-AI1 | Journal AI path already locale-aware (id/en/ms) + `provenance`-stamped — locked by test. Daily-guidance path (Step 11): `buildDailyGuidancePrompt` emits a locale-keyed `outputLanguageRule` (overrides the legacy "(Bahasa Indonesia)" schema hints) + an `attributionRule`; id/en/ms carried end to end (route → service → `dailyGuidanceEngine` → `AIGateway` → registry). **Native Bahasa Melayu** added to the deterministic synthesis path: new `lib/i18n/pickLocale.ts` (canonical `ms → en → id` chain); `unifiedBlueprintSynthesis` (`mergeThemes`, 21 `humanizeNeed` clauses, core-need fallbacks, `blueprintSummary`) and `adaptiveDailyPracticeGenerator` (all practice titles/descriptions) now carry native ms; `localDailyGuidanceFallback` resolves `ms → id` for its wrapper strings (Bahasa Melayu/Indonesia mutual intelligibility) rather than `ms → en`; `DailyGuidanceInput/Context.language` = `"id"|"en"|"ms"`. Guard `build106-ds-ai1-ai-locale-attribution.test.ts` (31 assertions incl. behavioral ms synthesis + practice output). **DS-AI1 remainder:** the Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms (**DS-AI1-themes**); and the rendered en/ms dashboard browser check (RC-2 / RC-9). |
 | R-32 | Localized notifications | MISSING | CP-036 partial + Step-8 corrections | PARTIAL COMPLETION VERIFIED; external delivery = DS-N1 | id/en/ms copy, explicit opt-in default, timezone quiet hours, Comfort/low-energy/dismissal suppression, frequency/absence gates, real web-token-only registration, owner-scoped fail-closed persistence, SW, and Android local scheduling are covered. No fake fallback token or false FCM-sent claim. Backend FCM sender, VAPID/browser round-trip, native remote push, per-category settings UI, and device delivery acceptance remain open. |
 | R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
 | R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
@@ -545,8 +551,11 @@ Next runtime is authorized).
 
 ## Focused verification + owned-gap closure (canonical recovery order Step 11 — 2026-09-02)
 
-Started from the three non-browser owned gaps (Founder direction). `AUDIT → ANALYZE → FIX →
-VERIFY → REPORT`. No product-feature redesign; smallest working diff.
+Two passes. **Pass 1** (2026-09-02): the three non-browser owned gaps — DS-2C1 (done),
+DS-AI1 + DS-J4 (contract/UI). **Pass 2** (Founder-directed, same day, before browser QA): close
+the remaining *local logic* — DS-AI1 native `ms` synthesis/output, DS-J4 progress-score /
+growth-phase de-streaking — then a local browser pass for the RC-2 items that are testable
+without a real Firebase project. `AUDIT → ANALYZE → FIX → VERIFY`. No product-feature redesign.
 
 **DS-2C1 — DONE (code + emulator).** `lib/firebase/service.ts` `getUserProfile` no longer
 catches every error and returns `null`; a denied / unavailable read now propagates, and `null`
@@ -559,48 +568,70 @@ release state-machine suite's "I: divergence note" step was updated to verify th
 read PROPAGATES) and `restoreRules()` moved into a `finally` so a step failure cannot leak
 denied rules into later scenarios.
 
-**DS-AI1 — PARTIAL (contract + plumbing).** R-PRD-31. The journal AI path was already
-locale-aware (id/en/ms) and `provenance`-stamped — locked by test. The daily-guidance path:
-`buildDailyGuidancePrompt` now emits an `outputLanguageRule` keyed to `input.language` that
-**explicitly overrides** the legacy `"(Bahasa Indonesia)"` per-field schema hints, plus an
-`attributionRule` (reflective AI companion, tentative phrasing, not authority / not an oracle).
-The user's true locale is carried end to end — `app/api/ai/daily-guidance/route.ts` →
-`lib/services/dailyGuidanceService.ts` → `lib/engines/dailyGuidanceEngine.ts` →
-`AIGateway` → `lib/ai/prompts/registry.ts` → `buildDailyGuidancePrompt` — instead of
-collapsing `ms`/`en` to `id`; `DailyGuidanceInput.language` and `DailyGuidanceContext.language`
-widened to `"id" | "en" | "ms"`. The synthesis / adaptive-practice / circadian engines stay
-id/en (`ms → en` per the canonical D-V5-35 chain). **Remainder:** locale-native `ms` synthesis
-copy, and the rendered en/ms dashboard browser check (RC-9).
+**DS-AI1 — PARTIAL (contract + plumbing + native ms synthesis).** R-PRD-31. Journal AI path
+already locale-aware + `provenance`-stamped. Daily-guidance path: `buildDailyGuidancePrompt`
+emits an `outputLanguageRule` keyed to `input.language` that **explicitly overrides** the legacy
+`"(Bahasa Indonesia)"` per-field hints, plus an `attributionRule`. True locale carried end to
+end (`route → service → dailyGuidanceEngine → AIGateway → registry → buildDailyGuidancePrompt`);
+`DailyGuidanceInput/Context.language` = `"id" | "en" | "ms"`.
 
-**DS-J4 — PARTIAL (rendered surfaces de-streaked).** R-PRD-18 / R-XC-02. Audit: no dedicated
-MoodTrend component; the mood surface is the Insights page. Removed the streak-pressure UI —
-`components/insights/InsightPageClient.tsx` `"🔥 Streak Saat Ini" / "{n} Hari Berturut-turut"`
-section and the streak sentence in the closing message; the unmounted
-`components/dashboard/SoulProgress.tsx` (`"Gamified Healing"`, `"Healing Streak … 🔥"`) and
-`components/profile/HealingProgressSummary.tsx` (`"Healing streak"`) de-streaked to plain
-"days active" / consistency framing. **Remainder:** `lib/engines/progressCalculationEngine.ts`
-`consistencyScore` is still 40% consecutive-day-streak-weighted and `getGrowthPhase` gates on
-`streakDays` (score-model de-streaking is logic; left for the DS-J4 consumer sub-step, not a
-verification-step change), and the `/insights` browser check.
+Step-11-continuation (Founder-directed, before browser QA): **native Bahasa Melayu** added to
+the deterministic path — new `lib/i18n/pickLocale.ts` (id/en/ms picker, canonical `ms → en → id`
+chain); `unifiedBlueprintSynthesis` (`mergeThemes`, 21 `humanizeNeed` clauses, core-need
+fallbacks, `blueprintSummary`) and `adaptiveDailyPracticeGenerator` (every practice
+title/description) now carry native ms; the prompt + orchestrator pass native `ms` into the
+synthesis (no `ms → en` coercion). `localDailyGuidanceFallback` resolves `ms → id` for its
+wrapper strings (Bahasa Melayu/Indonesia mutual intelligibility; `weekdayName` widened to
+`ms-MY`). **Deliberate deviation flagged for Founder:** for generated narrative *prose* the
+fallback uses `ms → id` rather than the D-V5-35 key-fallback `ms → en`, because an Indonesian
+sentence is far more intelligible to a Malay reader than an English one.
 
-New tests (all in `tests/release-manifest.mjs`): `build106-ds2c1-profile-read-error` (10,
-STATIC_GUARD), `build106-ds-ai1-ai-locale-attribution` (22, STRONG_UNIT — journal behavioral +
-daily-guidance guard), `build106-ds-j4-mood-trend-no-streak` (21, STATIC_GUARD).
+**Remainder — DS-AI1-themes (new register row):** the Indonesian-only theme-label dictionaries
+(`getHumanDesignPracticeTheme` / `getLifePathPracticeTheme` / `lifePathThemes` map) and the full
+`localDailyGuidanceFallback` string set (~70 sites, currently `ms → id`); plus the rendered
+en/ms dashboard browser check (RC-2 / RC-9). Not a release-critical blocker on its own.
+
+**DS-J4 — PARTIAL (rendered UI + score/phase logic de-streaked).** R-PRD-18 / R-XC-02. Rendered
+streak UI removed (`InsightPageClient.tsx` "🔥 Streak Saat Ini" section + streak sentence;
+unmounted `SoulProgress.tsx` / `HealingProgressSummary.tsx` → "days active"). Step-11-continuation:
+**`lib/engines/progressCalculationEngine.ts` de-streaked** — `consistencyScore` now weights
+frequency 30% / **active-days-in-last-30 40%** / recent-7d 30% (the consecutive-day `streakScore`
+term is gone; new `countActiveDaysInWindow` helper); `determineJourneyPhase` gates on
+`activeDays30` not `streakDays`; milestone `"7 Hari Bertumbuh"` → `"7 Hari Aktif"`. `streakDays`
+kept as a raw metric only (commented: never chain-pressure UI); new `activeDays30` on
+`ProgressMetrics`. **Remainder:** the `/insights` rendered browser check (RC-2).
+
+New / extended tests (all in `tests/release-manifest.mjs`): `build106-ds2c1-profile-read-error`
+(10, STATIC_GUARD), `build106-ds-ai1-ai-locale-attribution` (31 — journal + daily-guidance guard
++ **behavioral native-ms synthesis / practice** + `pickLocale` contract, STRONG_UNIT),
+`build106-ds-j4-mood-trend-no-streak` (26 — + **behavioral**: unbroken-run vs gapped same-count
+→ identical `consistencyScore`; phase parity; milestone copy, STATIC_GUARD).
 
 Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0; no-emulator release runner
 **PASS=15 FAIL=0 SKIPPED=8 TOTAL=23** EXIT 0; full Firestore/Auth emulator release runner
 **PASS=23 FAIL=0 SKIPPED=0 TOTAL=23**, `RELEASE_TESTS_PASS`, EXIT 0
-(`STRONG_REAL_SDK=6 STRONG_UNIT=11 STATIC_GUARD=5 MOCK_UNIT=1`). No regression — the
-state-machine suite is back to `passed=33 failed=0` after its "I" step was corrected to the
-fixed contract. No version bump / build artifact / deploy / publish / production write.
+(`STRONG_REAL_SDK=6 STRONG_UNIT=11 STATIC_GUARD=5 MOCK_UNIT=1`); state-machine suite
+`passed=33 failed=0`. No version bump / build artifact / deploy / publish / production write.
 
-RC status after Step 11: **RC-10 (DS-2C1) CLOSED**; RC-9 (DS-AI1) and RC-11 (DS-J4) PARTIAL
-with named remainders. RC-1..RC-8 unchanged (browser / device / external / audit — Steps
-11 browser pass and 12).
+**Browser QA (local, Founder-authorized ephemeral `.next` + synthetic `.env.local`, both
+deleted afterward; worktree clean):** a `next dev` (Turbopack) runtime was brought up. All eight
+Step-11-touched routes — `/`, `/login`, `/premium-bhumi`, `/upgrade`, `/insights`, `/dashboard`,
+`/dashboard/environment`, `/journal` — **compile and serve HTTP 200 with zero error markers**;
+the dev log shows **no compile errors / "Module not found" / `⨯`**. This confirms the Step-11
+diffs (incl. the new `lib/i18n/pickLocale.ts` module, the `"id"|"en"|"ms"` type widening, and
+the `progressCalculationEngine` changes) are build-safe app-wide. **Interactive/visual rendering
+of the auth-gated SPA is NOT achievable in this environment** — the synthetic Firebase config
+prevents the client from reaching a real project, so the React tree does not hydrate (same
+limitation as GATE_07 / DS-E1 / DS-R1 / DS-M1 in earlier steps). No `PASS` is claimed for any
+browser-evidence-class gap.
 
-`NEXT_SAFE_ACTION` after Step 11 = continue the RC-1..RC-11 browser/device/external
-verification that a local Next runtime / authorized account allows (RC-2 primary-surface
-browser QA, RC-1/DS-GATE07 external), then Step 12 fresh-account acceptance, Step 13 last.
+RC status after Step 11: **RC-10 (DS-2C1) CLOSED**; **RC-9 (DS-AI1) and RC-11 (DS-J4) local
+logic CLOSED**, rendered browser check outstanding (RC-2). RC-1..RC-8 unchanged (browser /
+device / external / audit).
+
+`NEXT_SAFE_ACTION` after Step 11 = **Step 12** — genuine fresh non-sample account acceptance
+(DS-GATE07, external) + the RC-2 primary-surface browser/device pass in an environment with a
+real Firebase project or emulator-backed web client; then Step 13.
 
 ## Historical source identifiers
 
@@ -637,8 +668,9 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-J1** | Journaling UI relocation: recover `app/wellness/journaling/page.tsx` (594L, CP-036); add `next.config.ts` redirects `/journal` + `/innerwork/journaling` → `/wellness/journaling` (`:path*`); reduce `app/journal/page.tsx` + `app/innerwork/journaling/page.tsx` to redirect stubs. | R-12 (5-mode radiogroup UI), R-16 (history/search/filter UI + export PDF/JSON/text), R-13 (CBT form UI) | Build 106 — journaling-UI sub-step, scheduled **after Step 5** (Memory Dashboard + journaling page land together as the Inner Work surface); or on explicit Founder priority. | OPEN |
 | **DS-J2** | Journaling UI behaviour wiring: 5-mode radiogroup + per-mode state; 30s per-mode autosave wiring (`save/load/clearPerModeDraft` + `draftInfo` indicator); `SafetyActionCard` wiring on `crisisScanJournalText`; `zoneBContext` / `getRecommendedMode` advisory context; `<article>` history rendering; export. | R-15 (autosave wiring), R-16 (history UI), R-19 (crisis card render), R-12 | Same as DS-J1. | OPEN |
 | **DS-J3** | Restore the full `tests/unit/v5-03-journaling-acceptance.test.ts` rows removed for the contract subset (original 1.2–1.10, 4.1/4.3–4.6, 5.1–5.4/5.6–5.7, 6.1–6.4, 7.2–7.3, 8.2/8.3/8.7, 9.2, 10.5, 11.*) + browser E2E of a journaling session. | R-12, R-13, R-15, R-16, R-19 (acceptance) | With DS-J1/DS-J2. | OPEN |
-| **DS-J4** | Mood trend (R-PRD-18): audit the existing Build 105 mood/progress components against the "progress without streaks" contract (R-PRD-18 / R-XC-02); add a unit/static guard asserting no streak / consecutive-day / completion-checklist UI; then browser check. Created by Step 10 to close an un-owned deferral. | R-18 | Build 106 — journaling/insights consumer work, with DS-J1/DS-J2; browser in Step 11. | **PARTIAL (Step 11)** — streak-pressure UI removed from `InsightPageClient.tsx` + the two unmounted progress components; guard in manifest (21). **Remainder:** `progressCalculationEngine.consistencyScore` 40% streak weight + `getGrowthPhase` `streakDays` gating (score-model de-streaking), and the `/insights` browser check. |
-| **DS-AI1** | AI content in user locale + source attribution (R-PRD-31): enforce user-locale rendering + provenance/attribution on the daily-guidance and journal-AI generation paths; unit coverage that a non-id locale profile yields locale-tagged attributed AI output. Created by Step 10 — the recovery order has no numbered "AI step", so R-31's remainder was previously un-owned. | R-31, R-XC-09 (attribution) | Build 106 — AI-output reconciliation sub-step. | **PARTIAL (Step 11)** — journal AI path locked (locale + provenance); daily-guidance prompt now emits a locale-keyed `outputLanguageRule` + `attributionRule` and id/en/ms is carried end to end (no id collapse); guard in manifest (22). **Remainder:** locale-native ms synthesis/adaptive-practice copy (currently ms → en per the canonical chain), and the rendered en/ms dashboard browser check (RC-9). |
+| **DS-J4** | Mood trend (R-PRD-18): de-streak the progress score + growth-phase logic; guard; browser check. | R-18 | Build 106 — journaling/insights consumer work; browser in Step 11 (cont.). | **PARTIAL (Step 11)** — rendered streak UI removed; **score/growth-phase logic de-streaked** (`consistencyScore` → frequency/active-days-30/recent, no consecutive term; `determineJourneyPhase` on `activeDays30`; "7 Hari Aktif" milestone). Guard 26 assertions (behavioral). **Remainder:** `/insights` rendered browser check (RC-2). |
+| **DS-AI1** | AI content in user locale + source attribution (R-PRD-31). | R-31, R-XC-09 | Build 106 — AI-output reconciliation sub-step. | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt `outputLanguageRule` + `attributionRule` + end-to-end id/en/ms plumbing; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); `localDailyGuidanceFallback` wrapper `ms → id`. Guard 31 assertions (behavioral ms). **Remainder:** **DS-AI1-themes** (Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms), and the rendered en/ms browser check (RC-2 / RC-9). |
+| **DS-AI1-themes** | Native Bahasa Melayu for the deeper deterministic-fallback layer: the theme-label dictionaries (`getHumanDesignPracticeTheme`, `getLifePathPracticeTheme`, `lifePathThemes` map, etc.) and every user-facing string in `localDailyGuidanceFallback.ts` (`~70` sites, currently `ms → id`). Split from DS-AI1 at Step 11 as the low-priority residual — the primary AI path already renders true ms and Bahasa Melayu/Indonesia are mutually intelligible. | R-31 (deterministic-fallback completeness) | Build 106 — i18n follow-up sprint, after the browser pass; not a release-critical blocker on its own. | OPEN (new — Step 11) |
 | **DS-I1** | Full `useTranslation()` migration of UI components off the `translations[language]` compat layer (V5_I18N_SPEC §3); widen the ~40 `"id"\|"en"` component prop/param types + add `ms` copy to inline dictionaries. | R-29..R-34 (full UI localization, beyond foundation) | Build 106 — localization component-migration sprint, after the feature-recovery steps. | OPEN |
 | **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | **DONE (Step 7, 2026-09-02)** — 28/28, EXIT 0; suite is in the release manifest. |
 | **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up. | **DONE (Step 11, 2026-09-02)** — `getUserProfile` now propagates a denied/unavailable read (returns `null` only for an absent doc), matching `userRepository.getUserProfile`; non-routing callers (`getUserPlan`/`saveUserPlan`, `resolveActiveProfile` fallback, login cold-mirror fallback) opt into tolerance with `.catch(() => null)`. Guard `tests/unit/build106-ds2c1-profile-read-error.test.ts` (10) + the release state-machine "I" step updated to verify the fix; full emulator suite **PASS=23/23**. |

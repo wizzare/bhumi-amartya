@@ -191,10 +191,11 @@ Every `DS-*` has an owner and a verification step. Status at end of Step 10:
 | DS-J1 | R-PRD-12/13/16 (journaling UI) | Build 106 journaling-UI sub-step (with DS-M1) | OPEN |
 | DS-J2 | R-PRD-15/16/19/25/12 (UI behaviour wiring, `upsertFromEntry` call site) | with DS-J1 | OPEN |
 | DS-J3 | R-PRD-12/13/15/16/19 (full acceptance rows + journaling E2E) | with DS-J1/DS-J2 | OPEN |
-| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + Step 11 browser | **PARTIAL (Step 11)** — streak UI removed from rendered surfaces + guard (21); `progressCalculationEngine` streak weighting + `/insights` browser = remainder |
+| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + browser | **PARTIAL (Step 11)** — rendered streak UI removed **and** `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term); guard 26 (behavioral). Remainder: `/insights` rendered browser check (RC-2) |
 | DS-I1 | R-PRD-29..34 full UI localization | localization component-migration sprint | OPEN |
 | DS-I2 | R-PRD-29/30 extended (`v5-i18n.test.ts`) | Step 7 | **DONE** (28/28, in manifest) |
-| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing + guard (22); ms-native synthesis copy + rendered browser (RC-9) = remainder |
+| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); guard 31 (behavioral ms). Remainder: **DS-AI1-themes** + rendered en/ms browser (RC-2 / RC-9) |
+| **DS-AI1-themes** | R-PRD-31 deterministic-fallback completeness | i18n follow-up sprint (post browser pass) | **OPEN (new — Step 11)** — Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms (~70 sites, currently `ms → id`). Not release-critical on its own — primary AI path renders true ms |
 | DS-2C1 | new-user gate Invariant E secondary path (`lib/firebase/service.ts` read-error swallow) | auth-hardening follow-up | **DONE (Step 11)** — read failure propagates (null = absent doc only); guard (10) + state-machine "I" step updated; emulator PASS=23/23 |
 | DS-2C2 | GATE_07, R-PRD-33/34 browser | verification Step 11 | OPEN |
 | DS-GATE07 | GATE_07_GENUINE_NEW_USER | **External** — authorized account + signup driver; Step 12 | BLOCKED (external) |
@@ -246,9 +247,9 @@ each owned. None is a silent gap.
 | RC-6 | Comfort Mode as first-class path functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-7 | Adaptive check-in + returning-user behaviour functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-8 | Security audit + Privacy audit passed; account deletion reconciled to full data inventory | PRD §5; Master SOT §5 | DS-P1 + a dedicated audit pass | Audit not yet run |
-| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing + guard done. Remaining: ms-native synthesis copy + rendered en/ms browser check |
+| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **LOCAL LOGIC CLOSED (Step 11)** — prompt locale/attribution contract + end-to-end id/en/ms plumbing + native Bahasa Melayu synthesis/practice output. Remaining: DS-AI1-themes (deep theme dicts) + rendered en/ms browser check (RC-2) |
 | RC-10 | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (secondary path) | new-user gate Invariant E | DS-2C1 | **CLOSED (Step 11)** — read failure propagates; guard + state-machine "I" step updated; full emulator suite PASS=23/23 |
-| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **PARTIAL (Step 11)** — audit done, streak UI removed from rendered surfaces + guard. Remaining: `progressCalculationEngine` streak-weight de-streaking + `/insights` browser check |
+| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **LOCAL LOGIC CLOSED (Step 11)** — rendered streak UI removed **and** `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term). Remaining: `/insights` rendered browser check (RC-2) |
 
 Non-blocking reconciliation decisions pending Founder input: DS-M2 (dedicated Dashboard Daily
 Note card y/n), DS-A2 (which large-cycle astro signals, if any, are ratified).
@@ -258,23 +259,37 @@ identity/calculation engines is a pre-existing separate track, not a Build 106 r
 
 ### 11.1 Step 11 progress (2026-09-02)
 
-The three non-browser owned gaps were addressed first (Founder direction). See the matrix
-"Focused verification + owned-gap closure" section for detail.
+Two passes — see the matrix "Focused verification + owned-gap closure" section for detail.
 
 - **RC-10 / DS-2C1 — CLOSED (code + emulator).** `firebaseService.getUserProfile` propagates
   a denied/unavailable read; `null` now means "document absent" only. Non-routing callers keep
   tolerance explicitly. Release state-machine suite corrected to the fixed contract and green
   (`passed=33 failed=0`).
-- **RC-9 / DS-AI1 — PARTIAL.** Daily-guidance prompt now carries a locale-keyed
-  `outputLanguageRule` (overrides the "(Bahasa Indonesia)" hints) + an `attributionRule`, and
-  id/en/ms flows end to end. Journal AI path already compliant. Remainder: ms-native synthesis
-  copy + rendered en/ms browser check.
-- **RC-11 / DS-J4 — PARTIAL.** Streak-pressure UI removed from the rendered progress surfaces.
-  Remainder: `progressCalculationEngine` streak-weight de-streaking + `/insights` browser check.
+- **RC-9 / DS-AI1 — LOCAL LOGIC CLOSED.** Daily-guidance prompt carries a locale-keyed
+  `outputLanguageRule` (overrides the "(Bahasa Indonesia)" hints) + an `attributionRule`;
+  id/en/ms flows end to end. Journal AI path already compliant. Native Bahasa Melayu added to
+  `unifiedBlueprintSynthesis` (`mergeThemes`, 21 `humanizeNeed` clauses, `blueprintSummary`) and
+  `adaptiveDailyPracticeGenerator` (all practice copy) via the new `lib/i18n/pickLocale.ts`;
+  `localDailyGuidanceFallback` wrapper resolves `ms → id` (Bahasa Melayu/Indonesia mutual
+  intelligibility — a **deliberate deviation from the D-V5-35 `ms → en` key-fallback chain for
+  generated prose**, flagged for Founder ratification). Remainder: **DS-AI1-themes** (Indonesian-
+  only theme-label dictionaries + full fallback ms) + rendered en/ms browser check (RC-2).
+- **RC-11 / DS-J4 — LOCAL LOGIC CLOSED.** Rendered streak UI removed **and** the score /
+  growth-phase logic de-streaked: `progressCalculationEngine.consistencyScore` now weights
+  frequency 30% / active-days-in-last-30 40% / recent-7d 30% (no consecutive-day term);
+  `determineJourneyPhase` gates on `activeDays30`; milestone `"7 Hari Bertumbuh"` →
+  `"7 Hari Aktif"`; `streakDays` kept as a raw metric only. Behavioral guard: an unbroken run
+  and the same active-day count with a gap now score identically. Remainder: `/insights`
+  rendered browser check (RC-2).
 
 Verification: `tsc` EXIT 0; no-emulator PASS=15/23; full Firestore/Auth emulator
-**PASS=23 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (+3 new DS guard suites; no regression). No
-version bump / build artifact / deploy / publish / production write.
+**PASS=23 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`; no
+regression across two passes). **Local `next dev` browser QA** (Founder-authorized ephemeral
+`.next` + synthetic `.env.local`, both deleted; worktree clean): all 8 Step-11-touched routes
+compile + serve HTTP 200 with no compile errors — the diffs are build-safe app-wide. Interactive
+SPA rendering is not achievable without a real Firebase project (env limitation), so no
+browser-evidence-class gap is marked `PASS`. No version bump / build artifact / deploy /
+publish / production write.
 
 RC-1..RC-8 unchanged — browser/device/external/audit acceptance, addressed by the remaining
 Step 11 browser pass (RC-2 primary-surface QA) and Step 12 (RC-1 fresh-account, external).
