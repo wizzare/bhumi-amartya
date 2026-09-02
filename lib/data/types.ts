@@ -276,6 +276,10 @@ export interface JournalPrompt {
   };
 }
 
+// T0-06 (D-V5-07) + J0-01 Founder directive: fifth mode is SPIRITUAL_AWAKENING
+// (display: "Spiritual Awakening"). Canonical docs updated in V5-01.
+export type JournalType = "FREE" | "CBT" | "EMOTION" | "GUIDED" | "SPIRITUAL_AWAKENING";
+
 export interface JournalEntry {
   id: string;
   userId: string;
@@ -286,7 +290,37 @@ export interface JournalEntry {
   content: string; // The actual journal text
   wordCount: number;
   durationMinutes: number; // How long they journaled
-  
+
+  // Mode discriminator (V5). Absent on legacy entries — treat as GUIDED.
+  journalType?: JournalType;
+
+  // Mode-specific structured payloads (only one is present, matching journalType)
+  cbt?: {
+    situation?: string;
+    automaticThought?: string;
+    interpretation?: string;
+    evidenceFor?: string;
+    evidenceAgainst?: string;
+    alternativePerspective?: string;
+    underlyingNeed?: string;
+    nextStep?: string;
+    reflectionSummary?: string;
+  };
+  emotion?: {
+    primaryFeeling?: string;
+    bodySensation?: string;
+    triggerContext?: string;
+    needBehindFeeling?: string;
+  };
+  guided?: {
+    promptResponses?: Array<{ questionId?: string; question?: string; answer: string }>;
+  };
+  spiritual?: {
+    experienceDescription?: string;
+    meaningExplored?: string;
+    connectionTheme?: string;
+  };
+
   // Analysis (filled after submission)
   emotionalAnalysis?: EmotionalAnalysis;
   

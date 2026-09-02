@@ -31,23 +31,23 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 | R-08 | No checklist/streak Dashboard | PRESENT_CORRECT | Build 105 | PRESERVE | regression test |
 | R-09 | Returning context | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
 | R-10 | Graceful Daily Rhythm failures | PARTIAL | CP-036 | RECOVERY_REQUIRED | fallback tests |
-| R-11 | Shared journal model + discriminator | MISSING | CP-036 | RECOVERY_REQUIRED | contract tests |
-| R-12 | Five journal modes | MISSING | CP-036 | RECOVERY_REQUIRED | UI + persistence tests |
-| R-13 | Structured safe CBT | MISSING | CP-036 | RECOVERY_REQUIRED | safety + browser tests |
-| R-14 | Comfort Mode | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-15 | Draft autosave/conflict | MISSING | CP-036 | RECOVERY_REQUIRED | timer/conflict tests |
-| R-16 | Journal history/search/filter/export | MISSING | CP-036 partial | RECOVERY_AND_COMPLETION_REQUIRED | integration tests |
-| R-17 | Continue Yesterday | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | browser acceptance |
-| R-18 | Mood trend | PARTIAL | existing components | RECONCILE | integration test |
-| R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERY_REQUIRED | crisis suppression tests |
-| R-20 | Entry privacy | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | privacy tests |
-| R-21 | Useful Memory continuity | PARTIAL | CP-036 | RECOVERY_REQUIRED | memory pipeline tests |
-| R-22 | No automatic raw sensitive storage | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | consent/provenance tests |
-| R-23 | Memory visibility/control | MISSING | CP-036 `app/journey/memory` | RECOVERY_REQUIRED | browser + CRUD tests |
-| R-24 | Context-aware retrieval | PARTIAL | CP-036 | RECOVERY_REQUIRED | retrieval tests |
-| R-25 | Journal->Memory->Insight->Experience | PARTIAL | CP-036 | RECOVERY_REQUIRED | end-to-end pipeline test |
-| R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | boundary/suppression tests |
-| R-27 | 90-day decay/pinning | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | lifecycle tests |
+| R-11 | Shared journal model + discriminator | MISSING | CP-036 | RECOVERED_VERIFIED (contract) | `JournalType` union + optional `journalType?` discriminator + `cbt/emotion/guided/spiritual` payloads in `lib/data/types.ts` + `lib/journal/localJournal.ts` `LocalJournalEntry`. `v5-03-journaling-acceptance` 1.1/2.*/3.*/1.11 + `build106-journal-contracts`. |
+| R-12 | Five journal modes | MISSING | CP-036 | CONTRACT RECOVERED; UI DEFERRED | `JournalType = FREE\|CBT\|EMOTION\|GUIDED\|SPIRITUAL_AWAKENING` (J0-01: uppercase `SPIRITUAL_AWAKENING`, not `spiritual`). i18n `journaling.modes` (5) in all 3 bundles (Step 3). The 5-mode radiogroup UI (`app/wellness/journaling/page.tsx`) is the deferred journaling-UI sub-step. |
+| R-13 | Structured safe CBT | MISSING | CP-036 | RECOVERED_VERIFIED (contract) | `JournalEntry.cbt` = Situation / Automatic Thought / Interpretation / Evidence For+Against / Alternative Perspective / Underlying Need / Next Step / Reflection Summary (R-PRD-13). Non-diagnostic enforced by `journalSafety.sanitizeAIOutput`. `build106-journal-contracts` AI-contract block. CBT UI = deferred sub-step. |
+| R-14 | Comfort Mode | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | Its own concept — not journaling data contract. |
+| R-15 | Draft autosave/conflict | MISSING | CP-036 | CONTRACT RECOVERED; wiring DEFERRED | `localJournal.ts` `savePerModeDraft` / `loadPerModeDraft` / `clearPerModeDraft` + `getScopedDraftKey(JOURNAL_DRAFT_PREFIX:${journalType}:${uid})` mode-isolated, timestamped. `v5-03-journaling-acceptance` 6.5/6.6. 30s autosave wiring is in the deferred journaling page. |
+| R-16 | Journal history/search/filter/export | MISSING | CP-036 partial | CONTRACT RECOVERED; UI/export DEFERRED | `localJournal.ts` `loadLocalJournalEntries` (multi-entry, newest-first — legacy per-day singleton removed), `getJournalHistoryGroupedByWeek`, `getEntriesByType`. history/search/filter/export UI in the deferred page. |
+| R-17 | Continue Yesterday | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | New implementation, later. |
+| R-18 | Mood trend | PARTIAL | existing components | RECONCILE (not Step 4) | Existing components; reconcile later. |
+| R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `lib/journal/journalSafety.ts` `crisisScanJournalText` (id/en/ms keywords) → resource card + `shouldSuppressAI`; `journalAIContract.ts` `generateJournalAIResponse` reflective-only (2-4 sentences), crisis → `{suppressed, provenance:"none"}`, `sanitizeAIOutput` strips diagnostic language. `build106-journal-contracts` + `v5-03-journaling-acceptance` §7/§8. |
+| R-20 | Entry privacy | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (not Step 4) | New implementation, later. |
+| R-21 | Useful Memory continuity | PARTIAL | CP-036 | JOURNAL-SIDE RECOVERED; storage/retrieval = step 5 | `lib/journal/journalMemoryExtraction.ts` `extractMemorySignals` (mode-aware FREE/CBT/EMOTION/GUIDED/SPIRITUAL_AWAKENING); `lib/memory/memoryCandidate.ts` contract (provenance / confidence / promotable). `build106-journal-contracts`. Memory Dashboard + persistence = step 5. |
+| R-22 | No automatic raw sensitive storage | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | `extractMemorySignals` stores a bounded grounded `snippet` (~40 chars crisis / ~80 normal), never full raw text; `MemoryCandidateEvidence.provenance` distinguishes `user-written` / `ai-interpretation` / `ai-insight`. `build106-journal-contracts` snippet-bounded block. |
+| R-23 | Memory visibility/control | MISSING | CP-036 `app/journey/memory` | DEFERRED to step 5 | `app/journey/memory/page.tsx` — Memory/Daily Context step. |
+| R-24 | Context-aware retrieval | PARTIAL | CP-036 | DEFERRED to step 5 | Retrieval side — Memory step. |
+| R-25 | Journal->Memory->Insight->Experience | PARTIAL | CP-036 | JOURNAL+EXTRACTION side recovered; pipeline end = step 5 | `journalMemoryExtraction` + `memoryCandidate` are the journal→candidate half. |
+| R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (contract) | `memoryCandidate.isPromotable` (no auto-promotion of one-offs, ≥3 required — §5), `groundedThemeLabel` non-diagnostic, crisis suppresses extraction. `build106-journal-contracts` thresholds block. |
+| R-27 | 90-day decay/pinning | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED (step 5) | `MemoryCandidate.pinned?` field present; decay lifecycle = Memory step. |
 | R-28 | Weekly/monthly reflection | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | opt-in + synthesis tests |
 | R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
 | R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
@@ -153,6 +153,38 @@ Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0; 8 unit suites EXIT 0 (i18n-fou
 
 Deferred to later steps: `useTranslation()` migration across UI (V5_I18N_SPEC §3); `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann` — Environment step 7); R-31 AI-in-locale (AI step); R-32 localized notifications (step 8); browser E2E of the switcher.
 
+## Journaling / CBT / data contracts (canonical recovery order Step 4 — 2026-09-02)
+
+Scope: the journaling **data contracts** + safety / AI / mode-aware extraction libs.
+The V5 journaling **UI relocation** (a new `app/wellness/journaling/page.tsx`, `next.config.ts`
+`/journal` + `/innerwork/journaling` → `/wellness/journaling` redirects, and gutting the two
+legacy pages to stubs) is a **deferred journaling-UI sub-step** — an architectural URL change,
+not a data contract; the existing Build 105 journal pages keep working meanwhile.
+
+Recovered verbatim from CP-036 (`036225f`), blob-SHA verified:
+
+- `lib/journal/journalSafety.ts` (70L) — `crisisScanJournalText` (id/en/ms crisis + support keywords) → `{ level, matchedKeywords, shouldShowResourceCard, shouldSuppressAI }`; `containsDiagnosticLanguage` / `sanitizeAIOutput` (reflective fallback, never a diagnostic claim). Zero imports.
+- `lib/journal/journalAIContract.ts` (63L) — `generateJournalAIResponse` reflective-only 2-4 sentences, per-mode hint, `provenance: "ai-insight" | "none"`, crisis → `{ suppressed:true, provenance:"none" }`.
+- `lib/journal/journalMemoryExtraction.ts` (149L) — `extractMemorySignals(entry, uid)` mode-aware per FREE / CBT / EMOTION / GUIDED / SPIRITUAL_AWAKENING; crisis content → `suppressed:true`; evidence carries a bounded grounded `snippet`, never full raw text.
+- `lib/memory/memoryCandidate.ts` (64L) — `MemoryCandidate` / `MemoryCandidateEvidence` / `MemoryProvenance` contract; `computeConfidence`, `isPromotable` (≥3, no one-off auto-promotion — R-26 §5), `groundedThemeLabel` (non-diagnostic).
+- `lib/journal/localJournal.ts` (263L → 388L) — `LocalJournalEntry` extended with `journalType?` / `provenance?` / mode payloads / optional `id?`; `theme: JournalTheme` widened to `theme: string`; `loadLocalJournalEntries` now returns the **full multi-entry collection newest-first** (legacy per-day-singleton clearing removed — the R-16 regression); + `getScopedDraftKey` / `savePerModeDraft` / `loadPerModeDraft` / `clearPerModeDraft` (mode-isolated, timestamped — R-15) + `getJournalHistoryGroupedByWeek` / `getEntriesByType` (R-16) + `GENERIC_JOURNAL_THEME` / `createGenericJournalPrompt` (honest empty-context, no fabricated theme).
+- `lib/repositories/journalRepository.ts` (90L → 118L) — journal Firestore contract.
+- `tests/unit/v5-03-journaling-acceptance.test.ts` (155L) — recovered then **trimmed to the contract-layer subset** (rows that read the deferred `app/wellness/journaling/page.tsx` / `next.config.ts` are marked and return with the UI sub-step). 36 assertions, EXIT 0.
+
+Hunk-recovered:
+
+- `lib/data/types.ts` — the `JournalType` union + `JournalEntry` `journalType?` discriminator + `cbt/emotion/guided/spiritual` optional payloads (purely additive; legacy entries → treated as GUIDED). The unrelated CP-036 enneagram-field removal was NOT taken; `UserProfile.language` widened to `+"ms"` (D-V5-35 consistency).
+
+New:
+
+- `tests/unit/build106-journal-contracts.test.ts` (38 assertions, EXIT 0) — `extractMemorySignals` mode-aware + legacy-as-FREE; crisis suppression; evidence-snippet bounded (R-22/R-26); `memoryCandidate` thresholds (no one-off promotion); AI contract reflective + non-diagnostic + crisis-suppressed across id/en/ms.
+
+Enum reconciliation: V5_DATA_MODEL.md's `journalType: ... | spiritual` (lowercase) is superseded — the canonical value is **`SPIRITUAL_AWAKENING`** (uppercase, Founder directive J0-01 / D-V5-07), per `lib/data/types.ts`. Provenance ledger row for V5_DATA_MODEL updated.
+
+Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0 (`localJournal` + `journalRepository` + `types.ts` recovery is drop-in — no consumer ripple); 10 unit suites EXIT 0; full release suite + Firestore/Auth emulator PASS=16 FAIL=0 SKIPPED=0.
+
+Deferred: journaling-UI sub-step (`app/wellness/journaling/page.tsx`, redirects, legacy stubs, 30s autosave wiring, history/search/filter/export UI, `SafetyActionCard` wiring); R-21/R-23/R-24/R-25/R-27 Memory-storage/retrieval/dashboard/decay → step 5; R-14 Comfort Mode / R-17 Continue Yesterday / R-18 Mood trend / R-20 Entry privacy → their own steps.
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -200,7 +232,7 @@ recovery branch — no body rewrite (historical requirements preserved).
 |---|---|---|---|---|
 | `V5_SOURCE_OF_TRUTH.md` | CP-036 `036225f` | `970cc767…` | RECOVERED_VERIFIED (provenance) | §4 stray "6 target locales" phrasing — CURRENT canonical scope is 3 (id/en/ms) + 3 deferred, D-V5-35. §6 "V4 Closure Requirements" OPEN list predates Build 105 hardening — reconcile per item during the relevant recovery step; Master SOT wins. |
 | `V5_PRD.md` | CP-036 `036225f` | `8bbaf34e…` | RECOVERED_VERIFIED (provenance) | Canonical source of the `R-PRD-01..46` text used by this matrix. Consistent with Master SOT §3. No stale content found. |
-| `V5_DATA_MODEL.md` | CP-036 `036225f` | `dc21c258…` | RECOVERED_VERIFIED (provenance) | §6 acceptance "supports all six canonical locales" — stale; CURRENT = 3 + 3 deferred (D-V5-35). `journalType` enum shows `spiritual`; V5 SOT/PRD rename fifth mode to `SPIRITUAL_AWAKENING` (display "Spiritual Awakening", directive J0-01) — internal key value to be resolved in recovery Step 4. Code-fence prefixes are corrupted in the snapshot (cosmetic). |
+| `V5_DATA_MODEL.md` | CP-036 `036225f` | `dc21c258…` | RECONCILED (Step 4, enum) | §6 acceptance "supports all six canonical locales" — stale; CURRENT = 3 + 3 deferred (D-V5-35). `journalType` enum shows lowercase `spiritual` — **SUPERSEDED**: the canonical value is `SPIRITUAL_AWAKENING` (uppercase; Founder directive J0-01 / D-V5-07), matching `lib/data/types.ts` and `lib/journal/localJournal.ts` recovered in Step 4. Code-fence prefixes are corrupted in the snapshot (cosmetic). |
 | `V5_DECISION_LOG.md` | CP-036 `036225f` | `4e8c8f56…` | RECOVERED_VERIFIED (provenance) | Full decision reconciliation deferred to the recovery steps that consume each decision (localization = Step 3, journaling = Step 4, astro = Step 6, environment = Step 7). |
 | `V5_TODO.md` | CP-036 `036225f` | `bfd6f13d…` | RECOVERED_VERIFIED (provenance) | Historical phased task list (P0–P8). Superseded as an execution driver by this matrix + Master SOT §7 recovery order; retained as context. |
 | `V5_CBT_JOURNAL_DESIGN.md` | CP-036 `036225f` | `c36749b3…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 4 (Journaling/CBT). |

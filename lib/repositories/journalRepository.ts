@@ -7,9 +7,10 @@ import {
   query,
   setDoc,
   limit,
+  where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
-import type { JournalEntry } from "@/lib/data/types";
+import type { JournalEntry, JournalType } from "@/lib/data/types";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 
@@ -86,5 +87,32 @@ export const journalRepository = {
 
   async saveEntry(uid: string, entry: JournalEntry): Promise<void> {
     await this.createJournalEntry(uid, entry);
+  },
+
+  async getEntriesByType(uid: string, type: JournalType, limitCount?: number): Promise<JournalEntry[]> {
+    assertAuthenticatedOwner(uid);
+    let entriesQuery = query(
+      journalEntriesCollection(uid),
+      where("journalType", "==", type),
+      orderBy("dateCreated", "desc"),
+    );
+    if (limitCount) {
+      entriesQuery = query(entriesQuery, limit(limitCount));
+    }
+    const snapshot = await debugFirestoreOperation(
+      { operation: "getDocs", path: journalEntriesPath(uid), uid },
+      () => getDocs(entriesQuery),
+    );
+    return snapshot.docs.map((entryDoc) => entryDoc.data() as JournalEntry);
+  },
+
+  // Per-mode draft helpers (Firestore-backed drafts — localStorage primary, Firestore mirror optional)
+  async saveDraft(uid: string, draftId: string, data: Record<string, unknown>): Promise<void> {
+    assertAuthenticatedOwner(uid);
+    const draftRef = doc(collection(db, "journals", uid, "drafts"), draftId);
+    await debugFirestoreOperation(
+      { operation: "setDoc", path: `journals/${uid}/drafts/${draftId}`, uid },
+      () => setDoc(draftRef, sanitizeForFirestore({ ...data, updatedAt: new Date().toISOString() }), { merge: true }),
+    );
   },
 };

@@ -10,11 +10,22 @@ import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 
 export const JOURNAL_STORAGE_KEY = "bhumiJournalEntries";
+export const JOURNAL_DRAFT_PREFIX = "bhumiJournalDraft";
+
+export type JournalType = "FREE" | "GUIDED" | "EMOTION" | "CBT" | "SPIRITUAL_AWAKENING";
+export type MemoryProvenance = "user-written" | "ai-interpretation" | "ai-insight";
 
 function getScopedJournalKey(): string {
   const uid = auth.currentUser?.uid;
   if (!uid) return JOURNAL_STORAGE_KEY; // Fallback to unscoped for legacy or unauthenticated
   return `${JOURNAL_STORAGE_KEY}:${uid}`;
+}
+
+function getScopedDraftKey(journalType: JournalType): string {
+  const uid = auth.currentUser?.uid;
+  const base = `${JOURNAL_DRAFT_PREFIX}:${journalType}`;
+  if (!uid) return base;
+  return `${base}:${uid}`;
 }
 
 export type JournalTheme =
@@ -40,7 +51,9 @@ export type BlueprintJournalContext = {
 };
 
 export type JournalPrompt = {
-  theme: JournalTheme;
+  // theme is a display label. For Zone-B handoff it is the practice title (string); for direct
+  // entry it is the generic "Refleksi Bebas" label. Not constrained to JournalTheme (W1).
+  theme: string;
   dashboardQuestion: string;
   questions: string[];
 };
@@ -52,8 +65,11 @@ export type JournalInsight = {
 
 export type LocalJournalEntry = {
   uid?: string;
+  id?: string;
   date: string;
-  theme: JournalTheme;
+  // Theme is a display label. Can be a THEME_BANK key (JournalTheme), a Zone-B practice title
+  // (string from sourceTheme + label), or the generic "Refleksi Bebas" label for direct entry (W1).
+  theme: string;
   questions: string[];
   journalText: string;
   emotionalState: string;
@@ -61,6 +77,34 @@ export type LocalJournalEntry = {
   createdAt: string;
   insight: string;
   tomorrowFocus: string;
+  journalType?: JournalType;
+  provenance?: MemoryProvenance;
+  // Per-mode structured payloads (optional, matching journalType)
+  cbt?: {
+    situation?: string;
+    automaticThought?: string;
+    interpretation?: string;
+    evidenceFor?: string;
+    evidenceAgainst?: string;
+    alternativePerspective?: string;
+    underlyingNeed?: string;
+    nextStep?: string;
+    reflectionSummary?: string;
+  };
+  emotion?: {
+    primaryFeeling?: string;
+    bodySensation?: string;
+    triggerContext?: string;
+    needBehindFeeling?: string;
+  };
+  guided?: {
+    promptResponses?: Array<{ question?: string; answer: string }>;
+  };
+  spiritual?: {
+    experienceDescription?: string;
+    meaningExplored?: string;
+    connectionTheme?: string;
+  };
   sourceContext?: {
     lifePathNumber?: number | null;
     humanDesignType?: string | null;
@@ -177,32 +221,113 @@ export function getTodayJournalPrompt(
   };
 }
 
+// W1: honest generic journal state used when no Wellness Section 1-2 context is present.
+// This is NOT a fabricated theme/context — it is a neutral free-writing prompt that keeps
+// the legacy question/insight UI working without implying a Section-2 handoff.
+export const GENERIC_JOURNAL_THEME = "Refleksi Bebas" as const;
+
+export function createGenericJournalPrompt(
+  previousEntries: LocalJournalEntry[] = [],
+): JournalPrompt {
+  // Reuse the same reflective question bank as today's seeded prompt so legacy behavior
+  // (questions + AI insight) is preserved, but present a neutral theme label.
+  const seeded = getTodayJournalPrompt(
+    { birthDate: null, sunSign: null, lifePathNumber: 0, humanDesignType: null, arcanaCenter: 0, natalChart: null, destinyMatrix: null },
+    previousEntries,
+  );
+  return {
+    theme: GENERIC_JOURNAL_THEME,
+    dashboardQuestion: seeded.dashboardQuestion,
+    questions: seeded.questions,
+  };
+}
+
 export function loadLocalJournalEntries(): LocalJournalEntry[] {
   if (typeof window === "undefined") return [];
 
   try {
     const scopedKey = getScopedJournalKey();
     const parsed = readOwnedCacheArray<LocalJournalEntry>(scopedKey, "journalEntries");
-    
-    // Validate entries have date field; if not, clear cache for fresh generation
-    const today = new Date().toISOString().split('T')[0];
-    if (parsed.length > 0 && parsed[0] && typeof parsed[0] === 'object') {
-      const firstEntry = parsed[0] as Record<string, unknown>;
-      if (!firstEntry.date || typeof firstEntry.date !== 'string' || !firstEntry.date.startsWith(today)) {
-        // Stale data, return empty to force regeneration
-        return [];
-      }
-    }
-    
+    // V5-03: collection keyed by id+createdAt, multi-entry per day — no per-day singleton validation.
+    // Legacy date-prefix check removed; return full collection newest-first.
     return parsed;
   } catch {
     return [];
   }
 }
 
+export function getEntriesByType(type: JournalType, limit?: number): LocalJournalEntry[] {
+  const entries = loadLocalJournalEntries();
+  const filtered = entries.filter((e) => (e.journalType || "FREE") === type);
+  return typeof limit === "number" ? filtered.slice(0, limit) : filtered;
+}
+
+export function getJournalHistoryGroupedByWeek(): Array<{ weekLabel: string; entries: LocalJournalEntry[] }> {
+  const entries = loadLocalJournalEntries();
+  const groups = new Map<string, LocalJournalEntry[]>();
+  for (const entry of entries) {
+    const d = new Date(entry.createdAt);
+    const weekStart = new Date(d);
+    weekStart.setDate(d.getDate() - d.getDay());
+    const label = weekStart.toISOString().slice(0, 10);
+    if (!groups.has(label)) groups.set(label, []);
+    groups.get(label)!.push(entry);
+  }
+  return Array.from(groups.entries()).map(([weekLabel, groupEntries]) => ({ weekLabel, entries: groupEntries }));
+}
+
+// Per-mode draft persistence — autosave every 30s, conflict resolution via timestamp.
+export type JournalDraft = {
+  journalType: JournalType;
+  journalText: string;
+  emotionalState: string;
+  bodySignals: string[];
+  cbt?: LocalJournalEntry["cbt"];
+  emotion?: LocalJournalEntry["emotion"];
+  guided?: LocalJournalEntry["guided"];
+  spiritual?: LocalJournalEntry["spiritual"];
+  updatedAt: string;
+};
+
+export function savePerModeDraft(draft: JournalDraft): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(getScopedDraftKey(draft.journalType), JSON.stringify(draft));
+  } catch {
+    // quota
+  }
+}
+
+export function loadPerModeDraft(journalType: JournalType): JournalDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(getScopedDraftKey(journalType));
+    if (!raw) return null;
+    return JSON.parse(raw) as JournalDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPerModeDraft(journalType: JournalType): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(getScopedDraftKey(journalType));
+  } catch {
+    // ignore
+  }
+}
+
+export function loadAllDrafts(): JournalDraft[] {
+  if (typeof window === "undefined") return [];
+  const types: JournalType[] = ["FREE", "GUIDED", "EMOTION", "CBT", "SPIRITUAL_AWAKENING"];
+  return types.map((t) => loadPerModeDraft(t)).filter((d): d is JournalDraft => d !== null);
+}
+
 export function saveLocalJournalEntry(entry: LocalJournalEntry): LocalJournalEntry[] {
   const entries = loadLocalJournalEntries();
-  const nextEntry = withActiveUid(entry);
+  const withId = { ...entry, id: entry.id || `journal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, journalType: entry.journalType || "FREE" as JournalType, provenance: entry.provenance || "user-written" as MemoryProvenance } as LocalJournalEntry;
+  const nextEntry = withActiveUid(withId);
   const nextEntries = [nextEntry, ...entries];
   const scopedKey = getScopedJournalKey();
   window.localStorage.setItem(scopedKey, JSON.stringify(nextEntries));
@@ -234,7 +359,7 @@ export function getLatestJournalEntry(entries: LocalJournalEntry[]): LocalJourna
 }
 
 export function generateLocalJournalInsight(input: {
-  theme: JournalTheme;
+  theme: string;
   journalText: string;
   emotionalState: string;
   bodySignals: string[];
