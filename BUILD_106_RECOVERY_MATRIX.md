@@ -203,6 +203,29 @@ The Build 106 release gate is closed while any requirement remains `MISSING`, `P
 
 Do not convert a requirement to `PASS` merely because code was copied or committed. `PASS` requires executed verification appropriate to the requirement.
 
+A recovered **contract layer** is NOT `PASS` for a requirement whose acceptance also needs UI /
+wiring / browser evidence. Contract-recovered rows read `RECOVERED_VERIFIED (contract)` or
+`CONTRACT RECOVERED; … DEFERRED` — never `PASS` — until the deferred sub-step below is executed
+and verified.
+
+---
+
+## Deferred sub-steps register
+
+Every deferred item has an explicit owner/future step. None of these is counted toward `PASS`
+for its requirement; the release gate stays closed on all of them.
+
+| ID | Deferred work | Requirements it gates | Owner / scheduled step | Status |
+|---|---|---|---|---|
+| **DS-J1** | Journaling UI relocation: recover `app/wellness/journaling/page.tsx` (594L, CP-036); add `next.config.ts` redirects `/journal` + `/innerwork/journaling` → `/wellness/journaling` (`:path*`); reduce `app/journal/page.tsx` + `app/innerwork/journaling/page.tsx` to redirect stubs. | R-12 (5-mode radiogroup UI), R-16 (history/search/filter UI + export PDF/JSON/text), R-13 (CBT form UI) | Build 106 — journaling-UI sub-step, scheduled **after Step 5** (Memory Dashboard + journaling page land together as the Inner Work surface); or on explicit Founder priority. | OPEN |
+| **DS-J2** | Journaling UI behaviour wiring: 5-mode radiogroup + per-mode state; 30s per-mode autosave wiring (`save/load/clearPerModeDraft` + `draftInfo` indicator); `SafetyActionCard` wiring on `crisisScanJournalText`; `zoneBContext` / `getRecommendedMode` advisory context; `<article>` history rendering; export. | R-15 (autosave wiring), R-16 (history UI), R-19 (crisis card render), R-12 | Same as DS-J1. | OPEN |
+| **DS-J3** | Restore the full `tests/unit/v5-03-journaling-acceptance.test.ts` rows removed for the contract subset (original 1.2–1.10, 4.1/4.3–4.6, 5.1–5.4/5.6–5.7, 6.1–6.4, 7.2–7.3, 8.2/8.3/8.7, 9.2, 10.5, 11.*) + browser E2E of a journaling session. | R-12, R-13, R-15, R-16, R-19 (acceptance) | With DS-J1/DS-J2. | OPEN |
+| **DS-I1** | Full `useTranslation()` migration of UI components off the `translations[language]` compat layer (V5_I18N_SPEC §3); widen the ~40 `"id"\|"en"` component prop/param types + add `ms` copy to inline dictionaries. | R-29..R-34 (full UI localization, beyond foundation) | Build 106 — localization component-migration sprint, after the feature-recovery steps. | OPEN |
+| **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | OPEN |
+| **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up, before final R-01..46 reconciliation. | OPEN |
+| **DS-2C2** | Real-browser Playwright E2E of the 3 reconciled onboarding surfaces (setup / dashboard boot / login) + the locale switcher + locale persistence round-trip. | GATE_07, R-33/R-34 (browser) | Build 106 — verification step (11) / fresh-account acceptance. | OPEN |
+| **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | **External** — needs an authorized authenticated test account + signup browser driver. Founder/ops to schedule. | BLOCKED (external) |
+
 ---
 
 ## Worktrees (Build 106)
