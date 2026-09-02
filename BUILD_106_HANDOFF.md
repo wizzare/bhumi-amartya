@@ -1,45 +1,38 @@
-# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF (CODEX → CLAUDE CODE)
+# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF (CLAUDE CODE)
 
-Status: HANDOFF AFTER STEP 8 — next agent is Claude Code, next action is Step 9
+Status: CLAUDE CODE CONTINUITY SNAPSHOT AFTER STEP 9 — next action is Step 10
 Date: 2026-09-02
 
 ```text
 NEXT_PRIMARY_AGENT               = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8)
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Step 9)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_HANDOFF_DOCS = 0eea40c65fa51d0efaabe8e1ef61c554cd923257
+CURRENT_HEAD_BEFORE_HANDOFF_DOCS = b341c82  (feat(premium): finalize Rp25.000 display price + live Play authority (R-42))
 BUILD_106_PHASE                  = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT              = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE          = CLOSED
-NEXT_SAFE_ACTION                = Step 9 — Premium copy / price
+NEXT_SAFE_ACTION                = Step 10 — Full R-PRD-01..46 reconciliation
 ```
 
-`CURRENT_HEAD_BEFORE_HANDOFF_DOCS` is the implementation/test HEAD verified for this handoff. The
+`CURRENT_HEAD_BEFORE_HANDOFF_DOCS` is the implementation/test HEAD verified for this snapshot. The
 commit carrying this file is the newer docs-only HEAD — resolve with `git rev-parse HEAD` after
 checkout.
 
-## Verified worktree state (at handoff)
+## Verified worktree state
 
 ```text
 authorized worktree   = C:\tmp\bhumi-build106-recovery
 branch                = recovery/build106-product-continuity
-HEAD (pre-docs)       = 0eea40c  docs(build106): hand off after Step 8 reconciliation
+HEAD (pre-docs)       = b341c82  feat(premium): finalize Rp25.000 display price + live Play authority (R-42)
 forensic worktree     = C:\tmp\bhumi-build83-access-hotfix  (feat/build99 @ 57479c9, 366 dirty) — READ ONLY, untouched
+worktree status       = clean
 ```
 
-Uncommitted in the worktree at handoff — a **partial Step 9 start left by Codex**, NOT yet reviewed
-or committed:
-
-- `M app/premium-bhumi/page.tsx` — fallback subscription copy `Rp50.000` → `Rp25.000`.
-- `?? tests/unit/v5-08-premium-residual.test.ts` — a static R-42 acceptance guard (display price in
-  all three locales + premium page fallback; no stale Rp50.000; live Google Play `formattedPrice`
-  precedence; entitlement priority and Premium-state UI unchanged; no billing internals exposed).
-- `M tests/release-manifest.mjs` — release-manifest entry for that test.
-
-The receiving agent MUST audit these against `V5_PRD.md` R-PRD-42, `V5_DECISION_LOG.md` D-V5-32,
-the recovered locale bundles, and CP-036 before adopting, extending, or replacing them. They are
-not evidence of completion.
+The Codex → Claude Code handoff (commit `fe271e8`, docs only) flipped `NEXT_PRIMARY_AGENT` to
+`CLAUDE_CODE`. The uncommitted partial Step 9 start left at that handoff was then audited against
+`V5_PRD.md` R-PRD-42, `V5_DECISION_LOG.md` D-V5-32, the recovered locale bundles, and CP-036, and
+**adopted** in commit `b341c82` (see Step 9 row and the matrix "Premium copy / price" section).
 
 ## Canonical authority and reading order
 
@@ -69,16 +62,18 @@ conflict, and the work must be reconstructable from the repo alone.
 | 6 — Astrology | RECOVERED_VERIFIED (unit/core) | `buildDailyAstroSynthesis` + dynamic eclipses + variable western events; `.slice(0,5)` / hardcoded eclipses / Blueprint-in-Astro regressions fixed; DS-DC1 DONE. R-36 consumer wiring = DS-A1; major-cycle scope = DS-A2; browser check open. |
 | 7 — Environment / Schumann | RECOVERED_VERIFIED (unit/integration contract); browser deferred | R-43/R-44/R-46 verified; R-45 code/unit/static complete. Unavailable states no longer fabricate `Stabil`; three-layer Schumann separated; NOAA Kp kept distinct from modelled SR. DS-I2 DONE (`v5-i18n.test.ts` 28/28, in manifest). Browser rendering = DS-E1. |
 | 8 — Notifications / privacy / remaining | PARTIAL_COMPLETION_VERIFIED (contract/source) | Five canonical specs recovered byte-identically; quiet-hours + FCM-token foundations reconciled (unsafe fake-token / false-delivery paths NOT adopted). New: notification policy + localized copy + opt-in + real-token-only registration + fail-closed persistence; Daily Rhythm runtime contracts; per-entry privacy enforcement; 90-day unpinned Memory decay; safe auth diagnostics; no-guilt copy. R-32 remote delivery = DS-N1; R-20 privacy UI + deletion = DS-P1; R-28 synthesis/persistence/UI = DS-M3; Daily Rhythm consumer UI = DS-R1. |
+| 9 — Premium copy / price | RECOVERED_VERIFIED (unit + static) | R-42: display price `Rp25.000` in all three `src/locales` bundles + `app/premium-bhumi/page.tsx` fallback (byte-identical to CP-036); no `Rp50.000` in any current user-facing source; `app/upgrade/page.tsx` renders the live Google Play `formattedPrice` for base plan `monthly` with no hardcoded price; entitlement/billing/Android sources unmodified. `tests/unit/v5-08-premium-residual.test.ts` 46 assertions, in manifest. Rendered device proof = DS-PR1. |
 
 Step 7 commits: `1bde634` (feat), `0ff5aa8` + `0293517` (test), `99db503` (docs).
 Step 8 commits: `901ad94` (feat), `d106cb7` (test), `0eea40c` (docs).
+Handoff + Step 9 commits: `fe271e8` (docs: Codex → Claude Code), `b341c82` (feat+test: R-42 premium price).
 
 ## Deferred sub-steps and open gates (latest)
 
 Detailed definitions and owners are in the matrix **Deferred sub-steps register**.
 
 - **OPEN:** DS-J1, DS-J2, DS-J3, DS-I1, DS-2C1, DS-2C2, DS-M1, DS-M2, DS-A1, DS-A2, DS-E1,
-  DS-R1, DS-N1, DS-P1.
+  DS-R1, DS-N1, DS-P1, DS-PR1.
 - **PARTIAL:** DS-M3 — 90-day unpinned decay + weekly/monthly eligibility DONE; reflection
   synthesis, persistence, and rendered experience OPEN.
 - **DONE:** DS-DC1 (Step 6), DS-I2 (Step 7).
@@ -86,45 +81,48 @@ Detailed definitions and owners are in the matrix **Deferred sub-steps register*
   browser/signup driver.
 - `GATE_07_GENUINE_NEW_USER` = CODE_COMPLETE / BLOCKED_ON_EXTERNAL_ACCEPTANCE.
 - R-45 browser rendering evidence is DS-E1 — do not call R-45 full PASS yet.
-- Browser verification remains open for onboarding, locale, Astro, Environment/Schumann, and Daily
-  Rhythm surfaces.
-- Steps 9–13 and complete reconciliation of R-PRD-01..46 remain open.
+- R-42 rendered device proof (display price + live Play `formattedPrice` substitution) is DS-PR1 —
+  do not call R-42 full PASS yet.
+- Browser verification remains open for onboarding, locale, Astro, Environment/Schumann, Daily
+  Rhythm, and Premium surfaces.
+- Steps 10–13 and complete reconciliation of R-PRD-01..46 remain open.
 - Version bump, production build, Build 106 APK/AAB, deploy, publish, `.next` artifact, production
   read/write, and release-ready claims are unauthorized until the canonical release gates pass and
   the Founder approves.
 
-## Last recorded evidence (end of Step 8, Codex)
+## Last recorded evidence (end of Step 9, Claude Code — 2026-09-02)
 
-- Step-8 focused contract suite (`build106-step8-contracts`): **63 assertions**, EXIT 0.
-- `build106-journal-contracts` **38**, `v5-05-daily-context` **7 checks**,
-  `behavior_sync_logger_privacy` **15/15**, `build106-memory-pipeline`,
-  `v5-03-journaling-acceptance` — all EXIT 0.
-- Step 7: `v5-environment-context` **29/29**; DS-I2 `v5-i18n` **28/28**.
-- TypeScript `tsc --noEmit` (`--incremental false`): EXIT 0.
-- Scoped ESLint: EXIT 0, **0 errors / 9 pre-existing warnings**.
-- No-emulator release runner: **PASS=11 FAIL=0 SKIPPED=8 TOTAL=19**, EXIT 0.
-- Full local synthetic Firestore/Auth emulator release runner: **PASS=19 FAIL=0 SKIPPED=0
-  TOTAL=19**, `RELEASE_TESTS_PASS`, EXIT 0.
+- `v5-08-premium-residual` (R-42 static acceptance guard): **46 assertions**, EXIT 0.
+- `v5-i18n` **28/28**, `build106-i18n-foundation` **108**, `build106-astro-regressions` **29**,
+  `v5-05-daily-context` **7 checks**, `build106-memory-pipeline`, `v5-03-journaling-acceptance`,
+  `build106-journal-contracts`, `build106-new-user-lifecycle`, auth suites — all EXIT 0.
+- TypeScript `tsc --noEmit`: EXIT 0.
+- No-emulator release runner: **PASS=12 FAIL=0 SKIPPED=8 TOTAL=20**, EXIT 0.
+- Full local synthetic Firestore/Auth emulator release runner: **PASS=20 FAIL=0 SKIPPED=0
+  TOTAL=20**, `RELEASE_TESTS_PASS`, EXIT 0.
+- Prior (end of Step 8, Codex): Step-8 contract suite 63 assertions EXIT 0; Step 7
+  `v5-environment-context` 29/29; emulator runner PASS=19.
 
-No browser/device test, production read/write, build artifact, deploy, publish, or version bump
-occurred.
+No browser/device test, production read/write, build artifact, deploy, publish, push, or version
+bump occurred.
 
 ## Claude Code continuation boundary
 
-Before Step 9, Claude Code must:
+Before Step 10, Claude Code must:
 
 1. Re-verify the authorized worktree path, branch, `git rev-parse HEAD`, and `git status --short`.
 2. Read the four canonical Build 106 files above (+ `CLAUDE.md`).
-3. Audit Premium copy / price (R-PRD-42 / D-V5-32) against repository evidence: the recovered
-   `src/locales/*` bundles, `app/premium-bhumi/page.tsx`, `app/upgrade/page.tsx`, the entitlement
-   presentation path, the native Google Play `formattedPrice` bridge, and CP-036 — and evaluate the
-   uncommitted Step-9 start listed above (adopt / extend / replace with provenance recorded).
-4. Preserve all Step 1–8 work. Do not silently promote any deferred UI/browser/external gate to
+3. For **Step 10 — Full R-PRD-01..46 reconciliation**: walk every `R-01..R-46` matrix row against
+   `V5_PRD.md` and repository evidence; assign each an accepted final status (`RECOVERED_VERIFIED`,
+   `PRESERVED`, `NEW_IMPLEMENTATION_REQUIRED`, or a named deferred sub-step) with executed evidence
+   or an explicit gap; close or re-scope stale rows; confirm every deferred `DS-*` still has an
+   owner. Do not add product features here — it is a reconciliation/audit pass.
+4. Preserve all Step 1–9 work. Do not silently promote any deferred UI/browser/external gate to
    `PASS`; keep it in its named register row.
 5. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`. Update `BUILD_106_RECOVERY_MATRIX.md`,
-   `BUILD_106_HANDOFF.md`, and AgentMemory after Step 9.
+   `BUILD_106_HANDOFF.md`, and AgentMemory after Step 10.
 
-`NEXT_SAFE_ACTION = Step 9 — Premium copy / price`
+`NEXT_SAFE_ACTION = Step 10 — Full R-PRD-01..46 reconciliation`
 
 `BUILD_106_RECOVERY_IN_PROGRESS`
 
