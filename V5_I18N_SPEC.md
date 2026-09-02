@@ -21,6 +21,14 @@ FUTURE / DEFERRED — intentionally OUT of current V5 scope:
 
 Fallback chain (unchanged): active locale → en-US → id-ID.
 
+> **Narrative-prose exception (D-V5-36, ratified 2026-09-02):** the *translation-key* fallback
+> above is `active → en → id-ID` and is unchanged. **Generated narrative prose** in the
+> deterministic daily-guidance synthesis + local (non-AI) fallback MAY resolve `ms → id` (not
+> `ms → en`) when a native Bahasa Melayu string is not yet authored, because Bahasa Melayu and
+> Bahasa Indonesia are mutually intelligible. This is a scoped bridge, not a licence to skip
+> `ms`; CURRENT-scope Bahasa Melayu remains required for V5 completion. Helper:
+> `lib/i18n/pickLocale.ts`.
+
 > **Revision history:** an earlier six-locale target (itself superseding an older 8-locale PRD) is revised by Founder decision D-V5-35. Deferred locales are not failed implementations; every reference must be labelled FUTURE / DEFERRED.
 
 ## 2. Architecture Decision

@@ -3,8 +3,13 @@
 // in the user locale). i18next owns keyed UI copy; this is for the generated narrative
 // strings those engines build inline.
 //
-// Canonical chain (D-V5-35): active -> en -> id-ID. Callers SHOULD supply an `ms`
+// Canonical KEY chain (D-V5-35): active -> en -> id-ID. Callers SHOULD supply an `ms`
 // value for CURRENT-scope Bahasa Melayu; when they do not, `ms` falls to `en` then `id`.
+//
+// D-V5-36 (RATIFIED 2026-09-02): for generated NARRATIVE PROSE, prose call sites MAY
+// instead resolve `ms -> id` (pass no `ms` and rely on the surrounding `!== "en"` branch)
+// because Bahasa Melayu / Bahasa Indonesia are mutually intelligible. Scoped bridge only;
+// native `ms` prose is still required (Build 106 DS-AI1-themes).
 
 export type GuidanceLocale = "id" | "en" | "ms";
 

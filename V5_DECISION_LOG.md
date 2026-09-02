@@ -540,3 +540,35 @@ Rules:
 - Historical six/eight-locale texts remain as history, marked superseded where they state scope.
 
 Supersedes the locale-set portion of D-V5-01.
+
+
+---
+
+## D-V5-36 — Narrative-Prose Fallback May Use `ms → id` (Scoped)
+**Date:** 2026-09-02 (Build 106, Step 11)
+**Status:** RATIFIED
+
+Refines D-V5-35's fallback rule for one specific case.
+
+- **Translation-KEY fallback is unchanged: `active → en-US → id-ID`.** i18next keyed UI copy,
+  error/empty/loading strings, a11y labels, and any string addressable by key follow this
+  chain exactly.
+- **Generated NARRATIVE PROSE** — the deterministic daily-guidance synthesis and its local
+  (non-AI) fallback (`lib/dailyGuidance/unifiedBlueprintSynthesis.ts`,
+  `lib/dailyGuidance/adaptiveDailyPracticeGenerator.ts`,
+  `lib/orchestrators/localDailyGuidanceFallback.ts`) — **MAY resolve `ms → id`** when a native
+  Bahasa Melayu string is not yet authored, instead of `ms → en`. Rationale: Bahasa Melayu and
+  Bahasa Indonesia are mutually intelligible to a very high degree, so an Indonesian sentence
+  serves a Malay reader far better than an English one; this path only runs when the primary AI
+  output (which renders true `ms` via the prompt `outputLanguageRule`) is unavailable.
+- This is a **product decision, not a licence to skip `ms`.** CURRENT-scope Bahasa Melayu is
+  still required for V5 completion; the `ms → id` prose fallback is a bridge while native `ms`
+  is completed (tracked as Build 106 `DS-AI1-themes`).
+- Helper: `lib/i18n/pickLocale.ts` — `pickLocale(lang, {id, en, ms?})` returns the `ms` value
+  when supplied, else falls `ms → en → id` (the canonical key chain); prose call sites that
+  want the `ms → id` bridge pass no `ms` and rely on the surrounding `!== "en"` branch.
+
+**Affected:** `lib/i18n/pickLocale.ts` (new), `lib/dailyGuidance/unifiedBlueprintSynthesis.ts`,
+`lib/dailyGuidance/adaptiveDailyPracticeGenerator.ts`,
+`lib/orchestrators/localDailyGuidanceFallback.ts`, `V5_I18N_SPEC.md` §4,
+`BUILD_106_RECOVERY_MATRIX.md` (R-31 / DS-AI1 / DS-AI1-themes).
