@@ -39,6 +39,8 @@ import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { cancelDailyReminders, getDailyReminderEnabled, refreshGentleNightReminder, setDailyReminderEnabled } from "@/lib/notifications/gentleNightReminder";
+import { registerFcmToken } from "@/lib/notifications/fcmRegistration";
+import { fcmTokenRepository } from "@/lib/repositories/fcmTokenRepository";
 import { Capacitor } from "@capacitor/core";
 
 const LANGUAGE_STORAGE_KEY = "bhumiLanguage";
@@ -215,7 +217,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const [dailyReminderEnabled, setDailyReminderEnabledState] = useState(true);
+  const [dailyReminderEnabled, setDailyReminderEnabledState] = useState(false);
   const [notificationState, setNotificationState] = useState("checking");
 
   useEffect(() => {
@@ -225,8 +227,28 @@ export default function SettingsPage() {
   const toggleDailyReminder = async (enabled: boolean) => {
     setDailyReminderEnabledState(enabled);
     await setDailyReminderEnabled(enabled);
-    if (!enabled) { setNotificationState("disabled"); return; }
-    if (!Capacitor.isNativePlatform()) { setNotificationState("web"); return; }
+    if (!enabled) {
+      const uid = auth?.user?.uid;
+      if (uid && !Capacitor.isNativePlatform()) {
+        try {
+          await fcmTokenRepository.deleteAllForUser(uid);
+        } catch {
+          await setDailyReminderEnabled(true);
+          setDailyReminderEnabledState(true);
+          setNotificationState("disable-error");
+          return;
+        }
+      }
+      setNotificationState("disabled");
+      return;
+    }
+    if (!Capacitor.isNativePlatform()) {
+      const uid = auth?.user?.uid;
+      if (!uid) { setNotificationState("unavailable"); return; }
+      const registration = await registerFcmToken(uid);
+      setNotificationState(registration.status);
+      return;
+    }
     const result = await refreshGentleNightReminder();
     setNotificationState(result.status === "permission-denied" ? "denied" : result.status);
   };
@@ -767,7 +789,7 @@ export default function SettingsPage() {
         <section className="bhumi-card space-y-4 p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">Dukungan Bhumi</h2>
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E8E9E5] bg-white px-5 py-4">
-            <div><p className="text-sm font-semibold text-[#4F5E52]">Pengingat Harian</p><p className="mt-1 text-xs text-[#7B8776]">Sapa ruangmu sekitar pukul 21.00 waktu perangkat.</p>{notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">Izin notifikasi ditolak di perangkat.</p>}</div>
+            <div><p className="text-sm font-semibold text-[#4F5E52]">Pengingat Harian</p><p className="mt-1 text-xs text-[#7B8776]">Sapa ruangmu sekitar pukul 21.00 waktu perangkat.</p>{notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">Izin notifikasi ditolak di perangkat.</p>}{notificationState === "disable-error" && <p className="mt-1 text-xs text-amber-700">Token notifikasi belum dapat dinonaktifkan. Coba lagi saat koneksi stabil.</p>}</div>
             <button type="button" role="switch" aria-checked={dailyReminderEnabled} aria-label="Pengingat Harian" onClick={() => void toggleDailyReminder(!dailyReminderEnabled)} className={`relative h-7 w-12 rounded-full transition ${dailyReminderEnabled ? "bg-[#4F5E52]" : "bg-[#D6D8D2]"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${dailyReminderEnabled ? "left-6" : "left-1"}`} /></button>
           </div>
         </section>

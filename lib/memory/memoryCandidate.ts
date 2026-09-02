@@ -38,7 +38,7 @@ export interface MemoryCandidate {
   lastSeenAt: string;
   dismissedAt?: string;
   correctedLabel?: string;
-  // Decay support (future): pinned prevents decay
+  // Pinned candidates bypass the canonical 90-day inactivity decay.
   pinned?: boolean;
 }
 

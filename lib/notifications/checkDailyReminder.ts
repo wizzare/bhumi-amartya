@@ -1,6 +1,5 @@
 import { safeJsonParse } from "@/lib/storage/safeJson";
 import { getLastActivity } from "@/lib/activity/getLastActivity";
-import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 import type { DailyGuidanceAdaptiveContext } from "@/lib/dailyGuidance/types";
 import {
   createAdaptiveRetention,
@@ -8,11 +7,11 @@ import {
 } from "@/lib/retention/adaptiveRetentionEngine";
 
 export const DAILY_REMINDER_MESSAGES = [
-  "Hai, kamu baik-baik aja? Hari ini belum innerwork dan grounding ya? Yuk login 🌱",
-  "Hai, semoga harimu lembut. Kalau belum sempat innerwork hari ini, yuk ambil waktu sebentar 🌿",
-  "Pelan-pelan aja, ya. Kalau jurnal, meditasi, atau audio healing belum sempat hari ini, kita lanjut bareng 🌱",
-  "Kamu nggak sendiri. Yuk cek-in sebentar lewat innerwork kecil hari ini 💚",
-  "Satu napas sadar hari ini sudah berarti. Kalau belum grounding, yuk login dan mulai dari langkah kecil 🌾",
+  "Catatanmu siap kapan pun kamu ingin membacanya.",
+  "Ruangmu tetap ada di sini, tanpa tuntutan.",
+  "Kalau terasa berguna, satu refleksi lembut menunggumu.",
+  "Kamu boleh kembali pelan-pelan, atau sekadar membaca.",
+  "Bhumi ada di sini kapan pun kamu siap.",
 ] as const;
 
 export type DailyReminderEligibility = {
@@ -82,21 +81,11 @@ export function pickUnifiedDailyReminderMessage(input: {
   adaptiveContext?: DailyGuidanceAdaptiveContext;
   seed?: number;
 }): string {
-  const synthesis = buildUnifiedBlueprintSynthesis({
-    language: input.language,
-    profile: input.profile,
-    blueprint: input.blueprint,
-    astrologyToday: input.astrologyToday,
-    adaptiveContext: input.adaptiveContext,
-  });
-  const need = synthesis.coreNeeds[Math.abs(input.seed ?? Date.now()) % Math.max(1, synthesis.coreNeeds.length)]
-    ?? (input.language === "en" ? "one gentle step" : "satu langkah lembut");
-
   if (input.language === "en") {
-    return `A small check-in can support ${need} today. Start with one breath, one note, or one grounding step.`;
+    return "Your Bhumi space is here whenever you are ready.";
   }
 
-  return `Check-in kecil bisa mendukung ${need} hari ini. Mulai dari satu napas, satu catatan, atau satu langkah grounding.`;
+  return "Ruang Bhumi ada di sini kapan pun kamu siap.";
 }
 
 export function pickAdaptiveRetentionNotification(input: {

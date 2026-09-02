@@ -18,12 +18,17 @@ function openDailyNote() {
 export function GentleNightReminderLifecycle() {
   const auth = useAuth();
   const hasUser = Boolean(auth?.user);
+  const locale = auth?.userProfile?.language === "en" || auth?.userProfile?.language === "en-US"
+    ? "en-US"
+    : auth?.userProfile?.language === "ms" || auth?.userProfile?.language === "ms-MY"
+      ? "ms-MY"
+      : "id-ID";
   useEffect(() => {
     let listener: PluginListenerHandle | undefined;
     let notificationListener: PluginListenerHandle | undefined;
     let disposed = false;
 
-    if (hasUser) void refreshGentleNightReminder();
+    if (hasUser) void refreshGentleNightReminder(new Date(), locale);
     else void cancelDailyReminders();
     void LocalNotifications.addListener("localNotificationActionPerformed", openDailyNote).then((handle) => { notificationListener = handle; });
 
@@ -32,14 +37,14 @@ export function GentleNightReminderLifecycle() {
         if (url.includes("/dashboard") || url.includes("/catatan") || url.includes("/profile")) openDailyNote();
       });
       const handle = await App.addListener("appStateChange", ({ isActive }) => {
-        if (isActive && hasUser) void refreshGentleNightReminder();
+        if (isActive && hasUser) void refreshGentleNightReminder(new Date(), locale);
       });
       if (disposed) { await handle.remove(); await action.remove(); }
       else listener = handle;
     });
 
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible" && hasUser) void refreshGentleNightReminder();
+      if (document.visibilityState === "visible" && hasUser) void refreshGentleNightReminder(new Date(), locale);
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -49,7 +54,7 @@ export function GentleNightReminderLifecycle() {
       void listener?.remove();
       void notificationListener?.remove();
     };
-  }, [auth?.user?.uid, hasUser]);
+  }, [auth?.user?.uid, hasUser, locale]);
 
   return null;
 }

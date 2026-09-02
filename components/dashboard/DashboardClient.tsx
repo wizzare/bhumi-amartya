@@ -890,7 +890,7 @@ export function DashboardClient() {
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">
-          {language === "id" ? "Sampai jumpa besok untuk refleksi berikutnya." : "See you tomorrow for your next reflection."}
+          {language === "id" ? "Ruang ini tetap ada kapan pun kamu kembali." : "This space remains here whenever you return."}
         </p>
       </footer>
 

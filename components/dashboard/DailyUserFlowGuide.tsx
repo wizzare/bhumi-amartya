@@ -12,15 +12,15 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
   const isId = language === "id";
 
   const content = {
-    title: isId ? "Disarankan" : "Recommended",
+    title: isId ? "Pilih ruang yang terasa pas" : "Choose what feels right",
     steps: [
       {
         id: "profile",
         icon: UserRound,
         title: isId ? "Profil" : "Profile",
         description: isId
-          ? "Lihat kembali blueprint dan identitasmu."
-          : "Review your blueprint and identity.",
+          ? "Blueprint-mu tersedia jika ingin dilihat."
+          : "Your blueprint is here if you want it.",
         href: "/profile",
         color: "bg-orange-50 text-orange-500",
       },
@@ -29,8 +29,8 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
         icon: Sprout,
         title: "Wellness",
         description: isId
-          ? "Lanjutkan praktik hari ini."
-          : "Continue today's practice.",
+          ? "Temukan ruang tenang tanpa kewajiban."
+          : "Find a calm space with no obligation.",
         href: "/wellness",
         color: "bg-emerald-50 text-emerald-600",
       },
@@ -39,8 +39,8 @@ export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
         icon: Compass,
         title: isId ? "Journey" : "Journey",
         description: isId
-          ? "Lihat perjalanan dan perkembanganmu."
-          : "View your journey and progress.",
+          ? "Lihat perjalananmu sesuai ritmemu."
+          : "See your journey at your own pace.",
         href: "/journey",
         color: "bg-indigo-50 text-indigo-600",
       }

@@ -7,6 +7,7 @@
 
 import type { LocalJournalEntry, JournalType } from "@/lib/journal/localJournal";
 import { crisisScanJournalText } from "@/lib/journal/journalSafety";
+import { canExtractJournalMemory } from "@/lib/journal/privacy";
 import type { MemoryCandidateEvidence, MemoryProvenance } from "@/lib/memory/memoryCandidate";
 
 export interface ExtractionSignals {
@@ -33,6 +34,7 @@ export function extractMemorySignals(
   entry: LocalJournalEntry,
   uid: string,
 ): ExtractionSignals | null {
+  if (!canExtractJournalMemory(entry.privacy)) return null;
   const mode: JournalType = (entry.journalType as JournalType) || "FREE";
   const textForSafety = entry.journalText || entry.theme || "";
   const scan = crisisScanJournalText(textForSafety);

@@ -14,6 +14,7 @@ import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
 import { classifyGoogleSignInError } from "./classifyGoogleSignInError";
 import { recordGoogleSignInDiagnostic, recordAuthEvent } from "./authTelemetry";
+import { logSafeAuthError, warnSafeAuthError } from "./safeDiagnostics";
 import { bootstrapCanonicalAccess } from "../billing/canonicalAccessBootstrap";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
@@ -217,12 +218,12 @@ export const ensureMinimalUserProfile = async (user: User) => {
   let bootstrapResult: { ok: boolean; outcome: string } | null = null;
   const needsBootstrap = !initialProfile || !initialProfile.trialStartedAt || !initialProfile.trialEndsAt;
   if (needsBootstrap) {
-    console.log("[TRIAL BOOTSTRAP TRIGGERED] UID:", user.uid);
+    console.info("[TRIAL BOOTSTRAP TRIGGERED]", { hasAuthenticatedUser: true });
     try {
       const getToken = typeof user.getIdToken === "function" ? user.getIdToken.bind(user) : async () => "";
       bootstrapResult = await bootstrapCanonicalAccess(user.uid, getToken, async () => {});
     } catch (e) {
-      console.warn("[TRIAL BOOTSTRAP FAILED DURING ENSURE_PROFILE]", e);
+      warnSafeAuthError("[TRIAL BOOTSTRAP FAILED DURING ENSURE_PROFILE]", e);
     }
   }
 
@@ -281,11 +282,8 @@ export const ensureMinimalUserProfile = async (user: User) => {
   );
 
   const createdProfile = (await userRepository.getUserProfile(user.uid)) ?? minimalProfile;
-  console.log("[PROFILE CREATED]", {
-    uid: user.uid,
-    email: user.email ?? null,
-    firestorePath: `users/${user.uid}`,
-    localCacheKey: `bhumiProfile:${user.uid}`,
+  console.info("[PROFILE CREATED]", {
+    hasAuthenticatedUser: true,
     setupCompleted: createdProfile.setupCompleted,
     blueprintStatus: createdProfile.blueprintStatus,
     source: "ensureMinimalUserProfile",
@@ -326,9 +324,8 @@ export const signInWithGoogle = async (options?: {
     try {
       const WEB_CLIENT_ID = "59259824153-vldlev9s91l6sss3ulqbh8mnaah4n4c9.apps.googleusercontent.com";
       const useCredentialManager = true;
-      console.log("[NATIVE GOOGLE AUTH START]", {
+      console.info("[NATIVE GOOGLE AUTH START]", {
         platform,
-        webClientId: WEB_CLIENT_ID,
         forceCodeForRefreshToken: true
       });
 
@@ -347,18 +344,17 @@ export const signInWithGoogle = async (options?: {
         throw nativeError;
       }
 
-      console.log("[NATIVE GOOGLE AUTH RESULT SUCCESS]", {
+      console.info("[NATIVE GOOGLE AUTH RESULT SUCCESS]", {
         hasCredential: !!result?.credential,
         hasIdToken: !!result?.credential?.idToken,
         hasAccessToken: !!result?.credential?.accessToken,
-        user: result?.user?.email
       });
 
       const idToken = result?.credential?.idToken ?? null;
       const accessToken = result?.credential?.accessToken ?? null;
 
       if (!idToken && !accessToken) {
-        console.error("[NATIVE GOOGLE AUTH ERROR] Missing tokens", result);
+        console.error("[NATIVE GOOGLE AUTH ERROR]", { reason: "missing_tokens" });
         const tokenError = new Error("Native Google sign-in did not return idToken/accessToken.");
         void recordGoogleSignInDiagnostic(
           classifyGoogleSignInError(tokenError, "ID_TOKEN_RETRIEVAL", useCredentialManager)
@@ -393,19 +389,7 @@ export const signInWithGoogle = async (options?: {
       void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange" });
       return;
     } catch (error) {
-      console.error("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
-      const err = error as { name?: string; message?: string; code?: string; stack?: string, errorMessage?: string };
-
-      const detailedError = {
-        name: err?.name,
-        message: err?.message || err?.errorMessage,
-        code: err?.code,
-        stack: err?.stack,
-        platform: platform,
-        timestamp: new Date().toISOString()
-      };
-
-      console.error("[DETAILED AUTH ERROR]", detailedError);
+      logSafeAuthError("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
       throw error;
     }
   }
@@ -464,7 +448,7 @@ export const signOut = async (): Promise<void> => {
         await FirebaseAuthentication.signOut();
         console.log("[AUTH] Native FirebaseAuthentication.signOut successful");
       } catch (nativeError) {
-        console.warn("[AUTH] Native signOut failed (non-critical):", nativeError);
+        warnSafeAuthError("[AUTH] Native signOut failed (non-critical)", nativeError);
       }
     }
 
@@ -484,7 +468,7 @@ export const signOut = async (): Promise<void> => {
     sessionStorage.clear();
     console.log("[AUTH] sessionStorage cleared");
   } catch (error) {
-    console.error("[AUTH] Error during signOut flow:", error);
+    logSafeAuthError("[AUTH] Error during signOut flow", error);
     throw error;
   }
 };

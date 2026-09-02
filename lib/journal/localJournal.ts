@@ -8,6 +8,8 @@ import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBluep
 import { auth } from "@/lib/firebase/firebase";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { normalizeJournalEntryPrivacy } from "@/lib/journal/privacy";
+import type { JournalEntryPrivacy } from "@/lib/journal/privacy";
 
 export const JOURNAL_STORAGE_KEY = "bhumiJournalEntries";
 export const JOURNAL_DRAFT_PREFIX = "bhumiJournalDraft";
@@ -78,6 +80,7 @@ export type LocalJournalEntry = {
   insight: string;
   tomorrowFocus: string;
   journalType?: JournalType;
+  privacy?: Partial<JournalEntryPrivacy>;
   provenance?: MemoryProvenance;
   // Per-mode structured payloads (optional, matching journalType)
   cbt?: {
@@ -326,7 +329,13 @@ export function loadAllDrafts(): JournalDraft[] {
 
 export function saveLocalJournalEntry(entry: LocalJournalEntry): LocalJournalEntry[] {
   const entries = loadLocalJournalEntries();
-  const withId = { ...entry, id: entry.id || `journal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, journalType: entry.journalType || "FREE" as JournalType, provenance: entry.provenance || "user-written" as MemoryProvenance } as LocalJournalEntry;
+  const withId = {
+    ...entry,
+    id: entry.id || `journal-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    journalType: entry.journalType || "FREE" as JournalType,
+    provenance: entry.provenance || "user-written" as MemoryProvenance,
+    privacy: normalizeJournalEntryPrivacy(entry.privacy),
+  } as LocalJournalEntry;
   const nextEntry = withActiveUid(withId);
   const nextEntries = [nextEntry, ...entries];
   const scopedKey = getScopedJournalKey();

@@ -280,6 +280,13 @@ export interface JournalPrompt {
 // (display: "Spiritual Awakening"). Canonical docs updated in V5-01.
 export type JournalType = "FREE" | "CBT" | "EMOTION" | "GUIDED" | "SPIRITUAL_AWAKENING";
 
+export type JournalEntryPrivacy = {
+  locked: boolean;
+  hiddenFromHistory: boolean;
+  localOnly: boolean;
+  excludeFromMemory: boolean;
+};
+
 export interface JournalEntry {
   id: string;
   userId: string;
@@ -293,6 +300,10 @@ export interface JournalEntry {
 
   // Mode discriminator (V5). Absent on legacy entries — treat as GUIDED.
   journalType?: JournalType;
+
+  // Per-entry privacy is user-controlled. Legacy entries use the safe defaults
+  // from lib/journal/privacy.ts.
+  privacy?: Partial<JournalEntryPrivacy>;
 
   // Mode-specific structured payloads (only one is present, matching journalType)
   cbt?: {

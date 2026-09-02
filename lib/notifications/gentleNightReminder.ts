@@ -1,17 +1,12 @@
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
 import { Preferences } from "@capacitor/preferences";
+import { notificationCopy, type NotificationLocale } from "@/lib/notifications/notificationPolicy";
+import { safeErrorMetadata } from "@/lib/auth/safeDiagnostics";
 
 export const GENTLE_NIGHT_REMINDER_ID = 2100;
 export const REENGAGEMENT_3D_ID = 2101;
 export const REENGAGEMENT_7D_ID = 2102;
-
-export const GENTLE_NIGHT_REMINDER_TITLE = "Bhumi menunggumu sebentar";
-export const GENTLE_NIGHT_REMINDER_BODY = "Ambil satu menit untuk menyapa dirimu malam ini.";
-export const REENGAGEMENT_3D_TITLE = "Bhumi kangen";
-export const REENGAGEMENT_3D_BODY = "Sudah 3 hari tidak mampir. Tidak perlu alasan khusus, hanya ingin memastikan kamu baik-baik saja.";
-export const REENGAGEMENT_7D_TITLE = "Bhumi masih di sini";
-export const REENGAGEMENT_7D_BODY = "Sudah satu minggu. Kalau mau kembali, pelan-pelan saja. Bhumi tetap di sini untukmu.";
 
 const STORAGE_KEYS = {
   lastOpenedAt: "bhumiLastOpenedAt",
@@ -20,8 +15,6 @@ const STORAGE_KEYS = {
   permissionStatus: "bhumiNightReminderPermissionStatus",
   scheduledAt: "bhumiNightReminderScheduledAt",
   enabled: "bhumiDailyReminderEnabled",
-  reengagement3dSentAt: "bhumiReengagement3dSentAt",
-  reengagement7dSentAt: "bhumiReengagement7dSentAt",
 } as const;
 
 const DAY_IN_MS = 86_400_000;
@@ -47,14 +40,6 @@ export function getNextNightReminderAt(now: Date): Date {
   return next;
 }
 
-function daysSince(lastDate: string | null, now: Date): number {
-  if (!lastDate) return Number.POSITIVE_INFINITY;
-  const parsed = new Date(`${lastDate}T00:00:00`);
-  if (Number.isNaN(parsed.getTime())) return Number.POSITIVE_INFINITY;
-  const diff = now.getTime() - parsed.getTime();
-  return Math.floor(diff / DAY_IN_MS);
-}
-
 async function savePreference(key: string, value: string): Promise<void> {
   await Preferences.set({ key, value });
   if (typeof window !== "undefined") window.localStorage.setItem(key, value);
@@ -72,7 +57,7 @@ export async function cancelDailyReminders(): Promise<void> {
 
 export async function getDailyReminderEnabled(): Promise<boolean> {
   const value = await getPreference(STORAGE_KEYS.enabled);
-  return value !== "false";
+  return value === "true";
 }
 
 export async function setDailyReminderEnabled(enabled: boolean): Promise<void> {
@@ -110,46 +95,23 @@ async function cancelNotification(id: number): Promise<void> {
   }
 }
 
-async function sendReengagementOnce(
-  id: number,
-  title: string,
-  body: string,
-  thresholdDays: number,
-  sentKey: string,
-  now: Date,
-): Promise<boolean> {
-  const lastOpened = await getPreference(STORAGE_KEYS.lastOpenedDate);
-  if (!lastOpened) return false;
-  const inactiveDays = daysSince(lastOpened, now);
-  if (!Number.isFinite(inactiveDays) || inactiveDays < thresholdDays) return false;
-
-  const lastSent = await getPreference(sentKey);
-  if (lastSent && lastSent >= lastOpened) {
-    // Already sent for this inactivity cycle; do not duplicate.
-    return false;
-  }
-
-  try {
-    await cancelNotification(id);
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id,
-          title,
-          body,
-          schedule: { at: now, allowWhileIdle: true },
-          extra: { kind: id === REENGAGEMENT_3D_ID ? "reengagement-3d" : "reengagement-7d" },
-        },
-      ],
-    });
-    await savePreference(sentKey, getLocalDateKey(now));
-    return true;
-  } catch {
-    return false;
-  }
+async function scheduleFutureReengagement(now: Date, locale: NotificationLocale): Promise<void> {
+  const copy = notificationCopy("return", locale);
+  const at3Days = new Date(now.getTime() + 3 * DAY_IN_MS);
+  const at7Days = new Date(now.getTime() + 7 * DAY_IN_MS);
+  await Promise.all([cancelNotification(REENGAGEMENT_3D_ID), cancelNotification(REENGAGEMENT_7D_ID)]);
+  await LocalNotifications.schedule({
+    notifications: [
+      { id: REENGAGEMENT_3D_ID, ...copy, schedule: { at: at3Days, allowWhileIdle: true }, extra: { kind: "reengagement-3d" } },
+      { id: REENGAGEMENT_7D_ID, ...copy, schedule: { at: at7Days, allowWhileIdle: true }, extra: { kind: "reengagement-7d" } },
+    ],
+  });
 }
 
-export async function refreshGentleNightReminder(now = new Date()): Promise<GentleNightReminderResult> {
+export async function refreshGentleNightReminder(
+  now = new Date(),
+  locale: NotificationLocale = "id-ID",
+): Promise<GentleNightReminderResult> {
   try {
     if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") {
       return { status: "unavailable" };
@@ -163,42 +125,19 @@ export async function refreshGentleNightReminder(now = new Date()): Promise<Gent
     if (permission === "denied") return { status: "permission-denied" };
     if (permission === "prompted") return { status: "permission-prompted" };
 
-    // Re-engagement cycles (3d / 7d) — send at most once per inactivity cycle.
-    const sent3 = await sendReengagementOnce(
-      REENGAGEMENT_3D_ID,
-      REENGAGEMENT_3D_TITLE,
-      REENGAGEMENT_3D_BODY,
-      3,
-      STORAGE_KEYS.reengagement3dSentAt,
-      now,
-    );
-    const sent7 = await sendReengagementOnce(
-      REENGAGEMENT_7D_ID,
-      REENGAGEMENT_7D_TITLE,
-      REENGAGEMENT_7D_BODY,
-      7,
-      STORAGE_KEYS.reengagement7dSentAt,
-      now,
-    );
-    if (sent3 || sent7) {
-      return { status: "reengagement-sent" };
-    }
+    // Each foreground open resets future absence invitations. If the user does
+    // not return, the OS delivers them at day 3/day 7; no app-open "catch-up"
+    // notification is emitted.
+    await scheduleFutureReengagement(now, locale);
 
-    // Daily 21:00 reminder ONLY if user has NOT opened the app today.
-    const lastOpenedDate = await getPreference(STORAGE_KEYS.lastOpenedDate);
-    const todayKey = getLocalDateKey(now);
-    if (lastOpenedDate === todayKey) {
-      await cancelNotification(GENTLE_NIGHT_REMINDER_ID);
-      return { status: "skipped-opened-today" };
-    }
-
+    // Schedule the next invitation. A later foreground open cancels/resets it.
     await cancelNotification(GENTLE_NIGHT_REMINDER_ID);
     const scheduledAt = getNextNightReminderAt(now);
+    const dailyCopy = notificationCopy("daily", locale);
     await LocalNotifications.schedule({
       notifications: [{
         id: GENTLE_NIGHT_REMINDER_ID,
-        title: GENTLE_NIGHT_REMINDER_TITLE,
-        body: GENTLE_NIGHT_REMINDER_BODY,
+        ...dailyCopy,
         schedule: { at: scheduledAt, allowWhileIdle: true },
         extra: { kind: "gentle-night-reminder" },
       }],
@@ -217,7 +156,7 @@ export async function refreshGentleNightReminder(now = new Date()): Promise<Gent
     });
     return { status: "scheduled", scheduledAt: scheduledAt.toISOString() };
   } catch (error) {
-    console.warn("[Gentle Night Reminder] Scheduler unavailable", error);
+    console.warn("[Gentle Night Reminder] Scheduler unavailable", safeErrorMetadata(error));
     return { status: "error", error };
   }
 }

@@ -19,9 +19,24 @@ export interface JourneyMemoryPattern {
   state: MemoryCandidate["state"];
 }
 
-export function aggregateForJourney(candidates: MemoryCandidate[]): JourneyMemoryPattern[] {
+export const MEMORY_DECAY_DAYS = 90;
+
+export function isCandidateWithinRetention(
+  candidate: MemoryCandidate,
+  now = new Date(),
+  decayDays = MEMORY_DECAY_DAYS,
+): boolean {
+  if (candidate.pinned) return true;
+  const lastSeen = new Date(candidate.lastSeenAt);
+  if (Number.isNaN(lastSeen.getTime())) return false;
+  const ageMs = now.getTime() - lastSeen.getTime();
+  return ageMs <= decayDays * 24 * 60 * 60 * 1000;
+}
+
+export function aggregateForJourney(candidates: MemoryCandidate[], now = new Date()): JourneyMemoryPattern[] {
   return candidates
     .filter(c => c.state !== "DISMISSED")
+    .filter(c => isCandidateWithinRetention(c, now))
     .filter(c => isPromotable(c.evidence.length) || c.pinned)
     .map(c => ({
       theme: c.theme,

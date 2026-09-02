@@ -24,6 +24,7 @@ import {
   type ProfileLoadOutcome,
 } from '@/lib/auth/profileLoadOutcome';
 import { enforceFounderQaAllowlist } from '@/lib/auth/founderQaGuard';
+import { logSafeAuthError, warnSafeAuthError } from '@/lib/auth/safeDiagnostics';
 
 interface AuthContextType {
   user: User | null;
@@ -54,8 +55,7 @@ function logProfileLoad(
   if (!isEmulatorMode) return;
   console.info("[AUTH PROFILE LOAD]", {
     effectId,
-    uid,
-    documentPath: `users/${uid}`,
+    hasAuthenticatedUser: Boolean(uid),
     stage,
     status: outcome?.status,
     elapsedMs: outcome?.elapsedMs,
@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return null;
       } else {
         if (outcome.error instanceof ServerIssuedProfilePendingError) throw outcome.error;
-        console.error("Auth profile refresh error:", outcome.error);
+        logSafeAuthError("[AUTH PROFILE REFRESH ERROR]", outcome.error);
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
         if (!isCurrentRefresh()) return null;
@@ -145,8 +145,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     console.log("[AUTH INIT START]", {
       source: "AuthContext",
       hasCurrentUser: Boolean(auth.currentUser),
-      uid: auth.currentUser?.uid ?? null,
-      email: auth.currentUser?.email ?? null,
     });
 
     // Safety timeout to resolve loading state if Firebase hangs
@@ -164,7 +162,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         await setPersistence(auth, browserLocalPersistence);
       } catch (error) {
-        console.error("Auth persistence setup error:", error);
+        logSafeAuthError("[AUTH PERSISTENCE SETUP ERROR]", error);
       }
 
       if (cancelled) return;
@@ -193,20 +191,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           void recordAuthEvent("AUTH_STATE_ESTABLISHED", undefined, firebaseUser?.uid);
           console.info("[AUTH] onAuthStateChanged", {
-            uid: firebaseUser?.uid ?? null,
-            email: firebaseUser?.email ?? null,
             route: typeof window !== "undefined" ? window.location.pathname : null,
             authState: firebaseUser ? "authenticated" : "unauthenticated",
           });
           console.info("[AUTH USER]", {
-            uid: firebaseUser?.uid ?? null,
-            email: firebaseUser?.email ?? null,
             providerId: firebaseUser?.providerData?.[0]?.providerId ?? null,
           });
           console.info("[AUTH INIT READY]", {
             currentUserExists: Boolean(firebaseUser),
-            uid: firebaseUser?.uid ?? null,
-            email: firebaseUser?.email ?? null,
           });
 
           if (!isActive()) return;
@@ -286,13 +278,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (primaryOutcome.status === "timeout") {
                 console.warn("[AUTH] Profile load timed out; continuing without a profile.", {
                   effectId,
-                  uid: firebaseUser.uid,
-                  documentPath: `users/${firebaseUser.uid}`,
+                  hasAuthenticatedUser: true,
                   elapsedMs: primaryOutcome.elapsedMs,
                 });
               }
             } else if (primaryOutcome.status === "error") {
-              console.error("Auth profile loading error:", primaryOutcome.error);
+              logSafeAuthError("[AUTH PROFILE LOADING ERROR]", primaryOutcome.error);
               if (!isActive()) return;
               setProfileError("Profil belum bisa dimuat. Silakan coba lagi.");
             }
@@ -306,8 +297,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (profile && profile.uid !== firebaseUser.uid) {
               console.error("[USER DATA MISMATCH BLOCKED]", {
                 reason: "profile_uid_mismatch_in_auth_context",
-                authUid: firebaseUser.uid,
-                profileUid: profile.uid
+                hasAuthUid: true,
+                hasProfileUid: Boolean(profile.uid),
               });
               if (!isActive()) return;
               setUserProfile(null);
@@ -315,8 +306,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfileError("Terjadi kesalahan sinkronisasi akun.");
             } else if (profile) {
               console.log("[USER DATA LOAD]", {
-                authUid: firebaseUser.uid,
-                profileUid: profile?.uid ?? null,
+                ownerMatched: true,
                 source: "AuthContext",
                 profileExists: !!profile,
                 setupCompleted: profile?.setupCompleted
@@ -332,7 +322,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
               const migrationResult = await resolveCurrentAuthOperation(
                 () => migrateUserToGaia(grantedProfile).catch((error) => {
-                  if (isActive()) console.warn("[GAIA MIGRATION DEFERRED]", error);
+                  if (isActive()) warnSafeAuthError("[GAIA MIGRATION DEFERRED]", error);
                   return grantedProfile;
                 }),
                 isActive,
@@ -348,7 +338,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   displayName: firebaseUser.displayName || (migratedProfile as any).displayName,
                   fullName: (migratedProfile as any).fullName,
                 }).catch((error) => {
-                  if (isActive()) console.warn('[BIRTHDAY MESSAGE CHECK FAILED]', error);
+                  if (isActive()) warnSafeAuthError('[BIRTHDAY MESSAGE CHECK FAILED]', error);
                 }),
                 isActive,
               );
@@ -360,7 +350,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                   email: firebaseUser.email || migratedProfile.email || "",
                   displayName: firebaseUser.displayName ?? migratedProfile.displayName ?? migratedProfile.fullName ?? "",
                 }).catch((error) => {
-                  if (isActive()) console.warn("[LOGIN PARTICIPATION UPDATE FAILED]", error);
+                  if (isActive()) warnSafeAuthError("[LOGIN PARTICIPATION UPDATE FAILED]", error);
                 }),
                 isActive,
               );
@@ -387,7 +377,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               setProfileError("Profil sedang disiapkan. Mohon tunggu.");
               return;
             }
-            console.error("Auth profile loading error:", error);
+            logSafeAuthError("[AUTH PROFILE LOADING ERROR]", error);
             void recordAuthEvent(
               "PROFILE_LOAD_FAILED",
               {
@@ -428,7 +418,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         },
         (error) => {
           if (cancelled) return;
-          console.error("Auth state listener error:", error);
+          logSafeAuthError("[AUTH STATE LISTENER ERROR]", error);
           setUser(null);
           setUserProfile(null);
           setAuthLoading(false);
@@ -459,7 +449,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         displayName: firebaseUser.displayName ?? userProfile?.displayName ?? userProfile?.fullName ?? "",
         role: userProfile?.guardianRole || userProfile?.role || "user",
       }).catch((error) => {
-        console.warn("[PRESENCE RESUME UPDATE FAILED]", error);
+        warnSafeAuthError("[PRESENCE RESUME UPDATE FAILED]", error);
       });
     };
 

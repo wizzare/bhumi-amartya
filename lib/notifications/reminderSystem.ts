@@ -79,9 +79,7 @@ export function checkAndSendDailyReminder(): boolean {
     return false;
   }
   
-  // In a real implementation this sends via FCM or Web Push.
-  // MVP: local abstraction.
-  console.log("[Reminder System] Hai, kamu baik-baik aja? Hari ini belum innerwork dan grounding ya? Yuk login 🌱");
+  // Local-only compatibility state. This does not claim FCM delivery.
   
   saveNotificationState({ reminderSentToday: true });
   return true;

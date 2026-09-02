@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { Capacitor } from "@capacitor/core";
@@ -17,13 +17,12 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { participationEngine } from "@/lib/engines/participationEngine";
 import { EmulatorQaLogin } from "@/components/dev/EmulatorQaLogin";
+import { logSafeAuthError } from "@/lib/auth/safeDiagnostics";
 
 function LoginContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { language } = useLanguage();
   const t = translations[language];
-  const nextParam = searchParams.get("next") || "/dashboard";
 
   const auth = useAuth();
   const authUser = auth?.user;
@@ -54,7 +53,7 @@ function LoginContent() {
 
     if (!Capacitor.isNativePlatform()) {
       void handleGoogleRedirectResult().catch((err) => {
-        console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
+        logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", err);
         if (!active) return;
         setError(getGoogleLoginErrorMessage(err));
       });
@@ -69,7 +68,7 @@ function LoginContent() {
     const checkUserAndRoute = async () => {
       if (!authStateResolved || !authUser || profileLoading) return;
 
-      console.log("[LOGIN SUCCESS] UID:", authUser.uid);
+      console.info("[LOGIN SUCCESS]", { hasAuthenticatedUser: true });
       trackEvent("login_success", authUser.uid);
       void participationEngine.recordActivity(authUser.uid, "login");
       console.log("[POST LOGIN CHECK] Checking Profile and Blueprint...");
@@ -103,10 +102,8 @@ function LoginContent() {
         const blueprintExists = Boolean(blueprint) || setupCompleted;
 
         console.log("[POST LOGIN CHECK]", {
-          uid: authUser.uid,
           setupCompleted,
           blueprintExists,
-          nextParam
         });
 
         if (setupCompleted && blueprintExists) {
@@ -117,13 +114,13 @@ function LoginContent() {
           router.replace("/setup");
         }
       } catch (err) {
-        console.error("[POST LOGIN ERROR]", err);
+        logSafeAuthError("[POST LOGIN ERROR]", err);
         router.replace("/setup");
       }
     };
 
     void checkUserAndRoute();
-  }, [authStateResolved, authUser, profileLoading, router, nextParam]);
+  }, [authStateResolved, authUser, profileLoading, router]);
 
   const handleGoogleLogin = async () => {
     try {
@@ -133,7 +130,7 @@ function LoginContent() {
       console.log("[LOGIN FLOW] Starting Google Auth");
       await signInWithGoogle({ promptSelectAccount: true });
     } catch (err: unknown) {
-      console.error("[CRITICAL AUTH ERROR - RAW]", err);
+      logSafeAuthError("[CRITICAL AUTH ERROR]", err);
       const code = (err as { code?: string })?.code;
       setError(getGoogleLoginErrorMessage(err));
       if (!Capacitor.isNativePlatform()) {
@@ -150,7 +147,7 @@ function LoginContent() {
       setError(null);
       await signInWithGoogleRedirect({ promptSelectAccount: true });
     } catch (err) {
-      console.error("[GOOGLE REDIRECT AUTH ERROR]", err);
+      logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", err);
       setError(getGoogleLoginErrorMessage(err));
     } finally {
       setLoginLoading(false);

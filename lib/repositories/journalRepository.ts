@@ -13,6 +13,7 @@ import { auth, db } from "@/lib/firebase/config";
 import type { JournalEntry, JournalType } from "@/lib/data/types";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
+import { canSyncJournalEntry } from "@/lib/journal/privacy";
 
 function assertAuthenticatedOwner(uid: string): void {
   if (typeof window === "undefined") return;
@@ -48,6 +49,9 @@ export const journalRepository = {
 
   async createJournalEntry(uid: string, entry: JournalEntry): Promise<void> {
     assertAuthenticatedOwner(uid);
+    if (!canSyncJournalEntry(entry.privacy)) {
+      throw new Error("LOCAL_ONLY_JOURNAL_ENTRY");
+    }
     const entryRef = doc(journalEntriesCollection(uid), entry.id);
     await debugFirestoreOperation(
       { operation: "setDoc", path: journalEntryPath(uid, entry.id), uid },
@@ -65,6 +69,9 @@ export const journalRepository = {
     data: Partial<JournalEntry>,
   ): Promise<void> {
     assertAuthenticatedOwner(uid);
+    if (!canSyncJournalEntry(data.privacy)) {
+      throw new Error("LOCAL_ONLY_JOURNAL_ENTRY");
+    }
     const entryRef = doc(journalEntriesCollection(uid), entryId);
     await debugFirestoreOperation(
       { operation: "setDoc", path: journalEntryPath(uid, entryId), uid },
