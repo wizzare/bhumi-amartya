@@ -18,6 +18,11 @@ export interface ProgressMetrics {
   bodySignals: Array<{ signal: string; frequency: number }>;
   physicalActivityDiversity: Array<{ category: string; count: number }>; // Build 31.35
   lastActivityDate: string | null;
+  // R-PRD-18 / R-XC-02: distinct days with any activity in the trailing 30 days.
+  // This is the no-pressure progress signal — missing a day does not reset it.
+  // `streakDays` above is retained as a raw metric only; it must not drive a
+  // "don't break the chain" UI.
+  activeDays30: number;
   updatedAt: string;
 }
 
@@ -59,7 +64,23 @@ function getActivityDates(
   return dates;
 }
 
-// Helper: Calculate streak (consecutive days with at least 1 activity)
+// Helper: distinct days with activity within the trailing `windowDays` (no
+// consecutive requirement). R-PRD-18 / R-XC-02 — progress without streak pressure.
+function countActiveDaysInWindow(dates: Set<string>, windowDays = 30): number {
+  if (dates.size === 0) return 0;
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - (windowDays - 1));
+  let count = 0;
+  for (const iso of dates) {
+    const d = new Date(iso);
+    if (Number.isFinite(d.getTime()) && d.getTime() >= cutoff.getTime()) count += 1;
+  }
+  return count;
+}
+
+// Helper: Calculate streak (consecutive days with at least 1 activity).
+// Retained as a raw metric only — NEVER surface as chain-pressure UI (R-PRD-18).
 function calculateStreak(dates: Set<string>): number {
   if (dates.size === 0) return 0;
 
@@ -99,7 +120,7 @@ function calculateConsistencyScore(
   journalEntries: JournalEntry[],
   meditationEntries: MeditationEntry[],
   audioHealingEntries: AudioHealingEntry[],
-  streakDays: number,
+  activeDays30: number,
   physicalActivities: PhysicalActivity[] = []
 ): number {
   const totalEntries =
@@ -110,9 +131,9 @@ function calculateConsistencyScore(
 
   if (totalEntries === 0) return 0;
 
-  // Calculate based on:
-  // 1. Activity frequency (entries per week, max 7 = 100% of this factor)
-  // 2. Streak (days, max 30 = 100% of this factor)
+  // Calculate based on (R-PRD-18 / R-XC-02 — no consecutive-day streak factor):
+  // 1. Activity frequency (total entries, max 40 = 100% of this factor)
+  // 2. Active days in the last 30 (breadth over the month, NOT a chain), max 20
   // 3. Recent activity (last 7 days activity)
 
   const now = new Date();
@@ -125,11 +146,12 @@ function calculateConsistencyScore(
     physicalActivities.filter((e) => new Date(e.completedAt) > sevenDaysAgo).length;
 
   const frequencyScore = Math.min((totalEntries / 40) * 100, 100); // Max 40 total entries for 100%
-  const streakScore = Math.min((streakDays / 30) * 100, 100); // Max 30 days for 100%
+  const activeDaysScore = Math.min((activeDays30 / 20) * 100, 100); // Max 20 active days in the last 30 for 100%
   const recentActivityScore = Math.min((recentEntries / 10) * 100, 100); // Ideal 10 in last week
 
-  // Weight: 30% frequency, 40% streak, 30% recent activity
-  const score = frequencyScore * 0.3 + streakScore * 0.4 + recentActivityScore * 0.3;
+  // Weight: 30% frequency, 40% active-days-in-last-30, 30% recent activity.
+  // No consecutive-day streak term (R-PRD-18 / R-XC-02).
+  const score = frequencyScore * 0.3 + activeDaysScore * 0.4 + recentActivityScore * 0.3;
 
   return Math.min(Math.round(score), 100);
 }
@@ -249,20 +271,21 @@ function analyzeBodySignals(
 // Helper: Determine journey phase
 function determineJourneyPhase(
   totalEntries: number,
-  streakDays: number,
+  activeDays30: number,
   themes: Array<{ theme: string; frequency: number; trend: "up" | "down" | "stable" }>
 ): "Awareness" | "Acceptance" | "Release" | "Rebuilding" | "Integration" | "Alignment" {
+  // Phases reflect depth of engagement, not an unbroken chain (R-PRD-18 / R-XC-02).
   // Awareness: Just starting, low activity
   if (totalEntries < 5) return "Awareness";
 
   // Acceptance: Regular activity, beginning to identify patterns
-  if (totalEntries < 20 && streakDays < 10) return "Acceptance";
+  if (totalEntries < 20 && activeDays30 < 8) return "Acceptance";
 
   // Release: Consistent activity, patterns becoming clear
-  if (streakDays >= 10 && streakDays < 30) return "Release";
+  if (activeDays30 >= 8 && activeDays30 < 20) return "Release";
 
   // Rebuilding: Strong consistency, working with patterns
-  if (streakDays >= 30 && totalEntries < 50) return "Rebuilding";
+  if (activeDays30 >= 20 && totalEntries < 50) return "Rebuilding";
 
   // Integration: Very consistent, themes stabilizing
   const upTrends = themes.filter((t) => t.trend === "up").length;
@@ -279,7 +302,7 @@ function unlockMilestones(
   journalEntries: JournalEntry[],
   meditationEntries: MeditationEntry[],
   audioHealingEntries: AudioHealingEntry[],
-  streakDays: number
+  activeDays30: number
 ): string[] {
   const milestones: string[] = [];
 
@@ -287,7 +310,8 @@ function unlockMilestones(
   if (meditationEntries.length > 0) milestones.push("✅ Meditasi Pertama");
   if (audioHealingEntries.length > 0) milestones.push("✅ Audio Healing Pertama");
 
-  if (streakDays >= 7) milestones.push("✅ 7 Hari Bertumbuh");
+  // Active days in the last month — not a consecutive-day streak (R-PRD-18).
+  if (activeDays30 >= 7) milestones.push("✅ 7 Hari Aktif");
   if (journalEntries.length >= 30) milestones.push("✅ 30 Refleksi");
   if (meditationEntries.length >= 10) milestones.push("✅ 10 Meditasi");
   if (audioHealingEntries.length >= 10) milestones.push("✅ 10 Audio Sessions");
@@ -333,22 +357,23 @@ export function calculateProgressMetrics(input: ProgressInput): ProgressMetrics 
   const totalEntries = totalJournalEntries + totalMeditationEntries + totalAudioHealingEntries + totalPhysicalActivities;
 
   const activityDates = getActivityDates(journalEntries, meditationEntries, audioHealingEntries, physicalActivities);
-  const streakDays = calculateStreak(activityDates);
+  const streakDays = calculateStreak(activityDates); // raw metric only — not chain-pressure UI (R-PRD-18)
+  const activeDays30 = countActiveDaysInWindow(activityDates, 30);
   const consistencyScore = calculateConsistencyScore(
     journalEntries,
     meditationEntries,
     audioHealingEntries,
-    streakDays,
+    activeDays30,
     physicalActivities
   );
 
   const dominantThemes = analyzeThemes(journalEntries, meditationEntries);
-  const journeyPhase = determineJourneyPhase(totalEntries, streakDays, dominantThemes);
+  const journeyPhase = determineJourneyPhase(totalEntries, activeDays30, dominantThemes);
   const milestones = unlockMilestones(
     journalEntries,
     meditationEntries,
     audioHealingEntries,
-    streakDays
+    activeDays30
   );
 
   // Analyze diversity Build 31.35
@@ -379,6 +404,7 @@ export function calculateProgressMetrics(input: ProgressInput): ProgressMetrics 
     bodySignals,
     physicalActivityDiversity,
     lastActivityDate,
+    activeDays30,
     updatedAt: new Date().toISOString(),
   };
 }

@@ -1,4 +1,5 @@
 import type { DailyGuidanceAdaptiveContext } from "@/lib/dailyGuidance/types";
+import { pickLocale } from "@/lib/i18n/pickLocale";
 import {
   interpretDestinyMatrixIntelligence,
   type DestinyHealthChart,
@@ -176,7 +177,8 @@ export type FullBaziSignals = {
 };
 
 export type UnifiedBlueprintSynthesisInput = {
-  language: "id" | "en";
+  // R-PRD-31 / DS-AI1: id/en/ms first-class; ms narrative below is native Bahasa Melayu.
+  language: "id" | "en" | "ms";
   profile: UnknownRecord | null;
   blueprint: UnknownRecord | null;
   astrologyToday?: string | null;
@@ -389,117 +391,160 @@ export function getProgressTone(completionRateYesterday: number, streakDays = 0)
   return { key: "steady", label: "steady, supportive continuation", durationRange: [5, 15], practiceDepth: "steady" };
 }
 
-function mergeThemes(primary: string, secondary: string, fallback: string, language: "id" | "en" = "id"): string {
+function mergeThemes(primary: string, secondary: string, fallback: string, language: "id" | "en" | "ms" = "id"): string {
   const parts = [primary, secondary].filter(Boolean);
   if (parts.length === 0) return fallback;
   if (parts.length === 1 || primary === secondary) return parts[0];
-  return language === "en"
-    ? `${primary}, held together with ${secondary}`
-    : `${primary} serta ${secondary}`;
+  return pickLocale(language, {
+    en: `${primary}, held together with ${secondary}`,
+    id: `${primary} serta ${secondary}`,
+    ms: `${primary} serta ${secondary}`,
+  });
 }
 
-function humanizeNeed(need: string, language: "id" | "en"): string {
+function humanizeNeed(need: string, language: "id" | "en" | "ms"): string {
   const text = need.toLowerCase();
+  const L = (en: string, id: string, ms: string) => pickLocale(language, { en, id, ms });
 
   if (text.includes("steady") || text.includes("continuation")) {
-    return language === "en"
-      ? "supportive continuation of your current steady rhythm"
-      : "kelanjutan suportif dari ritmemu yang mulai stabil";
+    return L(
+      "supportive continuation of your current steady rhythm",
+      "kelanjutan suportif dari ritmemu yang mulai stabil",
+      "kesinambungan yang menyokong bagi irama anda yang mula stabil",
+    );
   }
   if (text.includes("structure") || text.includes("discipline") || text.includes("consistency")) {
-    return language === "en"
-      ? "one clear structure that makes the day feel easier to hold"
-      : "satu struktur kecil yang membuat hari terasa lebih mudah dipegang";
+    return L(
+      "one clear structure that makes the day feel easier to hold",
+      "satu struktur kecil yang membuat hari terasa lebih mudah dipegang",
+      "satu struktur kecil yang membuatkan hari terasa lebih mudah dipegang",
+    );
   }
   if (text.includes("current sky")) {
-    return language === "en"
-      ? "awareness of today's mood without letting it decide everything for you"
-      : "kesadaran pada suasana hari ini tanpa membiarkannya menentukan semuanya";
+    return L(
+      "awareness of today's mood without letting it decide everything for you",
+      "kesadaran pada suasana hari ini tanpa membiarkannya menentukan semuanya",
+      "kesedaran terhadap suasana hari ini tanpa membiarkannya menentukan segalanya",
+    );
   }
   if (text.includes("relational") || text.includes("relationship") || text.includes("cooperation") || text.includes("invited") || text.includes("well-timed")) {
-    return language === "en"
-      ? "one relationship or conversation handled with more timing and care"
-      : "satu relasi atau percakapan yang dijaga dengan waktu dan kepedulian yang lebih pas";
+    return L(
+      "one relationship or conversation handled with more timing and care",
+      "satu relasi atau percakapan yang dijaga dengan waktu dan kepedulian yang lebih pas",
+      "satu hubungan atau perbualan yang dijaga dengan masa dan keprihatinan yang lebih tepat",
+    );
   }
   if (text.includes("home") || text.includes("family") || text.includes("community") || text.includes("inner yes")) {
-    return language === "en"
-      ? "one caring action that supports others without ignoring your own capacity"
-      : "satu tindakan peduli yang mendukung orang lain tanpa mengabaikan kapasitasmu";
+    return L(
+      "one caring action that supports others without ignoring your own capacity",
+      "satu tindakan peduli yang mendukung orang lain tanpa mengabaikan kapasitasmu",
+      "satu tindakan prihatin yang menyokong orang lain tanpa mengabaikan kapasiti anda",
+    );
   }
   if (text.includes("environment") || text.includes("spacious") || text.includes("sensitivity")) {
-    return language === "en"
-      ? "an environment that gives your sensitivity more room to breathe"
-      : "lingkungan yang memberi kepekaanmu lebih banyak ruang untuk bernapas";
+    return L(
+      "an environment that gives your sensitivity more room to breathe",
+      "lingkungan yang memberi kepekaanmu lebih banyak ruang untuk bernapas",
+      "persekitaran yang memberi kepekaan anda lebih banyak ruang untuk bernafas",
+    );
   }
   if (text.includes("self-trust") || text.includes("initiative") || text.includes("conscious initiation")) {
-    return language === "en"
-      ? "permission to trust the first honest step without forcing the whole path"
-      : "izin untuk mempercayai langkah jujur pertama tanpa memaksa seluruh jalan";
+    return L(
+      "permission to trust the first honest step without forcing the whole path",
+      "izin untuk mempercayai langkah jujur pertama tanpa memaksa seluruh jalan",
+      "keizinan untuk mempercayai langkah jujur pertama tanpa memaksa seluruh perjalanan",
+    );
   }
   if (text.includes("freedom") || text.includes("flexibility") || text.includes("explor")) {
-    return language === "en"
-      ? "enough freedom to move without scattering your energy everywhere"
-      : "ruang bergerak yang cukup tanpa membuat energimu tersebar ke mana-mana";
+    return L(
+      "enough freedom to move without scattering your energy everywhere",
+      "ruang bergerak yang cukup tanpa membuat energimu tersebar ke mana-mana",
+      "ruang bergerak yang mencukupi tanpa menyerakkan tenaga anda ke merata tempat",
+    );
   }
   if (text.includes("quiet") || text.includes("study") || text.includes("contemplative") || text.includes("introspection")) {
-    return language === "en"
-      ? "quiet space to understand what is true before acting on it"
-      : "ruang hening untuk memahami yang benar sebelum bertindak";
+    return L(
+      "quiet space to understand what is true before acting on it",
+      "ruang hening untuk memahami yang benar sebelum bertindak",
+      "ruang tenang untuk memahami apa yang benar sebelum bertindak",
+    );
   }
   if (text.includes("long-term") || text.includes("vision") || text.includes("building block")) {
-    return language === "en"
-      ? "one grounded building block for something that matters long term"
-      : "satu pijakan membumi untuk sesuatu yang penting dalam jangka panjang";
+    return L(
+      "one grounded building block for something that matters long term",
+      "satu pijakan membumi untuk sesuatu yang penting dalam jangka panjang",
+      "satu asas yang membumi bagi sesuatu yang penting untuk jangka panjang",
+    );
   }
   if (text.includes("compassion") || text.includes("service") || text.includes("healing")) {
-    return language === "en"
-      ? "care that includes other people without leaving yourself behind"
-      : "kepedulian yang tetap menyertakan dirimu sendiri";
+    return L(
+      "care that includes other people without leaving yourself behind",
+      "kepedulian yang tetap menyertakan dirimu sendiri",
+      "keprihatinan yang tetap menyertakan diri anda sendiri",
+    );
   }
   if (text.includes("body") || text.includes("energy") || text.includes("ground") || text.includes("tubuh")) {
-    return language === "en"
-      ? "a slower check-in with the body before choosing the next step"
-      : "jeda yang lebih pelan untuk mendengar tubuh sebelum memilih langkah";
+    return L(
+      "a slower check-in with the body before choosing the next step",
+      "jeda yang lebih pelan untuk mendengar tubuh sebelum memilih langkah",
+      "jeda yang lebih perlahan untuk mendengar tubuh sebelum memilih langkah",
+    );
   }
   if (text.includes("emotion") || text.includes("heart") || text.includes("harmony") || text.includes("care")) {
-    return language === "en"
-      ? "more room for feelings without letting them run the whole day"
-      : "ruang yang lebih lembut untuk emosi tanpa membiarkannya mengambil alih hari";
+    return L(
+      "more room for feelings without letting them run the whole day",
+      "ruang yang lebih lembut untuk emosi tanpa membiarkannya mengambil alih hari",
+      "ruang yang lebih lembut untuk emosi tanpa membiarkannya mengambil alih hari",
+    );
   }
   if (text.includes("leadership") || text.includes("power") || text.includes("money") || text.includes("ownership") || text.includes("responsibility with balance")) {
-    return language === "en"
-      ? "a cleaner relationship with responsibility, choice, and personal power"
-      : "relasi yang lebih jernih dengan tanggung jawab, pilihan, dan daya diri";
+    return L(
+      "a cleaner relationship with responsibility, choice, and personal power",
+      "relasi yang lebih jernih dengan tanggung jawab, pilihan, dan daya diri",
+      "hubungan yang lebih jernih dengan tanggungjawab, pilihan, dan kuasa diri",
+    );
   }
   if (text.includes("expression") || text.includes("communication") || text.includes("creative")) {
-    return language === "en"
-      ? "honest expression in a form that feels safe enough to begin"
-      : "ekspresi jujur dalam bentuk yang cukup aman untuk dimulai";
+    return L(
+      "honest expression in a form that feels safe enough to begin",
+      "ekspresi jujur dalam bentuk yang cukup aman untuk dimulai",
+      "ekspresi jujur dalam bentuk yang cukup selamat untuk dimulakan",
+    );
   }
   if (text.includes("rest") || text.includes("observation") || text.includes("clarity")) {
-    return language === "en"
-      ? "clarity that comes from pausing before giving energy away"
-      : "kejernihan yang muncul dari jeda sebelum memberi energi ke luar";
+    return L(
+      "clarity that comes from pausing before giving energy away",
+      "kejernihan yang muncul dari jeda sebelum memberi energi ke luar",
+      "kejernihan yang muncul daripada jeda sebelum memberi tenaga ke luar",
+    );
   }
   if (text.includes("release") || text.includes("closure") || text.includes("transform")) {
-    return language === "en"
-      ? "permission to close one small loop without rushing the whole process"
-      : "izin untuk menutup satu lingkaran kecil tanpa memburu seluruh proses";
+    return L(
+      "permission to close one small loop without rushing the whole process",
+      "izin untuk menutup satu lingkaran kecil tanpa memburu seluruh proses",
+      "keizinan untuk menutup satu lingkaran kecil tanpa mengejar seluruh proses",
+    );
   }
   if (text.includes("restart")) {
-    return language === "en"
-      ? "a gentle restart without turning yesterday into a verdict"
-      : "awal ulang yang lembut tanpa menjadikan kemarin sebagai vonis";
+    return L(
+      "a gentle restart without turning yesterday into a verdict",
+      "awal ulang yang lembut tanpa menjadikan kemarin sebagai vonis",
+      "permulaan semula yang lembut tanpa menjadikan semalam sebagai hukuman",
+    );
   }
   if (text.includes("growth") || text.includes("expansion") || text.includes("next level")) {
-    return language === "en"
-      ? "a slightly braver step that still respects capacity"
-      : "langkah yang sedikit lebih berani, tetap sesuai kapasitas";
+    return L(
+      "a slightly braver step that still respects capacity",
+      "langkah yang sedikit lebih berani, tetap sesuai kapasitas",
+      "langkah yang sedikit lebih berani, tetapi tetap menghormati kapasiti",
+    );
   }
   if (text.includes("celebration") || text.includes("consistency")) {
-    return language === "en"
-      ? "appreciation for the rhythm already being built"
-      : "apresiasi untuk ritme yang sudah mulai terbangun";
+    return L(
+      "appreciation for the rhythm already being built",
+      "apresiasi untuk ritme yang sudah mulai terbangun",
+      "penghargaan untuk irama yang sudah mula terbina",
+    );
   }
 
   return need;
@@ -828,9 +873,9 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     compactSignal("BaZi Ten Gods", fullBazi.tenGods),
   ].filter((item): item is string => Boolean(item));
 
-  const groundingFallback = input.language === "en" ? "grounded steadiness" : "ritme yang membumi";
-  const actionFallback = input.language === "en" ? "practical action" : "langkah nyata";
-  const reflectionFallback = input.language === "en" ? "honest reflection" : "refleksi jujur";
+  const groundingFallback = pickLocale(input.language, { en: "grounded steadiness", id: "ritme yang membumi", ms: "irama yang membumi" });
+  const actionFallback = pickLocale(input.language, { en: "practical action", id: "langkah nyata", ms: "langkah nyata" });
+  const reflectionFallback = pickLocale(input.language, { en: "honest reflection", id: "refleksi jujur", ms: "refleksi jujur" });
 
   const coreNeeds = [
     mergeThemes(lifePathThemes.grounding, hdThemes.grounding, groundingFallback, input.language),
@@ -838,11 +883,11 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
       || compactSignal("Love Line", fullDestinyMatrix.loveLine)
       || arcanaCenter
       || commonEnergy
-      || (input.language === "en" ? "emotional integration" : "integrasi emosi"),
+      || pickLocale(input.language, { en: "emotional integration", id: "integrasi emosi", ms: "integrasi emosi" }),
     mergeThemes(lifePathThemes.action, hdThemes.action, actionFallback, input.language),
-    input.astrologyToday 
-      ? (input.language === "en" ? "current sky awareness" : "kesadaran suasana langit") 
-      : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || (input.language === "en" ? "self-awareness" : "kesadaran diri"),
+    input.astrologyToday
+      ? pickLocale(input.language, { en: "current sky awareness", id: "kesadaran suasana langit", ms: "kesedaran suasana langit" })
+      : fullNatalChart.venus || fullNatalChart.saturn || sunSign || moonSign || ascendant || pickLocale(input.language, { en: "self-awareness", id: "kesadaran diri", ms: "kesedaran diri" }),
     fullTzolkin.lifePurpose || fullVedic.spiritualStyle || fullWeton.lifeMission || fullBazi.lifeMission,
     differentiators[0],
     progressTone.label,
@@ -851,9 +896,11 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     coreNeeds.map((need) => humanizeNeed(String(need), input.language)),
   );
 
-  const blueprintSummary = input.language === "en"
-    ? `Today may feel more workable when you give yourself ${humanNeeds[0] ?? "a steadier rhythm"}, ${humanNeeds[1] ?? "one honest pause"}, and ${humanNeeds[2] ?? "one doable next step"}. Let the day stay practical: one honest check-in, one grounded choice, one small follow-through.`
-    : `Hari ini mungkin terasa lebih bisa dijalani saat kamu memberi ruang untuk ${humanNeeds[0] ?? "ritme yang lebih stabil"}, ${humanNeeds[1] ?? "satu jeda jujur"}, dan ${humanNeeds[2] ?? "satu langkah yang bisa dilakukan"}. Biarkan harimu tetap sederhana: satu cek-in jujur, satu pilihan yang membumi, satu langkah kecil yang benar-benar dilakukan.`;
+  const blueprintSummary = pickLocale(input.language, {
+    en: `Today may feel more workable when you give yourself ${humanNeeds[0] ?? "a steadier rhythm"}, ${humanNeeds[1] ?? "one honest pause"}, and ${humanNeeds[2] ?? "one doable next step"}. Let the day stay practical: one honest check-in, one grounded choice, one small follow-through.`,
+    id: `Hari ini mungkin terasa lebih bisa dijalani saat kamu memberi ruang untuk ${humanNeeds[0] ?? "ritme yang lebih stabil"}, ${humanNeeds[1] ?? "satu jeda jujur"}, dan ${humanNeeds[2] ?? "satu langkah yang bisa dilakukan"}. Biarkan harimu tetap sederhana: satu cek-in jujur, satu pilihan yang membumi, satu langkah kecil yang benar-benar dilakukan.`,
+    ms: `Hari ini mungkin terasa lebih mudah dilalui apabila anda memberi ruang untuk ${humanNeeds[0] ?? "irama yang lebih stabil"}, ${humanNeeds[1] ?? "satu jeda jujur"}, dan ${humanNeeds[2] ?? "satu langkah yang boleh dilakukan"}. Biarkan hari anda kekal sederhana: satu semakan jujur, satu pilihan yang membumi, satu langkah kecil yang benar-benar dilakukan.`,
+  });
 
   return {
     blueprintSummary,

@@ -60,9 +60,9 @@ function firstNonEmpty(...values: any[]): string {
   return "";
 }
 
-function weekdayName(localDateKey: string, language: "id" | "en"): string {
+function weekdayName(localDateKey: string, language: "id" | "en" | "ms"): string {
   const date = new Date(`${localDateKey}T12:00:00`);
-  const locale = language === "id" ? "id-ID" : "en-US";
+  const locale = language === "en" ? "en-US" : language === "ms" ? "ms-MY" : "id-ID";
   return Number.isFinite(date.getTime())
     ? date.toLocaleDateString(locale, { weekday: "long" })
     : localDateKey;
@@ -380,8 +380,11 @@ export function generateLocalManifestation(input: DailyGuidanceInput, reason: st
   const lp = String(input.blueprint?.lifePath?.number || "");
   const arcana = String(input.blueprint?.destinyMatrix?.center || "");
   const synthesis = buildUnifiedBlueprintSynthesis({
-    // Synthesis copy is id/en only; ms -> en per the canonical chain (DS-AI1).
-    language: input.language === "en" || input.language === "ms" ? "en" : "id",
+    // DS-AI1: synthesis carries native id/en/ms. The local-fallback wrapper strings
+    // below resolve ms -> id (Bahasa Melayu / Bahasa Indonesia are mutually
+    // intelligible; a Malay reader is far better served by id than en when the LLM
+    // path is unavailable). Native ms for the full fallback stack = DS-AI1-fallback.
+    language: input.language,
     profile: input.user as unknown as Record<string, unknown>,
     blueprint: input.blueprint as unknown as Record<string, unknown>,
     astrologyToday: input.astrologyTransits?.summary,
@@ -509,8 +512,8 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
   let synthesis;
   try {
     synthesis = buildUnifiedBlueprintSynthesis({
-      // Synthesis copy is id/en only; ms -> en per the canonical chain (DS-AI1).
-      language: safeInput.language === "en" || safeInput.language === "ms" ? "en" : "id",
+      // DS-AI1: synthesis carries native id/en/ms; fallback wrapper strings resolve ms -> id.
+      language: safeInput.language,
       profile: safeInput.user as unknown as Record<string, unknown>,
       blueprint: safeInput.blueprint as unknown as Record<string, unknown>,
       astrologyToday: safeInput.astrologyTransits?.summary,
@@ -649,8 +652,9 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
           reason: "", reflection: "", advice: ""
         }
       }, {
-        // id/en only here; ms -> en per the canonical chain (DS-AI1).
-        language: safeInput.language === "en" || safeInput.language === "ms" ? "en" : "id",
+        // refreshDailyCompanionCategories is id/en only; ms resolves to id here
+        // (Bahasa Melayu / Indonesia mutual intelligibility) — DS-AI1-fallback.
+        language: safeInput.language === "en" ? "en" : "id",
         dailyVariationSeed: seed,
         localDateKey: seed.slice(0, 10),
         completionRateYesterday: Number(adaptive?.completionRateYesterday) || 0,
@@ -664,23 +668,23 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
       soulReflection: {
         dailyMessage: soulReflectionText,
         theme: safeString(transitThemes[0], "Pertumbuhan"),
-        affirmation: safeInput.language === "id"
+        affirmation: safeInput.language !== "en"
           ? `Aku melangkah di jalanku dengan kehadiran, kejujuran, dan kasih sayang.`
           : `I meet my path with presence, honesty, and care.`,
-        warningSign: mood <= 4 ? (safeInput.language === "id" ? "Jika tubuhmu meminta untuk melambat, perlakukan itu sebagai panduan, bukan hambatan." : "If your body asks for slowness, treat that as guidance rather than resistance.") : undefined,
-        guidance: safeInput.language === "id"
+        warningSign: mood <= 4 ? (safeInput.language !== "en" ? "Jika tubuhmu meminta untuk melambat, perlakukan itu sebagai panduan, bukan hambatan." : "If your body asks for slowness, treat that as guidance rather than resistance.") : undefined,
+        guidance: safeInput.language !== "en"
           ? `Pilih satu tindakan nyata yang mendukung dirimu dan biarkan sisanya menjadi opsional.`
           : `Choose one grounded action that supports you and let the rest become optional.`,
         emotionalTone: toneFromMood(mood),
       },
       astroEnergy: {
         currentEnergy: transitName,
-        description: safeInput.language === "id"
+        description: safeInput.language !== "en"
           ? `Kondisi langit menekankan tema batinmu hari ini.`
           : `The current sky highlights themes for your inner field.`,
         emoji: mood <= 4 ? "*" : "+",
         intensity: transit?.intensity || intensityFromMood(mood),
-        recommendation: safeInput.language === "id"
+        recommendation: safeInput.language !== "en"
           ? `Bekerjalah dengan energi dirimu melalui satu praktik tubuh sebelum mencoba memahaminya lewat pikiran.`
           : `Work with your energy through one embodied practice before making meaning from it.`,
         affectedAreas: transitThemes,
@@ -690,33 +694,33 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
           {
             id: `journal-${slug(seed)}-${slug(transitThemes[0])}`,
             task: restart
-              ? (safeInput.language === "id" ? "Tulis satu kalimat di jurnal yang membuat kepulangan hari ini terasa mungkin." : "Journal one sentence that makes returning feel possible.")
-              : (safeInput.language === "id" ? `Tulis di jurnal tentang bagaimana apa yang kamu rasakan muncul dalam harimu.` : `Journal about how what you feel is showing up.`),
+              ? (safeInput.language !== "en" ? "Tulis satu kalimat di jurnal yang membuat kepulangan hari ini terasa mungkin." : "Journal one sentence that makes returning feel possible.")
+              : (safeInput.language !== "en" ? `Tulis di jurnal tentang bagaimana apa yang kamu rasakan muncul dalam harimu.` : `Journal about how what you feel is showing up.`),
             duration: innerworkDuration,
             category: "journaling",
             emoji: "write",
-            purpose: safeInput.language === "id" ? `Mengubah rasa menjadi refleksi sadar.` : `To turn feeling into conscious reflection.`,
-            instruction: safeInput.language === "id" ? `Tulis tiga kalimat jujur, lalu garis bawahi kalimat yang terasa paling hidup bagi jiwamu.` : `Write three honest sentences, then underline the sentence that feels most alive.`,
+            purpose: safeInput.language !== "en" ? `Mengubah rasa menjadi refleksi sadar.` : `To turn feeling into conscious reflection.`,
+            instruction: safeInput.language !== "en" ? `Tulis tiga kalimat jujur, lalu garis bawahi kalimat yang terasa paling hidup bagi jiwamu.` : `Write three honest sentences, then underline the sentence that feels most alive.`,
             completed: false,
           },
           {
             id: `ground-${slug(seed)}-${slug(identity.humanDesign)}`,
-            task: safeInput.language === "id" ? `Murnikan energi batinmu sebelum memberikan respons.` : `Ground your inner energy before responding.`,
+            task: safeInput.language !== "en" ? `Murnikan energi batinmu sebelum memberikan respons.` : `Ground your inner energy before responding.`,
             duration: 6,
             category: "grounding",
             emoji: "root",
-            purpose: safeInput.language === "id" ? "Membiarkan sistem saraf memimpin sebelum pikiran memberikan penjelasan." : "To let the nervous system lead before the mind explains.",
-            instruction: safeInput.language === "id" ? "Tempelkan kedua telapak kaki ke lantai, lemaskan rahang, dan bernapaslah sampai bahumu terasa turun dan rileks." : "Place both feet down, soften your jaw, and breathe until your shoulders lower.",
+            purpose: safeInput.language !== "en" ? "Membiarkan sistem saraf memimpin sebelum pikiran memberikan penjelasan." : "To let the nervous system lead before the mind explains.",
+            instruction: safeInput.language !== "en" ? "Tempelkan kedua telapak kaki ke lantai, lemaskan rahang, dan bernapaslah sampai bahumu terasa turun dan rileks." : "Place both feet down, soften your jaw, and breathe until your shoulders lower.",
             completed: false,
           },
           {
             id: `meditate-${slug(seed)}-${slug(identity.sunSign)}`,
-            task: safeInput.language === "id" ? `Bermeditasi dengan dirimu.` : `Meditate with your inner self.`,
+            task: safeInput.language !== "en" ? `Bermeditasi dengan dirimu.` : `Meditate with your inner self.`,
             duration: meditationDuration,
             category: "meditation",
             emoji: "still",
-            purpose: safeInput.language === "id" ? `Mengintegrasikan apa yang kamu rasakan tanpa memprosesnya secara berlebihan lewat logika.` : `To integrate what you feel without overprocessing.`,
-            instruction: safeInput.language === "id" ? "Ikuti aliran napas dan sebutkan satu sensasi tubuh pada setiap embusan napasmu." : "Follow the breath and name one sensation on every exhale.",
+            purpose: safeInput.language !== "en" ? `Mengintegrasikan apa yang kamu rasakan tanpa memprosesnya secara berlebihan lewat logika.` : `To integrate what you feel without overprocessing.`,
+            instruction: safeInput.language !== "en" ? "Ikuti aliran napas dan sebutkan satu sensasi tubuh pada setiap embusan napasmu." : "Follow the breath and name one sensation on every exhale.",
             completed: false,
           },
         ],
@@ -727,11 +731,11 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
       },
       journalingPrompt: {
         prompt: restart
-          ? (safeInput.language === "id" ? "Apa yang akan membuat awal yang baru hari ini terasa ramah dan tidak berat bagi jiwamu?" : "What would make beginning again feel kind instead of heavy today?")
+          ? (safeInput.language !== "en" ? "Apa yang akan membuat awal yang baru hari ini terasa ramah dan tidak berat bagi jiwamu?" : "What would make beginning again feel kind instead of heavy today?")
           : strongCompletion
-            ? (safeInput.language === "id" ? `Apa yang diajarkan oleh konsistensi kemarin tentang dirimu dalam hidupmu?` : `What is yesterday's consistency teaching me about myself?`)
-            : (safeInput.language === "id" ? `Apa yang perlu dipahami oleh dirimu yang paling dalam hari ini?` : `What does my deep self need to understand today?`),
-        subPrompts: safeInput.language === "id" ? [
+            ? (safeInput.language !== "en" ? `Apa yang diajarkan oleh konsistensi kemarin tentang dirimu dalam hidupmu?` : `What is yesterday's consistency teaching me about myself?`)
+            : (safeInput.language !== "en" ? `Apa yang perlu dipahami oleh dirimu yang paling dalam hari ini?` : `What does my deep self need to understand today?`),
+        subPrompts: safeInput.language !== "en" ? [
           `Di bagian tubuh mana rasa saat ini paling terasa?`,
           `Apa yang kamu butuhkan sebelum kamu mengambil tindakan nyata?`,
           `Seperti apa rasanya dukungan jika kamu berhenti merasa harus terus membuktikannya?`,
@@ -745,28 +749,28 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         purpose: `To connect emotional memory with today's context.`,
         relatedArea: safeString(transitThemes[0], "Pertumbuhan"),
       },
-      shadowInsight: safeInput.language === "id"
+      shadowInsight: safeInput.language !== "en"
         ? `Tepi batin hari ini adalah menganggap apa yang kamu rasakan sebagai bukti bahwa kamu tertinggal. Integrasinya adalah memperlakukannya sebagai sinyal untuk perawatan diri, penyesuaian ritme, dan batas diri yang lebih jelas.`
         : `The inner edge today is turning what you feel into proof that you are behind. The integration is to treat it as a signal for care, pacing, and clearer boundaries.`,
       meditationRecommendation: {
-        title: safeInput.language === "id" ? `Penyelarasan Diri` : `Self Alignment`,
+        title: safeInput.language !== "en" ? `Penyelarasan Diri` : `Self Alignment`,
         duration: meditationDuration,
         type: "grounding",
         focusArea: safeString(transitThemes[0], "Kehadiran"),
-        description: safeInput.language === "id" ? `Praktik hening untuk mengintegrasikan apa yang kamu rasakan melalui tubuh.` : `A quiet practice for integrating what you feel through the body.`,
-        technique: safeInput.language === "id" ? "Pernapasan embusan pelan dengan pemindaian tubuh secara menyeluruh." : "Slow exhale breathing with body scanning",
+        description: safeInput.language !== "en" ? `Praktik hening untuk mengintegrasikan apa yang kamu rasakan melalui tubuh.` : `A quiet practice for integrating what you feel through the body.`,
+        technique: safeInput.language !== "en" ? "Pernapasan embusan pelan dengan pemindaian tubuh secara menyeluruh." : "Slow exhale breathing with body scanning",
         energyEffect: mood <= 4 ? "settling" : "centering",
       },
       healingRecommendation: {
         id: `healing-${slug(topTheme)}`,
         type: "somatic",
-        title: safeInput.language === "id" ? `Temui dirimu melalui tubuh` : `Meet yourself through the body`,
-        description: safeInput.language === "id" ? `Praktik singkat untuk membantu apa yang kamu rasakan berpindah dari tekanan mental menjadi kejernihan yang dirasakan tubuh.` : `A short practice to help what you feel move from mental pressure into embodied clarity.`,
+        title: safeInput.language !== "en" ? `Temui dirimu melalui tubuh` : `Meet yourself through the body`,
+        description: safeInput.language !== "en" ? `Praktik singkat untuk membantu apa yang kamu rasakan berpindah dari tekanan mental menjadi kejernihan yang dirasakan tubuh.` : `A short practice to help what you feel move from mental pressure into embodied clarity.`,
         duration: 10,
         basedOnEmotionalAnalysis: topTheme,
         addressesWound: topWound,
         supportedBy: "emotional memory and current context",
-        instructions: safeInput.language === "id" ? [
+        instructions: safeInput.language !== "en" ? [
           "Sebutkan perasaanmu tanpa menghakiminya sama sekali.",
           "Temukan di mana letak perasaan tersebut di dalam tubuhmu.",
           "Tawarkan satu tindakan dukungan nyata untuk dirimu sendiri hari ini.",
@@ -775,7 +779,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
           "Locate the feeling in the body.",
           "Offer one concrete support action today.",
         ],
-        tips: safeInput.language === "id" ? [
+        tips: safeInput.language !== "en" ? [
           "Jaga agar praktik ini tetap kecil dan mudah untuk diselesaikan.",
           "Pilih regulasi emosi sebelum mencoba melakukan interpretasi pikiran.",
         ] : [
@@ -785,15 +789,15 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         bestTiming: mood <= 4 ? "immediately" : "today",
         frequency: "once today",
         integratesWithPractice: ["journaling", "grounding", "meditation"],
-        supportiveReminder: safeInput.language === "id" ? `Kamu bisa bekerja dengan apa yang kamu rasakan tanpa harus merasa tertelan olehnya.` : `You can work with what you feel without becoming consumed by it.`,
+        supportiveReminder: safeInput.language !== "en" ? `Kamu bisa bekerja dengan apa yang kamu rasakan tanpa harus merasa tertelan olehnya.` : `You can work with what you feel without becoming consumed by it.`,
       },
       healingAudio: {
-        title: restart ? (safeInput.language === "id" ? "Alunan Kepulangan yang Lembut" : "Gentle Return Sound bath") : (safeInput.language === "id" ? `Penyelarasan ${safeString(transitThemes[0], "Keseimbangan")}` : `${safeString(transitThemes[0], "Balance")} Attunement`),
+        title: restart ? (safeInput.language !== "en" ? "Alunan Kepulangan yang Lembut" : "Gentle Return Sound bath") : (safeInput.language !== "en" ? `Penyelarasan ${safeString(transitThemes[0], "Keseimbangan")}` : `${safeString(transitThemes[0], "Balance")} Attunement`),
         frequency: mood <= 4 ? "396Hz" : "432Hz",
         duration: restart ? 8 : 12,
         purpose: restart
-          ? (safeInput.language === "id" ? "Mendukung awal ulang tanpa tekanan setelah hari yang tidak lengkap." : "Support a low-pressure restart after an incomplete day.")
-          : (safeInput.language === "id" ? `Mendukung dirimu dengan grounding sensorik yang stabil.` : `Support yourself with steady sensory grounding.`),
+          ? (safeInput.language !== "en" ? "Mendukung awal ulang tanpa tekanan setelah hari yang tidak lengkap." : "Support a low-pressure restart after an incomplete day.")
+          : (safeInput.language !== "en" ? `Mendukung dirimu dengan grounding sensorik yang stabil.` : `Support yourself with steady sensory grounding.`),
         affinity: "Diri",
         vibe: mood <= 4 ? "calming" : "balancing",
         artistOrSource: "Bhumi Amartya",
@@ -807,8 +811,8 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         currentPhase: (Number(safeInput.healingProgress.healingStreak) || 0) > 7 ? "Integration" : "Attunement",
         nextMilestone:
           (Number(safeInput.healingProgress.healingStreak) || 0) > 7
-            ? (safeInput.language === "id" ? "Perdalam konsistensi dengan penyempurnaan yang lembut." : "Deepen consistency with gentle refinement")
-            : (safeInput.language === "id" ? "Selesaikan ritme tujuh hari dari pemeriksaan diri yang jujur." : "Complete a seven-day rhythm of honest check-ins"),
+            ? (safeInput.language !== "en" ? "Perdalam konsistensi dengan penyempurnaan yang lembut." : "Deepen consistency with gentle refinement")
+            : (safeInput.language !== "en" ? "Selesaikan ritme tujuh hari dari pemeriksaan diri yang jujur." : "Complete a seven-day rhythm of honest check-ins"),
         progressPercentage: Math.min(100, Math.max(1, Number(safeInput.healingProgress.consciousnessLevel) || 1)),
       },
       reminderState: {
@@ -817,7 +821,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         meditationDone: false,
         moodLevel: mood,
         needsSupport: mood <= 4,
-        reminderMessage: safeInput.language === "id" ? `Mulailah dengan kehadiran sebelum menuntut dirimu melakukan lebih banyak.` : `Begin with presence before asking yourself to do more.`,
+        reminderMessage: safeInput.language !== "en" ? `Mulailah dengan kehadiran sebelum menuntut dirimu melakukan lebih banyak.` : `Begin with presence before asking yourself to do more.`,
         reminderCategory: mood <= 4 ? "grounding" : "journaling",
       },
       manifestation: generateLocalManifestation(safeInput as any, "ai_missing"),

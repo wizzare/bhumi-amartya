@@ -89,6 +89,53 @@ ok(
   ),
 );
 
+// --- progressCalculationEngine: score / phase / milestones are NOT streak-driven ---
+{
+  const { calculateProgressMetrics } = require("../../lib/engines/progressCalculationEngine.ts");
+  const day = (iso: string) => ({ dateCreated: `${iso}T09:00:00.000Z`, theme: "test", content: "x" });
+  const isoDaysAgo = (n: number) => {
+    const d = new Date();
+    d.setHours(9, 0, 0, 0);
+    d.setDate(d.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+
+  // Same 6 active days, all inside the last week, same recency — one is an
+  // unbroken run from today, the other has a gap (day 3 missing). Old logic gave
+  // the unbroken run a streak bonus; the de-streaked logic must score them equal.
+  const consecutive = [0, 1, 2, 3, 4, 5].map((n) => day(isoDaysAgo(n)));
+  const gapped = [0, 1, 2, 4, 5, 6].map((n) => day(isoDaysAgo(n)));
+
+  const mC = calculateProgressMetrics({ journalEntries: consecutive, meditationEntries: [], audioHealingEntries: [] });
+  const mS = calculateProgressMetrics({ journalEntries: gapped, meditationEntries: [], audioHealingEntries: [] });
+
+  ok(
+    "consistencyScore does not reward an unbroken run over the same count with a gap",
+    mC.consistencyScore === mS.consistencyScore,
+  );
+  ok("activeDays30 is exposed and counts distinct active days (not a chain)", mC.activeDays30 === 6 && mS.activeDays30 === 6);
+  ok(
+    "journeyPhase is the same for consecutive vs spread with equal engagement",
+    mC.journeyPhase === mS.journeyPhase,
+  );
+  ok(
+    "milestone copy is '7 Hari Aktif' (active days), never a 'streak'/'Bertumbuh' chain badge",
+    (() => {
+      const seven = [0, 1, 2, 3, 4, 8, 15].map((n) => day(isoDaysAgo(n)));
+      const m = calculateProgressMetrics({ journalEntries: seven, meditationEntries: [], audioHealingEntries: [] });
+      const joined = m.milestones.join(" ");
+      return joined.includes("7 Hari Aktif") && !/streak/i.test(joined) && !joined.includes("7 Hari Bertumbuh");
+    })(),
+  );
+  ok(
+    "engine source: consistencyScore has no streak term; phase gates on activeDays30",
+    (() => {
+      const src = fs.readFileSync("lib/engines/progressCalculationEngine.ts", "utf8");
+      return !/streakScore/.test(src) && /activeDaysScore \* 0\.4/.test(src) && /determineJourneyPhase\(\s*totalEntries,\s*activeDays30/.test(src);
+    })(),
+  );
+}
+
 console.log(
   `\nBUILD106_DS_J4_${failed === 0 ? "PASS" : "FAIL"} assertions=${passed} failed=${failed}`,
 );

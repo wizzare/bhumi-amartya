@@ -116,6 +116,51 @@ ok(
   /source:\s*"ai"\s*\|\s*"fallback"\s*\|\s*"local-fallback"/.test(contextTypeSrc),
 );
 
+// ---------------------------------------------------------------------------
+// 4. Native Bahasa Melayu in the deterministic synthesis / practice output
+// ---------------------------------------------------------------------------
+{
+  const { buildUnifiedBlueprintSynthesis } = require("../../lib/dailyGuidance/unifiedBlueprintSynthesis.ts");
+  const synMs = buildUnifiedBlueprintSynthesis({ language: "ms", profile: null, blueprint: null });
+  const synId = buildUnifiedBlueprintSynthesis({ language: "id", profile: null, blueprint: null });
+  const synEn = buildUnifiedBlueprintSynthesis({ language: "en", profile: null, blueprint: null });
+
+  ok(
+    "synthesis(ms).blueprintSummary is Bahasa Melayu (anda / apabila), not id (kamu) and not en",
+    /\banda\b/i.test(synMs.blueprintSummary) &&
+      /apabila|boleh dilakukan|kekal/i.test(synMs.blueprintSummary) &&
+      !/\bkamu\b/i.test(synMs.blueprintSummary),
+  );
+  ok(
+    "synthesis(ms) differs from synthesis(id) and synthesis(en)",
+    synMs.blueprintSummary !== synId.blueprintSummary && synMs.blueprintSummary !== synEn.blueprintSummary,
+  );
+  ok("synthesis(en).blueprintSummary is English", /Today may feel|Let the day stay practical/.test(synEn.blueprintSummary));
+
+  const { generateAdaptiveDailyPractices } = require("../../lib/dailyGuidance/adaptiveDailyPracticeGenerator.ts");
+  const ctx = { dailyVariationSeed: "2026-09-02", completionRateYesterday: 0, streakDays: 0, adaptiveTone: "steady_supportive" };
+  const pMs = generateAdaptiveDailyPractices({ date: "2026-09-02", language: "ms", profile: null, blueprint: null, adaptiveContext: ctx });
+  const pId = generateAdaptiveDailyPractices({ date: "2026-09-02", language: "id", profile: null, blueprint: null, adaptiveContext: ctx });
+  const msJoined = pMs.map((p: any) => `${p.title} ${p.description}`).join(" \n ");
+  ok(
+    "adaptive practices (ms) render Bahasa Melayu (kedua-dua / namakan / amalan / kelihatan)",
+    /kedua-dua|namakan|amalan|kelihatan|perkataan|tugasan/i.test(msJoined),
+  );
+  ok(
+    "adaptive practices (ms) differ from (id)",
+    msJoined !== pId.map((p: any) => `${p.title} ${p.description}`).join(" \n "),
+  );
+}
+
+// pickLocale helper contract
+{
+  const { pickLocale } = require("../../lib/i18n/pickLocale.ts");
+  ok("pickLocale ms uses ms value when supplied", pickLocale("ms", { id: "A", en: "B", ms: "C" }) === "C");
+  ok("pickLocale ms falls back to en when ms missing (D-V5-35 chain)", pickLocale("ms", { id: "A", en: "B" }) === "B");
+  ok("pickLocale en/id resolve directly", pickLocale("en", { id: "A", en: "B" }) === "B" && pickLocale("id", { id: "A", en: "B" }) === "A");
+  ok("pickLocale accepts BCP47 tags", pickLocale("ms-MY", { id: "A", en: "B", ms: "C" }) === "C" && pickLocale("en-US", { id: "A", en: "B" }) === "B");
+}
+
 console.log(
   `\nBUILD106_DS_AI1_${failed === 0 ? "PASS" : "FAIL"} assertions=${passed} failed=${failed}`,
 );

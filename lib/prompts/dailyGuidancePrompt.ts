@@ -15,9 +15,8 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
   const outputLanguage = input.language;
   const outputLanguageName = OUTPUT_LANGUAGE_NAMES[outputLanguage] ?? OUTPUT_LANGUAGE_NAMES.id;
   const unifiedBlueprint = buildUnifiedBlueprintSynthesis({
-    // Synthesis narrative copy is id/en only; ms falls back to en per the canonical
-    // ms -> en -> id chain (D-V5-35). Locale-native ms synthesis copy is DS-AI1.
-    language: outputLanguage === "en" ? "en" : outputLanguage === "ms" ? "en" : "id",
+    // DS-AI1: synthesis narrative carries native id/en/ms.
+    language: outputLanguage,
     profile: input.user as unknown as Record<string, unknown>,
     blueprint: input.blueprint as unknown as Record<string, unknown>,
     astrologyToday: input.astrologyTransits?.summary,

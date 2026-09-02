@@ -14,8 +14,8 @@ function assertString(value: unknown, field: string): asserts value is string {
 }
 
 function normalizeOutput(output: DailyGuidanceOutput, input: DailyGuidanceInput): DailyGuidanceOutput {
-  // Synthesis + adaptive-practice copy is id/en only; ms -> en per the canonical chain (DS-AI1).
-  const synthesisLanguage: "id" | "en" = input.language === "en" || input.language === "ms" ? "en" : "id";
+  // DS-AI1: synthesis + adaptive practices now carry native id/en/ms.
+  const synthesisLanguage = input.language;
   const synthesis = buildUnifiedBlueprintSynthesis({
     language: synthesisLanguage,
     profile: input.user as unknown as Record<string, unknown>,
