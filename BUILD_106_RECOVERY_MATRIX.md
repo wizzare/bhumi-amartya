@@ -6,26 +6,29 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Continuity snapshot — handoff to Claude Code after Step 8 (2026-09-02)
+## Continuity snapshot — after Step 10 (Claude Code, 2026-09-02)
 
 ```text
-NEXT_PRIMARY_AGENT                = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8)
+CURRENT_PRIMARY_AGENT             = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–10)
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_HANDOFF_DOCS  = 0eea40c65fa51d0efaabe8e1ef61c554cd923257
+CURRENT_HEAD_BEFORE_STEP10_DOCS   = 1b4e41c  (docs: handoff snapshot after Step 9)
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = Step 9 — Premium copy / price
+NEXT_SAFE_ACTION                  = Step 11 — focused unit/emulator/browser/device verification
 ```
 
-Operational snapshot: `BUILD_106_HANDOFF.md` (Codex → Claude Code). At handoff the worktree also
-holds an **uncommitted partial Step 9 start** by Codex (`app/premium-bhumi/page.tsx` fallback copy
-Rp50.000→Rp25.000, `tests/unit/v5-08-premium-residual.test.ts`, `tests/release-manifest.mjs`
-entry) — to be audited and reconciled in Step 9, not assumed complete.
+Step 9 (Premium copy / price, R-42): DONE — `RECOVERED_VERIFIED (unit + static)`, commits
+`fe271e8` (handoff) + `b341c82` (feat+test) + `1b4e41c` (docs). Rendered device proof = DS-PR1.
 
-`CURRENT_HEAD_BEFORE_STEP8_DOCS` is the clean implementation/test HEAD before this matrix and the
-continuity handoff were updated. After checkout, use `git rev-parse HEAD` for the newer docs commit.
+Step 10 (Full R-PRD-01..46 reconciliation): DONE — canonical deliverable
+`BUILD_106_RECONCILIATION_REPORT.md`. All 46 reconciled, zero `UNKNOWN`, zero false `PASS`;
+two un-owned deferrals assigned (**DS-J4** ← R-18, **DS-AI1** ← R-31); release-critical gaps
+enumerated RC-1..RC-11. See the "Full R-PRD-01..46 reconciliation" section below.
+
+After checkout, use `git rev-parse HEAD` for the newest docs commit (this matrix + the
+reconciliation report + `BUILD_106_HANDOFF.md`).
 
 ### Steps 1–8 status
 
@@ -110,7 +113,7 @@ Canonical continuation marker:
 | R-15 | Draft autosave/conflict | MISSING | CP-036 | CONTRACT RECOVERED; wiring DEFERRED | `localJournal.ts` `savePerModeDraft` / `loadPerModeDraft` / `clearPerModeDraft` + `getScopedDraftKey(JOURNAL_DRAFT_PREFIX:${journalType}:${uid})` mode-isolated, timestamped. `v5-03-journaling-acceptance` 6.5/6.6. 30s autosave wiring is in the deferred journaling page. |
 | R-16 | Journal history/search/filter/export | MISSING | CP-036 partial | CONTRACT RECOVERED; UI/export DEFERRED | `localJournal.ts` `loadLocalJournalEntries` (multi-entry, newest-first — legacy per-day singleton removed), `getJournalHistoryGroupedByWeek`, `getEntriesByType`. history/search/filter/export UI in the deferred page. |
 | R-17 | Continue Yesterday | MISSING | none proven | CONTRACT NEWLY_IMPLEMENTED; UI = DS-R1 | `canContinueYesterday` accepts only the prior local-calendar-day draft; selector wiring/browser deferred. |
-| R-18 | Mood trend | PARTIAL | existing components | RECONCILE (not Step 4) | Existing components; reconcile later. |
+| R-18 | Mood trend | PARTIAL | existing components | PARTIAL_COMPLETION; owner = DS-J4 (Step 10) | Build 105 mood/progress components exist but were not audited against the "progress without streaks" contract (R-PRD-18 / R-XC-02) and have no Build 106 unit coverage. Step 10 assigned **DS-J4**: audit the components, add a no-streak/no-consecutive-day guard, browser check in Step 11. |
 | R-19 | Reflective AI + crisis safety | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract) | `lib/journal/journalSafety.ts` `crisisScanJournalText` (id/en/ms keywords) → resource card + `shouldSuppressAI`; `journalAIContract.ts` `generateJournalAIResponse` reflective-only (2-4 sentences), crisis → `{suppressed, provenance:"none"}`, `sanitizeAIOutput` strips diagnostic language. `build106-journal-contracts` + `v5-03-journaling-acceptance` §7/§8. |
 | R-20 | Entry privacy | MISSING | none proven | PARTIAL COMPLETION (new contract/enforcement); UI = DS-P1 | New per-entry `locked/hiddenFromHistory/localOnly/excludeFromMemory` contract. Local-only is rejected by cloud repository; local-only/excluded content is blocked before Memory extraction. Unlock/hide controls and browser acceptance remain deferred. |
 | R-21 | Useful Memory continuity | PARTIAL | CP-036 | RECOVERED_VERIFIED (contract); Dashboard UI = DS-M1 | Step 4 extraction + Step 5 `lib/repositories/memoryCandidateRepository.ts` (Firestore `journalMemoryCandidates/{uid}/candidates/{id}` + local cache; `upsertFromEntry` evidence accumulation, `getActiveCandidates`) + `lib/memory/memoryPatternAggregator.ts` (`aggregateForJourney`) + `lib/livingIntelligence/memoryCompiler.ts` hunk (active candidates → `dominantThemes` supplement, capped 8). `build106-memory-pipeline` (23). |
@@ -123,7 +126,7 @@ Canonical continuation marker:
 | R-28 | Weekly/monthly reflection | MISSING | none proven | PARTIAL COMPLETION (new eligibility contract); synthesis/UI = DS-M3 | Opt-in + activity + Sunday/first-of-month eligibility tested; synthesis, persistence, and rendered flow remain open. |
 | R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
 | R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
-| R-31 | AI in user locale | PARTIAL | CP-036 | DEFERRED to AI step | Out of localization-foundation scope; tracked for the AI recovery step. |
+| R-31 | AI in user locale | PARTIAL | CP-036 | PARTIAL_COMPLETION; owner = DS-AI1 (Step 10) | `V5_I18N_SPEC` recovered; no AI-generation-path locale/attribution enforcement was implemented in Steps 1–9 (out of localization-foundation scope). Step 10 assigned **DS-AI1** (there is no numbered "AI step" in the recovery order): enforce user-locale + source attribution on the daily-guidance / journal-AI generation paths; unit coverage that a non-id locale profile yields locale-tagged attributed AI output; Step 11 browser check. Scheduled before Step 11 full verification. |
 | R-32 | Localized notifications | MISSING | CP-036 partial + Step-8 corrections | PARTIAL COMPLETION VERIFIED; external delivery = DS-N1 | id/en/ms copy, explicit opt-in default, timezone quiet hours, Comfort/low-energy/dismissal suppression, frequency/absence gates, real web-token-only registration, owner-scoped fail-closed persistence, SW, and Android local scheduling are covered. No fake fallback token or false FCM-sent claim. Backend FCM sender, VAPID/browser round-trip, native remote push, per-category settings UI, and device delivery acceptance remain open. |
 | R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
 | R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
@@ -484,6 +487,56 @@ emulator **PASS=20 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0.
 Deferred: **DS-PR1** — rendered device/browser proof of the display price + live Play
 `formattedPrice` substitution (no production purchase). R-42 is not full `PASS` until DS-PR1.
 
+## Full R-PRD-01..46 reconciliation (canonical recovery order Step 10 — 2026-09-02)
+
+Canonical deliverable: **`BUILD_106_RECONCILIATION_REPORT.md`** (Master SOT §7.10 / §10).
+A reconciliation/audit pass — no product features added.
+
+Result:
+
+- **All 46 canonical requirements R-PRD-01..46 have an accepted reconciled status. Zero
+  `UNKNOWN`.** R-01..R-46 rows above map 1:1 to R-PRD-01..46 (verified — no gaps, no
+  collisions after the 2026-08-24 ID reconciliation).
+- **Zero requirements are counted `PASS` on the strength of a contract or source file alone.**
+  Every requirement whose acceptance needs rendered/browser/device evidence is held at
+  contract/unit level with a named `DS-*` owner. No matrix row reads bare `PASS`.
+- **Every partial/deferred item has an owner and a verification step.** Step 10's
+  owner-discipline pass found two un-owned deferrals and assigned them:
+  - **DS-J4** ← R-18 Mood trend (matrix row had said only "reconcile later").
+  - **DS-AI1** ← R-31 AI-in-locale (matrix row had said "DEFERRED to AI step"; no such
+    numbered step exists).
+- **Historical recovery vs new implementation — final tally** (matches Master SOT §3
+  "recoverable 30 / new 12", plus 4 preserved-correct):
+  - `PRESERVED_VERIFIED` (Build 105 already correct): **4** — R-PRD-06, 08, 38, 41.
+  - `RECOVERED_VERIFIED` from CP-036 (provenance-verified, file/hunk): **27** — R-PRD-03,
+    11, 12, 13, 15, 16, 19, 21–26, 29, 30, 33–37, 39, 40, 42, 43–46.
+  - `NEW_CONTRACT_VERIFIED` / new completion: **13** — R-PRD-01, 02, 04, 05, 07, 09, 10,
+    14, 17, 20, 27 (decay), 28, 32.
+  - `PARTIAL → now owned`: **2** — R-PRD-18 (DS-J4), R-PRD-31 (DS-AI1).
+- **No Step 1–9 work regressed** at the reconciled HEAD `1b4e41c`:
+  `npx tsc --noEmit` EXIT 0; no-emulator release runner **PASS=12 FAIL=0 SKIPPED=8 TOTAL=20**
+  EXIT 0; full Firestore/Auth emulator release runner **PASS=20 FAIL=0 SKIPPED=0 TOTAL=20**,
+  `RELEASE_TESTS_PASS`, EXIT 0 (`STRONG_REAL_SDK=6 STRONG_UNIT=10 STATIC_GUARD=3 MOCK_UNIT=1`).
+  Cross-feature checks: Step-3 `UserProfile.language` widening did not regress the setup/
+  recovery state machine (`passed=33 failed=0`); Step-6 dynamic eclipses did not regress
+  Daily Guidance fail-closed; Step-8 `localOnly` cloud-rejection is exercised by "Persistence
+  E2E" (real SDK); Step-9 premium copy left billing/entitlement/Android byte-unchanged.
+
+**Unresolved release-critical gaps (RC-1..RC-11 in the report), each owned:** genuine
+new-user browser acceptance (RC-1, DS-GATE07, external); browser/device QA class (RC-2,
+DS-R1/E1/M1/PR1/2C2/A1); FCM infrastructure live (RC-3, DS-N1); Memory Dashboard functional
+(RC-4, DS-M1); journal draft/history rendered (RC-5, DS-J1/J2/J3); Comfort Mode rendered
+(RC-6, DS-R1); adaptive check-in / returning-user rendered (RC-7, DS-R1); security + privacy
+audit + account-deletion reconciliation (RC-8, DS-P1 + audit pass); AI localization +
+attribution (RC-9, DS-AI1); `lib/firebase/service.ts` read-error swallow (RC-10, DS-2C1);
+mood-trend no-streak audit (RC-11, DS-J4). Non-blocking Founder decisions pending: DS-M2,
+DS-A2.
+
+`BUILD_106_RELEASE_GATE = CLOSED`.
+`NEXT_SAFE_ACTION = Step 11 — focused unit/emulator/browser/device verification` (start with
+the small owned fixes DS-2C1, DS-AI1, DS-J4, then the browser-surface sub-steps once a local
+Next runtime is authorized).
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -519,6 +572,8 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-J1** | Journaling UI relocation: recover `app/wellness/journaling/page.tsx` (594L, CP-036); add `next.config.ts` redirects `/journal` + `/innerwork/journaling` → `/wellness/journaling` (`:path*`); reduce `app/journal/page.tsx` + `app/innerwork/journaling/page.tsx` to redirect stubs. | R-12 (5-mode radiogroup UI), R-16 (history/search/filter UI + export PDF/JSON/text), R-13 (CBT form UI) | Build 106 — journaling-UI sub-step, scheduled **after Step 5** (Memory Dashboard + journaling page land together as the Inner Work surface); or on explicit Founder priority. | OPEN |
 | **DS-J2** | Journaling UI behaviour wiring: 5-mode radiogroup + per-mode state; 30s per-mode autosave wiring (`save/load/clearPerModeDraft` + `draftInfo` indicator); `SafetyActionCard` wiring on `crisisScanJournalText`; `zoneBContext` / `getRecommendedMode` advisory context; `<article>` history rendering; export. | R-15 (autosave wiring), R-16 (history UI), R-19 (crisis card render), R-12 | Same as DS-J1. | OPEN |
 | **DS-J3** | Restore the full `tests/unit/v5-03-journaling-acceptance.test.ts` rows removed for the contract subset (original 1.2–1.10, 4.1/4.3–4.6, 5.1–5.4/5.6–5.7, 6.1–6.4, 7.2–7.3, 8.2/8.3/8.7, 9.2, 10.5, 11.*) + browser E2E of a journaling session. | R-12, R-13, R-15, R-16, R-19 (acceptance) | With DS-J1/DS-J2. | OPEN |
+| **DS-J4** | Mood trend (R-PRD-18): audit the existing Build 105 mood/progress components against the "progress without streaks" contract (R-PRD-18 / R-XC-02); add a unit/static guard asserting no streak / consecutive-day / completion-checklist UI; then browser check. Created by Step 10 to close an un-owned deferral. | R-18 | Build 106 — journaling/insights consumer work, with DS-J1/DS-J2; browser in Step 11. | OPEN (new — Step 10) |
+| **DS-AI1** | AI content in user locale + source attribution (R-PRD-31): enforce user-locale rendering + provenance/attribution on the daily-guidance and journal-AI generation paths; unit coverage that a non-id locale profile yields locale-tagged attributed AI output. Created by Step 10 — the recovery order has no numbered "AI step", so R-31's remainder was previously un-owned. | R-31, R-XC-09 (attribution) | Build 106 — AI-output reconciliation sub-step, scheduled **before Step 11**; browser check in Step 11. | OPEN (new — Step 10) |
 | **DS-I1** | Full `useTranslation()` migration of UI components off the `translations[language]` compat layer (V5_I18N_SPEC §3); widen the ~40 `"id"\|"en"` component prop/param types + add `ms` copy to inline dictionaries. | R-29..R-34 (full UI localization, beyond foundation) | Build 106 — localization component-migration sprint, after the feature-recovery steps. | OPEN |
 | **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | **DONE (Step 7, 2026-09-02)** — 28/28, EXIT 0; suite is in the release manifest. |
 | **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up, before final R-01..46 reconciliation. | OPEN |
