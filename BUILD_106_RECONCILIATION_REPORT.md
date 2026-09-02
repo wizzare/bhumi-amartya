@@ -191,11 +191,11 @@ Every `DS-*` has an owner and a verification step. Status at end of Step 10:
 | DS-J1 | R-PRD-12/13/16 (journaling UI) | Build 106 journaling-UI sub-step (with DS-M1) | OPEN |
 | DS-J2 | R-PRD-15/16/19/25/12 (UI behaviour wiring, `upsertFromEntry` call site) | with DS-J1 | OPEN |
 | DS-J3 | R-PRD-12/13/15/16/19 (full acceptance rows + journaling E2E) | with DS-J1/DS-J2 | OPEN |
-| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + Step 11 browser | **OPEN (new — Step 10)** |
+| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + Step 11 browser | **PARTIAL (Step 11)** — streak UI removed from rendered surfaces + guard (21); `progressCalculationEngine` streak weighting + `/insights` browser = remainder |
 | DS-I1 | R-PRD-29..34 full UI localization | localization component-migration sprint | OPEN |
 | DS-I2 | R-PRD-29/30 extended (`v5-i18n.test.ts`) | Step 7 | **DONE** (28/28, in manifest) |
-| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step, before Step 11 | **OPEN (new — Step 10)** |
-| DS-2C1 | new-user gate Invariant E secondary path (`lib/firebase/service.ts` read-error swallow) | auth-hardening follow-up, before Step 11 | OPEN |
+| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing + guard (22); ms-native synthesis copy + rendered browser (RC-9) = remainder |
+| DS-2C1 | new-user gate Invariant E secondary path (`lib/firebase/service.ts` read-error swallow) | auth-hardening follow-up | **DONE (Step 11)** — read failure propagates (null = absent doc only); guard (10) + state-machine "I" step updated; emulator PASS=23/23 |
 | DS-2C2 | GATE_07, R-PRD-33/34 browser | verification Step 11 | OPEN |
 | DS-GATE07 | GATE_07_GENUINE_NEW_USER | **External** — authorized account + signup driver; Step 12 | BLOCKED (external) |
 | DS-M1 | R-PRD-23 (Memory Dashboard UI), R-PRD-21 browser | Memory-Dashboard UI sub-step (DS-I1 first) | OPEN |
@@ -246,15 +246,38 @@ each owned. None is a silent gap.
 | RC-6 | Comfort Mode as first-class path functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-7 | Adaptive check-in + returning-user behaviour functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-8 | Security audit + Privacy audit passed; account deletion reconciled to full data inventory | PRD §5; Master SOT §5 | DS-P1 + a dedicated audit pass | Audit not yet run |
-| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | Implementation + unit + browser |
-| RC-10 | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (secondary path) | new-user gate Invariant E | DS-2C1 | Small fix + test, before Step 11 |
-| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | Audit + guard + browser |
+| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing + guard done. Remaining: ms-native synthesis copy + rendered en/ms browser check |
+| RC-10 | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (secondary path) | new-user gate Invariant E | DS-2C1 | **CLOSED (Step 11)** — read failure propagates; guard + state-machine "I" step updated; full emulator suite PASS=23/23 |
+| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **PARTIAL (Step 11)** — audit done, streak UI removed from rendered surfaces + guard. Remaining: `progressCalculationEngine` streak-weight de-streaking + `/insights` browser check |
 
 Non-blocking reconciliation decisions pending Founder input: DS-M2 (dedicated Dashboard Daily
 Note card y/n), DS-A2 (which large-cycle astro signals, if any, are ratified).
 
 Out of Build 106 scope (V5 Non-Requirement — do not rebuild): golden-dataset validation for the
 identity/calculation engines is a pre-existing separate track, not a Build 106 recovery item.
+
+### 11.1 Step 11 progress (2026-09-02)
+
+The three non-browser owned gaps were addressed first (Founder direction). See the matrix
+"Focused verification + owned-gap closure" section for detail.
+
+- **RC-10 / DS-2C1 — CLOSED (code + emulator).** `firebaseService.getUserProfile` propagates
+  a denied/unavailable read; `null` now means "document absent" only. Non-routing callers keep
+  tolerance explicitly. Release state-machine suite corrected to the fixed contract and green
+  (`passed=33 failed=0`).
+- **RC-9 / DS-AI1 — PARTIAL.** Daily-guidance prompt now carries a locale-keyed
+  `outputLanguageRule` (overrides the "(Bahasa Indonesia)" hints) + an `attributionRule`, and
+  id/en/ms flows end to end. Journal AI path already compliant. Remainder: ms-native synthesis
+  copy + rendered en/ms browser check.
+- **RC-11 / DS-J4 — PARTIAL.** Streak-pressure UI removed from the rendered progress surfaces.
+  Remainder: `progressCalculationEngine` streak-weight de-streaking + `/insights` browser check.
+
+Verification: `tsc` EXIT 0; no-emulator PASS=15/23; full Firestore/Auth emulator
+**PASS=23 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (+3 new DS guard suites; no regression). No
+version bump / build artifact / deploy / publish / production write.
+
+RC-1..RC-8 unchanged — browser/device/external/audit acceptance, addressed by the remaining
+Step 11 browser pass (RC-2 primary-surface QA) and Step 12 (RC-1 fresh-account, external).
 
 ---
 
