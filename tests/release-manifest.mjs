@@ -73,6 +73,24 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "Build 106 Step 11 DS-2C1 profile read-error is not 'profile missing'",
+    file: "tests/unit/build106-ds2c1-profile-read-error.test.ts",
+    kind: "node",
+    evidence: "STATIC_GUARD",
+  },
+  {
+    name: "Build 106 Step 11 DS-AI1 AI daily-guidance locale + attribution contract",
+    file: "tests/unit/build106-ds-ai1-ai-locale-attribution.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
+    name: "Build 106 Step 11 DS-J4 mood/progress surfaces carry no streak-pressure UI",
+    file: "tests/unit/build106-ds-j4-mood-trend-no-streak.test.ts",
+    kind: "node",
+    evidence: "STATIC_GUARD",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",

@@ -1,0 +1,95 @@
+/**
+ * Build 106 — DS-J4: R-PRD-18 "Mood trend visualization (progress WITHOUT streaks)"
+ * / R-XC-02 "Gentle habit philosophy — no streak pressure" / V5_PRD §4
+ * Non-Requirements ("no streak UI, no completion checklist, no badges").
+ *
+ * Audit outcome (2026-09-02): there is no dedicated MoodTrend component; the mood
+ * surface is the Insights page ("Emosi yang paling sering muncul" +
+ * body-signal frequencies). The violation was streak-pressure UI on the rendered
+ * progress surfaces:
+ *   - components/insights/InsightPageClient.tsx : "🔥 Streak Saat Ini" /
+ *     "{n} Hari Berturut-turut" section + a streak sentence in the closing message
+ *   - components/dashboard/SoulProgress.tsx (unmounted) : "Gamified Healing" +
+ *     "Healing Streak {n} hari 🔥"
+ *   - components/profile/HealingProgressSummary.tsx (unmounted) : "Healing streak" row
+ * All three were de-streaked to plain "days active" / consistency framing.
+ *
+ * Remaining DS-J4 sub-item (tracked, NOT closed here): lib/engines/
+ * progressCalculationEngine.ts still weights `consistencyScore` 40% on a
+ * consecutive-day streak and `getGrowthPhase` gates on `streakDays`. That score
+ * model de-streaking + the /insights browser check are DS-J4 remainder.
+ *
+ * Evidence class: STATIC_GUARD (rendered browser check is DS-J4 / Step 11).
+ */
+import fs from "node:fs";
+
+let passed = 0;
+let failed = 0;
+function ok(name: string, condition: boolean) {
+  if (condition) {
+    console.log(`PASS: ${name}`);
+    passed += 1;
+  } else {
+    console.error(`FAIL: ${name}`);
+    failed += 1;
+  }
+}
+
+const MOOD_PROGRESS_SURFACES = [
+  "components/insights/InsightPageClient.tsx",
+  "components/dashboard/SoulProgress.tsx",
+  "components/profile/HealingProgressSummary.tsx",
+];
+
+// Streak-pressure signals that must not appear in the rendered progress surfaces.
+// (Comments are stripped first so a rule-citing comment does not trip the guard.)
+function stripComments(src: string): string {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/\{\s*\/\*[\s\S]*?\*\/\s*\}/g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+}
+
+for (const file of MOOD_PROGRESS_SURFACES) {
+  const src = stripComments(fs.readFileSync(file, "utf8"));
+  ok(`${file}: no "streak" language`, !/streak/i.test(src));
+  ok(`${file}: no fire/streak emoji`, !src.includes("🔥"));
+  ok(`${file}: no "Berturut-turut" consecutive-day counter`, !/berturut-turut/i.test(src));
+  ok(`${file}: no "Gamified" framing`, !/gamified/i.test(src));
+  ok(`${file}: no badges / leaderboard / points UI`, !/\b(leaderboard|badge|poin\b|points\b|peringkat)\b/i.test(src));
+}
+
+// The de-streaked surfaces still show progress, just without a run to keep alive.
+const insights = fs.readFileSync("components/insights/InsightPageClient.tsx", "utf8");
+ok(
+  "insights: still surfaces a mood signal (Emosi yang paling sering muncul)",
+  insights.includes("Emosi yang paling sering muncul"),
+);
+ok(
+  "insights: still surfaces a gentle consistency reading",
+  /Konsistensi Innerwork/.test(insights) && /consistencyScore/.test(insights),
+);
+ok(
+  "insights: R-PRD-18 / R-XC-02 intent anchored in a comment",
+  /R-PRD-18[\s\S]{0,40}R-XC-02|R-XC-02[\s\S]{0,40}R-PRD-18|R-PRD-18.*streak/i.test(insights),
+);
+
+const soulProgress = fs.readFileSync("components/dashboard/SoulProgress.tsx", "utf8");
+ok("SoulProgress: prop is daysActive, not healingStreak", /daysActive/.test(soulProgress) && !/healingStreak/.test(soulProgress));
+
+const healingSummary = fs.readFileSync("components/profile/HealingProgressSummary.tsx", "utf8");
+ok("HealingProgressSummary: prop is daysActive, not healingStreak", /daysActive/.test(healingSummary) && !/healingStreak/.test(healingSummary));
+
+// The longitudinal wellness engine already forbids streak/points/badges in its
+// output by its own test — reference it so this contract is not orphaned.
+ok(
+  "longitudinalWellnessEngine test still forbids streak/points/badges/leaderboard",
+  /for \(const forbidden of \[[\s\S]*"streak"[\s\S]*"badges"[\s\S]*"leaderboard"/.test(
+    fs.readFileSync("lib/engines/longitudinalWellnessEngine.test.ts", "utf8"),
+  ),
+);
+
+console.log(
+  `\nBUILD106_DS_J4_${failed === 0 ? "PASS" : "FAIL"} assertions=${passed} failed=${failed}`,
+);
+process.exit(failed === 0 ? 0 : 1);

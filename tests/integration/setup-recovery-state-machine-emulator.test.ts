@@ -309,12 +309,20 @@ service cloud.firestore {
     assert.equal(route, "reauth", "I: read error routes to reauth, NOT setup");
     assert.notEqual(route, "setup", "I: INVARIANT 5 — read error != profile missing");
   });
-  await step("I: divergence note — firebaseService.getUserProfile SWALLOWS read error to null (not on the AuthContext route path)", async () => {
-    const swallowed = await firebaseService.getUserProfile(uid); // rules still deny read here
-    // documents current behavior; not a route-decision defect because AuthContext primary load uses the throwing userRepository path
-    log.push(`      firebaseService.getUserProfile under read-denial -> ${swallowed === null ? "null (SWALLOWED)" : "value"}`);
-    assert.equal(swallowed, null, "I: firebaseService swallow-to-null confirmed (documented divergence)");
-    await restoreRules();
+  await step("I: DS-2C1 — firebaseService.getUserProfile PROPAGATES a read error (no longer swallowed to null)", async () => {
+    try {
+      let threw = false;
+      let value: unknown = "unset";
+      try {
+        value = await firebaseService.getUserProfile(uid); // rules still deny read here
+      } catch {
+        threw = true;
+      }
+      log.push(`      firebaseService.getUserProfile under read-denial -> ${threw ? "threw (PROPAGATED)" : `returned ${value === null ? "null (SWALLOWED)" : "value"}`}`);
+      assert.equal(threw, true, "I: DS-2C1 — a denied read now propagates, matching userRepository.getUserProfile (read error != profile missing)");
+    } finally {
+      await restoreRules();
+    }
   });
 
   // ==========================================================================
