@@ -1,5 +1,6 @@
 type HealingProgressSummaryProps = {
-  healingStreak: number;
+  // R-PRD-18 / R-XC-02: plain count of active days, not a consecutive-day streak.
+  daysActive: number;
   journalEntriesCount: number;
   lastEmotionalCheckIn: string | null;
   currentHealingPhase: string;
@@ -16,13 +17,13 @@ function formatDate(value: string | null) {
 }
 
 export function HealingProgressSummary({
-  healingStreak,
+  daysActive,
   journalEntriesCount,
   lastEmotionalCheckIn,
   currentHealingPhase,
 }: HealingProgressSummaryProps) {
   const items = [
-    ["Healing streak", `${healingStreak} hari`],
+    ["Hari aktif", `${daysActive} hari`],
     ["Journal entries", `${journalEntriesCount} catatan`],
     ["Last emotional check-in", formatDate(lastEmotionalCheckIn)],
     ["Current healing phase", currentHealingPhase],

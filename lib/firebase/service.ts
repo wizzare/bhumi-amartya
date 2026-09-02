@@ -302,25 +302,32 @@ export class FirebaseService {
 
   // User Profile Operations
   async getUserProfile(uid: string): Promise<UserProfile | null> {
+    let userDoc;
     try {
       this.logFirestore("getDoc", "users", uid);
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      if (userDoc.exists()) {
-        const data = userDoc.data();
-        return {
-          ...data,
-          createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-          trialStartedAt: data.trialStartedAt?.toDate?.()?.toISOString(),
-          trialEndsAt: data.trialEndsAt?.toDate?.()?.toISOString(),
-          lastActiveAt: data.lastActiveAt?.toDate?.()?.toISOString()
-        } as UserProfile;
-      }
-      return null;
+      userDoc = await getDoc(doc(db, 'users', uid));
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      // DS-2C1 (Build 106): a read failure (permission-denied / unavailable / offline)
+      // must stay distinguishable from a genuinely absent document so route guards can
+      // send the user to re-auth instead of /setup. Mirrors userRepository.getUserProfile.
+      console.error('Error getting user profile: read failed', {
+        name: (error as { name?: string })?.name,
+        code: (error as { code?: string })?.code,
+      });
+      throw error;
+    }
+    if (!userDoc.exists()) {
       return null;
     }
+    const data = userDoc.data();
+    return {
+      ...data,
+      createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+      trialStartedAt: data.trialStartedAt?.toDate?.()?.toISOString(),
+      trialEndsAt: data.trialEndsAt?.toDate?.()?.toISOString(),
+      lastActiveAt: data.lastActiveAt?.toDate?.()?.toISOString()
+    } as UserProfile;
   }
 
   async saveUserProfile(profile: UserProfile): Promise<boolean> {

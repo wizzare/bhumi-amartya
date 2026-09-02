@@ -14,8 +14,10 @@ function assertString(value: unknown, field: string): asserts value is string {
 }
 
 function normalizeOutput(output: DailyGuidanceOutput, input: DailyGuidanceInput): DailyGuidanceOutput {
+  // Synthesis + adaptive-practice copy is id/en only; ms -> en per the canonical chain (DS-AI1).
+  const synthesisLanguage: "id" | "en" = input.language === "en" || input.language === "ms" ? "en" : "id";
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: input.language,
+    language: synthesisLanguage,
     profile: input.user as unknown as Record<string, unknown>,
     blueprint: input.blueprint as unknown as Record<string, unknown>,
     astrologyToday: input.astrologyTransits?.summary,
@@ -34,7 +36,7 @@ function normalizeOutput(output: DailyGuidanceOutput, input: DailyGuidanceInput)
   const generatedPractices = input.adaptiveContext
     ? generateAdaptiveDailyPractices({
       date: input.adaptiveContext.dailyVariationSeed,
-      language: input.language,
+      language: synthesisLanguage,
       profile: input.user as unknown as Record<string, unknown>,
       blueprint: input.blueprint as unknown as Record<string, unknown>,
       astrologyToday: input.astrologyTransits?.summary,

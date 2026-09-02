@@ -120,9 +120,10 @@ function createBlueprintParagraphs(blueprint: UnknownRecord | null): string[] {
 }
 
 function createClosingMessage(progress: ProgressData | null): string {
-  const streak = progress?.streakDays ?? 0;
+  // R-PRD-18 / R-XC-02: progress framing without streak pressure — no consecutive-day
+  // count and no "streak" language.
   const score = progress?.consistencyScore ?? 0;
-  return `Perjalananmu tidak selalu terlihat dari seberapa cepat kamu berubah. Sering kali ia terlihat dari keberanianmu untuk tetap hadir, jujur, dan mau mendengarkan dirimu sendiri saat keadaan belum sepenuhnya jelas. ${streak > 0 ? `Streak ${streak} hari yang kamu bangun menunjukkan bahwa kamu sedang menanam fondasi yang nyata.` : "Setiap langkah kecilmu tetap berarti, bahkan ketika belum konsisten setiap hari."} Dengan konsistensi ${score}/100 saat ini, kamu sudah berada di jalur yang bertumbuh. Tetap lembut pada prosesmu, karena perubahan yang dalam biasanya lahir dari kehadiran yang berulang, bukan dari dorongan yang terburu-buru.`;
+  return `Perjalananmu tidak selalu terlihat dari seberapa cepat kamu berubah. Sering kali ia terlihat dari keberanianmu untuk tetap hadir, jujur, dan mau mendengarkan dirimu sendiri saat keadaan belum sepenuhnya jelas. Setiap langkah kecilmu tetap berarti, bahkan ketika belum konsisten setiap hari. Dengan konsistensi ${score}/100 saat ini, kamu sudah berada di jalur yang bertumbuh. Tetap lembut pada prosesmu, karena perubahan yang dalam biasanya lahir dari kehadiran yang berulang, bukan dari dorongan yang terburu-buru.`;
 }
 
 export function InsightPageClient() {
@@ -337,12 +338,8 @@ export function InsightPageClient() {
           </div>
         </section>
 
-        <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">🔥 Streak Saat Ini</h2>
-          <div className="bhumi-card bg-white/50 p-6">
-            <p className="text-3xl font-semibold text-[#4F5E52]">{progress?.streakDays ?? 0} Hari Berturut-turut</p>
-          </div>
-        </section>
+        {/* R-PRD-18 / R-XC-02: no streak / consecutive-day pressure UI. Progress is
+            shown as a gentle consistency reading below, not a run to keep alive. */}
 
         <section className="mb-10">
           <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">🌱 Konsistensi Innerwork</h2>

@@ -380,7 +380,8 @@ export function generateLocalManifestation(input: DailyGuidanceInput, reason: st
   const lp = String(input.blueprint?.lifePath?.number || "");
   const arcana = String(input.blueprint?.destinyMatrix?.center || "");
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: input.language || "id",
+    // Synthesis copy is id/en only; ms -> en per the canonical chain (DS-AI1).
+    language: input.language === "en" || input.language === "ms" ? "en" : "id",
     profile: input.user as unknown as Record<string, unknown>,
     blueprint: input.blueprint as unknown as Record<string, unknown>,
     astrologyToday: input.astrologyTransits?.summary,
@@ -508,7 +509,8 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
   let synthesis;
   try {
     synthesis = buildUnifiedBlueprintSynthesis({
-      language: safeInput.language,
+      // Synthesis copy is id/en only; ms -> en per the canonical chain (DS-AI1).
+      language: safeInput.language === "en" || safeInput.language === "ms" ? "en" : "id",
       profile: safeInput.user as unknown as Record<string, unknown>,
       blueprint: safeInput.blueprint as unknown as Record<string, unknown>,
       astrologyToday: safeInput.astrologyTransits?.summary,
@@ -647,7 +649,8 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
           reason: "", reflection: "", advice: ""
         }
       }, {
-        language: safeInput.language || "id",
+        // id/en only here; ms -> en per the canonical chain (DS-AI1).
+        language: safeInput.language === "en" || safeInput.language === "ms" ? "en" : "id",
         dailyVariationSeed: seed,
         localDateKey: seed.slice(0, 10),
         completionRateYesterday: Number(adaptive?.completionRateYesterday) || 0,

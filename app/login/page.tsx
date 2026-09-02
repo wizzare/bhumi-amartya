@@ -76,8 +76,11 @@ function LoginContent() {
       try {
         // Prefer AuthContext's server-loaded profile over the local mirror; the
         // mirror is cleared on sign-out, so after logout/login it is cold.
+        // DS-2C1: getUserProfile now propagates genuine read failures. This cold-mirror
+        // fallback stays tolerant (the authoritative server re-check below owns the routing
+        // decision); a transient read error here must not by itself force /setup.
         let profile: { uid?: string | null; setupCompleted?: boolean | null } | null =
-          (auth?.userProfile as any) ?? (await storageProvider.getUserProfile());
+          (auth?.userProfile as any) ?? (await storageProvider.getUserProfile().catch(() => null));
         const blueprint = await storageProvider.getUserBlueprint();
 
         let setupCompleted =

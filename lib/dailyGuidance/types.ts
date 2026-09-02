@@ -131,7 +131,7 @@ export type DailyGuidanceContext = {
   uid: string;
   date: string;
   localDateKey?: string;
-  language: "id" | "en";
+  language: "id" | "en" | "ms";
   profile: Record<string, unknown> | null;
   blueprint: Record<string, unknown> | null;
   astrologyToday?: string | null;

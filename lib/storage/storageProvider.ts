@@ -645,14 +645,16 @@ class FirebaseStorageProvider implements StorageProvider {
   async getUserPlan(): Promise<any | null> {
     const uid = this.getCurrentUserId();
     if (!uid) return null;
-    const profile = await firebaseService.getUserProfile(uid);
+    // DS-2C1: getUserProfile now propagates genuine read failures; this non-critical
+    // plan lookup keeps its prior tolerant behavior (absent OR unreadable -> no plan).
+    const profile = await firebaseService.getUserProfile(uid).catch(() => null);
     return profile?.plan || null;
   }
 
   async saveUserPlan(plan: any): Promise<boolean> {
     const uid = this.getCurrentUserId();
     if (!uid) return false;
-    const currentProfile = await firebaseService.getUserProfile(uid);
+    const currentProfile = await firebaseService.getUserProfile(uid).catch(() => null);
     if (!currentProfile) return false;
     
     const updatedProfile = {

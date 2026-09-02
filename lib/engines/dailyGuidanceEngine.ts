@@ -23,16 +23,20 @@ export const dailyGuidanceEngine = {
       brain.localDateKey || context.localDateKey || "",
       identity,
     );
-    const language = context.language === "en" ? "en" : "id";
-    const circadian = buildCircadianContext(new Date(), language);
+    // uiLanguage is the user's true locale (R-PRD-31 — passed to the AI prompt);
+    // engineLanguage stays id/en for the internal id/en-only engines (DS-AI1).
+    const uiLanguage: "id" | "en" | "ms" =
+      context.language === "en" ? "en" : context.language === "ms" ? "ms" : "id";
+    const engineLanguage: "id" | "en" = uiLanguage === "en" ? "en" : "id";
+    const circadian = buildCircadianContext(new Date(), engineLanguage);
     const reflection = ReflectionEngine.calculate(memory, identity, circadian);
     const journey = JourneyEngine.calculate(memory, reflection, identity, circadian);
-    const wellness = WellnessEngine.calculate(memory, reflection, journey, identity, circadian, { language });
+    const wellness = WellnessEngine.calculate(memory, reflection, journey, identity, circadian, { language: engineLanguage });
     const potential = PotentialEngine.calculate(identity, memory, reflection, journey, wellness, circadian);
 
     const response = await AIGateway.generateStructuredJson<Record<string, any>>({
       promptKey: "daily-guidance",
-      language,
+      language: uiLanguage,
       identity,
       memory,
       reflection,

@@ -153,7 +153,8 @@ Buat soul reflection personal.
         : additionalContext?.previousGuidance || null;
 
       return buildDailyGuidancePrompt({
-        language: language === "en" ? "en" : "id",
+        // R-PRD-31: carry the user's true locale (id/en/ms) into the prompt.
+        language: language === "en" ? "en" : language === "ms" ? "ms" : "id",
         user: additionalContext?.user || additionalContext?.profile,
         blueprint: additionalContext?.blueprint,
         astrologyTransits: additionalContext?.astrologyTransits,

@@ -54,7 +54,7 @@ export type DailyGuidanceInput = {
   adaptiveContext?: DailyGuidanceAdaptiveContext;
   previousGuidance?: DailyGuidance | null;
   environmentContext?: any;
-  language: "id" | "en";
+  language: "id" | "en" | "ms";
   generatedAt: string;
 };
 

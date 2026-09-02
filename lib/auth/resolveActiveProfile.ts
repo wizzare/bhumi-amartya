@@ -45,7 +45,9 @@ export async function resolveActiveProfile(auth?: AuthLike): Promise<ResolvedPro
   }
 
   if (authUid) {
-    const providerProfile = await storageProvider.getUserProfile();
+    // DS-2C1: getUserProfile now propagates genuine read failures; this feature-page
+    // resolver keeps its prior semantics (unresolved read -> treated as missing below).
+    const providerProfile = await storageProvider.getUserProfile().catch(() => null);
     console.log("[USER DATA LOAD]", {
       uid: authUid,
       email: (auth?.user as { email?: string } | undefined)?.email ?? null,

@@ -4,10 +4,20 @@ import { buildBhumiSoulMirrorPrompt } from "@/lib/prompts/bhumiSoulMirrorPrompt"
 import { buildBhumiManifestationPrompt } from "@/lib/prompts/bhumiManifestationPrompt";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
 
+const OUTPUT_LANGUAGE_NAMES: Record<string, string> = {
+  id: "Bahasa Indonesia",
+  en: "English",
+  ms: "Bahasa Melayu",
+};
+
 export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
   const emotionalMemory = input.emotionalMemory ?? {};
+  const outputLanguage = input.language;
+  const outputLanguageName = OUTPUT_LANGUAGE_NAMES[outputLanguage] ?? OUTPUT_LANGUAGE_NAMES.id;
   const unifiedBlueprint = buildUnifiedBlueprintSynthesis({
-    language: input.language,
+    // Synthesis narrative copy is id/en only; ms falls back to en per the canonical
+    // ms -> en -> id chain (D-V5-35). Locale-native ms synthesis copy is DS-AI1.
+    language: outputLanguage === "en" ? "en" : outputLanguage === "ms" ? "en" : "id",
     profile: input.user as unknown as Record<string, unknown>,
     blueprint: input.blueprint as unknown as Record<string, unknown>,
     astrologyToday: input.astrologyTransits?.summary,
@@ -19,6 +29,10 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
       role: "Bhumi Amartya daily AI orchestration engine",
       instruction:
         "Generate original, user-aware daily dashboard guidance following the BHUMI AMARTYA V3 STRICT INTELLIGENCE CHAIN. Establish the BHUMI VOICE ARCHETYPE based on the field context. Dashboard fields must sound like a Companion (Teman Duduk), Wellness/Journey fields like a Coach/Navigator (Pendamping Pertumbuhan), and Profile fields like a Teacher (Penerjemah Diri). Return valid JSON only. No markdown.",
+      outputLanguageRule:
+        `OUTPUT LANGUAGE (R-PRD-31): Write EVERY user-facing string value — insight, reason, reflection, advice, soulReflectionText, dailyNoteText, all titles, affirmations, prompts, descriptions, narratives, questions — in ${outputLanguageName} (locale code "${outputLanguage}"). This rule OVERRIDES any "(Bahasa Indonesia)" hint inside outputSchema: those hints describe the required structure, lens, and tone, NOT the target language. Keep JSON keys, enum values (e.g. low/medium/high, grounding/reflection/action, gentle/empowering/grounding/introspective/celebratory) and numeric fields exactly as specified. Never mix languages inside one field. When a field specifies a fixed Indonesian phrase (e.g. the soulReflectionText greeting "Halo {firstName}," / time-of-day line, or the closing "Peluk hangat dari Bhumi."), render its natural equivalent in ${outputLanguageName} instead of the literal Indonesian when "${outputLanguage}" is not "id".`,
+      attributionRule:
+        "ATTRIBUTION (R-PRD-31 / R-XC-04 / R-XC-09): This is reflective AI companion output, not authoritative fact or diagnosis. Keep phrasing tentative and agency-preserving (e.g. 'mungkin', 'bisa jadi', 'satu kemungkinan'); never assert certainty about the user's state, future, health, or finances. The application labels this content as AI-generated and user-controllable; do not claim to be a human, a therapist, or an oracle.",
       repetitionAvoidanceRule:
         "REPETITION AVOIDANCE: You are provided with yesterday's soulReflectionText and dailyNoteText in userContext.previousGuidance. You MUST ensure today's text is significantly different in phrasing, focus, and narrative structure while remaining true to the blueprint. Do not repeat the same analogies or opening hooks.",
       intelligenceChainRule:

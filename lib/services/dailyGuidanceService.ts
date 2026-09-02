@@ -331,7 +331,12 @@ async function executeGetOrGenerateDailyGuidance(params: {
     uid,
     date,
     localDateKey: date,
-    language: profile.language === "en" ? "en" : "id",
+    // R-PRD-31: carry the user's true locale (id/en/ms); accepts short or BCP47 tags.
+    language: typeof profile.language === "string" && profile.language.startsWith("en")
+      ? "en"
+      : typeof profile.language === "string" && profile.language.startsWith("ms")
+        ? "ms"
+        : "id",
     profile,
     blueprint,
     currentSky: sky,
@@ -440,7 +445,11 @@ async function executeGetOrGenerateDailyGuidance(params: {
         previousProgressSummary: "Local fallback",
         previousGuidanceSummaries: [],
       },
-      language: (profile.language === "en" ? "en" as const : "id" as const),
+      language: (typeof profile.language === "string" && profile.language.startsWith("en")
+        ? "en" as const
+        : typeof profile.language === "string" && profile.language.startsWith("ms")
+          ? "ms" as const
+          : "id" as const),
       generatedAt: new Date().toISOString(),
     };
 

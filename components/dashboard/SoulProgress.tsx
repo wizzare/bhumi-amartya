@@ -1,24 +1,26 @@
 "use client";
 
+// R-PRD-18 / R-XC-02: progress without streak pressure — `daysActive` is a plain
+// count of gentle activity days, never a consecutive-day run to keep alive.
 interface SoulProgressProps {
-  healingStreak: number;
+  daysActive: number;
   consciousnessLevel: number;
 }
 
 export function SoulProgress({
-  healingStreak,
+  daysActive,
   consciousnessLevel,
 }: SoulProgressProps) {
   return (
     <div className="mt-6 bhumi-card p-6">
-      <p className="text-[#7B8776]">📈 Soul Progress (Gamified Healing)</p>
+      <p className="text-[#7B8776]">📈 Soul Progress</p>
 
       <div className="mt-5 space-y-4">
         <div>
           <div className="flex justify-between items-center">
-            <p className="text-[#4F5E52] font-semibold">Healing Streak</p>
+            <p className="text-[#4F5E52] font-semibold">Hari aktif</p>
             <p className="text-2xl font-bold text-[#9BB89A]">
-              {healingStreak} hari 🔥
+              {daysActive} hari
             </p>
           </div>
         </div>
