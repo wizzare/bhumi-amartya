@@ -6,18 +6,28 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Continuity snapshot — after Step 11 (Claude Code, 2026-09-02)
+## Continuity snapshot — after Step 12 (Claude Code, 2026-09-02)
 
 ```text
 CURRENT_PRIMARY_AGENT             = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–11)
+PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12)
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_STEP11_DOCS   = ff52611  (fix: Step 11 close DS-AI1 native ms synthesis + DS-J4 score/phase de-streak)
+CURRENT_HEAD_BEFORE_STEP12_DOCS   = 15428ba  (docs(v5): ratify D-V5-36 — narrative-prose fallback ms -> id)
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
-NEXT_SAFE_ACTION                  = Step 12 — genuine fresh-account acceptance (DS-GATE07, external) + RC-2 primary-surface browser/device pass in a real-Firebase environment
+NEXT_SAFE_ACTION                  = close DS-2C3 (setup-page mount guard) -> re-run the RC-2 rendered browser pass for DS-E1 / DS-J4 / DS-AI1 en-ms -> DS-AI1-themes -> then Step 13 (version bump / artifact, Founder approval only)
 ```
+
+Step 12 (genuine fresh-account acceptance + RC-2 rendered browser verification): AUDIT → VERIFY
+→ REPORT, no product code changed. **D-V5-36 ratified** (narrative-prose `ms → id` fallback,
+commit `15428ba`). **GATE_07 / DS-GATE07 = ACCEPTED at emulator-hydration level** — a brand-new
+emulator account ran the full lifecycle to a rendered `/dashboard` (real blueprint, rules-
+enforced Firestore) + dashboard hard-reload + logout/login, all correct. **DS-PR1 browser part
+done** (`/premium-bhumi` Rp25.000, `/upgrade` neutral "Google Play"). **R-34** switcher visible +
+persists. **NEW: DS-2C3** — `/setup` has no mount guard for an already-complete user, so a
+gated-feature-page cold hard-nav can strand a genuine complete user on `/setup`; this also
+blocks the DS-E1 / DS-J4 / DS-AI1 rendered checks by cold hard-nav. See the "Step 12" section.
 
 Step 9 (Premium copy / price, R-42): DONE — `RECOVERED_VERIFIED (unit + static)`. Rendered
 device proof = DS-PR1.
@@ -141,7 +151,7 @@ Canonical continuation marker:
 | R-31 | AI in user locale | PARTIAL | CP-036 | PARTIAL_COMPLETION (Step 11 — local logic closed); owner = DS-AI1 | Journal AI path already locale-aware (id/en/ms) + `provenance`-stamped — locked by test. Daily-guidance path (Step 11): `buildDailyGuidancePrompt` emits a locale-keyed `outputLanguageRule` (overrides the legacy "(Bahasa Indonesia)" schema hints) + an `attributionRule`; id/en/ms carried end to end (route → service → `dailyGuidanceEngine` → `AIGateway` → registry). **Native Bahasa Melayu** added to the deterministic synthesis path: new `lib/i18n/pickLocale.ts` (canonical `ms → en → id` chain); `unifiedBlueprintSynthesis` (`mergeThemes`, 21 `humanizeNeed` clauses, core-need fallbacks, `blueprintSummary`) and `adaptiveDailyPracticeGenerator` (all practice titles/descriptions) now carry native ms; `localDailyGuidanceFallback` resolves `ms → id` for its wrapper strings (Bahasa Melayu/Indonesia mutual intelligibility) rather than `ms → en`; `DailyGuidanceInput/Context.language` = `"id"|"en"|"ms"`. Guard `build106-ds-ai1-ai-locale-attribution.test.ts` (31 assertions incl. behavioral ms synthesis + practice output). **DS-AI1 remainder:** the Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms (**DS-AI1-themes**); and the rendered en/ms dashboard browser check (RC-2 / RC-9). |
 | R-32 | Localized notifications | MISSING | CP-036 partial + Step-8 corrections | PARTIAL COMPLETION VERIFIED; external delivery = DS-N1 | id/en/ms copy, explicit opt-in default, timezone quiet hours, Comfort/low-energy/dismissal suppression, frequency/absence gates, real web-token-only registration, owner-scoped fail-closed persistence, SW, and Android local scheduling are covered. No fake fallback token or false FCM-sent claim. Backend FCM sender, VAPID/browser round-trip, native remote push, per-category settings UI, and device delivery acceptance remain open. |
 | R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
-| R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
+| R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static + **Step 12 browser: switcher visible + persists**) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button **Indonesia / English / Melayu** switcher wired to `setLanguage`. **Step 12: rendered and clickable on `/`; each click persists `bhumiLanguage` to localStorage; the fresh user's profile carried `language`.** The welcome page's own visible copy does not yet re-render on switch → **DS-I1** (`useTranslation()` migration). |
 | R-35 | Single Daily Astro synthesis | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/dailyAstroSynthesis.ts` `buildDailyAstroSynthesis` — ONE object (sky/moon/westernEvents/eastern/eclipses/majorCycles), `sourceVersion` stamped, composes the already-proven engines. `AstroTodayCard.tsx` now renders it. `v5-daily-synthesis` (22) + `v5-astro-core` (20) + `build106-astro-regressions` (29). |
 | R-36 | Astro feeds Wellness/Catatan/Weekly | MISSING | CP-036 | ADAPTERS RECOVERED (unit); consumer wiring = DS-A1 | `dailyAstroSynthesis.ts` exports `astroContextFromSynthesis` (→ `wellnessRecommendationEngine.EnvironmentalContext.astroContext`) and `weeklyAstroContextFromSynthesis`. `buildDailyContext.ts` priority-4 astro source now typed to the real `DailyAstroSynthesis`. The Dashboard/Wellness/Weekly call sites that pass the synthesis in = **DS-A1**. |
 | R-37 | Variable Western events | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/relevantWesternEvents.ts` `selectRelevantWesternEvents` — variable-count (retrograde / aspect orb ≤ 6° / ingress ≤ 3 days), never padded. `AstroTodayCard.tsx` `.slice(0, 5)` on `sky.bodies` **removed**; renders `synthesis.westernEvents`. `v5-astro-core` "quiet day yields ZERO events (no slice(0,5) padding)"; `build106-astro-regressions` R-37 block. |
@@ -149,7 +159,7 @@ Canonical continuation marker:
 | R-39 | Dynamic eclipses | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | `lib/astrology/calculateEclipses.ts` (astronomy-engine, Meeus) `findNextGlobalEclipse` / `findNextVisibleEclipse` (null without observer coords — honest unavailable, D-V5-29). `KNOWN_ECLIPSES` array **retired** from `lib/data/astronomicalEvents.ts`; `astroAwarenessEngine.ts` uses `buildUpcomingEclipseEvents`. `AstroTodayCard.tsx` hardcoded "12/28 Agustus 2026" dates + `daysUntil("2026-…")` countdown **removed**; Global Next + Local/Visible Next cards. `v5-astro-core` + `build106-astro-regressions` R-39 block. |
 | R-40 | No Blueprint group in Astro | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | The `{ id: "blueprint", title: "Menyentuh Blueprint-mu Hari Ini", … activations.slice(0, 5) }` group and the `Zap` import **removed** from `AstroTodayCard.tsx`. Blueprint activations still feed `buildTransitNarrative` context but are not a standalone Astro group. `build106-astro-regressions` R-40 block. Browser UI check pending. |
 | R-41 | Astro non-diagnostic lens | PRESENT_CORRECT | Build 105 / CP-036 | PRESERVED (unit) | `astroContextFromSynthesis` tags describe the sky (`{body}-retrograde`, `{body}-in-{sign}`, intensity enum), never the user's condition; `majorCycles: { openScope: true }` (no invented signals, D-V5-26). `build106-astro-regressions` R-41 block. |
-| R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit + static); device render = DS-PR1 | Display price `Rp25.000/bulan` (id/ms) / `Rp25.000/month` (en) in all three `src/locales/*` bundles (Step 3); `app/premium-bhumi/page.tsx:274` fallback `Rp50.000`→`Rp25.000` (byte-identical to CP-036). No `Rp50.000` in any current user-facing source. `app/upgrade/page.tsx` renders the live Google Play `formattedPrice` for base plan `monthly` (`|| "Google Play"` neutral last), no hardcoded monetary string; native bridge emits `formattedPrice`. `tests/unit/v5-08-premium-residual.test.ts` (46 assertions, in release manifest). Rendered device proof of the live price = DS-PR1. |
+| R-42 | Rp25.000 display/live Play price wins | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit + static + **Step 12 rendered browser**) | Display price `Rp25.000/bulan` (id/ms) / `Rp25.000/month` (en) in all three `src/locales/*` bundles; `app/premium-bhumi/page.tsx:274` fallback `Rp50.000`→`Rp25.000` (byte-identical to CP-036); no `Rp50.000` anywhere. `app/upgrade/page.tsx` renders the live Google Play `formattedPrice` for base plan `monthly` (`|| "Google Play"` neutral last). `v5-08-premium-residual.test.ts` (46 assertions). **Step 12 browser: `/premium-bhumi` renders "Langganan bulanan Rp25.000/bulan…"; `/upgrade` renders `bhumi_premium_monthly` / base plan `monthly` / Harga = "Google Play" (neutral fallback, no hardcoded Rp).** A real Play `formattedPrice` substitution on an installed Android build = **DS-PR1** (device/Play-sandbox only). |
 | R-43 | Canonical environment sources | PARTIAL | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit/source) | `service.tsx`: Open-Meteo weather/AQ, astronomy-engine Sun/Moon/circadian, USGS seismic, NOAA SWPC Kp, and Schumann Resonance Live. Each source remains a distinct domain. `v5-environment-context` 29/29. |
 | R-44 | Provenance/unavailable honesty | PRESENT_BUT_REGRESSED | CP-036 + reconciled corrections | RECOVERED_VERIFIED (unit) | Every returned domain has source/status/observedAt; unavailable remote providers stay unavailable. USGS outage no longer fabricates `Stabil`; non-finite/out-of-range Schumann/Kp values fail closed. Exact unavailable copy is localized. |
 | R-45 | Three-layer Schumann | MISSING | CP-036 + reconciled corrections | CONTRACT/UI RECOVERED_VERIFIED (unit/static); browser = DS-E1 | Model-labelled SR1–SR5 snapshot, honest local 24h accumulation/window states, graph component, provenance/freshness, Bhumi interpretation, spiritual lens, grounding practice, and non-deterministic disclaimer. `v5-environment-context` + DS-I2 pass; browser rendering remains open. |
@@ -159,10 +169,15 @@ Canonical continuation marker:
 
 This is a release-blocking gate independent of the numbered product requirement rows.
 
-Current state: `CODE_COMPLETE / BLOCKED_ON_EXTERNAL_ACCEPTANCE` (Phase 2B + 2C, 2026-09-02).
-Every code-level and emulator-level requirement passes. The one remaining item — a genuine
-fresh non-sample account browser acceptance run — cannot be executed in this environment (no
-authorized authenticated test account; no signup browser driver). That is the sole `PASS` gap.
+Current state: `ACCEPTED (emulator-hydration browser run, 2026-09-02, Step 12)`.
+Phase 2B + 2C fixed the code; the full state machine passes at unit + emulator level; and
+**Step 12 executed a genuine fresh non-sample account acceptance run** against a real
+`next dev` (Turbopack) client wired to the local Firebase Auth + Firestore emulators — real
+hydration, real auth, real blueprint generation, rules-enforced Firestore persistence. Not a
+sample/audit identity. See the "Step 12 — genuine fresh-account acceptance" section below.
+One residual trap on a *different* trigger path (`app/setup/page.tsx` has no mount guard for an
+already-complete user reaching `/setup` via a gated-feature-page cold-nav) is tracked as
+**DS-2C3** and does not affect the onboarding gate itself.
 
 Root cause (VERIFIED): `ensureMinimalUserProfile()` (`lib/auth/authActions.ts`) decided
 create-vs-reconcile from a `getUserProfile` read taken *before* an unbounded
@@ -179,23 +194,23 @@ profile. Every route guard (`userRouteState.ts:37`, `landingCtaRoute.ts:32`,
 | Bootstrap cannot overwrite newer completed setup | PASS (unit + emulator) | `ensureMinimalUserProfile` re-reads authoritative state *after* the bootstrap await (only when `needsBootstrap`) and routes a raced call into the existing-profile reconcile path, never the create/clobber branch. `build106-new-user-lifecycle.test.ts` TEST_1 (`calls.upsert === 0`, finalized profile intact). Release suite: "Setup/recovery state machine" §11–§13, `INVARIANT 1`. |
 | Stale continuation cannot reset state | PASS (unit + emulator) | Reconcile goes through `userRepository.reconcileMinimalProfile()` — read + `guardMonotonicProfilePatch` + write in one Firestore `runTransaction`; a concurrent finalize forces a retry that re-observes the finalized state. TEST_6. Release suite: "Setup/recovery state machine" `8D-2 §11` ("concurrent finalize + stale failure (both orders) -> once the txn sees ready it cannot downgrade"), `SETUP_RECOVERY_STATE_MACHINE PASS passed=33 failed=0`. |
 | `setupCompleted` / `blueprintStatus` monotonic | PASS (unit + emulator) | `lib/auth/profileMonotonicity.ts` `guardMonotonicProfilePatch` strips `setupCompleted:false` / `onboardingCompleted:false` / `baselineWellnessCompleted:false` over a persisted `true`, and `blueprintStatus:"missing"` over any advanced state; protects non-empty birth strings and non-null lat/long/tz/country. TEST_2, TEST_3. RED/GREEN contrast recorded. Release suite: `8D-2` monotonic-recovery scenarios, `INVARIANT 1` ("no code path writes setupCompleted=true before a blueprint exists"). |
-| AuthContext refreshed after setup before routing | RECOVERED (static + emulator-model) | `app/setup/page.tsx` `finalizeSetup` awaits `auth.refreshUserProfile()` before `router.replace("/dashboard")` — recovered from historical commit `0f0ad14e`. `build106-new-user-lifecycle.test.ts` TEST_5 (source-order assertion). Release suite: "Setup/recovery state machine" `H4` ("after final profile-ready update -> restart: route=dashboard"). Real-browser E2E still pending. |
-| Server-authoritative verification wins over localStorage | FIXED (helper unit) | `finalizeSetup` now verifies with `verifySetupPersisted()` — a fresh `userRepository.getUserProfile(uid)` + the authoritative `blueprints/{uid}` read; audit/dev identities keep the local-mirror fallback. `build106-authoritative-profile-gate.test.ts` (`localStorage`-complete-but-server-incomplete → not verified). Real-browser E2E pending. |
-| Dashboard recovery reconciles before routing to /setup | FIXED (helper unit) | `DashboardClient` boot, when the *cached* profile looks incomplete for the auth uid, calls `userRepository.getUserProfile(uid)` and `reconcileCachedProfileWithServer()`; on `hydrate-from-server` it converges the local cache and continues instead of stranding the user. `build106-authoritative-profile-gate.test.ts`. Release suite: `C` restart scenario still fires `recoverUserBlueprint` after hydration. Real-browser E2E pending. |
-| Re-login (logout → login) lands on dashboard | FIXED (helper unit) | `app/login/page.tsx` post-login routing now prefers `auth.userProfile` (server-loaded) over the sign-out-cleared local mirror, with a `userRepository.getUserProfile(uid)` confirmation before any `/setup` route. `build106-authoritative-profile-gate.test.ts`. Real-browser E2E pending. |
+| AuthContext refreshed after setup before routing | PASS (unit + emulator-model + **Step 12 browser**) | `app/setup/page.tsx` `finalizeSetup` awaits `auth.refreshUserProfile()` before `router.replace("/dashboard")` (recovered from `0f0ad14e`). `build106-new-user-lifecycle.test.ts` TEST_5; release suite `H4`. **Step 12: the fresh account went setup → dashboard rendered on the first finalize.** |
+| Server-authoritative verification wins over localStorage | PASS (helper unit + **Step 12 browser**) | `finalizeSetup` verifies with `verifySetupPersisted()`. `build106-authoritative-profile-gate.test.ts`. **Step 12: profile persisted `setupCompleted:true` / `blueprintStatus:"ready"` in the emulator, rules-enforced.** |
+| Dashboard recovery reconciles before routing to /setup | PASS (helper unit + **Step 12 browser**) | `DashboardClient` boot reconciles a stale cache via `reconcileCachedProfileWithServer()`. `build106-authoritative-profile-gate.test.ts`. **Step 12: a hard reload of `/dashboard` for the fresh user stayed on `/dashboard` (no bounce to `/setup`).** |
+| Re-login (logout → login) lands on dashboard | PASS (helper unit + **Step 12 browser**) | `app/login/page.tsx` prefers `auth.userProfile` over the sign-out-cleared mirror + `userRepository.getUserProfile` confirmation. `build106-authoritative-profile-gate.test.ts`. **Step 12: cleared the auth session + local mirror, re-signed-in with the same account → landed on `/dashboard`, not `/setup`.** |
 | Missing profile distinguished from read error | PASS (unit + emulator) | `userRepository.getUserProfile` throws on read failure / returns `null` only for a genuinely absent doc; `ensureMinimalUserProfile` propagates the throw. TEST_4. Release suite: `I` ("getUserProfile THROWS on read denial -> resolveProfileLoad = error -> route=reauth"). NOTE the suite's divergence flag: `lib/firebase/service.ts` `getUserProfile` *swallows* read errors to `null`, but that path is not on the AuthContext route — tracked as follow-up, not a gate blocker. |
 | Fresh birth data → persisted blueprint schema | PASS (emulator) | Release suite: "P0 blueprint persistence (Firestore SDK)", "Setup & blueprint recovery", "Persistence E2E" all PASS with real Firestore SDK against the emulator. |
-| Sample/dev-audit not used as proof | HELD | Audit-mock seam catalogued (`lib/dailyGuidance/auditMocks.ts` `getMockProfile`/`getMockBlueprint`); every Build 106 test uses synthetic non-mock identities; the release state-machine suite uses "fresh anon uid per scenario". |
-| Genuine fresh non-sample account browser acceptance | **BLOCKED (external)** | No authorized authenticated test account and no signup browser driver in this environment (documented limitation, CLAUDE.md Build 85 §E). This is the only requirement not satisfied. |
+| Sample/dev-audit not used as proof | HELD | Audit-mock seam catalogued (`lib/dailyGuidance/auditMocks.ts` `getMockProfile`/`getMockBlueprint`); every Build 106 test uses synthetic non-mock identities; the release state-machine suite uses "fresh anon uid per scenario"; the **Step 12 acceptance used a brand-new emulator email/password account created seconds before the run** — no `bhumi_audit_user`, no `getMockProfile`, no precomputed blueprint. |
+| Genuine fresh non-sample account browser acceptance | **ACCEPTED (emulator-hydration, Step 12 — 2026-09-02)** | Real `next dev` client wired to local Auth+Firestore emulators. Fresh account `fresh-…@build106qa.test` (uid `hrudN1PA…`) → sign-in → `/setup` → real birth data (1990-06-15, 08:30, Jakarta, geocode lat `-6.1754`) → **real blueprint generated** (Life Path 4 "The Builder", Sun Gemini, HD Projector; numerology + HD + Destiny Matrix all present) → Firestore persisted (rules-enforced; profile `setupCompleted:true`, `blueprintStatus:"ready"`) → **`/dashboard` rendered** (Soul Reflection + Core Identity + Astro for the fresh user). **Dashboard hard-reload → stays on `/dashboard`** (Invariant G). **Logout → `/login`; re-login (cold mirror) → `/dashboard`** (cold-mirror fix). A **production** or Play-device run is still the ideal final proof, but the genuine-lifecycle acceptance is no longer un-run. |
 
 Required tests:
 
 1. deterministic bootstrap-timeout / late-completion race — **DONE** (`build106-new-user-lifecycle.test.ts` TEST_1, EXIT 0);
-2. fresh-user setup success — **DONE at emulator level** ("Setup/recovery state machine" B/finalize, `H4`); browser acceptance BLOCKED;
+2. fresh-user setup success — **DONE** (emulator "Setup/recovery state machine" B/finalize + **Step 12 genuine fresh-account browser run** — setup → real blueprint → `/dashboard` rendered);
 3. blueprint generation failure — **DONE** (release suite "Setup & blueprint recovery" scenario D, EXIT 0);
 4. final-profile write failure — **DONE** (release suite scenario E, EXIT 0);
 5. recovery-required transition — **DONE** (release suite `8D-2` §8–§13, `markBlueprintRecoveryRequired` transaction, EXIT 0);
-6. dashboard recovery finalization — **DONE at helper + emulator-model level** (`reconcileCachedProfileWithServer` unit; release suite `C` restart); browser E2E pending;
+6. dashboard recovery finalization — **DONE** (`reconcileCachedProfileWithServer` unit; release suite `C` restart; **Step 12: `/dashboard` hard-reload for the fresh user stayed on `/dashboard`**);
 7. pre-existing persisted user regression protection — **DONE** (`auth-minimal-profile-preservation.test.ts` + TEST_2/TEST_3 + release `8D-2 §13`).
 
 Evidence (2026-09-02):
@@ -208,7 +223,62 @@ Evidence (2026-09-02):
 - `npx tsc --noEmit` — EXIT 0, 0 errors
 - **Full release suite with Firestore + Auth emulator** (`firebase emulators:exec --project demo-release-suite`, JDK 21) — **PASS=16 FAIL=0 SKIPPED=0**, `RELEASE_TESTS_PASS`, EXIT 0 (STRONG_REAL_SDK=6, STRONG_UNIT=7, STATIC_GUARD=2, MOCK_UNIT=1). Includes "Setup & blueprint recovery", "Setup/recovery state machine" (`passed=33 failed=0`), "Concurrent recovery dedup (dual runtime)", "Persistence E2E".
 
-Follow-ups (not gate blockers): `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route); real-browser Playwright E2E of the three reconciled surfaces; the genuine fresh-account acceptance run.
+Follow-ups: `lib/firebase/service.ts` `getUserProfile` swallow — **CLOSED in Step 11 (DS-2C1)**. Genuine
+fresh-account acceptance run — **DONE in Step 12** at emulator-hydration level (see below); a
+production / Play-device run remains the ideal final proof. NEW: **DS-2C3** — `app/setup/page.tsx`
+has no mount guard sending an already-complete user to `/dashboard`, so a genuine complete user
+redirected to `/setup` by a gated-feature-page cold hard-nav is stranded there.
+
+## Step 12 — genuine fresh-account acceptance + RC-2 rendered browser verification (2026-09-02)
+
+`AUDIT → VERIFY → REPORT`. No product code changed (verification pass). Founder authorised an
+environment "capable of real hydration/auth flow" and forbade sample/audit users as proof.
+
+**Environment.** `next dev` (Turbopack, `bhumi-amartya-clean@4.4.5`) with an **ephemeral**
+`.env.local` (`NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`, demo project `demo-build106-qa`) wired
+to the local Firebase **Auth** (`:9099`) + **Firestore** (`:8080`) emulators. Ephemeral `.next`,
+`.env.local`, and `firebase-debug.log` / `firestore-debug.log` were **deleted afterward**; dev
+server + emulators stopped; **worktree clean; no `next build`**.
+
+**Genuine fresh account.** A brand-new email/password account
+(`fresh-<epoch>@build106qa.test`, uid `hrudN1PAbsyjwZubWxTsHBDtrFUB`) was created via the Auth
+emulator REST `accounts:signUp` **seconds before** the run — no `bhumi_audit_user`, no
+`getMockProfile`, no precomputed blueprint. Sign-in used the app's on-page emulator QA login
+(`signInWithEmailAndPassword`).
+
+**Genuine new-user lifecycle — PASS (real hydration + auth + blueprint):**
+
+| Step | Result |
+|---|---|
+| Welcome `/` renders | tagline "Ruang Untuk Pulang dan Kenali Diri", CTAs "Pengguna Baru" / "Saya Sudah Punya Akun", **locale switcher Indonesia / English / Melayu visible** (R-PRD-34). |
+| "Pengguna Baru" → `/login?next=/setup` → sign-in | fresh account authenticated → routed to `/setup`. |
+| `/setup` → real birth data | 1990-06-15, 08:30, "Jakarta, Java, Indonesia" (autocomplete geocode → lat `-6.1754049`); "Lanjut ke Dashboard" enabled after city selection. |
+| Finalize → blueprint | **real blueprint generated** — Life Path **4 "The Builder"**, Sun **Gemini**, HD **Projector**; `numerology` + `humanDesign` + `destinyMatrix` all present. Firestore persisted (rules-enforced): profile `setupCompleted:true`, `blueprintStatus:"ready"`, `birthDate`/`birthCity`/`latitude` set. |
+| → `/dashboard` | **rendered** — "Good night Fresh QA User", Soul Reflection (companion daily guidance), Core Identity card, Astro Hari Ini ("WANING GIBBOUS / Bulan di Taurus"). |
+| `/dashboard` hard reload | **stays on `/dashboard`** — no bounce to `/setup` (Build 106 Invariant G / authoritative-reconcile / late-bootstrap-race fix holds for a genuine account). |
+| Logout (cleared Auth IndexedDB + local mirror) → `/dashboard` | redirects to `/login` (correct). |
+| Re-login, same account (cold mirror) → | **lands on `/dashboard`**, not `/setup` (Build 106 `app/login/page.tsx` cold-mirror fix). |
+
+**RC-2 rendered surfaces:**
+
+| Item | Result |
+|---|---|
+| **DS-PR1 / R-PRD-42** — `/premium-bhumi` | **RENDERED PASS** — "Langganan bulanan **Rp25.000**/bulan. Dapat dibatalkan kapan saja melalui Google Play."; status "Penghuni Bhumi (Gratis)"; **zero `Rp50.000`**. |
+| **DS-PR1 / R-PRD-42** — `/upgrade` | **RENDERED PASS** — `Product ID bhumi_premium_monthly`, `Base Plan monthly`, `Harga` = **"Google Play"** (live `formattedPrice` neutral fallback, no hardcoded Rp), `STATUS Free / Belum aktif`, entitlement-authority copy present. |
+| **R-PRD-34** — locale switcher | **VISIBLE + persists** — clicking Indonesia/English/Melayu writes `bhumiLanguage` to localStorage; the fresh user's persisted **profile carried `language`** (R-PRD-33 profile side). ⚠️ the welcome-page's own visible copy does **not** re-render on switch → **DS-I1** (`useTranslation()` component migration) still open. |
+| **DS-E1** (Schumann) / **DS-J4** (`/insights` rendered) / **DS-AI1** (rendered en/ms daily guidance) | **NOT reached this run** — hard-navigation to these gated *feature* pages with a cold AuthContext bounces to `/setup` (see DS-2C3), and the in-app browser cannot drive Next App-Router deep SPA nav or capture screenshots. Their contract/unit + emulator evidence stands; the rendered check moves forward with DS-2C3 resolved (or via Playwright). |
+
+**NEW FINDING → DS-2C3.** `app/setup/page.tsx` redirects to `/dashboard` only *after* a
+successful `finalizeSetup` submission — it has **no mount-time guard** for a user who is already
+`setupCompleted` and lands on `/setup` via a redirect. So a genuine complete user whom a gated
+feature page bounces to `/setup` (cold-nav race) is **stranded** ("Profile: pending", no
+self-correction after 20 s). This is a residual instance of the Master-SOT-§4.1 trap on a
+*narrower* trigger than the one Phase 2B/2C fixed; the onboarding gate itself is verified working.
+
+**Evidence discipline:** no production read/write, no build artifact, no deploy/publish/push, no
+version bump. The acceptance is an **emulator-hydration browser run** — stronger than every prior
+GATE_07 evidence class (real client hydration, real auth session, real blueprint engines, real
+rules-enforced Firestore) but still not a production or Play-device run.
 
 ## Localization foundation (canonical recovery order Step 3 — 2026-09-02)
 
@@ -674,8 +744,9 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-I1** | Full `useTranslation()` migration of UI components off the `translations[language]` compat layer (V5_I18N_SPEC §3); widen the ~40 `"id"\|"en"` component prop/param types + add `ms` copy to inline dictionaries. | R-29..R-34 (full UI localization, beyond foundation) | Build 106 — localization component-migration sprint, after the feature-recovery steps. | OPEN |
 | **DS-I2** | Recover `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann`). | R-29/R-30 (extended) | **Step 7** (Environment / Schumann). | **DONE (Step 7, 2026-09-02)** — 28/28, EXIT 0; suite is in the release manifest. |
 | **DS-2C1** | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route; flagged by the release state-machine suite). | new-user gate (Invariant E, secondary path) | Build 106 — auth-hardening follow-up. | **DONE (Step 11, 2026-09-02)** — `getUserProfile` now propagates a denied/unavailable read (returns `null` only for an absent doc), matching `userRepository.getUserProfile`; non-routing callers (`getUserPlan`/`saveUserPlan`, `resolveActiveProfile` fallback, login cold-mirror fallback) opt into tolerance with `.catch(() => null)`. Guard `tests/unit/build106-ds2c1-profile-read-error.test.ts` (10) + the release state-machine "I" step updated to verify the fix; full emulator suite **PASS=23/23**. |
-| **DS-2C2** | Real-browser Playwright E2E of the 3 reconciled onboarding surfaces (setup / dashboard boot / login) + the locale switcher + locale persistence round-trip. | GATE_07, R-33/R-34 (browser) | Build 106 — verification step (11) / fresh-account acceptance. | OPEN |
-| **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | **External** — needs an authorized authenticated test account + signup browser driver. Founder/ops to schedule. | BLOCKED (external) |
+| **DS-2C2** | Real-browser E2E of the 3 reconciled onboarding surfaces (setup / dashboard boot / login) + locale round-trip. | GATE_07, R-33/R-34 (browser) | Build 106 — verification. | **PARTIAL (Step 12)** — setup → dashboard, dashboard hard-reload, logout → login all exercised in a real emulator-hydration browser run (see "Step 12" section). Remaining: a scripted Playwright suite for regression + the locale *visible-copy* round-trip (blocked by DS-I1). |
+| **DS-GATE07** | Genuine fresh non-sample account acceptance run (register → … → dashboard → reload → logout/login). | GATE_07_GENUINE_NEW_USER | Build 106 — verification Step 12. | **ACCEPTED at emulator-hydration level (Step 12, 2026-09-02)** — brand-new emulator email/password account, real hydration, real blueprint, rules-enforced Firestore, dashboard rendered, reload + logout/login all correct. A production / Play-device run is still the ideal final proof but the run is no longer un-executed. |
+| **DS-2C3** | `app/setup/page.tsx` has no mount-time guard redirecting an already-`setupCompleted` user to `/dashboard`; combined with gated *feature* pages bouncing a cold-AuthContext hard-nav to `/setup`, a genuine complete user can be stranded on `/setup`. Add the mount guard (or an authoritative reconcile on `/setup` mount) + extend the cold-nav reconcile to `AccessGuard` / `resolveActiveProfile`; regression test. | GATE_07 (residual trap, feature-page trigger), R-PRD (secondary-surface access) | Build 106 — auth-hardening follow-up, before the RC-2 rendered browser pass for DS-E1 / DS-J4 / DS-AI1 (those pages are unreachable by cold hard-nav until this lands). | OPEN (new — Step 12) |
 | **DS-M1** | Memory Dashboard UI: recover `app/journey/memory/page.tsx` (83L, CP-036) + `components/journey/MemoryCandidateCard` + `app/journey/page.tsx` link; needs `useTranslation()` (react-i18next) wiring — **prereq DS-I1**. Plus browser + CRUD E2E. | R-23 (visual visibility/control), R-21 (browser) | Build 106 — Memory-Dashboard UI sub-step, scheduled with DS-J1/DS-J2 (Inner Work / Journey surfaces land together); DS-I1 first. | OPEN |
 | **DS-M2** | "Daily Note on Dashboard" reconciliation: CP-036 keeps `DailyNoteV2` on Profile and surfaces daily-note text on Dashboard via `catatanSummary`/`SoulReflectionCard`. Decide whether Master SOT §5 "Daily Note absent from Dashboard" requires a dedicated Dashboard card; if yes, design + wire it. | R-03 (Dashboard surfacing), Master SOT §5 | Build 106 — Founder reconciliation decision, then Daily Rhythm / Dashboard step. | OPEN (decision) |
 | **DS-M3** | Complete opt-in weekly/monthly reflection synthesis, persistence, and rendered experience. Step 8 completed the 90-day unpinned decay (R-27) and reflection eligibility gates only. | R-28; R-27 no longer gated | Build 106 — Daily Rhythm/Memory consumer work. | **PARTIAL** — decay + eligibility DONE; synthesis/persistence/UI OPEN. |
@@ -686,7 +757,7 @@ for its requirement; the release gate stays closed on all of them.
 | **DS-R1** | Wire and render the Step-8 Daily Rhythm contracts: adaptive greeting/orientation, optional needs and equal paths, inline Tiny Step, Continue Yesterday, evening reflection, Comfort interaction, truthful failure states, and weekly/monthly reflection consumer. Add browser acceptance. | R-01, R-02, R-04..R-10, R-14, R-17, R-28 | Build 106 — consumer/UI work in Steps 10–11; browser only when local runtime artifacts are authorized. | OPEN |
 | **DS-N1** | Implement a trusted backend FCM sender/scheduler, per-category notification controls, VAPID web round-trip, Android remote-push plugin/configuration, token lifecycle acceptance, and truthful delivery history; verify in browser/device. | R-32 | Build 106 — notification external/integration acceptance; requires authorized configuration and device/browser test. | OPEN (external/configuration + implementation) |
 | **DS-P1** | Add entry-level lock/unlock, hide-from-history, local-only, and exclude-from-Memory UI; verify filtering/export behavior; reconcile account deletion with the complete data inventory, realtime deletion, entitlement cleanup, and acceptance evidence. | R-20 and privacy/deletion acceptance | Build 106 — privacy consumer and account-deletion hardening before final verification. | OPEN |
-| **DS-PR1** | Rendered device/browser proof of the Premium display price: the `Rp25.000` copy shows on the Premium + Upgrade surfaces, and a real Google Play `formattedPrice` (base plan `monthly`) replaces the copy when the native product is available, with a neutral fallback when it is not. No production purchase. | R-42 (rendered) | Build 106 — verification Step 11 / device QA, when a local runtime / Play sandbox is authorized. | OPEN |
+| **DS-PR1** | Rendered proof of the Premium display price. | R-42 (rendered) | Build 106 — device / Play-sandbox QA. | **BROWSER PART DONE (Step 12)** — `/premium-bhumi` renders "Langganan bulanan Rp25.000/bulan…", `/upgrade` renders `bhumi_premium_monthly` / base plan `monthly` / Harga = "Google Play" neutral fallback; zero `Rp50.000`. **Remaining:** a real Google Play `formattedPrice` substitution on an installed Android build (device / Play sandbox only). |
 
 ---
 

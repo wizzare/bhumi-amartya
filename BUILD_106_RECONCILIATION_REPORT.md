@@ -197,8 +197,9 @@ Every `DS-*` has an owner and a verification step. Status at end of Step 10:
 | **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); guard 31 (behavioral ms). Remainder: **DS-AI1-themes** + rendered en/ms browser (RC-2 / RC-9) |
 | **DS-AI1-themes** | R-PRD-31 deterministic-fallback completeness | i18n follow-up sprint (post browser pass) | **OPEN (new — Step 11)** — Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms (~70 sites, currently `ms → id`). Not release-critical on its own — primary AI path renders true ms |
 | DS-2C1 | new-user gate Invariant E secondary path (`lib/firebase/service.ts` read-error swallow) | auth-hardening follow-up | **DONE (Step 11)** — read failure propagates (null = absent doc only); guard (10) + state-machine "I" step updated; emulator PASS=23/23 |
-| DS-2C2 | GATE_07, R-PRD-33/34 browser | verification Step 11 | OPEN |
-| DS-GATE07 | GATE_07_GENUINE_NEW_USER | **External** — authorized account + signup driver; Step 12 | BLOCKED (external) |
+| DS-2C2 | GATE_07, R-PRD-33/34 browser | verification | **PARTIAL (Step 12)** — setup→dashboard, dashboard hard-reload, logout→login exercised in a real emulator-hydration browser run. Remaining: scripted Playwright regression + locale visible-copy round-trip (needs DS-I1) |
+| DS-GATE07 | GATE_07_GENUINE_NEW_USER | verification Step 12 | **ACCEPTED (emulator-hydration, Step 12)** — brand-new emulator account, real hydration/auth/blueprint, rules-enforced Firestore, dashboard rendered + reload + logout/login all correct. Production / Play-device run still ideal |
+| DS-2C3 | GATE_07 residual trap (feature-page trigger) | auth-hardening follow-up, before the DS-E1/DS-J4/DS-AI1 rendered browser pass | **OPEN (new — Step 12)** — `/setup` has no mount guard for an already-complete user; a gated-feature-page cold hard-nav can strand a genuine complete user there |
 | DS-M1 | R-PRD-23 (Memory Dashboard UI), R-PRD-21 browser | Memory-Dashboard UI sub-step (DS-I1 first) | OPEN |
 | DS-M2 | R-PRD-03 Dashboard surfacing, Master SOT §5 | Founder reconciliation decision, then Daily Rhythm/Dashboard step | OPEN (decision) |
 | DS-M3 | R-PRD-28 | Daily Rhythm/Memory consumer work | PARTIAL (decay + eligibility done; synthesis/persistence/UI open) |
@@ -209,7 +210,7 @@ Every `DS-*` has an owner and a verification step. Status at end of Step 10:
 | DS-R1 | R-PRD-01/02/04..10/14/17/28 consumer UI | consumer/UI work Steps 10–11; browser in Step 11 | OPEN |
 | DS-N1 | R-PRD-32 remote delivery | notification external/integration acceptance | OPEN (external/config + impl) |
 | DS-P1 | R-PRD-20 + privacy/deletion acceptance | privacy consumer + account-deletion hardening, before Step 11 | OPEN |
-| DS-PR1 | R-PRD-42 rendered | verification Step 11 / device QA | OPEN |
+| DS-PR1 | R-PRD-42 rendered | device / Play-sandbox QA | **BROWSER PART DONE (Step 12)** — `/premium-bhumi` renders "Rp25.000/bulan", `/upgrade` renders `bhumi_premium_monthly` / base plan `monthly` / Harga = "Google Play" neutral fallback; zero `Rp50.000`. Remaining: real Play `formattedPrice` on an installed Android build |
 
 ---
 
@@ -239,8 +240,9 @@ each owned. None is a silent gap.
 
 | # | Gap | Master SOT / PRD gate | Owner | Blocking type |
 |---|---|---|---|---|
-| RC-1 | Genuine fresh non-sample new-user browser acceptance | Master SOT §8, §10.3; PRD §5 | DS-GATE07 (Step 12) | **EXTERNAL** — needs authorized authenticated account + signup browser driver |
-| RC-2 | Browser/device QA for affected primary surfaces (Daily Rhythm, Schumann, Memory Dashboard, Premium, locale switcher, Astro Today, onboarding) | Master SOT §8 "Browser/device QA completed for affected primary surfaces" | DS-R1, DS-E1, DS-M1, DS-PR1, DS-2C2, DS-A1 (Step 11) | Needs authorized local Next runtime / `.next` artifact (prohibited in Steps 1–10) |
+| RC-1 | Genuine fresh non-sample new-user browser acceptance | Master SOT §8, §10.3; PRD §5 | DS-GATE07 | **ACCEPTED at emulator-hydration level (Step 12)** — brand-new emulator account, full lifecycle to a rendered `/dashboard` (real blueprint, rules-enforced Firestore), dashboard hard-reload + logout/login all correct. A production / Play-device run is still the ideal final proof |
+| RC-2 | Browser/device QA for affected primary surfaces (Daily Rhythm, Schumann, Memory Dashboard, Premium, locale switcher, Astro Today, onboarding) | Master SOT §8 | DS-R1, DS-E1, DS-M1, DS-PR1, DS-2C2, DS-A1 | **PARTIAL (Step 12)** — onboarding (setup→dashboard, reload, logout/login), **Premium `/premium-bhumi` + `/upgrade`** (DS-PR1 browser part), and the **locale switcher visibility/persistence** (R-34) all verified in a real emulator-hydration browser run. DS-E1 (Schumann), DS-J4 (`/insights`), DS-AI1 (rendered en/ms) not reached — blocked by **DS-2C3** (cold hard-nav to gated feature pages bounces to `/setup`) + in-app-browser SPA-nav limits |
+| RC-12 | `/setup` mount guard for an already-complete user | Master SOT §4.1 (residual trap, narrower trigger) | DS-2C3 | **OPEN (new — Step 12)** — add the guard + extend the cold-nav authoritative reconcile to `AccessGuard` / `resolveActiveProfile`; regression test |
 | RC-3 | FCM infrastructure live (backend sender, VAPID round-trip, native remote push, device delivery) | PRD §5 "FCM infrastructure live"; Master SOT §5 | DS-N1 | Needs authorized configuration + device test |
 | RC-4 | Memory Dashboard (view/edit/delete/export) functional | PRD §5 | DS-M1 (needs DS-I1 first) | UI implementation + browser |
 | RC-5 | Journal draft recovery + history/search functional (rendered) | PRD §5 | DS-J1/DS-J2/DS-J3 | UI implementation + browser |
@@ -291,8 +293,52 @@ SPA rendering is not achievable without a real Firebase project (env limitation)
 browser-evidence-class gap is marked `PASS`. No version bump / build artifact / deploy /
 publish / production write.
 
-RC-1..RC-8 unchanged — browser/device/external/audit acceptance, addressed by the remaining
-Step 11 browser pass (RC-2 primary-surface QA) and Step 12 (RC-1 fresh-account, external).
+### 11.2 Step 12 — genuine fresh-account acceptance + RC-2 rendered browser (2026-09-02)
+
+`AUDIT → VERIFY → REPORT`; no product code changed. Founder ratified the narrative-prose
+fallback (D-V5-36, commit `15428ba`) and authorised an environment "capable of real
+hydration/auth flow", forbidding sample/audit users as proof.
+
+**Environment.** `next dev` (Turbopack) with an **ephemeral** `.env.local`
+(`NEXT_PUBLIC_USE_FIREBASE_EMULATORS=true`, demo project `demo-build106-qa`) wired to the local
+Firebase **Auth** (`:9099`) + **Firestore** (`:8080`) emulators. Ephemeral `.next`, `.env.local`,
+debug logs **deleted afterward**; servers stopped; **worktree clean; no `next build`**.
+
+**RC-1 / DS-GATE07 — ACCEPTED (emulator-hydration).** A brand-new email/password account
+(`fresh-<epoch>@build106qa.test`, uid `hrudN1PA…`) was created via the Auth emulator REST
+**seconds before** the run — no audit fixture, no `getMockProfile`, no precomputed blueprint.
+Full lifecycle verified in a real hydrating browser client:
+`sign-in → /setup → real birth data (1990-06-15, 08:30, Jakarta, geocode) → finalize →
+**real blueprint generated** (Life Path 4 "The Builder", Sun Gemini, HD Projector; numerology +
+HD + Destiny Matrix present) → Firestore persisted rules-enforced (profile setupCompleted:true,
+blueprintStatus:"ready") → /dashboard rendered (Soul Reflection + Core Identity + Astro)`.
+**Dashboard hard-reload → stays on /dashboard** (Invariant G). **Logout → /login; re-login
+(cold mirror) → /dashboard** (cold-mirror fix). Production / Play-device run still ideal.
+
+**RC-2 — PARTIAL.**
+- **DS-PR1 browser part DONE** — `/premium-bhumi` renders "Langganan bulanan Rp25.000/bulan…";
+  `/upgrade` renders `bhumi_premium_monthly` / base plan `monthly` / `Harga` = "Google Play"
+  neutral fallback; **zero `Rp50.000`**.
+- **R-34** — the `Indonesia / English / Melayu` switcher renders on `/` and each click persists
+  `bhumiLanguage` to localStorage; the fresh user's profile carried `language`. Visible-copy
+  round-trip on the welcome page itself is still **DS-I1** (`useTranslation()` migration).
+- **DS-E1 (Schumann) / DS-J4 (`/insights` rendered) / DS-AI1 (rendered en/ms)** — **not reached**:
+  hard-navigation to these gated feature pages with a cold AuthContext bounces to `/setup`
+  (**DS-2C3**), and the in-app browser cannot drive Next App-Router deep SPA nav / screenshots.
+
+**NEW — RC-12 / DS-2C3.** `app/setup/page.tsx` redirects to `/dashboard` only after a successful
+`finalizeSetup` — it has **no mount guard** for an already-`setupCompleted` user. A genuine
+complete user redirected to `/setup` by a gated-feature-page cold hard-nav is **stranded there**
+("Profile: pending", no self-correction). Residual instance of the Master-SOT-§4.1 trap on a
+narrower trigger; the onboarding gate itself is verified working. Fix + regression test are
+DS-2C3, scheduled before the DS-E1 / DS-J4 / DS-AI1 rendered browser pass.
+
+Evidence discipline: no production read/write, no build artifact, no deploy/publish/push, no
+version bump. The acceptance is an **emulator-hydration browser run** — stronger than every
+prior GATE_07 evidence class, still not a production/device run.
+
+RC-3..RC-8 unchanged — FCM infra, Memory Dashboard, journal draft/history, Comfort Mode,
+adaptive check-in, security/privacy audit.
 
 ---
 
