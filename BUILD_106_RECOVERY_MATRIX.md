@@ -49,12 +49,12 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 | R-26 | Memory boundaries | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | boundary/suppression tests |
 | R-27 | 90-day decay/pinning | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | lifecycle tests |
 | R-28 | Weekly/monthly reflection | MISSING | none proven | NEW_IMPLEMENTATION_REQUIRED | opt-in + synthesis tests |
-| R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | locale runtime tests |
-| R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERY_REQUIRED | fallback tests |
-| R-31 | AI in user locale | PARTIAL | CP-036 | RECOVERY_REQUIRED | localized AI tests |
-| R-32 | Localized notifications | MISSING | CP-036 scheduler | RECOVERY_REQUIRED | notification tests |
-| R-33 | Locale persistence | PARTIAL | CP-036 | RECOVERY_REQUIRED | persistence tests |
-| R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERY_REQUIRED | browser tests |
+| R-29 | id/en/ms locales | PRESENT_BUT_REGRESSED | CP-036 | RECOVERED_VERIFIED (unit) | 3 bundles (507 keys each) recovered; `ms` no longer phantom — `build106-i18n-foundation.test.ts` + `v5-auth-locale-flow.test.ts`. Browser E2E pending. |
+| R-30 | Locale fallback missing->en->id | MISSING | CP-036 | RECOVERED_VERIFIED (unit) | `getI18n().fallbackLng = {ms:[en,id], en:[id], default:[en]}`; `getCompatDictionaries()` merges id<-en<-active — `build106-i18n-foundation.test.ts`. |
+| R-31 | AI in user locale | PARTIAL | CP-036 | DEFERRED to AI step | Out of localization-foundation scope; tracked for the AI recovery step. |
+| R-32 | Localized notifications | MISSING | CP-036 scheduler | DEFERRED to notifications step (8) | Out of localization-foundation scope. |
+| R-33 | Locale persistence | PARTIAL | CP-036 + new | RECOVERED + COMPLETED (unit) | `LanguageContext` reads profile + localStorage; `changeLanguage` now also persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` (NEW — CP-036 gap). `UserProfile.language` widened to accept id/en/ms tags. `build106-i18n-foundation.test.ts` R-33 block. Browser E2E pending. |
+| R-34 | Visible functional switcher | PARTIAL | CP-036 | RECOVERED (static) | `app/page.tsx` static "Indonesia \| English" label replaced by the CP-036 functional 3-button id/en/ms switcher wired to `setLanguage`. Browser E2E pending. |
 | R-35 | Single Daily Astro synthesis | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | synthesis tests |
 | R-36 | Astro feeds Wellness/Catatan/Weekly | MISSING | CP-036 | RECOVERY_REQUIRED | integration tests |
 | R-37 | Variable Western events | PRESENT_BUT_REGRESSED | CP-036 | RECOVERY_REQUIRED | variable-count tests |
@@ -123,6 +123,36 @@ Evidence (2026-09-02):
 
 Follow-ups (not gate blockers): `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (off the AuthContext route); real-browser Playwright E2E of the three reconciled surfaces; the genuine fresh-account acceptance run.
 
+## Localization foundation (canonical recovery order Step 3 — 2026-09-02)
+
+Scope: the i18n **foundation** — canonical instance, id/en/ms bundles, fallback chain,
+persistence, functional switcher. The full `useTranslation()` component migration
+(V5_I18N_SPEC §3) is a later sprint and is NOT in scope here.
+
+Recovered verbatim from CP-036 (`036225f`), blob-SHA verified:
+
+- `src/locales/{id-ID,en-US,ms-MY}/translation.json` — 619 lines / ~27 KB each, **507 leaf keys** each. Verified a strict **superset** of the legacy `lib/data/translations.ts` `id` dict (233 keys) — 0 consumed keys lost.
+- `lib/i18n/index.ts` — one canonical `i18next` instance; `fallbackLng = { ms: ["en","id"], en: ["id"], default: ["en"] }`; `SUPPORTED_LOCALES` = id/en/ms only; `deepMerge` + `getCompatDictionaries()` (id<-en<-active pre-merge). es-ES/pt-BR/fr-FR are never loaded.
+- `lib/locale/normalizeLocale.ts` — BCP47 ↔ short mapper (`normalizeLocale`, `getDictionaryKey`, `DEFAULT_LOCALE`). NOTE the V5_I18N_SPEC §3 text says "retire normalizeLocale"; the CP-036 *implementation* rebuilt it safely under `lib/locale/` — implementation is authority (see provenance ledger).
+- `lib/data/translations.ts` — 851-line legacy flat dict **replaced** by CP-036's 8-line shim: `export const translations = getCompatDictionaries()`. Every `translations[language].section.key` consumer keeps working, and `translations["ms"]` now resolves (R-29 phantom/crash gone).
+- `app/context/LanguageContext.tsx` — CP-036 version: `Language = "id"|"en"|"ms"`, `fromProfileLanguage()` maps `"ms-MY"`/`"ms_MY"` → `"ms"`, i18next sync effect.
+- `tests/unit/v5-phase1-language-context.test.ts` (17 assertions) + `tests/unit/v5-auth-locale-flow.test.ts` (22 assertions) — recovered verbatim, both EXIT 0.
+
+Newly implemented (CP-036 gaps, labelled NEW):
+
+- `LanguageContext.changeLanguage` now persists `normalizeLocale(short)` (BCP47 tag) to `users/{uid}.language` on an explicit choice — CP-036 wrote localStorage only (R-33 completion).
+- `lib/repositories/userRepository.ts` `UserProfile.language` widened to `"id-ID"|"en-US"|"ms-MY"|"id"|"en"|"ms"`.
+- `app/page.tsx` switcher hunk recovered on top of Build 105's newer `decideLandingCtaRoute` routing (hunk-level, routing preserved).
+- `tests/unit/build106-i18n-foundation.test.ts` (108 assertions, EXIT 0) — locale scope / fallback chain / no-key-loss / ms-not-phantom / persist-value-shape.
+
+Deps: `i18next@^23.16.8` + `react-i18next@^14.1.3` re-added to `package.json` (Build 105 had dropped them; present in CP-036). `react-i18next` is dormant until the component-migration sprint.
+
+Widening ripple contained at 4 boundaries (not-yet-localized legacy surfaces fall `ms → en` per the canonical chain): `app/setup/page.tsx` (`preferredLanguage` type), `components/wellness/WellnessPageClient.tsx` ×2 (`WellnessAssessmentFlow` prop), `components/journey/details/JourneyDetailClient.tsx` (`buildUnifiedBlueprintSynthesis` arg). Full component-type widening + `ms` copy in inline dictionaries is the react-i18next migration sprint.
+
+Evidence (2026-09-02): `npx tsc --noEmit` EXIT 0; 8 unit suites EXIT 0 (i18n-foundation 108, v5-phase1-language-context 17, v5-auth-locale-flow 22, + new-user/auth suites); full release suite + Firestore/Auth emulator **PASS=16 FAIL=0 SKIPPED=0** (`userRepository` type change did not regress the setup/recovery state machine — `passed=33 failed=0`).
+
+Deferred to later steps: `useTranslation()` migration across UI (V5_I18N_SPEC §3); `tests/unit/v5-i18n.test.ts` (couples to `lib/environment/schumann` — Environment step 7); R-31 AI-in-locale (AI step); R-32 localized notifications (step 8); browser E2E of the switcher.
+
 ## Historical source identifiers
 
 `CP-036` = checkpoint `036225f23b4c07636ab875f9939afbebdbdad9d7`.
@@ -174,7 +204,7 @@ recovery branch — no body rewrite (historical requirements preserved).
 | `V5_DECISION_LOG.md` | CP-036 `036225f` | `4e8c8f56…` | RECOVERED_VERIFIED (provenance) | Full decision reconciliation deferred to the recovery steps that consume each decision (localization = Step 3, journaling = Step 4, astro = Step 6, environment = Step 7). |
 | `V5_TODO.md` | CP-036 `036225f` | `bfd6f13d…` | RECOVERED_VERIFIED (provenance) | Historical phased task list (P0–P8). Superseded as an execution driver by this matrix + Master SOT §7 recovery order; retained as context. |
 | `V5_CBT_JOURNAL_DESIGN.md` | CP-036 `036225f` | `c36749b3…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 4 (Journaling/CBT). |
-| `V5_I18N_SPEC.md` | CP-036 `036225f` | `30f688ac…` | RECOVERED_VERIFIED (provenance) | Detailed reconciliation belongs to recovery Step 3 (Localization). Confirm CURRENT scope id/en/ms + fallback active→en→id-ID against D-V5-35. |
+| `V5_I18N_SPEC.md` | CP-036 `036225f` | `30f688ac…` | RECONCILED (Step 3, 2026-09-02) | Foundation recovered per this doc (§1 CURRENT id/en/ms per D-V5-35; §2 i18next + `src/locales/{tag}/translation.json` + active→en→id-ID fallback; §4 switcher persists). SUPERSEDED sub-content: §4 "All **six** locale dictionaries exist" — pre-D-V5-35 wording; CURRENT scope is 3 + 3 DEFERRED. §3 "retire `normalizeLocale.ts`" — the CP-036 implementation instead rebuilt it safely at `lib/locale/normalizeLocale.ts`; implementation is authority. Full `useTranslation()` component migration (§3) deferred to a later sprint. |
 | `DOCUMENTATION_INDEX.md` | CP-036 `036225f` (then reconciled) | adopted then edited on the recovery branch | RECONCILED | Added Build 106 authority block; fixed stale "Six canonical locales" and "D-V5-01..12" index cells; expanded historical/superseded table. |
 
 `RECOVERED_VERIFIED (provenance)` means the file's origin is proven and it was adopted intact. It

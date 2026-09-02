@@ -92,7 +92,7 @@ export default function SetupPage() {
   const [birthTime, setBirthTime] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [selectedCity, setSelectedCity] = useState<CitySelection | null>(null);
-  const [preferredLanguage, setPreferredLanguage] = useState<"id" | "en">(language);
+  const [preferredLanguage, setPreferredLanguage] = useState<"id" | "en" | "ms">(language);
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 

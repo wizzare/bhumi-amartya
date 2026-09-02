@@ -10,6 +10,7 @@ import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { journeyStoryEngine, GrowthStory } from "@/lib/engines/journeyStoryEngine";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
+import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { ArrowLeft, Sparkles, Clock, Heart, Flag } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCompletionSummary, mergeDailyStatesWithJourneyRecords } from "@/lib/engines/completionEngine";
@@ -183,7 +184,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         let synthesis = null;
         if (blueprintData) {
             synthesis = buildUnifiedBlueprintSynthesis({
-              language: profile?.language || "id",
+              // Build 106: this synthesis surface is not yet localized for ms;
+              // fall ms -> en per the canonical chain until its own i18n sprint.
+              language: getDictionaryKey(profile?.language || "id") === "en" ? "en" : "id",
               profile: profile as unknown as Record<string, unknown>,
               blueprint: blueprintData as unknown as Record<string, unknown>
             });

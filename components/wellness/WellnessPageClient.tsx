@@ -700,10 +700,10 @@ export function WellnessPageClient() {
         <AppNav />
         <div className="mx-auto max-w-lg space-y-12">
           <BhumiPageHeader />
-          <WellnessAssessmentFlow 
+          <WellnessAssessmentFlow
             key={startFresh ? "fresh" : "saved"}
             uid={activeUid}
-            language={language}
+            language={language === "ms" ? "en" : language}
             startFresh={startFresh}
             initialStage={assessmentStage === "questions" ? "questions" : "intro"}
             onResultsLoaded={async (m, n, s, r) => {
@@ -740,7 +740,7 @@ export function WellnessPageClient() {
             <WellnessAssessmentFlow
               key="baseline"
               uid={activeUid}
-              language={language}
+              language={language === "ms" ? "en" : language}
               startFresh={true}
               onResultsLoaded={async (m, n, s, r) => {
                 setMapping(m);

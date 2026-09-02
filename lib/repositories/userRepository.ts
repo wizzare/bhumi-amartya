@@ -38,7 +38,10 @@ export type UserProfile = {
   latitude?: number | null;
   longitude?: number | null;
   timezone?: string | null;
-  language?: "id" | "en";
+  // Build 106 localization foundation (R-29 / R-33, D-V5-35): the profile holds
+  // the canonical BCP47 tag for id / en / ms. Legacy short codes remain accepted
+  // for back-compat with pre-V5 documents.
+  language?: "id-ID" | "en-US" | "ms-MY" | "id" | "en" | "ms";
   onboardingCompleted: boolean;
   baselineWellnessCompleted: boolean;
   baselineWellnessProfile?: BaselineWellnessProfile;
