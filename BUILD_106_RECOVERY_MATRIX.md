@@ -6,17 +6,23 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Codex continuity snapshot after Step 8 (2026-09-02)
+## Continuity snapshot — handoff to Claude Code after Step 8 (2026-09-02)
 
 ```text
-NEXT_PRIMARY_AGENT                = CODEX
+NEXT_PRIMARY_AGENT                = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT            = CODEX (Steps 7–8)
 CURRENT_BRANCH                    = recovery/build106-product-continuity
-CURRENT_HEAD_BEFORE_STEP8_DOCS    = d106cb7649860b39fe03485d9a04db98bda1c924
+CURRENT_HEAD_BEFORE_HANDOFF_DOCS  = 0eea40c65fa51d0efaabe8e1ef61c554cd923257
 BUILD_106_PHASE                   = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
 BUILD_106_ARTIFACT                = DOES_NOT_EXIST
 BUILD_106_RELEASE_GATE            = CLOSED
 NEXT_SAFE_ACTION                  = Step 9 — Premium copy / price
 ```
+
+Operational snapshot: `BUILD_106_HANDOFF.md` (Codex → Claude Code). At handoff the worktree also
+holds an **uncommitted partial Step 9 start** by Codex (`app/premium-bhumi/page.tsx` fallback copy
+Rp50.000→Rp25.000, `tests/unit/v5-08-premium-residual.test.ts`, `tests/release-manifest.mjs`
+entry) — to be audited and reconciled in Step 9, not assumed complete.
 
 `CURRENT_HEAD_BEFORE_STEP8_DOCS` is the clean implementation/test HEAD before this matrix and the
 continuity handoff were updated. After checkout, use `git rev-parse HEAD` for the newer docs commit.
