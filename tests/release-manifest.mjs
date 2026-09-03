@@ -97,6 +97,12 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "Build 106 final pre-release gap closure (F-2 ultimate fallback + RC-8 account-deletion inventory)",
+    file: "tests/unit/build106-final-pre-release-gap-closure.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",
