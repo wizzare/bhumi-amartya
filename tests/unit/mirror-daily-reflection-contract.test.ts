@@ -15,7 +15,9 @@
  *  5. Null guidance -> unavailable state
  *  6. Error param -> error state
  *  7. Loading param -> loading state with empty text
- *  8. No production write in any path (static source check)
+ *  8. English/Malay mirrors prefer the locale-specific reflection without
+ *     weakening the canonical DailyConclusion contract
+ *  9. No production write in any path (static source check)
  */
 
 import assert from "node:assert/strict";
@@ -210,6 +212,41 @@ function test(label: string, condition: boolean, detail?: string) {
 }
 
 // TEST 8: no production writes in source (static check)
+{
+  const guidance = {
+    ...makeGuidanceBase(),
+    dailySynthesisState: "ready" as const,
+    soulReflectionText: "Your energy can move gently without losing direction.",
+    dailyConclusion: {
+      title: "Kesimpulan Hari Ini" as const,
+      text: "Tema utama harimu adalah bergerak perlahan.",
+      localDateKey: "2026-07-27",
+      timezone: TIMEZONE,
+      owner: "daily-synthesis" as const,
+      sourceVersion: "test",
+    },
+  } as DailyGuidance;
+
+  const english = buildMirrorDailyReflection({ guidance, userName: USERNAME, now: NOW, timezone: TIMEZONE, language: "en-US" });
+  test("English mirror uses locale-specific reflection", english.text.includes("Your energy can move gently"));
+  test("English mirror does not render Indonesian conclusion", !english.text.includes("Tema utama harimu"));
+  test("English mirror uses English greeting", english.text.includes("Hello, Test User."));
+  test("English mirror uses English signoff", english.text.includes("Warm hugs from Bhumi."));
+  test("English mirror retains canonical conclusion metadata", english.dailyConclusionText === "Tema utama harimu adalah bergerak perlahan.");
+
+  const malay = buildMirrorDailyReflection({
+    guidance: { ...guidance, soulReflectionText: "Tenagamu boleh bergerak dengan lembut tanpa kehilangan arah." },
+    userName: USERNAME,
+    now: NOW,
+    timezone: TIMEZONE,
+    language: "ms-MY",
+  });
+  test("Malay mirror uses locale-specific reflection", malay.text.includes("Tenagamu boleh bergerak dengan lembut"));
+  test("Malay mirror uses Malay greeting", malay.text.includes("Hai, Test User."));
+  test("Malay mirror uses Malay signoff", malay.text.includes("Pelukan hangat daripada Bhumi."));
+}
+
+// TEST 9: no production writes in source (static check)
 {
   const src = readFileSync("lib/dailyGuidance/mirrorDailyReflection.ts", "utf8");
 

@@ -63,6 +63,7 @@ const routeSrc = fs.readFileSync("app/api/ai/daily-guidance/route.ts", "utf8");
 const serviceSrc = fs.readFileSync("lib/services/dailyGuidanceService.ts", "utf8");
 const inputTypeSrc = fs.readFileSync("lib/orchestrators/types.ts", "utf8");
 const contextTypeSrc = fs.readFileSync("lib/dailyGuidance/types.ts", "utf8");
+const dashboardSrc = fs.readFileSync("components/dashboard/DashboardClient.tsx", "utf8");
 
 ok(
   "prompt: OUTPUT_LANGUAGE_NAMES covers id/en/ms",
@@ -107,6 +108,15 @@ ok(
   /language:\s*"id"\s*\|\s*"en"\s*\|\s*"ms"/.test(inputTypeSrc) &&
     /language:\s*"id"\s*\|\s*"en"\s*\|\s*"ms"/.test(contextTypeSrc),
 );
+ok(
+  "dashboard generation derives locale from the loaded profile, not the initial-render closure",
+  /const profileLanguage = String\(p\?\.language \|\| p\?\.profile\?\.language \|\| "id"\)/.test(dashboardSrc) &&
+    /language: guidanceLanguage, profile: p/.test(dashboardSrc),
+);
+ok(
+  "dashboard locale precedence keeps the canonical top-level profile locale",
+  /language: p\?\.language \|\| p\?\.profile\?\.language \|\| "id"/.test(dashboardSrc),
+);
 
 // ---------------------------------------------------------------------------
 // 3. Attribution data model already present on the guidance record
@@ -126,6 +136,11 @@ ok(
   const synEn = buildUnifiedBlueprintSynthesis({ language: "en", profile: null, blueprint: null });
 
   ok(
+    "synthesis preserves locale for downstream fallback narrative engines",
+    synMs.language === "ms" && synId.language === "id" && synEn.language === "en",
+  );
+
+  ok(
     "synthesis(ms).blueprintSummary is Bahasa Melayu (anda / apabila), not id (kamu) and not en",
     /\banda\b/i.test(synMs.blueprintSummary) &&
       /apabila|boleh dilakukan|kekal/i.test(synMs.blueprintSummary) &&
@@ -136,6 +151,13 @@ ok(
     synMs.blueprintSummary !== synId.blueprintSummary && synMs.blueprintSummary !== synEn.blueprintSummary,
   );
   ok("synthesis(en).blueprintSummary is English", /Today may feel|Let the day stay practical/.test(synEn.blueprintSummary));
+
+  const fallbackSrc = fs.readFileSync("lib/orchestrators/localDailyGuidanceFallback.ts", "utf8");
+  ok(
+    "local fallback reflection consumes the preserved synthesis locale",
+    /const isId = synthesis\.language !== "en"/.test(fallbackSrc) &&
+      /synthesis = \{[\s\S]{0,220}language: safeInput\.language/.test(fallbackSrc),
+  );
 
   const { generateAdaptiveDailyPractices } = require("../../lib/dailyGuidance/adaptiveDailyPracticeGenerator.ts");
   const ctx = { dailyVariationSeed: "2026-09-02", completionRateYesterday: 0, streakDays: 0, adaptiveTone: "steady_supportive" };
@@ -159,6 +181,35 @@ ok(
   ok("pickLocale ms falls back to en when ms missing (D-V5-35 chain)", pickLocale("ms", { id: "A", en: "B" }) === "B");
   ok("pickLocale en/id resolve directly", pickLocale("en", { id: "A", en: "B" }) === "B" && pickLocale("id", { id: "A", en: "B" }) === "A");
   ok("pickLocale accepts BCP47 tags", pickLocale("ms-MY", { id: "A", en: "B", ms: "C" }) === "C" && pickLocale("en-US", { id: "A", en: "B" }) === "B");
+}
+
+// ---------------------------------------------------------------------------
+// 5. DashboardClient must resolve a BCP47 profile.language before translations[]
+//    (BUILD_106_REGRESSION found by Step-12 RC-2 rendered verification: the
+//     Step-3 switcher persists "en-US"/"ms-MY" to users/{uid}.language, and
+//     `translations["en-US"]` is undefined -> the dashboard render crashed with
+//     "Cannot read properties of undefined (reading 'dashboard')").
+// ---------------------------------------------------------------------------
+{
+  const { getDictionaryKey } = require("../../lib/locale/normalizeLocale.ts");
+  const { translations } = require("../../lib/data/translations.ts");
+  ok(
+    "getDictionaryKey maps BCP47 profile tags to the translations short key",
+    getDictionaryKey("en-US") === "en" && getDictionaryKey("ms-MY") === "ms" &&
+      getDictionaryKey("en") === "en" && getDictionaryKey("ms") === "ms" &&
+      getDictionaryKey("id-ID") === "id" && getDictionaryKey(undefined as unknown as string) === "id",
+  );
+  ok(
+    "translations resolves for every getDictionaryKey output (no undefined dictionary)",
+    ["en-US", "ms-MY", "id-ID", "en", "ms", "id", "weird"].every(
+      (tag) => translations[getDictionaryKey(tag)] && translations[getDictionaryKey(tag)].dashboard,
+    ),
+  );
+  ok(
+    "DashboardClient normalizes profile.language via getDictionaryKey before translations[]",
+    /const language = getDictionaryKey\(profile\?\.language/.test(dashboardSrc) &&
+      /import \{ getDictionaryKey \} from "@\/lib\/locale\/normalizeLocale"/.test(dashboardSrc),
+  );
 }
 
 console.log(

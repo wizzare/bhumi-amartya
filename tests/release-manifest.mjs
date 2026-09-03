@@ -79,6 +79,12 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "Build 106 DS-2C3 completed-user setup/cold-navigation reconciliation",
+    file: "tests/unit/build106-ds2c3-cold-nav.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Build 106 Step 11 DS-AI1 AI daily-guidance locale + attribution contract",
     file: "tests/unit/build106-ds-ai1-ai-locale-attribution.test.ts",
     kind: "node",

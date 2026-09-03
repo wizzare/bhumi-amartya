@@ -10,6 +10,7 @@ import assert from "node:assert";
 import {
   verifySetupPersisted,
   reconcileCachedProfileWithServer,
+  isCompletedProfileForUser,
 } from "../../lib/auth/authoritativeProfileGate.ts";
 import type { UserProfile } from "../../lib/repositories/userRepository.ts";
 
@@ -140,10 +141,19 @@ function testReconcileCachedProfileWithServer(): void {
   console.log("  reconcileCachedProfileWithServer ................ PASS");
 }
 
+function testCompletedProfileOwnership(): void {
+  ok(isCompletedProfileForUser(UID, prof()), "completed profile for active uid redirects away from setup");
+  ok(!isCompletedProfileForUser(UID, prof({ setupCompleted: false })), "incomplete profile stays eligible for setup");
+  ok(!isCompletedProfileForUser(UID, prof({ uid: "other-user" })), "cross-uid complete profile never redirects active user");
+  ok(!isCompletedProfileForUser(UID, null), "missing profile never redirects away from setup");
+  console.log("  isCompletedProfileForUser ....................... PASS");
+}
+
 function run(): void {
   console.log("build106-authoritative-profile-gate:");
   testVerifySetupPersisted();
   testReconcileCachedProfileWithServer();
+  testCompletedProfileOwnership();
   console.log(`PASS build106-authoritative-profile-gate (${assertions} assertions)`);
 }
 

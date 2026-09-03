@@ -14,14 +14,26 @@
  *   - components/profile/HealingProgressSummary.tsx (unmounted) : "Healing streak" row
  * All three were de-streaked to plain "days active" / consistency framing.
  *
- * Remaining DS-J4 sub-item (tracked, NOT closed here): lib/engines/
- * progressCalculationEngine.ts still weights `consistencyScore` 40% on a
- * consecutive-day streak and `getGrowthPhase` gates on `streakDays`. That score
- * model de-streaking + the /insights browser check are DS-J4 remainder.
- *
  * Evidence class: STATIC_GUARD (rendered browser check is DS-J4 / Step 11).
  */
 import fs from "node:fs";
+import { createRequire } from "node:module";
+
+for (const [key, value] of Object.entries({
+  NEXT_PUBLIC_FIREBASE_API_KEY: "synthetic-dsj4-key",
+  NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: "demo-dsj4.firebaseapp.com",
+  NEXT_PUBLIC_FIREBASE_PROJECT_ID: "demo-dsj4",
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: "demo-dsj4.appspot.com",
+  NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "123456789",
+  NEXT_PUBLIC_FIREBASE_APP_ID: "1:123456789:web:dsj4",
+  NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false",
+})) {
+  process.env[key] ||= value;
+}
+
+const loadModule = createRequire(`${process.cwd()}/tests/unit/build106-ds-j4-mood-trend-no-streak.test.ts`);
+const { calculateProgressMetrics } = loadModule("../../lib/engines/progressCalculationEngine.ts");
+const { createProgressData } = loadModule("../../lib/insights/createInsightProgress.ts");
 
 let passed = 0;
 let failed = 0;
@@ -91,7 +103,6 @@ ok(
 
 // --- progressCalculationEngine: score / phase / milestones are NOT streak-driven ---
 {
-  const { calculateProgressMetrics } = require("../../lib/engines/progressCalculationEngine.ts");
   const day = (iso: string) => ({ dateCreated: `${iso}T09:00:00.000Z`, theme: "test", content: "x" });
   const isoDaysAgo = (n: number) => {
     const d = new Date();
@@ -132,6 +143,44 @@ ok(
     (() => {
       const src = fs.readFileSync("lib/engines/progressCalculationEngine.ts", "utf8");
       return !/streakScore/.test(src) && /activeDaysScore \* 0\.4/.test(src) && /determineJourneyPhase\(\s*totalEntries,\s*activeDays30/.test(src);
+    })(),
+  );
+}
+
+// --- createInsightProgress: the engine actually rendered by /insights --------
+{
+  const today = new Date();
+  const isoDaysAgo = (n: number) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+  const entry = (n: number) => ({ date: isoDaysAgo(n), emotionalState: "tenang", theme: "Self Worth" });
+  const consecutive = [0, 1, 2, 3, 4, 5].map(entry);
+  const gapped = [0, 1, 2, 4, 5, 6].map(entry);
+  const c = createProgressData({ journalEntries: consecutive, meditationEntries: [], audioHealingEntries: [], compiledInnerwork: null });
+  const g = createProgressData({ journalEntries: gapped, meditationEntries: [], audioHealingEntries: [], compiledInnerwork: null });
+
+  ok("rendered insights engine does not reward consecutive streak", c.consistencyScore === g.consistencyScore);
+  ok("rendered insights engine exposes equal activeDays30", c.activeDays30 === 6 && g.activeDays30 === 6);
+  ok(
+    "rendered insights milestone is 7 Hari Aktif",
+    (() => {
+      const seven = createProgressData({
+        journalEntries: [0, 1, 2, 4, 8, 12, 20].map(entry),
+        meditationEntries: [],
+        audioHealingEntries: [],
+        compiledInnerwork: null,
+      });
+      const labels = seven.milestones.map((item: { label: string }) => item.label).join(" ");
+      return labels.includes("7 Hari Aktif") && !labels.includes("7 Hari Bertumbuh");
+    })(),
+  );
+  ok(
+    "rendered insights engine source has no streak score or streak phase gate",
+    (() => {
+      const src = fs.readFileSync("lib/insights/createInsightProgress.ts", "utf8");
+      return !/streakScore/.test(src) && /activeDaysScore/.test(src) && /determineStage\(allEntries\.length, activeDays30/.test(src);
     })(),
   );
 }
