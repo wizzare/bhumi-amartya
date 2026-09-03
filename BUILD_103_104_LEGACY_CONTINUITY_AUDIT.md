@@ -464,3 +464,68 @@ PLAY_UPLOAD_PERFORMED = NO
 ```
 
 Final marker: **`BUILD_103_104_LEGACY_CONTINUITY_AUDIT_COMPLETE_WITH_4_RELEASE_BLOCKERS`**.
+
+---
+
+## 15. Founder-approved Build 106 reconciliation update (2026-09-03)
+
+The read-only audit above remains the accepted historical baseline. Founder subsequently authorized
+the minimum Build 106 reconciliation. The non-ancestor `d2cb236…` package was not cherry-picked;
+it was used only as evidence. Implementation commits:
+
+- `36a32cd` — source: UID-bound Firestore role policy, canonical admin/lifetime entitlement,
+  restored historical Admin Activity + communications surface, and an emulator-only provisioning
+  runner.
+- `e5d1592` — tests: four synthetic admin slots, Rules persistence/action/relogin coverage, and
+  negative normal-user/Premium-user/self-elevation checks.
+
+The existing `users/{uid}.role`, `membershipType`, `membershipExpiryDate`, and
+`entitlementSource` fields are reused. No account name or four-admin email allowlist is present in
+client policy, no `isPremium:true` shortcut was added, and the Google Play subscriber branch remains
+source- and expiry-strict.
+
+Gap transition:
+
+| Original gap | Current status | Evidence |
+|---|---|---|
+| `LEGACY-GAP-01` — active Firestore role for four real accounts | **OPEN — PRODUCTION PROVISIONING PENDING** | UID-bound implementation + emulator role state pass; production Firestore was not read or written in this phase. |
+| `LEGACY-GAP-02` — Free Lifetime for four real accounts | **OPEN — PRODUCTION PROVISIONING PENDING** | `admin` role and `LIFETIME/admin_lifetime` resolve non-expiring Premium independently of active Play; real accounts remain unwritten. |
+| `LEGACY-GAP-03` — divergent authorization | **CLOSED IN SOURCE/EMULATOR** | UI is bound to authenticated UID + hydrated `users/{uid}` role; profile read/mismatch fails closed; Founder server route now loads the same Firestore profile and has no unauthenticated dev bypass. |
+| `LEGACY-GAP-04` — missing admin action surface | **CLOSED IN SOURCE/EMULATOR** | Historical `/admin/activity`, monitoring/search/detail/analytics, personal message, inbox/reply, broadcast, diagnostics and privileged maintenance surface restored; Rules action/persistence path passes. |
+
+Executed evidence:
+
+```text
+TYPESCRIPT_NO_EMIT = PASS (EXIT 0)
+ADMIN_LIFETIME_UNIT = PASS (21 assertions)
+ADMIN_RULES_EMULATOR = PASS (23 assertions)
+BILLING_ENTITLEMENT_CONTRACT = PASS (61/61)
+ENTITLEMENT_MIRROR_DRIFT = PASS (17/17)
+TESTER_GRANT_RECONCILIATION = PASS (20/20)
+INBOX_COMMUNICATION_CONTRACT = PASS (24/24)
+FULL_RELEASE_SUITE = PASS=27 FAIL=0 SKIPPED=0 TOTAL=27
+PRODUCTION_FIRESTORE_READS = 0
+PRODUCTION_FIRESTORE_WRITES = 0
+```
+
+The previously signed AAB was produced from `3c8620d6…`, before reconciliation source commit
+`36a32cd`; it is valid historical evidence but does not contain this fix. Rebuild/sign/device
+verification was expressly not performed.
+
+```text
+BUILD_103_CONTINUITY = COMPLETE
+BUILD_104_CONTINUITY = COMPLETE
+ADMIN_IDENTITIES_EXPECTED = 4
+ADMIN_IDENTITIES_IDENTIFIED = 4
+ADMIN_IDENTITIES_ACCOUNTED = 4
+ADMIN_IDENTITIES_CODE_AND_EMULATOR_RECONCILED = 4
+ADMIN_IDENTITIES_PRODUCTION_PROVISIONED_AND_VERIFIED = 0
+ADMIN_UNACCOUNTED_ITEMS = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
+RELEASE_BLOCKING_LEGACY_GAPS = 2
+ADDITIONAL_RELEASE_ARTIFACT_GAPS = 1
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+PLAY_UPLOAD_AUTHORIZED = NO
+PLAY_UPLOAD_PERFORMED = NO
+```
+
+Current marker: **`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING`**.

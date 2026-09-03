@@ -1,6 +1,6 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production-signed AAB built, verified, and device smoke-tested. Play Console upload is not authorized and has not been performed.**
+Status: **`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING` — source and local/emulator verification are complete; production account provisioning and a replacement signed artifact are not authorized and have not been performed.**
 Primary agent: CODEX.
 Date: 2026-09-03
 
@@ -10,15 +10,20 @@ PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9�
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 AUTHORIZED_WORKTREE              = C:\tmp\bhumi-build106-recovery
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_RELEASE_READY_HEAD       = 3c8620d6ffaa8a893380d78ff367842f8a18842c
-HANDOFF_DOC_COMMIT               = documentation-only child commit of CURRENT_RELEASE_READY_HEAD; resolve with `git rev-parse HEAD`
-BUILD_106_PHASE                  = RECONCILED — production-signed AAB built + verified + device smoke-tested; Play Console upload separately gated
-BUILD_106_ARTIFACT (SIGNED)      = bhumi-amartya-v5.0.6-build106-release-signed.aab (AAB, PRODUCTION-SIGNED) — sha256 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d, 10834020 bytes
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (documentation-only child of e5d1592)
+ADMIN_LIFETIME_SOURCE_COMMIT     = 36a32cd
+ADMIN_LIFETIME_TEST_COMMIT       = e5d1592
+LEGACY_AUDIT_DOC_COMMIT          = 0e1f634
+HISTORICAL_RELEASE_READY_HEAD    = 3c8620d6ffaa8a893380d78ff367842f8a18842c
+BUILD_106_PHASE                  = ADMIN + LIFETIME RECONCILIATION CODE COMPLETE / EMULATOR VERIFIED / PRODUCTION PENDING
+HISTORICAL_BUILD_106_ARTIFACT    = bhumi-amartya-v5.0.6-build106-release-signed.aab — verified only for 3c8620d6ffaa8a893380d78ff367842f8a18842c; it does not contain 36a32cd
 SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
-SMOKE_TEST                        = PASS — signed release APK installed + launched on Android emulator (SDK 37), Build 106 welcome screen rendered, no crash
+SMOKE_TEST                        = HISTORICAL PASS FOR 3c8620d6 — not rerun for the current reconciled source
 versionCode / versionName        = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
-RELEASE_CRITICAL_GAPS_OPEN       = 0
-BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — signed artifact ready for Play Console upload on separate Founder authorization
+RELEASE_BLOCKING_LEGACY_GAPS     = 2
+RECONCILED_ARTIFACT_GAP          = 1
+RELEASE_CRITICAL_GAPS_OPEN       = 3
+BUILD_106_MARKER                 = BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
@@ -26,19 +31,52 @@ RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliatio
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
 F-2                              = FIXED + tested
-SIGNED_ARTIFACT_STATUS           = ALREADY VERIFIED
+SIGNED_ARTIFACT_STATUS           = HISTORICAL VERIFIED / STALE FOR CURRENT RECONCILED SOURCE
 PLAY_STORE_UPLOAD                = NOT AUTHORIZED / NOT PERFORMED
 DEPLOY / PUBLISH / PRODUCTION_WRITE = NOT DONE / NOT AUTHORIZED
-NEXT_SAFE_ACTION                 = BUILD_103_104_LEGACY_CONTINUITY_AUDIT
-NEXT_ACTION_MODE                 = READ_ONLY
-NEXT_ACTION_SCOPE                = account for all Build 103/104 work in Build 106, including all four historical admin identities
-PRODUCT_CODE_CHANGES             = PROHIBITED
+PRODUCTION_FIRESTORE_READS_WRITES = 0 / 0
+NEXT_SAFE_ACTION                 = FOUNDER_REVIEW_THEN_SEPARATELY_AUTHORIZE_PRODUCTION_PREFLIGHT_PROVISIONING_AND_REPLACEMENT_BUILD_SIGN_DEVICE_TEST
+NEXT_ACTION_MODE                 = APPROVAL_GATED
+ADMIN_TARGET_STATE               = CODE_RECONCILED / LOCAL_EMULATOR VERIFIED / PRODUCTION PROVISIONING PENDING
+ADMIN_UNACCOUNTED_ITEMS          = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
+PRODUCT_CODE_CHANGES             = COMPLETE IN 36a32cd; NO FURTHER CHANGES AUTHORIZED
 FORENSIC_WORKTREE                = C:\tmp\bhumi-build83-access-hotfix (feat/build99 @ 57479c9) — READ ONLY
 ```
 
 Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test).
 
-## Current Codex handover boundary
+## Current Founder-approved reconciliation boundary
+
+The Founder-approved Build 106 admin + lifetime reconciliation is implemented in `36a32cd` and
+covered by the regression package in `e5d1592`. The implementation uses the existing canonical
+`users/{uid}` Firestore profile fields and UID-bound role checks. It does not embed any of the four
+admin names, emails, or UIDs in client authorization logic, does not use `isPremium:true`, and does
+not weaken Google Play or signed-entitlement handling.
+
+All four historical identities are accounted in the protected audit evidence:
+
+1. **Maulina** — source/local-emulator reconciled; production Firestore provisioning pending.
+2. **Septi** — source/local-emulator reconciled; production Firestore provisioning pending.
+3. **Nandra** (repository evidence: Nanda Viandra) — source/local-emulator reconciled; production
+   Firestore provisioning pending.
+4. **Azian Meirdania** — source/local-emulator reconciled; production Firestore provisioning
+   pending.
+
+The full Firebase Auth/Firestore emulator release manifest passes **27/27** suites. The focused
+admin unit suite passes **21/21**, and the admin emulator suite passes **23/23**. No production
+Firestore read/write was made. The existing signed artifact remains valid historical evidence for
+`3c8620d6`, but it predates the reconciliation and cannot be uploaded as proof of the current
+source.
+
+Current blockers are: (1) separately authorized production preflight and UID-scoped provisioning
+of role + non-expiring lifetime state for all four accounts; and (2) separately authorized rebuild,
+production signing, and device acceptance for the reconciled HEAD. Play Internal Testing remains
+**NO** until these gates close.
+
+## Historical completed audit boundary
+
+The read-only `BUILD_103_104_LEGACY_CONTINUITY_AUDIT` below was completed and committed at
+`0e1f634`. Its operational next action is superseded by the current reconciliation boundary above.
 
 The next task is **`BUILD_103_104_LEGACY_CONTINUITY_AUDIT`**. It is a **READ-ONLY** continuity
 audit only; it must account for all Build 103 and Build 104 work in Build 106 and must not change
@@ -57,14 +95,53 @@ support/reply capability; broadcast/messaging capability; inbox/user-management 
 other privileged tools; Firestore/security-rule implications; and the identity's state in Builds
 103, 104, 105, and 106.
 
+For all four identities, the intended historical state to audit and verify is:
+
+```text
+ADMIN_ROLE = ACTIVE
+LIFETIME_ACCESS = ACTIVE
+```
+
+Required target behavior:
+
+- The admin identity is persisted through the canonical Firestore role/access model.
+- Admin privileges survive logout/login and device changes.
+- Lifetime access does not expire and does not depend on an active Google Play subscription.
+- There is no client-side `isPremium:true` bypass.
+- `getEntitlementStatus()` and billing security are not weakened.
+- UI authorization contains no hardcoded name-based privilege check.
+- Authorization resolves from UID/account identity through the existing canonical admin model.
+
 Trace authorization end-to-end for each identity:
 
 `ADMIN IDENTITY → ROLE → ACCESS CHECK → ADMIN ACTION → WRITE/READ → PERSISTENCE → USER/ADMIN UI`
+
+Trace lifetime entitlement end-to-end for each identity:
+
+`IDENTITY → LIFETIME ENTITLEMENT → getEntitlementStatus()/canonical access resolver → PREMIUM FEATURES`
 
 Explicitly search Build 103/104 repository history for Maulina, Septi, Nandra, the fourth admin
 identity, admin allowlists, admin UIDs/emails, role maps, `founder`/`admin`/`dev_admin`, privileged
 route guards, and support/admin-reply/broadcast implementation. Admin UI presence alone is not
 proof that all four identities retain working authorization.
+
+For each of the four admins, report:
+
+```text
+ADMIN_NAME =
+ACCOUNT_RESOLUTION =
+UID =
+FIRESTORE_ADMIN_STATE =
+ROLE =
+LIFETIME_ACCESS_STATE =
+ENTITLEMENT_SOURCE =
+ADMIN_FEATURE_ACCESS =
+PREMIUM_FEATURE_ACCESS =
+BUILD_103_STATE =
+BUILD_104_STATE =
+BUILD_106_STATE =
+VERDICT =
+```
 
 The audit report must end with this verdict block:
 
@@ -84,7 +161,15 @@ ADMIN_UNACCOUNTED_ITEMS =
 ```
 
 If an historical admin cannot be identified or cannot access a capability they historically had,
-record the exact regression and release impact.
+record the exact regression and release impact. If Build 106 does not preserve the intended
+admin-role or lifetime-access state, classify it explicitly as
+**`MISSING_HISTORICAL_ADMIN_CONTINUITY`**.
+
+Do not invent new Firestore fields when an existing canonical admin/entitlement schema exists.
+Search for the exact fourth identity and the original Build 103/104 admin/lifetime implementation
+before proposing changes. If implementation is required after the audit, propose the minimum safe
+reconciliation through the existing Firestore and entitlement architecture. The READ-ONLY audit
+must perform no production Firestore writes.
 
 Do not rebuild, version bump, deploy, publish, upload to Play, perform production writes, or push.
 The forensic worktree `C:\tmp\bhumi-build83-access-hotfix` (`feat/build99` @ `57479c9`) must remain
@@ -374,11 +459,14 @@ this worktree):
 6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
    save flow before DS-M1 ships, RC-4 becomes release-critical again.
 
-`NEXT_SAFE_ACTION = BUILD_103_104_LEGACY_CONTINUITY_AUDIT`
-`NEXT_ACTION_MODE = READ_ONLY`
+`NEXT_SAFE_ACTION = FOUNDER_REVIEW_THEN_SEPARATELY_AUTHORIZE_PRODUCTION_PREFLIGHT_PROVISIONING_AND_REPLACEMENT_BUILD_SIGN_DEVICE_TEST`
+`NEXT_ACTION_MODE = APPROVAL_GATED`
 `NEXT_PRIMARY_AGENT = CODEX`
-`RELEASE_CRITICAL_GAPS_OPEN = 0`
+`RELEASE_BLOCKING_LEGACY_GAPS = 2`
+`RECONCILED_ARTIFACT_GAP = 1`
+`RELEASE_CRITICAL_GAPS_OPEN = 3`
+`BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO`
 
-`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` (production-signed artifact verified; Play upload not authorized/not performed)
+`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING`
 
 STOP AND WAIT FOR FOUNDER REVIEW

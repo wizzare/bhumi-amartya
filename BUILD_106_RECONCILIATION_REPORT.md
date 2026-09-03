@@ -1,9 +1,9 @@
 # BHUMI AMARTYA — BUILD 106 FULL RECONCILIATION REPORT (R-PRD-01..46)
 
-Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.), §11.4 (final pre-release gap closure — `RELEASE_CRITICAL_GAPS_OPEN = 0`), §11.5 (Step 13 — version bump + local artifact)
+Status: CANONICAL — extended through §11.6 (Founder-approved Build 106 admin/lifetime reconciliation)
 Primary authority: `BUILD_106_MASTER_SOT.md` §7.10 / §7.13 / §10
 Execution ledger: `BUILD_106_RECOVERY_MATRIX.md` · Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`
-Date: 2026-09-02; last updated 2026-09-03 (§11.5)
+Date: 2026-09-02; last updated 2026-09-03 (§11.6)
 Branch: `recovery/build106-product-continuity`
 Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3/§11.4 at the Step 12 (cont.) + final-gap-closure commits; §11.5 at the Step 13 version-bump commit `0b55f99`
 
@@ -563,6 +563,142 @@ Founder-approved. Canonical record: **`BUILD_106_RELEASE_PROVENANCE.md`**.
 - **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing +
   Play upload on the authorized release machine.** No deploy / publish / Play upload / production
   write.
+
+### 11.6 Build 106 — admin + lifetime access reconciliation (2026-09-03)
+
+Founder approved the accepted `BUILD_103_104_LEGACY_CONTINUITY_AUDIT.md` and authorized
+`AUDIT → ANALYZE → DESIGN MINIMAL RECONCILIATION → FIX → VERIFY → REPORT`. The checkpoint
+`d2cb236…` remained forensic/reference evidence only and was not cherry-picked.
+
+#### Architecture and implementation
+
+- **Identity/profile:** Firebase Auth UID hydrates `users/{uid}`. Both canonical profile readers now
+  bind the document ID back to the returned `uid`, so missing legacy body fields cannot break the
+  authenticated-UID equality check.
+- **Role:** `lib/auth/privilegedUser.ts` resolves `admin` / `dev_admin` only from the server-owned
+  Firestore `role` / `guardianRole` fields. It checks both fields, requires authenticated UID ==
+  hydrated profile UID for UI pages, and removes the unused email-keyed `admin_users` lookup.
+- **Server guard:** `requireFounder` now verifies the bearer token, loads `users/{verified uid}` and
+  fails closed on Firestore read failure. Its unauthenticated development/static-secret bypass was
+  removed. The Founder-only API remains Founder-only; generic admin actions are enforced by the
+  existing Firestore `isAdminActor()` role bridge.
+- **Lifetime/Premium:** `getEntitlementStatus()` identifies an admin role as `admin`,
+  `Admin (Lifetime)`, `expiresAt=null`, source `Firestore Admin Role`. Existing explicit
+  `membershipType=LIFETIME` is separately identified. Google Play still requires
+  `entitlementSource=google_play`, `membershipType=PREMIUM`, and a valid future expiry; raw
+  `isPremium:true` remains non-authoritative. `lib/access/accessControl.ts` now delegates to this
+  canonical resolver instead of returning the previous contradictory admin values.
+- **Provisioning contract:** the existing role/lifetime fields are used—no new Firestore schema.
+  `scripts/reconcileBuild106AdminLifetimeEmulator.ts` accepts four UID inputs, refuses missing or
+  duplicate values, refuses non-local/non-`demo-*` execution, requires each profile to exist, and
+  writes only `role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, and
+  `entitlementSource=admin_lifetime`. No names/emails or `isPremium` value are embedded.
+- **Admin surface:** the historical same-lineage `/admin/activity` + `AdminInboxWorkspace` surface
+  was restored: user monitoring/search/detail/analytics, personal messages, support inbox and
+  replies, broadcasts, HD diagnostics/re-run/cache, Gaia migration, guardian validation, and
+  user-facing `/inbox` persistence. Diagnostics and navigation use the same UID-bound role guard.
+- **Rules/backend:** `firestore.rules` required no change. Existing `legacyRoleIsAdminOrFounder()`
+  provides the Firestore-backed authorization and protects the role/membership fields from normal
+  self-write. Existing communication/admin repositories are reused.
+
+Source commit: `36a32cd`. Test commit: `e5d1592`.
+
+#### Verification
+
+```text
+npx tsc --noEmit (equivalent local Node invocation) = EXIT 0
+build106-admin-lifetime-continuity = PASS (21 assertions)
+build106-admin-lifetime-continuity-emulator = PASS (23 assertions)
+billing-entitlement-contract = PASS (61/61)
+entitlement_reconcile_drift = PASS (17/17)
+tester-grant-reconciliation = PASS (20/20)
+hotfix-011-inbox-communication = PASS (24/24)
+FULL_FIRESTORE_AUTH_EMULATOR_RELEASE_SUITE = PASS=27 FAIL=0 SKIPPED=0 TOTAL=27
+STATE_MACHINE = passed=33 failed=0
+PRODUCTION_FIRESTORE_READS = 0
+PRODUCTION_FIRESTORE_WRITES = 0
+DEPLOY_PUBLISH_PLAY_UPLOAD = NOT PERFORMED
+REBUILD_VERSION_BUMP = NOT PERFORMED
+```
+
+The 23 real-SDK emulator assertions prove, for each of four synthetic admin slots: role-authorized
+user list/get; UID-attributed reply persisted to and readable from the target user's inbox path;
+broadcast metadata create; user-management update; and authorization after logout/login. They also
+prove a normal Play-Premium user is not an admin, a free user cannot self-promote role or lifetime,
+and a missing role profile denies access. The 21 unit assertions cover lifetime resolver behavior,
+active and expired Play coexistence, stale/mismatched UID denial, raw `isPremium` denial, UI wiring,
+profile UID binding, and the emulator-only migration boundary.
+
+#### Per-admin disposition
+
+The exact repository-evidenced UIDs remain recorded in the accepted audit §9 and are not duplicated
+in routine test output. No real account was read or mutated in this phase.
+
+```text
+ADMIN_NAME = Maulina
+UID_RESOLUTION = RESOLVED_FROM_AUTH_EXPORT_AND_REPOSITORY_EVIDENCE; exact value in audit §9
+FIRESTORE_ROLE = TARGET admin; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+LIFETIME_ENTITLEMENT = TARGET LIFETIME/admin_lifetime/non-expiring; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+ADMIN_ACCESS = CODE_AND_RULES_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+PREMIUM_ACCESS = CANONICAL_RESOLVER_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+TEST_EVIDENCE = UNIT 21 + EMULATOR 23 + FULL RELEASE 27/27
+VERDICT = CODE_RECONCILED_PRODUCTION_PROVISIONING_PENDING
+
+ADMIN_NAME = Septi
+UID_RESOLUTION = RESOLVED_FROM_AUTH_EXPORT_AND_REPOSITORY_EVIDENCE; exact value in audit §9
+FIRESTORE_ROLE = TARGET admin; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+LIFETIME_ENTITLEMENT = TARGET LIFETIME/admin_lifetime/non-expiring; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+ADMIN_ACCESS = CODE_AND_RULES_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+PREMIUM_ACCESS = CANONICAL_RESOLVER_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+TEST_EVIDENCE = UNIT 21 + EMULATOR 23 + FULL RELEASE 27/27
+VERDICT = CODE_RECONCILED_PRODUCTION_PROVISIONING_PENDING
+
+ADMIN_NAME = Nandra (repository account mapping: Nanda Viandra)
+UID_RESOLUTION = RESOLVED_FROM_AUTH_EXPORT_AND_REPOSITORY_EVIDENCE; exact value in audit §9
+FIRESTORE_ROLE = TARGET admin; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+LIFETIME_ENTITLEMENT = TARGET LIFETIME/admin_lifetime/non-expiring; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+ADMIN_ACCESS = CODE_AND_RULES_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+PREMIUM_ACCESS = CANONICAL_RESOLVER_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+TEST_EVIDENCE = UNIT 21 + EMULATOR 23 + FULL RELEASE 27/27
+VERDICT = CODE_RECONCILED_PRODUCTION_PROVISIONING_PENDING
+
+ADMIN_NAME = Azian Meirdania
+UID_RESOLUTION = RESOLVED_FROM_AUTH_EXPORT_AND_REPOSITORY_EVIDENCE; exact value in audit §9
+FIRESTORE_ROLE = TARGET admin; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+LIFETIME_ENTITLEMENT = TARGET LIFETIME/admin_lifetime/non-expiring; SOURCE/EMULATOR VERIFIED; PRODUCTION WRITE NOT PERFORMED
+ADMIN_ACCESS = CODE_AND_RULES_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+PREMIUM_ACCESS = CANONICAL_RESOLVER_VERIFIED; REAL_ACCOUNT_RUNTIME_PENDING_PROVISIONING
+TEST_EVIDENCE = UNIT 21 + EMULATOR 23 + FULL RELEASE 27/27
+VERDICT = CODE_RECONCILED_PRODUCTION_PROVISIONING_PENDING
+```
+
+#### Current release verdict
+
+`LEGACY-GAP-03` and `LEGACY-GAP-04` are closed in source/emulator. `LEGACY-GAP-01` and
+`LEGACY-GAP-02` remain release-blocking until a separately authorized trusted production operation
+preflights and writes the four exact UIDs. In addition, the existing signed AAB is tied to
+`3c8620d6…`; it predates source commit `36a32cd`, so it cannot represent this reconciliation.
+
+```text
+BUILD_103_CONTINUITY = COMPLETE
+BUILD_104_CONTINUITY = COMPLETE
+ADMIN_IDENTITIES_EXPECTED = 4
+ADMIN_IDENTITIES_ACCOUNTED = 4
+ADMIN_IDENTITIES_CODE_AND_EMULATOR_RECONCILED = 4
+ADMIN_IDENTITIES_PRODUCTION_PROVISIONED_AND_VERIFIED = 0
+ADMIN_AUTHORIZATION_CONTINUITY = CODE_COMPLETE_PRODUCTION_PENDING
+ADMIN_FEATURE_CONTINUITY = SOURCE_AND_RULES_COMPLETE_DEVICE_ACCEPTANCE_PENDING
+ADMIN_UNACCOUNTED_ITEMS = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
+RELEASE_BLOCKING_LEGACY_GAPS = 2
+ADDITIONAL_RELEASE_ARTIFACT_GAPS = 1
+RELEASE_CRITICAL_GAPS_OPEN = 3
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+PLAY_UPLOAD_AUTHORIZED = NO
+PLAY_UPLOAD_PERFORMED = NO
+```
+
+Current marker:
+**`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING`**.
 
 ---
 
