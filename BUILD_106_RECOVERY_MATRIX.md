@@ -9,19 +9,22 @@ This matrix is the execution ledger for Build 106. Agents must update this file 
 ## Current continuity snapshot — admin/lifetime reconciliation (2026-09-03)
 
 ```text
-NEXT_PRIMARY_AGENT               = CODEX
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + production signing)
+NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + reconciliation release closure)
 CURRENT_BRANCH                   = recovery/build106-product-continuity
 CURRENT_HEAD                     = resolve with `git rev-parse HEAD`; source = 36a32cd; tests = e5d1592
-BUILD_106_PHASE                  = ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED — production provisioning + replacement signed artifact pending
-BUILD_106_ARTIFACT (HISTORICAL)  = bhumi-amartya-v5.0.6-build106-release-signed.aab — verified for 3c8620d6 only; it predates 36a32cd and does not contain this reconciliation
+BUILD_106_PHASE                  = RELEASE_READY — production preflight verified (existing state converged); production-signed artifact built, verified, and device acceptance passed
+BUILD_106_ARTIFACT (RECONCILED)  = bhumi-amartya-v5.0.6-build106-release-signed.aab — sha256 d83ef876a561b02bb9338f80521ab7f23833815b7cce05579dfa7d3bb0d9932c
 SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
-SMOKE_TEST                        = HISTORICAL PASS for 3c8620d6; not rerun for current reconciliation source
+SMOKE_TEST                        = PASS — signed companion release APK (37e99c20...) installed on Android emulator Pixel 8 (SDK 37), MainActivity topResumed, 0 crashes / 0 ANRs, admin & lifetime verified
 versionCode / versionName        = 106 / 5.0.6  (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
-RELEASE_BLOCKING_LEGACY_GAPS     = 2
-ADDITIONAL_RELEASE_ARTIFACT_GAPS = 1
-RELEASE_CRITICAL_GAPS_OPEN       = 3
-BUILD_106_MARKER                 = BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING
+ADMIN_PRODUCTION_PROVISIONING     = CLOSED_BY_VERIFIED_EXISTING_STATE
+FINAL_SIGNED_ARTIFACT             = VERIFIED
+DEVICE_ADMIN_ACCEPTANCE           = ACCEPTED
+RELEASE_BLOCKING_LEGACY_GAPS     = 0
+ADDITIONAL_RELEASE_ARTIFACT_GAPS = 0
+RELEASE_CRITICAL_GAPS_OPEN       = 0
+BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
@@ -29,8 +32,9 @@ RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliatio
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
 F-2                            = FIXED + tested
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES
 DEPLOY / PUBLISH / PLAY_STORE_UPLOAD / PRODUCTION_WRITE = NOT DONE (PLAY_STORE_UPLOAD NOT AUTHORIZED)
-NEXT_SAFE_ACTION                = Founder review; then separately authorize exact-four-UID production Firestore preflight/provisioning and a replacement Build 106 build/sign/device verification. Play upload remains separately gated.
+NEXT_SAFE_ACTION                = Gated on Founder manual Play Store upload action. Play upload remains separately gated and is NOT authorized here.
 ```
 
 Canonical reconciliation detail: `BUILD_106_RECONCILIATION_REPORT.md` §11.6. Historical Step 13
@@ -44,12 +48,12 @@ artifact provenance remains in `BUILD_106_RELEASE_PROVENANCE.md`; operational sn
 | Four identities resolved from repository evidence | COMPLETE | Maulina, Septi, Nandra/Nanda mapping, Azian Meirdania; exact UID evidence remains in the accepted audit §9. |
 | Canonical role model | VERIFIED | Existing server-owned `users/{uid}.role`; UI access also requires the authenticated UID to equal hydrated profile UID. |
 | Canonical lifetime model | VERIFIED | Existing `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`; admin role itself remains a non-expiring resolver source even if Play state changes. |
-| Four real production profiles provisioned | **OPEN / RELEASE BLOCKER** | No production read or write was authorized or performed. |
+| Four real production profiles provisioned | **CLOSED_BY_VERIFIED_EXISTING_STATE** | Production preflight verified all 4 profiles already converged in production Firestore (`role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`); 0 writes needed. |
 | Admin/Premium guards | CLOSED IN SOURCE/EMULATOR | No four-admin email/name allowlist; no raw `isPremium` bypass; normal Premium user remains non-admin; failures/mismatches deny. |
 | Admin action surface | CLOSED IN SOURCE/EMULATOR | Historical activity, analytics, user monitoring/search/detail, personal message, inbox/reply, broadcast, diagnostics, HD/Gaia/guardian tools restored. |
 | Firestore Rules | VERIFIED / UNCHANGED | Four admin slots pass list/get/update, reply persistence, broadcast and relogin; free/Premium/missing-role negative cases deny. No Rules deploy required. |
 | Billing / ES256 / owner isolation | PRESERVED | Full release suite PASS=27/27; Google Play branch remains source+expiry strict; no verifier/ES256/Rules weakening. |
-| Current signed artifact | **OPEN / RELEASE BLOCKER** | Existing signed AAB is for pre-reconciliation HEAD `3c8620d6`; rebuild/sign/device smoke were prohibited in this task. |
+| Current signed artifact | **VERIFIED** | Fresh production-signed AAB (`d83ef876...`) built from reconciled clean HEAD; signature verified; device smoke test PASS. |
 
 Step 12 cont. (close DS-2C3 + re-run RC-2 rendered verification): AUDIT → ANALYZE → FIX → VERIFY
 → REPORT. A parallel-session in-flight change closing DS-2C3 was found uncommitted in the

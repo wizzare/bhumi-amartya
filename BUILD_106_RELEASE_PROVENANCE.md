@@ -19,8 +19,8 @@ RELEASE_CRITICAL_GAPS_OPEN   = 0
 SIGNED_ARTIFACT_TYPE         = Android App Bundle (.aab), PRODUCTION-SIGNED (v1/JAR, upload key)
 SIGNED_ARTIFACT_FILE         = bhumi-amartya-v5.0.6-build106-release-signed.aab
 SIGNED_ARTIFACT_BUILD_PATH   = android/app/build/outputs/bundle/release/app-release.aab
-SIGNED_ARTIFACT_SIZE_BYTES   = 10834020
-SIGNED_ARTIFACT_SHA256       = 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d
+SIGNED_ARTIFACT_SIZE_BYTES   = 10918782
+SIGNED_ARTIFACT_SHA256       = d83ef876a561b02bb9338f80521ab7f23833815b7cce05579dfa7d3bb0d9932c
 SIGNING_KEY                  = CN=Bhumi Amartya, O=Bhumi Amartya, C=ID  (alias bhumi-amartya)
 SIGNING_KEY_SHA256           = 1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18
 SIGNING_KEY_SHA1            = B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52
@@ -28,7 +28,8 @@ SIGNATURE_VERIFY            = jarsigner "jar verified"; cert fingerprint == auth
 SMOKE_TEST                   = PASS — signed release APK installed on Android emulator (SDK 37),
                                launched, rendered the Build 106 welcome screen (id/en/ms selector),
                                no crash / FATAL / ANR
-SMOKE_TEST_APK_SHA256        = dfbae26953844ca37cb1ecd12a6eded1382297bdccbe5d1dd9b15258bcd64438
+SMOKE_TEST_APK_SHA256        = 37e99c20e97390908f751fa6175ffa371443cc857b4a4072372bf335c86aaa0b
+SMOKE_TEST_APK_SIZE_BYTES    = 11115476
 
 # --- Local unsigned build (§1–§9, superseded by §10 for the release artifact) ---
 UNSIGNED_ARTIFACT_FILE       = bhumi-amartya-v5.0.6-build106-release-unsigned.aab
@@ -187,25 +188,26 @@ predate the real upload key) and was not followed.
 
 | Check | Result |
 |---|---|
-| `gradlew :app:bundleRelease` (JDK 17, SDK 36, Gradle 9.4.1, keystore configured) | **BUILD SUCCESSFUL** — `:app:packageReleaseBundle` UP-TO-DATE (identical content to §3), `:app:signReleaseBundle` + `:app:bundleRelease` executed. |
-| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **10,834,020 bytes** — sha256 **`460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d`** |
-| AAB zip integrity (`unzip -t`) | **No errors detected in compressed data.** |
-| Signature files | `META-INF/BHUMI-AM.RSA` + `BHUMI-AM.SF` + `MANIFEST.MF` (v1 / JAR signing — the scheme Play requires for an AAB upload). |
-| `jarsigner -verify` | **"jar verified."** Signed by `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA384withRSA, 2048-bit. (Benign, expected warnings: self-signed upload cert / no chain / no timestamp — normal for an Android upload key.) |
+| Check | Result |
+|---|---|
+| `gradlew :app:bundleRelease` (JDK 17, SDK 36, Gradle 9.4.1, keystore configured) | **BUILD SUCCESSFUL** — fresh production-signed AAB built from reconciled clean HEAD. |
+| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **10,918,782 bytes** — sha256 **`d83ef876a561b02bb9338f80521ab7f23833815b7cce05579dfa7d3bb0d9932c`** |
+| AAB zip integrity (`unzip -t` / tar listing) | **No errors detected in compressed data.** Valid bundle layout (1443 entries). |
+| Signature files | `META-INF/BHUMI-AM.RSA` + `BHUMI-AM.SF` + `MANIFEST.MF` (v1 / JAR signing — required for Play upload). |
+| `jarsigner -verify` | **"jar verified."** Signed by `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA384withRSA, 2048-bit. |
 | **Signing cert fingerprint (from `BHUMI-AM.RSA`)** | SHA-256 `1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18` — **exact match to the authorized upload key**. SHA-1 `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52` ✓ |
-| Package identity + version (packaged manifest) | `com.bhumiamartya.app` / versionCode **106** / versionName **5.0.6** / minSdk 24 / targetSdk 36 / `MainActivity` MAIN+LAUNCHER / no `.qa` / no `debuggable` — unchanged from §4. |
+| Package identity + version (packaged manifest) | `com.bhumiamartya.app` / versionCode **106** / versionName **5.0.6** / minSdk 24 / targetSdk 36 / `MainActivity` MAIN+LAUNCHER / no `.qa` / no `debuggable`. |
 
-### 10.3 Device smoke test — signed release APK on an Android emulator
+### 10.3 Device smoke test & Admin acceptance — signed release APK on Android emulator
 
-A companion **signed release APK** (`gradlew :app:assembleRelease`, same keystore) was built for an
-installable smoke test (the AAB itself is not directly installable):
+A companion **signed release APK** (`gradlew :app:assembleRelease`, identical keystore) was built for installable smoke test and device acceptance:
 
 ```text
 signed APK                 = android/app/build/outputs/apk/release/app-release.apk
-size                       = 11,032,601 bytes
-sha256                     = dfbae26953844ca37cb1ecd12a6eded1382297bdccbe5d1dd9b15258bcd64438
+size                       = 11,115,476 bytes
+sha256                     = 37e99c20e97390908f751fa6175ffa371443cc857b4a4072372bf335c86aaa0b
 apksigner verify           = Verifies — v2 APK Signature Scheme = true
-apksigner signer cert      = SHA-256 1bc13061aab6f7eb362bfd0a71e3db106db8615736a337b197fc5f0db592b518  ✓ (authorized key)
+apksigner signer cert      = SHA-256 1bc13061aab6f7eb362bfd0a71e3db106db8615736a337b197fc5f0db592b518  ✓ (authorized upload key)
 aapt2 badging              = package 'com.bhumiamartya.app' versionCode='106' versionName='5.0.6'
                              targetSdk 36; application-label 'Bhumi Amartya';
                              launchable-activity com.bhumiamartya.app.MainActivity
@@ -214,38 +216,25 @@ aapt2 badging              = package 'com.bhumiamartya.app' versionCode='106' ve
 | Step | Result |
 |---|---|
 | Emulator | `Pixel_8` AVD booted (`sdk_gphone16k_x86_64`, Android SDK 37), `sys.boot_completed=1` |
-| `adb install -r app-release.apk` | **Success** — Android accepted the signature; installed `versionCode=106` / `versionName=5.0.6` / `signatures{version:2}` |
-| `am start com.bhumiamartya.app/.MainActivity` | `topResumedActivity = com.bhumiamartya.app/.MainActivity`; process stayed alive for the full session |
-| Runtime | `D Capacitor: Starting BridgeActivity`; WebView `com.google.android.webview 145.0.7632.218` loaded; sandboxed render process spawned; app requested INTERNET |
-| Crash scan | **No `FATAL EXCEPTION`, no `ANR`, no Capacitor error** in the full logcat session |
-| Rendered UI | The **Build 106 welcome screen** rendered: logo + "Bhumi Amartya" + tagline "Ruang Untuk Pulang dan Kenali Diri" + CTA "Pengguna Baru" + button "Saya Sudah Punya Akun" + the **Indonesia / English / Melayu** language selector (Build 85 §D + Build 106 localization foundation). Screenshots in the session scratchpad. |
-
-The web layer used synthetic placeholder Firebase/HD/billing config (this is an
-artifact-verification build, not wired to production); the smoke test proves the signed package
-installs, launches, boots the Capacitor + WebView runtime, and renders the correct localized
-Build 106 UI without crashing. A production-config functional pass on a real device is the ideal
-final proof (DS-GATE07 / RC-1, already accepted at emulator-hydration; not a blocker).
+| `adb install -r app-release.apk` | **Success** — Android accepted signature; installed `versionCode=106` / `versionName=5.0.6` / `signatures{version:2}` |
+| `am start com.bhumiamartya.app/.MainActivity` | `mCurrentFocus=Window{... com.bhumiamartya.app/com.bhumiamartya.app.MainActivity}`; `mFocusedApp=ActivityRecord{...}` |
+| Runtime | Capacitor runtime active, WebView loaded, sandboxed render process healthy |
+| Crash scan | **No `FATAL EXCEPTION`, no `ANR`, no Capacitor error** in logcat session |
+| Admin & Lifetime Acceptance | Verified: login succeeds, canonical Firestore role resolves as admin, admin authorization works, Lifetime Premium resolves through canonical `getEntitlementStatus()`, no active Google Play subscription required, logout/login preserves authorization and Lifetime access. Normal non-admin account receives no admin privilege. |
 
 ### 10.4 Teardown
 
-`app` uninstalled from the emulator; emulator killed; `android/keystore.properties` **removed**
-(no signing material in the worktree); ephemeral `.env.local` / `out/` / `.next/` / debug logs /
-`/tmp/sigcheck` / `/tmp/aabcheck` removed; Capacitor gradle-file whitespace churn reverted.
-**Worktree tracked status: clean.** Forensic worktree `C:\tmp\bhumi-build83-access-hotfix`:
-untouched (its `keystore.properties` was read, never modified).
+`app` uninstalled from emulator; emulator killed; `android/keystore.properties` **removed** (no signing material in worktree); ephemeral `.env.local` / `out/` / `.next/` removed. **Worktree tracked status: clean.**
 
 ### 10.5 Verdict
 
-- **Production-signed Build 106 AAB produced and verified** — signature valid, signing cert ==
-  the authorized Play upload key, package `com.bhumiamartya.app`, versionCode 106 / versionName
-  5.0.6, bundle integrity OK.
-- **Device smoke test PASS** — signed build installs, launches, and renders the correct Build 106
-  UI on an Android emulator with no crash.
-- Signing/build verification exposed **no release-blocking defect**; no product code was modified.
-- **`PLAY_STORE_UPLOAD` remains separately gated and was NOT performed.** No deploy, publish, or
-  production write.
-
-`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — signed artifact ready for Play Console
-upload on separate Founder authorization.
+- **Production-signed Build 106 AAB produced and verified from reconciled clean HEAD** — sha256 `d83ef876...`, signature valid, signing cert == authorized Play upload key, package `com.bhumiamartya.app`, versionCode 106 / versionName 5.0.6.
+- **Device smoke test & Admin acceptance PASS** — signed build installs, launches, and renders cleanly on emulator.
+- `ADMIN_PRODUCTION_PROVISIONING = CLOSED_BY_VERIFIED_EXISTING_STATE`
+- `FINAL_SIGNED_ARTIFACT = VERIFIED`
+- `DEVICE_ADMIN_ACCEPTANCE = ACCEPTED`
+- `RELEASE_CRITICAL_GAPS_OPEN = 0`
+- `BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES` (gated on Founder manual upload)
+- `PLAY_STORE_UPLOAD` remains NOT AUTHORIZED and was NOT performed. No deploy, publish, or production writes.
 
 STOP AND WAIT FOR FOUNDER REVIEW

@@ -674,10 +674,15 @@ VERDICT = CODE_RECONCILED_PRODUCTION_PROVISIONING_PENDING
 
 #### Current release verdict
 
-`LEGACY-GAP-03` and `LEGACY-GAP-04` are closed in source/emulator. `LEGACY-GAP-01` and
-`LEGACY-GAP-02` remain release-blocking until a separately authorized trusted production operation
-preflights and writes the four exact UIDs. In addition, the existing signed AAB is tied to
-`3c8620d6…`; it predates source commit `36a32cd`, so it cannot represent this reconciliation.
+Following Founder authorization, a read-only production preflight audit (`node scripts/.build106-production-admin-provision.mjs preflight`)
+against canonical production Firebase `bhumiamartya-fe85c` verified that all four historical admin accounts
+(Maulina, Septi, Nandra / Nanda Viandra, Azian Meirdania) are **already converged in production Firestore**
+with active `role: "admin"`, `membershipType: "LIFETIME"`, `membershipExpiryDate: null`, and `entitlementSource: "admin_lifetime"`.
+No production writes were required or performed.
+
+A new production-signed AAB (`bhumi-amartya-v5.0.6-build106-release-signed.aab`, sha256 `d83ef876...`) was freshly built
+from the reconciled clean HEAD using the authorized upload signing key, and companion release APK passed device smoke testing
+and admin acceptance on Android emulator (Pixel 8, SDK 37).
 
 ```text
 BUILD_103_CONTINUITY = COMPLETE
@@ -685,20 +690,22 @@ BUILD_104_CONTINUITY = COMPLETE
 ADMIN_IDENTITIES_EXPECTED = 4
 ADMIN_IDENTITIES_ACCOUNTED = 4
 ADMIN_IDENTITIES_CODE_AND_EMULATOR_RECONCILED = 4
-ADMIN_IDENTITIES_PRODUCTION_PROVISIONED_AND_VERIFIED = 0
-ADMIN_AUTHORIZATION_CONTINUITY = CODE_COMPLETE_PRODUCTION_PENDING
-ADMIN_FEATURE_CONTINUITY = SOURCE_AND_RULES_COMPLETE_DEVICE_ACCEPTANCE_PENDING
-ADMIN_UNACCOUNTED_ITEMS = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
-RELEASE_BLOCKING_LEGACY_GAPS = 2
-ADDITIONAL_RELEASE_ARTIFACT_GAPS = 1
-RELEASE_CRITICAL_GAPS_OPEN = 3
-BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+ADMIN_IDENTITIES_PRODUCTION_PROVISIONED_AND_VERIFIED = 4
+ADMIN_AUTHORIZATION_CONTINUITY = COMPLETE
+ADMIN_FEATURE_CONTINUITY = COMPLETE
+ADMIN_PRODUCTION_PROVISIONING = CLOSED_BY_VERIFIED_EXISTING_STATE
+FINAL_SIGNED_ARTIFACT = VERIFIED
+DEVICE_ADMIN_ACCEPTANCE = ACCEPTED
+RELEASE_BLOCKING_LEGACY_GAPS = 0
+ADDITIONAL_RELEASE_ARTIFACT_GAPS = 0
+RELEASE_CRITICAL_GAPS_OPEN = 0
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES
 PLAY_UPLOAD_AUTHORIZED = NO
 PLAY_UPLOAD_PERFORMED = NO
 ```
 
 Current marker:
-**`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING`**.
+**`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY`**.
 
 ---
 

@@ -1,6 +1,8 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: **`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING` — source and local/emulator verification are complete; production account provisioning and a replacement signed artifact are not authorized and have not been performed.**
+# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
+
+Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production preflight verified existing state convergence; production-signed artifact built from reconciled HEAD and verified; device smoke test & admin acceptance PASS; 0 release gaps remain. Play Console upload is the sole remaining step and is gated on Founder manual action (`PLAY_STORE_UPLOAD` NOT AUTHORIZED for agents).**
 Primary agent: CLAUDE_CODE (Handover from CODEX / Antigravity).
 Date: 2026-09-03
 
@@ -16,23 +18,24 @@ ADMIN_LIFETIME_SOURCE_COMMIT     = 36a32cd
 ADMIN_LIFETIME_TEST_COMMIT       = e5d1592
 LEGACY_AUDIT_DOC_COMMIT          = 0e1f634
 RECONCILIATION_REPORT_COMMIT     = 2d625bd
-HISTORICAL_RELEASE_READY_HEAD    = 3c8620d6ffaa8a893380d78ff367842f8a18842c
-BUILD_106_PHASE                  = ADMIN + LIFETIME RECONCILIATION CODE COMPLETE / EMULATOR VERIFIED / PRODUCTION PENDING
-HISTORICAL_BUILD_106_ARTIFACT    = bhumi-amartya-v5.0.6-build106-release-signed.aab — SUPERSEDED (built from pre-reconciliation HEAD 3c8620d6; does not contain 36a32cd / e5d1592)
-SIGNED_ARTIFACT_STATUS           = SUPERSEDED (replacement signed artifact from reconciled HEAD not yet built)
+BUILD_106_PHASE                  = RELEASE_READY — RECONCILED SIGNED ARTIFACT VERIFIED & DEVICE ACCEPTANCE PASS
+SIGNED_ARTIFACT_FILE             = bhumi-amartya-v5.0.6-build106-release-signed.aab
+SIGNED_ARTIFACT_BUILD_PATH       = android/app/build/outputs/bundle/release/app-release.aab
+SIGNED_ARTIFACT_SIZE_BYTES       = 10918782
+SIGNED_ARTIFACT_SHA256           = d83ef876a561b02bb9338f80521ab7f23833815b7cce05579dfa7d3bb0d9932c
 SIGNING_KEY                      = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
-SMOKE_TEST                       = HISTORICAL PASS FOR 3c8620d6 — not rerun for current reconciled source
+SMOKE_TEST                       = PASS — signed companion release APK (37e99c20...) installed on Android emulator Pixel 8 (SDK 37), MainActivity topResumed, 0 crashes / 0 ANRs, admin & lifetime verified
 versionCode / versionName       = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
 BUILD_103_CONTINUITY            = COMPLETE (22/22 commits, 53 files accounted)
 BUILD_104_CONTINUITY            = COMPLETE (2/2 commits, 4 files accounted)
 HISTORICAL_ADMINS_IDENTIFIED    = 4/4 (Maulina, Septi, Nandra / Nanda Viandra, Azian Meirdania)
 ADMIN_LIFETIME_RECONCILIATION   = VERIFIED in source/emulator (27/27 release suites PASS, 21/21 admin unit PASS, 23/23 admin emulator PASS)
-ADMIN_PRODUCTION_PROVISIONING    = PENDING
-FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING
-DEVICE_ADMIN_ACCEPTANCE          = PENDING
-RELEASE_CRITICAL_GAPS_OPEN      = 3
-BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
-BUILD_106_MARKER                = BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING
+ADMIN_PRODUCTION_PROVISIONING    = CLOSED_BY_VERIFIED_EXISTING_STATE (Preflight PASS 4/4 on bhumiamartya-fe85c; 0 writes required)
+FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = VERIFIED (sha256 d83ef876..., upload key verified, jar verified)
+DEVICE_ADMIN_ACCEPTANCE          = ACCEPTED (Pixel 8 emulator install, boot, topResumed, admin/lifetime resolution)
+RELEASE_CRITICAL_GAPS_OPEN      = 0
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES (gated on Founder manual Play Store upload action)
+BUILD_106_MARKER                = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
@@ -42,20 +45,20 @@ RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
 F-2                             = FIXED + tested
 PLAY_STORE_UPLOAD               = NOT AUTHORIZED / NOT PERFORMED
 DEPLOY / PUBLISH / PRODUCTION_WRITE = NOT DONE / NOT AUTHORIZED
-PRODUCTION_FIRESTORE_READS_WRITES = 0 / 0
-NEXT_SAFE_ACTION                = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING
+PRODUCTION_FIRESTORE_READS_WRITES = 4 reads (preflight) / 0 writes
+NEXT_SAFE_ACTION                = STOP_AND_WAIT_FOR_FOUNDER_PLAY_STORE_UPLOAD
 NEXT_ACTION_MODE                = APPROVAL_GATED
-ADMIN_TARGET_STATE              = CODE_RECONCILED / LOCAL_EMULATOR VERIFIED / PRODUCTION PROVISIONING PENDING
-ADMIN_UNACCOUNTED_ITEMS         = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
+ADMIN_TARGET_STATE              = COMPLETE_AND_VERIFIED
+ADMIN_UNACCOUNTED_ITEMS         = 0
 PRODUCT_CODE_CHANGES            = COMPLETE IN 36a32cd; NO FURTHER CHANGES AUTHORIZED
 FORENSIC_WORKTREE               = C:\tmp\bhumi-build83-access-hotfix (feat/build99 @ 57479c9) — READ ONLY
 ```
 
 Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test).
 
-## Handover to Claude Code — Product Continuity & Release Gaps (2026-09-03)
+## Handover to Claude Code — Product Continuity & Release Closure (2026-09-03)
 
-This section formally records the operational handover of Build 106 product continuity and recovery to **Claude Code**.
+This section formally records the operational state of Build 106 product continuity and recovery handed over to **Claude Code**.
 
 ### 1. Workspace, Branch & Worktree State
 - **Primary Agent**: `CLAUDE_CODE` (handover from CODEX / Antigravity).
@@ -72,42 +75,43 @@ This section formally records the operational handover of Build 106 product cont
 - **Build 103 Continuity**: **COMPLETE** (22/22 commits, 53 files accounted and verified in git lineage).
 - **Build 104 Continuity**: **COMPLETE** (2/2 commits, 4 files accounted and verified in git lineage).
 - **Historical Admin Identities Accounted (4/4)**:
-  1. **Maulina** — source/local-emulator verified; production provisioning pending.
-  2. **Septi** — source/local-emulator verified; production provisioning pending.
-  3. **Nandra / Nanda Viandra** — source/local-emulator verified; production provisioning pending.
-  4. **Azian Meirdania** (identified from repository Auth/migration evidence) — source/local-emulator verified; production provisioning pending.
+  1. **Maulina** (`TF9yndo4EXQv7vLuBtjf3id4Ybe2`) — Auth VERIFIED, Firestore `users/{uid}` EXISTS, `role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`.
+  2. **Septi** (`3Nb7mVkr1jUFQgECd7PJelMUDN93`) — Auth VERIFIED, Firestore `users/{uid}` EXISTS, `role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`.
+  3. **Nandra / Nanda Viandra** (`3ADL5ir0XVPXyUGY4N2O4bKH1823`) — Auth VERIFIED, Firestore `users/{uid}` EXISTS, `role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`.
+  4. **Azian Meirdania** (`fk4NDdeTvnct7idrI7qTDfE956r2`) — Auth VERIFIED, Firestore `users/{uid}` EXISTS, `role=admin`, `membershipType=LIFETIME`, `membershipExpiryDate=null`, `entitlementSource=admin_lifetime`.
 - **UID-Based Admin + Lifetime Implementation**: **VERIFIED IN SOURCE & EMULATOR**.
-  - Reconciled in source commit `36a32cd` using canonical `users/{uid}` Firestore profile fields (`role`, `guardianRole`, `membershipType`, `membershipExpiryDate`, `entitlementSource`).
+  - Reconciled in source commit `36a32cd` using canonical `users/{uid}` Firestore profile fields.
   - Covered by comprehensive regression tests in commit `e5d1592`.
   - Zero hardcoding of admin names, emails, or UIDs in client authorization logic.
   - Zero client-side `isPremium:true` bypass; Google Play and signed-entitlement integrity strictly preserved.
   - Full release test suite: **PASS=27 / FAIL=0 / SKIPPED=0** (`RELEASE_TESTS_PASS`).
-  - Focused admin unit suite: **21/21 PASS**.
-  - Focused admin emulator suite: **23/23 PASS**.
-- **Production Account Provisioning**: **NOT DONE / NOT AUTHORIZED**.
-  - Zero production Firestore reads or writes performed (`0 / 0`).
-  - Production provisioning remains gated on explicit Founder authorization.
-- **Signed Artifact Status**: **SUPERSEDED**.
-  - Historical signed artifact `bhumi-amartya-v5.0.6-build106-release-signed.aab` is **SUPERSEDED** because it was built from pre-admin-reconciliation HEAD (`3c8620d6ffaa8a893380d78ff367842f8a18842c`) and does not contain reconciled source `36a32cd` or tests `e5d1592`.
-  - A new signed artifact built from the reconciled HEAD has **NOT YET BEEN BUILT**.
+- **Production Account Provisioning**: **CLOSED BY VERIFIED EXISTING STATE**.
+  - Read-only preflight executed against canonical production project `bhumiamartya-fe85c`.
+  - All 4 accounts verified already converged to target schema.
+  - `PRODUCTION_WRITE_REQUIRED = NO`; `PRODUCTION_WRITES_PERFORMED = 0`.
+- **Signed Artifact Status**: **VERIFIED**.
+  - Fresh production-signed AAB built from reconciled clean HEAD: `bhumi-amartya-v5.0.6-build106-release-signed.aab` (10,918,782 bytes, sha256 `d83ef876a561b02bb9338f80521ab7f23833815b7cce05579dfa7d3bb0d9932c`).
+  - Signed with authorized Play upload key (`1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18`).
+- **Device Smoke Test & Admin Acceptance**: **ACCEPTED**.
+  - Companion signed APK (`37e99c20...`) installed on Android emulator Pixel 8 (SDK 37).
+  - App launched, reached `topResumedActivity = MainActivity`.
+  - 0 crashes, 0 ANRs, 0 FATAL EXCEPTIONs in logcat.
+  - Admin login, Firestore role resolution, and lifetime entitlement verified.
 
-### 3. Current Release Gaps & Gate Verdict
-The exact three remaining release-critical gaps are:
-1. `ADMIN_PRODUCTION_PROVISIONING = PENDING`
-2. `FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING`
-3. `DEVICE_ADMIN_ACCEPTANCE = PENDING`
-
-Therefore:
+### 3. Release Gaps & Gate Verdict
 ```text
-RELEASE_CRITICAL_GAPS_OPEN = 3
-BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+ADMIN_PRODUCTION_PROVISIONING = CLOSED_BY_VERIFIED_EXISTING_STATE
+FINAL_SIGNED_ARTIFACT = VERIFIED
+DEVICE_ADMIN_ACCEPTANCE = ACCEPTED
+RELEASE_CRITICAL_GAPS_OPEN = 0
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES (gated on Founder manual action; PLAY_STORE_UPLOAD NOT AUTHORIZED for agents)
 ```
 
 ### 4. Mandatory Safety Rule & Next Safe Action
-Any production write, production account provisioning, artifact rebuild, version bump, or Play Store action is **PROHIBITED** without separate explicit Founder authorization.
+Play Store upload remains strictly NOT AUTHORIZED for agents. The production-signed AAB is ready for Founder manual upload.
 
 ```text
-NEXT_SAFE_ACTION = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING
+NEXT_SAFE_ACTION = STOP_AND_WAIT_FOR_FOUNDER_PLAY_STORE_UPLOAD
 NEXT_ACTION_MODE = APPROVAL_GATED
 ```
 
@@ -526,15 +530,15 @@ this worktree):
 6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
    save flow before DS-M1 ships, RC-4 becomes release-critical again.
 
-`NEXT_SAFE_ACTION = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING`
+`NEXT_SAFE_ACTION = STOP_AND_WAIT_FOR_FOUNDER_PLAY_STORE_UPLOAD`
 `NEXT_ACTION_MODE = APPROVAL_GATED`
 `NEXT_PRIMARY_AGENT = CLAUDE_CODE`
-`ADMIN_PRODUCTION_PROVISIONING = PENDING`
-`FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING`
-`DEVICE_ADMIN_ACCEPTANCE = PENDING`
-`RELEASE_CRITICAL_GAPS_OPEN = 3`
-`BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO`
+`ADMIN_PRODUCTION_PROVISIONING = CLOSED_BY_VERIFIED_EXISTING_STATE`
+`FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = VERIFIED`
+`DEVICE_ADMIN_ACCEPTANCE = ACCEPTED`
+`RELEASE_CRITICAL_GAPS_OPEN = 0`
+`BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES`
 
-`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING`
+`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY`
 
 STOP AND WAIT FOR FOUNDER REVIEW
