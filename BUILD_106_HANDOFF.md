@@ -1,25 +1,68 @@
-# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF (CLAUDE CODE → ANTIGRAVITY)
+# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: HANDOVER CLAUDE CODE → ANTIGRAVITY after Step 12 (cont.). DS-2C3 / RC-12 CLOSED. RC-2 ADVANCED. Next primary agent is ANTIGRAVITY.
+Status: **RECONCILED — `RELEASE_CRITICAL_GAPS_OPEN = 0`. Awaiting Founder Step 13 approval.**
+Primary agent: CLAUDE CODE (Founder-directed continuation; the earlier Antigravity handoff is superseded).
 Date: 2026-09-03
 
 ```text
-NEXT_PRIMARY_AGENT               = ANTIGRAVITY
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12, Step 12 cont.)
+NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12, Step 12 cont., final gap closure)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the Step 12 (cont.) docs commit; adoption commits are `c9f3d04` (source) + `1808852` (tests)
-BUILD_106_PHASE                  = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the final-gap-closure docs commit; source fix `29781d6`, test `2877b31`
+BUILD_106_PHASE                  = RECONCILED — awaiting Founder Step 13 approval
 BUILD_106_ARTIFACT              = DOES_NOT_EXIST
-BUILD_106_RELEASE_GATE          = CLOSED
+BUILD_106_RELEASE_GATE          = CLOSED (opens on Founder Step 13 approval)
+RELEASE_CRITICAL_GAPS_OPEN       = 0
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
-GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run still the ideal final proof
-RC-2                            = ADVANCED (onboarding + Premium + switcher + DS-2C3 `/setup`+`/insights` no-bounce + DS-E1 honest-unavailable + DS-AI1 mirror en/ms — all rendered-verified; residual = DS-AI1-themes body prose, DS-J4 streak-with-data, DS-M1/DS-R1 unbuilt UI)
-RC-12 / DS-2C3                  = CLOSED (code + full emulator suite PASS=24/24 + emulator-hydration browser)
-RC-10 / DS-2C1                  = CLOSED (Step 11)
-DS-AI1-themes                   = OPEN — residual low-priority i18n follow-up; per D-V5-36 `ms → id` narrative prose is ratified ⇒ NOT release-critical
-NEXT_SAFE_ACTION                = audit remaining RC-3..RC-8 + the DS register → Founder approval for Step 13 (version bump / Build 106 artifact)
+GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
+RC-2                            = ADVANCED (non-blocking) — correctness-critical rendered checks pass; residual = un-built V5 UI (DS-M1 / DS-R1), DS-J4 seeded-data, DS-AI1-themes prose
+RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliation Report §11.4)
+RC-8 / DS-P1                    = CLOSED — account-deletion inventory defect fixed + verified; auth / rules / privacy-enforcement audit clean
+RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
+F-2 (Daily Guidance ultimate fallback) = FIXED + tested (reachability confirmed; minimum correctness fix)
+DS-AI1-themes                   = ACCEPTED_DEFERRED_NON_BLOCKING (D-V5-36 `ms → id` prose ratified)
+NEXT_SAFE_ACTION                = Founder approval for Step 13 (version bump / Build 106 artifact). Until then: no version bump / build / deploy / publish / push / production write.
 ```
+
+## Final pre-release gap closure — what Claude Code did (2026-09-03)
+
+`AUDIT → ANALYZE → FIX only where required → VERIFY → REPORT`. Founder-directed disposition of
+RC-3..RC-8, the Step 12.5 F-2 finding, and every remaining `DS-*`. Canonical detail:
+`BUILD_106_RECONCILIATION_REPORT.md` **§11.4**. Commits: `29781d6` (fix), `2877b31` (test), then
+this docs commit.
+
+- **F-2 — FIXED.** Reachability confirmed: `generateLocalDailyGuidance`'s outer catch **re-throws**,
+  so all-providers-fail + a deterministic sub-generator throw ⇒ `runProviderCascade` `ok:false`
+  ⇒ `dailyGuidanceEngine.generateFallbackFace` ⇒ persisted `aiInsight: "Hari ini tentang ."` +
+  empty reflection/note/prompt/meditation. Minimum correctness fix in
+  `lib/engines/dailyGuidanceEngine.ts`: id/en fallback copy block (`ms → id` per D-V5-36) fills
+  the five fields with coherent sentences; malformed literal removed. Build-105-identical → not a
+  regression.
+- **RC-8 — CLOSED.** Audit run: auth PII-logging clean; `firestore.rules` unchanged from Build 105
+  (owner-isolation + `journalMemoryCandidates` / `fcmTokens` contracts pass in the release suite);
+  per-entry privacy enforcement fail-closed. **Defect found + fixed:**
+  `firebaseService.deleteUserDataCompletely` used drifted collection names + omitted `activities`,
+  `dailyStates`, `journalMemoryCandidates`, `wellnessAssessments`, `wellnessMappings`,
+  `progressData` — sensitive wellness/emotional/journal-derived data survived account deletion.
+  Fixed in `lib/firebase/service.ts` (generic `deleteNestedEntries` + canonical schema coverage;
+  legacy aliases kept as no-ops). Regression test cross-checks every repo collection literal
+  against deletion coverage.
+- **RC-3 / RC-4 / RC-5 / RC-6 / RC-7 — ACCEPTED_DEFERRED_NON_BLOCKING.** Each is an un-built
+  canonical V5 surface that Build 105 also never shipped; the recovered contracts are verified;
+  the Build 105 baseline is intact (no regression). **RC-4 verified:**
+  `memoryCandidateRepository.upsertFromEntry` has zero runtime callers → no memory data exists →
+  no exposure (re-open guard recorded). **RC-5 verified:** `app/journal/page.tsx` +
+  `app/innerwork/journaling/page.tsx` save (local + cloud) + load history at the Build 105 baseline.
+- **Every `DS-*` reconciled** to CLOSED / ACCEPTED_DEFERRED_NON_BLOCKING / RELEASE_BLOCKER
+  (§11.4 table). **Zero RELEASE_BLOCKER.** DS-P1 release-critical portion CLOSED; its
+  entry-controls UI + external pen-test → non-blocking.
+- **No F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8 work** — post-Build-106 Daily Guidance roadmap
+  (Step 12.5 audit §6); no new evidence proved any a release-critical defect.
+- **Verification:** `npx tsc --noEmit` EXIT 0; full Firestore/Auth emulator release suite
+  **PASS=25 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`);
+  `build106-final-pre-release-gap-closure` 89 assertions EXIT 0.
+- No version bump, Build 106 artifact, deploy, publish, push, or production write.
 
 ## Step 12 (cont.) — what Claude Code did (2026-09-03)
 
@@ -89,7 +132,7 @@ locale bundles, and CP-036, and **adopted** in `b341c82`. Step 10 (Full R-PRD-01
 reconciliation) is a docs/audit pass — canonical deliverable `BUILD_106_RECONCILIATION_REPORT.md`
 plus matrix updates; no product code changed.
 
-## Canonical authority and reading order (for ANTIGRAVITY)
+## Canonical authority and reading order
 
 The repository Markdown set is the authority. Read in order before any further work:
 
@@ -98,16 +141,16 @@ The repository Markdown set is the authority. Read in order before any further w
 2. `BUILD_106_MASTER_SOT.md` — primary canonical product/recovery authority.
 3. `BUILD_106_RECOVERY_MATRIX.md` — canonical status, evidence, deferred-work, and gate ledger.
 4. `BUILD_106_RECONCILIATION_REPORT.md` — canonical R-PRD-01..46 reconciliation + the
-   **RC-1..RC-12** release-critical gap list (§11.1 Step 11, §11.2 Step 12, §11.3 Step 12 cont.).
+   **RC-1..RC-12** release-critical gap list (§11.1 Step 11, §11.2 Step 12, §11.3 Step 12 cont.,
+   **§11.4 final pre-release gap closure — `RELEASE_CRITICAL_GAPS_OPEN = 0`**).
 5. `BUILD_106_AGENT_PROTOCOL.md` — mandatory recovery, safety, and evidence procedure.
 6. `BUILD_106_HANDOFF.md` — this operational snapshot (not a higher authority than the above).
 7. `RULES.md` — engineering/product invariants where not superseded above.
-8. `CLAUDE.md` — Claude Code's operational entrypoint; Antigravity is not bound by it, but its
-   build/release lock and worktree rules restate the same Build 106 constraints.
+8. `CLAUDE.md` — Claude Code's operational entrypoint; its build/release lock and worktree rules
+   restate the same Build 106 constraints.
 
-Claude AgentMemory (`C:\Users\shein\.claude\projects\...\memory\`) is Claude Code's supplementary
-continuity and is **not required** for Antigravity. Everything needed is in the repo Markdown; the
-work must be reconstructable from the repo alone. On any conflict, the Build 106 Markdown wins.
+The work must be reconstructable from the repo Markdown alone. On any conflict, the Build 106
+Markdown wins.
 
 ## Continuity state — Steps 1–12 (cont.)
 
@@ -126,6 +169,7 @@ work must be reconstructable from the repo alone. On any conflict, the Build 106
 | 11 — Focused verification + owned-gap closure | DONE (local logic closed; rendered browser pass completed in Step 12 cont.) | **DS-2C1 DONE** (RC-10 CLOSED): `firebaseService.getUserProfile` propagates read failures (`null` = absent doc only); non-routing callers keep tolerance via `.catch(() => null)`; state-machine "I" step updated + green. **DS-AI1 — local logic CLOSED** (RC-9): daily-guidance prompt `outputLanguageRule` + `attributionRule`; id/en/ms end to end; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); `localDailyGuidanceFallback` wrapper `ms → id`. Remainder = **DS-AI1-themes** (deep theme dicts + full fallback ms) + rendered en/ms browser (RC-2). **DS-J4 — local logic CLOSED** (RC-11): rendered streak UI removed + `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term; `"7 Hari Aktif"`). Remainder = `/insights` rendered browser (RC-2). Full emulator **PASS=23/23** `RELEASE_TESTS_PASS`; two passes, no regression. Local `next dev` browser QA: all 8 Step-11 routes compile + serve HTTP 200, no compile errors; interactive SPA rendering not possible without a real Firebase project (env limitation, ephemeral `.next` + `.env.local` deleted, worktree clean). Version bump / build / deploy / publish still LOCKED. |
 | 12 — Genuine fresh-account acceptance + RC-2 rendered browser | ACCEPTED @ emulator-hydration; RC-2 advanced | **D-V5-36 ratified** (`15428ba` — narrative-prose `ms → id`). **RC-1 / DS-GATE07 ACCEPTED at emulator-hydration** — brand-new emulator account → `/setup` → **real blueprint** (LP4 Builder / Gemini / Projector) → rules-enforced Firestore → **`/dashboard` rendered**; hard-reload stays; logout → `/login`, re-login (cold mirror) → `/dashboard`. DS-PR1 browser part done; R-34 switcher visible + persists. NEW finding DS-2C3. AUDIT → VERIFY → REPORT; no product code changed. |
 | 12 (cont.) — DS-2C3 closure + RC-2 rendered re-verification | DS-2C3 / RC-12 CLOSED; RC-2 ADVANCED | Founder **OPTION A (ADOPT)**. Unreported parallel-session in-flight change audited hunk-by-hunk + adopted (`c9f3d04` source, `1808852` tests). **DS-2C3 CLOSED** — `isCompletedProfileForUser`; `/setup` mount guard; `resolveActiveProfile` authoritative cold re-read + `isUnavailable`; `AccessGuard` / `InsightPageClient` reconcile before gating. **BUILD_106_REGRESSION fixed** — `DashboardClient` BCP47 `translations[tag]` white-screen for en/ms switcher users → `getDictionaryKey`. **RC-2 ADVANCED** — `/setup` completed-user hard-nav → `/dashboard`; `/insights` hard-nav no bounce; `/dashboard/environment` "Data belum tersedia" no fabricated "Stabil" (R-PRD-44); Soul Reflection native en/ms. Full emulator suite **PASS=24/24**. |
+| Final pre-release gap closure | `RELEASE_CRITICAL_GAPS_OPEN = 0` | Founder-directed disposition of RC-3..RC-8 + F-2 + all `DS-*` (§11.4). **F-2 FIXED** (`dailyGuidanceEngine` ultimate fallback — reachability confirmed, malformed `aiInsight` + empty fields replaced with coherent id/en copy). **RC-8 CLOSED** (`deleteUserDataCompletely` drift + 6 omitted per-user collections fixed; auth/rules/privacy audit clean). **RC-3/4/5/6/7 = ACCEPTED_DEFERRED_NON_BLOCKING** (un-built V5 surfaces Build 105 also never shipped; contracts verified; baseline intact). New suite `build106-final-pre-release-gap-closure` 89 assertions. Fix `29781d6`, test `2877b31`. Full emulator suite **PASS=25/25**. |
 
 Step 7 commits: `1bde634` (feat), `0ff5aa8` + `0293517` (test), `99db503` (docs).
 Step 8 commits: `901ad94` (feat), `d106cb7` (test), `0eea40c` (docs).
@@ -135,56 +179,51 @@ Step 11 commits: `1a686db` (fix: DS-2C1 / DS-AI1 / DS-J4 source), `6e16274` (tes
 Step 12 commit: `15428ba` (docs: ratify D-V5-36) + docs. Step 12 was AUDIT → VERIFY → REPORT — no product code changed.
 Step 12 (cont.) commits: `c9f3d04` (fix: DS-2C3 + DS-J4/DS-AI1 rendered + BCP47 `DashboardClient` regression — adopted parallel-session source, +417 −86 / 10 files), `1808852` (test: DS-2C3 cold-nav suite + manifest + extended guards, +198 −7 / 6 files), then this docs commit + `.gitignore`.
 
-## Deferred sub-steps and open gates (latest — after Step 12 cont.)
+## Deferred sub-steps and open gates (after final pre-release gap closure)
 
-Detailed definitions and owners are in the matrix **Deferred sub-steps register**.
+Canonical reconciliation: `BUILD_106_RECONCILIATION_REPORT.md` **§11.4** (each `DS-*` classed
+CLOSED / ACCEPTED_DEFERRED_NON_BLOCKING / RELEASE_BLOCKER). **Zero RELEASE_BLOCKER.**
 
-- **OPEN:** DS-J1, DS-J2, DS-J3, DS-I1, DS-M1, DS-M2, DS-A1, DS-A2, DS-R1, DS-N1, DS-P1,
-  **DS-AI1-themes** (low-priority i18n residual; per D-V5-36 `ms → id` prose ratified ⇒ NOT
-  release-critical).
-- **PARTIAL:** DS-M3 (decay + eligibility done; synthesis/persistence/rendered open).
-  **DS-AI1** — local logic closed + Soul Reflection wrapper RENDERED en/ms (Step 12 cont.);
-  remainder = DS-AI1-themes body prose.
-  **DS-J4** — de-streaked in both `progressCalculationEngine` (Step 11) and
-  `createInsightProgress` (Step 12 cont.); `/insights` reachable + no bounce; remainder = streak
-  section rendered *with seeded activity data* (not release-critical).
-  **DS-E1** — `/dashboard/environment` rendered honest-unavailable (no fabricated "Stabil",
-  R-PRD-44); remainder = fully-populated 3-layer render (needs mocked geolocation + live Schumann).
-  **DS-2C2** — setup→dashboard / reload / logout→login + `/setup` and `/insights` cold hard-nav
-  all exercised in emulator-hydration browser runs; remainder = scripted Playwright regression +
-  locale visible-copy round-trip (needs DS-I1).
-  **DS-PR1** — browser part done Step 12 (`/premium-bhumi` Rp25.000, `/upgrade` neutral "Google
-  Play"); remainder = real Play `formattedPrice` on an installed Android build.
-- **DONE / CLOSED:** DS-DC1 (Step 6), DS-I2 (Step 7), **DS-2C1 (Step 11 — RC-10 CLOSED)**,
-  **DS-2C3 (Step 12 cont. — RC-12 CLOSED)**.
-- **ACCEPTED (emulator-hydration, Step 12):** **DS-GATE07** — brand-new emulator account ran the
-  full lifecycle to a rendered `/dashboard` (real blueprint, rules-enforced Firestore) + reload +
-  logout/login, all correct. `GATE_07_GENUINE_NEW_USER` = **ACCEPTED (emulator-hydration); a
-  production / Play-device run is still the ideal final proof.**
-- R-45 full browser PASS still needs the fully-populated Schumann 3-layer render (DS-E1 remainder).
-- R-42: **rendered browser part done (Step 12)**; a real Play `formattedPrice` on device = DS-PR1.
-- Release-critical gaps are **RC-1..RC-12** in `BUILD_106_RECONCILIATION_REPORT.md` §11 / §11.1 /
-  §11.2 / §11.3. After Step 12 cont.: **RC-1 ACCEPTED (emulator-hydration)**; **RC-10 CLOSED**;
-  **RC-12 CLOSED**; **RC-9 / RC-11 local logic CLOSED** (RC-9 wrapper rendered); **RC-2 ADVANCED**
-  (DS-2C3 unblocked; DS-E1 honest-unavailable + DS-AI1 mirror en/ms rendered; DS-J4 `/insights`
-  no-bounce); **RC-3..RC-8 unchanged** — the remaining release-critical work.
-- Non-blocking Founder decisions pending: DS-M2 (dedicated Dashboard Daily Note card y/n),
-  DS-A2 (ratified large-cycle astro signals, if any).
+- **CLOSED:** DS-DC1 (Step 6), DS-I2 (Step 7), DS-2C1 (Step 11 — RC-10), DS-2C3 (Step 12 cont. —
+  RC-12), **DS-P1 release-critical portion** (final gap closure — account-deletion inventory
+  fixed + verified).
+- **ACCEPTED_DEFERRED_NON_BLOCKING:** DS-J1, DS-J2, DS-J3 (V5 journaling UI; journaling
+  functional at Build 105 baseline), DS-J4 (both engines de-streaked; `/insights` no-bounce;
+  residual = streak section with seeded data), DS-I1 (`useTranslation()` migration; foundation
+  verified), DS-AI1 (local logic closed + mirror wrapper rendered en/ms), DS-AI1-themes (D-V5-36
+  `ms → id` prose ratified), DS-2C2 (flows exercised; residual = Playwright + locale copy),
+  DS-M1 (extraction unwired → no data → no exposure; re-open guard), DS-M2 / DS-A2 (Founder
+  decisions), DS-M3 (opt-in synthesis; decay + eligibility done), DS-A1 (astro consumer wiring;
+  adapters typed), DS-E1 (`/dashboard/environment` honest-unavailable rendered PASS; residual =
+  populated 3-layer render), DS-R1 (Daily Rhythm consumer UI; all contracts verified), DS-N1
+  (remote FCM infra; external config + device), DS-PR1 (Premium rendered; residual = real Play
+  price on device), DS-GATE07 (ACCEPTED at emulator-hydration, Founder-accepted).
+- **RC-1..RC-12** in `BUILD_106_RECONCILIATION_REPORT.md` §11 / §11.1 / §11.2 / §11.3 / **§11.4**.
+  After final gap closure: **RC-1 ACCEPTED**; **RC-8 / RC-10 / RC-12 CLOSED**; **RC-9 / RC-11**
+  local logic closed; **RC-2 ADVANCED**; **RC-3 / RC-4 / RC-5 / RC-6 / RC-7 =
+  ACCEPTED_DEFERRED_NON_BLOCKING**. **`RELEASE_CRITICAL_GAPS_OPEN = 0`.**
 - Version bump, production build, Build 106 APK/AAB, deploy, publish, `.next` artifact, production
-  read/write, and release-ready claims are unauthorized until the canonical release gates pass and
-  the Founder approves.
+  read/write, and release-ready claims are unauthorized until the Founder approves Step 13.
 
-## Last recorded evidence (end of Step 12 cont., Claude Code — 2026-09-03)
+## Last recorded evidence (end of final pre-release gap closure, Claude Code — 2026-09-03)
 
-- TypeScript `npx tsc --noEmit`: **EXIT 0** (final worktree = adopted source + the BCP47
-  `DashboardClient` regression fix).
-- No-emulator unit runner: **PASS=16/24** (8 suites require the Firestore/Auth emulator).
+- TypeScript `npx tsc --noEmit`: **EXIT 0**.
 - **Full Firestore/Auth emulator release suite** (`firebase emulators:exec --project
-  demo-release-suite "node scripts/run-release-tests.mjs"`, JDK 21): **PASS=24 FAIL=0 SKIPPED=0**,
-  `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`).
-- DS guard suites, all EXIT 0: `build106-ds2c3-cold-nav` **11**; `build106-ds-ai1-ai-locale-attribution`
-  **38**; `build106-ds-j4-mood-trend-no-streak` **30**; `build106-authoritative-profile-gate`
-  **27**; `mirror-daily-reflection-contract` **32**; `build106-ds2c1-profile-read-error` **10**.
+  demo-release-suite "node scripts/run-release-tests.mjs"`, JDK 21): **PASS=25 FAIL=0 SKIPPED=0**,
+  `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`; by evidence STRONG_REAL_SDK=6
+  STRONG_UNIT=11 STATIC_GUARD=5 MOCK_UNIT=1).
+- New suite `build106-final-pre-release-gap-closure` — **89 assertions**, EXIT 0 (F-2 behavioural
+  id/en/ms + reachability guards + RC-8 repo-collection-vs-deletion cross-check). In the manifest.
+- Prior DS guard suites unchanged and green: `build106-ds2c3-cold-nav` 11,
+  `build106-ds-ai1-ai-locale-attribution` 38, `build106-ds-j4-mood-trend-no-streak` 30,
+  `build106-authoritative-profile-gate` 27, `mirror-daily-reflection-contract` 32,
+  `build106-ds2c1-profile-read-error` 10.
+- **RC-8 audit executed:** auth PII-logging clean; `firestore.rules` unchanged from Build 105;
+  per-entry privacy enforcement fail-closed; `deleteUserDataCompletely` collection-name drift +
+  6 omitted per-user collections **fixed**.
+- **F-2 reachability confirmed** (`generateLocalDailyGuidance` outer catch re-throws →
+  `runProviderCascade` `ok:false` → `generateFallbackFace`); malformed `aiInsight` + empty
+  fields **fixed** (id/en coherent copy).
 - **RC-2 rendered re-verification — emulator-hydration browser run** (`next dev` Turbopack wired to
   local Auth `:9099` + Firestore `:8080`; ephemeral `.env.local` + `.next` + `.playwright-cli/` +
   debug logs deleted afterward; servers stopped; **worktree clean; no `next build`**):
@@ -205,40 +244,45 @@ Detailed definitions and owners are in the matrix **Deferred sub-steps register*
 No production read/write, build artifact, deploy, publish, push, or version bump occurred in
 Steps 9–12 (cont.).
 
-## ANTIGRAVITY continuation boundary
+## Continuation boundary — Step 13 gate
 
 Before any edit:
 
-1. Verify `git branch --show-current` = `recovery/build106-product-continuity`, `git rev-parse HEAD`
-   = the Step 12 (cont.) docs commit (this file), and `git status --short` = clean.
+1. Verify `git branch --show-current` = `recovery/build106-product-continuity`,
+   `git rev-parse HEAD` = the final-gap-closure docs commit (this file), `git status --short` = clean.
 2. Read the canonical Build 106 files in the order above (+ `BUILD_106_RECONCILIATION_REPORT.md`
-   §11.1 / §11.2 / §11.3). Do not treat Claude AgentMemory as required input.
-3. Do **not** work Step 13, bump the version, or create a Build 106 artifact without explicit
-   Founder approval. Do **not** mutate the forensic worktree `C:\tmp\bhumi-build83-access-hotfix`.
+   §11.1 / §11.2 / §11.3 / **§11.4**).
+3. Do **not** mutate the forensic worktree `C:\tmp\bhumi-build83-access-hotfix`.
 
-Then, in order:
+State: **`RELEASE_CRITICAL_GAPS_OPEN = 0`.** All RC-1..RC-12 are CLOSED or Founder-dispositioned
+**ACCEPTED_DEFERRED_NON_BLOCKING** (§11.4); every `DS-*` is reconciled with **zero
+RELEASE_BLOCKER**. Master SOT §8 gates: 46/46 reconciled; genuine new-user lifecycle passes
+(emulator-hydration, Founder-accepted); late-bootstrap race has an executed regression test;
+sample/audit not used as onboarding proof; recovered-module tests pass; Firestore
+owner-isolation passes; affected primary surfaces browser-QA'd; no provenance conflict open.
+**The one remaining §8 gate is "Founder explicitly approves release/versioning."**
 
-4. **Audit the remaining release-critical gaps before Step 13.** RC-3 (FCM infra / DS-N1), RC-4
-   (Memory Dashboard / DS-M1, needs DS-I1), RC-5 (journal draft + history UI / DS-J1–J3), RC-6
-   (Comfort Mode / DS-R1), RC-7 (adaptive check-in / DS-R1), RC-8 (security + privacy audit +
-   account-deletion inventory / DS-P1) are all still OPEN and release-critical. Confirm each
-   owner + evidence class; decide with the Founder whether any are descoped for Build 106 or must
-   land first. This is the gate to Step 13.
-5. **DS-AI1-themes** — residual low-priority i18n follow-up (Indonesian-only theme-label
-   dictionaries + full `localDailyGuidanceFallback` ms). Per D-V5-36 not release-critical; land it
-   only if the Founder wants it in Build 106.
-6. **Optional hardening of the DS-* PARTIALs** where cheap: DS-J4 streak section rendered with
-   seeded activity data; DS-E1 fully-populated 3-layer Schumann render (mocked geolocation + a
-   stubbed Schumann source); DS-2C2 scripted Playwright regression.
-7. Then **Step 13** — version bump / Build 106 artifact — **Founder approval only**, and only once
-   every RC-1..RC-12 item and the Master SOT §8 gates are satisfied.
-8. Preserve all Step 1–12 (cont.) work. Do not silently promote any deferred gate to `PASS`.
-9. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`. Update the matrix, reconciliation report, this
-   handoff after each pass. End every Founder-facing report with `STOP AND WAIT FOR FOUNDER REVIEW`.
+Next:
 
-`NEXT_SAFE_ACTION = audit remaining RC-3..RC-8 + the DS register → Founder approval for Step 13`
-`NEXT_PRIMARY_AGENT = ANTIGRAVITY`
+4. **Step 13 — version bump / Build 106 artifact — on Founder approval only.** When approved:
+   coherent `versionName` / `versionCode` bump, AAB/APK build with signing evidence, regression
+   results, Firestore/backend deploy evidence if any, then the release provenance record. Until
+   the Founder says so: **no version bump, build, deploy, publish, push, or production write.**
+5. Post-Build-106 roadmap (NOT Build 106): F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8 (Step 12.5
+   audit §6); the DS-* ACCEPTED_DEFERRED_NON_BLOCKING items (journaling V5 UI, Memory Dashboard,
+   Daily Rhythm consumer UI, remote FCM infra, DS-AI1-themes, DS-P1 entry-controls UI + external
+   pen-test, DS-I1 component migration, DS-2C2 Playwright).
+6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
+   save flow before DS-M1 ships, RC-4 becomes release-critical again.
+7. Preserve all Step 1–12 (cont.) + final-gap-closure work. Do not silently promote any deferred
+   gate to `PASS`. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`; update the matrix, reconciliation
+   report, and this handoff after each pass; end every Founder-facing report with
+   `STOP AND WAIT FOR FOUNDER REVIEW`.
 
-`BUILD_106_RECOVERY_IN_PROGRESS`
+`NEXT_SAFE_ACTION = Founder approval for Step 13 (version bump / Build 106 artifact)`
+`NEXT_PRIMARY_AGENT = CLAUDE_CODE`
+`RELEASE_CRITICAL_GAPS_OPEN = 0`
+
+`BUILD_106_RECOVERY_IN_PROGRESS` (reconciled; awaiting Founder Step 13 approval)
 
 STOP AND WAIT FOR FOUNDER REVIEW

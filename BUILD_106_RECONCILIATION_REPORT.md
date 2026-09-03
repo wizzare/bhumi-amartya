@@ -1,11 +1,11 @@
 # BHUMI AMARTYA — BUILD 106 FULL RECONCILIATION REPORT (R-PRD-01..46)
 
-Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.)
+Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.), §11.4 (final pre-release gap closure — `RELEASE_CRITICAL_GAPS_OPEN = 0`)
 Primary authority: `BUILD_106_MASTER_SOT.md` §7.10 / §10
 Execution ledger: `BUILD_106_RECOVERY_MATRIX.md`
-Date: 2026-09-02; last updated 2026-09-03 (§11.3)
+Date: 2026-09-02; last updated 2026-09-03 (§11.4)
 Branch: `recovery/build106-product-continuity`
-Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3 at the Step 12 (cont.) adoption commits
+Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3/§11.4 at the Step 12 (cont.) + final-gap-closure commits
 
 This report is the Step 10 deliverable: a full walk of every canonical requirement
 `R-PRD-01..46` and every deferred sub-step, assigning each an **accepted final reconciled
@@ -235,20 +235,23 @@ The Master SOT counts 46 numbered requirements; the cross-cutting set is folded 
 
 ## 11. Unresolved release-critical gaps (explicit)
 
-The Build 106 release gate is **CLOSED**. The following are the release-critical open items,
-each owned. None is a silent gap.
+**Final pre-release gap closure (2026-09-03, §11.4): `RELEASE_CRITICAL_GAPS_OPEN = 0`.**
+RC-3..RC-7 are dispositioned **ACCEPTED_DEFERRED_NON_BLOCKING**; RC-8 is **CLOSED**
+(account-deletion inventory defect fixed + verified; security/privacy audit run clean);
+F-2 is fixed + tested. No `RELEASE_BLOCKER` remains. The rows below carry the dispositioned
+status; see §11.4 for the audit.
 
 | # | Gap | Master SOT / PRD gate | Owner | Blocking type |
 |---|---|---|---|---|
-| RC-1 | Genuine fresh non-sample new-user browser acceptance | Master SOT §8, §10.3; PRD §5 | DS-GATE07 | **ACCEPTED at emulator-hydration level (Step 12)** — brand-new emulator account, full lifecycle to a rendered `/dashboard` (real blueprint, rules-enforced Firestore), dashboard hard-reload + logout/login all correct. A production / Play-device run is still the ideal final proof |
+| RC-1 | Genuine fresh non-sample new-user browser acceptance | Master SOT §8, §10.3; PRD §5 | DS-GATE07 | **ACCEPTED at emulator-hydration level (Step 12)** — brand-new emulator account, full lifecycle to a rendered `/dashboard` (real blueprint, rules-enforced Firestore), dashboard hard-reload + logout/login all correct. A production / Play-device run is still the ideal final proof, not a blocker |
 | RC-2 | Browser/device QA for affected primary surfaces (Daily Rhythm, Schumann, Memory Dashboard, Premium, locale switcher, Astro Today, onboarding) | Master SOT §8 | DS-R1, DS-E1, DS-M1, DS-PR1, DS-2C2, DS-A1 | **ADVANCED (Step 12 cont.)** — DS-2C3 unblocked. Verified in the emulator-hydration browser run: onboarding (setup→dashboard, reload, logout/login); Premium `/premium-bhumi` + `/upgrade` (DS-PR1 browser part); locale switcher visibility/persistence (R-34); `/setup` hard-nav as a completed user → `/dashboard`; `/insights` hard-nav → no bounce; `/dashboard/environment` Schumann "Data belum tersedia" with **no fabricated "Stabil"** (R-PRD-44); dashboard Soul Reflection rendered native en ("Warm hugs from Bhumi.") + ms ("Pelukan hangat daripada Bhumi."). **Residual (not release-critical):** DS-AI1-themes body prose in the LLM-down local fallback; DS-J4 streak section rendered *with seeded data*; DS-M1 Memory Dashboard, DS-R1 Daily Rhythm consumer UI (still un-built) |
 | RC-12 | `/setup` mount guard for an already-complete user | Master SOT §4.1 (residual trap, narrower trigger) | DS-2C3 | **CLOSED (Step 12 cont., 2026-09-03)** — adopted parallel-session work under Founder OPTION A: `isCompletedProfileForUser` helper; `app/setup/page.tsx` mount guard redirects a completed user to `/dashboard` and shows a retry card on read failure; `resolveActiveProfile` does an authoritative cold-context re-read and returns `isUnavailable` (fail-closed) instead of "missing"; `AccessGuard` + `InsightPageClient` reconcile before gating. Guard `build106-ds2c3-cold-nav.test.ts` (11) + `build106-authoritative-profile-gate` +4. Full emulator suite PASS=24/24; browser: `/setup` completed-user hard-nav → `/dashboard`, `/insights` hard-nav → no bounce |
-| RC-3 | FCM infrastructure live (backend sender, VAPID round-trip, native remote push, device delivery) | PRD §5 "FCM infrastructure live"; Master SOT §5 | DS-N1 | Needs authorized configuration + device test |
-| RC-4 | Memory Dashboard (view/edit/delete/export) functional | PRD §5 | DS-M1 (needs DS-I1 first) | UI implementation + browser |
-| RC-5 | Journal draft recovery + history/search functional (rendered) | PRD §5 | DS-J1/DS-J2/DS-J3 | UI implementation + browser |
-| RC-6 | Comfort Mode as first-class path functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
-| RC-7 | Adaptive check-in + returning-user behaviour functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
-| RC-8 | Security audit + Privacy audit passed; account deletion reconciled to full data inventory | PRD §5; Master SOT §5 | DS-P1 + a dedicated audit pass | Audit not yet run |
+| RC-3 | FCM infrastructure live (backend sender, VAPID round-trip, native remote push, device delivery) | PRD §5 "FCM infrastructure live"; Master SOT §5 | DS-N1 | **ACCEPTED_DEFERRED_NON_BLOCKING (§11.4)** — Build 105 had no notification system; Build 106 recovered id/en/ms copy + opt-in default + quiet hours + suppression + real-token-only registration + fail-closed persistence + SW + Android local scheduling (Step-8 suite, in manifest). Remote push delivery needs Founder-authorized external config (VAPID, backend deploy, Play) + device QA — outside this worktree. Net improvement over Build 105; no regression |
+| RC-4 | Memory Dashboard (view/edit/delete/export) functional | PRD §5 | DS-M1 (needs DS-I1 first) | **ACCEPTED_DEFERRED_NON_BLOCKING (§11.4)** — verified: `memoryCandidateRepository.upsertFromEntry` has **zero callers** in the runtime, so `journalMemoryCandidates/*` stays empty → no user memory to manage, no privacy exposure. Dashboard UI + the extraction call site (DS-J2) land together post-Build-106. **Re-open if `upsertFromEntry` is wired before DS-M1 ships** |
+| RC-5 | Journal draft recovery + history/search functional (rendered) | PRD §5 | DS-J1/DS-J2/DS-J3 | **ACCEPTED_DEFERRED_NON_BLOCKING (§11.4)** — verified: `app/journal/page.tsx` + `app/innerwork/journaling/page.tsx` are live and save (local + `journalRepository.saveEntry`) + load history at the Build 105 baseline. Build 106 recovered the full V5 data contracts (5 modes, CBT 8-field, per-mode draft, history/search/export functions). The V5 UI relocation is deferred; journaling is not broken |
+| RC-6 | Comfort Mode as first-class path functional (rendered) | PRD §5 | DS-R1 | **ACCEPTED_DEFERRED_NON_BLOCKING (§11.4)** — R-PRD-06 (Do Nothing valid) PRESERVED_VERIFIED at Build 105; R-PRD-14 (Comfort as first-class path) NEW_CONTRACT_VERIFIED (`lib/dailyRhythm/runtime.ts` + Step-8 suite). The rendered Comfort interaction state is DS-R1 consumer UI; Build 105 baseline dashboard + Do-Nothing path intact — no regression |
+| RC-7 | Adaptive check-in + returning-user behaviour functional (rendered) | PRD §5 | DS-R1 | **ACCEPTED_DEFERRED_NON_BLOCKING (§11.4)** — R-PRD-01/02/07/09 all NEW_CONTRACT_VERIFIED (`resolveOrientation`, 7→3 need options, evening-reflection window, no-guilt return copy; Step-8 suite). Rendered adaptive orientation/need-discovery/evening-reflection UI is DS-R1; Build 105 baseline check-in intact — no regression |
+| RC-8 | Security audit + Privacy audit passed; account deletion reconciled to full data inventory | PRD §5; Master SOT §5 | DS-P1 + a dedicated audit pass | **CLOSED (§11.4, 2026-09-03)** — audit run: auth PII-logging clean; `firestore.rules` unchanged from Build 105 (owner-isolation + `journalMemoryCandidates`/`fcmTokens` contracts pass in the release suite); per-entry privacy enforcement fail-closed (Step-8 + Persistence E2E). **Defect found + fixed:** `deleteUserDataCompletely` collection-name drift + 6 omitted per-user collections → sensitive wellness/emotional/journal-derived data survived account deletion. Fixed in `lib/firebase/service.ts`; regression test `build106-final-pre-release-gap-closure` (89 assertions, repo-vs-delete cross-check) in the manifest; emulator suite PASS=25/25. Residual DS-P1 entry-controls UI + external pen-test → ACCEPTED_DEFERRED_NON_BLOCKING |
 | RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **LOCAL LOGIC CLOSED + WRAPPER RENDERED (Step 12 cont.)** — Step 11 prompt locale/attribution contract + id/en/ms plumbing + native Bahasa Melayu synthesis/practice; Step 12 cont. adopted `mirrorDailyReflection` id/en/ms `MIRROR_COPY` + locale daypart, and `unifiedBlueprintSynthesis`/`localDailyGuidanceFallback` now propagate `language` (was collapsing to id). Emulator-hydration browser: Soul Reflection wrapper renders native en/ms, `crashed:false` (after the BCP47 `DashboardClient` fix). Remaining: **DS-AI1-themes** body-prose fragments in the LLM-down local fallback — per **D-V5-36** `ms → id` prose ratified, **not release-critical** |
 | RC-10 | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (secondary path) | new-user gate Invariant E | DS-2C1 | **CLOSED (Step 11)** — read failure propagates; guard + state-machine "I" step updated; full emulator suite PASS=23/23 |
 | RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **LOCAL LOGIC CLOSED (Step 12 cont.)** — Step 11 de-streaked `progressCalculationEngine`; Step 12 cont. adopted the matching de-streak in `lib/insights/createInsightProgress.ts` (the engine `/insights` renders): `consistencyScore` = frequency + active-days-in-30 + recent-7d (no consecutive term), stage on `activeDays30`, milestone "7 Hari Aktif", `streakDays` raw-metric only. Guard `build106-ds-j4-mood-trend-no-streak` 30 assertions; browser: `/insights` reachable, no bounce. Remaining (not release-critical): streak section rendered *with seeded activity data* |
@@ -403,6 +406,141 @@ RC-11 = local logic closed (RC-9 wrapper rendered); **RC-10 / RC-12 = CLOSED**; 
 unchanged; DS-AI1-themes = open residual (not release-critical per D-V5-36). No product-code
 change beyond the audited adoption + the one authorized regression fix; no version bump, build,
 deploy, publish, push, or production write.
+
+### 11.4 Final pre-release gap closure (2026-09-03) — `RELEASE_CRITICAL_GAPS_OPEN = 0`
+
+`AUDIT → ANALYZE → FIX only where required → VERIFY → REPORT`. Founder-directed disposition of
+RC-3..RC-8, the F-2 Daily Guidance ultimate-fallback finding, and every remaining `DS-*`.
+Build 106 is **product-continuity recovery**, not a feature-complete release: an item is a
+`RELEASE_BLOCKER` only if it is a real defect against canonical Build 106, a
+correctness/security/privacy issue, or a regression that should already work. Un-built canonical
+V5 surfaces that Build 105 also never shipped are **not** regressions.
+
+**RC-3 — FCM infrastructure live → ACCEPTED_DEFERRED_NON_BLOCKING.** Build 105 had no
+notification system (Master SOT §5). Build 106 recovered the client contract: id/en/ms copy,
+opt-in default, quiet hours, category suppression, **real-token-only** registration (no fake
+tokens), **fail-closed** persistence, service worker, **Android local scheduling** — Step-8
+contract suite passes and is in the release manifest. The missing piece — a trusted backend FCM
+sender/scheduler, VAPID web round-trip, native remote-push plugin, per-category UI, on-device
+delivery proof — needs Founder-authorized external configuration (VAPID keys, backend deploy,
+Play Console) and a physical device, all outside this worktree's authorization. Net improvement
+over Build 105; no regression.
+
+**RC-4 — Memory Dashboard functional → ACCEPTED_DEFERRED_NON_BLOCKING.** Build 105: missing
+(Master SOT §5). Build 106 recovered the full CRUD state machine
+(`confirm`/`correct`/`dismiss`/`deleteCandidate`) + pattern aggregator +
+`getActiveCandidates → memoryCompiler` wiring (`build106-memory-pipeline`). **Verified:**
+`memoryCandidateRepository.upsertFromEntry` (the only write path) has **zero callers** in
+`app/`, `lib/`, `components/` — memory-candidate extraction is not wired into any live save
+flow, so `journalMemoryCandidates/*` stays empty. There is no user memory to view/edit/delete
+and no privacy exposure. The dashboard UI (`app/journey/memory/page.tsx`, needs DS-I1) and the
+extraction call site (DS-J2) land together post-Build-106. **Re-open guard:** if a future change
+wires `upsertFromEntry` before DS-M1 ships, RC-4 becomes release-critical again.
+
+**RC-5 — Journal draft recovery + history/search functional → ACCEPTED_DEFERRED_NON_BLOCKING.**
+**Verified:** `app/journal/page.tsx` and `app/innerwork/journaling/page.tsx` are live client
+components that save (local `saveLocalJournalEntry` + cloud `journalRepository.saveEntry`) and
+load history (`loadLocalJournalEntries`) at the Build 105 baseline — journaling is functional.
+Build 106 recovered the canonical V5 data contracts: `JournalType` discriminator, 5 modes, CBT
+8-field payload, per-mode draft autosave/conflict, multi-entry history +
+`getEntriesByType`/`getJournalHistoryGroupedByWeek`, crisis scan + AI suppression
+(`build106-journal-contracts` + `v5-03-journaling-acceptance`). The V5 UI relocation
+(`app/wellness/journaling/page.tsx` + redirects + 30 s autosave wiring + rendered
+history/search/filter/export) is DS-J1/J2/J3, deferred. Journaling is not broken.
+
+**RC-6 — Comfort Mode as first-class path → ACCEPTED_DEFERRED_NON_BLOCKING.** R-PRD-06 ("Do
+Nothing is a valid completion") is `PRESERVED_VERIFIED` — Build 105 already correct
+(`availablePaths()` contains `do-nothing`, no mandatory completion). R-PRD-14 ("Comfort Mode as
+first-class path") is `NEW_CONTRACT_VERIFIED` — `lib/dailyRhythm/runtime.ts`
+(tired/overwhelmed/unknown → Comfort; notification policy suppresses non-return categories),
+Step-8 suite (63 assertions). The rendered Comfort interaction state is DS-R1 consumer UI; the
+Build 105 baseline dashboard + Do-Nothing path are intact — no regression.
+
+**RC-7 — Adaptive check-in + returning-user behaviour → ACCEPTED_DEFERRED_NON_BLOCKING.**
+R-PRD-01/02/07/09 are all `NEW_CONTRACT_VERIFIED` (`resolveOrientation`, `getNeedOptions` 7→3
+for familiar users, evening-reflection 18:00–21:59-local-and-only-after-journaling, no-guilt
+return-window copy; Step-8 suite). The rendered adaptive orientation / need-discovery /
+evening-reflection consumer UI is DS-R1, deferred. Build 105 baseline check-in is intact — no
+regression.
+
+**RC-8 — Security + Privacy audit + account deletion → CLOSED.** Audit executed this pass:
+
+- **Auth PII logging** — `grep` of `lib/auth/`, `context/AuthContext.tsx`, `app/login/` for raw
+  `email`/`uid` in `console.*` → clean. Step-8 safe diagnostics + the Step 12 (cont.)
+  `[USER DATA LOAD]` de-identification hold.
+- **Firestore rules** — `git diff 8fc3c23..HEAD -- firestore.rules` = empty. Owner-isolation +
+  `journalMemoryCandidates` / `fcmTokens` / `telemetry_events` contracts are covered by the
+  "Firestore owner isolation + production-preserved blocks" release suite (PASS) and
+  "Persistence E2E … cross-user denial" (PASS).
+- **Per-entry privacy (R-PRD-20)** — `lib/journal/privacy.ts` + repository/extraction enforcement
+  (`localOnly` rejected by the cloud repo; `excludeFromMemory` blocked before extraction),
+  Step-8 suite + Persistence E2E. The entry-level toggle **UI** is DS-P1 (deferred; enforcement
+  is already fail-closed).
+- **Account deletion — DEFECT FOUND + FIXED.** `firebaseService.deleteUserDataCompletely` used
+  drifted collection names (`meditationEntries`, `audioHealingEntries`, `healingMemory`,
+  `journeyData`, `weeklyReports`) and omitted `activities`, `dailyStates`,
+  `journalMemoryCandidates`, `wellnessAssessments`, `wellnessMappings`, `progressData` — so a
+  "permanent" account deletion left daily check-in states (emotional words / moods / wellness
+  snapshots), wellness assessments + mappings, healing progress, journey daily records, weekly
+  reflections, physical activities, journal-derived memory candidates, and progress data in
+  Firestore. Byte-identical to Build 105 (pre-existing), but a privacy-correctness defect and a
+  named Master SOT §5 Build 106 reconciliation item. **Fixed** (`lib/firebase/service.ts`): a
+  generic `deleteNestedEntries(parent, sub)` deleter now covers the canonical per-user schema
+  (nested subcollections for meditations / audioHealing / activities / dailyStates /
+  journeyDailyRecords / journalMemoryCandidates; `healingProgress` / `wellnessMappings` /
+  `progressData` direct docs; `weeklyReflections` / `wellnessAssessments` uid-scoped), with the
+  legacy aliases retained as labelled no-ops. The local-storage side is already covered by its
+  `key.includes(uid)` prefix sweep. Regression test
+  `tests/unit/build106-final-pre-release-gap-closure.test.ts` (89 assertions, incl. a
+  repo-collection-literal-vs-deletion-coverage cross-check) — in the manifest.
+
+Remaining RC-8 residual — the DS-P1 entry-controls **UI** and a formal external penetration
+test — is ACCEPTED_DEFERRED_NON_BLOCKING (enforcement is fail-closed; an external pen-test is
+outside this worktree).
+
+**F-2 — Daily Guidance malformed ultimate fallback → RESOLVED.** Reachability **confirmed**:
+`generateLocalDailyGuidance`'s outer catch **re-throws**, so when every AI provider fails and a
+deterministic narrative sub-generator throws, `runProviderCascade` returns `{ ok:false }` and
+`dailyGuidanceEngine.generateLanguageFace` routes to `generateFallbackFace`, which persisted
+`aiInsight: "Hari ini tentang ."` plus empty `soulReflectionText` / `dailyNoteText` /
+`journalPrompt` / `meditationSuggestion` — a record that passes `isCanonicalDailyGuidanceRecord`
+and renders. **Minimum correctness fix** (`lib/engines/dailyGuidanceEngine.ts`): a small id/en
+fallback copy block (`ms → id` per D-V5-36) fills those five fields with coherent, punctuation-
+terminated sentences; the malformed literal is removed. No architecture change — this is the
+deepest fallback (AI stack + deterministic generator both unavailable). Present verbatim in
+Build 105 → not a Build 106 regression, but a correctness defect → fixed per Founder
+instruction. Regression test: 89 assertions (behavioural id/en/ms + static reachability guards).
+
+**Every remaining `DS-*` reconciled:**
+
+| DS-* | Class | Note |
+|---|---|---|
+| DS-DC1, DS-I2, DS-2C1, DS-2C3 | **CLOSED** | done in Steps 6/7/11/12 cont. |
+| **DS-P1** (release-critical portion) | **CLOSED** | account-deletion inventory fixed + verified this pass. Entry-controls UI residual → deferred. |
+| DS-J1, DS-J2, DS-J3 | ACCEPTED_DEFERRED_NON_BLOCKING | V5 journaling UI relocation; journaling functional at Build 105 baseline (verified). |
+| DS-J4 | ACCEPTED_DEFERRED_NON_BLOCKING | both engines de-streaked; `/insights` no-bounce verified; residual = streak section rendered with seeded data. |
+| DS-I1 | ACCEPTED_DEFERRED_NON_BLOCKING | `useTranslation()` component migration; id/en/ms foundation + fallback + persistence + switcher verified (R-29..R-34 reconciled). |
+| DS-AI1 | ACCEPTED_DEFERRED_NON_BLOCKING | local logic closed + mirror wrapper rendered en/ms; residual DS-AI1-themes body prose. |
+| DS-AI1-themes | ACCEPTED_DEFERRED_NON_BLOCKING | ratified `ms → id` narrative prose under D-V5-36. |
+| DS-2C2 | ACCEPTED_DEFERRED_NON_BLOCKING | onboarding + cold hard-nav flows exercised in the emulator-hydration browser; residual = scripted Playwright + locale visible-copy round-trip (needs DS-I1). |
+| DS-M1 | ACCEPTED_DEFERRED_NON_BLOCKING | Memory Dashboard UI; extraction unwired → no data to manage, no exposure (verified). Re-open if `upsertFromEntry` is wired first. |
+| DS-M2, DS-A2 | ACCEPTED_DEFERRED_NON_BLOCKING | Founder decisions (dedicated Daily Note card; ratified large-cycle astro signals). |
+| DS-M3 | ACCEPTED_DEFERRED_NON_BLOCKING | weekly/monthly reflection synthesis/persistence/UI; decay + eligibility done; opt-in feature, never shipped-then-broken. |
+| DS-A1 | ACCEPTED_DEFERRED_NON_BLOCKING | R-36 astro consumer wiring; adapters recovered + typed; astro renders (`build106-astro-regressions`). |
+| DS-E1 | ACCEPTED_DEFERRED_NON_BLOCKING | `/dashboard/environment` honest-unavailable rendered PASS (no fabricated "Stabil", R-PRD-44); residual = fully-populated 3-layer render (needs geolocation + live Schumann source). |
+| DS-R1 | ACCEPTED_DEFERRED_NON_BLOCKING | Daily Rhythm consumer UI; all contracts NEW_CONTRACT_VERIFIED (Step-8 suite); Build 105 baseline dashboard intact. |
+| DS-N1 | ACCEPTED_DEFERRED_NON_BLOCKING | remote FCM delivery infra; external config + device; local scheduling works. |
+| DS-PR1 | ACCEPTED_DEFERRED_NON_BLOCKING | `/premium-bhumi` Rp25.000 + `/upgrade` neutral rendered; residual = real Play `formattedPrice` on an installed build (device / Play sandbox only). |
+| DS-GATE07 | ACCEPTED_DEFERRED_NON_BLOCKING | ACCEPTED at emulator-hydration (Step 12, Founder-accepted); production / Play-device run is the ideal final proof, not a blocker. |
+
+**Verification (final worktree):** `npx tsc --noEmit` **EXIT 0**; full Firestore/Auth emulator
+release suite **PASS=25 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine
+`passed=33 failed=0`); `build106-final-pre-release-gap-closure` 89 assertions EXIT 0.
+
+**`RELEASE_CRITICAL_GAPS_OPEN = 0`.** No `RELEASE_BLOCKER` remains. Step 13 (version bump /
+Build 106 artifact) may begin on **Founder approval**. No F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8
+work was done — those remain the post-Build-106 Daily Guidance roadmap (Step 12.5 audit §6); no
+new evidence proved any of them a release-critical defect.
 
 ---
 
