@@ -6,29 +6,30 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Continuity snapshot — final pre-release gap closure complete (2026-09-03)
+## Continuity snapshot — Step 13 complete: Build 106 local artifact built + verified (2026-09-03)
 
 ```text
-NEXT_PRIMARY_AGENT               = CLAUDE_CODE (primary; earlier Antigravity handoff superseded by Founder-directed continuation)
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12, Step 12 cont., final gap closure)
+NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13)
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (final-gap-closure docs commit newest); fix `29781d6` + test `2877b31`
-BUILD_106_PHASE                  = RECONCILED — awaiting Founder Step 13 approval
-BUILD_106_ARTIFACT               = DOES_NOT_EXIST
-BUILD_106_RELEASE_GATE           = CLOSED (opens on Founder Step 13 approval)
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (Step 13 docs commit newest); version bump = 0b55f99
+BUILD_106_PHASE                  = RECONCILED — local release artifact built + verified; production signing + Play upload out of scope
+BUILD_106_ARTIFACT               = bhumi-amartya-v5.0.6-build106-release-unsigned.aab (AAB, UNSIGNED) — sha256 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977, 27003050 bytes
+versionCode / versionName        = 106 / 5.0.6  (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
 RELEASE_CRITICAL_GAPS_OPEN       = 0
+BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — pending production signing + Play upload on the authorized release machine
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
-RC-2                            = ADVANCED (non-blocking) — correctness-critical rendered checks pass; residuals are un-built V5 UI (DS-M1 / DS-R1) + DS-J4 seeded-data + DS-AI1-themes prose
+RC-2                            = ADVANCED (non-blocking)
 RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliation Report §11.4)
-RC-8 / DS-P1                    = CLOSED — account-deletion inventory defect fixed + verified; auth / rules / privacy-enforcement audit clean
+RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
-F-2 (Daily Guidance ultimate fallback) = FIXED + tested (reachability confirmed; minimum correctness fix)
-DS-AI1-themes                   = ACCEPTED_DEFERRED_NON_BLOCKING (D-V5-36 `ms → id` prose ratified)
-NEXT_SAFE_ACTION                = Founder approval for Step 13 (version bump / Build 106 artifact). No agent may version bump / build / deploy / publish / push / write production data until then.
+F-2                            = FIXED + tested
+DEPLOY / PUBLISH / PLAY_UPLOAD / PRODUCTION_WRITE = NOT DONE (NOT APPROVED)
+NEXT_SAFE_ACTION                = Founder review of the Step 13 report + `BUILD_106_RELEASE_PROVENANCE.md`, then production signing + Play upload on the authorized release machine. No deploy / publish / Play upload / production write from this worktree.
 ```
 
-Operational snapshot: `BUILD_106_HANDOFF.md`.
+Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`. Operational snapshot: `BUILD_106_HANDOFF.md`.
 
 Step 12 cont. (close DS-2C3 + re-run RC-2 rendered verification): AUDIT → ANALYZE → FIX → VERIFY
 → REPORT. A parallel-session in-flight change closing DS-2C3 was found uncommitted in the
@@ -367,6 +368,40 @@ DS suites EXIT 0: `build106-ds2c3-cold-nav` 11, `build106-ds-ai1-ai-locale-attri
 **Evidence discipline:** no production read/write, no build artifact, no deploy/publish/push, no
 version bump. Ephemeral `.env.local` / `.next` / `.playwright-cli/` / debug logs removed; worktree
 clean apart from the three coherent commits.
+
+## Step 13 — Build 106 version bump + local release artifact (2026-09-03)
+
+`PREFLIGHT → VERSION → BUILD → VERIFY → SMOKE TEST → REPORT`. Founder-approved
+(`VERSION_BUMP` / `BUILD_106_ARTIFACT` / `LOCAL_RELEASE_BUILD` / `LOCAL_ARTIFACT_VERIFICATION` =
+APPROVED; `DEPLOY` / `PUBLISH` / `PLAY_STORE_UPLOAD` / `PRODUCTION_WRITE` = NOT APPROVED).
+Canonical record: **`BUILD_106_RELEASE_PROVENANCE.md`**.
+
+- **Version bump** (commit `0b55f99`): `versionCode 105 → 106`, `versionName "5.0.5" → "5.0.6"` in
+  `android/app/build.gradle` + `lib/config/buildInfo.ts` (`CURRENT_VERSION_*` / `CURRENT_BUILD_NUMBER`)
+  + `tests/unit/version-reconciliation.test.ts` (retargeted, stale-guard now rejects Build 105).
+  `RELEASE_NAME` → "BHUMI AMARTYA V5 BUILD 106". `version-reconciliation.test.ts` **20/20 PASS**.
+- **Build:** `next build` (`output: 'export'` → `out/`) **EXIT 0**; `guard-release-bundle.ts`
+  **✅ 0 violations**; `cap sync android` OK (9 plugins); `gradlew :app:bundleRelease` —
+  `:app:packageReleaseBundle` **succeeded** (AAB packaged), `:app:signReleaseBundle` **failed**
+  (no keystore — classified as an environment/credential limitation, NOT a Build 106 defect; see
+  Provenance §6).
+- **Artifact:** `bhumi-amartya-v5.0.6-build106-release-unsigned.aab` — Android App Bundle,
+  **unsigned** — **27,003,050 bytes** — sha256
+  **`9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977`**. Build path
+  `android/app/build/intermediates/intermediary_bundle/release/packageReleaseBundle/intermediary-bundle.aab`;
+  a stable copy is in the session scratchpad.
+- **Verify:** `tsc --noEmit` EXIT 0; full Firestore/Auth emulator release suite **PASS=25 FAIL=0
+  SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`); AAB `unzip -t` **no
+  errors**; packaged manifest = `com.bhumiamartya.app` / versionCode **106** / versionName
+  **5.0.6** / minSdk 24 / targetSdk 36 / MainActivity MAIN+LAUNCHER / no `.qa` / no `debuggable`;
+  AAB bundles the verified Build 106 web export + 9 Capacitor plugins + non-emulator config;
+  no new permissions vs Build 105; no `firestore.rules`/backend change to deploy.
+- **Smoke test:** device install/launch **not locally possible** (no keystore; cannot modify
+  signing or `google-services.json`). Static/structural smoke test performed — all pass
+  (Provenance §5).
+- **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing +
+  Play upload on the authorized release machine.** No deploy / publish / Play upload /
+  production write performed.
 
 ## Final pre-release gap closure (2026-09-03) — `RELEASE_CRITICAL_GAPS_OPEN = 0`
 

@@ -1,11 +1,11 @@
 # BHUMI AMARTYA — BUILD 106 FULL RECONCILIATION REPORT (R-PRD-01..46)
 
-Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.), §11.4 (final pre-release gap closure — `RELEASE_CRITICAL_GAPS_OPEN = 0`)
-Primary authority: `BUILD_106_MASTER_SOT.md` §7.10 / §10
-Execution ledger: `BUILD_106_RECOVERY_MATRIX.md`
-Date: 2026-09-02; last updated 2026-09-03 (§11.4)
+Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.), §11.4 (final pre-release gap closure — `RELEASE_CRITICAL_GAPS_OPEN = 0`), §11.5 (Step 13 — version bump + local artifact)
+Primary authority: `BUILD_106_MASTER_SOT.md` §7.10 / §7.13 / §10
+Execution ledger: `BUILD_106_RECOVERY_MATRIX.md` · Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`
+Date: 2026-09-02; last updated 2026-09-03 (§11.5)
 Branch: `recovery/build106-product-continuity`
-Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3/§11.4 at the Step 12 (cont.) + final-gap-closure commits
+Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3/§11.4 at the Step 12 (cont.) + final-gap-closure commits; §11.5 at the Step 13 version-bump commit `0b55f99`
 
 This report is the Step 10 deliverable: a full walk of every canonical requirement
 `R-PRD-01..46` and every deferred sub-step, assigning each an **accepted final reconciled
@@ -541,6 +541,28 @@ release suite **PASS=25 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine
 Build 106 artifact) may begin on **Founder approval**. No F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8
 work was done — those remain the post-Build-106 Daily Guidance roadmap (Step 12.5 audit §6); no
 new evidence proved any of them a release-critical defect.
+
+### 11.5 Step 13 — version bump + local release artifact (2026-09-03)
+
+Founder-approved. Canonical record: **`BUILD_106_RELEASE_PROVENANCE.md`**.
+
+- **Version bump** (commit `0b55f99`): versionCode **106**, versionName **5.0.6**, RELEASE_NAME
+  "BHUMI AMARTYA V5 BUILD 106" — `android/app/build.gradle` + `lib/config/buildInfo.ts` +
+  `tests/unit/version-reconciliation.test.ts` (20/20 PASS).
+- **Local release artifact:** `bhumi-amartya-v5.0.6-build106-release-unsigned.aab` — Android App
+  Bundle, **unsigned** (release variant; no local keystore) — 27,003,050 bytes — sha256
+  `9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977`.
+- **Build/verify:** `next build` EXIT 0; release security guard 0 violations; `cap sync` OK;
+  `gradlew :app:bundleRelease` packaged the AAB then failed only at `signReleaseBundle` (no
+  keystore — environment/credential limitation, **not** a Build 106 defect); `tsc` EXIT 0; full
+  emulator release suite PASS=25/25; AAB zip integrity OK; packaged manifest carries
+  `com.bhumiamartya.app` / 106 / 5.0.6 / minSdk 24 / targetSdk 36, no `.qa`, no `debuggable`; no
+  new permissions vs Build 105; no `firestore.rules` / backend change to deploy.
+- **Smoke test:** device install not locally possible (no keystore; cannot touch signing /
+  `google-services.json`); static/structural smoke test performed — all pass.
+- **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing +
+  Play upload on the authorized release machine.** No deploy / publish / Play upload / production
+  write.
 
 ---
 

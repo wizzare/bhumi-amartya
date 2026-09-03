@@ -1,29 +1,32 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: **RECONCILED — `RELEASE_CRITICAL_GAPS_OPEN = 0`. Awaiting Founder Step 13 approval.**
-Primary agent: CLAUDE CODE (Founder-directed continuation; the earlier Antigravity handoff is superseded).
+Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — local release artifact built + verified. Production signing + Play upload are the only remaining steps (out of scope here).**
+Primary agent: CLAUDE CODE.
 Date: 2026-09-03
 
 ```text
 NEXT_PRIMARY_AGENT               = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–12, Step 12 cont., final gap closure)
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the final-gap-closure docs commit; source fix `29781d6`, test `2877b31`
-BUILD_106_PHASE                  = RECONCILED — awaiting Founder Step 13 approval
-BUILD_106_ARTIFACT              = DOES_NOT_EXIST
-BUILD_106_RELEASE_GATE          = CLOSED (opens on Founder Step 13 approval)
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the Step 13 docs commit; version bump `0b55f99`
+BUILD_106_PHASE                  = RECONCILED — local release artifact built + verified; production signing + Play upload out of scope
+BUILD_106_ARTIFACT              = bhumi-amartya-v5.0.6-build106-release-unsigned.aab (AAB, UNSIGNED) — sha256 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977, 27003050 bytes
+versionCode / versionName        = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
 RELEASE_CRITICAL_GAPS_OPEN       = 0
+BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — pending production signing + Play upload on the authorized release machine
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
-RC-2                            = ADVANCED (non-blocking) — correctness-critical rendered checks pass; residual = un-built V5 UI (DS-M1 / DS-R1), DS-J4 seeded-data, DS-AI1-themes prose
+RC-2                            = ADVANCED (non-blocking)
 RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliation Report §11.4)
-RC-8 / DS-P1                    = CLOSED — account-deletion inventory defect fixed + verified; auth / rules / privacy-enforcement audit clean
+RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
-F-2 (Daily Guidance ultimate fallback) = FIXED + tested (reachability confirmed; minimum correctness fix)
-DS-AI1-themes                   = ACCEPTED_DEFERRED_NON_BLOCKING (D-V5-36 `ms → id` prose ratified)
-NEXT_SAFE_ACTION                = Founder approval for Step 13 (version bump / Build 106 artifact). Until then: no version bump / build / deploy / publish / push / production write.
+F-2                            = FIXED + tested
+DEPLOY / PUBLISH / PLAY_UPLOAD / PRODUCTION_WRITE = NOT DONE (NOT APPROVED)
+NEXT_SAFE_ACTION                = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md; then production signing + Play upload on the authorized release machine. No deploy / publish / Play upload / production write from this worktree.
 ```
+
+Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`.
 
 ## Final pre-release gap closure — what Claude Code did (2026-09-03)
 
@@ -244,45 +247,69 @@ CLOSED / ACCEPTED_DEFERRED_NON_BLOCKING / RELEASE_BLOCKER). **Zero RELEASE_BLOCK
 No production read/write, build artifact, deploy, publish, push, or version bump occurred in
 Steps 9–12 (cont.).
 
-## Continuation boundary — Step 13 gate
+## Step 13 — Build 106 version bump + local release artifact (2026-09-03)
 
-Before any edit:
+`PREFLIGHT → VERSION → BUILD → VERIFY → SMOKE TEST → REPORT`. Founder-approved. Canonical record:
+**`BUILD_106_RELEASE_PROVENANCE.md`**.
 
-1. Verify `git branch --show-current` = `recovery/build106-product-continuity`,
-   `git rev-parse HEAD` = the final-gap-closure docs commit (this file), `git status --short` = clean.
-2. Read the canonical Build 106 files in the order above (+ `BUILD_106_RECONCILIATION_REPORT.md`
-   §11.1 / §11.2 / §11.3 / **§11.4**).
-3. Do **not** mutate the forensic worktree `C:\tmp\bhumi-build83-access-hotfix`.
+- **Version bump** (commit `0b55f99`): versionCode **106**, versionName **5.0.6**, RELEASE_NAME
+  "BHUMI AMARTYA V5 BUILD 106". `android/app/build.gradle` + `lib/config/buildInfo.ts` +
+  `tests/unit/version-reconciliation.test.ts` (20/20 PASS). Mirrors the Build 105 prep-commit surface.
+- **Build:** `next build` (`output:'export'` → `out/`) EXIT 0; `guard-release-bundle.ts` 0 violations;
+  `cap sync android` OK (9 plugins); `gradlew :app:bundleRelease` — `:app:packageReleaseBundle`
+  **succeeded**, `:app:signReleaseBundle` **failed** (no keystore — environment/credential
+  limitation, **not** a Build 106 defect; Provenance §6).
+- **Artifact:** `bhumi-amartya-v5.0.6-build106-release-unsigned.aab` — Android App Bundle,
+  **unsigned** — **27,003,050 bytes** — sha256
+  **`9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977`**. Build path
+  `android/app/build/intermediates/intermediary_bundle/release/packageReleaseBundle/intermediary-bundle.aab`;
+  stable copy in the session scratchpad.
+- **Verify:** `tsc --noEmit` EXIT 0; full Firestore/Auth emulator release suite **PASS=25 FAIL=0
+  SKIPPED=0** `RELEASE_TESTS_PASS`; AAB `unzip -t` no errors; packaged manifest =
+  `com.bhumiamartya.app` / versionCode **106** / versionName **5.0.6** / minSdk 24 / targetSdk 36 /
+  MainActivity MAIN+LAUNCHER / no `.qa` / no `debuggable`; AAB bundles the verified Build 106 web
+  export + 9 plugins + non-emulator config; no new permissions vs Build 105; no
+  `firestore.rules` / backend change to deploy.
+- **Smoke test:** device install/launch **not locally possible** (no keystore; cannot modify
+  signing or `google-services.json`) — static/structural smoke test performed, all pass.
+- **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing +
+  Play upload on the authorized release machine.** No deploy / publish / Play upload / production
+  write performed.
 
-State: **`RELEASE_CRITICAL_GAPS_OPEN = 0`.** All RC-1..RC-12 are CLOSED or Founder-dispositioned
-**ACCEPTED_DEFERRED_NON_BLOCKING** (§11.4); every `DS-*` is reconciled with **zero
-RELEASE_BLOCKER**. Master SOT §8 gates: 46/46 reconciled; genuine new-user lifecycle passes
-(emulator-hydration, Founder-accepted); late-bootstrap race has an executed regression test;
-sample/audit not used as onboarding proof; recovered-module tests pass; Firestore
-owner-isolation passes; affected primary surfaces browser-QA'd; no provenance conflict open.
-**The one remaining §8 gate is "Founder explicitly approves release/versioning."**
+## Continuation boundary — production signing + Play upload
 
-Next:
+Before any edit: verify branch `recovery/build106-product-continuity`, `git rev-parse HEAD` = the
+Step 13 docs commit (this file), `git status --short` clean; read the canonical Build 106 files in
+the order above (+ Reconciliation Report §11.1–§11.5 + `BUILD_106_RELEASE_PROVENANCE.md`); do not
+mutate the forensic worktree `C:\tmp\bhumi-build83-access-hotfix`.
 
-4. **Step 13 — version bump / Build 106 artifact — on Founder approval only.** When approved:
-   coherent `versionName` / `versionCode` bump, AAB/APK build with signing evidence, regression
-   results, Firestore/backend deploy evidence if any, then the release provenance record. Until
-   the Founder says so: **no version bump, build, deploy, publish, push, or production write.**
-5. Post-Build-106 roadmap (NOT Build 106): F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8 (Step 12.5
-   audit §6); the DS-* ACCEPTED_DEFERRED_NON_BLOCKING items (journaling V5 UI, Memory Dashboard,
-   Daily Rhythm consumer UI, remote FCM infra, DS-AI1-themes, DS-P1 entry-controls UI + external
-   pen-test, DS-I1 component migration, DS-2C2 Playwright).
+State: **`RELEASE_CRITICAL_GAPS_OPEN = 0`; version 106 / 5.0.6; local unsigned release AAB built
+and verified.** Master SOT §8 gates all satisfied (46/46 reconciled; genuine new-user lifecycle
+accepted at emulator-hydration; race regression test executed; recovered-module + owner-isolation
+tests pass; primary surfaces browser-QA'd; no provenance conflict; Founder approved release
+creation) **except** the production-signed-artifact + device evidence, which require the Play
+upload key and are done on the authorized release machine.
+
+Next (on the release machine, Founder-directed, NOT from this worktree):
+
+1. **Production signing** — build `:app:bundleRelease` with `BHUMI_RELEASE_STORE_FILE` /
+   `_STORE_PASSWORD` / `_KEY_ALIAS` / `_KEY_PASSWORD` (or `android/keystore.properties`) present →
+   signed `app-release.aab`. Re-hash; keep the mapping file. Never commit signing secrets.
+2. **Device smoke test** on the signed build (or a debug build with a `.qa` `google-services.json`
+   client) — install, launch, onboarding → dashboard, Premium screen, locale switcher.
+3. **Play Console upload** to Internal Testing — Founder action; `PLAY_STORE_UPLOAD` is separately
+   gated.
+4. **DS-GATE07 / RC-1** — a production / Play-device genuine-new-user acceptance run is the ideal
+   final proof (already accepted at emulator-hydration; not a blocker).
+5. Post-Build-106 roadmap (NOT Build 106): F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8 (Step 12.5 §6);
+   the DS-* ACCEPTED_DEFERRED_NON_BLOCKING items.
 6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
    save flow before DS-M1 ships, RC-4 becomes release-critical again.
-7. Preserve all Step 1–12 (cont.) + final-gap-closure work. Do not silently promote any deferred
-   gate to `PASS`. `AUDIT → ANALYZE → FIX → VERIFY → REPORT`; update the matrix, reconciliation
-   report, and this handoff after each pass; end every Founder-facing report with
-   `STOP AND WAIT FOR FOUNDER REVIEW`.
 
-`NEXT_SAFE_ACTION = Founder approval for Step 13 (version bump / Build 106 artifact)`
+`NEXT_SAFE_ACTION = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md; then production signing + Play upload on the authorized release machine`
 `NEXT_PRIMARY_AGENT = CLAUDE_CODE`
 `RELEASE_CRITICAL_GAPS_OPEN = 0`
 
-`BUILD_106_RECOVERY_IN_PROGRESS` (reconciled; awaiting Founder Step 13 approval)
+`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` (pending production signing + Play upload)
 
 STOP AND WAIT FOR FOUNDER REVIEW
