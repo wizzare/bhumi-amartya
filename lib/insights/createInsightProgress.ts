@@ -33,6 +33,7 @@ export type ProgressData = {
   totalMeditationEntries: number;
   totalAudioHealingEntries: number;
   streakDays: number;
+  activeDays30: number;
   consistencyScore: number;
   currentStage: HealingStage;
   milestones: ProgressMilestone[];
@@ -94,7 +95,21 @@ function calculateStreak(entries: UnknownRecord[]): number {
   return streak;
 }
 
-function calculateConsistencyScore(entries: UnknownRecord[], streak: number): number {
+function calculateActiveDays30(entries: UnknownRecord[]): number {
+  const today = new Date();
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(today.getDate() - 29);
+  const earliest = thirtyDaysAgo.toISOString().slice(0, 10);
+  const latest = today.toISOString().slice(0, 10);
+  return new Set(
+    entries
+      .map((entry) => parseDate(entry.date) ?? parseDate(entry.createdAt))
+      .filter((item): item is string => Boolean(item))
+      .filter((day) => day >= earliest && day <= latest),
+  ).size;
+}
+
+function calculateConsistencyScore(entries: UnknownRecord[], activeDays30: number): number {
   const today = new Date();
   const sevenDaysAgo = new Date(today);
   sevenDaysAgo.setDate(today.getDate() - 6);
@@ -105,16 +120,16 @@ function calculateConsistencyScore(entries: UnknownRecord[], streak: number): nu
       .filter((day) => day >= sevenDaysAgo.toISOString().slice(0, 10)),
   );
 
-  const totalActivityScore = Math.min(50, Math.round((entries.length / 30) * 50));
-  const streakScore = Math.min(30, streak * 3);
-  const recentScore = Math.min(20, Math.round((recentDays.size / 7) * 20));
+  const totalActivityScore = Math.min(30, Math.round((entries.length / 30) * 30));
+  const activeDaysScore = Math.min(40, Math.round((activeDays30 / 30) * 40));
+  const recentScore = Math.min(30, Math.round((recentDays.size / 7) * 30));
 
-  return Math.max(0, Math.min(100, totalActivityScore + streakScore + recentScore));
+  return Math.max(0, Math.min(100, totalActivityScore + activeDaysScore + recentScore));
 }
 
-function determineStage(totalActivities: number, streak: number, emotionalCount: number): HealingStage {
-  if (totalActivities >= 45 && streak >= 10) return "Alignment";
-  if (totalActivities >= 30 && streak >= 6) return "Integration";
+function determineStage(totalActivities: number, activeDays30: number, emotionalCount: number): HealingStage {
+  if (totalActivities >= 45 && activeDays30 >= 10) return "Alignment";
+  if (totalActivities >= 30 && activeDays30 >= 6) return "Integration";
   if (totalActivities >= 18) return "Rebuilding";
   if (totalActivities >= 10 && emotionalCount >= 2) return "Release";
   if (totalActivities >= 4) return "Acceptance";
@@ -162,6 +177,7 @@ export function createProgressData(input: {
   const { journalEntries, meditationEntries, audioHealingEntries, compiledInnerwork } = input;
   const allEntries = [...journalEntries, ...meditationEntries, ...audioHealingEntries];
   const streakDays = calculateStreak(allEntries);
+  const activeDays30 = calculateActiveDays30(allEntries);
   const emotionalStates = countBy(allEntries, "emotionalState")
     .slice(0, 5)
     .map((item) => ({ value: item.key, frequency: item.count }));
@@ -169,13 +185,13 @@ export function createProgressData(input: {
     .slice(0, 5)
     .map((item) => ({ value: item.key, frequency: item.count }));
   const dominantThemes = calculateThemeTrends(allEntries);
-  const consistencyScore = calculateConsistencyScore(allEntries, streakDays);
-  const currentStage = determineStage(allEntries.length, streakDays, emotionalStates.length);
+  const consistencyScore = calculateConsistencyScore(allEntries, activeDays30);
+  const currentStage = determineStage(allEntries.length, activeDays30, emotionalStates.length);
   const milestones: ProgressMilestone[] = [
     { label: "Penulis Pertama", unlocked: journalEntries.length >= 1 },
     { label: "Meditasi Pertama", unlocked: meditationEntries.length >= 1 },
     { label: "Audio Healing Pertama", unlocked: audioHealingEntries.length >= 1 },
-    { label: "7 Hari Bertumbuh", unlocked: streakDays >= 7 },
+    { label: "7 Hari Aktif", unlocked: activeDays30 >= 7 },
     { label: "30 Refleksi", unlocked: journalEntries.length >= 30 },
     { label: "10 Sesi Meditasi", unlocked: meditationEntries.length >= 10 },
     { label: "10 Sesi Audio", unlocked: audioHealingEntries.length >= 10 },
@@ -187,6 +203,7 @@ export function createProgressData(input: {
     totalMeditationEntries: meditationEntries.length,
     totalAudioHealingEntries: audioHealingEntries.length,
     streakDays,
+    activeDays30,
     consistencyScore,
     currentStage,
     milestones,

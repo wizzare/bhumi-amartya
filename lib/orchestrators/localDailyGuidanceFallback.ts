@@ -521,6 +521,9 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
     });
   } catch (err) {
     synthesis = {
+      // Preserve locale even when blueprint synthesis itself is unavailable;
+      // downstream reflection generators must not silently collapse to id.
+      language: safeInput.language,
       blueprintSummary: safeInput.language === "en"
         ? "Today is a day for steady progress and gentle self-care."
         : "Hari ini adalah hari untuk kemajuan yang stabil dan perawatan diri yang lembut.",

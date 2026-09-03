@@ -15,7 +15,8 @@ import {
 import { calculateHumanDesignTypeFromBirthData } from "@/lib/humandesign/calculateHumanDesignType";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
-import { verifySetupPersisted } from "@/lib/auth/authoritativeProfileGate";
+import { isCompletedProfileForUser, verifySetupPersisted } from "@/lib/auth/authoritativeProfileGate";
+import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
 import { Timestamp } from "firebase/firestore";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
@@ -49,6 +50,10 @@ export default function SetupPage() {
   const t = translations[language];
   const auth = useAuth();
   const user = auth?.user;
+  const authRef = useRef(auth);
+  useEffect(() => {
+    authRef.current = auth;
+  }, [auth]);
 
   // P1 AUDIT BYPASS (Dev Only) — consistent with ProtectedRoute
   const [devUser, setDevUser] = useState<{ uid: string; email: string; displayName: string } | null>(null);
@@ -95,6 +100,8 @@ export default function SetupPage() {
   const [preferredLanguage, setPreferredLanguage] = useState<"id" | "en" | "ms">(language);
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mountGuard, setMountGuard] = useState<"checking" | "ready" | "redirecting" | "unavailable">("checking");
+  const [mountGuardAttempt, setMountGuardAttempt] = useState(0);
 
   const [debug, setDebug] = useState<SetupDebugState>({
     authUid: null,
@@ -106,6 +113,53 @@ export default function SetupPage() {
   });
 
   const initializedRef = useRef(false);
+  const mountGuardReconciledUidRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const currentAuth = authRef.current;
+    if (devUser) {
+      setMountGuard("ready");
+      return;
+    }
+    if (!currentAuth?.authStateResolved || currentAuth.authLoading || currentAuth.profileLoading) {
+      setMountGuard("checking");
+      return;
+    }
+    if (!user) {
+      setMountGuard("ready");
+      return;
+    }
+    if (isCompletedProfileForUser(user.uid, currentAuth.userProfile)) {
+      setMountGuard("redirecting");
+      router.replace("/dashboard");
+      return;
+    }
+    if (mountGuardReconciledUidRef.current === user.uid) {
+      setMountGuard("ready");
+      return;
+    }
+
+    let cancelled = false;
+    mountGuardReconciledUidRef.current = user.uid;
+    setMountGuard("checking");
+    void resolveActiveProfile(currentAuth).then((resolved) => {
+      if (cancelled || resolved.isLoading) return;
+      if (resolved.isUnavailable) {
+        setMountGuard("unavailable");
+        return;
+      }
+      if (isCompletedProfileForUser(user.uid, resolved.profile)) {
+        setMountGuard("redirecting");
+        router.replace("/dashboard");
+        return;
+      }
+      setMountGuard("ready");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth?.authLoading, auth?.authStateResolved, auth?.userProfile, devUser, mountGuardAttempt, router, user]);
 
   useEffect(() => {
     if (effectiveUser && !initializedRef.current) {
@@ -361,6 +415,34 @@ export default function SetupPage() {
       setLoading(false);
     }
   };
+
+  if (mountGuard === "checking" || mountGuard === "redirecting") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
+        <p className="text-sm text-[#7B8776]">Menyelaraskan profil...</p>
+      </main>
+    );
+  }
+
+  if (mountGuard === "unavailable") {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
+        <div className="bhumi-card w-full max-w-md p-8 text-center">
+          <p className="text-sm text-[#7B8776] mb-6">Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.</p>
+          <button
+            type="button"
+            onClick={() => {
+              mountGuardReconciledUidRef.current = null;
+              setMountGuardAttempt((attempt) => attempt + 1);
+            }}
+            className="bhumi-button w-full"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (!effectiveUser) {
     return (

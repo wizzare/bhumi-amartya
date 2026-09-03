@@ -18,6 +18,7 @@ import { safetyRepository, TrustedContact } from "@/lib/repositories/safetyRepos
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
+import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { reconcileCachedProfileWithServer } from "@/lib/auth/authoritativeProfileGate";
@@ -104,6 +105,10 @@ function withCanonicalDailyConclusion(
     timezone,
     referenceDate: new Date(`${localDateKey}T12:00:00.000Z`),
   });
+  const locale = String(profile.language ?? "id").toLowerCase().split("-")[0];
+  const localizedSoulReflection = locale === "en" || locale === "ms"
+    ? guidance.soulReflectionText?.trim() || catatanGuidance.dailyConclusion?.text
+    : catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText;
 
   return {
     ...guidance,
@@ -112,7 +117,7 @@ function withCanonicalDailyConclusion(
     dailyConclusion: catatanGuidance.dailyConclusion,
     dailyNarrativeParagraphs: catatanGuidance.dailyNarrativeParagraphs,
     dailyNoteText: catatanGuidance.dailyNoteText,
-    soulReflectionText: catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText,
+    soulReflectionText: localizedSoulReflection,
     categories: catatanGuidance.categories ?? guidance.categories,
     dailySynthesisSeed: catatanGuidance.dailySynthesisSeed,
   };
@@ -138,7 +143,15 @@ export function DashboardClient() {
   const [weeklyGuidance, setWeeklyGuidance] = useState<WeeklyGuidance | null>(null);
     const [appNow, setAppNow] = useState(() => new Date());
 
-  const language = (profile?.language || "id") as "id" | "en";
+  // `profile.language` may be a BCP47 tag ("en-US" / "ms-MY") after the Step-3
+  // switcher persists a normalized locale; `translations` is keyed by the short
+  // code, so resolve it here or `translations[tag]` is undefined and the render
+  // crashes (BUILD_106_REGRESSION, RC-2 rendered verification, Step 12).
+  const language = getDictionaryKey(profile?.language ?? "id");
+  // DS-I1 owns widening the remaining legacy component props. Until then,
+  // Malay uses the ratified Indonesian UI-copy fallback while generated prose
+  // and the mirror wrapper retain the user's true locale.
+  const legacyUiLanguage: "id" | "en" = language === "en" ? "en" : "id";
   const t = translations[language];
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
@@ -148,6 +161,7 @@ export function DashboardClient() {
     userName: profile?.fullName || profile?.displayName || profile?.name,
     now: appNow,
     timezone: appTimezone,
+    language,
     loading: dgLoading,
     error: dgError,
   });
@@ -223,6 +237,12 @@ export function DashboardClient() {
 
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    const profileLanguage = String(p?.language || p?.profile?.language || "id").toLowerCase();
+    const guidanceLanguage: "id" | "en" | "ms" = profileLanguage.startsWith("en")
+      ? "en"
+      : profileLanguage.startsWith("ms")
+        ? "ms"
+        : "id";
     const today = getLocalDateKey(appNow, timezone);
     const envWindowKey = getEnvironmentWindowKey(appNow, today);
     const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}`;
@@ -412,7 +432,7 @@ export function DashboardClient() {
       }
 
       const payload = {
-        uid, date: today, localDateKey: today, language, profile: p, blueprint: b,
+        uid, date: today, localDateKey: today, language: guidanceLanguage, profile: p, blueprint: b,
         currentSky: sky as any,
         natalHouses: b.astrology?.houses || null,
         dailyState: existingDailyState,
@@ -491,7 +511,7 @@ export function DashboardClient() {
             previousProgressSummary: "Local fallback",
             previousGuidanceSummaries: [],
           },
-          language: language || "id",
+          language: guidanceLanguage,
           generatedAt: new Date().toISOString(),
         };
 
@@ -545,7 +565,7 @@ export function DashboardClient() {
             arcanaCenter: b?.destinyMatrix?.center || 0,
             rawBlueprint: b as Record<string, unknown> | null,
             unifiedBlueprint: buildUnifiedBlueprintSynthesis({
-              language: p?.profile?.language || p?.language || "id",
+              language: p?.language || p?.profile?.language || "id",
               profile: p,
               blueprint: b,
             }),
@@ -820,7 +840,7 @@ export function DashboardClient() {
 
       {/* ...existing code... */}
 
-      <DashboardHeader userName={profile.fullName} language={language} />
+      <DashboardHeader userName={profile.fullName} language={legacyUiLanguage} />
 
       <PendingHdRecoveryBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 
@@ -828,7 +848,7 @@ export function DashboardClient() {
         <SafetyActionCard
           state={safetyState}
           trustedContact={trustedContact}
-          language={language}
+          language={legacyUiLanguage}
           onDismiss={async () => {
             if (auth?.user?.uid) {
               const nextState = { ...safetyState, isSafetyMode: false };
@@ -844,11 +864,11 @@ export function DashboardClient() {
         badge={profile.guardianBadge === "core_guardian" ? "core_guardian" : "guardian"}
         tier={profile.recognitionTier === "FOUNDER" || profile.recognitionTier === "CORE_GUARDIAN" ? profile.recognitionTier : "GUARDIAN"}
         recognitionDate={profile.recognitionDate}
-        language={language}
+        language={legacyUiLanguage}
       />
 
       <SoulReflectionCard
-        language={language}
+        language={legacyUiLanguage}
         reflection={visibleSoulReflection}
         loading={!visibleSoulReflection}
       />
@@ -884,7 +904,7 @@ export function DashboardClient() {
 
       <WeeklyGuidanceCard guidance={weeklyGuidance} />
 
-      <DailyUserFlowGuide language={language} />
+      <DailyUserFlowGuide language={legacyUiLanguage} />
 
       <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 

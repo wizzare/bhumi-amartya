@@ -12,6 +12,50 @@ export type MirrorDailyReflection = {
   synthesisFingerprint: string | null;
 };
 
+export type MirrorDailyLanguage = "id" | "en" | "ms";
+
+const MIRROR_COPY: Record<MirrorDailyLanguage, {
+  error: string;
+  unavailable: string;
+  greeting: (name: string, daypart: string) => string;
+  signoff: string;
+}> = {
+  id: {
+    error: "Refleksi Jiwa belum berhasil dibuka. Silakan muat ulang halaman ini sebentar lagi.",
+    unavailable: "Refleksi Jiwa hari ini belum tersedia karena Kesimpulan Hari Ini belum selesai disusun.",
+    greeting: (name, daypart) => `Halo, ${name}, bagaimana kabarmu ${daypart} ini.`,
+    signoff: "Semoga menjadi petunjuk bagi kamu.\nPeluk hangat dari Bhumi.",
+  },
+  en: {
+    error: "Soul Reflection could not be opened. Please reload this page in a moment.",
+    unavailable: "Today's Soul Reflection is not available because Today's Conclusion has not been completed.",
+    greeting: (name, daypart) => `Hello, ${name}. How are you this ${daypart}?`,
+    signoff: "May this offer you a gentle direction.\nWarm hugs from Bhumi.",
+  },
+  ms: {
+    error: "Refleksi Jiwa belum dapat dibuka. Sila muat semula halaman ini sebentar lagi.",
+    unavailable: "Refleksi Jiwa hari ini belum tersedia kerana Kesimpulan Hari Ini belum selesai disusun.",
+    greeting: (name, daypart) => `Hai, ${name}. Apa khabar pada ${daypart} ini?`,
+    signoff: "Semoga ini menjadi petunjuk yang lembut untukmu.\nPelukan hangat daripada Bhumi.",
+  },
+};
+
+function normalizeMirrorLanguage(value: unknown): MirrorDailyLanguage {
+  const short = String(value ?? "id").toLowerCase().split("-")[0];
+  return short === "en" || short === "ms" ? short : "id";
+}
+
+function getLocalizedDaypart(date: Date, timezone: string, language: MirrorDailyLanguage): string {
+  const idDaypart = getMirrorDaypart(date, timezone);
+  if (language === "en") {
+    return ({ "dini hari": "early morning", pagi: "morning", siang: "afternoon", sore: "late afternoon", malam: "evening" } as const)[idDaypart];
+  }
+  if (language === "ms") {
+    return ({ "dini hari": "awal pagi", pagi: "pagi", siang: "tengah hari", sore: "petang", malam: "malam" } as const)[idDaypart];
+  }
+  return idDaypart;
+}
+
 export function getMirrorDaypart(date: Date, timezone: string): "dini hari" | "pagi" | "siang" | "sore" | "malam" {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: timezone,
@@ -39,6 +83,7 @@ export function buildMirrorDailyReflection({
   userName,
   now,
   timezone,
+  language = "id",
   loading = false,
   error = null,
 }: {
@@ -46,9 +91,12 @@ export function buildMirrorDailyReflection({
   userName: unknown;
   now: Date;
   timezone: string;
+  language?: MirrorDailyLanguage | string;
   loading?: boolean;
   error?: string | null;
 }): MirrorDailyReflection {
+  const locale = normalizeMirrorLanguage(language);
+  const copy = MIRROR_COPY[locale];
   if (loading) {
     return {
       state: "loading",
@@ -63,7 +111,7 @@ export function buildMirrorDailyReflection({
   if (error) {
     return {
       state: "error",
-      text: "Refleksi Jiwa belum berhasil dibuka. Silakan muat ulang halaman ini sebentar lagi.",
+      text: copy.error,
       dailyConclusionText: null,
       localDateKey: null,
       timezone,
@@ -78,7 +126,7 @@ export function buildMirrorDailyReflection({
   if (guidance?.dailySynthesisState === "unavailable") {
     return {
       state: "unavailable",
-      text: "Refleksi Jiwa hari ini belum tersedia karena Kesimpulan Hari Ini belum selesai disusun.",
+      text: copy.unavailable,
       dailyConclusionText: null,
       localDateKey: guidance.localDateKey ?? guidance.date ?? null,
       timezone,
@@ -90,7 +138,7 @@ export function buildMirrorDailyReflection({
   if (!contract?.dailyConclusion.text) {
     return {
       state: "unavailable",
-      text: "Refleksi Jiwa hari ini belum tersedia karena Kesimpulan Hari Ini belum selesai disusun.",
+      text: copy.unavailable,
       dailyConclusionText: null,
       localDateKey: guidance?.localDateKey ?? guidance?.date ?? null,
       timezone,
@@ -99,11 +147,14 @@ export function buildMirrorDailyReflection({
   }
 
   const displayName = safeMirrorDisplayName(userName);
-  const daypart = getMirrorDaypart(now, contract.timezone || timezone);
+  const daypart = getLocalizedDaypart(now, contract.timezone || timezone, locale);
+  const reflectionText = locale === "id"
+    ? contract.dailyConclusion.text
+    : guidance?.soulReflectionText?.trim() || contract.dailyConclusion.text;
   const text = [
-    `Halo, ${displayName}, bagaimana kabarmu ${daypart} ini.`,
-    contract.dailyConclusion.text,
-    "Semoga menjadi petunjuk bagi kamu.\nPeluk hangat dari Bhumi.",
+    copy.greeting(displayName, daypart),
+    reflectionText,
+    copy.signoff,
   ].join("\n\n");
 
   return {

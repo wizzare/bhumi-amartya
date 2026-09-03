@@ -193,6 +193,8 @@ export type ProgressTone = {
 };
 
 export type UnifiedBlueprintSynthesis = {
+  /** Preserve the caller locale for downstream deterministic narrative engines. */
+  language: "id" | "en" | "ms";
   blueprintSummary: string;
   coreNeeds: string[];
   practiceThemes: {
@@ -903,6 +905,7 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
   });
 
   return {
+    language: input.language,
     blueprintSummary,
     coreNeeds,
     practiceThemes: {

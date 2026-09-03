@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { APP_MODE } from "@/lib/config/appMode";
@@ -25,6 +25,8 @@ import {
 import { loadJourneyData, refreshJourneyData, type JourneyData } from "@/lib/journey/createJourneyData";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
 import { InsightOrchestrator, type InsightPageData } from "@/lib/orchestrators/insightOrchestrator";
+import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { storageProvider } from "@/lib/storage/storageProvider";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -129,52 +131,89 @@ function createClosingMessage(progress: ProgressData | null): string {
 export function InsightPageClient() {
   const router = useRouter();
   const auth = useAuth();
+  const authRef = useRef(auth);
+  useEffect(() => {
+    authRef.current = auth;
+  }, [auth]);
   const userProfile = auth?.userProfile;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [firebaseInsightData, setFirebaseInsightData] = useState<InsightPageData | null>(null);
   const [localState, setLocalState] = useState<LocalInsightState | null>(null);
+  const reconciledUidRef = useRef<string | null>(null);
 
   useEffect(() => {
+    const currentAuth = authRef.current;
     if (APP_MODE === "local-first") {
-      try {
-        const profile = safeJsonParse<UnknownRecord | null>(localStorage.getItem("bhumiUserProfile"), null);
-        const blueprint = safeJsonParse<UnknownRecord | null>(localStorage.getItem("bhumiUserBlueprint"), null);
-        const journalEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiJournalEntries"), []);
-        const meditationEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiMeditationEntries"), []);
-        const audioHealingEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiAudioHealingEntries"), []);
-        const healingInsights = loadHealingInsights() ?? refreshHealingInsights();
-        const journeyData = loadJourneyData() ?? refreshJourneyData();
-        const compiledInnerwork = loadCompiledInnerwork() ?? refreshCompiledInnerwork();
-        const progressData = loadProgressData() ?? refreshProgressData();
+      if (!currentAuth || currentAuth.authLoading || currentAuth.profileLoading || !currentAuth.authStateResolved) return;
+      let cancelled = false;
 
-        if (!profile) {
-          router.replace("/setup");
-          return;
+      const loadLocalInsightData = async () => {
+        try {
+          const authUid = currentAuth.user?.uid;
+          const canUseReconciledContext = Boolean(
+            authUid &&
+            reconciledUidRef.current === authUid &&
+            currentAuth.userProfile?.uid === authUid,
+          );
+          if (authUid && !canUseReconciledContext) reconciledUidRef.current = authUid;
+          const resolved = canUseReconciledContext
+            ? {
+                profile: currentAuth.userProfile as unknown as UnknownRecord,
+                isLoading: false,
+                isMissing: false,
+                isUnavailable: false,
+              }
+            : await resolveActiveProfile(currentAuth);
+          if (cancelled || resolved.isLoading) return;
+          if (resolved.isUnavailable) {
+            setError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
+            return;
+          }
+          const profile = resolved.profile;
+          if (!profile || profile.setupCompleted !== true) {
+            router.replace("/setup");
+            return;
+          }
+          const blueprint = await storageProvider.getUserBlueprint() as unknown as UnknownRecord | null;
+          const journalEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiJournalEntries"), []);
+          const meditationEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiMeditationEntries"), []);
+          const audioHealingEntries = safeJsonParse<unknown>(localStorage.getItem("bhumiAudioHealingEntries"), []);
+          const healingInsights = loadHealingInsights() ?? refreshHealingInsights();
+          const journeyData = loadJourneyData() ?? refreshJourneyData();
+          const compiledInnerwork = loadCompiledInnerwork() ?? refreshCompiledInnerwork();
+          const progressData = loadProgressData() ?? refreshProgressData();
+
+          if (cancelled) return;
+          setLocalState({
+            profile,
+            blueprint,
+            journalEntries: Array.isArray(journalEntries) ? journalEntries : [],
+            meditationEntries: Array.isArray(meditationEntries) ? meditationEntries : [],
+            audioHealingEntries: Array.isArray(audioHealingEntries) ? audioHealingEntries : [],
+            healingInsights,
+            journeyData,
+            compiledInnerwork,
+            progressData,
+          });
+        } catch (loadError) {
+          if (!cancelled) {
+            console.error("[Insight Page] Failed to load local data", loadError);
+            setError("Gagal memuat insight data. Silakan coba lagi.");
+          }
+        } finally {
+          if (!cancelled) setLoading(false);
         }
+      };
 
-        setLocalState({
-          profile,
-          blueprint,
-          journalEntries: Array.isArray(journalEntries) ? journalEntries : [],
-          meditationEntries: Array.isArray(meditationEntries) ? meditationEntries : [],
-          audioHealingEntries: Array.isArray(audioHealingEntries) ? audioHealingEntries : [],
-          healingInsights,
-          journeyData,
-          compiledInnerwork,
-          progressData,
-        });
-      } catch (loadError) {
-        console.error("[Insight Page] Failed to load local data", loadError);
-        setError("Gagal memuat insight data. Silakan coba lagi.");
-      } finally {
-        setLoading(false);
-      }
-      return;
+      void loadLocalInsightData();
+      return () => {
+        cancelled = true;
+      };
     }
 
-    if (!auth || auth.authLoading || auth.profileLoading) return;
-    const { user } = auth;
+    if (!currentAuth || currentAuth.authLoading || currentAuth.profileLoading) return;
+    const { user } = currentAuth;
     if (!user) {
       router.replace("/");
       return;
@@ -199,7 +238,7 @@ export function InsightPageClient() {
     };
 
     loadInsightData();
-  }, [auth, router, userProfile]);
+  }, [auth?.authLoading, auth?.authStateResolved, auth?.user?.uid, router, userProfile]);
 
   const localHasActivity = hasAnyActivity(localState);
   const dominantTheme = useMemo(() => {

@@ -22,6 +22,13 @@ import type { UserProfile } from "@/lib/repositories/userRepository";
 
 type MinimalProfile = { uid?: string | null; setupCompleted?: boolean | null };
 
+export function isCompletedProfileForUser(
+  uid: string,
+  profile: MinimalProfile | null | undefined,
+): boolean {
+  return profile?.uid === uid && profile.setupCompleted === true;
+}
+
 export type SetupPersistenceSource = "server" | "audit-local" | "none";
 
 export interface SetupPersistenceVerdict {
@@ -90,7 +97,7 @@ export function reconcileCachedProfileWithServer(input: {
 }): CachedProfileReconcile {
   const { uid, cached, server } = input;
 
-  if (cached && cached.uid === uid && cached.setupCompleted === true) {
+  if (cached && isCompletedProfileForUser(uid, cached)) {
     return { profile: cached, action: "use-cached", shouldPersistCache: false };
   }
 

@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { type PremiumFeature } from "@/lib/access/accessControl";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
+import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import type { UserProfile } from "@/lib/repositories/userRepository";
 
 type AccessGuardProps = {
   children: React.ReactNode;
@@ -14,12 +16,58 @@ type AccessGuardProps = {
 
 export function AccessGuard({ children, feature }: AccessGuardProps) {
   const auth = useAuth();
+  const authRef = useRef(auth);
+  useEffect(() => {
+    authRef.current = auth;
+  }, [auth]);
   const router = useRouter();
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [hasAccess, setHasAccess] = useState(true);
-  const [checking, setChecking] = useState(true);
+  const [checkingAccess, setCheckingAccess] = useState(true);
+  const [checkingProfile, setCheckingProfile] = useState(true);
+  const [resolvedProfile, setResolvedProfile] = useState<UserProfile | null>(null);
+  const [resolveUnavailable, setResolveUnavailable] = useState(false);
+  const [resolveAttempt, setResolveAttempt] = useState(0);
+  const reconciledUidRef = useRef<string | null>(null);
 
-  const uid = auth?.userProfile?.uid;
+  useEffect(() => {
+    const currentAuth = authRef.current;
+    if (!currentAuth?.authStateResolved || currentAuth.authLoading || currentAuth.profileLoading) return;
+    const authUid = currentAuth.user?.uid;
+    if (!authUid) {
+      setResolvedProfile(null);
+      setCheckingProfile(false);
+      return;
+    }
+    if (currentAuth.userProfile?.uid === authUid && currentAuth.userProfile.setupCompleted === true) {
+      setResolvedProfile(currentAuth.userProfile);
+      setResolveUnavailable(false);
+      setCheckingProfile(false);
+      return;
+    }
+    if (reconciledUidRef.current === authUid) {
+      setResolvedProfile(currentAuth.userProfile ?? null);
+      setCheckingProfile(false);
+      return;
+    }
+    let cancelled = false;
+
+    reconciledUidRef.current = authUid;
+    setCheckingProfile(true);
+    setResolveUnavailable(false);
+    void resolveActiveProfile(currentAuth).then((resolved) => {
+      if (cancelled || resolved.isLoading) return;
+      setResolvedProfile(resolved.profile as unknown as UserProfile | null);
+      setResolveUnavailable(resolved.isUnavailable);
+      setCheckingProfile(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [auth?.authLoading, auth?.authStateResolved, auth?.user?.uid, auth?.userProfile, resolveAttempt]);
+
+  const uid = typeof resolvedProfile?.uid === "string" ? resolvedProfile.uid : undefined;
   useEffect(() => {
     if (!uid) return;
     let cancelled = false;
@@ -31,9 +79,10 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     };
   }, [uid]);
 
-  const userProfile = auth?.userProfile;
+  const userProfile = resolvedProfile;
 
   useEffect(() => {
+    if (checkingProfile) return;
     let cancelled = false;
     async function checkAccess() {
       // 1. Synchronous Firestore entitlement check
@@ -41,7 +90,7 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
       if (syncAccess) {
         if (!cancelled) {
           setHasAccess(true);
-          setChecking(false);
+          setCheckingAccess(false);
         }
         return;
       }
@@ -56,7 +105,7 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
             if (isValid) {
               if (!cancelled) {
                 setHasAccess(true);
-                setChecking(false);
+                setCheckingAccess(false);
               }
               return;
             }
@@ -68,17 +117,17 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
 
       if (!cancelled) {
         setHasAccess(false);
-        setChecking(false);
+        setCheckingAccess(false);
       }
     }
 
-    setChecking(true);
+    setCheckingAccess(true);
     checkAccess();
 
     return () => {
       cancelled = true;
     };
-  }, [userProfile, testerRecord]);
+  }, [checkingProfile, userProfile, testerRecord]);
 
   if (
     process.env.NODE_ENV === "development" &&
@@ -88,7 +137,35 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     return <>{children}</>;
   }
 
-  if (!auth || auth.loading || checking) return <>{children}</>;
+  if (!auth || auth.loading || checkingProfile || checkingAccess) {
+    return (
+      <div className="min-h-screen bg-[#FCFAF5] flex items-center justify-center">
+        <p className="text-sm text-[#7B8776]">Menyelaraskan akses...</p>
+      </div>
+    );
+  }
+
+  if (resolveUnavailable) {
+    return (
+      <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 flex items-center justify-center">
+        <section className="w-full max-w-md rounded-[2rem] bg-white p-8 text-center shadow-sm border border-[#E8E9E5]">
+          <p className="text-sm leading-relaxed text-[#7B8776] mb-6">
+            Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              reconciledUidRef.current = null;
+              setResolveAttempt((attempt) => attempt + 1);
+            }}
+            className="w-full rounded-2xl bg-[#4F5E52] px-5 py-4 text-sm font-bold text-white"
+          >
+            Coba Lagi
+          </button>
+        </section>
+      </main>
+    );
+  }
 
   if (hasAccess) return <>{children}</>;
 
