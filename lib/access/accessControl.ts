@@ -1,13 +1,5 @@
-import { isPrivilegedUser } from '../auth/privilegedUser';
 import { UserProfile } from '../repositories/userRepository';
-import { Timestamp } from 'firebase/firestore';
-import { isGaiaAccessOverrideActive } from '../billing/gaiaAccess';
-import {
-  getCurrentBadge,
-  hasActiveBadgeAccess,
-  isTrialUser,
-  type BadgeAccessProfile,
-} from '../billing/billingPreparation';
+import { getEntitlementStatus } from '../billing/entitlementService';
 
 export type PremiumFeature =
   | 'meditation'
@@ -45,36 +37,17 @@ const NON_DASHBOARD_FEATURES: PremiumFeature[] = [
   'profile',
 ];
 
-function hasActivePremiumMembership(profile: UserProfile): boolean {
-  if (profile.membershipType === 'LIFETIME') return true;
-  if (profile.membershipType !== 'PREMIUM') return false;
-  if (!profile.membershipExpiryDate) return false;
-  return Timestamp.now().seconds < profile.membershipExpiryDate.seconds;
-}
-
 export function isTrialActive(profile: UserProfile): boolean {
-  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
-  if (hasActivePremiumMembership(profile)) return true;
-  return isTrialUser(profile as BadgeAccessProfile);
+  return getEntitlementStatus(profile).reason === 'trial';
 }
 
 export function canAccessPremiumFeature(profile: UserProfile | null, feature: PremiumFeature): boolean {
   if (feature === 'dashboard') return true;
-  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) return true;
-  if (!profile) return false;
-  if (hasActivePremiumMembership(profile)) return true;
-  return hasActiveBadgeAccess(profile as BadgeAccessProfile);
+  return getEntitlementStatus(profile).isPremium;
 }
 
 export function getUserAccess(profile: UserProfile | null) {
-  if (isGaiaAccessOverrideActive() || isPrivilegedUser(profile)) {
-    return {
-      plan: profile?.plan ?? 'free',
-      isPremium: false,
-      isTrialActive: true,
-      lockedFeatures: [] as PremiumFeature[],
-    };
-  }
+  const entitlement = getEntitlementStatus(profile);
   if (!profile) {
     return {
       plan: 'free',
@@ -84,15 +57,10 @@ export function getUserAccess(profile: UserProfile | null) {
     };
   }
 
-  const active = isTrialActive(profile);
-  const badge = getCurrentBadge(profile as BadgeAccessProfile);
-  const isPremium = hasActivePremiumMembership(profile) || badge === 'Founder' || badge === 'Penjaga Bhumi Inti' || badge === 'Penjaga Bhumi Alfa';
-  const hasAccess = canAccessPremiumFeature(profile, 'premium-content');
-
   return {
     plan: profile.plan,
-    isPremium,
-    isTrialActive: active,
-    lockedFeatures: hasAccess ? [] : NON_DASHBOARD_FEATURES
+    isPremium: entitlement.isPremium,
+    isTrialActive: entitlement.reason === 'trial',
+    lockedFeatures: entitlement.isPremium ? [] : NON_DASHBOARD_FEATURES
   };
 }

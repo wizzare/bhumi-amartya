@@ -1,5 +1,5 @@
 import { UserProfile } from "../repositories/userRepository";
-import { isPrivilegedUser } from "../auth/privilegedUser";
+import { isAdminUser, isFounderUser } from "../auth/privilegedUser";
 import { isGaiaAccessOverrideActive } from "./gaiaAccess";
 import {
   ALFA_ACCESS_UNTIL,
@@ -11,7 +11,7 @@ import {
 
 export type EntitlementStatus = {
   isPremium: boolean;
-  reason: "founder" | "inti_badge" | "alfa_badge" | "trial" | "subscriber" | "override" | "none";
+  reason: "founder" | "admin" | "lifetime" | "inti_badge" | "alfa_badge" | "trial" | "subscriber" | "override" | "none";
   expiresAt: Date | null;
   daysRemaining: number | null;
   effectiveTier: string;
@@ -107,11 +107,13 @@ export function getEntitlementStatus(
   const activeEntitlements: EntitlementStatus[] = [];
   const expiredEntitlements: EntitlementStatus[] = [];
 
-  // 1. Founder (Rule Priority 1) - Lifetime bypass
+  // 1. Founder / Admin / explicit Lifetime (Rule Priority 1).
+  // Admin is derived from the server-owned users/{uid} role fields; no email
+  // allowlist or client isPremium flag participates in this decision.
   const badge = profile.testerBadge || (profile as any).badge || (profile as any).guardianBadge;
   const effectiveBadge = testerRecord?.badge || badge;
-  
-  if (isPrivilegedUser(profile) || profile.membershipType === "LIFETIME" || effectiveBadge === "Founder") {
+
+  if (isFounderUser(profile) || effectiveBadge === "Founder") {
     activeEntitlements.push({
       isPremium: true,
       reason: "founder",
@@ -119,6 +121,34 @@ export function getEntitlementStatus(
       daysRemaining: null,
       effectiveTier: "Founder (Lifetime)",
       source: "Founder Privileged",
+      status: "Active",
+      trialLoginsRemaining: null,
+    });
+  }
+
+  if (isAdminUser(profile)) {
+    activeEntitlements.push({
+      isPremium: true,
+      reason: "admin",
+      expiresAt: null,
+      daysRemaining: null,
+      effectiveTier: "Admin (Lifetime)",
+      source: "Firestore Admin Role",
+      status: "Active",
+      trialLoginsRemaining: null,
+    });
+  }
+
+  if (profile.membershipType === "LIFETIME") {
+    activeEntitlements.push({
+      isPremium: true,
+      reason: "lifetime",
+      expiresAt: null,
+      daysRemaining: null,
+      effectiveTier: "Lifetime",
+      source: profile.entitlementSource === "admin_lifetime"
+        ? "Firestore Admin Lifetime"
+        : "Firestore Lifetime Entitlement",
       status: "Active",
       trialLoginsRemaining: null,
     });
@@ -277,8 +307,8 @@ export function getEntitlementStatus(
     }
 
     // Preserve the highest precedence tier/reason, but apply the latest expiry.
-    // Precedence: founder > inti_badge/alfa_badge > subscriber > trial
-    const reasonPrecedence = { "founder": 1, "inti_badge": 2, "alfa_badge": 2, "subscriber": 3, "trial": 4, "override": 5, "none": 6 };
+    // Precedence: founder > admin > explicit lifetime > tester > subscriber > trial.
+    const reasonPrecedence = { "founder": 1, "admin": 2, "lifetime": 3, "inti_badge": 4, "alfa_badge": 4, "subscriber": 5, "trial": 6, "override": 7, "none": 8 };
     let highestTierEntitlement = activeEntitlements[0];
     for (const entitlement of activeEntitlements) {
       if (reasonPrecedence[entitlement.reason] < reasonPrecedence[highestTierEntitlement.reason]) {

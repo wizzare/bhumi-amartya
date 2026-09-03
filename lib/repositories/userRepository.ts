@@ -72,6 +72,7 @@ export type UserProfile = {
   recognitionDate?: string;
   membershipType?: "FREE" | "TRIAL" | "PREMIUM" | "LIFETIME" | "PENJAGA_BHUMI_INTI" | "REGULAR" | string | null;
   membershipExpiryDate?: Timestamp | null;
+  entitlementSource?: string | null;
   role?: string | null;
   versionName?: string | null;
   versionCode?: number | null;
@@ -296,7 +297,7 @@ const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
     () => getDoc(userRef),
   );
   if (docSnap.exists()) {
-    return docSnap.data() as UserProfile;
+    return { ...docSnap.data(), uid: docSnap.id } as UserProfile;
   }
   return null;
 };

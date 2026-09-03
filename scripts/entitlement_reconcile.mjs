@@ -54,7 +54,7 @@ const ALFA_GRANT_STARTS_AT = new Date("2026-06-29T00:00:00+07:00");
 const ALFA_ACCESS_UNTIL = new Date("2026-07-30T00:00:00+07:00");
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const FOUNDER_EMAILS = ["wizzare@gmail.com"]; // matches lib/auth/privilegedUser.ts
-const ADMIN_ROLES = ["founder", "admin", "dev_admin"];
+const ADMIN_ROLES = ["admin", "dev_admin"];
 
 // ---- HELPERS ----
 function toDate(v) {
@@ -71,13 +71,20 @@ function toDate(v) {
 
 const mask = (uid) => (uid ? uid.slice(0, 8) + "…" : "?");
 
-function isPrivilegedUser(profile) {
+function normalizedRoles(profile) {
+  return [profile?.role, profile?.guardianRole]
+    .map((role) => String(role || "").trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function isFounderUser(profile) {
   if (!profile) return false;
   const email = (profile.email || "").toLowerCase().trim();
-  const role = ((profile.role || profile.guardianRole) || "").toLowerCase();
-  if (FOUNDER_EMAILS.includes(email)) return true;
-  if (ADMIN_ROLES.includes(role)) return true;
-  return false;
+  return FOUNDER_EMAILS.includes(email) || normalizedRoles(profile).includes("founder");
+}
+
+function isAdminUser(profile) {
+  return Boolean(profile && normalizedRoles(profile).some((role) => ADMIN_ROLES.includes(role)));
 }
 
 function getCanonicalTrialWindow(profile) {
@@ -109,10 +116,20 @@ function resolveCanonical(profile, testerRecord, now = new Date()) {
   const badge = profile.testerBadge || profile.badge || profile.guardianBadge;
   const effectiveBadge = testerRecord?.badge || badge;
 
-  // Priority 1: Founder
-  if (isPrivilegedUser(profile) || profile.membershipType === "LIFETIME" || effectiveBadge === "Founder") {
+  // Priority 1: Founder / Admin / explicit Lifetime
+  if (isFounderUser(profile) || effectiveBadge === "Founder") {
     activeEntitlements.push({
       isPremium: true, reason: "founder", expiresAt: null, tier: "Founder (Lifetime)",
+    });
+  }
+  if (isAdminUser(profile)) {
+    activeEntitlements.push({
+      isPremium: true, reason: "admin", expiresAt: null, tier: "Admin (Lifetime)",
+    });
+  }
+  if (profile.membershipType === "LIFETIME") {
+    activeEntitlements.push({
+      isPremium: true, reason: "lifetime", expiresAt: null, tier: "Lifetime",
     });
   }
 
@@ -189,6 +206,22 @@ function propose(profile, testerRecord) {
       subscriptionStatus: "active",
     };
     const isAligned = profile?.membershipType === "LIFETIME" && profile?.entitlementSource === "founder";
+    return {
+      state: isAligned ? "no-op" : "upgrade",
+      writes: proposed,
+    };
+  }
+
+  if ((e.reason === "admin" || e.reason === "lifetime") && e.expiresAt === null) {
+    const proposed = {
+      membershipType: "LIFETIME",
+      membershipExpiryDate: null,
+      accessUntil: null,
+      entitlementSource: e.reason === "admin" ? "admin_lifetime" : (profile?.entitlementSource || "lifetime"),
+      subscriptionStatus: "active",
+    };
+    const isAligned = profile?.membershipType === "LIFETIME"
+      && profile?.entitlementSource === proposed.entitlementSource;
     return {
       state: isAligned ? "no-op" : "upgrade",
       writes: proposed,

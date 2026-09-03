@@ -1,12 +1,9 @@
 import { NextResponse } from "next/server";
 import { getApps, initializeApp, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 import { readFileSync, existsSync } from "fs";
-import { isPrivilegedUser } from "./privilegedUser";
-
-const FOUNDER_EMAILS = [
-  "wizzare@gmail.com",
-];
+import { isFounderUser } from "./privilegedUser";
 
 function initAdminForAuth() {
   if (getApps().length) return;
@@ -33,18 +30,7 @@ export type RequireFounderResult =
   | { ok: false; response: NextResponse };
 
 export async function requireFounder(request?: Request): Promise<RequireFounderResult> {
-  // 1. Dev / Test Bypass Header or Environment
-  if (request) {
-    const devBypass = request.headers.get("x-dev-secret");
-    if (devBypass === "bhumi-dev-bypass" || (process.env.NODE_ENV === "development" && !request.headers.get("authorization"))) {
-      return { ok: true, uid: "dev-founder-uid", email: "wizzare@gmail.com" };
-    }
-  }
-
   if (!request) {
-    if (process.env.NODE_ENV === "development") {
-      return { ok: true, uid: "dev-founder-uid", email: "wizzare@gmail.com" };
-    }
     return {
       ok: false,
       response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
@@ -69,36 +55,49 @@ export async function requireFounder(request?: Request): Promise<RequireFounderR
 
   initAdminForAuth();
 
-  try {
-    if (!getApps().length) {
-      return {
-        ok: false,
-        response: NextResponse.json({ error: "Firebase Admin initialization failed" }, { status: 500 }),
-      };
-    }
-
-    const decodedToken = await getAuth().verifyIdToken(idToken);
-    const email = decodedToken.email?.toLowerCase().trim();
-    const role = (decodedToken.role as string) || (decodedToken.guardianRole as string);
-
-    const isFounder = (email && FOUNDER_EMAILS.includes(email)) || isPrivilegedUser({ email, role });
-
-    if (!isFounder) {
-      return {
-        ok: false,
-        response: NextResponse.json({ error: "Forbidden: Founder access required" }, { status: 403 }),
-      };
-    }
-
+  if (!getApps().length) {
     return {
-      ok: true,
-      uid: decodedToken.uid,
-      email: decodedToken.email,
+      ok: false,
+      response: NextResponse.json({ error: "Firebase Admin initialization failed" }, { status: 500 }),
     };
-  } catch (err: unknown) {
+  }
+
+  let decodedToken;
+  try {
+    decodedToken = await getAuth().verifyIdToken(idToken);
+  } catch {
     return {
       ok: false,
       response: NextResponse.json({ error: "Invalid or expired token" }, { status: 401 }),
     };
   }
+
+  let profile: Record<string, unknown> = {};
+  try {
+    const snapshot = await getFirestore().collection("users").doc(decodedToken.uid).get();
+    if (snapshot.exists) profile = snapshot.data() ?? {};
+  } catch {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Authorization state unavailable" }, { status: 503 }),
+    };
+  }
+
+  if (!isFounderUser({
+    uid: decodedToken.uid,
+    email: decodedToken.email,
+    role: typeof profile.role === "string" ? profile.role : null,
+    guardianRole: typeof profile.guardianRole === "string" ? profile.guardianRole : null,
+  })) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "Forbidden: Founder access required" }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true,
+    uid: decodedToken.uid,
+    email: decodedToken.email,
+  };
 }

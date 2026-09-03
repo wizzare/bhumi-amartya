@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldAlert, RefreshCw, ArrowLeft, Activity } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { diagnosticRepository, GoogleSignInFailureEvent } from "@/lib/repositories/diagnosticRepository";
+import { hasPrivilegedPageAccessForUid } from "@/lib/auth/privilegedUser";
 
 export default function AdminDiagnosticsPage() {
   const auth = useAuth();
@@ -14,7 +15,7 @@ export default function AdminDiagnosticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const isFounder = profile?.guardianRole === "founder" || profile?.email?.trim().toLowerCase() === "wizzare@gmail.com";
+  const hasAdminAccess = hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
 
   const fetchFailures = async () => {
     setLoading(true);
@@ -31,26 +32,26 @@ export default function AdminDiagnosticsPage() {
   };
 
   useEffect(() => {
-    if (isFounder) {
+    if (hasAdminAccess) {
       void fetchFailures();
     }
-  }, [isFounder]);
+  }, [hasAdminAccess]);
 
   if (auth?.authLoading || auth?.profileLoading) {
     return (
       <main className="min-h-screen bg-[#FCFAF5] flex items-center justify-center">
-        <p className="text-[#7B8776] animate-pulse font-medium">Memverifikasi Akses Founder...</p>
+        <p className="text-[#7B8776] animate-pulse font-medium">Memverifikasi akses admin...</p>
       </main>
     );
   }
 
-  if (!auth?.user || !isFounder) {
+  if (!auth?.user || !hasAdminAccess) {
     return (
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-10 flex items-center justify-center">
         <div className="max-w-md w-full bhumi-card p-10 text-center bg-white border border-[#E8E9E5] rounded-[2rem] shadow-sm">
           <ShieldAlert size={48} className="mx-auto text-red-500 mb-4" />
           <h1 className="text-2xl font-serif font-bold text-[#4F5E52]">Akses Ditolak</h1>
-          <p className="mt-3 text-[#7B8776]">Halaman ini hanya tersedia untuk Founder Bhumi.</p>
+          <p className="mt-3 text-[#7B8776]">Halaman ini hanya tersedia untuk admin Bhumi.</p>
           <Link href="/dashboard" className="bhumi-button mt-8 inline-flex px-6 py-2.5 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">
             Kembali ke Dashboard
           </Link>

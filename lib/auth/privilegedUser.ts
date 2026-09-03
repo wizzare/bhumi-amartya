@@ -1,50 +1,62 @@
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
-
 const FOUNDER_EMAILS = [
   "wizzare@gmail.com",
-];
+] as const;
 
-const ADMIN_ROLES = ["founder", "admin", "dev_admin"];
+export type PrivilegedRole = "founder" | "admin" | "dev_admin";
+
+const ADMIN_ROLES = ["admin", "dev_admin"] as const;
 
 export interface PrivilegedUserInfo {
+  uid?: string | null;
   email?: string | null;
   role?: string | null;
   guardianRole?: string | null;
 }
 
-/**
- * Global helper to identify Founders and Admins who must bypass all application gates.
- */
-export function isPrivilegedUser(user: PrivilegedUserInfo | null): boolean {
+function normalizedRoles(user: PrivilegedUserInfo): string[] {
+  return [user.role, user.guardianRole]
+    .map((role) => role?.trim().toLowerCase() ?? "")
+    .filter(Boolean);
+}
+
+export function isFounderUser(user: PrivilegedUserInfo | null): boolean {
   if (!user) return false;
+  const email = user.email?.trim().toLowerCase() ?? "";
+  return normalizedRoles(user).includes("founder")
+    || (FOUNDER_EMAILS as readonly string[]).includes(email);
+}
 
-  const email = user.email?.toLowerCase().trim();
-  const role = user.role?.toLowerCase() || user.guardianRole?.toLowerCase();
+/** Admin identities resolve only from the server-owned Firestore role fields. */
+export function isAdminUser(user: PrivilegedUserInfo | null): boolean {
+  if (!user) return false;
+  return normalizedRoles(user).some((role) =>
+    (ADMIN_ROLES as readonly string[]).includes(role),
+  );
+}
 
-  // 1. Hardcoded Founder Email Bypass (Immediate)
-  if (email && FOUNDER_EMAILS.includes(email)) return true;
+export function resolvePrivilegedRole(user: PrivilegedUserInfo | null): PrivilegedRole | null {
+  if (isFounderUser(user)) return "founder";
+  if (!user) return null;
+  const roles = normalizedRoles(user);
+  if (roles.includes("admin")) return "admin";
+  if (roles.includes("dev_admin")) return "dev_admin";
+  return null;
+}
 
-  // 2. Role-based Bypass
-  if (role && ADMIN_ROLES.includes(role)) return true;
-
-  return false;
+/** Global helper for premium and privileged feature policy. */
+export function isPrivilegedUser(user: PrivilegedUserInfo | null): boolean {
+  return resolvePrivilegedRole(user) !== null;
 }
 
 /**
- * Future-proof Firestore check for privileged status.
- * Used for dynamic admin management without app updates.
+ * UI guard bound to the currently authenticated Firebase UID. A stale profile,
+ * missing profile, or profile-read failure cannot authorize a privileged page.
  */
-export async function checkRemotePrivilegedStatus(email: string): Promise<boolean> {
-  if (!email) return false;
-  try {
-    const snap = await getDoc(doc(db, "admin_users", email.toLowerCase().trim()));
-    if (snap.exists()) {
-      const data = snap.data();
-      return data.active === true;
-    }
-  } catch (err) {
-    console.warn("[PRIVILEGED USER] Remote check failed:", err);
-  }
-  return false;
+export function hasPrivilegedPageAccessForUid(
+  authenticatedUid: string | null | undefined,
+  profile: PrivilegedUserInfo | null,
+): boolean {
+  const uid = authenticatedUid?.trim() ?? "";
+  const profileUid = profile?.uid?.trim() ?? "";
+  return Boolean(uid && profileUid && uid === profileUid && resolvePrivilegedRole(profile));
 }

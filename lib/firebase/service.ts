@@ -322,6 +322,7 @@ export class FirebaseService {
     const data = userDoc.data();
     return {
       ...data,
+      uid: userDoc.id,
       createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       trialStartedAt: data.trialStartedAt?.toDate?.()?.toISOString(),
