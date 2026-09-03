@@ -34,6 +34,9 @@ node_modules
 # Next build
 .next/
 
+# Playwright CLI browser-QA session logs (ephemeral)
+.playwright-cli/
+
 # VS Code
 .vscode/
 

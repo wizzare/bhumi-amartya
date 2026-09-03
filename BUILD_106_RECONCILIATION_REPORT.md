@@ -1,11 +1,11 @@
 # BHUMI AMARTYA — BUILD 106 FULL RECONCILIATION REPORT (R-PRD-01..46)
 
-Status: CANONICAL — canonical recovery order **Step 10**
+Status: CANONICAL — Step 10 deliverable; extended by §11.1 (Step 11), §11.2 (Step 12), §11.3 (Step 12 cont.)
 Primary authority: `BUILD_106_MASTER_SOT.md` §7.10 / §10
 Execution ledger: `BUILD_106_RECOVERY_MATRIX.md`
-Date: 2026-09-02
+Date: 2026-09-02; last updated 2026-09-03 (§11.3)
 Branch: `recovery/build106-product-continuity`
-Implementation HEAD reconciled: `1b4e41c` (end of Step 9)
+Implementation HEAD reconciled: `1b4e41c` (end of Step 9); §11.3 at the Step 12 (cont.) adoption commits
 
 This report is the Step 10 deliverable: a full walk of every canonical requirement
 `R-PRD-01..46` and every deferred sub-step, assigning each an **accepted final reconciled
@@ -191,22 +191,22 @@ Every `DS-*` has an owner and a verification step. Status at end of Step 10:
 | DS-J1 | R-PRD-12/13/16 (journaling UI) | Build 106 journaling-UI sub-step (with DS-M1) | OPEN |
 | DS-J2 | R-PRD-15/16/19/25/12 (UI behaviour wiring, `upsertFromEntry` call site) | with DS-J1 | OPEN |
 | DS-J3 | R-PRD-12/13/15/16/19 (full acceptance rows + journaling E2E) | with DS-J1/DS-J2 | OPEN |
-| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + browser | **PARTIAL (Step 11)** — rendered streak UI removed **and** `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term); guard 26 (behavioral). Remainder: `/insights` rendered browser check (RC-2) |
+| **DS-J4** | R-PRD-18 (mood trend, no-streak) | journaling/insights consumer work + browser | **PARTIAL (Step 12 cont.)** — `progressCalculationEngine` (Step 11) **and** `lib/insights/createInsightProgress.ts` (the engine `/insights` renders, Step 12 cont.) de-streaked: `consistencyScore` = frequency + active-days-in-30 + recent-7d, no consecutive term; stage on `activeDays30`; milestone "7 Hari Aktif"; `streakDays` raw-metric only. Guard 30. Browser: `/insights` reachable, no bounce. Remainder (not release-critical): streak section rendered with seeded data |
 | DS-I1 | R-PRD-29..34 full UI localization | localization component-migration sprint | OPEN |
 | DS-I2 | R-PRD-29/30 extended (`v5-i18n.test.ts`) | Step 7 | **DONE** (28/28, in manifest) |
-| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 11)** — journal AI locked; daily-guidance prompt locale/attribution contract + end-to-end id/en/ms plumbing; **native Bahasa Melayu** in `unifiedBlueprintSynthesis` + `adaptiveDailyPracticeGenerator` (new `lib/i18n/pickLocale.ts`); guard 31 (behavioral ms). Remainder: **DS-AI1-themes** + rendered en/ms browser (RC-2 / RC-9) |
+| **DS-AI1** | R-PRD-31 (AI in user locale + attribution) | AI-output reconciliation sub-step | **PARTIAL (Step 12 cont.)** — journal AI locked; daily-guidance prompt locale/attribution contract + id/en/ms plumbing; native Bahasa Melayu synthesis/practice; Step 12 cont. adopted `mirrorDailyReflection` id/en/ms `MIRROR_COPY` + locale daypart, and `unifiedBlueprintSynthesis`/`localDailyGuidanceFallback` now propagate `language`. Guard 38. **Browser: Soul Reflection wrapper RENDERED PASS en/ms** (after the BCP47 `DashboardClient` fix). Remainder: **DS-AI1-themes** body prose (not release-critical per D-V5-36) |
 | **DS-AI1-themes** | R-PRD-31 deterministic-fallback completeness | i18n follow-up sprint (post browser pass) | **OPEN (new — Step 11)** — Indonesian-only theme-label dictionaries + full `localDailyGuidanceFallback` ms (~70 sites, currently `ms → id`). Not release-critical on its own — primary AI path renders true ms |
 | DS-2C1 | new-user gate Invariant E secondary path (`lib/firebase/service.ts` read-error swallow) | auth-hardening follow-up | **DONE (Step 11)** — read failure propagates (null = absent doc only); guard (10) + state-machine "I" step updated; emulator PASS=23/23 |
 | DS-2C2 | GATE_07, R-PRD-33/34 browser | verification | **PARTIAL (Step 12)** — setup→dashboard, dashboard hard-reload, logout→login exercised in a real emulator-hydration browser run. Remaining: scripted Playwright regression + locale visible-copy round-trip (needs DS-I1) |
 | DS-GATE07 | GATE_07_GENUINE_NEW_USER | verification Step 12 | **ACCEPTED (emulator-hydration, Step 12)** — brand-new emulator account, real hydration/auth/blueprint, rules-enforced Firestore, dashboard rendered + reload + logout/login all correct. Production / Play-device run still ideal |
-| DS-2C3 | GATE_07 residual trap (feature-page trigger) | auth-hardening follow-up, before the DS-E1/DS-J4/DS-AI1 rendered browser pass | **OPEN (new — Step 12)** — `/setup` has no mount guard for an already-complete user; a gated-feature-page cold hard-nav can strand a genuine complete user there |
+| DS-2C3 | GATE_07 residual trap (feature-page trigger) | auth-hardening follow-up | **CLOSED (Step 12 cont., 2026-09-03)** — `isCompletedProfileForUser` helper; `app/setup/page.tsx` mount guard → `/dashboard` for a completed user (retry card on read failure); `resolveActiveProfile` authoritative cold-context re-read + `isUnavailable` (fail-closed); `AccessGuard` + `InsightPageClient` reconcile before gating (`InsightPageClient` drops the unscoped `bhumiUserProfile` read). Guard `build106-ds2c3-cold-nav` (11) in manifest. Emulator PASS=24/24; browser `/setup` + `/insights` hard-nav verified |
 | DS-M1 | R-PRD-23 (Memory Dashboard UI), R-PRD-21 browser | Memory-Dashboard UI sub-step (DS-I1 first) | OPEN |
 | DS-M2 | R-PRD-03 Dashboard surfacing, Master SOT §5 | Founder reconciliation decision, then Daily Rhythm/Dashboard step | OPEN (decision) |
 | DS-M3 | R-PRD-28 | Daily Rhythm/Memory consumer work | PARTIAL (decay + eligibility done; synthesis/persistence/UI open) |
 | DS-DC1 | R-PRD-03 astro source typing | Step 6 | **DONE** |
 | DS-A1 | R-PRD-36 consumer wiring | astro-integration sub-step | OPEN |
 | DS-A2 | R-PRD-35 large-cycle scope | Founder decision, then wire | OPEN (decision) |
-| DS-E1 | R-PRD-45 browser, R-PRD-44 rendered unavailable | verification Step 11 (needs authorized local Next runtime) | OPEN |
+| DS-E1 | R-PRD-45 browser, R-PRD-44 rendered unavailable | verification | **PARTIAL (Step 12 cont.)** — emulator-hydration browser: `/dashboard/environment` reachable, Schumann "Data belum tersedia" with **no fabricated "Stabil"** ⇒ R-PRD-44 honest-unavailable rendered PASS. Remainder: fully-populated 3-layer render + provenance labels (needs mocked geolocation + live Schumann source) |
 | DS-R1 | R-PRD-01/02/04..10/14/17/28 consumer UI | consumer/UI work Steps 10–11; browser in Step 11 | OPEN |
 | DS-N1 | R-PRD-32 remote delivery | notification external/integration acceptance | OPEN (external/config + impl) |
 | DS-P1 | R-PRD-20 + privacy/deletion acceptance | privacy consumer + account-deletion hardening, before Step 11 | OPEN |
@@ -241,17 +241,17 @@ each owned. None is a silent gap.
 | # | Gap | Master SOT / PRD gate | Owner | Blocking type |
 |---|---|---|---|---|
 | RC-1 | Genuine fresh non-sample new-user browser acceptance | Master SOT §8, §10.3; PRD §5 | DS-GATE07 | **ACCEPTED at emulator-hydration level (Step 12)** — brand-new emulator account, full lifecycle to a rendered `/dashboard` (real blueprint, rules-enforced Firestore), dashboard hard-reload + logout/login all correct. A production / Play-device run is still the ideal final proof |
-| RC-2 | Browser/device QA for affected primary surfaces (Daily Rhythm, Schumann, Memory Dashboard, Premium, locale switcher, Astro Today, onboarding) | Master SOT §8 | DS-R1, DS-E1, DS-M1, DS-PR1, DS-2C2, DS-A1 | **PARTIAL (Step 12)** — onboarding (setup→dashboard, reload, logout/login), **Premium `/premium-bhumi` + `/upgrade`** (DS-PR1 browser part), and the **locale switcher visibility/persistence** (R-34) all verified in a real emulator-hydration browser run. DS-E1 (Schumann), DS-J4 (`/insights`), DS-AI1 (rendered en/ms) not reached — blocked by **DS-2C3** (cold hard-nav to gated feature pages bounces to `/setup`) + in-app-browser SPA-nav limits |
-| RC-12 | `/setup` mount guard for an already-complete user | Master SOT §4.1 (residual trap, narrower trigger) | DS-2C3 | **OPEN (new — Step 12)** — add the guard + extend the cold-nav authoritative reconcile to `AccessGuard` / `resolveActiveProfile`; regression test |
+| RC-2 | Browser/device QA for affected primary surfaces (Daily Rhythm, Schumann, Memory Dashboard, Premium, locale switcher, Astro Today, onboarding) | Master SOT §8 | DS-R1, DS-E1, DS-M1, DS-PR1, DS-2C2, DS-A1 | **ADVANCED (Step 12 cont.)** — DS-2C3 unblocked. Verified in the emulator-hydration browser run: onboarding (setup→dashboard, reload, logout/login); Premium `/premium-bhumi` + `/upgrade` (DS-PR1 browser part); locale switcher visibility/persistence (R-34); `/setup` hard-nav as a completed user → `/dashboard`; `/insights` hard-nav → no bounce; `/dashboard/environment` Schumann "Data belum tersedia" with **no fabricated "Stabil"** (R-PRD-44); dashboard Soul Reflection rendered native en ("Warm hugs from Bhumi.") + ms ("Pelukan hangat daripada Bhumi."). **Residual (not release-critical):** DS-AI1-themes body prose in the LLM-down local fallback; DS-J4 streak section rendered *with seeded data*; DS-M1 Memory Dashboard, DS-R1 Daily Rhythm consumer UI (still un-built) |
+| RC-12 | `/setup` mount guard for an already-complete user | Master SOT §4.1 (residual trap, narrower trigger) | DS-2C3 | **CLOSED (Step 12 cont., 2026-09-03)** — adopted parallel-session work under Founder OPTION A: `isCompletedProfileForUser` helper; `app/setup/page.tsx` mount guard redirects a completed user to `/dashboard` and shows a retry card on read failure; `resolveActiveProfile` does an authoritative cold-context re-read and returns `isUnavailable` (fail-closed) instead of "missing"; `AccessGuard` + `InsightPageClient` reconcile before gating. Guard `build106-ds2c3-cold-nav.test.ts` (11) + `build106-authoritative-profile-gate` +4. Full emulator suite PASS=24/24; browser: `/setup` completed-user hard-nav → `/dashboard`, `/insights` hard-nav → no bounce |
 | RC-3 | FCM infrastructure live (backend sender, VAPID round-trip, native remote push, device delivery) | PRD §5 "FCM infrastructure live"; Master SOT §5 | DS-N1 | Needs authorized configuration + device test |
 | RC-4 | Memory Dashboard (view/edit/delete/export) functional | PRD §5 | DS-M1 (needs DS-I1 first) | UI implementation + browser |
 | RC-5 | Journal draft recovery + history/search functional (rendered) | PRD §5 | DS-J1/DS-J2/DS-J3 | UI implementation + browser |
 | RC-6 | Comfort Mode as first-class path functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-7 | Adaptive check-in + returning-user behaviour functional (rendered) | PRD §5 | DS-R1 | UI implementation + browser |
 | RC-8 | Security audit + Privacy audit passed; account deletion reconciled to full data inventory | PRD §5; Master SOT §5 | DS-P1 + a dedicated audit pass | Audit not yet run |
-| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **LOCAL LOGIC CLOSED (Step 11)** — prompt locale/attribution contract + end-to-end id/en/ms plumbing + native Bahasa Melayu synthesis/practice output. Remaining: DS-AI1-themes (deep theme dicts) + rendered en/ms browser check (RC-2) |
+| RC-9 | AI content localization + attribution | R-PRD-31 / R-XC-09 | DS-AI1 | **LOCAL LOGIC CLOSED + WRAPPER RENDERED (Step 12 cont.)** — Step 11 prompt locale/attribution contract + id/en/ms plumbing + native Bahasa Melayu synthesis/practice; Step 12 cont. adopted `mirrorDailyReflection` id/en/ms `MIRROR_COPY` + locale daypart, and `unifiedBlueprintSynthesis`/`localDailyGuidanceFallback` now propagate `language` (was collapsing to id). Emulator-hydration browser: Soul Reflection wrapper renders native en/ms, `crashed:false` (after the BCP47 `DashboardClient` fix). Remaining: **DS-AI1-themes** body-prose fragments in the LLM-down local fallback — per **D-V5-36** `ms → id` prose ratified, **not release-critical** |
 | RC-10 | `lib/firebase/service.ts` `getUserProfile` swallows read errors to `null` (secondary path) | new-user gate Invariant E | DS-2C1 | **CLOSED (Step 11)** — read failure propagates; guard + state-machine "I" step updated; full emulator suite PASS=23/23 |
-| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **LOCAL LOGIC CLOSED (Step 11)** — rendered streak UI removed **and** `progressCalculationEngine` score/growth-phase de-streaked (`activeDays30`, no consecutive term). Remaining: `/insights` rendered browser check (RC-2) |
+| RC-11 | Mood trend audited against no-streak contract | R-PRD-18 / R-XC-02 | DS-J4 | **LOCAL LOGIC CLOSED (Step 12 cont.)** — Step 11 de-streaked `progressCalculationEngine`; Step 12 cont. adopted the matching de-streak in `lib/insights/createInsightProgress.ts` (the engine `/insights` renders): `consistencyScore` = frequency + active-days-in-30 + recent-7d (no consecutive term), stage on `activeDays30`, milestone "7 Hari Aktif", `streakDays` raw-metric only. Guard `build106-ds-j4-mood-trend-no-streak` 30 assertions; browser: `/insights` reachable, no bounce. Remaining (not release-critical): streak section rendered *with seeded activity data* |
 
 Non-blocking reconciliation decisions pending Founder input: DS-M2 (dedicated Dashboard Daily
 Note card y/n), DS-A2 (which large-cycle astro signals, if any, are ratified).
@@ -340,13 +340,69 @@ prior GATE_07 evidence class, still not a production/device run.
 RC-3..RC-8 unchanged — FCM infra, Memory Dashboard, journal draft/history, Comfort Mode,
 adaptive check-in, security/privacy audit.
 
-**Handover (2026-09-02).** Primary agent → **CODEX** after Step 12. `NEXT_SAFE_ACTION = close
-DS-2C3 → rerun RC-2 rendered browser verification → Step 13`. Branch
-`recovery/build106-product-continuity`; HEAD at handover `8617155` (the handover-docs commit is
-newer). Step 12 acceptance = ACCEPTED (emulator-hydration); GATE_07 / RC-1 = ACCEPTED; RC-2 =
-PARTIAL; **RC-12 / DS-2C3 = OPEN and release-critical**; DS-AI1-themes = open residual. No
-product code change, version bump, build, deploy, publish, push, or production write in the
-handover.
+**Handover (2026-09-02).** Primary agent → **CODEX** after Step 12. Superseded by §11.3.
+
+### 11.3 Step 12 (cont.) — DS-2C3 closure + RC-2 rendered re-verification (2026-09-03)
+
+`AUDIT → ANALYZE → FIX → VERIFY → REPORT`. Founder **OPTION A (ADOPT)**.
+
+**In-flight work adopted.** At HEAD `0b8e8a4` the worktree carried an uncommitted parallel-session
+change (10 tracked source files, 6 test files incl. a new `build106-ds2c3-cold-nav.test.ts`,
+ephemeral `.playwright-cli/` / `.env.local`) with no report. Per the Founder directive it was
+**not** discarded/stashed/reset — audited hunk-by-hunk against canonical Build 106, verified, and
+adopted. Provenance: **parallel Build 106 recovery session (Codex/Antigravity), unreported.**
+Commits: `c9f3d04` (source, +417 −86 / 10 files), `1808852` (tests, +198 −7 / 6 files),
+docs commit (this update + matrix + handoff + `.gitignore`).
+
+**RC-12 / DS-2C3 — CLOSED (code + full emulator suite + emulator-hydration browser).**
+`lib/auth/authoritativeProfileGate.ts` `isCompletedProfileForUser(uid, profile)`;
+`lib/auth/resolveActiveProfile.ts` `isUnavailable` + authoritative `refreshUserProfile()` re-read
+on a cold/stale context (read failure ⇒ fail-closed `isUnavailable`, not "missing"); de-identified
+`[USER DATA LOAD]` log; `app/setup/page.tsx` mount guard (`checking/ready/redirecting/unavailable`
+— completed owned profile ⇒ `router.replace("/dashboard")`, read failure ⇒ "Coba Lagi" retry, not
+the birth-data form); `components/auth/AccessGuard.tsx` reconciles the active profile before the
+entitlement check; `components/insights/InsightPageClient.tsx` cold-nav uses `resolveActiveProfile`
++ scoped `storageProvider.getUserBlueprint()` and drops the forbidden unscoped `bhumiUserProfile`
+localStorage read.
+
+**BUILD_106_REGRESSION found by the RC-2 rendered run + fixed (Founder OPTION A item 4).**
+`components/dashboard/DashboardClient.tsx` read `translations[profile.language]` directly. After
+the Step-3 switcher persists a normalized BCP47 tag (`"en-US"` / `"ms-MY"`) to
+`users/{uid}.language`, `translations["en-US"]` is `undefined` and the dashboard render throws
+`Cannot read properties of undefined (reading 'dashboard')` — a white-screen for every en/ms
+switcher user. Fix: `getDictionaryKey(profile?.language ?? "id")`. Latent since Step 3, not in the
+adopted diff. Regression cover: `build106-ds-ai1-ai-locale-attribution.test.ts` section 5.
+
+**RC-2 rendered re-verification (emulator-hydration harness, same as §11.2):**
+
+| Item | Result |
+|---|---|
+| DS-2C3 — `/setup` hard-nav as a completed user | **RENDERED PASS** — redirects to `/dashboard`; no strand |
+| DS-2C3 — `/insights` hard-nav (cold AuthContext) | **RENDERED PASS** — no bounce to `/setup` |
+| DS-E1 / R-PRD-44 — `/dashboard/environment` | **RENDERED PASS (honest-unavailable)** — Schumann "Data belum tersedia", **no fabricated "Stabil"**. Full 3-layer render still needs geolocation + a live Schumann source |
+| DS-AI1 / R-PRD-31 — Soul Reflection en | **RENDERED PASS (wrapper)** — "Good morning" / "Hello, RC2 QA. How are you this morning?" / "Warm hugs from Bhumi.", `crashed:false` |
+| DS-AI1 / R-PRD-31 — Soul Reflection ms | **RENDERED PASS (wrapper)** — "Selamat pagi" / "Hai, RC2 QA. Apa khabar pada pagi ini?" / "Pelukan hangat daripada Bhumi.", `crashed:false` |
+| DS-AI1-themes — reflection body prose | **OPEN residual** — Indonesian theme-label fragments in the LLM-down local fallback; per D-V5-36 `ms → id` prose ratified ⇒ NOT release-critical |
+| DS-J4 / R-PRD-18 — `/insights` | **PARTIAL** — reachable + de-streak unit-verified; streak section with data needs seeded activity (deferred) |
+
+**Verification totals (final worktree = adopted + BCP47 fix + BCP47 guard test):**
+`npx tsc --noEmit` **EXIT 0**; no-emulator runner PASS=16/24; **full Firestore/Auth emulator
+release suite PASS=24 FAIL=0 SKIPPED=0** `RELEASE_TESTS_PASS` (state-machine `passed=33 failed=0`);
+DS suites EXIT 0 — `ds2c3-cold-nav` 11, `ds-ai1` 38, `ds-j4` 30, `authoritative-profile-gate` 27,
+`mirror-daily-reflection-contract` 32, `ds2c1` 10.
+
+**Evidence discipline:** no production read/write, no build artifact, no deploy/publish/push, no
+version bump. Ephemeral `.env.local` / `.next` / `.playwright-cli/` / debug logs removed; worktree
+clean apart from the three coherent commits.
+
+**Handover (2026-09-03).** Primary agent → **ANTIGRAVITY**. `NEXT_SAFE_ACTION = audit remaining
+RC-3..RC-8 + the DS register → Founder approval for Step 13 (version bump / Build 106 artifact)`.
+Branch `recovery/build106-product-continuity`; HEAD = resolve with `git rev-parse HEAD` (the Step
+12 cont. docs commit is newest). RC-1 = ACCEPTED (emulator-hydration); RC-2 = ADVANCED; RC-9 /
+RC-11 = local logic closed (RC-9 wrapper rendered); **RC-10 / RC-12 = CLOSED**; RC-3..RC-8
+unchanged; DS-AI1-themes = open residual (not release-critical per D-V5-36). No product-code
+change beyond the audited adoption + the one authorized regression fix; no version bump, build,
+deploy, publish, push, or production write.
 
 ---
 
