@@ -1,15 +1,17 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production-signed AAB built, verified, and device smoke-tested. Play Console upload is the only remaining step and is separately gated.**
-Primary agent: CLAUDE CODE.
+Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production-signed AAB built, verified, and device smoke-tested. Play Console upload is not authorized and has not been performed.**
+Primary agent: CODEX.
 Date: 2026-09-03
 
 ```text
-NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+NEXT_PRIMARY_AGENT               = CODEX
 PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + production signing)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
+AUTHORIZED_WORKTREE              = C:\tmp\bhumi-build106-recovery
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the Step 13 signing-docs commit; version bump `0b55f99`
+CURRENT_RELEASE_READY_HEAD       = 3c8620d6ffaa8a893380d78ff367842f8a18842c
+HANDOFF_DOC_COMMIT               = documentation-only child commit of CURRENT_RELEASE_READY_HEAD; resolve with `git rev-parse HEAD`
 BUILD_106_PHASE                  = RECONCILED — production-signed AAB built + verified + device smoke-tested; Play Console upload separately gated
 BUILD_106_ARTIFACT (SIGNED)      = bhumi-amartya-v5.0.6-build106-release-signed.aab (AAB, PRODUCTION-SIGNED) — sha256 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d, 10834020 bytes
 SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
@@ -23,12 +25,71 @@ RC-2                            = ADVANCED (non-blocking)
 RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliation Report §11.4)
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
-F-2                            = FIXED + tested
-DEPLOY / PUBLISH / PLAY_STORE_UPLOAD / PRODUCTION_WRITE = NOT DONE (PLAY_STORE_UPLOAD NOT AUTHORIZED)
-NEXT_SAFE_ACTION                = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md §10; then Play Console upload on separate Founder authorization. No deploy / publish / Play upload / production write from this worktree.
+F-2                              = FIXED + tested
+SIGNED_ARTIFACT_STATUS           = ALREADY VERIFIED
+PLAY_STORE_UPLOAD                = NOT AUTHORIZED / NOT PERFORMED
+DEPLOY / PUBLISH / PRODUCTION_WRITE = NOT DONE / NOT AUTHORIZED
+NEXT_SAFE_ACTION                 = BUILD_103_104_LEGACY_CONTINUITY_AUDIT
+NEXT_ACTION_MODE                 = READ_ONLY
+NEXT_ACTION_SCOPE                = account for all Build 103/104 work in Build 106, including all four historical admin identities
+PRODUCT_CODE_CHANGES             = PROHIBITED
+FORENSIC_WORKTREE                = C:\tmp\bhumi-build83-access-hotfix (feat/build99 @ 57479c9) — READ ONLY
 ```
 
 Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test).
+
+## Current Codex handover boundary
+
+The next task is **`BUILD_103_104_LEGACY_CONTINUITY_AUDIT`**. It is a **READ-ONLY** continuity
+audit only; it must account for all Build 103 and Build 104 work in Build 106 and must not change
+product code. "Four admins" means four historical admin identities/accounts, not four admin feature
+categories:
+
+1. **Maulina**.
+2. **Septi**.
+3. **Nandra**.
+4. **UNKNOWN** — identify from actual Build 103/104 repository, history, and evidence; do not guess.
+
+Audit each identity individually. For each admin, determine: name/identity; UID/email only when it
+is present in authorized repository evidence; assigned role (`founder`, `admin`, `dev_admin`, or
+equivalent); where role/access is defined; accessible admin routes/features; permissions;
+support/reply capability; broadcast/messaging capability; inbox/user-management capability; any
+other privileged tools; Firestore/security-rule implications; and the identity's state in Builds
+103, 104, 105, and 106.
+
+Trace authorization end-to-end for each identity:
+
+`ADMIN IDENTITY → ROLE → ACCESS CHECK → ADMIN ACTION → WRITE/READ → PERSISTENCE → USER/ADMIN UI`
+
+Explicitly search Build 103/104 repository history for Maulina, Septi, Nandra, the fourth admin
+identity, admin allowlists, admin UIDs/emails, role maps, `founder`/`admin`/`dev_admin`, privileged
+route guards, and support/admin-reply/broadcast implementation. Admin UI presence alone is not
+proof that all four identities retain working authorization.
+
+The audit report must end with this verdict block:
+
+```text
+ADMIN_1_MAULINA =
+ADMIN_2_SEPTI =
+ADMIN_3_NANDRA =
+ADMIN_4_NAME =
+ADMIN_4_STATUS =
+
+ADMIN_IDENTITIES_EXPECTED = 4
+ADMIN_IDENTITIES_ACCOUNTED =
+
+ADMIN_AUTHORIZATION_CONTINUITY = COMPLETE / INCOMPLETE
+ADMIN_FEATURE_CONTINUITY = COMPLETE / INCOMPLETE
+ADMIN_UNACCOUNTED_ITEMS =
+```
+
+If an historical admin cannot be identified or cannot access a capability they historically had,
+record the exact regression and release impact.
+
+Do not rebuild, version bump, deploy, publish, upload to Play, perform production writes, or push.
+The forensic worktree `C:\tmp\bhumi-build83-access-hotfix` (`feat/build99` @ `57479c9`) must remain
+read-only. The remainder of this document preserves historical recovery evidence; where an older
+next-action or signing statement conflicts with this section, this current handover boundary wins.
 
 ## Final pre-release gap closure — what Claude Code did (2026-09-03)
 
@@ -278,7 +339,7 @@ Steps 9–12 (cont.).
   Play upload on the authorized release machine.** No deploy / publish / Play upload / production
   write performed.
 
-## Continuation boundary — production signing + Play upload
+## Historical Step 13 continuation boundary — signing completed; Play upload remains gated
 
 Before any edit: verify branch `recovery/build106-product-continuity`, `git rev-parse HEAD` = the
 Step 13 docs commit (this file), `git status --short` clean; read the canonical Build 106 files in
@@ -292,7 +353,12 @@ tests pass; primary surfaces browser-QA'd; no provenance conflict; Founder appro
 creation) **except** the production-signed-artifact + device evidence, which require the Play
 upload key and are done on the authorized release machine.
 
-Next (on the release machine, Founder-directed, NOT from this worktree):
+The production-signing action described below has since been completed and verified. The list is
+retained as historical provenance only; it is not the current task. Play upload remains separately
+gated and is not authorized.
+
+Historical next steps recorded before signing (on the release machine, Founder-directed, NOT from
+this worktree):
 
 1. **Production signing** — build `:app:bundleRelease` with `BHUMI_RELEASE_STORE_FILE` /
    `_STORE_PASSWORD` / `_KEY_ALIAS` / `_KEY_PASSWORD` (or `android/keystore.properties`) present →
@@ -308,10 +374,11 @@ Next (on the release machine, Founder-directed, NOT from this worktree):
 6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
    save flow before DS-M1 ships, RC-4 becomes release-critical again.
 
-`NEXT_SAFE_ACTION = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md; then production signing + Play upload on the authorized release machine`
-`NEXT_PRIMARY_AGENT = CLAUDE_CODE`
+`NEXT_SAFE_ACTION = BUILD_103_104_LEGACY_CONTINUITY_AUDIT`
+`NEXT_ACTION_MODE = READ_ONLY`
+`NEXT_PRIMARY_AGENT = CODEX`
 `RELEASE_CRITICAL_GAPS_OPEN = 0`
 
-`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` (pending production signing + Play upload)
+`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` (production-signed artifact verified; Play upload not authorized/not performed)
 
 STOP AND WAIT FOR FOUNDER REVIEW
