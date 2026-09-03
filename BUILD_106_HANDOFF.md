@@ -1,49 +1,115 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
 Status: **`BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING` — source and local/emulator verification are complete; production account provisioning and a replacement signed artifact are not authorized and have not been performed.**
-Primary agent: CODEX.
+Primary agent: CLAUDE_CODE (Handover from CODEX / Antigravity).
 Date: 2026-09-03
 
 ```text
-NEXT_PRIMARY_AGENT               = CODEX
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + production signing)
+NEXT_PRIMARY_AGENT               = CLAUDE_CODE
+PREVIOUS_PRIMARY_AGENT           = CODEX (Admin & Lifetime Reconciliation; Build 103/104 continuity audit)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 AUTHORIZED_WORKTREE              = C:\tmp\bhumi-build106-recovery
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (documentation-only child of e5d1592)
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (documentation descendant of 2d625bd72befbd10487bb83748e850c4bdf1c37c)
+RECONCILED_SOURCE_HEAD           = 2d625bd72befbd10487bb83748e850c4bdf1c37c
 ADMIN_LIFETIME_SOURCE_COMMIT     = 36a32cd
 ADMIN_LIFETIME_TEST_COMMIT       = e5d1592
 LEGACY_AUDIT_DOC_COMMIT          = 0e1f634
+RECONCILIATION_REPORT_COMMIT     = 2d625bd
 HISTORICAL_RELEASE_READY_HEAD    = 3c8620d6ffaa8a893380d78ff367842f8a18842c
 BUILD_106_PHASE                  = ADMIN + LIFETIME RECONCILIATION CODE COMPLETE / EMULATOR VERIFIED / PRODUCTION PENDING
-HISTORICAL_BUILD_106_ARTIFACT    = bhumi-amartya-v5.0.6-build106-release-signed.aab — verified only for 3c8620d6ffaa8a893380d78ff367842f8a18842c; it does not contain 36a32cd
-SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
-SMOKE_TEST                        = HISTORICAL PASS FOR 3c8620d6 — not rerun for the current reconciled source
-versionCode / versionName        = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
-RELEASE_BLOCKING_LEGACY_GAPS     = 2
-RECONCILED_ARTIFACT_GAP          = 1
-RELEASE_CRITICAL_GAPS_OPEN       = 3
-BUILD_106_MARKER                 = BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING
+HISTORICAL_BUILD_106_ARTIFACT    = bhumi-amartya-v5.0.6-build106-release-signed.aab — SUPERSEDED (built from pre-reconciliation HEAD 3c8620d6; does not contain 36a32cd / e5d1592)
+SIGNED_ARTIFACT_STATUS           = SUPERSEDED (replacement signed artifact from reconciled HEAD not yet built)
+SIGNING_KEY                      = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
+SMOKE_TEST                       = HISTORICAL PASS FOR 3c8620d6 — not rerun for current reconciled source
+versionCode / versionName       = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
+BUILD_103_CONTINUITY            = COMPLETE (22/22 commits, 53 files accounted)
+BUILD_104_CONTINUITY            = COMPLETE (2/2 commits, 4 files accounted)
+HISTORICAL_ADMINS_IDENTIFIED    = 4/4 (Maulina, Septi, Nandra / Nanda Viandra, Azian Meirdania)
+ADMIN_LIFETIME_RECONCILIATION   = VERIFIED in source/emulator (27/27 release suites PASS, 21/21 admin unit PASS, 23/23 admin emulator PASS)
+ADMIN_PRODUCTION_PROVISIONING    = PENDING
+FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING
+DEVICE_ADMIN_ACCEPTANCE          = PENDING
+RELEASE_CRITICAL_GAPS_OPEN      = 3
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+BUILD_106_MARKER                = BUILD_106_ADMIN_LIFETIME_RECONCILIATION_CODE_COMPLETE_EMULATOR_VERIFIED_PRODUCTION_PENDING
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
 RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliation Report §11.4)
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
-F-2                              = FIXED + tested
-SIGNED_ARTIFACT_STATUS           = HISTORICAL VERIFIED / STALE FOR CURRENT RECONCILED SOURCE
-PLAY_STORE_UPLOAD                = NOT AUTHORIZED / NOT PERFORMED
+F-2                             = FIXED + tested
+PLAY_STORE_UPLOAD               = NOT AUTHORIZED / NOT PERFORMED
 DEPLOY / PUBLISH / PRODUCTION_WRITE = NOT DONE / NOT AUTHORIZED
 PRODUCTION_FIRESTORE_READS_WRITES = 0 / 0
-NEXT_SAFE_ACTION                 = FOUNDER_REVIEW_THEN_SEPARATELY_AUTHORIZE_PRODUCTION_PREFLIGHT_PROVISIONING_AND_REPLACEMENT_BUILD_SIGN_DEVICE_TEST
-NEXT_ACTION_MODE                 = APPROVAL_GATED
-ADMIN_TARGET_STATE               = CODE_RECONCILED / LOCAL_EMULATOR VERIFIED / PRODUCTION PROVISIONING PENDING
-ADMIN_UNACCOUNTED_ITEMS          = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
-PRODUCT_CODE_CHANGES             = COMPLETE IN 36a32cd; NO FURTHER CHANGES AUTHORIZED
-FORENSIC_WORKTREE                = C:\tmp\bhumi-build83-access-hotfix (feat/build99 @ 57479c9) — READ ONLY
+NEXT_SAFE_ACTION                = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING
+NEXT_ACTION_MODE                = APPROVAL_GATED
+ADMIN_TARGET_STATE              = CODE_RECONCILED / LOCAL_EMULATOR VERIFIED / PRODUCTION PROVISIONING PENDING
+ADMIN_UNACCOUNTED_ITEMS         = PRODUCTION_FIRESTORE_ROLE_AND_LIFETIME_PROVISIONING_FOR_4; NEW_SIGNED_ARTIFACT_AND_DEVICE_ACCEPTANCE_FOR_RECONCILED_HEAD
+PRODUCT_CODE_CHANGES            = COMPLETE IN 36a32cd; NO FURTHER CHANGES AUTHORIZED
+FORENSIC_WORKTREE               = C:\tmp\bhumi-build83-access-hotfix (feat/build99 @ 57479c9) — READ ONLY
 ```
 
 Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test).
+
+## Handover to Claude Code — Product Continuity & Release Gaps (2026-09-03)
+
+This section formally records the operational handover of Build 106 product continuity and recovery to **Claude Code**.
+
+### 1. Workspace, Branch & Worktree State
+- **Primary Agent**: `CLAUDE_CODE` (handover from CODEX / Antigravity).
+- **Authorized Worktree**: `C:\tmp\bhumi-build106-recovery`
+- **Current Branch**: `recovery/build106-product-continuity`
+- **Current Reconciled HEAD**: `2d625bd72befbd10487bb83748e850c4bdf1c37c` (or latest documentation-only descendant)
+- **Tracked Worktree State**: Clean.
+- **Build Metadata (MUST REMAIN UNCHANGED)**:
+  - `versionCode = 106`
+  - `versionName = 5.0.6`
+  - `RELEASE_NAME = "BHUMI AMARTYA V5 BUILD 106"`
+
+### 2. Continuity & Reconciliation Audit Results
+- **Build 103 Continuity**: **COMPLETE** (22/22 commits, 53 files accounted and verified in git lineage).
+- **Build 104 Continuity**: **COMPLETE** (2/2 commits, 4 files accounted and verified in git lineage).
+- **Historical Admin Identities Accounted (4/4)**:
+  1. **Maulina** — source/local-emulator verified; production provisioning pending.
+  2. **Septi** — source/local-emulator verified; production provisioning pending.
+  3. **Nandra / Nanda Viandra** — source/local-emulator verified; production provisioning pending.
+  4. **Azian Meirdania** (identified from repository Auth/migration evidence) — source/local-emulator verified; production provisioning pending.
+- **UID-Based Admin + Lifetime Implementation**: **VERIFIED IN SOURCE & EMULATOR**.
+  - Reconciled in source commit `36a32cd` using canonical `users/{uid}` Firestore profile fields (`role`, `guardianRole`, `membershipType`, `membershipExpiryDate`, `entitlementSource`).
+  - Covered by comprehensive regression tests in commit `e5d1592`.
+  - Zero hardcoding of admin names, emails, or UIDs in client authorization logic.
+  - Zero client-side `isPremium:true` bypass; Google Play and signed-entitlement integrity strictly preserved.
+  - Full release test suite: **PASS=27 / FAIL=0 / SKIPPED=0** (`RELEASE_TESTS_PASS`).
+  - Focused admin unit suite: **21/21 PASS**.
+  - Focused admin emulator suite: **23/23 PASS**.
+- **Production Account Provisioning**: **NOT DONE / NOT AUTHORIZED**.
+  - Zero production Firestore reads or writes performed (`0 / 0`).
+  - Production provisioning remains gated on explicit Founder authorization.
+- **Signed Artifact Status**: **SUPERSEDED**.
+  - Historical signed artifact `bhumi-amartya-v5.0.6-build106-release-signed.aab` is **SUPERSEDED** because it was built from pre-admin-reconciliation HEAD (`3c8620d6ffaa8a893380d78ff367842f8a18842c`) and does not contain reconciled source `36a32cd` or tests `e5d1592`.
+  - A new signed artifact built from the reconciled HEAD has **NOT YET BEEN BUILT**.
+
+### 3. Current Release Gaps & Gate Verdict
+The exact three remaining release-critical gaps are:
+1. `ADMIN_PRODUCTION_PROVISIONING = PENDING`
+2. `FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING`
+3. `DEVICE_ADMIN_ACCEPTANCE = PENDING`
+
+Therefore:
+```text
+RELEASE_CRITICAL_GAPS_OPEN = 3
+BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO
+```
+
+### 4. Mandatory Safety Rule & Next Safe Action
+Any production write, production account provisioning, artifact rebuild, version bump, or Play Store action is **PROHIBITED** without separate explicit Founder authorization.
+
+```text
+NEXT_SAFE_ACTION = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING
+NEXT_ACTION_MODE = APPROVAL_GATED
+```
 
 ## Current Founder-approved reconciliation boundary
 
@@ -269,12 +335,13 @@ this docs commit.
 ```text
 authorized worktree   = C:\tmp\bhumi-build106-recovery
 branch                = recovery/build106-product-continuity
-HEAD                  = the Step 12 (cont.) docs commit — resolve with `git rev-parse HEAD`
-                        adoption commits: c9f3d04 (source) + 1808852 (tests); prior docs HEAD 0b8e8a4
+reconciled source HEAD = 2d625bd72befbd10487bb83748e850c4bdf1c37c
+HEAD                  = resolve with `git rev-parse HEAD` (documentation descendant of 2d625bd)
 forensic worktree     = C:\tmp\bhumi-build83-access-hotfix  (feat/build99 @ 57479c9, ~366 dirty) — READ ONLY, untouched
-worktree status       = clean (only the three coherent Step 12 cont. commits)
-versionCode           = 105 (unchanged; no version bump)
-BUILD_106_ARTIFACT    = DOES_NOT_EXIST
+worktree status       = clean tracked worktree
+versionCode           = 106
+versionName           = 5.0.6
+BUILD_106_ARTIFACT    = SUPERSEDED (historical signed AAB from 3c8620d6; replacement from reconciled HEAD not yet built)
 ```
 
 Step 9 (Premium copy / price, R-42) — the uncommitted partial start left at the Codex → Claude
@@ -459,11 +526,12 @@ this worktree):
 6. **Re-open guard:** if any change wires `memoryCandidateRepository.upsertFromEntry` into a live
    save flow before DS-M1 ships, RC-4 becomes release-critical again.
 
-`NEXT_SAFE_ACTION = FOUNDER_REVIEW_THEN_SEPARATELY_AUTHORIZE_PRODUCTION_PREFLIGHT_PROVISIONING_AND_REPLACEMENT_BUILD_SIGN_DEVICE_TEST`
+`NEXT_SAFE_ACTION = WAIT_FOR_FOUNDER_AUTHORIZATION_FOR_PRODUCTION_ADMIN_LIFETIME_PROVISIONING`
 `NEXT_ACTION_MODE = APPROVAL_GATED`
-`NEXT_PRIMARY_AGENT = CODEX`
-`RELEASE_BLOCKING_LEGACY_GAPS = 2`
-`RECONCILED_ARTIFACT_GAP = 1`
+`NEXT_PRIMARY_AGENT = CLAUDE_CODE`
+`ADMIN_PRODUCTION_PROVISIONING = PENDING`
+`FINAL_SIGNED_ARTIFACT_FROM_RECONCILED_HEAD = PENDING`
+`DEVICE_ADMIN_ACCEPTANCE = PENDING`
 `RELEASE_CRITICAL_GAPS_OPEN = 3`
 `BUILD_106_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = NO`
 
