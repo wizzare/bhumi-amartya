@@ -451,27 +451,46 @@ export class FirebaseService {
         await Promise.all(Array.from(refsByPath.values()).map(ref => deleteDoc(ref)));
       };
 
-      const deleteNestedJournalEntries = async () => {
-        const entriesSnapshot = await getDocs(collection(db, 'journals', uid, 'entries'));
+      // Delete a `<parent>/{uid}/<sub>/*` subcollection, then the `<parent>/{uid}` doc itself.
+      const deleteNestedEntries = async (parent: string, sub: string) => {
+        const entriesSnapshot = await getDocs(collection(db, parent, uid, sub));
         await Promise.all(entriesSnapshot.docs.map(d => deleteDoc(d.ref)));
-        await deleteDoc(doc(db, 'journals', uid));
+        await deleteDoc(doc(db, parent, uid)).catch(() => {});
       };
 
+      const deleteNestedJournalEntries = () => deleteNestedEntries('journals', 'entries');
+
       await Promise.all([
+        // Direct per-user documents (canonical schema)
         deleteDirectDocument('blueprints'),
         deleteDirectDocument('users'),
+        deleteDirectDocument('healingProgress'),
+        deleteDirectDocument('wellnessMappings'),
+        deleteDirectDocument('progressData'),
+        // Nested per-user subcollections (canonical schema: <parent>/{uid}/<sub>/*)
+        deleteNestedJournalEntries(),
+        deleteNestedEntries('meditations', 'entries'),
+        deleteNestedEntries('audioHealing', 'entries'),
+        deleteNestedEntries('activities', 'entries'),
+        deleteNestedEntries('dailyStates', 'entries'),
+        deleteNestedEntries('journeyDailyRecords', 'entries'),
+        deleteNestedEntries('journalMemoryCandidates', 'candidates'),
+        // uid-field-scoped flat collections
+        deleteScoped('weeklyReflections'),
+        deleteScoped('wellnessAssessments'),
+        deleteScoped('notifications'),
+        deleteDailyGuidance(),
+        // Legacy / pre-schema-drift names — harmless no-ops if empty, but cover
+        // any documents written before the repositories were renamed.
         deleteScoped('journalEntries'),
         deleteScoped('meditationEntries'),
         deleteScoped('audioHealingEntries'),
         deleteScoped('healingMemory'),
         deleteScoped('journeyData'),
-        deleteScoped('notifications'),
         deleteScoped('weeklyReports'),
         deleteDirectDocument('healingMemory'),
         deleteDirectDocument('journeyData'),
         deleteDirectDocument('notifications'),
-        deleteDailyGuidance(),
-        deleteNestedJournalEntries(),
       ]);
 
       return true;

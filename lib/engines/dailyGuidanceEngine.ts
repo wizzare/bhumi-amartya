@@ -106,6 +106,22 @@ export const dailyGuidanceEngine = {
 
   generateFallbackFace(brain: DailyIntelligenceObject, context?: any): any {
     const now = new Date().toISOString();
+    // Ultimate fallback copy (AI stack + deterministic generator both unavailable).
+    // id/en only; ms resolves to id per D-V5-36. Must be well-formed — this text can
+    // persist and render, and `aiInsight` must never be a broken fragment.
+    const isEn = context?.language === "en";
+    const fb = {
+      reflection: isEn
+        ? "Today is about steady presence. Let calm settle first, and clarity can follow at its own pace."
+        : "Hari ini tentang kehadiran yang tenang. Biarkan tenang hadir lebih dulu, lalu kejernihan menyusul dengan ritmenya sendiri.",
+      note: isEn
+        ? "There is nothing here that must be finished at once. Begin with what feels kind and honest."
+        : "Tidak ada yang harus diselesaikan sekaligus di sini. Mulailah dari yang terasa lembut dan jujur.",
+      journalPrompt: isEn
+        ? "What feels most true for you before today begins?"
+        : "Apa yang paling terasa jujur bagimu sebelum hari ini dimulai?",
+      meditation: isEn ? "Self Alignment" : "Penyelarasan Diri",
+    };
     return applyDynamicInfluence({
       uid: brain.uid,
       date: brain.localDateKey,
@@ -122,8 +138,8 @@ export const dailyGuidanceEngine = {
       memoryHash: generateMemoryHash(context),
       theme: brain.theme,
       focus: brain.focus,
-      soulReflectionText: "",
-      dailyNoteText: "",
+      soulReflectionText: fb.reflection,
+      dailyNoteText: fb.note,
       categories: {
         general: { insight: "Hari ini tentang keseimbangan diri.", reason: "", advice: "Jaga fokusmu." },
         mental: { insight: "Pikiranmu stabil.", reason: "", advice: "Jaga ketenangan." },
@@ -140,9 +156,9 @@ export const dailyGuidanceEngine = {
         attraction: "Aku mengundang kejernihan, keberanian lembut, dan ritme yang membumi.",
       },
       astrologyToday: context?.astrologyToday || context?.currentSky?.summary || "",
-      aiInsight: "Hari ini tentang .",
-      journalPrompt: "",
-      meditationSuggestion: "",
+      aiInsight: fb.reflection,
+      journalPrompt: fb.journalPrompt,
+      meditationSuggestion: fb.meditation,
       dailyPractices: [],
       generatedAt: now,
       createdAt: now,
