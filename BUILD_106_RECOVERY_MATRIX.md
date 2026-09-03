@@ -6,18 +6,20 @@ Continuity handoff: `BUILD_106_HANDOFF.md` (operational snapshot; not a higher a
 
 This matrix is the execution ledger for Build 106. Agents must update this file as evidence is produced. Do not mark any row PASS without executed evidence.
 
-## Continuity snapshot — Step 13 complete: Build 106 local artifact built + verified (2026-09-03)
+## Continuity snapshot — Step 13 complete: Build 106 production-signed AAB built + verified + smoke-tested (2026-09-03)
 
 ```text
 NEXT_PRIMARY_AGENT               = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13)
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + production signing)
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (Step 13 docs commit newest); version bump = 0b55f99
-BUILD_106_PHASE                  = RECONCILED — local release artifact built + verified; production signing + Play upload out of scope
-BUILD_106_ARTIFACT               = bhumi-amartya-v5.0.6-build106-release-unsigned.aab (AAB, UNSIGNED) — sha256 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977, 27003050 bytes
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` (Step 13 signing-docs commit newest); version bump = 0b55f99
+BUILD_106_PHASE                  = RECONCILED — production-signed AAB built + verified + device smoke-tested; Play Console upload separately gated
+BUILD_106_ARTIFACT (SIGNED)      = bhumi-amartya-v5.0.6-build106-release-signed.aab (AAB, PRODUCTION-SIGNED) — sha256 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d, 10834020 bytes
+SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
+SMOKE_TEST                        = PASS — signed release APK installed + launched on Android emulator (SDK 37), Build 106 welcome screen rendered, no crash
 versionCode / versionName        = 106 / 5.0.6  (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
 RELEASE_CRITICAL_GAPS_OPEN       = 0
-BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — pending production signing + Play upload on the authorized release machine
+BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — signed artifact ready for Play Console upload on separate Founder authorization
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
@@ -25,11 +27,11 @@ RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliatio
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
 F-2                            = FIXED + tested
-DEPLOY / PUBLISH / PLAY_UPLOAD / PRODUCTION_WRITE = NOT DONE (NOT APPROVED)
-NEXT_SAFE_ACTION                = Founder review of the Step 13 report + `BUILD_106_RELEASE_PROVENANCE.md`, then production signing + Play upload on the authorized release machine. No deploy / publish / Play upload / production write from this worktree.
+DEPLOY / PUBLISH / PLAY_STORE_UPLOAD / PRODUCTION_WRITE = NOT DONE (PLAY_STORE_UPLOAD NOT AUTHORIZED)
+NEXT_SAFE_ACTION                = Founder review of the Step 13 report + `BUILD_106_RELEASE_PROVENANCE.md` §10, then Play Console upload on separate Founder authorization. No deploy / publish / Play upload / production write from this worktree.
 ```
 
-Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`. Operational snapshot: `BUILD_106_HANDOFF.md`.
+Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test). Operational snapshot: `BUILD_106_HANDOFF.md`.
 
 Step 12 cont. (close DS-2C3 + re-run RC-2 rendered verification): AUDIT → ANALYZE → FIX → VERIFY
 → REPORT. A parallel-session in-flight change closing DS-2C3 was found uncommitted in the
@@ -399,9 +401,43 @@ Canonical record: **`BUILD_106_RELEASE_PROVENANCE.md`**.
 - **Smoke test:** device install/launch **not locally possible** (no keystore; cannot modify
   signing or `google-services.json`). Static/structural smoke test performed — all pass
   (Provenance §5).
-- **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing +
-  Play upload on the authorized release machine.** No deploy / publish / Play upload /
-  production write performed.
+- **Local build marker (superseded by the signing pass below):** the unsigned AAB above was the
+  local artifact-verification build; production signing followed.
+
+### Step 13 — authorized production signing + device smoke test (2026-09-03)
+
+Founder-authorized ("use the existing authorized production signing configuration/keystore").
+`PLAY_STORE_UPLOAD` remained separately gated (not done). No product code changed. Full detail:
+`BUILD_106_RELEASE_PROVENANCE.md` **§10**.
+
+- **Signing key:** the existing authorized Play **upload key** (also used for Build 104/105) —
+  `C:/Users/shein/keys/recovery-2026-08-03/bhumi-amartya-release.jks` (intact 2678-byte PKCS12;
+  the corrupt 2632-byte copy was not used), alias `bhumi-amartya`, `CN=Bhumi Amartya`,
+  SHA-256 `1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518`. `android/keystore.properties`
+  populated from the identical config already in the Build 104 / forensic worktrees, and
+  **removed after the build** (gitignored; no signing material left in the worktree).
+  `android/app/build.gradle` unchanged.
+- **Signed AAB:** `android/app/build/outputs/bundle/release/app-release.aab` —
+  `bhumi-amartya-v5.0.6-build106-release-signed.aab` — **10,834,020 bytes** — sha256
+  **`460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d`**.
+- **Signature verify:** `unzip -t` no errors; `jarsigner -verify` → **"jar verified"**; the
+  `BHUMI-AM.RSA` cert fingerprint (SHA-256 / SHA-1) **exactly matches the authorized upload key**;
+  packaged manifest `com.bhumiamartya.app` / versionCode 106 / versionName 5.0.6 / minSdk 24 /
+  targetSdk 36, no `.qa`, no `debuggable`.
+- **Device smoke test — PASS:** a companion signed release APK
+  (`app-release.apk`, 11,032,601 bytes, sha256
+  `dfbae26953844ca37cb1ecd12a6eded1382297bdccbe5d1dd9b15258bcd64438`; `apksigner verify` = Verifies,
+  v2 scheme, authorized cert; `aapt2 badging` = `com.bhumiamartya.app` 106 / 5.0.6) was installed
+  on the `Pixel_8` emulator (Android SDK 37): `adb install` **Success**, `am start` →
+  `MainActivity` topResumed, `D Capacitor: Starting BridgeActivity`, WebView loaded, **no
+  FATAL / ANR**, and the **Build 106 welcome screen rendered** (logo + "Bhumi Amartya" + "Ruang
+  Untuk Pulang dan Kenali Diri" + "Pengguna Baru" + "Saya Sudah Punya Akun" + Indonesia/English/Melayu
+  selector). Screenshots in the session scratchpad.
+- Signing/build verification exposed **no release-blocking defect**. Teardown: app uninstalled,
+  emulator killed, `keystore.properties` removed, ephemeral removed — **worktree clean**.
+- **Marker:** `BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — signed artifact ready for Play
+  Console upload on separate Founder authorization. No deploy / publish / Play upload / production
+  write performed.
 
 ## Final pre-release gap closure (2026-09-03) — `RELEASE_CRITICAL_GAPS_OPEN = 0`
 

@@ -1,20 +1,22 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — local release artifact built + verified. Production signing + Play upload are the only remaining steps (out of scope here).**
+Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production-signed AAB built, verified, and device smoke-tested. Play Console upload is the only remaining step and is separately gated.**
 Primary agent: CLAUDE CODE.
 Date: 2026-09-03
 
 ```text
 NEXT_PRIMARY_AGENT               = CLAUDE_CODE
-PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13)
+PREVIOUS_PRIMARY_AGENT           = CODEX (Steps 7–8) → CLAUDE_CODE (Steps 9–13 + production signing)
 CURRENT_PROGRAM                  = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
 CURRENT_BRANCH                   = recovery/build106-product-continuity
-CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the Step 13 docs commit; version bump `0b55f99`
-BUILD_106_PHASE                  = RECONCILED — local release artifact built + verified; production signing + Play upload out of scope
-BUILD_106_ARTIFACT              = bhumi-amartya-v5.0.6-build106-release-unsigned.aab (AAB, UNSIGNED) — sha256 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977, 27003050 bytes
+CURRENT_HEAD                     = resolve with `git rev-parse HEAD` — newest = the Step 13 signing-docs commit; version bump `0b55f99`
+BUILD_106_PHASE                  = RECONCILED — production-signed AAB built + verified + device smoke-tested; Play Console upload separately gated
+BUILD_106_ARTIFACT (SIGNED)      = bhumi-amartya-v5.0.6-build106-release-signed.aab (AAB, PRODUCTION-SIGNED) — sha256 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d, 10834020 bytes
+SIGNING_KEY                       = CN=Bhumi Amartya (alias bhumi-amartya) — SHA-256 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518 (== authorized Play upload key)
+SMOKE_TEST                        = PASS — signed release APK installed + launched on Android emulator (SDK 37), Build 106 welcome screen rendered, no crash
 versionCode / versionName        = 106 / 5.0.6   (RELEASE_NAME "BHUMI AMARTYA V5 BUILD 106")
 RELEASE_CRITICAL_GAPS_OPEN       = 0
-BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — pending production signing + Play upload on the authorized release machine
+BUILD_106_MARKER                 = BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY — signed artifact ready for Play Console upload on separate Founder authorization
 STEP_12_ACCEPTANCE              = ACCEPTED (emulator-hydration browser run)
 GATE_07 / RC-1                  = ACCEPTED (emulator-hydration); production / Play-device run is the ideal final proof, not a blocker
 RC-2                            = ADVANCED (non-blocking)
@@ -22,11 +24,11 @@ RC-3 / RC-4 / RC-5 / RC-6 / RC-7 = ACCEPTED_DEFERRED_NON_BLOCKING (Reconciliatio
 RC-8 / DS-P1                    = CLOSED
 RC-9 / RC-10 / RC-11 / RC-12    = CLOSED / local-logic-closed (non-blocking)
 F-2                            = FIXED + tested
-DEPLOY / PUBLISH / PLAY_UPLOAD / PRODUCTION_WRITE = NOT DONE (NOT APPROVED)
-NEXT_SAFE_ACTION                = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md; then production signing + Play upload on the authorized release machine. No deploy / publish / Play upload / production write from this worktree.
+DEPLOY / PUBLISH / PLAY_STORE_UPLOAD / PRODUCTION_WRITE = NOT DONE (PLAY_STORE_UPLOAD NOT AUTHORIZED)
+NEXT_SAFE_ACTION                = Founder review of the Step 13 report + BUILD_106_RELEASE_PROVENANCE.md §10; then Play Console upload on separate Founder authorization. No deploy / publish / Play upload / production write from this worktree.
 ```
 
-Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md`.
+Canonical Step 13 record: `BUILD_106_RELEASE_PROVENANCE.md` (§10 = authorized production signing + device smoke test).
 
 ## Final pre-release gap closure — what Claude Code did (2026-09-03)
 

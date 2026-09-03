@@ -1,25 +1,41 @@
 # BHUMI AMARTYA — BUILD 106 RELEASE PROVENANCE (Step 13)
 
-Status: **RECONCILED — local release artifact built + verified. Production signing + Play upload
-are the only remaining steps and are OUT OF SCOPE for this worktree (no keystore; not authorized).**
+Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production-signed AAB produced,
+signature + identity + integrity verified, device smoke test PASS. Play Console upload is the
+only remaining step and is separately gated (`PLAY_STORE_UPLOAD` NOT AUTHORIZED here).**
 Primary authority: `BUILD_106_MASTER_SOT.md` §7.13 / §8 / §10.
-Date: 2026-09-03.
+Date: 2026-09-03. §1–§9 = local (unsigned) build; **§10 = authorized production signing + device smoke test.**
 
 ```text
-FINAL_COMMIT / HEAD          = resolve with `git rev-parse HEAD` — the Step 13 docs commit; version bump = 0b55f99
+FINAL_COMMIT / HEAD          = resolve with `git rev-parse HEAD` — the Step 13 docs commits; version bump = 0b55f99
 BRANCH                       = recovery/build106-product-continuity
 versionCode                  = 106
 versionName                  = 5.0.6
 RELEASE_NAME                 = BHUMI AMARTYA V5 BUILD 106
 applicationId                = com.bhumiamartya.app
 RELEASE_CRITICAL_GAPS_OPEN   = 0
-ARTIFACT_TYPE                = Android App Bundle (.aab), UNSIGNED (release variant, no local keystore)
-ARTIFACT_FILE                = bhumi-amartya-v5.0.6-build106-release-unsigned.aab
-ARTIFACT_BUILD_PATH          = android/app/build/intermediates/intermediary_bundle/release/packageReleaseBundle/intermediary-bundle.aab
-ARTIFACT_SIZE_BYTES          = 27003050
-ARTIFACT_SHA256              = 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977
-SIGNED_PRODUCTION_ARTIFACT   = NOT PRODUCED (keystore absent by design; forbidden to add signing secrets)
-DEPLOY / PUBLISH / PLAY UPLOAD = NOT DONE (NOT APPROVED)
+
+# --- Production-signed artifact (§10) ---
+SIGNED_ARTIFACT_TYPE         = Android App Bundle (.aab), PRODUCTION-SIGNED (v1/JAR, upload key)
+SIGNED_ARTIFACT_FILE         = bhumi-amartya-v5.0.6-build106-release-signed.aab
+SIGNED_ARTIFACT_BUILD_PATH   = android/app/build/outputs/bundle/release/app-release.aab
+SIGNED_ARTIFACT_SIZE_BYTES   = 10834020
+SIGNED_ARTIFACT_SHA256       = 460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d
+SIGNING_KEY                  = CN=Bhumi Amartya, O=Bhumi Amartya, C=ID  (alias bhumi-amartya)
+SIGNING_KEY_SHA256           = 1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18
+SIGNING_KEY_SHA1            = B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52
+SIGNATURE_VERIFY            = jarsigner "jar verified"; cert fingerprint == authorized upload key
+SMOKE_TEST                   = PASS — signed release APK installed on Android emulator (SDK 37),
+                               launched, rendered the Build 106 welcome screen (id/en/ms selector),
+                               no crash / FATAL / ANR
+SMOKE_TEST_APK_SHA256        = dfbae26953844ca37cb1ecd12a6eded1382297bdccbe5d1dd9b15258bcd64438
+
+# --- Local unsigned build (§1–§9, superseded by §10 for the release artifact) ---
+UNSIGNED_ARTIFACT_FILE       = bhumi-amartya-v5.0.6-build106-release-unsigned.aab
+UNSIGNED_ARTIFACT_SHA256     = 9a67aace816dfa0ea7a84d4ed9f38e6e01148205810833676410a0e894af9977
+
+DEPLOY / PUBLISH / PLAY UPLOAD = NOT DONE (PLAY_STORE_UPLOAD NOT AUTHORIZED)
+PRODUCTION_WRITE             = NONE
 ```
 
 ## 1. Preflight
@@ -125,18 +141,111 @@ From Reconciliation Report §11.4:
 - **DS-I1** (`useTranslation()` migration), **DS-2C2** (scripted Playwright), **DS-M2 / DS-A2** (Founder decisions), **DS-M3**, **DS-A1**, **DS-E1** (populated 3-layer Schumann render), **DS-PR1** (real Play `formattedPrice` on device), **DS-GATE07** (production / Play-device acceptance run).
 - Post-Build-106 Daily Guidance roadmap: F-1 / F-3 / F-4 / F-5 / F-6 / F-7 / F-8 (Step 12.5 audit §6).
 
-## 9. Release readiness verdict
+## 9. Release readiness verdict (local unsigned build)
 
 - The **Build 106 codebase is reconciled** against canonical V5 (R-PRD-01..46, zero UNKNOWN), all
   known regressions resolved, `RELEASE_CRITICAL_GAPS_OPEN = 0`, genuine new-user lifecycle accepted
   (emulator-hydration), no Firestore/backend change to deploy.
 - The **local release artifact (unsigned AAB) is built and verified**: correct version metadata,
   valid bundle structure, verified web payload, security guard clean.
-- **The only remaining steps are production signing (Play upload key, on the authorized release
-  machine) and Play Console upload — both explicitly NOT APPROVED / OUT OF SCOPE here.**
+- Production signing + Play upload were the remaining steps → **production signing is now done in §10.**
 
-`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — **pending production signing + Play upload
-on the authorized release machine.** No deploy, publish, Play Store upload, or production write
-was performed.
+---
+
+## 10. Authorized production signing + device smoke test (2026-09-03)
+
+Founder-authorized: "Use the existing authorized production signing configuration/keystore …
+Produce the production-signed Build 106 AAB." `PLAY_STORE_UPLOAD` remains separately gated
+(not done). No product code changed.
+
+### 10.1 Signing configuration — the existing authorized upload key
+
+The production upload keystore is the one already used for Build 104 / Build 105 (required for
+Play update continuity):
+
+```text
+BHUMI_RELEASE_STORE_FILE  = C:/Users/shein/keys/recovery-2026-08-03/bhumi-amartya-release.jks
+                            (2678-byte PKCS12 — the INTACT recovery keystore; the 2632-byte
+                             C:/Users/shein/keys/bhumi-amartya-release.jks is the known-corrupt
+                             copy and was NOT used)
+BHUMI_RELEASE_KEY_ALIAS   = bhumi-amartya
+key identity              = CN=Bhumi Amartya, O=Bhumi Amartya, C=ID
+                            valid 2026-06-06 → 2053-10-22, SHA384withRSA, 2048-bit RSA
+key SHA-256               = 1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18
+key SHA-1                 = B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52
+```
+
+`android/keystore.properties` was populated for the build **from the identical authorized config
+already present in the Build 104 / forensic worktrees** (a file copy of established config — no
+secret was authored or transcribed), and **removed immediately after the build**. It is gitignored;
+the worktree carries no signing material. `android/app/build.gradle` was **not** modified — its
+existing `signingConfigs.release` block (env vars → `keystore.properties` fallback) was used as-is.
+`RELEASE_SIGNING_GUIDE.md` in the repo is stale (its "keystore Not Found" audit + `bhumi-alias`
+predate the real upload key) and was not followed.
+
+### 10.2 Build + signature verification
+
+| Check | Result |
+|---|---|
+| `gradlew :app:bundleRelease` (JDK 17, SDK 36, Gradle 9.4.1, keystore configured) | **BUILD SUCCESSFUL** — `:app:packageReleaseBundle` UP-TO-DATE (identical content to §3), `:app:signReleaseBundle` + `:app:bundleRelease` executed. |
+| **Signed AAB** | `android/app/build/outputs/bundle/release/app-release.aab` — **10,834,020 bytes** — sha256 **`460f44e246ad3c5d8b219dac45da32994cf4c0d166a33be7a1c74791522a303d`** |
+| AAB zip integrity (`unzip -t`) | **No errors detected in compressed data.** |
+| Signature files | `META-INF/BHUMI-AM.RSA` + `BHUMI-AM.SF` + `MANIFEST.MF` (v1 / JAR signing — the scheme Play requires for an AAB upload). |
+| `jarsigner -verify` | **"jar verified."** Signed by `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA384withRSA, 2048-bit. (Benign, expected warnings: self-signed upload cert / no chain / no timestamp — normal for an Android upload key.) |
+| **Signing cert fingerprint (from `BHUMI-AM.RSA`)** | SHA-256 `1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18` — **exact match to the authorized upload key**. SHA-1 `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52` ✓ |
+| Package identity + version (packaged manifest) | `com.bhumiamartya.app` / versionCode **106** / versionName **5.0.6** / minSdk 24 / targetSdk 36 / `MainActivity` MAIN+LAUNCHER / no `.qa` / no `debuggable` — unchanged from §4. |
+
+### 10.3 Device smoke test — signed release APK on an Android emulator
+
+A companion **signed release APK** (`gradlew :app:assembleRelease`, same keystore) was built for an
+installable smoke test (the AAB itself is not directly installable):
+
+```text
+signed APK                 = android/app/build/outputs/apk/release/app-release.apk
+size                       = 11,032,601 bytes
+sha256                     = dfbae26953844ca37cb1ecd12a6eded1382297bdccbe5d1dd9b15258bcd64438
+apksigner verify           = Verifies — v2 APK Signature Scheme = true
+apksigner signer cert      = SHA-256 1bc13061aab6f7eb362bfd0a71e3db106db8615736a337b197fc5f0db592b518  ✓ (authorized key)
+aapt2 badging              = package 'com.bhumiamartya.app' versionCode='106' versionName='5.0.6'
+                             targetSdk 36; application-label 'Bhumi Amartya';
+                             launchable-activity com.bhumiamartya.app.MainActivity
+```
+
+| Step | Result |
+|---|---|
+| Emulator | `Pixel_8` AVD booted (`sdk_gphone16k_x86_64`, Android SDK 37), `sys.boot_completed=1` |
+| `adb install -r app-release.apk` | **Success** — Android accepted the signature; installed `versionCode=106` / `versionName=5.0.6` / `signatures{version:2}` |
+| `am start com.bhumiamartya.app/.MainActivity` | `topResumedActivity = com.bhumiamartya.app/.MainActivity`; process stayed alive for the full session |
+| Runtime | `D Capacitor: Starting BridgeActivity`; WebView `com.google.android.webview 145.0.7632.218` loaded; sandboxed render process spawned; app requested INTERNET |
+| Crash scan | **No `FATAL EXCEPTION`, no `ANR`, no Capacitor error** in the full logcat session |
+| Rendered UI | The **Build 106 welcome screen** rendered: logo + "Bhumi Amartya" + tagline "Ruang Untuk Pulang dan Kenali Diri" + CTA "Pengguna Baru" + button "Saya Sudah Punya Akun" + the **Indonesia / English / Melayu** language selector (Build 85 §D + Build 106 localization foundation). Screenshots in the session scratchpad. |
+
+The web layer used synthetic placeholder Firebase/HD/billing config (this is an
+artifact-verification build, not wired to production); the smoke test proves the signed package
+installs, launches, boots the Capacitor + WebView runtime, and renders the correct localized
+Build 106 UI without crashing. A production-config functional pass on a real device is the ideal
+final proof (DS-GATE07 / RC-1, already accepted at emulator-hydration; not a blocker).
+
+### 10.4 Teardown
+
+`app` uninstalled from the emulator; emulator killed; `android/keystore.properties` **removed**
+(no signing material in the worktree); ephemeral `.env.local` / `out/` / `.next/` / debug logs /
+`/tmp/sigcheck` / `/tmp/aabcheck` removed; Capacitor gradle-file whitespace churn reverted.
+**Worktree tracked status: clean.** Forensic worktree `C:\tmp\bhumi-build83-access-hotfix`:
+untouched (its `keystore.properties` was read, never modified).
+
+### 10.5 Verdict
+
+- **Production-signed Build 106 AAB produced and verified** — signature valid, signing cert ==
+  the authorized Play upload key, package `com.bhumiamartya.app`, versionCode 106 / versionName
+  5.0.6, bundle integrity OK.
+- **Device smoke test PASS** — signed build installs, launches, and renders the correct Build 106
+  UI on an Android emulator with no crash.
+- Signing/build verification exposed **no release-blocking defect**; no product code was modified.
+- **`PLAY_STORE_UPLOAD` remains separately gated and was NOT performed.** No deploy, publish, or
+  production write.
+
+`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — signed artifact ready for Play Console
+upload on separate Founder authorization.
 
 STOP AND WAIT FOR FOUNDER REVIEW
