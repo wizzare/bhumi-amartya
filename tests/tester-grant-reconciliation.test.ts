@@ -133,6 +133,7 @@ console.log("✔ 13. Explicit grant still outranks login-count trial PASS");
 const paidProfile = {
   membershipType: "PREMIUM",
   isPremium: true,
+  entitlementSource: "google_play",
   membershipExpiryDate: "2026-10-01T00:00:00+07:00",
 };
 const paidEnt = getEntitlementStatus(paidProfile as any, currentNow);

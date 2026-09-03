@@ -262,10 +262,11 @@ async function runR4Tests() {
   assert(getEntitlementStatus(freeUser).isPremium === false, "20. HOTFIX-002 broadcast assumption: free user is not premium (entitlement intact)");
 
   const trialStartedAt = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
-  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialStartedAt } as any;
+  const trialEndsAt = new Date(new Date(trialStartedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const trialUser: UserProfile = { uid: "trial_1", email: "trial@test.com", trialStartedAt, trialEndsAt, entitlementSource: "firebase_auth_creation_time" } as any;
   assert(getEntitlementStatus(trialUser).isPremium === true, "21. Dashboard access intact: trial user within the 7-day time-based trial window gets access");
 
-  const premiumUser: UserProfile = { uid: "prem_1", email: "prem@test.com", membershipType: "PREMIUM", isPremium: true, accessUntil: "2026-12-31T00:00:00Z" } as any;
+  const premiumUser: UserProfile = { uid: "prem_1", email: "prem@test.com", membershipType: "PREMIUM", entitlementSource: "google_play", isPremium: true, membershipExpiryDate: "2099-12-31T00:00:00Z" } as any;
   assert(getEntitlementStatus(premiumUser).isPremium === true, "22. Trial/entitlement suite intact: verified premium user");
 
   const founderUser: UserProfile = { uid: "founder_1", email: "founder@test.com", membershipType: "LIFETIME" } as any;

@@ -103,6 +103,18 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT + STATIC_GUARD",
   },
   {
+    name: "Build 106 four-admin UID authorization + lifetime entitlement contract",
+    file: "tests/unit/build106-admin-lifetime-continuity.test.ts",
+    kind: "env",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
+    name: "Build 106 four-admin Firestore authorization, persistence, negative access, and relogin",
+    file: "tests/integration/build106-admin-lifetime-continuity-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
+  {
     name: "Auth landing CTA routing (read error != profile missing)",
     file: "tests/unit/auth-landing-route.test.ts",
     kind: "node",
