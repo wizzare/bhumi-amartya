@@ -157,9 +157,8 @@ test("admin UI uses UID-bound policy and restores the historical action chain", 
   const activity = readFileSync("app/admin/activity/page.tsx", "utf8");
   const inbox = readFileSync("components/admin/AdminInboxWorkspace.tsx", "utf8");
   const diagnostics = readFileSync("app/admin/diagnostics/page.tsx", "utf8");
-  const nav = readFileSync("components/navigation/AppNav.tsx", "utf8");
 
-  for (const source of [activity, inbox, diagnostics, nav]) {
+  for (const source of [activity, inbox, diagnostics]) {
     assert.match(source, /hasPrivilegedPageAccessForUid/);
     assert.doesNotMatch(source, /PERMANENT_ADMIN_EMAILS|admin_users/);
   }
@@ -170,7 +169,27 @@ test("admin UI uses UID-bound policy and restores the historical action chain", 
   assert.match(inbox, /getAllUserCommunications/);
   assert.match(inbox, /sendAdminReply/);
   assert.match(inbox, /sendBroadcast/);
-  assert.match(nav, /href:\s*["']\/admin\/activity/);
+});
+
+// Build 106 production hotfix: ADMIN PAGE / MENU EXPOSURE = REMOVE (authorization
+// above is unchanged). The shipped navigation must not surface the admin console
+// or Auth Diagnostics for any role, and each admin route is gated so a
+// production build cannot render it by direct navigation.
+test("admin console + Auth Diagnostics are not exposed in the production UI", () => {
+  const nav = readFileSync("components/navigation/AppNav.tsx", "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+  assert.doesNotMatch(nav, /["']\/admin(\/|["'])/);
+  assert.doesNotMatch(nav, /label:\s*["']Admin["']/);
+  assert.doesNotMatch(nav, /label:\s*["']Auth Diagnostics["']/);
+  assert.doesNotMatch(nav, /hasPrivilegedPageAccessForUid/);
+
+  const gate = readFileSync("lib/config/adminUiExposure.ts", "utf8");
+  assert.match(gate, /NEXT_PUBLIC_ENABLE_ADMIN_UI/);
+  for (const file of ["app/admin/page.tsx", "app/admin/activity/page.tsx", "app/admin/diagnostics/page.tsx"]) {
+    assert.match(readFileSync(file, "utf8"), /isAdminUiExposed/);
+  }
+  assert.match(readFileSync("scripts/run-prod-build.mjs", "utf8"), /NEXT_PUBLIC_ENABLE_ADMIN_UI:\s*'false'/);
 });
 
 test("server founder guard has no unauthenticated development bypass", () => {

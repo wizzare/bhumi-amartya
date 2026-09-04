@@ -103,6 +103,18 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT + STATIC_GUARD",
   },
   {
+    name: "Build 107 hotfix — Human Design 'menghitung ulang' existing-user convergence",
+    file: "tests/unit/build107-hd-existing-user-convergence.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
+    name: "Build 107 hotfix — production-surface guard (admin console + Auth Diagnostics not exposed; obsolete routes removed; route classification)",
+    file: "tests/unit/build107-production-surface-guard.test.ts",
+    kind: "node",
+    evidence: "STATIC_GUARD",
+  },
+  {
     name: "Build 106 four-admin UID authorization + lifetime entitlement contract",
     file: "tests/unit/build106-admin-lifetime-continuity.test.ts",
     kind: "env",
