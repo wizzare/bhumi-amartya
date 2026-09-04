@@ -7,8 +7,11 @@ CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 INITIATIVE                      = BUILD 108 ENL
 PURPOSE                         = Dedicated English-Language Edition / Global Release
+TOTAL_ROUTES_AUDITED            = 51
+TOTAL_USER_FACING_PAGES         = 48
+DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_BUILD_108_ENL_SOT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -24,7 +27,7 @@ The authoritative starting point and production baseline for all Build 108 work 
 - Release Status: **PRODUCTION**
 
 Build 107 resolved three critical regressions discovered in Build 106:
-1. **Human Design Identity Core convergence:** Existing/legacy users no longer hang on perpetual calculation states; recognized types resolve deterministically (`components/dashboard/CoreIdentity.tsx`).
+1. **Human Design Identity Core convergence:** Existing/legacy users no longer hang on perpetual calculation states; recognized types resolve deterministically (`components/dashboard/CoreIdentity.tsx`). Failed recalculation can never destroy a recoverable historical type (`AccuracyUpgradeBanner.tsx`, `PendingHdRecoveryBanner.tsx`).
 2. **Withdrawal of internal Admin Console from production UI:** `components/navigation/AppNav.tsx` dropped all admin/diagnostics menu items and role checks. All `app/admin/*` routes are hard-gated by `isAdminUiExposed()` which evaluates `NEXT_PUBLIC_ENABLE_ADMIN_UI === "true"` (pinned `false` in production exports).
 3. **Orphan route elimination:** Stale dev routes (`/status`, `/test`, `/roadmap`, `/changelog`, `/onboarding`) were deleted and guarded by static route assertions.
 4. **Administrative & Lifetime authorization continuity:** Preserved all 4 admin accounts, Lifetime entitlements, and Firestore rules.
@@ -44,12 +47,14 @@ For all Build 108 ENL activities, the authority conflict order is:
 1. **Explicit Founder Instruction** for the current task.
 2. **Authorized Repository & Runtime Evidence** from the recovery worktree.
 3. **`BUILD_108_ENL_MASTER_SOT.md`** (this document) — Primary product & architectural authority.
-4. **`BUILD_108_ENL_SCOPE_MATRIX.md`** — Surface-by-surface status & classification ledger.
-5. **`BUILD_108_ENL_HANDOFF.md`** — Operational handoff & task progression rules.
-6. **`BUILD_108_ENL_RELEASE_PLAN.md`** — Release gates, verification suites, and deployment checklists.
-7. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
-8. **Provenance-verified V5 documents** (`V5_*.md`).
-9. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
+4. **`BUILD_108_ENL_PAGE_AUDIT.md`** — Exhaustive 51-route read-only audit report and copy gap analysis.
+5. **`BUILD_108_ENL_SCOPE_MATRIX.md`** — Surface-by-surface status & classification ledger.
+6. **`BUILD_108_ENL_SPRINT_PLAN.md`** — Data-driven 8-sprint implementation sequence.
+7. **`BUILD_108_ENL_HANDOFF.md`** — Operational handoff & task progression rules.
+8. **`BUILD_108_ENL_RELEASE_PLAN.md`** — Release gates, verification suites, and deployment checklists.
+9. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
+10. **Provenance-verified V5 documents** (`V5_*.md`).
+11. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
 
 ---
 
@@ -59,11 +64,12 @@ Build 108 must explicitly guard and verify every element of Build 107:
 
 ### BUILD_107_INHERITANCE_CHECKLIST
 - [ ] **Human Design Convergence:** Existing users with stored HD records must immediately resolve to their type in `CoreIdentity.tsx`. Perpetual "Menghitung..." / "Perlu kalkulasi ulang" must never return.
+- [ ] **Failed Recalculation Safety:** A failed background recalculation must never overwrite or destroy a canonical stored Human Design type (`AccuracyUpgradeBanner.tsx`, `PendingHdRecoveryBanner.tsx`).
 - [ ] **Admin UI Protection:** `isAdminUiExposed()` gate must remain active on `app/admin/page.tsx`, `app/admin/activity/page.tsx`, and `app/admin/diagnostics/page.tsx`. `scripts/run-prod-build.mjs` must pin `NEXT_PUBLIC_ENABLE_ADMIN_UI: 'false'`.
 - [ ] **Clean AppNav Menu:** `components/navigation/AppNav.tsx` must never reintroduce Admin, Auth Diagnostics, or privileged role gating in production navigation.
 - [ ] **Orphan Routes Stay Gone:** Routes `/status`, `/test`, `/roadmap`, `/changelog`, `/onboarding` and `AuditReadiness.tsx` must remain deleted.
 - [ ] **Production Surface Guard:** `tests/unit/build107-production-surface-guard.test.ts` (131 assertions) must stay green.
-- [ ] **Admin & Lifetime Entitlements:** Admin roles (`founder`, `admin`, `dev_admin`) and non-expiring Lifetime entitlements for the four canonical admin accounts must remain intact.
+- [ ] **Admin & Lifetime Entitlements:** Admin roles (`founder`, `admin`, `dev_admin`) and non-expiring Lifetime entitlements for the four canonical admin accounts must remain intact (`privilegedUser.ts`, `entitlementService.ts`).
 - [ ] **Firestore Rules Security:** Owner-isolation, authenticated reads/writes, and zero unauthorized public mutations must remain intact.
 - [ ] **Deterministic Export & Build:** Web export (`output: 'export'`) -> Capacitor sync -> Android signed bundle pipeline must remain intact.
 
@@ -82,133 +88,111 @@ We audited four architectural approaches for Build 108 ENL:
 | **C** | **Unified Codebase with First-Class English Edition & Build-Target Flag (RECOMMENDED)** | Single unified codebase where English is 100% implemented across all surfaces, engines, and prompts. An environment/build flag (`NEXT_PUBLIC_APP_EDITION=ENL`) governs whether the artifact is a dedicated English release (locked to English, hidden selectors) or a multilingual global release. | Zero codebase divergence; single source of truth; full regression protection; supports both dedicated ENL store listing or unified multi-language listing. | Requires thorough, disciplined dictionary & presentation layer completion. | **RECOMMENDED (OPTION C)** |
 | **D** | Dynamic Server-Driven Remote Config | Download localized copy dynamically via Firestore or Cloud Storage at runtime. | Instant copy tweaks without app updates. | High latency, offline vulnerability, complex caching, and violation of Bhumi local-first philosophy. | **REJECTED** |
 
-### 4.2 The 10 Critical Architectural Decisions
+### 4.2 Explicit Global Architecture Policy Answers
 
-#### Decision 1: Language Selectors Visibility in Build 108 ENL
-- **In Build 108 ENL mode (`NEXT_PUBLIC_APP_EDITION=ENL`):**
-  - The language selector on Landing (`app/page.tsx`) and Settings (`app/settings/page.tsx`) will be **hidden**.
-  - Active runtime locale is pinned to `"en"` (`en-US`).
-- **In Default / Multilingual mode:**
-  - The switcher remains available with canonical tags (`id-ID`, `en-US`, `ms-MY`).
+```text
+BUILD_108_ENL_LANGUAGE_MODEL        = OPTION_C_UNIFIED_EDITION_FLAGGED
+VISIBLE_LANGUAGES                   = ["en"] (ENL mode) / ["en", "id", "ms"] (Multilingual mode)
+INTERNAL_FALLBACK_LANGUAGES         = ["en", "id"]
+EXISTING_USER_LOCALE_BEHAVIOR       = PRESERVE_PROFILE_INITIALIZE_ENL_SESSION
+AI_OUTPUT_LANGUAGE_POLICY           = STRICT_ENGLISH_END_TO_END
+API_OUTPUT_LANGUAGE_POLICY          = STRICT_ENGLISH_CANONICAL
+INTENTIONALLY_UNTRANSLATED_TERMS    = CULTURAL_TERMS_CANONICAL_PRESERVED
+```
 
-#### Decision 2: Preservation of Internal `id-ID` & `ms-MY` Resources
-- Under no circumstances will `src/locales/id-ID/` or `src/locales/ms-MY/` be deleted from the repository.
-- They remain permanently in source control as the authoritative cultural baseline and as fallback data.
+#### Detailed Policy Breakdown:
 
-#### Decision 3: Fallback Hierarchy for Missing English Copy
-1. **Primary:** Keyed English dictionary (`src/locales/en-US/translation.json`).
-2. **Secondary:** English programmatic fallback string inside the component/engine (graceful descriptive text).
-3. **Tertiary (Emergency):** `id-ID` dictionary entry as a last-resort safety guard to prevent crashes or empty screens, accompanied by a dev warning logger.
+1. **`BUILD_108_ENL_LANGUAGE_MODEL = OPTION_C_UNIFIED_EDITION_FLAGGED`**
+   - Single unified codebase across all editions.
+   - Build-time environment variable `NEXT_PUBLIC_APP_EDITION=ENL` controls visible language controls and default initialization.
+   - All 51 routes, 11 blueprint engines, AI prompts, and legal documents provide 100% complete native English.
 
-#### Decision 4: Treatment of Culturally Specific Terms (e.g., Weton)
-- Concepts rooted in Indonesian/Javanese cosmology (*Weton*, *Pasaran*, *Neptu*, *Pancasuda*, *Saptawara*, *Sadwara*) or Chinese/Mesoamerican traditions (*BaZi*, *Tzolkin*, *Nakshatra*) are classified as **`INTENTIONALLY_LOCAL_TERM`**.
-- **Rule:** Do NOT perform absurd literal translations (e.g., do not translate *Pon* or *Wage*).
-- **Presentation standard:** Retain the authentic terminology, framed with clear, dignified English context:
-  - *"Javanese Weton (Birth Day & Market Sign)"*
-  - *"Day Master & Five Element Balance"*
-  - *"Mayan Solar Kin & Galactic Tone"*
+2. **`VISIBLE_LANGUAGES = ["en"]` (ENL Mode)**
+   - When building the dedicated ENL artifact, language switchers on the Landing page (`app/page.tsx`) and Settings page (`app/settings/page.tsx`) are hidden.
+   - The UI runs purely in English without displaying inactive language options.
+   - In standard multilingual mode, the switcher remains functional across `id-ID`, `en-US`, and `ms-MY`.
 
-#### Decision 5: End-to-End English AI Narratives
-- `lib/prompts/dailyGuidancePrompt.ts`, `bhumiDailyReflectionPrompt.ts`, `bhumiSoulMirrorPrompt.ts`, and `bhumiManifestationPrompt.ts` must generate 100% English responses when `language: "en"`.
-- Remove hardcoded Indonesian framing phrases:
-  - Replace *"Halo {firstName}"* with natural English greetings (*"Welcome, {firstName}"*, *"Good morning, {firstName}"*).
-  - Replace *"Peluk hangat dari Bhumi."* with dignified English companion sign-offs (*"Warmly with you, Bhumi."* or *"In gentle presence, Bhumi."*).
-  - Eliminate all Indonesian transit template starters (*"Posisi Matahari hari ini..."*).
-- Local deterministic fallback (`localDailyGuidanceFallback.ts`) must return 100% English copy when `language === "en"`.
+3. **`INTERNAL_FALLBACK_LANGUAGES = ["en", "id"]`**
+   - Fallback hierarchy: Keyed English (`translation.json`) -> Programmatic English semantic fallback -> `id-ID` dictionary (emergency safety net).
+   - Under no circumstances will `id-ID` or `ms-MY` dictionary resources be deleted from source control.
 
-#### Decision 6: Firestore & User Data Schema Stability
-- **Zero breaking schema changes.**
-- `users/{uid}.language` will store `"en-US"` or `"en"`.
-- Cached daily guidance entries in `users/{uid}/dailyGuidance/{date}` already incorporate language hashing via `createDailyContentSeed()`.
+4. **`EXISTING_USER_LOCALE_BEHAVIOR = PRESERVE_PROFILE_INITIALIZE_ENL_SESSION`**
+   - Existing users upgrading from Build 107 retain their profile record (`users/{uid}.language`).
+   - The ENL edition binary initializes the active session to `"en"`.
+   - Calculations and blueprint views re-render in English. Historical user-created journal entries in Indonesian remain unaltered.
 
-#### Decision 7: Upgrade Experience for Existing Users
-- For users updating to a dedicated Build 108 ENL artifact: The active app locale is initialized to `"en"`.
-- User profile data (name, birth details, journal entries, journey steps) is preserved with 100% fidelity.
-- Historical journal entries written in Indonesian remain untouched; future prompts and guidance are served in English.
+5. **`AI_OUTPUT_LANGUAGE_POLICY = STRICT_ENGLISH_END_TO_END`**
+   - `buildDailyGuidancePrompt()` sets `outputLanguage = "en"`.
+   - Indonesian boilerplate greetings (*"Halo {firstName}"*) become *"Welcome, {firstName}"* or natural time-of-day greetings.
+   - Indonesian sign-offs (*"Peluk hangat dari Bhumi."*) become *"Warmly with you, Bhumi."*.
+   - Deterministic local guidance fallback (`localDailyGuidanceFallback.ts`) returns 100% English strings when `language === "en"`.
 
-#### Decision 8: Package / Application Identity Implications
-- If Build 108 ENL is intended as a **dedicated international Google Play app**:
-  - Requires distinct application identifier (e.g., `com.bhumiamartya.app.en` or `com.bhumiamartya.global`).
-  - Requires corresponding Google Play Console app, Firebase Android App entry with SHA-1/SHA-256 fingerprints, and Google Sign-In Client ID.
-- If Build 108 ENL is intended as a **direct update to the existing app**:
-  - Retains `applicationId = "com.bhumiamartya.app"`.
-  - In this case, English should be the default language, while preserving the user's ability to switch to Indonesian in Settings.
+6. **`API_OUTPUT_LANGUAGE_POLICY = STRICT_ENGLISH_CANONICAL`**
+   - Internal API endpoints (`/api/ai/daily-guidance`, `/api/humandesign/calculate`, `/api/kenali-diri/aura`) return canonical English payloads and error messages.
 
-#### Decision 9: Play Store Listing Implications
-- Store listing metadata must be translated into English:
-  - App Name: `Bhumi Amartya: Soul Blueprint & Self-Discovery`
-  - Short Description: `Discover your soul map, Human Design, astrology transits, and daily reflections.`
-  - Full Description, Feature Graphic, Screenshots, and Privacy Policy URL (`/kebijakan-privasi` -> English `/privacy-policy`).
-
-#### Decision 10: Versioning Scheme
-- Baseline: `versionCode = 107`, `versionName = "5.0.7"`
-- Build 108 ENL target:
-  - `versionCode = 108`
-  - `versionName = "5.0.8"` (or `"5.0.8-enl"`)
-  - Target files for sync: `android/app/build.gradle`, `lib/config/buildInfo.ts`, `src/lib/version.ts`, and test assertions.
+7. **`INTENTIONALLY_UNTRANSLATED_TERMS = CULTURAL_TERMS_CANONICAL_PRESERVED`**
+   - Authentic cosmological terms are preserved with clear English glosses:
+     - **Weton:** *Dina*, *Pasaran* (*Legi, Pahing, Pon, Wage, Kliwon*), *Neptu*, *Pancasuda*.
+     - **BaZi:** *Day Master*, *Yin/Yang Elements*, *Tian Gan*, *Di Zhi*.
+     - **Tzolkin:** *Solar Seals* (*Imix, Ik, Akbal...*), *Galactic Tones*.
+     - **Vedic:** *Nakshatras*, *Dashas*, *Rashi*.
+     - **Human Design:** *Sacral*, *Ajna*, *Generator*, *Projector*, *Manifestor*, *Reflector*.
+   - Surrounding explanations, summaries, and personality profiles must be rendered in fluent, native English.
 
 ---
 
 ## 5. Audit Results & Current Baseline Metrics
 
-An exhaustive code audit of the Build 107 baseline yielded the following metrics:
+An exhaustive 51-route code audit (detailed in `BUILD_108_ENL_PAGE_AUDIT.md`) produced the following exact metrics:
 
 ```text
-TOTAL_UI_SURFACES                  = 51
-ENGLISH_READY                      = 0
-PARTIAL_ENGLISH                    = 8
-INDONESIAN_HARDCODED               = 39
-INTENTIONALLY_LOCAL_TERM           = 1
-OUT_OF_SCOPE (ADMIN/DEV GATED)     = 3
-
-BACKEND_GENERATED_LANGUAGE_GAPS    = HIGH (11 Blueprint presentation engines lack English localization)
-AI_LANGUAGE_GAPS                   = MEDIUM-HIGH (Prompts contain Indonesian boilerplate and greetings)
+TOTAL_ROUTES                       = 51
+TOTAL_USER_FACING_PAGES            = 48
+DEV_OR_DEPRECATED_SURFACES         = 3 (app/admin/page, app/admin/activity, app/admin/diagnostics)
+ENGLISH_READY_PAGES                = 0
+PARTIAL_ENGLISH_PAGES              = 8
+INDONESIAN_HARDCODED_PAGES         = 39
+INTENTIONALLY_LOCAL_TERM_PAGES     = 1
+ROUTE_LEVEL_HARDCODED_ID_FINDINGS  = 560
+COMPONENT_LEVEL_HARDCODED_ID       = 389
+TOTAL_HARDCODED_ID_FINDINGS        = 949+
+MALAY_HARDCODED_FINDINGS           = 1
+BACKEND_GENERATED_LANGUAGE_GAPS    = 11 (All 11 Blueprint presentation engines in lib/)
+AI_LANGUAGE_GAPS                   = 5 (dailyGuidance, soulMirror, manifestation, reflection, identity prompts)
+API_LANGUAGE_GAPS                  = 3 (ai, humandesign, aura routes)
+FALLBACK_LANGUAGE_GAPS             = 6 (daily guidance fallback, CoreIdentity, timeOfDay, etc.)
 LEGAL_COPY_GAPS                    = CRITICAL (5 of 5 legal/about/help pages are 100% hardcoded Indonesian)
 BUILD_107_REGRESSION_RISKS         = FULLY IDENTIFIED & GUARDED
-ARCHITECTURE_RECOMMENDATION        = OPTION C (Unified Codebase with Build-Target Edition Support)
+RECOMMENDED_SPRINT_COUNT           = 8 SPRINTS
+ARCHITECTURE_RECOMMENDATION        = OPTION C (Unified First-Class English Edition Architecture)
 ```
-
-### Audit Findings Summary:
-1. **The 11 Blueprint Presentation Engines:** All 11 engines (`lib/humandesign/presentation.ts`, `lib/astrology/presentation.ts`, `lib/destiny-matrix/presentation.ts`, `lib/numerology/presentation.ts`, etc.) generate strings purely in Bahasa Indonesia with no language parameter.
-2. **Legal & Informational Pages:** `/tentang`, `/syarat-ketentuan`, `/kebijakan-privasi`, `/bantuan`, `/kontak` are static, hardcoded Indonesian documents.
-3. **Core Identity & Dashboard Subcards:** While `src/locales/en-US/translation.json` has core keys, major subcards (`DailyNoteV2.tsx`, `AIReminderState.tsx`, `WeeklyGuidanceCard.tsx`, `PenjagaBhumiIntiBanner.tsx`) contain hardcoded Indonesian text.
-4. **Settings Page:** Contains hardcoded Indonesian text in Danger Zone ("Zona Bahaya"), Account Deletion, and Membership status cards.
 
 ---
 
-## 6. Implementation Strategy & Sprints
+## 6. Derived Sprint Roadmap Summary
 
-Execution of Build 108 ENL will proceed across 7 planned sprints:
+The 8 implementation sprints (specified in detail in `BUILD_108_ENL_SPRINT_PLAN.md`):
 
-```mermaid
-flowchart TD
-    S0[Sprint 0: Canonical Foundation & SOT] --> S1[Sprint 1: Core Shell, Auth & Navigation i18n]
-    S1 --> S2[Sprint 2: 11 Blueprint Presentation Engines English Layer]
-    S2 --> S3[Sprint 3: AI Orchestration, Prompts & Local Fallback]
-    S3 --> S4[Sprint 4: Hub Surfaces - Dashboard, Profile, Journey, Wellness, Journal]
-    S4 --> S5[Sprint 5: Legal, Settings, Paywall & Static Pages]
-    S5 --> S6[Sprint 6: Build 107 Regression Guard, Build & Release QA]
-```
-
-- **Sprint 0: Foundation & Governance (CURRENT)** — Auditing, SOT documentation, Scope Matrix, Release Plan, and Entrypoints.
-- **Sprint 1: Core Shell, Auth & Navigation** — Landing page, Login, Setup flow, AppNav, and global headers.
-- **Sprint 2: 11 Blueprint Presentation Engines** — Localizing Human Design, Astrology, Destiny Matrix, Life Path, Vedic, BaZi, Tzolkin, Weton, Whole Sign, Zi Wei, and Astrocartography.
-- **Sprint 3: AI Prompts & Daily Guidance Fallback** — English prompt generation, time-of-day greetings, daily conclusion contracts, and local fallback synthesizer.
-- **Sprint 4: Primary Hubs & Cards** — DashboardClient subcards, Profile tabs, Journey steps, Wellness assessment, and Journal prompts.
-- **Sprint 5: Legal, Settings & Paywall** — Privacy Policy, Terms, About, Help, Contact, Settings danger zone, and Payment modal.
-- **Sprint 6: Verification, Build & Release Gate** — Full test suite pass, static surface guard pass, version bump to 108 / 5.0.8, APK/AAB build, and Founder sign-off.
+1. **Sprint 1: Onboarding, Authentication & Core Shell** (`app/page.tsx`, `app/login/page.tsx`, `app/setup/page.tsx`, `AppNav.tsx`, language switcher hiding).
+2. **Sprint 2: Dashboard & Core Identity** (`app/dashboard/page.tsx`, `app/dashboard/environment/page.tsx`, `CoreIdentity.tsx`, all 15 dashboard cards).
+3. **Sprint 3: The 11 Blueprint Presentation Engines** (`app/blueprint/*` and all 11 `lib/` engines).
+4. **Sprint 4: AI Daily Guidance, Prompts & Local Fallbacks** (`lib/prompts/*`, `unifiedBlueprintSynthesis.ts`, `localDailyGuidanceFallback.ts`).
+5. **Sprint 5: Profile, Journey & Journal Hubs** (`profile`, `journey`, `journal`, `insights`, `reports/weekly`).
+6. **Sprint 6: Wellness, Somatics, Healing & Innerwork** (`wellness`, `wellness-assessment`, `healing/*`, `innerwork/*`, `kenali-diri/aura`).
+7. **Sprint 7: Settings, Paywall, Legal & Static Pages** (`settings`, `premium-bhumi`, `upgrade`, `tentang`, `syarat-ketentuan`, `kebijakan-privasi`, `bantuan`, `kontak`).
+8. **Sprint 8: Final Regression, Build Verification & Release Protocol** (Full test suite, static surface guard, version bump to 108 / 5.0.8, signed AAB/APK build, Founder sign-off).
 
 ---
 
-## 7. Operational Status & Guardrails
+## 7. Governance Status & Next Steps
 
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_BUILD_108_ENL_SOT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
 ```
 
 **Guardrails:**
-- NO product code edits may take place until the Founder approves this Master SOT and the recommended architecture.
+- NO product code edits may take place until the Founder approves this Master SOT, the Page Audit (`BUILD_108_ENL_PAGE_AUDIT.md`), and the Sprint Plan (`BUILD_108_ENL_SPRINT_PLAN.md`).
 - NO version bump to 108 or 5.0.8.
 - NO APK or AAB generation.
 - NO deployment or publishing.

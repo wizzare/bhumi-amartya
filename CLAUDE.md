@@ -18,11 +18,13 @@ continuity. DO NOT begin product code modifications before explicit Founder appr
 ## Mandatory reading order (before ANY analysis / code / test / build / deploy)
 
 1. `BUILD_108_ENL_MASTER_SOT.md` — PRIMARY canonical product/architectural authority for Build 108 ENL
-2. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface status & classification ledger (51 routes)
-3. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap
-4. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol
-5. `BUILD_107_HOTFIX_RELEASE.md` — production baseline record (Build 107)
-6. `AGENTS.md` & `RULES.md` — engineering/product invariants and repository operating rules
+2. `BUILD_108_ENL_PAGE_AUDIT.md` — canonical 51-route read-only audit report and copy gap analysis
+3. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface status & classification ledger (51 routes)
+4. `BUILD_108_ENL_SPRINT_PLAN.md` — data-driven 8-sprint implementation sequence
+5. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap
+6. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol
+7. `BUILD_107_HOTFIX_RELEASE.md` — production baseline record (Build 107)
+8. `AGENTS.md` & `RULES.md` — engineering/product invariants and repository operating rules
 
 ## Canonical authority order (highest first)
 

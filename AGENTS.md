@@ -4,11 +4,13 @@
 For ANY Build 108 ENL analysis, documentation, coding, testing, build, or release work, agents MUST read these files BEFORE touching source:
 
 1. `BUILD_108_ENL_MASTER_SOT.md` — PRIMARY canonical product and architectural authority for Build 108 ENL.
-2. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface classification & status ledger across all 51 routes.
-3. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap.
-4. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol.
-5. `BUILD_107_HOTFIX_RELEASE.md` — authoritative record of the Build 107 production baseline.
-6. `RULES.md` — engineering and product invariants where not superseded by explicit Build 108 ENL rules.
+2. `BUILD_108_ENL_PAGE_AUDIT.md` — canonical 51-route read-only audit report and copy gap analysis.
+3. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface classification & status ledger across all 51 routes.
+4. `BUILD_108_ENL_SPRINT_PLAN.md` — data-driven 8-sprint implementation sequence.
+5. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap.
+6. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol.
+7. `BUILD_107_HOTFIX_RELEASE.md` — authoritative record of the Build 107 production baseline.
+8. `RULES.md` — engineering and product invariants where not superseded by explicit Build 108 ENL rules.
 
 ### Production Baseline & Continuity Rule
 
