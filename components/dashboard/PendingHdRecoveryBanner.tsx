@@ -4,6 +4,7 @@ import React, { useMemo, useState } from "react";
 import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getHdState } from "@/lib/humandesign/hdState";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
@@ -98,7 +99,11 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
           longitude: profile.longitude,
         });
 
-        if (blueprint) {
+        // Build 106 hotfix: only persist a canonical recalculation. A failed
+        // engine call returns a typeless local-fallback/pending chart; writing
+        // that back would overwrite recoverable stored HD and trap the user on
+        // "menghitung ulang". On failure keep existing data and just reload.
+        if (blueprint && isCanonicalHumanDesign(nextHD)) {
           const nextBlueprint = {
             ...blueprint,
             humanDesign: nextHD,

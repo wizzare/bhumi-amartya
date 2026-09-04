@@ -1,6 +1,7 @@
 "use client";
 
 import { getHdState } from "@/lib/humandesign/hdState";
+import { isRecognizedHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { HumanDesignChart } from "@/lib/humandesign/types";
 
 interface CoreIdentityProps {
@@ -40,39 +41,34 @@ export function CoreIdentity({
 }: CoreIdentityProps) {
   const hdState = getHdState(humanDesign);
   const humanDesignType = hdState.type === "Manifesting Generator" ? "ManGen" : hdState.type;
+
+  // Build 106 hotfix: an existing user whose stored Human Design carries a
+  // recognizable type MUST converge to a resolved identity here — never a
+  // perpetual "menghitung ulang" / "Menghitung..." primary value. The
+  // canonical-accuracy path (remote Gaia engine promoting to CANONICAL, its
+  // background retry, and the /blueprint/human-design detail view) is unchanged;
+  // this only stops the dashboard tile from stranding recoverable data.
   const humanDesignPresentation = (() => {
-    switch (hdState.state) {
-      case "CANONICAL":
-        return { value: humanDesignType || "Belum tersedia" };
-      case "FALLBACK_LABELED":
-        if (hdState.provenance === "local_fallback") {
-          return {
-            value: humanDesignType || "Perhitungan belum berhasil",
-            subValue: "Perhitungan belum berhasil, akan dicoba lagi",
-          };
-        }
-        return {
-          value: humanDesignType || "Data historis",
-          subValue: "Data historis, perlu kalkulasi ulang",
-        };
-      case "PENDING":
-        return {
-          value: hdState.reason === "needs_verified_timezone"
-            ? labels.humanDesignNeedsTimezone || labels.humanDesignPending
-            : labels.humanDesignPending,
-          subValue: "Perhitungan sedang berlangsung",
-        };
-      case "RETRIABLE_ERROR":
-        return {
-          value: "Perlu dihitung ulang",
-          subValue: "Kalkulasi belum tersedia. Coba lagi nanti.",
-        };
-      case "TERMINAL_ERROR":
-        return {
-          value: "Belum tersedia",
-          subValue: "Data Human Design belum dapat dihitung.",
-        };
+    // Any usable stored type resolves the tile — a recognized type, or (for a
+    // settled canonical/historical record) whatever label the engine stored.
+    if (isRecognizedHumanDesignType(hdState.type)) {
+      return { value: humanDesignType as string };
     }
+    if (hdState.type && (hdState.state === "CANONICAL" || hdState.state === "FALLBACK_LABELED")) {
+      return { value: humanDesignType as string };
+    }
+    if (hdState.state === "PENDING") {
+      return {
+        value: hdState.reason === "needs_verified_timezone"
+          ? labels.humanDesignNeedsTimezone || labels.humanDesignPending
+          : labels.humanDesignPending,
+        subValue: "Perhitungan sedang berlangsung",
+      };
+    }
+    return {
+      value: "Belum tersedia",
+      subValue: "Data Human Design belum dapat dihitung.",
+    };
   })();
 
   return (

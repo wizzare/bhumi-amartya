@@ -5,6 +5,7 @@ import { Sparkles, RefreshCw, X } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { getHdState } from "@/lib/humandesign/hdState";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 
 interface AccuracyUpgradeBannerProps {
   uid: string;
@@ -32,7 +33,7 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
       const latitude = profile?.latitude ?? profile?.profile?.latitude ?? null;
       const longitude = profile?.longitude ?? profile?.profile?.longitude ?? null;
 
-      // Force recalculation using Python engine
+      // Force recalculation using the canonical Gaia engine.
       const nextHD = await calculateHumanDesign({
         birthDate,
         birthTime,
@@ -42,14 +43,23 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
         longitude,
       });
 
-      const nextBlueprint = {
-        ...blueprint,
-        humanDesign: { ...nextHD, needsUpgrade: false },
-        updatedAt: new Date().toISOString()
-      };
+      // Build 106 hotfix: only a canonical result may replace stored HD. If the
+      // engine is unreachable it returns a typeless local-fallback/pending
+      // chart; persisting that would strip a recoverable historical type and
+      // strand the user on "menghitung ulang". Leave existing data intact.
+      if (isCanonicalHumanDesign(nextHD)) {
+        const nextBlueprint = {
+          ...blueprint,
+          humanDesign: { ...nextHD, needsUpgrade: false },
+          updatedAt: new Date().toISOString()
+        };
+        await storageProvider.saveUserBlueprint(nextBlueprint);
+        window.location.reload(); // Force refresh to see new identity
+        return;
+      }
 
-      await storageProvider.saveUserBlueprint(nextBlueprint);
-      window.location.reload(); // Force refresh to see new identity
+      console.warn("[AccuracyUpgradeBanner] Recalculation did not return a canonical chart; existing HD preserved.");
+      setDismissed(true);
     } catch (error) {
       console.error("Accuracy upgrade failed", error);
     } finally {
