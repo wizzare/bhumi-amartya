@@ -238,3 +238,45 @@ aapt2 badging              = package 'com.bhumiamartya.app' versionCode='106' ve
 - `PLAY_STORE_UPLOAD` remains NOT AUTHORIZED and was NOT performed. No deploy, publish, or production writes.
 
 STOP AND WAIT FOR FOUNDER REVIEW
+
+---
+
+## 11. Build 107 production regression hotfix (2026-09-04) — SUPERSEDES §1–§10 as the release artifact
+
+The Build 106 §10 signed AAB (`d83ef876…`, versionCode 106) is **superseded**. Published Build 106
+carried three live regressions (HD Identity Core stuck on "menghitung ulang" for existing users;
+in-app admin console + Auth Diagnostics exposed in the production "Lainnya" menu) plus five stale
+orphan routes. Founder approved **Build 107**.
+
+Canonical detail: **`BUILD_107_HOTFIX_RELEASE.md`**. Summary:
+
+```text
+BRANCH                    = recovery/build106-product-continuity
+FIX COMMITS               = 49af553 (HD convergence) · 07ae6e0 (admin/Auth-Diagnostics de-exposure)
+                            · 58adcc4 (obsolete-route removal) · d3a9674 (test) · 4e6ca26 (version bump)
+versionCode / versionName = 107 / 5.0.7    RELEASE_NAME = BHUMI AMARTYA V5 BUILD 107
+SIGNED_AAB                 = bhumi-amartya-v5.0.7-build107-release-signed.aab
+  build path               = android/app/build/outputs/bundle/release/app-release.aab
+  size bytes               = 10,833,021
+  sha256                   = 3ac83cdc4ddbdc6bc3fb719f2809477a91779961d482d7edb1dd2e8c4f9b210a
+SIGNED_APK (device QA)     = bhumi-amartya-v5.0.7-build107-release-signed.apk
+  size bytes               = 11,033,120
+  sha256                   = bb0729be6d2282fad28c50aaba14a9cd3821a4af9b0d317ac4a6009de857a1f2
+SIGNING_KEY                = CN=Bhumi Amartya (alias bhumi-amartya) — authorized Play upload key
+  SHA-256                  = 1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18
+  SHA-1                    = B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52
+SIGNATURE_VERIFY           = AAB jarsigner "jar verified" + cert == upload key; APK apksigner v2 scheme = true
+PACKAGED_MANIFEST          = com.bhumiamartya.app / versionCode 107 / versionName 5.0.7 / minSdk 24 /
+                             targetSdk 36 / MainActivity MAIN+LAUNCHER / no .qa / no debuggable / no new permissions
+RELEASE_SUITE              = RELEASE_TESTS_PASS — PASS=29 FAIL=0 SKIPPED=0 (JDK 21 emulator); tsc EXIT 0
+DEVICE_QA                  = Pixel_8 AVD (SDK 37): install Success (sig v2), MainActivity topResumed,
+                             Build 107 welcome screen rendered (id/en/ms selector), 0 FATAL / 0 ANR /
+                             0 dropbox entries for the app
+ADMIN_AUTHORIZATION        = PRESERVED — privilegedUser / requireFounder / adminContinuity /
+                             getEntitlementStatus admin-lifetime / firestore.rules unchanged;
+                             four-admin authorization + lifetime suites green
+RELEASE_CRITICAL_GAPS_OPEN = 0
+PLAY_STORE_UPLOAD          = NOT AUTHORIZED / NOT PERFORMED
+```
+
+`NEXT_SAFE_ACTION = STOP_AND_WAIT_FOR_FOUNDER_PLAY_STORE_UPLOAD`

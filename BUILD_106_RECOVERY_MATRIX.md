@@ -41,6 +41,43 @@ Canonical reconciliation detail: `BUILD_106_RECONCILIATION_REPORT.md` §11.6. Hi
 artifact provenance remains in `BUILD_106_RELEASE_PROVENANCE.md`; operational snapshot:
 `BUILD_106_HANDOFF.md`.
 
+## Build 107 production regression hotfix (2026-09-04) — SUPERSEDES the Build 106 artifact
+
+Published Build 106 shipped three live production regressions + five stale orphan routes. Founder
+approved a Build 107 hotfix. Canonical record: **`BUILD_107_HOTFIX_RELEASE.md`**.
+
+```text
+BUILD_107_MARKER                        = BUILD_107_RECONCILED
+FIX COMMITS                             = 49af553 · 07ae6e0 · 58adcc4 · d3a9674 · 4e6ca26
+versionCode / versionName               = 107 / 5.0.7
+HUMAN_DESIGN_EXISTING_USER_FIX          = FIXED — CoreIdentity resolves any recognized/settled stored HD type;
+                                          AccuracyUpgradeBanner + PendingHdRecoveryBanner persist only a
+                                          canonical recalc (no destructive overwrite). Canonical Gaia path,
+                                          background retry, /blueprint/human-design detail view unchanged.
+ADMIN_UI_PRODUCTION_EXPOSURE            = REMOVED — AppNav drops Admin + Auth Diagnostics + all privileged-role
+                                          logic; new lib/config/adminUiExposure.ts gate; app/admin/* redirect to
+                                          /dashboard when NEXT_PUBLIC_ENABLE_ADMIN_UI != "true"; run-prod-build
+                                          pins it false; patch_nav.js deleted.
+AUTH_DIAGNOSTICS_PRODUCTION_EXPOSURE    = REMOVED (same change; app/admin/diagnostics is DEV_ONLY, gated).
+DEV_ONLY_ROUTES_PRODUCTION_EXPOSURE     = REMOVED — /status /test /roadmap /changelog /onboarding +
+                                          components/audit/AuditReadiness.tsx deleted.
+ADMIN_AUTHORIZATION_PRESERVED           = YES — privilegedUser / requireFounder / adminContinuity /
+                                          getEntitlementStatus admin-lifetime / firestore.rules unchanged;
+                                          four historical admin identities + Lifetime entitlement intact;
+                                          build106-admin-lifetime-continuity 22/22 + emulator four-admin suite green.
+TESTS                                   = tsc EXIT 0 · full emulator release suite RELEASE_TESTS_PASS 29/29
+                                          (incl. build107-hd-existing-user-convergence 19/19 +
+                                          build107-production-surface-guard 131/131) · version-reconciliation 21/21
+FINAL_SIGNED_BUILD_107                  = VERIFIED — AAB sha256 3ac83cdc…210a / APK sha256 bb0729be…a1f2;
+                                          signing cert == authorized Play upload key 1BC13061…B518;
+                                          pkg com.bhumiamartya.app / 107 / 5.0.7 / targetSdk 36 / no new permissions.
+DEVICE_QA                              = PASS — Pixel_8 AVD (SDK 37): install Success (sig v2), MainActivity
+                                          topResumed, Build 107 welcome screen rendered, 0 FATAL / 0 ANR.
+RELEASE_CRITICAL_GAPS_OPEN             = 0
+BUILD_107_CAN_PROCEED_TO_PLAY_INTERNAL_TESTING = YES (gated on Founder manual Play Store upload)
+PLAY_STORE_UPLOAD / DEPLOY / PUBLISH / PRODUCTION_WRITE / BACKEND_DEPLOY = NOT DONE / NOT AUTHORIZED
+```
+
 ### Admin/lifetime reconciliation ledger
 
 | Item | Status | Evidence / remainder |

@@ -1,6 +1,25 @@
 # BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
 
-# BHUMI AMARTYA — BUILD 106 CONTINUITY HANDOFF
+> ## ⚠ SUPERSEDED BY BUILD 107 — 2026-09-04
+>
+> Published Build 106 carried three live production regressions (HD Identity Core stuck on
+> "menghitung ulang" for existing users; the in-app admin console exposed in the production
+> "Lainnya" menu; the Auth Diagnostics page exposed in "Lainnya") plus five stale orphan routes.
+> The Founder approved a **Build 107** production regression hotfix. It is committed
+> (`49af553` → `4e6ca26`), version-bumped to **versionCode 107 / versionName 5.0.7**,
+> production-signed, verified, and device-QA'd. **The published Build 106 artifact is superseded
+> and must not be uploaded.**
+>
+> **Canonical Build 107 record: `BUILD_107_HOTFIX_RELEASE.md`.** Signed AAB
+> `bhumi-amartya-v5.0.7-build107-release-signed.aab` (sha256 `3ac83cdc4ddbdc6bc3fb719f2809477a91779961d482d7edb1dd2e8c4f9b210a`),
+> signing cert == authorized Play upload key `1B:C1:30:61:…:B518`. `RELEASE_CRITICAL_GAPS_OPEN = 0`.
+> `PLAY_STORE_UPLOAD` remains Founder-gated and was NOT performed.
+>
+> Admin AUTHORIZATION (Firestore roles, the four historical admin identities, Lifetime entitlement,
+> canonical authorization, `firestore.rules`, the premium entitlement resolver) is **preserved
+> unchanged** — only the admin PAGE / MENU EXPOSURE was withdrawn.
+>
+> The rest of this file is the Build 106 operational history, retained per the supersession rule.
 
 Status: **`BUILD_106_RECOVERY_RECONCILED_AND_RELEASE_READY` — production preflight verified existing state convergence; production-signed artifact built from reconciled HEAD and verified; device smoke test & admin acceptance PASS; 0 release gaps remain. Play Console upload is the sole remaining step and is gated on Founder manual action (`PLAY_STORE_UPLOAD` NOT AUTHORIZED for agents).**
 Primary agent: CLAUDE_CODE (Handover from CODEX / Antigravity).
