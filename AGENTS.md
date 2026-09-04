@@ -1,32 +1,30 @@
-<!-- BEGIN:build106-entrypoint -->
-# BUILD 106 — MANDATORY RECOVERY ENTRYPOINT
+<!-- BEGIN:build108-enl-entrypoint -->
+# BUILD 108 ENL — MANDATORY OPERATIONAL ENTRYPOINT
 
-For ANY Build 106 analysis, coding, testing, recovery, build, or release work, agents MUST read these files BEFORE touching source:
+For ANY Build 108 ENL analysis, documentation, coding, testing, build, or release work, agents MUST read these files BEFORE touching source:
 
-1. `BUILD_106_MASTER_SOT.md` — PRIMARY canonical product/recovery authority for Build 106.
-2. `BUILD_106_RECOVERY_MATRIX.md` — canonical R-PRD-01..46 execution/status ledger.
-3. `BUILD_106_AGENT_PROTOCOL.md` — mandatory recovery, evidence, safety, and release-gate procedure.
-4. `RULES.md` — engineering/product invariants where not superseded by explicit Build 106 recovery rules.
-5. Historical/recovered V5 documents only after provenance is verified against the Build 106 Master SOT.
+1. `BUILD_108_ENL_MASTER_SOT.md` — PRIMARY canonical product and architectural authority for Build 108 ENL.
+2. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface classification & status ledger across all 51 routes.
+3. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap.
+4. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol.
+5. `BUILD_107_HOTFIX_RELEASE.md` — authoritative record of the Build 107 production baseline.
+6. `RULES.md` — engineering and product invariants where not superseded by explicit Build 108 ENL rules.
 
-### Build 106 authority rule
+### Production Baseline & Continuity Rule
 
-For Build 106, conflict order is:
+Build 107 (`versionCode = 107`, `versionName = "5.0.7"`, commit `d2ecb5e`) is the PRODUCTION baseline. Build 108 ENL must inherit 100% of Build 107 fixes (Human Design convergence, withdrawal of admin console from production UI, removal of stale orphan routes, lifetime authorization, and static surface guards). Nothing from Build 107 may regress.
 
-Founder explicit instruction for the current task → authorized repository/runtime evidence → `BUILD_106_MASTER_SOT.md` → `BUILD_106_RECOVERY_MATRIX.md` → `BUILD_106_AGENT_PROTOCOL.md` → provenance-verified recovered V5 canonical documents → historical implementation evidence → legacy docs/chat memory.
+### Build 108 ENL Authority Rule
 
-`SOT.md`, `PRD.md`, and `TODO.md` at repository root target the Build 80/85 era and MUST NOT be used as Build 106 product authority.
+For Build 108 ENL, conflict order is:
 
-The older Build 100 and generic V5 entrypoints below are historical context only when working on Build 106. They MUST NOT override the three Build 106 files above.
+Founder explicit instruction for the current task → authorized repository/runtime evidence → `BUILD_108_ENL_MASTER_SOT.md` → `BUILD_108_ENL_SCOPE_MATRIX.md` → `BUILD_108_ENL_HANDOFF.md` → `BUILD_108_ENL_RELEASE_PLAN.md` → `BUILD_107_HOTFIX_RELEASE.md` → historical Build 106 records → legacy docs/chat memory.
 
-### Build 106 release restriction
+### Build 108 Release Restriction
 
-Build 106 is a product-continuity recovery and reconciliation release, NOT a normal feature build and NOT a four-bug hotfix.
-
-Agents MUST NOT bump versionCode/versionName, create a Build 106 APK/AAB, deploy, publish, or claim release readiness until the release gate defined in `BUILD_106_MASTER_SOT.md` is evidence-backed and Founder-approved.
-
-If uncertain, stop normal feature work and return to the Build 106 recovery manifest.
-<!-- END:build106-entrypoint -->
+`BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED`.
+Agents MUST NOT modify product code, bump versionCode/versionName, create an APK/AAB, deploy, publish, or claim release readiness until explicit Founder sign-off is granted.
+<!-- END:build108-enl-entrypoint -->
 
 <!-- BEGIN:canonical-agent-rules -->
 # Bhumi Amartya — Agent Operating Contract

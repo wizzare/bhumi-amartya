@@ -1,28 +1,28 @@
 @AGENTS.md
 
-# BHUMI AMARTYA — CLAUDE CODE OPERATIONAL ENTRYPOINT
+# BHUMI AMARTYA — OPERATIONAL ENTRYPOINT
 
 ```text
-PRIMARY_AGENT      = CLAUDE_CODE
-CURRENT_PROGRAM    = BUILD_106_PRODUCT_CONTINUITY_RECOVERY
-BUILD_106_PHASE    = RECOVERY_AND_RECONCILIATION_IN_PROGRESS
-BUILD_106_ARTIFACT = DOES_NOT_EXIST
+PRIMARY_AGENT      = CLAUDE_CODE / ANTIGRAVITY
+CURRENT_PROGRAM    = BUILD_108_ENL_FOUNDATION
+BUILD_108_PHASE    = FOUNDATION_AUDIT_AND_SPECIFICATION_COMPLETE
+BUILD_108_STATUS   = NOT_STARTED
+BASELINE           = BUILD 107 (versionCode 107, versionName 5.0.7, commit d2ecb5e)
 ```
 
-Build 106 is a **product-continuity recovery + reconciliation** milestone — NOT a normal feature
-release and NOT a small hotfix. Its mission is to reconcile Build 105 against the canonical V5
-requirement set (`R-PRD-01..46`) and recoverable historical source, restore lost/regressed product
-behaviour, prove genuine new-user onboarding, and only then prepare a Build 106 artifact. Do not
-convert this program into feature development.
+Build 108 ENL is the **dedicated English-language edition** of Bhumi Amartya.
+Its mission is to establish 100% complete, elegant, native English across all 51 routes, 11 blueprint
+engines, AI guidance narratives, and legal surfaces, while inheriting 100% of Build 107 fixes and
+continuity. DO NOT begin product code modifications before explicit Founder approval of the SOT.
 
 ## Mandatory reading order (before ANY analysis / code / test / build / deploy)
 
-1. `CLAUDE.md` (this file)
-2. `BUILD_106_MASTER_SOT.md` — PRIMARY canonical product/recovery authority for Build 106
-3. `BUILD_106_RECOVERY_MATRIX.md` — canonical `R-PRD-01..46` execution/status ledger
-4. `BUILD_106_AGENT_PROTOCOL.md` — mandatory recovery / evidence / safety / release-gate procedure
-5. `AGENTS.md` for compatible repository operating guidance (with `RULES.md`)
-6. Provenance-verified V5 documents (`V5_*.md`) only when relevant to the current task
+1. `BUILD_108_ENL_MASTER_SOT.md` — PRIMARY canonical product/architectural authority for Build 108 ENL
+2. `BUILD_108_ENL_SCOPE_MATRIX.md` — canonical surface-by-surface status & classification ledger (51 routes)
+3. `BUILD_108_ENL_HANDOFF.md` — developer & agent operational guidelines and sprint roadmap
+4. `BUILD_108_ENL_RELEASE_PLAN.md` — mandatory 7-gate release and governance protocol
+5. `BUILD_107_HOTFIX_RELEASE.md` — production baseline record (Build 107)
+6. `AGENTS.md` & `RULES.md` — engineering/product invariants and repository operating rules
 
 ## Canonical authority order (highest first)
 
