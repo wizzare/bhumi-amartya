@@ -127,25 +127,35 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
           unifiedBlueprint: unifiedBlueprint as unknown as Record<string, unknown>,
         }),
         adaptiveDailyProgression: input.adaptiveContext ?? null,
-        dailyVariationSeed: input.adaptiveContext?.dailyVariationSeed ?? input.generatedAt.slice(0, 10),
+        dailyVariationSeed: input.adaptiveContext?.dailyVariationSeed ?? (input.generatedAt || new Date().toISOString()).slice(0, 10),
         requiredToneRule:
           "Use adaptiveDailyProgression.adaptiveTone exactly: gentle_encouraging_restart means gentle, encouraging, restart tone; appreciative_growth_oriented means appreciative and growth-oriented tone; steady_supportive means steady, supportive tone. Adapt this tone to fit the context-specific voice role (Companion, Coach, or Navigator).",
         synthesisRule:
-          "Every dashboard field must reflect the V1.4.1 architecture and use the expanded 8-system LIANA context when relevant. (MIRROR) Primary weighting: Life Path 20%, HD 20%, Destiny Matrix/Arcana 18%, Natal Sun/Moon/ASC 18%, Vedic/Tzolkin/Weton/BaZi 24% as supporting differentiators. (COMPASS) Driven by house activation and grounded with stored blueprint differentiators. Use 'kamu' and 'dirimu' instead of formal Indonesian pronouns or 'pengguna'.",
+          outputLanguage === "en"
+            ? "Every dashboard field must reflect the V1.4.1 architecture and use the expanded 8-system LIANA context when relevant. (MIRROR) Primary weighting: Life Path 20%, HD 20%, Destiny Matrix/Arcana 18%, Natal Sun/Moon/ASC 18%, Vedic/Tzolkin/Weton/BaZi 24% as supporting differentiators. (COMPASS) Driven by house activation and grounded with stored blueprint differentiators. Use 'you' and 'your' directly instead of third-person labels."
+            : "Every dashboard field must reflect the V1.4.1 architecture and use the expanded 8-system LIANA context when relevant. (MIRROR) Primary weighting: Life Path 20%, HD 20%, Destiny Matrix/Arcana 18%, Natal Sun/Moon/ASC 18%, Vedic/Tzolkin/Weton/BaZi 24% as supporting differentiators. (COMPASS) Driven by house activation and grounded with stored blueprint differentiators. Use 'kamu' dan 'dirimu' instead of formal Indonesian pronouns or 'pengguna'.",
         environmentSynthesisRule:
           "ENVIRONMENT GROUNDING RULE: Environment context (weather, heat/UV, air quality, moon phase, time of day) must serve as supportive grounding context across the 8 Catatan Hari Ini categories without sounding like a weather report. For example: general (overall day/window pacing), mental (focus pacing under heat/air quality), finance/practical (groundedness and avoiding forced heavy decisions), love/relational (emotional softness, quiet listening, time window rhythm), spiritual (moon phase resonance and inner meaning), challenges (acknowledging physical/environmental load and reducing self-pressure), and opportunities (gentle openings and small next steps). Never use raw technical weather metrics.",
         archetypeApplicationRule:
-          "For Refleksi Jiwa (Mirror), select the most relevant Dominant Archetype for today and write from that perspective. Example: 'Sebagai seorang Builder, fokusmu hari ini adalah...' or 'Bagian Sage dalam dirimu mengingatkan bahwa...'.",
+          outputLanguage === "en"
+            ? "For Soul Reflection (Mirror), select the most relevant Dominant Archetype for today and write from that perspective. Example: 'As a Builder, your focus today is...' or 'The Sage within you reminds you that...'."
+            : "For Refleksi Jiwa (Mirror), select the most relevant Dominant Archetype for today and write from that perspective. Example: 'Sebagai seorang Builder, fokusmu hari ini adalah...' or 'Bagian Sage dalam dirimu mengingatkan bahwa...'.",
         reasonEngineRule:
-          "For the 'reason' field in each category, you must use the provided astroHouseActivations. Map each planet's energy and its active house to the relevant life area according to SECTION 3. Expand the 'reason' to 3-5 sentences explaining the relationship between Transit, Blueprint, and the user's Psychology. Technical terms like 'House 10' or 'Mars di House 7' must NOT be visible; instead, translate them into user-friendly area descriptions, such as 'Mars di area relasi' or 'di area karir'. Keep the tone conversational, observational, and companion-like.",
+          outputLanguage === "en"
+            ? "For the 'reason' field in each category, you must use the provided astroHouseActivations. Map each planet's energy and its active house to the relevant life area according to SECTION 3. Expand the 'reason' to 3-5 sentences explaining the relationship between Transit, Blueprint, and the user's Psychology. Technical terms like 'House 10' or 'Mars in House 7' must NOT be visible; instead, translate them into user-friendly area descriptions, such as 'Mars in your relationship area' or 'in your career area'. Keep the tone conversational, observational, and companion-like."
+            : "For the 'reason' field in each category, you must use the provided astroHouseActivations. Map each planet's energy and its active house to the relevant life area according to SECTION 3. Expand the 'reason' to 3-5 sentences explaining the relationship between Transit, Blueprint, and the user's Psychology. Technical terms like 'House 10' or 'Mars di House 7' must NOT be visible; instead, translate them into user-friendly area descriptions, such as 'Mars di area relasi' or 'di area karir'. Keep the tone conversational, observational, and companion-like.",
         reflectionRule:
           "For the 'reflection' field in each category, provide 2-3 deep reflective questions related to the category's theme and today's cosmic context. Help the user look inward without feeling judged.",
         adviceRule:
-          "For each category's 'advice', write a standalone Saran Bhumi of exactly 2-3 complete sentences and 220-320 characters in one paragraph. Use Soul Reflection, Today's Note, current sky, core identity, and journey memory only as hidden context. Never quote, summarize, concatenate, or refer to those sections. Never write 'Ini selaras dengan', 'pesan harianmu', 'Inti dirimu', 'Kamu berada di', or 'berdasarkan'. Do not reuse the same opening or recommendation across categories. STRICTLY give exactly ONE concrete, gentle action. Do NOT concatenate multiple instructions, tasks, or actions. Never expose raw technical labels, raw blueprint numbers, Money Line, Love Line, Karmic Tail, House numbers, engine names, or internal payload structures.",
+          outputLanguage === "en"
+            ? "For each category's 'advice', write a standalone Bhumi Advice of exactly 2-3 complete sentences and 220-320 characters in one paragraph. Use Soul Reflection, Today's Note, current sky, core identity, and journey memory only as hidden context. Never quote, summarize, concatenate, or refer to those sections. Never write 'This aligns with', 'your daily message', 'Your core self', 'You are in', or 'based on'. Do not reuse the same opening or recommendation across categories. STRICTLY give exactly ONE concrete, gentle action. Do NOT concatenate multiple instructions, tasks, or actions. Never expose raw technical labels, raw blueprint numbers, Money Line, Love Line, Karmic Tail, House numbers, engine names, or internal payload structures."
+            : "For each category's 'advice', write a standalone Saran Bhumi of exactly 2-3 complete sentences and 220-320 characters in one paragraph. Use Soul Reflection, Today's Note, current sky, core identity, and journey memory only as hidden context. Never quote, summarize, concatenate, or refer to those sections. Never write 'Ini selaras dengan', 'pesan harianmu', 'Inti dirimu', 'Kamu berada di', or 'berdasarkan'. Do not reuse the same opening or recommendation across categories. STRICTLY give exactly ONE concrete, gentle action. Do NOT concatenate multiple instructions, tasks, or actions. Never expose raw technical labels, raw blueprint numbers, Money Line, Love Line, Karmic Tail, House numbers, engine names, or internal payload structures.",
         separateReflectionRule:
           "Soul Reflection (Mirror) is about WHO YOU ARE FUNDAMENTALLY. Write from an ARCHETYPE PERSPECTIVE. Today's Note (Compass) is about HOW TODAY AFFECTS YOU. They must not repeat the same data sources or ideas.",
         bhumiVoiceArchitectureRule:
-          "DASHBOARD NARRATIVE (Mirror, Compass, Manifestation) MUST use the Companion / Teman Duduk archetype: observational, warm, empathetic, curiosity-driven. Target feeling: 'Ditemani'. Prioritize: observation, reflection, presence, empathy, curiosity. Reduce: instructions, lectures, motivation, task lists. Use a natural hybrid of 'Aku' and 'Bhumi' (e.g. 'Aku memperhatikan...', 'Aku penasaran...', 'Ada bagian dari...', 'Mungkin...', 'Bisa jadi...'). Never write 'Kamu harus...', 'Jangan lupa...', 'Cobalah...', 'Ingatlah bahwa...', 'Hari ini pilih satu langkah kecil...'. WELLNESS NARRATIVE (Innerwork, Meditation, journal prompts) MUST use the Coach / Navigator archetype: active practice, gradual growth, navigator guidance. Target feeling: 'Dibimbing'.",
+          outputLanguage === "en"
+            ? "DASHBOARD NARRATIVE (Mirror, Compass, Manifestation) MUST use the Companion archetype: observational, warm, empathetic, curiosity-driven. Target feeling: 'Accompanied'. Prioritize: observation, reflection, presence, empathy, curiosity. Reduce: instructions, lectures, motivation, task lists. Use a natural hybrid of 'I' and 'Bhumi' (e.g. 'I notice...', 'I wonder...', 'There is a part of...', 'Perhaps...', 'It could be...'). Never write 'You must...', 'Don't forget...', 'Try to...', 'Remember that...', 'Today choose one small step...'. WELLNESS NARRATIVE (Innerwork, Meditation, journal prompts) MUST use the Coach / Navigator archetype: active practice, gradual growth, navigator guidance. Target feeling: 'Guided'."
+            : "DASHBOARD NARRATIVE (Mirror, Compass, Manifestation) MUST use the Companion / Teman Duduk archetype: observational, warm, empathetic, curiosity-driven. Target feeling: 'Ditemani'. Prioritize: observation, reflection, presence, empathy, curiosity. Reduce: instructions, lectures, motivation, task lists. Use a natural hybrid of 'Aku' and 'Bhumi' (e.g. 'Aku memperhatikan...', 'Aku penasaran...', 'Ada bagian dari...', 'Mungkin...', 'Bisa jadi...'). Never write 'Kamu harus...', 'Jangan lupa...', 'Cobalah...', 'Ingatlah bahwa...', 'Hari ini pilih satu langkah kecil...'. WELLNESS NARRATIVE (Innerwork, Meditation, journal prompts) MUST use the Coach / Navigator archetype: active practice, gradual growth, navigator guidance. Target feeling: 'Dibimbing'.",
         dailyPracticeRules:
           "Generate exactly 3 dailyInnerwork.tasks following SECTION 4: Mirror + Compass synthesis. Grounding first, reflection/journaling second, action/real life third. Each must be measurable, personalized, achievable in 5-20 minutes. Meditation MUST be personalized based on the user's current growth focus, today's challenges, and their progress stage. Manifestation MUST be personalized based on their journey phase (Awareness, Release, etc.), growth focus, next milestone, and available 8-system differentiators from unifiedBlueprint.fullBlueprint.",
         generatedAt: input.generatedAt,
@@ -154,66 +164,70 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
         blueprintSummary: "string, natural synthesis of current needs from the unified blueprint model; do not list labels as reasons",
 
         // V2 Categories (Catatan Hari Ini / Compass)
-        // STRICT OBSERVATIONAL OPENING RULE: All category insights must start with a direct human observation (e.g., 'Sepertinya...', 'Ada bagian dari dirimu yang...', 'Aku memperhatikan bahwa...') instead of absolute definitions ('Hari ini adalah tentang...').
+        // STRICT OBSERVATIONAL OPENING RULE: All category insights must start with a direct human observation instead of absolute definitions.
         categories: {
           general: {
-            insight: "string (Bahasa Indonesia), Atmosphere Reader. Focus strictly on: ritme, tempo, suasana, kualitas perhatian. Title: Kabar Harimu. STRICT RULE: Must only observe the overall daily atmosphere. It is FORBIDDEN to suggest pauses, breathing exercises, task-reduction, coaching, actions, or advice.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. 3-5 sentences. Explain connection between Today's Sky and Natal Houses.",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Atmosphere Reader. Focus strictly on: pace, tempo, atmosphere, quality of attention. Title: ${outputLanguage === "en" ? "Today's Atmosphere" : "Kabar Harimu"}. STRICT RULE: Must only observe the overall daily atmosphere. It is FORBIDDEN to suggest pauses, breathing exercises, task-reduction, coaching, actions, or advice.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. 3-5 sentences. Explain connection between Today's Sky and Natal Houses.`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           mental: {
-            insight: "string (Bahasa Indonesia), Perspective Reader. Focus strictly on: perspektif, fokus, kejernihan, bias, overthinking. Title: Pikiran. STRICT RULE: Focus only on how the mind is processing information. It is FORBIDDEN to discuss relationships, outer circles, body energy, workload/exhaustion, or spirituality.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of communication and mind (House 3, Mercury, or Ajna).",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Perspective Reader. Focus strictly on: perspective, focus, clarity, bias, overthinking. Title: ${outputLanguage === "en" ? "Mind" : "Pikiran"}. STRICT RULE: Focus only on how the mind is processing information. It is FORBIDDEN to discuss relationships, outer circles, body energy, workload/exhaustion, or spirituality.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on transits in the area of communication and mind (House 3, Mercury, or Ajna).`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           finance: {
-            insight: "string (Bahasa Indonesia), Resource Reader. Focus strictly on: prioritas, stabilitas, tenaga, keputusan praktis, arah kerja. Title: Rasa Aman & Rezeki. STRICT RULE: Focus only on safety, stability, work boundaries, and energy stability. It is FORBIDDEN to discuss romanticization of work, general relationships, or spirituality. No prediction of financial success.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of resources or career (House 2 or House 10).",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Resource Reader. Focus strictly on: priorities, stability, energy, practical decisions, work direction. Title: ${outputLanguage === "en" ? "Security & Resources" : "Rasa Aman & Rezeki"}. STRICT RULE: Focus only on safety, stability, work boundaries, and energy stability. It is FORBIDDEN to discuss romanticization of work, general relationships, or spirituality. No prediction of financial success.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on transits in the area of resources or career (House 2 or House 10).`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           love: {
-            insight: "string (Bahasa Indonesia), Intimacy Reader. Focus strictly on: kedekatan, kerentanan, penerimaan, rasa dicintai, kebutuhan emosional. Title: Hati. STRICT RULE: Focus strictly on intimacy, partner connection, and inner vulnerability. It is FORBIDDEN to discuss general social communication, networking, friendships, outer family dynamics, or social boundary issues.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of romance or relationships (House 5, 7, or 11).",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Intimacy Reader. Focus strictly on: closeness, vulnerability, acceptance, feeling loved, emotional needs. Title: ${outputLanguage === "en" ? "Heart" : "Hati"}. STRICT RULE: Focus strictly on intimacy, partner connection, and inner vulnerability. It is FORBIDDEN to discuss general social communication, networking, friendships, outer family dynamics, or social boundary issues.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on transits in the area of romance or relationships (House 5, 7, or 11).`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           relational: {
-            insight: "string (Bahasa Indonesia), Relationship Reader. Focus strictly on: komunikasi, keluarga, teman, lingkungan, respons sosial. Title: Orang Terdekat. STRICT RULE: Focus strictly on outer circles, communication boundaries, and social dynamics. It is FORBIDDEN to discuss romantic intimacy, partnerships, core romantic vulnerability, or intimate partnership feelings.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of community or communication (House 11 or Mercury).",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Relationship Reader. Focus strictly on: communication, family, friends, environment, social responses. Title: ${outputLanguage === "en" ? "Inner Circle" : "Orang Terdekat"}. STRICT RULE: Focus strictly on outer circles, communication boundaries, and social dynamics. It is FORBIDDEN to discuss romantic intimacy, partnerships, core romantic vulnerability, or intimate partnership feelings.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on transits in the area of community or communication (House 11 or Mercury).`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           spiritual: {
-            insight: "string (Bahasa Indonesia), Meaning Reader. Focus strictly on: kesadaran, makna, perspektif hidup, refleksi jiwa, pembelajaran. Title: Makna Batin. STRICT RULE: Connect today's theme to the user's specific Life Path number or Arcana Center. It is FORBIDDEN to repeat generic spiritual cliches or discuss rest, breathing, productivity, or energy management.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on transits in the area of spirituality and the subconscious (House 12 or Neptune).",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Meaning Reader. Focus strictly on: consciousness, meaning, life perspective, soul reflection, learning. Title: ${outputLanguage === "en" ? "Inner Meaning" : "Makna Batin"}. STRICT RULE: Connect today's theme to the user's specific Life Path number or Arcana Center. It is FORBIDDEN to repeat generic spiritual cliches or discuss rest, breathing, productivity, or energy management.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on transits in the area of spirituality and the subconscious (House 12 or Neptune).`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           challenges: {
-            insight: "string (Bahasa Indonesia), Friction Detector. Focus strictly on: terburu-buru, defensif, menghindar, menunda, kehilangan fokus, reaksi otomatis. Title: Yang Lagi Berat. STRICT RULE: Focus strictly on identifying a concrete psychological friction point or resistance area. It must show friction, NOT solutions. It is FORBIDDEN to write wellness reminders, self care, healing, rest, or burnout reminders.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Retrogrades/Saturn/Mars transits.",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Friction Detector. Focus strictly on: rushing, defensiveness, avoidance, procrastination, loss of focus, automatic reaction. Title: ${outputLanguage === "en" ? "Current Friction" : "Yang Lagi Berat"}. STRICT RULE: Focus strictly on identifying a concrete psychological friction point or resistance area. It must show friction, NOT solutions. It is FORBIDDEN to write wellness reminders, self care, healing, rest, or burnout reminders.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on Retrogrades/Saturn/Mars transits.`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           opportunities: {
-            insight: "string (Bahasa Indonesia), Opportunity Reader. Focus strictly on: peluang, eksperimen, keberanian baru, kemungkinan. Title: Ruang Baru. STRICT RULE: Observe specific openings for growth, expansion, or experiments. It is FORBIDDEN to write generic motivation or empty affirmations.",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on Jupiter or North Node transits.",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), Opportunity Reader. Focus strictly on: openings, experiments, new courage, possibility. Title: ${outputLanguage === "en" ? "New Space" : "Ruang Baru"}. STRICT RULE: Observe specific openings for growth, expansion, or experiments. It is FORBIDDEN to write generic motivation or empty affirmations.`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on Jupiter or North Node transits.`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           },
           advice: {
-            insight: "string (Bahasa Indonesia), practical summary of guidance for the day. Title: Saran",
-            reason: "string (Bahasa Indonesia), use reasonEngineRule. Focus on practical application of blueprint and transit.",
-            reflection: "string (Bahasa Indonesia), use reflectionRule. 2-3 questions.",
-            advice: "string (Bahasa Indonesia), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph."
+            insight: `string (${outputLanguageName}), practical summary of guidance for the day. Title: ${outputLanguage === "en" ? "Advice" : "Saran"}`,
+            reason: `string (${outputLanguageName}), use reasonEngineRule. Focus on practical application of blueprint and transit.`,
+            reflection: `string (${outputLanguageName}), use reflectionRule. 2-3 questions.`,
+            advice: `string (${outputLanguageName}), use adviceRule. Exactly 2-3 sentences, 220-320 characters, one paragraph.`
           }
         },
 
-        soulReflectionText: "string, (REFLEKSI JIWA / MIRROR) 60-100 words in Bahasa Indonesia. One paragraph only, warm, personal, gentle, and non-repetitive. MUST start exactly with: 'Halo {firstName},\\nSelamat pagi/siang/sore/malam.' using the user's first name and current time window. Use existing Journey Memory, progress context, and core blueprint only as hidden context; do not expose technical labels. MUST close exactly with: 'Peluk hangat dari Bhumi.' Do NOT add another sentence after that. Do NOT write 'Renungkan perlahan.'",
-        dailyNoteText: "string, (Pesan Penutup / Companion Closing) 80-120 words. Write a warm, simple, human sign-off as a trusted companion standing at the doorway before parting. Role: Companion Closing. Focus strictly on: kehangatan, kehadiran, penerimaan. STRICT RULE: It is FORBIDDEN to summarize the preceding category cards, repeat/recap insights, repeat challenges, repeat opportunities, list tasks, or recap the dashboard. Do not use headings or bullet points.",
+        soulReflectionText: outputLanguage === "en"
+          ? "string, (SOUL REFLECTION / MIRROR) 60-100 words in English. One paragraph only, warm, personal, gentle, and non-repetitive. MUST start exactly with: 'Hello {firstName},\\nGood morning/afternoon/evening.' using the user's first name and current time window. Use existing Journey Memory, progress context, and core blueprint only as hidden context; do not expose technical labels. MUST close exactly with: 'Warm hugs from Bhumi.' Do NOT add another sentence after that. Do NOT write 'Reflect slowly.'"
+          : "string, (REFLEKSI JIWA / MIRROR) 60-100 words in Bahasa Indonesia. One paragraph only, warm, personal, gentle, and non-repetitive. MUST start exactly with: 'Halo {firstName},\\nSelamat pagi/siang/sore/malam.' using the user's first name and current time window. Use existing Journey Memory, progress context, and core blueprint only as hidden context; do not expose technical labels. MUST close exactly with: 'Peluk hangat dari Bhumi.' Do NOT add another sentence after that. Do NOT write 'Renungkan perlahan.'",
+        dailyNoteText: outputLanguage === "en"
+          ? "string, (Companion Closing) 80-120 words in English. Write a warm, simple, human sign-off as a trusted companion standing at the doorway before parting. Role: Companion Closing. Focus strictly on: warmth, presence, acceptance. STRICT RULE: It is FORBIDDEN to summarize the preceding category cards, repeat/recap insights, repeat challenges, repeat opportunities, list tasks, or recap the dashboard. Do not use headings or bullet points."
+          : "string, (Pesan Penutup / Companion Closing) 80-120 words. Write a warm, simple, human sign-off as a trusted companion standing at the doorway before parting. Role: Companion Closing. Focus strictly on: kehangatan, kehadiran, penerimaan. STRICT RULE: It is FORBIDDEN to summarize the preceding category cards, repeat/recap insights, repeat challenges, repeat opportunities, list tasks, or recap the dashboard. Do not use headings or bullet points.",
         companionReflection: {
           preview:
             "string, 100-150 words for Dashboard Catatan Hari Ini preview. Ending with ...",
@@ -298,11 +312,11 @@ export function buildDailyGuidancePrompt(input: DailyGuidanceInput): string {
           vibe: "string",
           artistOrSource: "string",
         },
-        innerworkNarrative: "string (Bahasa Indonesia), 3-5 sentences inviting user to SECTION 4 innerwork.",
+        innerworkNarrative: `string (${outputLanguageName}), 3-5 sentences inviting user to SECTION 4 innerwork.`,
         manifestation: {
-          affirmation: "string (Bahasa Indonesia), (MANIFESTASI) Grounded 'I am' or 'I choose' statement based on bhumiManifestationTemplate. Max 2 sentences.",
-          attraction: "string (Bahasa Indonesia), (MANIFESTASI) Energy or quality to embody based on bhumiManifestationTemplate. Max 2 sentences.",
-          assumption: "string (Bahasa Indonesia), (MANIFESTASI) Perspective or belief worth practicing today based on bhumiManifestationTemplate. Max 2 sentences."
+          affirmation: `string (${outputLanguageName}), (MANIFESTATION) Grounded 'I am' or 'I choose' statement based on bhumiManifestationTemplate. Max 2 sentences.`,
+          attraction: `string (${outputLanguageName}), (MANIFESTATION) Energy or quality to embody based on bhumiManifestationTemplate. Max 2 sentences.`,
+          assumption: `string (${outputLanguageName}), (MANIFESTATION) Perspective or belief worth practicing today based on bhumiManifestationTemplate. Max 2 sentences.`
         },
         soulProgress: {
           healingStreak: "number",

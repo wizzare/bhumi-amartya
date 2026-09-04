@@ -93,20 +93,24 @@ node --import tsx tests/unit/version-reconciliation.test.ts
 ## 5. Current Task State & Handoff Action
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_03_COMPLETE (Blueprint Hub + all 11 Blueprint Systems: Numerology, Human Design, Natal Chart, Destiny Matrix, Vedic, BaZi, Tzolkin, Weton, Whole Sign, Zi Wei, Astrocartography 100% English)
-NEXT_SAFE_ACTION                = SPRINT-108-04-AI-GUIDANCE
+BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_04_COMPLETE (AI Guidance, Prompts, Local Deterministic Fallbacks, Normalization & Birthday Messages 100% Native English)
+NEXT_SAFE_ACTION                = SPRINT-108-05-PROFILE-JOURNEY-JOURNAL
 ```
 
-**Sprint 3 Accomplishments:**
-- Blueprint Hub (`app/blueprint/page.tsx`) + `IdentityExpansionPage.tsx` + `AuditSection.tsx` 100% English with localized card descriptions, metadata, and badge labels.
-- All 11 Blueprint detail pages (`app/blueprint/*/page.tsx`) fully localized with English headers, section titles, reading narratives, and fallback states.
-- All 11 Presentation Engines in `lib/` updated to provide dual-language (`isEn`) support producing fluent English interpretations.
-- Visual child components updated with English labels: `AstrocartographyMap.tsx`, `DestinyMatrixVisual.tsx`, `TwelvePalaceChart.tsx`, `HumanDesignBodygraphLite.tsx`, `NatalWheelLite.tsx`.
-- Cultural terminology preservation: Strictly preserved authentic terms (Javanese weton days/pasarans/neptu/tulang wangi, Chinese stems/branches/palaces, Sanskrit nakshatras, Mayan solar seals) with English explanatory glosses.
-- Mathematical Calculation Integrity: Zero calculation routines altered across all 11 systems.
-- Build 107 HD Convergence: 100% preserved.
-- Unit and regression test suite `tests/unit/build108-sprint03-blueprints.test.ts` (15 sub-suites, 171 assertions) passing.
-- 100% regression suite passing (747 assertions total across all 5 test files, exit code 0).
+**Sprint 4 Accomplishments:**
+- `dailyGuidancePrompt.ts`: Dynamic English synthesis rules, Companion/Coach archetypes, reasonEngine/advice rules, English greeting (`Hello {firstName}`) and closing (`Warm hugs from Bhumi.`), output schema per category.
+- `bhumiSoulMirrorPrompt.ts`: Dual-language prompt with English role, philosophy, opening (`Hi {userName}, how are you feeling this {dayName}?`), and style rules.
+- `bhumiManifestationPrompt.ts`: Dual-language prompt with English context awareness, first-person grounding, and schema.
+- `bhumiDailyReflectionPrompt.ts`: Dual-language prompt with English preview (`...`) and full reflection (`TODAY'S FOCUS`).
+- `soulIdentityPrompt.ts` & `lib/ai/prompts/registry.ts`: Complete English resonance narrative voice ("I notice...") and English registry prompt.
+- `localDailyGuidanceFallback.ts`: Localized English personal note sections (`Current theme:`, `Daily focus:`, etc.), life path/HD/arcana/transit themes, English fallback categories, and fallback name resolution.
+- `dailyGuidanceEngine.ts`: Dynamic influence builders (`buildDailyStateSentence`, `buildJourneySentence`, `buildWellnessSentence`, `buildAstroSentence`, etc.) with `isEn` support preventing Indonesian sentence leakage into `dailyNoteText` and category `reason`/`advice`.
+- `normalizeUserFacingGuidance.ts`: English fallback categories, advice variations across all 11 themes, English blacklist deconfliction, and English time-aware closing.
+- `mirrorDailyReflection.ts` & `birthdayMessage.ts`: Localized mirror reflection helper and English birthday message generator.
+- `app/api/ai/daily-guidance/route.ts`: Default language resolves to `"en"` when `isEnlEdition()` is true.
+- Unit and regression test suite `tests/unit/build108-sprint04-ai-guidance.test.ts` (11 sub-suites, 129 assertions) passing with exit code 0.
+- All regression suites passing (Sprint 1, Sprint 2, Sprint 3, Build 107 Production Surface Guard, Build 107 HD Convergence) with 0 errors.
 - Repository `npx tsc --noEmit` passing with 0 errors.
 
-**Next Sprint:** `SPRINT-108-04-AI-GUIDANCE` (Daily guidance prompts, unified blueprint synthesis, local guidance fallback).
+**Next Sprint:** `SPRINT-108-05-PROFILE-JOURNEY-JOURNAL` (Profile Hub & Sections, Journey Hub & Milestones, Journal Hub & Entries, Insights, Weekly Reports).
+

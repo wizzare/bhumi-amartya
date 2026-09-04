@@ -72,10 +72,12 @@ export function getMirrorDaypart(date: Date, timezone: string): "dini hari" | "p
   return "malam";
 }
 
-export function safeMirrorDisplayName(value: unknown): string {
+export function safeMirrorDisplayName(value: unknown, language: MirrorDailyLanguage | string = "id"): string {
+  const isEn = String(language).toLowerCase().startsWith("en");
+  const fallback = isEn ? "Friend of Bhumi" : "Sahabat Bhumi";
   const raw = String(value ?? "").trim();
-  if (!raw || raw.includes("@")) return "Sahabat Bhumi";
-  return raw.split(/\s+/).filter(Boolean).slice(0, 2).join(" ") || "Sahabat Bhumi";
+  if (!raw || raw.includes("@")) return fallback;
+  return raw.split(/\s+/).filter(Boolean).slice(0, 2).join(" ") || fallback;
 }
 
 export function buildMirrorDailyReflection({
@@ -146,7 +148,7 @@ export function buildMirrorDailyReflection({
     };
   }
 
-  const displayName = safeMirrorDisplayName(userName);
+  const displayName = safeMirrorDisplayName(userName, locale);
   const daypart = getLocalizedDaypart(now, contract.timezone || timezone, locale);
   const reflectionText = locale === "id"
     ? contract.dailyConclusion.text

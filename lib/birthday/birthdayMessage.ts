@@ -1,9 +1,12 @@
+import { isEnlEdition } from "@/lib/config/edition";
+
 export type BirthdayProfile = {
   uid: string;
   birthDate?: string | null;
   timezone?: string | null;
   displayName?: string | null;
   fullName?: string | null;
+  language?: string | null;
 };
 
 export function isValidBirthDate(value?: string | null): value is string {
@@ -31,10 +34,33 @@ export function birthdayYearKey(profile: BirthdayProfile, now = new Date()): str
 
 export function isLeapYear(year: number): boolean { return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0); }
 
-export function buildBirthdayMessage(profile: BirthdayProfile, year: string) {
-  const firstName = String(profile.displayName || profile.fullName || 'Sahabat Bhumi').trim().split(/\s+/)[0];
+function getOrdinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+export function buildBirthdayMessage(profile: BirthdayProfile, year: string, languageOverride?: "id" | "en") {
+  const isEn = languageOverride === "en" || (!languageOverride && (profile.language === "en" || isEnlEdition()));
+  const defaultName = isEn ? "Friend" : "Sahabat Bhumi";
+  const firstName = String(profile.displayName || profile.fullName || defaultName).trim().split(/\s+/)[0];
   const birthYear = Number(profile.birthDate?.slice(0, 4));
   const age = Number.isFinite(birthYear) ? Math.max(0, Number(year) - birthYear) : null;
+
+  if (isEn) {
+    const ageOrdinal = age ? getOrdinal(age) : "";
+    return {
+      id: `birthday:${profile.uid}:${year}`,
+      title: `Happy Birthday, ${firstName}`,
+      content: [
+        `Today marks a new cycle in your journey${age ? `—your ${ageOrdinal} year` : ""}.`,
+        "Bhumi wishes you a happy birthday, and hopes this new year brings peace, courage, health, and expansive space to know yourself even more deeply.",
+        "Thank you for being part of the Bhumi Amartya journey.",
+        "Warm hugs from Bhumi.",
+      ].join("\n\n"),
+    };
+  }
+
   return {
     id: `birthday:${profile.uid}:${year}`,
     title: `Selamat Ulang Tahun, ${firstName}`,

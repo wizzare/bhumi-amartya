@@ -27,6 +27,7 @@ import {
 import { db } from "@/lib/firebase/config";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { birthdayYearKey, buildBirthdayMessage, type BirthdayProfile } from "@/lib/birthday/birthdayMessage";
+import { isEnlEdition } from "@/lib/config/edition";
 
 /**
  * BHUMI V4 COMMUNICATION CENTER SERVICE
@@ -95,7 +96,7 @@ export class CommunicationCenterService {
       priority: 'normal',
       source: 'system',
       title: message.title,
-      summary: 'Pesan ulang tahun dari Bhumi Amartya.',
+      summary: (profile.language === "en" || isEnlEdition()) ? "Birthday message from Bhumi Amartya." : "Pesan ulang tahun dari Bhumi Amartya.",
       content: message.content,
       ownerUserId: profile.uid,
       senderRole: 'system',

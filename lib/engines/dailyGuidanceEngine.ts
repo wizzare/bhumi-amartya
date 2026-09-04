@@ -140,7 +140,16 @@ export const dailyGuidanceEngine = {
       focus: brain.focus,
       soulReflectionText: fb.reflection,
       dailyNoteText: fb.note,
-      categories: {
+      categories: isEn ? {
+        general: { insight: "Today is about personal balance.", reason: "", advice: "Keep your focus." },
+        mental: { insight: "Your mind is steady.", reason: "", advice: "Preserve your calm." },
+        finance: { insight: "Focus on resource stability.", reason: "", advice: "Manage with care." },
+        love: { insight: "Focus on harmony.", reason: "", advice: "Listen with your heart." },
+        relational: { insight: "Your connections are moving well.", reason: "", advice: "Maintain open communication." },
+        spiritual: { insight: "Inner growth is unfolding.", reason: "", advice: "Listen within." },
+        challenges: { insight: "Meet friction with composure.", reason: "", advice: "Take measured steps." },
+        opportunities: { insight: "New openings lie ahead.", reason: "", advice: "Engage with discernment." }
+      } : {
         general: { insight: "Hari ini tentang keseimbangan diri.", reason: "", advice: "Jaga fokusmu." },
         mental: { insight: "Pikiranmu stabil.", reason: "", advice: "Jaga ketenangan." },
         finance: { insight: "Fokus pada kestabilan keuangan.", reason: "", advice: "Kelola dengan baik." },
@@ -150,7 +159,11 @@ export const dailyGuidanceEngine = {
         challenges: { insight: "Hadapi rintangan dengan tenang.", reason: "", advice: "Ambil langkah perlahan." },
         opportunities: { insight: "Peluang baru ada di depan.", reason: "", advice: "Manfaatkan dengan bijak." }
       },
-      manifestation: {
+      manifestation: isEn ? {
+        affirmation: "I choose to be honestly present with today's state.",
+        assumption: "I believe the right small direction can emerge from quiet awareness.",
+        attraction: "I invite clarity, gentle courage, and grounded pacing.",
+      } : {
         affirmation: "Aku memilih hadir dengan jujur pada keadaan hari ini.",
         assumption: "Aku percaya arah kecil yang tepat bisa tumbuh dari kesadaran yang tenang.",
         attraction: "Aku mengundang kejernihan, keberanian lembut, dan ritme yang membumi.",
@@ -291,25 +304,42 @@ function trendLabel(values: number[]): "naik turun" | "meningkat" | "menurun" | 
   return hasUp ? "meningkat" : "menurun";
 }
 
-function buildDailyStateSentence(dailyState: any, previousDailyState: any): string {
+function buildDailyStateSentence(dailyState: any, previousDailyState: any, isEn: boolean = false): string {
   const emotion = firstText(dailyState?.emotionalWord, dailyState?.moodLabel);
   const nervousSystem = firstText(dailyState?.nervousSystemState, dailyState?.wellnessSnapshot?.metrics?.nervousSystemState);
   const energy = numberValue(dailyState?.wellnessSnapshot?.metrics?.energy ?? dailyState?.energy);
   const previousEnergy = numberValue(previousDailyState?.wellnessSnapshot?.metrics?.energy ?? previousDailyState?.energy);
 
   if (energy !== null && previousEnergy !== null && energy !== previousEnergy) {
+    if (isEn) {
+      const direction = energy > previousEnergy ? "higher" : "lower";
+      return `Today your energy is ${direction} compared to yesterday (${energy}/${previousEnergy}); let your daily choices honor that real capacity.`;
+    }
     const direction = energy > previousEnergy ? "lebih tinggi" : "lebih rendah";
     return `Hari ini energimu ${direction} dibanding kemarin (${energy}/${previousEnergy}); biarkan pilihan harianmu mengikuti kapasitas nyata itu.`;
   }
   if (emotion && nervousSystem) {
+    if (isEn) {
+      return `Today's check-in notes your emotion as ${emotion} and your nervous system as ${nervousSystem}; let that be the primary tone to accompany.`;
+    }
     return `Check-in hari ini mencatat emosimu ${emotion} dan sistem sarafmu ${nervousSystem}; itu menjadi nada utama yang perlu ditemani.`;
   }
-  if (emotion) return `Check-in hari ini mencatat emosimu ${emotion}; Bhumi memakai itu sebagai cermin pertama sebelum memberi arah.`;
-  if (nervousSystem) return `Sistem sarafmu hari ini memberi sinyal ${nervousSystem}; ritme harianmu perlu membaca sinyal itu dulu.`;
+  if (emotion) {
+    if (isEn) {
+      return `Today's check-in notes your emotion as ${emotion}; Bhumi uses this as the first mirror before offering direction.`;
+    }
+    return `Check-in hari ini mencatat emosimu ${emotion}; Bhumi memakai itu sebagai cermin pertama sebelum memberi arah.`;
+  }
+  if (nervousSystem) {
+    if (isEn) {
+      return `Your nervous system signals ${nervousSystem} today; let your daily rhythm read that cue first.`;
+    }
+    return `Sistem sarafmu hari ini memberi sinyal ${nervousSystem}; ritme harianmu perlu membaca sinyal itu dulu.`;
+  }
   return "";
 }
 
-function buildJourneySentence(context: any, healingMemory: any): string {
+function buildJourneySentence(context: any, healingMemory: any, isEn: boolean = false): string {
   const history = uniqueRecords([
     ...list(context?.journeyHistory),
     ...list(context?.recentDailyStates),
@@ -320,17 +350,29 @@ function buildJourneySentence(context: any, healingMemory: any): string {
   const growthNarrative = firstText(healingMemory?.growthNarrative, healingMemory?.weeklyLearning, healingMemory?.coachMemory);
 
   if (count >= 20) {
-    return `Dalam 30 hari terakhir, kamu menyelesaikan ${count} jejak praktik; pola ini menunjukkan perubahan yang dijaga, bukan sekadar niat sesaat.`;
+    return isEn
+      ? `Over the last 30 days, you completed ${count} practice check-ins; this pattern reflects sustained dedication rather than fleeting impulse.`
+      : `Dalam 30 hari terakhir, kamu menyelesaikan ${count} jejak praktik; pola ini menunjukkan perubahan yang dijaga, bukan sekadar niat sesaat.`;
   }
   if (count >= 5) {
-    return `Selama beberapa hari terakhir, kamu sudah mengumpulkan ${count} praktik; ${lastPractice ? `yang terakhir terkait ${lastPractice}.` : "konsistensi itu mulai menjadi bahasa tubuhmu."}`;
+    return isEn
+      ? `Over the past few days, you have gathered ${count} practices; ${lastPractice ? `the latest being ${lastPractice}.` : "that consistency is becoming your body's language."}`
+      : `Selama beberapa hari terakhir, kamu sudah mengumpulkan ${count} praktik; ${lastPractice ? `yang terakhir terkait ${lastPractice}.` : "konsistensi itu mulai menjadi bahasa tubuhmu."}`;
   }
-  if (lastPractice) return `Jejak perjalanan terakhirmu menunjukkan praktik ${lastPractice}; respons tubuh dan batinmu setelahnya layak diperhatikan hari ini.`;
-  if (growthNarrative) return `Memori perjalananmu sedang menyorot ${growthNarrative}; tema itu menjadi benang yang Bhumi bawa hari ini.`;
+  if (lastPractice) {
+    return isEn
+      ? `Your recent journey trace shows practice with ${lastPractice}; your somatic response afterward is worth observing today.`
+      : `Jejak perjalanan terakhirmu menunjukkan praktik ${lastPractice}; respons tubuh dan batinmu setelahnya layak diperhatikan hari ini.`;
+  }
+  if (growthNarrative) {
+    return isEn
+      ? `Your journey memory is highlighting ${growthNarrative}; that theme is woven into today's reflection.`
+      : `Memori perjalananmu sedang menyorot ${growthNarrative}; tema itu menjadi benang yang Bhumi bawa hari ini.`;
+  }
   return "";
 }
 
-function buildWellnessSentence(context: any): string {
+function buildWellnessSentence(context: any, isEn: boolean = false): string {
   const theme = topMappingLabel(context);
   const states = list(context?.recentDailyStates);
   const recentSleep = states
@@ -343,26 +385,36 @@ function buildWellnessSentence(context: any): string {
     .slice(0, 3);
 
   if (recentSleep.length >= 2 && recentSleep[0] > recentSleep[1]) {
-    return `Kualitas tidur terakhirmu mulai membaik (${recentSleep[0]}/${recentSleep[1]}); pertahankan pola yang membantu tubuhmu pulih.`;
+    return isEn
+      ? `Your sleep quality has begun improving (${recentSleep[0]}/${recentSleep[1]}); keep honoring the rhythm that restores your body.`
+      : `Kualitas tidur terakhirmu mulai membaik (${recentSleep[0]}/${recentSleep[1]}); pertahankan pola yang membantu tubuhmu pulih.`;
   }
   if (recentEnergy.length >= 2 && recentEnergy[0] < recentEnergy[1]) {
-    return `Energi terakhirmu turun dari ${recentEnergy[1]} ke ${recentEnergy[0]}; jangan memakai standar hari yang lebih kuat untuk membaca hari ini.`;
+    return isEn
+      ? `Your energy shifted from ${recentEnergy[1]} to ${recentEnergy[0]}; don't hold today to the standards of a high-energy day.`
+      : `Energi terakhirmu turun dari ${recentEnergy[1]} ke ${recentEnergy[0]}; jangan memakai standar hari yang lebih kuat untuk membaca hari ini.`;
   }
-  if (theme) return `Pemetaan Wellness hari ini paling menyorot ${theme}; rekomendasi Bhumi mengikuti kebutuhan itu, bukan nasihat umum.`;
+  if (theme) {
+    return isEn
+      ? `Today's Wellness mapping highlights ${theme}; Bhumi's suggestions follow that real need rather than generic advice.`
+      : `Pemetaan Wellness hari ini paling menyorot ${theme}; rekomendasi Bhumi mengikuti kebutuhan itu, bukan nasihat umum.`;
+  }
   return "";
 }
 
-function buildAstroSentence(context: any): string {
+function buildAstroSentence(context: any, isEn: boolean = false): string {
   const astroTheme = firstText(
     context?.currentSky?.summary,
     context?.astrologyTransits?.summary,
     context?.astrologyToday,
   );
   if (!astroTheme) return "";
-  return `Konteks langit hari ini terbaca sebagai ${astroTheme}; gunakan ini sebagai cuaca batin, bukan ramalan.`;
+  return isEn
+    ? `Today's sky context reflects ${astroTheme}; take this as inner climate, not a forecast.`
+    : `Konteks langit hari ini terbaca sebagai ${astroTheme}; gunakan ini sebagai cuaca batin, bukan ramalan.`;
 }
 
-function buildPrioritizedCompanionReflection(context: any, healingMemory: any, blueprintTheme: string): {
+function buildPrioritizedCompanionReflection(context: any, healingMemory: any, blueprintTheme: string, isEn: boolean = false): {
   text: string;
   sources: Array<{ sentence: string; source: string }>;
   dominantTheme: string;
@@ -392,13 +444,23 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   if (count180 >= 120) {
     return {
       dominantTheme: "Consistency",
-      text: [
+      text: isEn ? [
+        `I sense a rhythm you have maintained for quite some time.`,
+        `For a long time you have continually returned to your practice${recurringPractice ? `, especially ${recurringPractice}` : ""}; so today's energy shift is best read as a small adjustment, not a reason to start from scratch.`,
+        "Of all the habits you have sustained, which part most deserves protection today?",
+        "Protect that one core habit before adding new targets.",
+      ].join(" ") : [
         `Aku menangkap ritme yang sudah cukup lama kamu jaga.`,
         `Sejak lama kamu terus kembali ke latihanmu${recurringPractice ? `, terutama ${recurringPractice}` : ""}; jadi perubahan energi hari ini lebih tepat dibaca sebagai penyesuaian, bukan tanda kamu harus mulai dari nol.`,
         "Dari semua kebiasaan yang sudah kamu jaga, bagian mana yang paling perlu dilindungi hari ini?",
         "Lindungi satu kebiasaan inti itu sebelum menambah target baru.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "What matters most today is guarding a rhythm already proven to work.", source: "Dominant theme: Journey long-term consistency" },
+        { sentence: `For a long time you have returned to your practice${recurringPractice ? `, especially ${recurringPractice}` : ""}; therefore today's shift is an adjustment, not a reset.`, source: "Journey 180-day practice history + Daily State" },
+        { sentence: "Of all the habits you have sustained, which part most deserves protection today?", source: "Journey 180-day practice history" },
+        { sentence: "Protect that one core habit before adding new targets.", source: "Journey 180-day practice history" },
+      ] : [
         { sentence: "Yang paling penting hari ini adalah menjaga ritme yang sudah terbukti bekerja.", source: "Dominant theme: Journey long-term consistency" },
         { sentence: `Sejak lama kamu terus kembali ke latihanmu${recurringPractice ? `, terutama ${recurringPractice}` : ""}; karena itu, perubahan energi hari ini perlu dibaca sebagai penyesuaian ritme, bukan alasan untuk mulai dari nol.`, source: "Journey 180-day practice history + Daily State" },
         { sentence: "Dari semua kebiasaan yang sudah kamu jaga, bagian mana yang paling perlu dilindungi hari ini?", source: "Journey 180-day practice history" },
@@ -408,20 +470,36 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   }
 
   if (isLowEnergy) {
-    const support = count7 >= 5
-      ? "Minggu ini kamu tetap kembali ke latihanmu, jadi tubuhmu mungkin bukan berhenti bergerak; ia sedang meminta cara bergerak yang lebih memulihkan."
-      : sleepPattern === "meningkat"
-        ? "Kualitas tidur mulai memberi sinyal pemulihan, jadi hari ini lebih tepat dipakai untuk menjaga stabilitas tubuh."
-        : "Energi yang naik turun belakangan ini membuat pemulihan lebih penting daripada menambah beban baru.";
+    const support = isEn
+      ? (count7 >= 5
+        ? "This week you kept returning to your practice, so your body hasn't stopped moving; it is asking for a more restorative way to move."
+        : sleepPattern === "meningkat"
+          ? "Sleep quality is signaling recovery, so today is best used to preserve bodily stability."
+          : "Fluctuating energy lately makes recovery more essential than taking on new weight.")
+      : (count7 >= 5
+        ? "Minggu ini kamu tetap kembali ke latihanmu, jadi tubuhmu mungkin bukan berhenti bergerak; ia sedang meminta cara bergerak yang lebih memulihkan."
+        : sleepPattern === "meningkat"
+          ? "Kualitas tidur mulai memberi sinyal pemulihan, jadi hari ini lebih tepat dipakai untuk menjaga stabilitas tubuh."
+          : "Energi yang naik turun belakangan ini membuat pemulihan lebih penting daripada menambah beban baru.");
     return {
       dominantTheme: "Recovery",
-      text: [
+      text: isEn ? [
+        "I sense your body is asking for more honest recovery.",
+        support,
+        "What is one weight you can set down so your body doesn't have to ask for it louder later?",
+        "Choose one gentle practice that helps your body feel safe first.",
+      ].join(" ") : [
         "Aku menangkap tubuhmu sedang meminta pemulihan yang lebih jujur.",
         support,
         "Apa satu beban yang bisa kamu turunkan agar tubuhmu tidak harus memintanya lebih keras nanti?",
         "Pilih satu praktik ringan yang membuat tubuhmu merasa aman dulu.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "What most calls for your attention today is recovery.", source: "Dominant theme: Daily State / Wellness recovery" },
+        { sentence: support, source: "Daily State energy trend + Journey recent practice" },
+        { sentence: "What is one weight you can set down so your body doesn't have to ask for it louder later?", source: "Daily State low energy / recovery trend" },
+        { sentence: "Choose one gentle practice that helps your body feel safe first.", source: "Daily State low energy / Wellness recovery" },
+      ] : [
         { sentence: "Yang paling perlu kamu perhatikan hari ini adalah pemulihan.", source: "Dominant theme: Daily State / Wellness recovery" },
         { sentence: support, source: "Daily State energy trend + Journey recent practice" },
         { sentence: "Apa satu beban yang bisa kamu turunkan agar tubuhmu tidak harus memintanya lebih keras nanti?", source: "Daily State low energy / recovery trend" },
@@ -433,13 +511,23 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   if (isBoundary || /lelah|sensitif|gelisah/.test(emotion)) {
     return {
       dominantTheme: "Boundary",
-      text: [
+      text: isEn ? [
+        "I notice the theme of boundaries is quite close to you right now.",
+        `Earlier notes on ${previousSummary || wellnessTheme || "personal energy"} meet the feelings of ${emotion || "today"}; this makes your small decisions more pivotal than lengthy explanations.`,
+        "Where do you already know deep down that it's time to say enough?",
+        "State one gentle boundary calmly before your body shoulders it as exhaustion.",
+      ].join(" ") : [
         "Aku menangkap tema batas sedang cukup dekat denganmu.",
         `Catatan sebelumnya tentang ${previousSummary || wellnessTheme || "energi pribadi"} bertemu dengan rasa ${emotion || "yang muncul hari ini"}; ini membuat keputusan kecilmu lebih penting daripada penjelasan panjang.`,
         "Di bagian mana kamu sebenarnya sudah tahu perlu berkata cukup?",
         "Ucapkan satu batas kecil dengan tenang sebelum tubuhmu menanggungnya sebagai lelah.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "Today's focus is on a more honest boundary.", source: "Dominant theme: Boundary" },
+        { sentence: `Earlier notes on ${previousSummary || wellnessTheme || "personal energy"} meet the feelings of ${emotion || "today"}; this makes small choices more important than long explanations.`, source: "Previous Daily State / Wellness Mapping + Daily State emotion" },
+        { sentence: "Where do you already know deep down that it's time to say enough?", source: "Boundary theme + Daily State emotion" },
+        { sentence: "State one gentle boundary calmly before your body shoulders it as exhaustion.", source: "Boundary theme + Daily State emotion" },
+      ] : [
         { sentence: "Fokus hari ini adalah batas yang lebih jujur.", source: "Dominant theme: Boundary" },
         { sentence: `Catatan sebelumnya tentang ${previousSummary || wellnessTheme || "energi pribadi"} bertemu dengan rasa ${emotion || "yang muncul hari ini"}; ini membuat keputusan kecilmu lebih penting daripada penjelasan panjang.`, source: "Previous Daily State / Wellness Mapping + Daily State emotion" },
         { sentence: "Di bagian mana kamu sebenarnya sudah tahu perlu berkata cukup?", source: "Boundary theme + Daily State emotion" },
@@ -449,16 +537,28 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   }
 
   if (count90 >= 60 || count30 >= 20) {
-    const duration = count90 >= 60 ? "beberapa bulan" : "30 hari terakhir";
+    const duration = isEn
+      ? (count90 >= 60 ? "the past few months" : "the last 30 days")
+      : (count90 >= 60 ? "beberapa bulan" : "30 hari terakhir");
     return {
       dominantTheme: "Consistency",
-      text: [
+      text: isEn ? [
+        "I see consistency becoming the natural language of your journey.",
+        `Over ${duration}, you have returned repeatedly to your practice${recurringPractice ? `, especially ${recurringPractice}` : ""}; your direction is being shaped by rhythm rather than passing moods.`,
+        "Which habit feels most alive in shaping how you make choices?",
+        "Preserve that one working rhythm today.",
+      ].join(" ") : [
         "Aku melihat konsistensi mulai menjadi bahasa perjalananmu.",
         `Selama ${duration}, kamu berkali-kali kembali ke latihanmu${recurringPractice ? `, terutama ${recurringPractice}` : ""}; itu berarti arahmu sedang dibentuk oleh pengulangan, bukan oleh suasana hati sesaat.`,
         "Kebiasaan mana yang paling terasa mulai mengubah caramu mengambil keputusan?",
         "Jaga satu pengulangan yang sudah bekerja hari ini.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "What stands out most today is consistency.", source: "Dominant theme: Journey consistency" },
+        { sentence: `Over ${duration}, you returned repeatedly to your practice${recurringPractice ? `, especially ${recurringPractice}` : ""}; your direction is shaped by rhythm.`, source: "Journey 30/90-day practice history" },
+        { sentence: "Which habit feels most alive in shaping how you make choices?", source: "Journey longitudinal practice history" },
+        { sentence: "Preserve that one working rhythm today.", source: "Journey longitudinal practice history" },
+      ] : [
         { sentence: "Yang paling menonjol hari ini adalah konsistensi.", source: "Dominant theme: Journey consistency" },
         { sentence: `Selama ${duration}, kamu berkali-kali kembali ke latihanmu${recurringPractice ? `, terutama ${recurringPractice}` : ""}; itu berarti arahmu sedang dibentuk oleh pengulangan, bukan oleh suasana hati sesaat.`, source: "Journey 30/90-day practice history" },
         { sentence: "Kebiasaan mana yang paling terasa mulai mengubah caramu mengambil keputusan?", source: "Journey longitudinal practice history" },
@@ -470,13 +570,23 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   if (count7 >= 5) {
     return {
       dominantTheme: "Growing Habit",
-      text: [
+      text: isEn ? [
+        "I see a small habit beginning to take shape.",
+        `This week you stayed true to returning${recurringPractice ? ` through ${recurringPractice}` : ""}; this momentum doesn't need to expand yet, only to stay unbroken.`,
+        "What typically disrupts this gentle rhythm?",
+        "Simplify your practice today so it remains doable.",
+      ].join(" ") : [
         "Aku melihat ada kebiasaan kecil yang mulai mencari bentuk.",
         `Minggu ini kamu tetap kembali ke latihanmu${recurringPractice ? ` lewat ${recurringPractice}` : ""}; jejak ini belum perlu dibesarkan, hanya perlu dijaga agar tidak putus.`,
         "Apa yang biasanya membuat ritme kecil ini mudah terganggu?",
         "Sederhanakan latihanmu hari ini agar tetap bisa dilakukan.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "Today what matters most is nurturing the habit just taking shape.", source: "Dominant theme: 7-day Journey habit" },
+        { sentence: `This week you returned to your practice${recurringPractice ? ` through ${recurringPractice}` : ""}; keep it unbroken.`, source: "Journey 7-day practice history" },
+        { sentence: "What typically disrupts this gentle rhythm?", source: "Journey 7-day practice history" },
+        { sentence: "Simplify your practice today so it remains doable.", source: "Journey 7-day practice history" },
+      ] : [
         { sentence: "Hari ini yang paling penting adalah menjaga kebiasaan yang baru mulai terbentuk.", source: "Dominant theme: 7-day Journey habit" },
         { sentence: `Minggu ini kamu tetap kembali ke latihanmu${recurringPractice ? ` lewat ${recurringPractice}` : ""}; jejak ini belum perlu dibesarkan, hanya perlu dijaga agar tidak putus.`, source: "Journey 7-day practice history" },
         { sentence: "Apa yang biasanya membuat ritme kecil ini mudah terganggu?", source: "Journey 7-day practice history" },
@@ -486,18 +596,32 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   }
 
   if (isRecovery) {
-    const support = sleepPattern === "meningkat"
-      ? "Kualitas tidur mulai memberi sinyal pemulihan, jadi hari ini lebih tepat dipakai untuk menjaga stabilitas tubuh."
-      : "Energi yang naik turun belakangan ini membuat pemulihan lebih penting daripada menambah beban baru.";
+    const support = isEn
+      ? (sleepPattern === "meningkat"
+        ? "Sleep quality is signaling recovery, so today is best used to preserve bodily stability."
+        : "Fluctuating energy lately makes recovery more essential than taking on new weight.")
+      : (sleepPattern === "meningkat"
+        ? "Kualitas tidur mulai memberi sinyal pemulihan, jadi hari ini lebih tepat dipakai untuk menjaga stabilitas tubuh."
+        : "Energi yang naik turun belakangan ini membuat pemulihan lebih penting daripada menambah beban baru.");
     return {
       dominantTheme: "Recovery",
-      text: [
+      text: isEn ? [
+        "I sense recovery is the main message from your body.",
+        support,
+        "What is one weight you can set down so your body doesn't have to ask for it louder later?",
+        "Choose one gentle practice that helps your body feel safe first.",
+      ].join(" ") : [
         "Aku menangkap pemulihan sedang menjadi pesan utama tubuhmu.",
         support,
         "Apa satu beban yang bisa kamu turunkan agar tubuhmu tidak harus memintanya lebih keras nanti?",
         "Pilih satu praktik ringan yang membuat tubuhmu merasa aman dulu.",
       ].join(" "),
-      sources: [
+      sources: isEn ? [
+        { sentence: "What most calls for your attention today is recovery.", source: "Dominant theme: Wellness recovery" },
+        { sentence: support, source: "Daily State energy trend / Wellness recovery" },
+        { sentence: "What is one weight you can set down so your body doesn't have to ask for it louder later?", source: "Recovery trend" },
+        { sentence: "Choose one gentle practice that helps your body feel safe first.", source: "Wellness recovery" },
+      ] : [
         { sentence: "Yang paling perlu kamu perhatikan hari ini adalah pemulihan.", source: "Dominant theme: Wellness recovery" },
         { sentence: support, source: "Daily State energy trend / Wellness recovery" },
         { sentence: "Apa satu beban yang bisa kamu turunkan agar tubuhmu tidak harus memintanya lebih keras nanti?", source: "Recovery trend" },
@@ -508,7 +632,14 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
 
   return {
     dominantTheme: blueprintTheme ? "Meaning" : "Start",
-    text: [
+    text: isEn ? [
+      "I won't pretend to remember a journey you haven't recorded yet.",
+      blueprintTheme
+        ? `Since your daily trace is fresh, Bhumi begins with your core pattern of ${blueprintTheme} as a starting anchor.`
+        : "Since your daily trace is fresh, Bhumi won't pretend to know what hasn't yet unfolded.",
+      "What is one thing you feel most clearly before today begins?",
+      "Complete one honest check-in so Bhumi has a real foundation to accompany you tomorrow.",
+    ].join(" ") : [
       "Aku belum akan berpura-pura mengingat perjalanan yang belum kamu catat.",
       blueprintTheme
         ? `Karena jejak harianmu masih baru, Bhumi baru bisa memakai pola dasar ${blueprintTheme} sebagai pegangan awal.`
@@ -516,7 +647,12 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
       "Apa satu hal yang paling nyata kamu rasakan sebelum hari ini dimulai?",
       "Isi satu check-in jujur agar Bhumi punya jejak nyata untuk menemanimu besok.",
     ].join(" "),
-    sources: [
+    sources: isEn ? [
+      { sentence: "Today what matters most is starting honestly, not doing everything.", source: "Dominant theme: New-user start" },
+      { sentence: blueprintTheme ? `Since your trace is new, Bhumi uses your core pattern of ${blueprintTheme} as a starting anchor.` : "Since your trace is new, Bhumi won't assume what hasn't unfolded.", source: blueprintTheme ? "Blueprint Synthesis / new-user state" : "New-user state" },
+      { sentence: "What is one thing you feel most clearly before today begins?", source: "New-user state" },
+      { sentence: "Complete one honest check-in so Bhumi has a real foundation to accompany you tomorrow.", source: "New-user state" },
+    ] : [
       { sentence: "Hari ini yang paling penting adalah mulai dengan jujur, bukan banyak.", source: "Dominant theme: New-user start" },
       { sentence: blueprintTheme ? `Karena jejak harianmu masih baru, Bhumi baru bisa memakai pola dasar ${blueprintTheme} sebagai pegangan awal.` : "Karena jejak harianmu masih baru, Bhumi belum akan berpura-pura mengingat sesuatu yang belum kamu jalani.", source: blueprintTheme ? "Blueprint Synthesis / new-user state" : "New-user state" },
       { sentence: "Apa satu hal yang paling nyata kamu rasakan sebelum hari ini dimulai?", source: "New-user state" },
@@ -525,11 +661,11 @@ function buildPrioritizedCompanionReflection(context: any, healingMemory: any, b
   };
 }
 
-function buildCompanionReflection(context: any, healingMemory: any, blueprintTheme: string): {
+function buildCompanionReflection(context: any, healingMemory: any, blueprintTheme: string, isEn: boolean = false): {
   text: string;
   sources: Array<{ sentence: string; source: string }>;
 } {
-  return buildPrioritizedCompanionReflection(context, healingMemory, blueprintTheme);
+  return buildPrioritizedCompanionReflection(context, healingMemory, blueprintTheme, isEn);
 }
 
 function buildInfluence(context: any): {
@@ -544,6 +680,7 @@ function buildInfluence(context: any): {
   tags: string[];
   sources: Array<{ sentence: string; source: string }>;
 } {
+  const isEn = context?.language === "en";
   const dailyState = context?.dailyState ?? context?.wellnessState ?? null;
   const previousDailyState = context?.previousDailyState ?? context?.previousDayState ?? null;
   const healingMemory = context?.healingMemory ?? context?.journeyMemory ?? null;
@@ -573,14 +710,14 @@ function buildInfluence(context: any): {
     context?.blueprintSummary,
     context?.blueprint?.lifePath?.role,
   );
-  const dailyStateSentence = buildDailyStateSentence(dailyState, previousDailyState);
-  const journeySentence = buildJourneySentence(context, healingMemory);
-  const wellnessSentence = buildWellnessSentence(context);
-  const astroSentence = buildAstroSentence(context);
-  const companionReflection = buildCompanionReflection(context, healingMemory, blueprintTheme);
+  const dailyStateSentence = buildDailyStateSentence(dailyState, previousDailyState, isEn);
+  const journeySentence = buildJourneySentence(context, healingMemory, isEn);
+  const wellnessSentence = buildWellnessSentence(context, isEn);
+  const astroSentence = buildAstroSentence(context, isEn);
+  const companionReflection = buildCompanionReflection(context, healingMemory, blueprintTheme, isEn);
 
   const envContext = context?.environmentContext;
-  const envSupport = buildEnvironmentSupport(envContext);
+  const envSupport = buildEnvironmentSupport(envContext, isEn);
   const categorySupport = buildCategorySupport({
     dailyStateSentence,
     journeySentence,
@@ -593,7 +730,7 @@ function buildInfluence(context: any): {
     wellnessTheme,
     blueprintTheme,
     envSupport,
-  });
+  }, isEn);
 
   const tags = [
     emotionalWord ? `dailyState:${emotionalWord}` : "",
@@ -613,11 +750,11 @@ function buildInfluence(context: any): {
       astroSentence,
       wellnessSentence,
       envSupport.compass,
-      previousSummary ? `Catatan kemarin masih tertinggal sebagai konteks: ${previousSummary}.` : "",
+      previousSummary ? (isEn ? `Yesterday's note lingers as supportive context: ${previousSummary}.` : `Catatan kemarin masih tertinggal sebagai konteks: ${previousSummary}.`) : "",
     ].filter(Boolean).join(" "),
     manifestation: [
-      wellnessTheme ? `Aku memilih tindakan yang menghormati kebutuhan ${wellnessTheme}.` : "",
-      memoryTheme ? `Aku mengakui pelajaran ${memoryTheme} dan berhenti mengulang respons lama.` : "",
+      wellnessTheme ? (isEn ? `I choose actions that honor the need for ${wellnessTheme}.` : `Aku memilih tindakan yang menghormati kebutuhan ${wellnessTheme}.`) : "",
+      memoryTheme ? (isEn ? `I acknowledge the lesson of ${memoryTheme} and cease repeating old responses.` : `Aku mengakui pelajaran ${memoryTheme} dan berhenti mengulang respons lama.`) : "",
     ].filter(Boolean).join(" "),
     general: [
       dailyStateSentence,
@@ -644,23 +781,23 @@ function buildCategorySupport(input: {
   wellnessTheme: string;
   blueprintTheme: string;
   envSupport: ReturnType<typeof buildEnvironmentSupport>;
-}): Record<string, string> {
+}, isEn: boolean = false): Record<string, string> {
   const dailyTone = firstText(
     input.dailyStateSentence,
-    input.emotionalWord ? `Check-in terakhirmu membawa nada ${input.emotionalWord}; bagian ini perlu dibaca dari keadaan nyata itu.` : "",
-    input.nervousSystem ? `Sinyal sistem sarafmu ${input.nervousSystem} menjadi konteks penting untuk membaca hari ini.` : "",
+    input.emotionalWord ? (isEn ? `Your recent check-in carries a tone of ${input.emotionalWord}; this area is best read from that present reality.` : `Check-in terakhirmu membawa nada ${input.emotionalWord}; bagian ini perlu dibaca dari keadaan nyata itu.`) : "",
+    input.nervousSystem ? (isEn ? `Your nervous system signal of ${input.nervousSystem} provides essential context for reading today.` : `Sinyal sistem sarafmu ${input.nervousSystem} menjadi konteks penting untuk membaca hari ini.`) : "",
   );
   const journeyTone = firstText(
     input.journeySentence,
-    input.journeyTheme ? `Memori perjalananmu sedang membawa tema ${input.journeyTheme}; itu memberi arah yang lebih personal.` : "",
+    input.journeyTheme ? (isEn ? `Your journey memory holds the theme of ${input.journeyTheme}; providing a more personal direction.` : `Memori perjalananmu sedang membawa tema ${input.journeyTheme}; itu memberi arah yang lebih personal.`) : "",
   );
   const wellnessTone = firstText(
     input.wellnessSentence,
-    input.wellnessTheme ? `Wellness hari ini menyorot ${input.wellnessTheme}; saran perlu mengikuti kebutuhan tubuh itu.` : "",
+    input.wellnessTheme ? (isEn ? `Today's wellness highlights ${input.wellnessTheme}; advice should follow your body's true needs.` : `Wellness hari ini menyorot ${input.wellnessTheme}; saran perlu mengikuti kebutuhan tubuh itu.`) : "",
   );
   const astroTone = input.astroSentence;
-  const blueprintTone = input.blueprintTheme ? `Blueprint-mu menjadi dasar yang stabil, sementara konteks hari ini menentukan cara membawakannya.` : "";
-  const previousTone = input.previousSummary ? `Jejak kemarin masih terasa melalui ${input.previousSummary}; hari ini tidak berdiri sendiri.` : "";
+  const blueprintTone = input.blueprintTheme ? (isEn ? `Your blueprint serves as a steady anchor, while today's context guides how you express it.` : `Blueprint-mu menjadi dasar yang stabil, sementara konteks hari ini menentukan cara membawakannya.`) : "";
+  const previousTone = input.previousSummary ? (isEn ? `Yesterday's trace still echoes through ${input.previousSummary}; today does not stand entirely alone.` : `Jejak kemarin masih terasa melalui ${input.previousSummary}; hari ini tidak berdiri sendiri.`) : "";
 
   return {
     general: [dailyTone, input.envSupport.general].filter(Boolean).join(" "),
@@ -674,7 +811,7 @@ function buildCategorySupport(input: {
   };
 }
 
-function buildEnvironmentSupport(envContext: any): {
+function buildEnvironmentSupport(envContext: any, isEn: boolean = false): {
   mirror: string;
   compass: string;
   general: string;
@@ -689,7 +826,7 @@ function buildEnvironmentSupport(envContext: any): {
   const flags = Array.isArray(envContext.cautionFlags) ? envContext.cautionFlags : [];
   const circadian = String(envContext.circadianStatus || "").toLowerCase();
   const weather = String(envContext.weatherSummary || "").toLowerCase();
-  const isWarm = flags.includes("heat_stress_possible") || /panas|hangat/.test(weather);
+  const isWarm = flags.includes("heat_stress_possible") || /panas|hangat|warm|hot/.test(weather);
   const isHumid = flags.includes("high_humidity");
   const isAirSensitive = flags.some((flag: string) => /^air_quality_(sensitive|unhealthy|very_unhealthy|hazardous)$/.test(flag));
   const isNight = /night|malam|evening|petang/.test(circadian);
@@ -697,7 +834,14 @@ function buildEnvironmentSupport(envContext: any): {
   const contextSentence = typeof envContext.contextSentence === "string" ? envContext.contextSentence : "";
 
   if (isAirSensitive) {
-    return {
+    return isEn ? {
+      mirror: "Unfavorable air quality can be a gentle reminder to read your body with extra patience.",
+      compass: "Unfavorable air quality serves as supportive context: choose a sheltered rhythm if your body tires easily.",
+      general: "Unfavorable air quality makes small choices about space, pauses, and outdoor activity worth mindful attention.",
+      finance: "For practical tasks, choose energy-conserving routes so your focus isn't drained by outer conditions.",
+      challenge: "If your body feels heavier, read that as a cue for care, not as a verdict on your emotional state.",
+      opportunity: "New space today can begin from selecting an environment and pace that feel kind to your body.",
+    } : {
       mirror: "Kualitas udara yang kurang ramah bisa menjadi pengingat lembut untuk membaca tubuh dengan lebih sabar.",
       compass: "Kualitas udara yang kurang ramah sebaiknya hanya menjadi konteks pendukung: pilih ritme yang lebih terlindungi bila tubuh terasa mudah lelah.",
       general: "Kualitas udara yang kurang ramah membuat keputusan kecil tentang ruang, jeda, dan aktivitas luar menjadi lebih layak diperhatikan.",
@@ -708,7 +852,14 @@ function buildEnvironmentSupport(envContext: any): {
   }
 
   if (isWarm || isHumid) {
-    return {
+    return isEn ? {
+      mirror: "Warm or humid air can offer a gentle cue to treat your physical body with more tenderness.",
+      compass: "Warm or humid weather supports more realistic pacing, especially for physically demanding tasks.",
+      general: "Warm or humid conditions remind you to adapt to your body's rhythm rather than force it.",
+      finance: "Pace practical matters with ample pauses so energy doesn't deplete before main tasks conclude.",
+      challenge: "Heaviness today might best be approached with a kinder, slower physical pace.",
+      opportunity: "Opt for opportunities that can be sustained with steady energy rather than one big push.",
+    } : {
       mirror: "Udara yang terasa hangat atau lembap bisa menjadi latar kecil untuk memperlakukan tubuhmu lebih lembut.",
       compass: "Udara yang hangat atau lembap mendukung pilihan tempo yang lebih realistis, terutama untuk aktivitas yang banyak menguras tenaga.",
       general: "Kondisi sekitar yang hangat atau lembap bisa menjadi pengingat untuk menyesuaikan ritme tubuh, bukan memaksanya.",
@@ -719,7 +870,14 @@ function buildEnvironmentSupport(envContext: any): {
   }
 
   if (isNight) {
-    return {
+    return isEn ? {
+      mirror: "As night settles in, your body may call for gentle closure rather than new momentum.",
+      compass: "Nightfall makes Today's Note best read as evening closure rather than a call for new productivity.",
+      general: "The night invites a closing, settling rhythm.",
+      finance: "Wrap up the most essential practical tasks and let the rest wait for clearer daylight.",
+      challenge: "If the mind is still buzzing, close one single loop so the body knows today is complete.",
+      opportunity: "New space can take the form of closing the day with deeper awareness.",
+    } : {
       mirror: "Karena hari sudah masuk fase malam, tubuhmu mungkin lebih membutuhkan penutupan daripada dorongan baru.",
       compass: "Fase malam membuat Catatan Hari Ini lebih tepat dibaca sebagai penutup hari, bukan dorongan produktivitas baru.",
       general: "Fase malam mengajak ritme yang lebih menutup dan merapikan.",
@@ -730,7 +888,14 @@ function buildEnvironmentSupport(envContext: any): {
   }
 
   if (isMorning) {
-    return {
+    return isEn ? {
+      mirror: "Morning offers a quiet threshold to begin with a clear, unhurried pace.",
+      compass: "Morning supports a simple initial choice before your attention expands in many directions.",
+      general: "Morning sets the context to shape your rhythm rather than chase everything at once.",
+      finance: "Choose the single practical task that most benefits from early attention.",
+      challenge: "",
+      opportunity: "New space today starts best from one clear, grounded opening step.",
+    } : {
       mirror: "Fase pagi bisa menjadi latar lembut untuk memulai dengan tempo yang jelas dan tidak berlebihan.",
       compass: "Fase pagi mendukung satu pilihan awal yang sederhana sebelum perhatianmu melebar ke banyak arah.",
       general: "Pagi memberi konteks untuk menyusun ritme, bukan mengejar semuanya sekaligus.",

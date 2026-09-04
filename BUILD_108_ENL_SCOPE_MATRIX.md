@@ -111,15 +111,17 @@ Each blueprint engine in `lib/` must be augmented to support English presentatio
 
 ## 4. AI Prompt Orchestration & Guidance Engines
 
-| Subsystem | Source Path | Current Status | Required Action |
+| Subsystem | Source Path | Current Status | Notes & Verification |
 |---|---|---|---|
-| **Daily Guidance Prompt** | `lib/prompts/dailyGuidancePrompt.ts` | Partial English Support (`outputLanguageRule`) | Ensure prompt instruction enforces native English phrasing; eliminate hardcoded Indonesian greeting defaults ("Halo {firstName}") and Indonesian sign-offs ("Peluk hangat dari Bhumi."). |
-| **Daily Soul Mirror Prompt** | `lib/prompts/bhumiSoulMirrorPrompt.ts` | ID Boilerplate | Clean out Indonesian instructional phrases; ensure archetype instructions use English nouns. |
-| **Manifestation Prompt** | `lib/prompts/bhumiManifestationPrompt.ts` | ID Boilerplate | Ensure English prompt output for daily grounding tasks and intentions. |
-| **Unified Blueprint Synthesis** | `lib/dailyGuidance/unifiedBlueprintSynthesis.ts` | Partial English (`pickLocale`) | Expand `pickLocale` coverage so that every synthesis sentence carries a complete English variant. |
-| **Local Guidance Fallback** | `lib/orchestrators/localDailyGuidanceFallback.ts` | Partial English (`isId` branching) | Complete 100% of English fallback strings for insight, warning sign, daily practices, journal prompts, and shadow insights. |
-| **Mentor Advice Categories** | `lib/dailyGuidance/mentorAdvice.ts` | Partial English | Localize category titles (Relationship, Career, Health, Spiritual, Personal) and lens descriptions into English. |
-| **Time-of-day Greeting** | `lib/dailyGuidance/timeOfDayGreeting.ts` | Partial English | Verify English greetings: "Good morning", "Good afternoon", "Good evening", "Quiet night". |
+| **Daily Guidance Prompt** | `lib/prompts/dailyGuidancePrompt.ts` | `ENGLISH_READY` (Verified) | Native English synthesis instructions, dynamic category schema, English greetings and companion sign-offs. |
+| **Daily Soul Mirror Prompt** | `lib/prompts/bhumiSoulMirrorPrompt.ts` | `ENGLISH_READY` (Verified) | Full English companion role, tone, and opening question structure. |
+| **Manifestation Prompt** | `lib/prompts/bhumiManifestationPrompt.ts` | `ENGLISH_READY` (Verified) | Native English first-person grounding tasks and intention contracts. |
+| **Daily Reflection Prompt** | `lib/prompts/bhumiDailyReflectionPrompt.ts` | `ENGLISH_READY` (Verified) | English preview, full reflection, and focus section contract. |
+| **Soul Identity Prompt & Registry** | `lib/prompts/soulIdentityPrompt.ts`, `lib/ai/prompts/registry.ts` | `ENGLISH_READY` (Verified) | Pure English resonance narrative voice ("I notice...") without cosmic origin over-claims. |
+| **Local Guidance Fallback** | `lib/orchestrators/localDailyGuidanceFallback.ts` | `ENGLISH_READY` (Verified) | 100% English themes, personal note sections, category insights, and fallback name resolution. |
+| **Daily Guidance Engine Influence** | `lib/engines/dailyGuidanceEngine.ts` | `ENGLISH_READY` (Verified) | Fully localized dynamic influence builders (state, journey, wellness, astro, environment). |
+| **User Normalizer & Mirror Helper** | `lib/dailyGuidance/normalizeUserFacingGuidance.ts`, `mirrorDailyReflection.ts` | `ENGLISH_READY` (Verified) | English category fallbacks, 11-theme advice variations, and English blacklist filtering. |
+| **Birthday & Dispatch Helpers** | `lib/birthday/birthdayMessage.ts`, `lib/services/communicationCenterService.ts` | `ENGLISH_READY` (Verified) | English birthday wishes, ordinal age formatting, and localized dispatch summary. |
 
 ---
 

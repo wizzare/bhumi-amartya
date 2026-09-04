@@ -92,7 +92,31 @@ function compactBlueprintSignal(value: any): string {
   return "";
 }
 
-function localizeDailyNoteLabel(value: string): string {
+function localizeDailyNoteLabel(value: string, isId: boolean = true): string {
+  if (!isId) {
+    const labelsEn: Record<string, string> = {
+      mercury: "Mercury",
+      venus: "Venus",
+      mars: "Mars",
+      moon: "Moon",
+      sun: "Sun",
+      saturn: "Saturn",
+      jupiter: "Jupiter",
+      pluto: "Pluto",
+      "wait to respond": "waiting to respond",
+      "wait for invitation": "waiting for invitation",
+      "inform before action": "informing before action",
+      "wait a lunar cycle": "waiting a lunar cycle",
+      sacral: "sacral",
+      emotional: "emotional",
+      lunar: "lunar",
+      splenic: "splenic",
+      ego: "ego",
+      "self-projected": "self-projected",
+      mental: "mental",
+    };
+    return labelsEn[value.toLowerCase()] || value;
+  }
   const labels: Record<string, string> = {
     mercury: "Merkurius",
     venus: "Venus",
@@ -112,7 +136,7 @@ function localizeDailyNoteLabel(value: string): string {
     splenic: "instingtif",
     ego: "kehendak",
     "self-projected": "arah diri",
-    "mental": "kejernihan mental",
+    mental: "kejernihan mental",
   };
   return labels[value.toLowerCase()] || value;
 }
@@ -123,6 +147,7 @@ function buildPersonalDailyNote(params: {
   userName: string;
   dateSeed: string;
 }): string {
+  const isId = params.synthesis.language !== "en";
   const signals = safeObject(params.synthesis?.identitySignals);
   const fullBlueprint = safeObject(params.synthesis?.fullBlueprint);
   const blueprint = safeObject(params.context?.blueprint);
@@ -150,19 +175,20 @@ function buildPersonalDailyNote(params: {
     .map((name) => bodies.find((body) => safeString(body.body || body.name || body.planet).toLowerCase() === name.toLowerCase()))
     .find(Boolean);
   const transit = activeTransits[seed % Math.max(activeTransits.length, 1)] || bodyFromSky || {};
-  const planet = localizeDailyNoteLabel(firstNonEmpty(transit.planet, transit.body, transit.name, "Merkurius"));
-  const sign = firstNonEmpty(transit.sign, transit.zodiacSign, params.context?.currentSky?.moonSign, "tema analitis");
+  const defaultPlanet = isId ? "Merkurius" : "Mercury";
+  const planet = localizeDailyNoteLabel(firstNonEmpty(transit.planet, transit.body, transit.name, defaultPlanet), isId);
+  const sign = firstNonEmpty(transit.sign, transit.zodiacSign, params.context?.currentSky?.moonSign, isId ? "tema analitis" : "analytical theme");
   const transitSummary = firstNonEmpty(
     params.context?.astrologyTransits?.summary,
     params.context?.astrologyToday,
     safeArray<any>(transit.themes).join(", "),
-    "fokus mental, keputusan kecil, dan caramu mengatur respons harian"
+    isId ? "fokus mental, keputusan kecil, dan caramu mengatur respons harian" : "mental focus, small decisions, and how you direct your daily response"
   );
 
   const lifePath = firstNonEmpty(signals.lifePath, blueprint.lifePath?.number);
   const humanDesignType = firstNonEmpty(signals.humanDesignType, humanDesign.type);
-  const strategy = localizeDailyNoteLabel(firstNonEmpty(signals.strategy, humanDesign.strategy));
-  const authority = localizeDailyNoteLabel(firstNonEmpty(signals.authority, humanDesign.authority));
+  const strategy = localizeDailyNoteLabel(firstNonEmpty(signals.strategy, humanDesign.strategy), isId);
+  const authority = localizeDailyNoteLabel(firstNonEmpty(signals.authority, humanDesign.authority), isId);
   const arcanaCenter = firstNonEmpty(signals.arcanaCenter, destinyMatrix.center);
   const sunSign = firstNonEmpty(signals.sunSign, astrology.sunSign);
   const moonSign = firstNonEmpty(signals.moonSign, astrology.moonSign);
@@ -170,7 +196,6 @@ function buildPersonalDailyNote(params: {
 
   // Journey Context
   const completionYesterday = adaptive.completionRateYesterday || 0;
-  const isId = params.synthesis.language !== "en";
 
   let activityNote = "";
   if (completionYesterday >= 80) {
@@ -179,7 +204,7 @@ function buildPersonalDailyNote(params: {
       activityNote = isId ? `Hari ${wName} ini adalah kesempatan baru untuk mulai kembali dengan ritme yang lebih ramah.` : `This ${wName} is a new chance to restart with a kinder rhythm.`;
   }
 
-  const lifePathThemes: Record<string, string> = {
+  const lifePathThemesId: Record<string, string> = {
     "1": "memulai dengan keputusan yang mandiri",
     "2": "menjaga harmoni tanpa menghilangkan kebutuhanmu sendiri",
     "3": "mengubah rasa menjadi ekspresi yang jelas",
@@ -193,14 +218,37 @@ function buildPersonalDailyNote(params: {
     "22": "menjaga visi besar lewat fondasi kecil yang stabil",
     "33": "melayani dengan hati tanpa memikul semuanya",
   };
-  const humanDesignThemes: Record<string, string> = {
+  const lifePathThemesEn: Record<string, string> = {
+    "1": "initiating with independent decisions",
+    "2": "holding harmony without sacrificing your own needs",
+    "3": "turning feelings into clear expression",
+    "4": "building structure, rhythm, and consistency",
+    "5": "navigating freedom without scattering your energy",
+    "6": "caring for others without losing your center",
+    "7": "reading deeper meaning before drawing conclusions",
+    "8": "wielding power and discernment cleanly",
+    "9": "releasing old cycles with maturity",
+    "11": "grounding intuition into actionable steps",
+    "22": "anchoring large vision through steady small foundations",
+    "33": "serving with an open heart without carrying everything alone",
+  };
+
+  const humanDesignThemesId: Record<string, string> = {
     generator: "tubuhmu perlu merasa punya respons yang nyata sebelum menambah beban",
     "manifesting generator": "energi cepatmu tetap butuh jeda agar tidak meloncat ke terlalu banyak arah",
     projector: "perhatianmu lebih tajam ketika kamu memilih tempat yang benar-benar layak menerima energimu",
     manifestor: "dorongan memulai akan terasa lebih bersih ketika kamu menyampaikan arah tanpa harus membela diri",
     reflector: "kejernihanmu sangat dipengaruhi lingkungan, ritme, dan siapa yang sedang kamu serap hari ini",
   };
-  const arcanaThemes: Record<string, string> = {
+  const humanDesignThemesEn: Record<string, string> = {
+    generator: "your body needs a true somatic response before taking on more weight",
+    "manifesting generator": "your quick energy still needs pauses to avoid scattering across too many directions",
+    projector: "your perception is sharpest when you choose spaces truly worthy of your energy",
+    manifestor: "your inner impulse to initiate flows cleanest when you communicate your direction without having to defend it",
+    reflector: "your clarity is deeply shaped by your environment, your pacing, and whose energy you are sampling today",
+  };
+
+  const arcanaThemesId: Record<string, string> = {
     "4": "disiplin yang tidak kaku",
     "6": "pilihan relasi yang lebih sadar",
     "8": "kekuatan batin, batas, dan keberanian mengatur ulang kendali",
@@ -208,30 +256,39 @@ function buildPersonalDailyNote(params: {
     "11": "kepekaan yang perlu diterjemahkan menjadi tindakan sederhana",
     "12": "melihat dari sudut pandang baru sebelum bereaksi",
   };
+  const arcanaThemesEn: Record<string, string> = {
+    "4": "grounded, non-rigid discipline",
+    "6": "more conscious relational choices",
+    "8": "inner strength, healthy boundaries, and mindful control",
+    "9": "wisdom, completion, and the courage to close old cycles",
+    "11": "sensitivity translated into simple, real-world action",
+    "12": "seeing from fresh perspectives before reacting",
+  };
 
-  const lpTheme = lifePathThemes[lifePath] || "mengenali pola yang membuat hidupmu lebih stabil";
-  const hdTheme = humanDesignThemes[humanDesignType.toLowerCase()] || "cara tubuhmu mengambil keputusan perlu dihormati sebelum pikiran mempercepat cerita";
-  const arcanaTheme = arcanaThemes[arcanaCenter] || "pusat energimu sedang diminta bekerja lebih sadar";
-  const natalLine = [
-    sunSign && `Matahari ${sunSign}`,
-    moonSign && `Bulan ${moonSign}`,
-    ascendant && `Ascendant ${ascendant}`,
-  ].filter(Boolean).join(", ");
+  const lpTheme = isId
+    ? (lifePathThemesId[lifePath] || "mengenali pola yang membuat hidupmu lebih stabil")
+    : (lifePathThemesEn[lifePath] || "recognizing patterns that bring stability to your life");
+  const hdTheme = isId
+    ? (humanDesignThemesId[humanDesignType.toLowerCase()] || "cara tubuhmu mengambil keputusan perlu dihormati sebelum pikiran mempercepat cerita")
+    : (humanDesignThemesEn[humanDesignType.toLowerCase()] || "how your body reaches decisions deserves honor before the mind speeds ahead");
+  const arcanaTheme = isId
+    ? (arcanaThemesId[arcanaCenter] || "pusat energimu sedang diminta bekerja lebih sadar")
+    : (arcanaThemesEn[arcanaCenter] || "your energetic center is being invited to operate with greater consciousness");
 
   const transitText = `${planet} ${sign} ${transitSummary}`.toLowerCase();
-  const dominantTheme = transitText.includes("venus") || transitText.includes("relasi") || transitText.includes("hubungan")
+  const dominantTheme = transitText.includes("venus") || transitText.includes("relasi") || transitText.includes("hubungan") || transitText.includes("relationship")
     ? "relationship"
-    : transitText.includes("mars") || transitText.includes("aksi") || transitText.includes("energi")
+    : transitText.includes("mars") || transitText.includes("aksi") || transitText.includes("energi") || transitText.includes("action")
       ? "action"
-      : transitText.includes("saturn") || transitText.includes("struktur") || transitText.includes("tanggung")
+      : transitText.includes("saturn") || transitText.includes("struktur") || transitText.includes("tanggung") || transitText.includes("structure")
         ? "structure"
-        : transitText.includes("moon") || transitText.includes("bulan") || transitText.includes("emosi")
+        : transitText.includes("moon") || transitText.includes("bulan") || transitText.includes("emosi") || transitText.includes("emotion")
           ? "emotion"
-          : transitText.includes("pluto") || transitText.includes("lepas") || transitText.includes("transform")
+          : transitText.includes("pluto") || transitText.includes("lepas") || transitText.includes("transform") || transitText.includes("release")
             ? "release"
             : "clarity";
 
-  const questionByTransit: Record<string, string> = {
+  const questionByTransitId: Record<string, string> = {
     clarity: "Hal apa yang sebenarnya sudah jelas, tetapi masih kutunda karena takut harus mengubah cara bergerakku?",
     structure: "Fondasi kecil apa yang perlu kubereskan agar energiku tidak terus bocor ke hal yang berserakan?",
     relationship: "Di percakapan mana aku perlu lebih jujur tanpa kehilangan kelembutan?",
@@ -239,9 +296,15 @@ function buildPersonalDailyNote(params: {
     emotion: "Rasa apa yang sedang meminta didengar sebelum aku mengambil keputusan hari ini?",
     release: "Apa yang bisa kulepaskan hari ini supaya ruang batinku terasa lebih ringan dan jernih?",
   };
-  const natalPhrase = natalLine
-    ? `Dengan warna dasar batinmu, dorongan ini menyentuh cara alamimu mencari aman, membaca detail, dan menjaga ritme yang bisa dipercaya.`
-    : "Dorongan ini menyentuh cara alamimu mencari aman, membaca situasi, dan menjaga ritme yang bisa dipercaya.";
+  const questionByTransitEn: Record<string, string> = {
+    clarity: "What is already clear, yet I hesitate to act on because it requires shifting my direction?",
+    structure: "What small foundation can I tend to today so my energy doesn't leak into clutter?",
+    relationship: "Where in my conversations do I need to be more honest while remaining kind?",
+    action: "Which step genuinely has a somatic response from your body, versus what is born of rush?",
+    emotion: "What feeling is asking to be heard before I make decisions today?",
+    release: "What can I gently set down today so my inner space feels lighter and clearer?",
+  };
+  const questionByTransit = isId ? questionByTransitId : questionByTransitEn;
 
   const hdStyle = calculateHumanDesignStyle(params.synthesis.fullBlueprint as any);
   const career = careerIntelligenceEngine.calculateCareer(params.synthesis.fullBlueprint as any);
@@ -253,12 +316,22 @@ function buildPersonalDailyNote(params: {
   const integrated = blueprintSynthesisNarrative.generateIdentityNarrative(params.synthesis, hdStyle, career, natal, dmV3, params.synthesis.language || "id");
   const astroContext = astroContextEngine.synthesize(params.synthesis, params.context.astrologyTransits, integrated, params.synthesis.language || "id");
 
+  if (!isId) {
+    return [
+      `Current theme: ${astroContext.timingTheme}. ${astroContext.timingInsight} ${activityNote}`,
+      `Your natural pace unfolds through ${lpTheme}; your energy aligns best when ${hdTheme}. At the same time, there is space to gently welcome ${arcanaTheme}.`,
+      `Daily focus:\n${astroContext.timingFocus}`,
+      `Reflection question:\n${questionByTransit[dominantTheme]}`,
+      `Lifestyle Insight:\n${integrated.lifestyleAdvice}`
+    ].join("\n\n");
+  }
+
   return [
     `Tema saat ini: ${astroContext.timingTheme}. ${astroContext.timingInsight} ${activityNote}`,
     `Langkah alamimu berkembang lewat ${lpTheme}; energimu juga lebih selaras ketika ${hdTheme}. Di saat yang sama, ada ruang untuk menyapa sisi dirimu yang ingin merawat ${arcanaTheme} dengan lebih lembut.`,
     `Fokus harian:\n${astroContext.timingFocus}`,
     `Pertanyaan refleksi:\n${questionByTransit[dominantTheme]}`,
-    isId ? `Insight Gaya Hidup:\n${integrated.lifestyleAdvice}` : `Lifestyle Insight:\n${integrated.lifestyleAdvice}`
+    `Insight Gaya Hidup:\n${integrated.lifestyleAdvice}`
   ].join("\n\n");
 }
 
@@ -600,7 +673,14 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
     const innerworkDuration = mood <= 4 ? 10 : 15;
     const totalInnerworkDuration = innerworkDuration + 6 + meditationDuration;
 
-    const userName = safeString(identity.name, "Jiwa");
+    const isId = safeInput.language !== "en";
+    const userName = safeString(
+      identity.name,
+      safeString(
+        (safeInput.user as any)?.displayName,
+        safeString((safeInput.user as any)?.fullName, isId ? "Jiwa" : "Friend")
+      )
+    );
 
     const soulReflectionText = generateSoulReflection(synthesis, userName, [
       safeInput.user.id,
@@ -670,7 +750,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
 
       soulReflection: {
         dailyMessage: soulReflectionText,
-        theme: safeString(transitThemes[0], "Pertumbuhan"),
+        theme: safeString(transitThemes[0], safeInput.language !== "en" ? "Pertumbuhan" : "Growth"),
         affirmation: safeInput.language !== "en"
           ? `Aku melangkah di jalanku dengan kehadiran, kejujuran, dan kasih sayang.`
           : `I meet my path with presence, honesty, and care.`,
@@ -727,8 +807,8 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
             completed: false,
           },
         ],
-        theme: safeString(transitThemes[0], "Kehadiran"),
-        focusArea: safeString(transitThemes[0], "Diri"),
+        theme: safeString(transitThemes[0], safeInput.language !== "en" ? "Kehadiran" : "Presence"),
+        focusArea: safeString(transitThemes[0], safeInput.language !== "en" ? "Diri" : "Self"),
         totalDuration: totalInnerworkDuration,
         difficulty: mood <= 4 ? "beginner" : mood >= 8 ? "advanced" : "intermediate",
       },
@@ -747,10 +827,10 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
           `What do I need before taking action?`,
           `What would support look like if I stopped earning it?`,
         ],
-        theme: safeString(transitThemes[0], "Refleksi"),
+        theme: safeString(transitThemes[0], safeInput.language !== "en" ? "Refleksi" : "Reflection"),
         emotionalDepth: mood <= 4 ? "surface" : "medium",
         purpose: `To connect emotional memory with today's context.`,
-        relatedArea: safeString(transitThemes[0], "Pertumbuhan"),
+        relatedArea: safeString(transitThemes[0], safeInput.language !== "en" ? "Pertumbuhan" : "Growth"),
       },
       shadowInsight: safeInput.language !== "en"
         ? `Tepi batin hari ini adalah menganggap apa yang kamu rasakan sebagai bukti bahwa kamu tertinggal. Integrasinya adalah memperlakukannya sebagai sinyal untuk perawatan diri, penyesuaian ritme, dan batas diri yang lebih jelas.`
@@ -759,7 +839,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         title: safeInput.language !== "en" ? `Penyelarasan Diri` : `Self Alignment`,
         duration: meditationDuration,
         type: "grounding",
-        focusArea: safeString(transitThemes[0], "Kehadiran"),
+        focusArea: safeString(transitThemes[0], safeInput.language !== "en" ? "Kehadiran" : "Presence"),
         description: safeInput.language !== "en" ? `Praktik hening untuk mengintegrasikan apa yang kamu rasakan melalui tubuh.` : `A quiet practice for integrating what you feel through the body.`,
         technique: safeInput.language !== "en" ? "Pernapasan embusan pelan dengan pemindaian tubuh secara menyeluruh." : "Slow exhale breathing with body scanning",
         energyEffect: mood <= 4 ? "settling" : "centering",
@@ -801,7 +881,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         purpose: restart
           ? (safeInput.language !== "en" ? "Mendukung awal ulang tanpa tekanan setelah hari yang tidak lengkap." : "Support a low-pressure restart after an incomplete day.")
           : (safeInput.language !== "en" ? `Mendukung dirimu dengan grounding sensorik yang stabil.` : `Support yourself with steady sensory grounding.`),
-        affinity: "Diri",
+        affinity: safeInput.language !== "en" ? "Diri" : "Self",
         vibe: mood <= 4 ? "calming" : "balancing",
         artistOrSource: "Bhumi Amartya",
       },

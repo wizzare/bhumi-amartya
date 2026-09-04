@@ -1,10 +1,11 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
 import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 import {
   generateDailyGuidanceForRequest,
   getOrGenerateDailyGuidance,
 } from "@/lib/services/dailyGuidanceService";
+import { isEnlEdition } from "@/lib/config/edition";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -174,7 +175,13 @@ function normalizeDailyGuidanceRequest(
         ? "en"
         : typeof body?.language === "string" && body.language.startsWith("ms")
           ? "ms"
-          : "id",
+          : typeof body?.language === "string" && body.language.startsWith("id")
+            ? "id"
+            : typeof (profile as any)?.language === "string" && (profile as any).language.startsWith("id")
+              ? "id"
+              : isEnlEdition()
+                ? "en"
+                : "id",
       user: asRecord("user" in (body ?? {}) ? body?.user : null) ?? profile,
       profile,
       blueprint,
