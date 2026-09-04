@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
 import { Capacitor } from "@capacitor/core";
 import {
   GooglePopupTimeoutError,
@@ -22,7 +23,7 @@ import { logSafeAuthError } from "@/lib/auth/safeDiagnostics";
 function LoginContent() {
   const router = useRouter();
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations["en"];
 
   const auth = useAuth();
   const authUser = auth?.user;
@@ -37,15 +38,15 @@ function LoginContent() {
   const getGoogleLoginErrorMessage = (err: unknown): string => {
     const code = (err as { code?: string })?.code;
     if (err instanceof GooglePopupTimeoutError || code === "auth/popup-timeout") {
-      return "Google belum merespons. Periksa apakah pop-up diblokir, lalu coba lagi atau gunakan halaman masuk Google.";
+      return t.login?.popupTimeout || "Google did not respond. Check if pop-ups are blocked, then try again or use the Google sign-in page.";
     }
     if (code === "auth/popup-blocked") {
-      return "Pop-up Google diblokir oleh browser. Gunakan halaman masuk Google atau izinkan pop-up untuk aplikasi ini.";
+      return t.login?.popupBlocked || "Google pop-up was blocked by browser. Use the Google sign-in page or allow pop-ups for this app.";
     }
     if (code === "auth/popup-closed-by-user") {
-      return "Jendela masuk Google ditutup sebelum proses selesai. Silakan coba lagi.";
+      return t.login?.popupClosed || "Google sign-in window was closed before completion. Please try again.";
     }
-    return "Masuk dengan Google belum berhasil. Periksa koneksi lalu coba lagi.";
+    return t.login?.genericError || "Google sign-in was not successful. Check your connection and try again.";
   };
 
   useEffect(() => {
@@ -160,7 +161,7 @@ function LoginContent() {
   if (authLoading || (authUser && !authStateResolved) || (authUser && profileLoading)) {
     return (
       <div className="bhumi-card w-full max-w-md p-10 text-center">
-        <p className="text-[#4F5E52] text-lg">Memverifikasi akun...</p>
+        <p className="text-[#4F5E52] text-lg">{t.login?.verifying || "Verifying account..."}</p>
         <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-[#E8E9E5]">
           <div className="h-full w-3/4 animate-pulse rounded-full bg-[#4F5E52]" />
         </div>
@@ -174,16 +175,16 @@ function LoginContent() {
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg">
           <img src="/images/logo.png" alt="Bhumi" className="w-12 h-12 object-contain" />
         </div>
-        <h1 className="text-3xl font-serif text-[#4F5E52]">{t.welcome.title}</h1>
+        <h1 className="text-3xl font-serif text-[#4F5E52]">{t.welcome?.title || "Bhumi Amartya"}</h1>
         <p className="mt-4 text-[#7B8776] leading-relaxed">
-          Masuk untuk melanjutkan perjalanan pengenalan dirimu.
+          {t.login?.subtitle || "Sign in to continue your journey of self-discovery."}
         </p>
       </div>
 
       <div className="space-y-4 pt-4">
         {error && (
           <div className="text-red-600 text-sm text-left bg-red-50 p-4 rounded-2xl border border-red-100">
-            <p className="font-bold mb-1">Masuk dengan Google belum selesai</p>
+            <p className="font-bold mb-1">{t.login?.errorTitle || "Google sign-in incomplete"}</p>
             {error}
           </div>
         )}
@@ -195,7 +196,7 @@ function LoginContent() {
             disabled={loginLoading}
             className="w-full rounded-full border border-[#4F5E52] px-6 py-3 text-[#4F5E52] font-medium transition hover:bg-[#F3F5F1] disabled:opacity-60"
           >
-            Gunakan halaman masuk Google
+            {t.login?.useRedirect || "Use Google sign-in page"}
           </button>
         )}
 
@@ -206,7 +207,7 @@ function LoginContent() {
           className="w-full rounded-full bg-[#4F5E52] px-6 py-4 text-white font-medium shadow-lg transition hover:bg-[#3e4b42] disabled:opacity-60 flex items-center justify-center gap-3"
         >
           {loginLoading ? (
-            "Menghubungkan..."
+            t.login?.connecting || "Connecting..."
           ) : (
             <>
               <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
@@ -217,14 +218,14 @@ function LoginContent() {
                   <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                 </svg>
               </div>
-              Lanjutkan dengan Google
+              {t.login?.continueWithGoogle || "Continue with Google"}
             </>
           )}
         </button>
       </div>
 
       <p className="text-center text-xs text-[#7B8776] leading-relaxed px-4">
-        Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.
+        {t.login?.termsNotice || "By continuing, you agree to Bhumi Amartya's Terms of Service and Privacy Policy."}
       </p>
 
       <EmulatorQaLogin />

@@ -2,7 +2,7 @@
 **Developer & Agent Execution Guide**
 
 ```text
-STATUS                          = NOT_STARTED (FOUNDATION AUDIT & SPECIFICATION COMPLETE)
+STATUS                          = IN_PROGRESS (SPRINT-108-01-SHELL COMPLETE)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 CURRENT_BRANCH                  = recovery/build106-product-continuity
@@ -11,8 +11,8 @@ PURPOSE                         = Dedicated English-Language Edition of Bhumi Am
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DERIVED_SPRINT_COUNT            = 8 SPRINTS
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
+BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_01_COMPLETE
+NEXT_SAFE_ACTION                = SPRINT_02_DASHBOARD_CORE
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -93,8 +93,16 @@ node --import tsx tests/unit/version-reconciliation.test.ts
 ## 5. Current Task State & Handoff Action
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
+BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_01_COMPLETE (Shell, Landing, Login, Setup 100% English)
+NEXT_SAFE_ACTION                = SPRINT-108-02-DASHBOARD
 ```
 
-**Instruction:** Do not perform any product code modifications until the Founder has reviewed `BUILD_108_ENL_PAGE_AUDIT.md` and `BUILD_108_ENL_SPRINT_PLAN.md` and approved the execution roadmap.
+**Sprint 1 Accomplishments:**
+- Landing page (`app/page.tsx`), Login page (`app/login/page.tsx`), Setup wizard (`app/setup/page.tsx`), and App shell initialized with full English support and clean English fallbacks.
+- Language switcher conditionally hidden in ENL edition mode (`!isEnlEdition()`).
+- Multilingual dictionary parity preserved without deleting `id-ID` or `ms-MY` bundles.
+- Non-destructive profile continuity: existing user profile `language` in Firestore is protected and not overwritten.
+- Unit and regression test suite `tests/unit/build108-sprint01-shell.test.ts` (168 assertions) passing.
+- 100% regression suite passing (447 assertions total across all 5 test files).
+
+**Next Sprint:** `SPRINT-108-02-DASHBOARD` (Dashboard Core, Environment & All 15 Subcards).

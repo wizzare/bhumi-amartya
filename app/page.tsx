@@ -4,12 +4,15 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { decideLandingCtaRoute } from "@/lib/auth/landingCtaRoute";
+import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
 import { useEffect, useState } from "react";
 
 export default function LandingPage() {
   const router = useRouter();
   const auth = useAuth();
   const { language, setLanguage } = useLanguage();
+  const t = translations[language] || translations["en"];
   const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {
@@ -84,14 +87,14 @@ export default function LandingPage() {
            {!showFallback ? (
              <div className="animate-pulse flex flex-col items-center">
                 <div className="w-16 h-16 bg-[#4F5E52]/10 rounded-full mb-4"></div>
-                <p className="text-[#4F5E52] text-sm font-medium">Menghubungkan perjalanan...</p>
+                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connecting || "Connecting your journey..."}</p>
              </div>
            ) : (
              <div className="flex flex-col items-center gap-4 text-center px-6 max-w-xs">
-                <p className="text-[#4F5E52] text-sm font-medium">Sepertinya koneksi melambat atau sesi terganggu.</p>
+                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connectionSlow || "Connection seems slow or session was interrupted."}</p>
                 <div className="flex gap-2 w-full">
-                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">Coba Lagi</button>
-                  <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="flex-1 py-3 border border-[#4F5E52] text-[#4F5E52] rounded-xl text-xs font-bold uppercase tracking-wider">Masuk Ulang</button>
+                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.reload || "Try Again"}</button>
+                  <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="flex-1 py-3 border border-[#4F5E52] text-[#4F5E52] rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.relogin || "Sign In Again"}</button>
                 </div>
              </div>
            )}
@@ -106,10 +109,10 @@ export default function LandingPage() {
         <img src="/images/logo.png" alt="Bhumi" className="w-14 h-14 object-contain" />
       </div>
 
-      <h1 className="text-4xl font-serif text-[#4F5E52] mb-4">Bhumi Amartya</h1>
+      <h1 className="text-4xl font-serif text-[#4F5E52] mb-4">{t.welcome?.title || "Bhumi Amartya"}</h1>
 
       <p className="max-w-xs text-[#7B8776] leading-relaxed mb-12">
-        Ruang Untuk Pulang dan Kenali Diri
+        {t.welcome?.subtitle || "A space to return home, understand yourself, and grow gently."}
       </p>
 
       <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -117,33 +120,35 @@ export default function LandingPage() {
           onClick={handleMulai}
           className="bhumi-button w-full"
         >
-          Pengguna Baru
+          {t.welcome?.newUser || "I Am New Here"}
         </button>
 
         <button
           onClick={handlePunyaAkun}
           className="w-full rounded-2xl border border-[#4F5E52] bg-white px-5 py-4 font-semibold text-[#4F5E52] transition hover:bg-[#F5F1E8]"
         >
-          Saya Sudah Punya Akun
+          {t.welcome?.returningUser || "I Already Have an Account"}
         </button>
       </div>
 
-      <div className="mt-12 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center">
-        {/* Build 106 R-34: functional locale switcher (id / en / ms, D-V5-35).
-            Recovered from CP-036 app/page.tsx switcher hunk. */}
-        <div className="flex items-center justify-center gap-3 text-xs">
-          {(["id", "en", "ms"] as const).map((code) => (
-            <button
-              key={code}
-              type="button"
-              onClick={() => setLanguage(code)}
-              className={language === code ? "font-bold text-[#4F5E52] underline" : "text-[#7B8776]"}
-            >
-              {code === "id" ? "Indonesia" : code === "en" ? "English" : "Melayu"}
-            </button>
-          ))}
+      {!isEnlEdition() && (
+        <div className="mt-12 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center">
+          {/* Build 106 R-34: functional locale switcher (id / en / ms, D-V5-35).
+              Recovered from CP-036 app/page.tsx switcher hunk. */}
+          <div className="flex items-center justify-center gap-3 text-xs">
+            {(["id", "en", "ms"] as const).map((code) => (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setLanguage(code)}
+                className={language === code ? "font-bold text-[#4F5E52] underline" : "text-[#7B8776]"}
+              >
+                {code === "id" ? "Indonesia" : code === "en" ? "English" : "Melayu"}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </main>
   );
 }

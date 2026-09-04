@@ -7,6 +7,7 @@ import i18next, { type i18n as I18nInstance } from "i18next";
 import idID from "../../src/locales/id-ID/translation.json";
 import enUS from "../../src/locales/en-US/translation.json";
 import msMY from "../../src/locales/ms-MY/translation.json";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type SupportedLocaleTag = "id-ID" | "en-US" | "ms-MY";
 export type SupportedShortCode = "id" | "en" | "ms";
@@ -17,7 +18,7 @@ export const SUPPORTED_LOCALES: Array<{ tag: SupportedLocaleTag; short: Supporte
   { tag: "ms-MY", short: "ms", label: "Bahasa Melayu" },
 ];
 
-export const DEFAULT_SHORT: SupportedShortCode = "id";
+export const DEFAULT_SHORT: SupportedShortCode = isEnlEdition() ? "en" : "id";
 
 const RAW_BUNDLES: Record<SupportedLocaleTag, Record<string, unknown>> = {
   "id-ID": idID as Record<string, unknown>,

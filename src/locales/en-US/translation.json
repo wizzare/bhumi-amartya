@@ -10,7 +10,9 @@
     "english": "🇺🇸 English",
     "melayu": "🇲🇾 Melayu",
     "connectionSlow": "Connection seems slow or session was interrupted.",
-    "reload": "Try Again"
+    "reload": "Try Again",
+    "connecting": "Connecting your journey...",
+    "relogin": "Sign In Again"
   },
   "login": {
     "title": "Bhumi Amartya",
@@ -44,7 +46,9 @@
     "mustLogin": "You must log in first.",
     "goToLogin": "Go to Login Page",
     "blueprintSaveFailed": "Failed to save blueprint. Your birth data has been saved, please try again.",
-    "verificationFailed": "Data verification failed."
+    "verificationFailed": "Data verification failed.",
+    "aligningProfile": "Aligning profile...",
+    "profileLoadError": "Profile could not be loaded. Check your connection and try again."
   },
   "cityAutocomplete": {
     "placeholder": "City",

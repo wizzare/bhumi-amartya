@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { changeI18nLanguage } from "@/lib/i18n";
 import { normalizeLocale } from "@/lib/locale/normalizeLocale";
 import { userRepository } from "@/lib/repositories/userRepository";
+import { isEnlEdition } from "@/lib/config/edition";
 
 // D-V5-35: CURRENT locales id / en / ms. es-ES, pt-BR, fr-FR are DEFERRED.
 type Language =
@@ -68,6 +69,9 @@ export function LanguageProvider({
 
   const [language, setLanguage] =
     useState<Language>(() => {
+      if (isEnlEdition()) {
+        return "en";
+      }
       if (typeof window === "undefined") {
         return "id";
       }
@@ -91,6 +95,10 @@ export function LanguageProvider({
 
   const changeLanguage =
     (lang: Language) => {
+      if (isEnlEdition()) {
+        setLanguage("en");
+        return;
+      }
 
       setLanguage(lang);
 
@@ -121,6 +129,13 @@ export function LanguageProvider({
     };
 
   useEffect(() => {
+    if (isEnlEdition()) {
+      if (language !== "en") {
+        setLanguage("en");
+      }
+      return;
+    }
+
     const profileLanguageRaw = auth?.userProfile?.language;
     const profileLanguage = fromProfileLanguage(profileLanguageRaw);
     const savedLanguage =

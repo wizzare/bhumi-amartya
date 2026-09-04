@@ -10,7 +10,9 @@
     "english": "🇺🇸 English",
     "melayu": "🇲🇾 Melayu",
     "connectionSlow": "Sepertinya koneksi melambat atau sesi terganggu.",
-    "reload": "Coba Lagi"
+    "reload": "Coba Lagi",
+    "connecting": "Menghubungkan perjalanan...",
+    "relogin": "Masuk Ulang"
   },
   "login": {
     "title": "Bhumi Amartya",
@@ -44,7 +46,9 @@
     "mustLogin": "Kamu harus login terlebih dahulu.",
     "goToLogin": "Ke Halaman Login",
     "blueprintSaveFailed": "Gagal menyimpan blueprint. Data kelahiranmu telah tersimpan, silakan coba lagi.",
-    "verificationFailed": "Verifikasi data gagal."
+    "verificationFailed": "Verifikasi data gagal.",
+    "aligningProfile": "Menyelaraskan profil...",
+    "profileLoadError": "Profil belum bisa dimuat. Periksa koneksi lalu coba lagi."
   },
   "cityAutocomplete": {
     "placeholder": "Kota",

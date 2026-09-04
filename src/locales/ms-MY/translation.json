@@ -10,7 +10,9 @@
     "english": "🇺🇸 English",
     "melayu": "🇲🇾 Melayu",
     "connectionSlow": "Nampaknya sambungan perlahan atau sesi terganggu.",
-    "reload": "Cuba Semula"
+    "reload": "Cuba Semula",
+    "connecting": "Menghubungkan perjalanan...",
+    "relogin": "Log Masuk Semula"
   },
   "login": {
     "title": "Bhumi Amartya",
@@ -44,7 +46,9 @@
     "mustLogin": "Anda mesti log masuk terlebih dahulu.",
     "goToLogin": "Ke Halaman Log Masuk",
     "blueprintSaveFailed": "Gagal menyimpan cetak biru. Data kelahiran anda telah disimpan, sila cuba lagi.",
-    "verificationFailed": "Pengesahan data gagal."
+    "verificationFailed": "Pengesahan data gagal.",
+    "aligningProfile": "Menyelaraskan profil...",
+    "profileLoadError": "Profil belum boleh dimuatkan. Semak sambungan dan cuba lagi."
   },
   "cityAutocomplete": {
     "placeholder": "Bandar",

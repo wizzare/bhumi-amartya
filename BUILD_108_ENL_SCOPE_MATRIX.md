@@ -35,9 +35,9 @@ All 51 routes (`app/**/page.tsx`) verified against Build 107 production surface 
 
 | Route Path | Current Classification | Build 107 Route Class | Audit Findings & Copy Gaps | Required ENL Remediation |
 |---|---|---|---|---|
-| `app/page.tsx` | `PARTIAL_ENGLISH` | `PRODUCT` | Tagline (*"Ruang Untuk Pulang dan Kenali Diri"*), buttons (*"Pengguna Baru"*, *"Saya Sudah Punya Akun"*), and loading state are hardcoded ID. Locale switcher exposed at bottom. | Wire all copy to `t.welcome`; hide or lock locale switcher for ENL edition. |
-| `app/login/page.tsx` | `PARTIAL_ENGLISH` | `PRODUCT` | Form fields and titles use `t.login`, but OAuth error toasts, session fallback alerts, and edge-case banners remain in ID. | Complete `t.login` error dictionaries; verify OAuth English error strings. |
-| `app/setup/page.tsx` | `PARTIAL_ENGLISH` | `PRODUCT` | Step form mostly consumes `t.setup`, but validation messages, date-picker formatters, and city autocomplete fallbacks contain ID words. | Full English validation; ensure date format is `MM/DD/YYYY` or accessible picker. |
+| `app/page.tsx` | `ENGLISH_READY` | `PRODUCT` | Landing page 100% localized to `t.welcome`. Switcher hidden in ENL mode (`!isEnlEdition()`). Clean English fallbacks. | SPRINT-108-01-SHELL COMPLETE. |
+| `app/login/page.tsx` | `ENGLISH_READY` | `PRODUCT` | Form fields, buttons, Google error messages, redirect button, loading, and terms notice 100% English. | SPRINT-108-01-SHELL COMPLETE. |
+| `app/setup/page.tsx` | `ENGLISH_READY` | `PRODUCT` | Step form, input placeholders, validation errors, loading/guard screens, and verification messages 100% English. | SPRINT-108-01-SHELL COMPLETE. |
 | `app/dashboard/page.tsx` | `PARTIAL_ENGLISH` | `PRODUCT` | `DashboardClient` consumes `translations[dictKey]`, but subcards (`DailyNoteV2`, `SoulReflectionCard`, `PenjagaBhumiIntiBanner`, `CoreIdentity` fallbacks) have hardcoded ID. | Audit all subcards; connect every text field to `t.dashboard` or localized engine output. |
 | `app/dashboard/environment/page.tsx` | `PARTIAL_ENGLISH` | `PRODUCT` | Header consumes `t.environment`, but Schumann narrative interpretations and planetary weather cards have mixed strings. | Complete `t.environment` dictionary; localize astrological weather notes. |
 | `app/profile/page.tsx` | `INDONESIAN_HARDCODED` | `PRODUCT` | Profile Hub headers, category tabs, and card wrappers are completely hardcoded in ID (*"Peta Jiwa"*, *"Potensi"*, *"Pertumbuhan"*). | Migrate to `t.profile`; create English section definitions. |

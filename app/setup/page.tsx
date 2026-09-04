@@ -4,6 +4,7 @@ import { FormEvent, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
 import CityAutocomplete from "@/components/ui/CityAutocomplete";
 import type { CitySelection } from "@/components/ui/CityAutocomplete";
 import { useAuth } from "@/context/AuthContext";
@@ -47,7 +48,7 @@ function deepClean<T>(obj: T): T {
 export default function SetupPage() {
   const router = useRouter();
   const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations[language] || translations["en"];
   const auth = useAuth();
   const user = auth?.user;
   const authRef = useRef(auth);
@@ -207,12 +208,12 @@ export default function SetupPage() {
     console.log("[SETUP SUBMIT START] UID:", uid);
 
     if (!birthTime || !birthTime.trim()) {
-      setFormError("Jam kelahiran wajib diisi untuk pemetaan Human Design yang akurat.");
+      setFormError(t.setup?.birthTimeRequired || "Birth time is required for accurate Human Design mapping.");
       return;
     }
 
     if (!selectedCity || selectedCity.latitude == null || selectedCity.longitude == null) {
-      setFormError("Pilih kota kelahiran dari daftar yang muncul agar koordinat lokasi terdeteksi.");
+      setFormError(t.setup?.cityRequired || "Select a birth city from the list so location coordinates are detected.");
       return;
     }
 
@@ -309,7 +310,7 @@ export default function SetupPage() {
           // profile (DEFECT-8D-2): a stale / cross-tab / delayed failure here must
           // not undo a concurrent successful finalize.
           await userRepository.markBlueprintRecoveryRequired(uid, profilePayload).catch(() => {});
-          throw new Error("Gagal menyimpan blueprint. Data kelahiranmu telah tersimpan, silakan coba lagi.");
+          throw new Error(t.setup?.blueprintSaveFailed || "Failed to save blueprint. Your birth data has been saved, please try again.");
         }
       }
 
@@ -405,13 +406,13 @@ export default function SetupPage() {
         console.log("[SETUP ROUTE TO DASHBOARD]");
         router.replace("/dashboard/");
       } else {
-        throw new Error(`Verifikasi data gagal (${verdict.reason}).`);
+        throw new Error(`${t.setup?.verificationFailed || "Data verification failed"} (${verdict.reason}).`);
       }
 
     } catch (err: any) {
       console.error("[SETUP ERROR]", err);
       setDebug(prev => ({ ...prev, errorMessage: err.message || String(err) }));
-      setFormError(err.message || "Terjadi kesalahan saat menyimpan data.");
+      setFormError(err.message || t.setup?.genericError || "An unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
@@ -419,7 +420,7 @@ export default function SetupPage() {
   if (mountGuard === "checking" || mountGuard === "redirecting") {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <p className="text-sm text-[#7B8776]">Menyelaraskan profil...</p>
+        <p className="text-sm text-[#7B8776]">{t.setup?.aligningProfile || "Aligning profile..."}</p>
       </main>
     );
   }
@@ -428,7 +429,7 @@ export default function SetupPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="bhumi-card w-full max-w-md p-8 text-center">
-          <p className="text-sm text-[#7B8776] mb-6">Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.</p>
+          <p className="text-sm text-[#7B8776] mb-6">{t.setup?.profileLoadError || "Profile could not be loaded. Check your connection and try again."}</p>
           <button
             type="button"
             onClick={() => {
@@ -437,7 +438,7 @@ export default function SetupPage() {
             }}
             className="bhumi-button w-full"
           >
-            Coba Lagi
+            {t.welcome?.reload || "Try Again"}
           </button>
         </div>
       </main>
@@ -448,8 +449,8 @@ export default function SetupPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
         <div className="text-center p-8 bhumi-card max-w-md">
-          <p className="text-[#4F5E52] mb-6">Kamu harus login terlebih dahulu.</p>
-          <button onClick={() => router.push("/login")} className="bhumi-button">Ke Halaman Login</button>
+          <p className="text-[#4F5E52] mb-6">{t.setup?.mustLogin || "You must log in first."}</p>
+          <button onClick={() => router.push("/login")} className="bhumi-button">{t.setup?.goToLogin || "Go to Login Page"}</button>
         </div>
       </main>
     );
@@ -468,7 +469,7 @@ export default function SetupPage() {
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Nama Lengkap"
+            placeholder={t.setup?.fullName || (isEnlEdition() ? "Full Name" : "Nama Lengkap")}
             className="bhumi-input w-full"
             required
           />
@@ -494,7 +495,7 @@ export default function SetupPage() {
           />
           <CityAutocomplete
             value={birthPlace}
-            placeholder="Kota Kelahiran"
+            placeholder={t.setup?.birthPlace || (isEnlEdition() ? "Birth Place" : "Kota Kelahiran")}
             onInputChange={(val) => {
               setBirthPlace(val);
               setSelectedCity(null);
@@ -511,7 +512,9 @@ export default function SetupPage() {
             disabled={loading || !birthDate || !birthTime || !birthPlace || !selectedCity}
             className="bhumi-button w-full pt-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? "Menyimpan..." : "Lanjut ke Dashboard"}
+            {loading
+              ? (t.setup?.saving || (isEnlEdition() ? "Saving..." : "Menyimpan..."))
+              : (t.setup?.goToDashboard || (isEnlEdition() ? "Continue to Dashboard" : "Lanjut ke Dashboard"))}
           </button>
         </form>
 
