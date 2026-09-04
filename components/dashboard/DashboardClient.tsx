@@ -18,6 +18,7 @@ import { safetyRepository, TrustedContact } from "@/lib/repositories/safetyRepos
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
 import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { userRepository } from "@/lib/repositories/userRepository";
@@ -148,11 +149,9 @@ export function DashboardClient() {
   // code, so resolve it here or `translations[tag]` is undefined and the render
   // crashes (BUILD_106_REGRESSION, RC-2 rendered verification, Step 12).
   const language = getDictionaryKey(profile?.language ?? "id");
-  // DS-I1 owns widening the remaining legacy component props. Until then,
-  // Malay uses the ratified Indonesian UI-copy fallback while generated prose
-  // and the mirror wrapper retain the user's true locale.
-  const legacyUiLanguage: "id" | "en" = language === "en" ? "en" : "id";
-  const t = translations[language];
+  const isEnl = isEnlEdition();
+  const legacyUiLanguage: "id" | "en" = isEnl || language === "en" ? "en" : "id";
+  const t = translations[isEnl ? "en" : language];
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
   const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
@@ -785,7 +784,7 @@ export function DashboardClient() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="rounded-[2.5rem] bg-white p-12 shadow-xl text-center max-w-md w-full border border-black/5">
-          <p className="text-[#4F5E52] text-xl font-serif italic">Membuka ruangmu...</p>
+          <p className="text-[#4F5E52] text-xl font-serif italic">{t.dashboard.openingSpace || "Opening your space..."}</p>
           <div className="mt-10 h-1 w-full overflow-hidden rounded-full bg-[#E8E9E5]">
             <div className="h-full w-1/2 animate-progress rounded-full bg-[#4F5E52]" />
           </div>
@@ -801,9 +800,9 @@ export function DashboardClient() {
           <div className="w-16 h-16 rounded-full bg-[#4F5E52]/10 flex items-center justify-center mb-6">
             <span className="text-2xl">🌱</span>
           </div>
-          <h2 className="text-2xl font-serif text-[#4F5E52] mb-3 font-semibold">Menyelaraskan Ruangmu</h2>
+          <h2 className="text-2xl font-serif text-[#4F5E52] mb-3 font-semibold">{t.dashboard.syncingSpace || "Aligning Your Space"}</h2>
           <p className="text-[#7B8776] mb-8 leading-relaxed text-sm">
-            Data profil atau peta jiwamu sedang dalam pemulihan. Silakan muat ulang atau buka pengaturan setup.
+            {t.dashboard.syncingDescription || "Your profile data or soul map is being restored. Please reload or open setup."}
           </p>
           <div className="flex flex-col gap-3 w-full">
             <button
@@ -813,13 +812,13 @@ export function DashboardClient() {
               }}
               className="bhumi-button w-full py-4 text-base"
             >
-              Coba Muat Ulang Data
+              {t.dashboard.reloadButton || "Try Reloading Data"}
             </button>
             <button
               onClick={() => router.replace("/setup")}
               className="py-3 px-4 rounded-full border border-[#4F5E52]/20 text-[#4F5E52] text-sm hover:bg-gray-50 transition-all"
             >
-              Ke Halaman Setup
+              {t.dashboard.setupButton || "Go to Setup Page"}
             </button>
           </div>
         </div>
@@ -884,9 +883,12 @@ export function DashboardClient() {
           lifePath: t.dashboard.lifePath,
           arcanaCenter: t.dashboard.arcanaCenter,
           sunSign: t.dashboard.sunSign,
-          humanDesign: language === "en" ? "Human Design Type" : "Human Design Type",
+          humanDesign: isEnl || language === "en" ? "Human Design Type" : t.dashboard.humanDesign,
           humanDesignPending: t.dashboard.humanDesignPending,
           humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
+          unavailable: t.dashboard.unavailable || (isEnl || language === "en" ? "Not available" : "Belum tersedia"),
+          calculatingInProgress: t.dashboard.calculatingInProgress || (isEnl || language === "en" ? "Calculation in progress" : "Perhitungan sedang berlangsung"),
+          cannotCalculate: t.dashboard.cannotCalculate || (isEnl || language === "en" ? "Human Design data cannot be calculated." : "Data Human Design belum dapat dihitung."),
         }}
       />
 
@@ -910,7 +912,7 @@ export function DashboardClient() {
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">
-          {language === "id" ? "Ruang ini tetap ada kapan pun kamu kembali." : "This space remains here whenever you return."}
+          {(isEnl || language === "en") ? (t.dashboard.footerQuote || "This space remains here whenever you return.") : (t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali.")}
         </p>
       </footer>
 

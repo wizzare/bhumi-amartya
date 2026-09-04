@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Activity, Droplets, Globe, MapPin, Radio, Thermometer } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
+import { kpActivityLabel } from "@/lib/environment/schumann";
 import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
@@ -18,19 +20,26 @@ type EnvironmentContextCardProps = {
   onOpenDetail?: () => void;
 };
 
-function formatCoord(val: number, isLat: boolean): string {
-  const dir = isLat ? (val >= 0 ? "LU" : "LS") : (val >= 0 ? "BT" : "BB");
+function formatCoord(val: number, isLat: boolean, isEn = false): string {
+  const dir = isLat
+    ? (val >= 0 ? (isEn ? "N" : "LU") : (isEn ? "S" : "LS"))
+    : (val >= 0 ? (isEn ? "E" : "BT") : (isEn ? "W" : "BB"));
   return `${Math.abs(val).toFixed(2)}° ${dir}`;
 }
 
-function formatLocation(location: EnvironmentLocation | null, permission: EnvironmentPermissionState | null): string {
+function formatLocation(
+  location: EnvironmentLocation | null,
+  permission: EnvironmentPermissionState | null,
+  t: Record<string, any>,
+  isEn: boolean
+): string {
   if (location?.cityOrRegency) return location.cityOrRegency;
   if (location?.coordinates) {
-    return `${formatCoord(location.coordinates.latitude, true)}, ${formatCoord(location.coordinates.longitude, false)}`;
+    return `${formatCoord(location.coordinates.latitude, true, isEn)}, ${formatCoord(location.coordinates.longitude, false, isEn)}`;
   }
-  if (permission === "denied") return "Menanti izin lokasimu";
-  if (permission === "unsupported") return "Lokasi belum terbaca";
-  return "Mengenali lokasimu...";
+  if (permission === "denied") return t.waitingPermission || (isEn ? "Awaiting your location permission" : "Menanti izin lokasimu");
+  if (permission === "unsupported") return t.locationNotDetected || (isEn ? "Location not yet detected" : "Lokasi belum terbaca");
+  return t.readingLocation || (isEn ? "Recognizing your location..." : "Mengenali lokasimu...");
 }
 
 function SummaryItem({
@@ -57,7 +66,8 @@ function SummaryItem({
 
 export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardProps) {
   const { language } = useLanguage();
-  const t = translations[language].environment;
+  const isEn = isEnlEdition() || language === "en";
+  const t = translations[isEn ? "en" : language].environment;
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [location, setLocation] = useState<EnvironmentLocation | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
@@ -153,14 +163,14 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <SummaryItem icon={<MapPin size={18} />} label={t.fLocation} value={formatLocation(location, permission)} />
-              <SummaryItem icon={<Thermometer size={18} />} label={t.fTemperature} value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : t.unavailable} />
-              <SummaryItem icon={<Droplets size={18} />} label={t.fHumidity} value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : t.unavailable} />
-              <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context?.earthActivity?.dataState === "available" ? context.earthActivity.status : t.unavailable} />
-              <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context?.spaceWeather?.geomagneticActivity ?? t.unavailable} />
-              <SummaryItem icon={<Radio size={18} />} label={t.fSchumann} value={context?.schumann?.frequencies.some((item) => typeof item.valueHz === "number") ? `SR1 ${context.schumann.frequencies[0]?.valueHz ?? "—"} Hz` : t.unavailable} />
-            </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <SummaryItem icon={<MapPin size={18} />} label={t.fLocation} value={formatLocation(location, permission, t, isEn)} />
+                <SummaryItem icon={<Thermometer size={18} />} label={t.fTemperature} value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : t.unavailable} />
+                <SummaryItem icon={<Droplets size={18} />} label={t.fHumidity} value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : t.unavailable} />
+                <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context?.earthActivity?.dataState === "available" ? (isEn && context.earthActivity.status === "Stabil" ? "Stable" : context.earthActivity.status) : t.unavailable} />
+                <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context?.spaceWeather?.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather.kpIndex, isEn) : (context?.spaceWeather?.geomagneticActivity ?? t.unavailable)} />
+                <SummaryItem icon={<Radio size={18} />} label={t.fSchumann} value={context?.schumann?.frequencies.some((item) => typeof item.valueHz === "number") ? `SR1 ${context.schumann.frequencies[0]?.valueHz ?? "—"} Hz` : t.unavailable} />
+              </div>
 
             {onOpenDetail && (
               <button

@@ -2,7 +2,7 @@
 **Developer & Agent Execution Guide**
 
 ```text
-STATUS                          = IN_PROGRESS (SPRINT-108-01-SHELL COMPLETE)
+STATUS                          = IN_PROGRESS (SPRINT-108-02-DASHBOARD COMPLETE)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 CURRENT_BRANCH                  = recovery/build106-product-continuity
@@ -11,8 +11,8 @@ PURPOSE                         = Dedicated English-Language Edition of Bhumi Am
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DERIVED_SPRINT_COUNT            = 8 SPRINTS
-BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_01_COMPLETE
-NEXT_SAFE_ACTION                = SPRINT_02_DASHBOARD_CORE
+BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_02_COMPLETE
+NEXT_SAFE_ACTION                = SPRINT_03_BLUEPRINT_CORE
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -93,16 +93,23 @@ node --import tsx tests/unit/version-reconciliation.test.ts
 ## 5. Current Task State & Handoff Action
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_01_COMPLETE (Shell, Landing, Login, Setup 100% English)
-NEXT_SAFE_ACTION                = SPRINT-108-02-DASHBOARD
+BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_02_COMPLETE (Dashboard & Environment 100% English)
+NEXT_SAFE_ACTION                = SPRINT-108-03-BLUEPRINT-CORE
 ```
 
-**Sprint 1 Accomplishments:**
-- Landing page (`app/page.tsx`), Login page (`app/login/page.tsx`), Setup wizard (`app/setup/page.tsx`), and App shell initialized with full English support and clean English fallbacks.
-- Language switcher conditionally hidden in ENL edition mode (`!isEnlEdition()`).
-- Multilingual dictionary parity preserved without deleting `id-ID` or `ms-MY` bundles.
-- Non-destructive profile continuity: existing user profile `language` in Firestore is protected and not overwritten.
-- Unit and regression test suite `tests/unit/build108-sprint01-shell.test.ts` (168 assertions) passing.
-- 100% regression suite passing (447 assertions total across all 5 test files).
+**Sprint 2 Accomplishments:**
+- `app/dashboard/page.tsx`, `app/dashboard/environment/page.tsx`, and all dashboard subcards localized to 100% English.
+- `DashboardClient`: localized opening and syncing/fallback screens, footer quote, and language routing.
+- `CoreIdentity`: preserved Build 107 HD convergence invariant (`isRecognizedHumanDesignType` early return), localized calculation in progress and unavailable labels.
+- `EnvironmentContextCard` & `app/dashboard/environment/page.tsx`: English coordinate formatting (`N`/`S`, `E`/`W`), weather conditions, moon phases, AQI, UV, Kp index, and spiritual readings.
+- `WeeklyGuidanceCard`: `en-US` date formatting and localized phase guidance.
+- `AstroTodayCard`: `en-US` date/instant formatting, English transit events, and moon headers.
+- `GuardianIdentityCard`: English greetings, badges (Bhumi Founder, Bhumi Core Guardian, etc.), and recognition date.
+- `PendingHdRecoveryBanner` & `AccuracyUpgradeBanner`: English copy across all states while strictly guarding `saveUserBlueprint` with `isCanonicalHumanDesign`.
+- `TrialWelcomePopup` & `ReviewDialog`: English modal titles, descriptions, and buttons.
+- `DailyNoteV2`, `AIReminderState`, `PenjagaBhumiIntiBanner`, and `DailyUserFlowGuide`: English notes, section titles, reminders, and guardian banners.
+- `SafetyActionCard` & `supportResourceLibrary`: English safety disclaimers, safe path header, 24-hour tag, call copy, SMS text, and recommendation.
+- Unit and regression test suite `tests/unit/build108-sprint02-dashboard.test.ts` (258 assertions) passing.
+- 100% regression suite passing (576 assertions total across all test files).
 
-**Next Sprint:** `SPRINT-108-02-DASHBOARD` (Dashboard Core, Environment & All 15 Subcards).
+**Next Sprint:** `SPRINT-108-03-BLUEPRINT-CORE` (Blueprint Hub, Human Design, Natal Chart, Numerology, Destiny Matrix).

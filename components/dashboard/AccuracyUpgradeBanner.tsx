@@ -6,6 +6,8 @@ import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { getHdState } from "@/lib/humandesign/hdState";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface AccuracyUpgradeBannerProps {
   uid: string;
@@ -14,6 +16,8 @@ interface AccuracyUpgradeBannerProps {
 }
 
 export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgradeBannerProps) {
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -79,15 +83,23 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
             <div className="p-2 rounded-xl bg-white/20">
               <Sparkles size={18} />
             </div>
-            <h4 className="font-bold text-sm">Peningkatan Akurasi</h4>
+            <h4 className="font-bold text-sm">
+              {isEn ? "Accuracy Upgrade" : "Peningkatan Akurasi"}
+            </h4>
           </div>
-          <button onClick={() => setDismissed(true)} className="p-1 opacity-60 hover:opacity-100">
+          <button
+            onClick={() => setDismissed(true)}
+            className="p-1 opacity-60 hover:opacity-100"
+            aria-label={isEn ? "Dismiss" : "Tutup"}
+          >
             <X size={18} />
           </button>
         </div>
 
         <p className="text-xs leading-relaxed font-medium">
-          Akurasi pemetaan jiwamu kini lebih presisi. Perbarui profilmu sekarang untuk sinkronisasi batin yang lebih mendalam?
+          {isEn
+            ? "Your soul mapping precision has improved. Update your profile now for deeper inner alignment?"
+            : "Akurasi pemetaan jiwamu kini lebih presisi. Perbarui profilmu sekarang untuk sinkronisasi batin yang lebih mendalam?"}
         </p>
 
         <button
@@ -98,7 +110,7 @@ export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgra
           {loading ? (
              <RefreshCw size={16} className="animate-spin" />
           ) : (
-             "Perbarui Sekarang"
+             isEn ? "Update Now" : "Perbarui Sekarang"
           )}
         </button>
       </div>

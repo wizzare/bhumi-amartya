@@ -3,13 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { Compass, Sprout, UserRound, ChevronRight } from "lucide-react";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface DailyUserFlowGuideProps {
   language: "id" | "en";
 }
 
 export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
-  const isId = language === "id";
+  const isId = !isEnlEdition() && language === "id";
 
   const content = {
     title: isId ? "Pilih ruang yang terasa pas" : "Choose what feels right",

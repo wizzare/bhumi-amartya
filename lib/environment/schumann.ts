@@ -98,12 +98,12 @@ export function computeSchumannWindow(buffer: SchumannObservation[], now = Date.
   };
 }
 
-export function kpActivityLabel(kp: number): string {
-  if (kp < 2) return "Tenang";
-  if (kp < 3) return "Aktivitas ringan";
-  if (kp < 5) return "Aktif";
-  if (kp < 7) return "Badai geomagnetik";
-  return "Badai kuat";
+export function kpActivityLabel(kp: number, isEn = false): string {
+  if (kp < 2) return isEn ? "Quiet" : "Tenang";
+  if (kp < 3) return isEn ? "Unsettled" : "Aktivitas ringan";
+  if (kp < 5) return isEn ? "Active" : "Aktif";
+  if (kp < 7) return isEn ? "Geomagnetic storm" : "Badai geomagnetik";
+  return isEn ? "Strong storm" : "Badai kuat";
 }
 
 export interface RawNoaaKpRow { time_tag?: string; Kp?: number }

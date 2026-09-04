@@ -72,6 +72,9 @@ export const EXTERNAL_RESOURCES: SupportResource[] = [
 
 export const SUPPORT_DISCLAIMERS = {
   wellness: "Pilihan ini berfokus pada kesejahteraan dan pengembangan diri. Bukan pengganti layanan medis profesional atau diagnosis psikologis.",
+  wellness_en: "This option focuses on self-discovery and well-being. It is not a replacement for professional medical care or clinical psychological diagnosis.",
   safety_intro: "Kami melihat beberapa sinyal yang menunjukkan bahwa kamu mungkin membutuhkan dukungan tambahan saat ini.",
-  safety_recommendation: "Bhumi merekomendasikan jalur dukungan yang lebih dekat dan lebih manusiawi."
+  safety_intro_en: "We notice several signals suggesting you may benefit from extra support right now.",
+  safety_recommendation: "Bhumi merekomendasikan jalur dukungan yang lebih dekat dan lebih manusiawi.",
+  safety_recommendation_en: "Bhumi recommends a closer, more human path of support."
 };

@@ -8,9 +8,13 @@ import {
   getTrialWelcomePreferenceKey,
   shouldShowTrialWelcome,
 } from "@/lib/billing/trialWelcome";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 import type { UserProfile } from "@/lib/repositories/userRepository";
 
 export function TrialWelcomePopup({ profile }: { profile: UserProfile }) {
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [visible, setVisible] = useState(false);
   const entitlement = useMemo(() => getEntitlementStatus(profile), [profile]);
   const preferenceKey = getTrialWelcomePreferenceKey(profile);
@@ -50,7 +54,7 @@ export function TrialWelcomePopup({ profile }: { profile: UserProfile }) {
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Tutup"
+          aria-label={isEn ? "Close" : "Tutup"}
           className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full text-[#7B8776] hover:bg-[#F2F4F0]"
         >
           <X size={20} aria-hidden="true" />
@@ -58,17 +62,19 @@ export function TrialWelcomePopup({ profile }: { profile: UserProfile }) {
 
         <Sparkles className="mb-4 h-7 w-7 text-[#4F5E52]" aria-hidden="true" />
         <h2 id="trial-welcome-title" className="pr-10 font-serif text-2xl text-[#3F5145]">
-          Selamat datang di Bhumi
+          {isEn ? "Welcome to Bhumi" : "Selamat datang di Bhumi"}
         </h2>
         <p className="mt-3 text-sm leading-6 text-[#6F7C72]">
-          Selama 7 hari, kamu memiliki akses penuh ke Profil, Wellness, Journey, dan ruang pendampingan Bhumi.
+          {isEn
+            ? "For 7 days, you have full access to Profile, Wellness, Journey, and all Bhumi guidance spaces."
+            : "Selama 7 hari, kamu memiliki akses penuh ke Profil, Wellness, Journey, dan ruang pendampingan Bhumi."}
         </p>
         <button
           type="button"
           onClick={dismiss}
           className="mt-6 w-full rounded-lg bg-[#4F5E52] px-5 py-3 text-sm font-semibold text-white hover:bg-[#3D4A3F]"
         >
-          Mulai Jelajahi
+          {isEn ? "Start Exploring" : "Mulai Jelajahi"}
         </button>
       </section>
     </div>

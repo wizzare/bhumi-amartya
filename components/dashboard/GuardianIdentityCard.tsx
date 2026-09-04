@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Sparkles, ShieldCheck, Leaf } from "lucide-react";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type GuardianRole = "founder" | "admin" | "user";
 export type GuardianBadge = "core_guardian" | "guardian";
@@ -16,13 +17,14 @@ interface GuardianIdentityCardProps {
 }
 
 export function GuardianIdentityCard({ role, badge, tier, recognitionDate, language }: GuardianIdentityCardProps) {
+  const isEn = isEnlEdition() || language === "en";
 
   const getGreeting = () => {
     if (tier === "FOUNDER") {
       return {
         icon: <Sparkles className="text-yellow-500" />,
-        title: "🌟 Selamat Datang di Bhumi Amartya",
-        message: language === "id"
+        title: isEn ? "🌟 Welcome to Bhumi Amartya" : "🌟 Selamat Datang di Bhumi Amartya",
+        message: !isEn
           ? "Kamu adalah Founder Bhumi. Terima kasih telah menghadirkan ruang untuk pulang, mengenali diri, dan bertumbuh bersama."
           : "You are the Founder of Bhumi. Thank you for creating a space to come home, know yourself, and grow together."
       };
@@ -30,8 +32,8 @@ export function GuardianIdentityCard({ role, badge, tier, recognitionDate, langu
     if (tier === "CORE_GUARDIAN") {
       return {
         icon: <Leaf className="text-emerald-500" />,
-        title: "🌱 Selamat Datang di Bhumi Amartya",
-        message: language === "id"
+        title: isEn ? "🌱 Welcome to Bhumi Amartya" : "🌱 Selamat Datang di Bhumi Amartya",
+        message: !isEn
           ? "Kamu adalah Penjaga Inti Bhumi. Sebelum banyak orang mengenal Bhumi, kamu telah lebih dahulu berjalan bersama kami. Terima kasih telah membantu menjaga, merawat, dan membentuk rumah ini."
           : "You are a Core Guardian of Bhumi. Before many knew Bhumi, you walked with us. Thank you for helping protect, nurture, and shape this home."
       };
@@ -39,16 +41,16 @@ export function GuardianIdentityCard({ role, badge, tier, recognitionDate, langu
     if (role === "admin") {
       return {
         icon: <ShieldCheck className="text-blue-500" />,
-        title: "🛡️ Selamat Datang di Bhumi Amartya",
-        message: language === "id"
+        title: isEn ? "🛡️ Welcome to Bhumi Amartya" : "🛡️ Selamat Datang di Bhumi Amartya",
+        message: !isEn
           ? "Kamu adalah Admin Bhumi. Terima kasih telah membantu menjaga ruang ini agar tetap aman, hangat, dan bermanfaat bagi banyak orang."
           : "You are a Bhumi Admin. Thank you for helping keep this space safe, warm, and meaningful for many."
       };
     }
     return {
       icon: <Leaf className="text-green-500" />,
-      title: "🌿 Selamat Datang di Bhumi Amartya",
-      message: language === "id"
+      title: isEn ? "🌿 Welcome to Bhumi Amartya" : "🌿 Selamat Datang di Bhumi Amartya",
+      message: !isEn
         ? "Kamu adalah Penjaga Bhumi. Terima kasih telah menjadi bagian dari perjalanan untuk mengenali diri, bertumbuh, dan menemukan jalan pulangmu sendiri."
         : "You are a Guardian of Bhumi. Thank you for being part of the journey to know yourself, grow, and find your own way home."
     };
@@ -74,26 +76,26 @@ export function GuardianIdentityCard({ role, badge, tier, recognitionDate, langu
           {role === "founder" ? (
              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-50 border border-yellow-100 text-[10px] font-bold text-yellow-700 uppercase tracking-wider">
                <Sparkles size={12} />
-               Founder Bhumi
+               {isEn ? "Bhumi Founder" : "Founder Bhumi"}
              </div>
           ) : (
             <>
               {badge === "core_guardian" && (
                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-[10px] font-bold text-emerald-700 uppercase tracking-wider">
                    <Leaf size={12} />
-                   Penjaga Inti Bhumi
+                   {isEn ? "Bhumi Core Guardian" : "Penjaga Inti Bhumi"}
                  </div>
               )}
               {badge === "guardian" && (
                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-100 text-[10px] font-bold text-green-700 uppercase tracking-wider">
                    <Leaf size={12} />
-                   Penjaga Bhumi
+                   {isEn ? "Bhumi Guardian" : "Penjaga Bhumi"}
                  </div>
               )}
               {role === "admin" && (
                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] font-bold text-blue-700 uppercase tracking-wider">
                    <ShieldCheck size={12} />
-                   Admin Bhumi
+                   {isEn ? "Bhumi Admin" : "Admin Bhumi"}
                  </div>
               )}
             </>
@@ -102,7 +104,7 @@ export function GuardianIdentityCard({ role, badge, tier, recognitionDate, langu
 
         {recognitionDate && (
           <p className="text-[10px] text-[#9AA394] italic font-medium">
-            Bersama Bhumi sejak {recognitionDate}
+            {isEn ? `With Bhumi since ${recognitionDate}` : `Bersama Bhumi sejak ${recognitionDate}`}
           </p>
         )}
       </div>

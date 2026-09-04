@@ -9,6 +9,8 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { Timestamp } from "firebase/firestore";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface PendingHdRecoveryBannerProps {
   uid: string;
@@ -24,6 +26,8 @@ function hasBirthData(profile: any): boolean {
 
 export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRecoveryBannerProps) {
   const router = useRouter();
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [localDismissed, setLocalDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -39,27 +43,33 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   const { title, message, buttonLabel, buttonAction } = useMemo(() => {
     if (isMissingBirthData) {
       return {
-        title: "Data Kelahiran Belum Lengkap",
-        message: "Lengkapi jam dan kota lahirmu agar peta jiwamu bisa terbaca dengan presisi.",
-        buttonLabel: "Lengkapi Sekarang",
+        title: isEn ? "Incomplete Birth Data" : "Data Kelahiran Belum Lengkap",
+        message: isEn
+          ? "Complete your birth time and city so your soul blueprint can be read accurately."
+          : "Lengkapi jam dan kota lahirmu agar peta jiwamu bisa terbaca dengan presisi.",
+        buttonLabel: isEn ? "Complete Now" : "Lengkapi Sekarang",
         buttonAction: "settings" as const,
       };
     }
     if (isRetriableError) {
       return {
-        title: "Perhitungan Terkendala",
-        message: "Peta Human Design belum selesai dihitung. Silakan coba lagi atau muat ulang halaman.",
-        buttonLabel: "Coba Lagi",
+        title: isEn ? "Calculation Pending" : "Perhitungan Terkendala",
+        message: isEn
+          ? "Your Human Design chart calculation is not finished yet. Please try again or refresh the page."
+          : "Peta Human Design belum selesai dihitung. Silakan coba lagi atau muat ulang halaman.",
+        buttonLabel: isEn ? "Try Again" : "Coba Lagi",
         buttonAction: "reload" as const,
       };
     }
     return {
-      title: "Perhitungan Sedang Berlangsung",
-      message: "Peta Human Design sedang diproses. Hasil akan muncul setelah perhitungan selesai.",
-      buttonLabel: "Coba Lagi Nanti",
+      title: isEn ? "Calculation in Progress" : "Perhitungan Sedang Berlangsung",
+      message: isEn
+        ? "Your Human Design chart is being processed. Results will appear once calculation finishes."
+        : "Peta Human Design sedang diproses. Hasil akan muncul setelah perhitungan selesai.",
+      buttonLabel: isEn ? "Try Again Later" : "Coba Lagi Nanti",
       buttonAction: "reload" as const,
     };
-  }, [isMissingBirthData, isRetriableError]);
+  }, [isMissingBirthData, isRetriableError, isEn]);
 
   if (!shouldDisplay || isFirestoreDismissed || localDismissed) {
     return null;
@@ -143,7 +153,7 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
             onClick={handleDismiss}
             disabled={loading}
             className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-all opacity-80 hover:opacity-100"
-            title="Tutup sementara"
+            title={isEn ? "Dismiss temporarily" : "Tutup sementara"}
           >
             <X size={18} />
           </button>

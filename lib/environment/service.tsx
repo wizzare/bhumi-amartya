@@ -63,21 +63,50 @@ const WEATHER_CODES: Record<number, string> = {
   95: "Badai Petir",
 };
 
-export function getAqiLabel(aqiValue: number): string {
-  if (aqiValue <= 50) return "Baik";
-  if (aqiValue <= 100) return "Sedang";
-  if (aqiValue <= 150) return "Kurang sehat untuk kelompok sensitif";
-  if (aqiValue <= 200) return "Tidak sehat";
-  if (aqiValue <= 300) return "Sangat tidak sehat";
-  return "Berbahaya";
+const WEATHER_CODES_EN: Record<number, string> = {
+  0: "Clear",
+  1: "Mostly Clear",
+  2: "Partly Cloudy",
+  3: "Overcast",
+  45: "Foggy",
+  48: "Depositing Rime Fog",
+  51: "Light Drizzle",
+  53: "Drizzle",
+  55: "Heavy Drizzle",
+  61: "Light Rain",
+  63: "Rain",
+  65: "Heavy Rain",
+  71: "Light Snow",
+  73: "Snow",
+  75: "Heavy Snow",
+  80: "Light Rain Showers",
+  81: "Moderate Rain Showers",
+  82: "Violent Rain Showers",
+  95: "Thunderstorm",
+};
+
+export function getWeatherConditionLabel(code: number, isEn = false): string {
+  if (isEn) {
+    return WEATHER_CODES_EN[code] ?? "Clear";
+  }
+  return WEATHER_CODES[code] ?? "Cerah";
 }
 
-export function getUvLabel(uv: number): string {
-  if (uv <= 2) return "Rendah";
-  if (uv <= 5) return "Sedang";
-  if (uv <= 7) return "Tinggi";
-  if (uv <= 10) return "Sangat Tinggi";
-  return "Ekstrem";
+export function getAqiLabel(aqiValue: number, isEn = false): string {
+  if (aqiValue <= 50) return isEn ? "Good" : "Baik";
+  if (aqiValue <= 100) return isEn ? "Moderate" : "Sedang";
+  if (aqiValue <= 150) return isEn ? "Unhealthy for Sensitive Groups" : "Kurang sehat untuk kelompok sensitif";
+  if (aqiValue <= 200) return isEn ? "Unhealthy" : "Tidak sehat";
+  if (aqiValue <= 300) return isEn ? "Very Unhealthy" : "Sangat tidak sehat";
+  return isEn ? "Hazardous" : "Berbahaya";
+}
+
+export function getUvLabel(uv: number, isEn = false): string {
+  if (uv <= 2) return isEn ? "Low" : "Rendah";
+  if (uv <= 5) return isEn ? "Moderate" : "Sedang";
+  if (uv <= 7) return isEn ? "High" : "Tinggi";
+  if (uv <= 10) return isEn ? "Very High" : "Sangat Tinggi";
+  return isEn ? "Extreme" : "Ekstrem";
 }
 
 export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -113,17 +142,17 @@ export function getMoonPhaseLabel(phaseAngle: number): string {
   return "Sabit Tua";
 }
 
-export function normalizeMoonPhaseLabel(input: string | null | undefined): string {
-  if (!input) return "Belum tersedia";
+export function normalizeMoonPhaseLabel(input: string | null | undefined, isEn = false): string {
+  if (!input) return isEn ? "Unavailable" : "Belum tersedia";
   const clean = input.trim().toLowerCase().replace(/[\s_-]+/g, "");
-  if (clean.includes("newmoon") || clean === "bulanbaru") return "Bulan Baru";
-  if (clean.includes("waxingcrescent") || clean === "sabitmuda") return "Sabit Muda";
-  if (clean.includes("firstquarter") || clean === "kuartalpertama") return "Kuartal Pertama";
-  if (clean.includes("waxinggibbous") || clean.includes("benjolmuda") || clean === "cembungawal") return "Cembung Awal";
-  if (clean.includes("fullmoon") || clean === "purnama" || clean === "bulanpurnama") return "Purnama";
-  if (clean.includes("waninggibbous") || clean.includes("benjoltua") || clean === "cembungakhir") return "Cembung Akhir";
-  if (clean.includes("lastquarter") || clean === "kuartalakhir" || clean === "kuartalterakhir") return "Kuartal Akhir";
-  if (clean.includes("waningcrescent") || clean === "sabittua") return "Sabit Tua";
+  if (clean.includes("newmoon") || clean === "bulanbaru") return isEn ? "New Moon" : "Bulan Baru";
+  if (clean.includes("waxingcrescent") || clean === "sabitmuda") return isEn ? "Waxing Crescent" : "Sabit Muda";
+  if (clean.includes("firstquarter") || clean === "kuartalpertama") return isEn ? "First Quarter" : "Kuartal Pertama";
+  if (clean.includes("waxinggibbous") || clean.includes("benjolmuda") || clean === "cembungawal") return isEn ? "Waxing Gibbous" : "Cembung Awal";
+  if (clean.includes("fullmoon") || clean === "purnama" || clean === "bulanpurnama") return isEn ? "Full Moon" : "Purnama";
+  if (clean.includes("waninggibbous") || clean.includes("benjoltua") || clean === "cembungakhir") return isEn ? "Waning Gibbous" : "Cembung Akhir";
+  if (clean.includes("lastquarter") || clean === "kuartalakhir" || clean === "kuartalterakhir") return isEn ? "Last Quarter" : "Kuartal Akhir";
+  if (clean.includes("waningcrescent") || clean === "sabittua") return isEn ? "Waning Crescent" : "Sabit Tua";
   return input;
 }
 

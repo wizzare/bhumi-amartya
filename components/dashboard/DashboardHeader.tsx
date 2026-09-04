@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { APP_TIME_REFRESH_MS, getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface DashboardHeaderProps {
   userName: string;
@@ -11,7 +12,8 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
   const [now, setNow] = useState(() => new Date());
-  const locale = language === "id" ? "id-ID" : "en-US";
+  const isEn = isEnlEdition() || language === "en";
+  const locale = isEn ? "en-US" : "id-ID";
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
     year: "numeric",
@@ -24,7 +26,7 @@ export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
     minute: "2-digit",
     hour12: false,
   });
-  const greeting = getTimeOfDayGreeting(now, language);
+  const greeting = getTimeOfDayGreeting(now, isEn ? "en" : "id");
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), APP_TIME_REFRESH_MS);

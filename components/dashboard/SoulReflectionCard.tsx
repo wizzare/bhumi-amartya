@@ -3,6 +3,7 @@
 import React from "react";
 import { Quote } from "lucide-react";
 import { cleanMarkdown } from "@/lib/utils/markdown";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface SoulReflectionCardProps {
   language: "id" | "en";
@@ -11,6 +12,7 @@ interface SoulReflectionCardProps {
 }
 
 export function SoulReflectionCard({ language, reflection, loading }: SoulReflectionCardProps) {
+  const isEn = isEnlEdition() || language === "en";
   const [isExpanded, setIsExpanded] = React.useState(false);
   const cleanedReflection = React.useMemo(
     () => cleanMarkdown(reflection),
@@ -21,7 +23,7 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
     <div className="mt-8 space-y-4">
       <div className="px-1 text-center">
         <h3 className="text-[#4F6658] font-serif text-2xl font-bold italic">
-          {language === "id" ? "Refleksi Jiwa" : "Soul Reflection"}
+          {isEn ? "Soul Reflection" : "Refleksi Jiwa"}
         </h3>
       </div>
 
@@ -47,19 +49,19 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
           ) : (
             <div className="space-y-4">
               <p className="text-[9px] text-[#7B8776] font-bold uppercase tracking-wider mb-2">
-                {language === "id"
-                  ? "Membaca Jiwamu Hari Ini"
-                  : "Reading your soul today"}
+                {isEn
+                  ? "Reading your soul today"
+                  : "Membaca Jiwamu Hari Ini"}
               </p>
               <h2 className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
-                {cleanedReflection || (language === "id" ? "Menyiapkan pesan untuk jiwamu..." : "Preparing a message for your soul...")}
+                {cleanedReflection || (isEn ? "Preparing a message for your soul..." : "Menyiapkan pesan untuk jiwamu...")}
               </h2>
 
               {cleanedReflection && cleanedReflection.length > 150 && (
                 <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-widest mt-4">
                   {isExpanded
-                    ? (language === "id" ? "Tutup" : "Collapse")
-                    : (language === "id" ? "Baca Selengkapnya" : "Read More")}
+                    ? (isEn ? "Collapse" : "Tutup")
+                    : (isEn ? "Read More" : "Baca Selengkapnya")}
                 </p>
               )}
             </div>

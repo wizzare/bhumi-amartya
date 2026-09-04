@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { DashboardNoteAdapter } from "@/lib/dailyGuidance/dashboardNoteAdapter";
 import { getTimeOfDayGreeting } from "@/lib/dailyGuidance/timeOfDayGreeting";
+import { isEnlEdition } from "@/lib/config/edition";
 import { IntelligenceCard } from "./IntelligenceCard";
 
 interface DailyNoteV2Props {
@@ -46,6 +47,7 @@ export function DailyNoteV2({
   appNow = new Date(),
 }: DailyNoteV2Props) {
   const auth = useAuth();
+  const isEn = isEnlEdition() || language === "en";
 
   React.useEffect(() => {
     if (dailyGuidance) trackEvent("open_daily_note", auth?.user?.uid);
@@ -56,9 +58,11 @@ export function DailyNoteV2({
   if (state === "loading") {
     return (
       <section className="mt-8 space-y-4">
-        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">
+          {isEn ? "A Note from Bhumi for You" : "Catatan dari Bhumi untuk Kamu"}
+        </h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm italic text-[#7B8776]">
-          {language === "id" ? "Catatanmu sedang dirapikan sebentar..." : "Your letter is being written..."}
+          {isEn ? "Your note is being written..." : "Catatanmu sedang dirapikan sebentar..."}
         </div>
       </section>
     );
@@ -67,9 +71,13 @@ export function DailyNoteV2({
   if (state === "unavailable") {
     return (
       <section className="mt-8 space-y-4">
-        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">
+          {isEn ? "A Note from Bhumi for You" : "Catatan dari Bhumi untuk Kamu"}
+        </h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
-          Catatan Hari Ini belum bisa disusun karena data minimum profil dan Arsip Akashi belum tersedia.
+          {isEn
+            ? "Today's Note cannot be compiled yet because minimum profile and Akashi Archive data are not available."
+            : "Catatan Hari Ini belum bisa disusun karena data minimum profil dan Arsip Akashi belum tersedia."}
         </div>
       </section>
     );
@@ -78,9 +86,13 @@ export function DailyNoteV2({
   if (state === "error") {
     return (
       <section className="mt-8 space-y-4">
-        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">
+          {isEn ? "A Note from Bhumi for You" : "Catatan dari Bhumi untuk Kamu"}
+        </h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
-          Catatan Hari Ini belum berhasil dibuka. {dailyNoteError ? `Detail: ${dailyNoteError}` : "Silakan muat ulang halaman ini sebentar lagi."}
+          {isEn
+            ? `Today's Note could not be opened. ${dailyNoteError ? `Detail: ${dailyNoteError}` : "Please reload this page shortly."}`
+            : `Catatan Hari Ini belum berhasil dibuka. ${dailyNoteError ? `Detail: ${dailyNoteError}` : "Silakan muat ulang halaman ini sebentar lagi."}`}
         </div>
       </section>
     );
@@ -89,9 +101,13 @@ export function DailyNoteV2({
   if (!dailyGuidance?.categories) {
     return (
       <section className="mt-8 space-y-4">
-        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">Catatan dari Bhumi untuk Kamu</h3>
+        <h3 className="px-1 text-2xl font-serif font-bold text-[#4F6658]">
+          {isEn ? "A Note from Bhumi for You" : "Catatan dari Bhumi untuk Kamu"}
+        </h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
-          Catatan Hari Ini belum memiliki struktur bacaan yang lengkap untuk ditampilkan.
+          {isEn
+            ? "Today's Note does not have a complete reading structure to display yet."
+            : "Catatan Hari Ini belum memiliki struktur bacaan yang lengkap untuk ditampilkan."}
         </div>
       </section>
     );
@@ -150,27 +166,44 @@ export function DailyNoteV2({
     };
   });
 
-  const greeting = getTimeOfDayGreeting(appNow, language);
-  const cleanName = userName?.trim() || (language === "id" ? "Sahabat" : "Friend");
+  const greeting = getTimeOfDayGreeting(appNow, isEn ? "en" : "id");
+  const cleanName = userName?.trim() || (!isEn ? "Sahabat" : "Friend");
   const conclusion = dailyGuidance?.dailyConclusion?.text;
+
+  const TITLE_MAP_EN: Record<string, string> = {
+    general: "Today's Horizon",
+    mental: "Mind & Focus",
+    finance: "Finance & Abundance",
+    love: "Love & Relationships",
+    relational: "Close Connections",
+    spiritual: "Inner Meaning",
+    challenges: "Current Challenges",
+    opportunities: "New Opportunities",
+  };
 
   return (
     <section className="mt-10 space-y-6">
       <div className="px-1">
-        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">Catatan Hari Ini</h3>
+        <h3 className="font-serif text-2xl font-bold text-[#4F6658]">
+          {isEn ? "Today's Note" : "Catatan Hari Ini"}
+        </h3>
         <p className="mt-1 text-sm font-semibold text-[#4F6658]">{greeting}, {cleanName}.</p>
-        <p className="text-sm font-medium text-[#7B8776] mt-1">{appNow.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
+        <p className="text-sm font-medium text-[#7B8776] mt-1">{appNow.toLocaleDateString(isEn ? "en-US" : "id-ID", {
           weekday: "long",
           day: "numeric",
           month: "long",
           year: "numeric",
         })}</p>
-        <p className="text-xs text-[#9AA394] mt-2 opacity-80 italic">Sebuah catatan kecil dari Bhumi untuk kamu.</p>
+        <p className="text-xs text-[#9AA394] mt-2 opacity-80 italic">
+          {isEn ? "A small note from Bhumi for you." : "Sebuah catatan kecil dari Bhumi untuk kamu."}
+        </p>
       </div>
 
       {state === "limited" && (
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-4 text-xs leading-5 text-[#7B8776]">
-          Beberapa sumber pendukung belum tersedia, jadi catatan ini disusun dari data yang sudah valid tanpa mengarang konteks tambahan.
+          {isEn
+            ? "Some supporting sources are not yet available, so this note is compiled only from valid data without invented context."
+            : "Beberapa sumber pendukung belum tersedia, jadi catatan ini disusun dari data yang sudah valid tanpa mengarang konteks tambahan."}
         </div>
       )}
 
@@ -179,9 +212,11 @@ export function DailyNoteV2({
           const Icon = section.icon ? ICON_MAP[section.icon] : null;
           if (!Icon || section.isClosing) return null;
 
-          const sectionTitle = section.key === "finance" ? "Ekonomi & Rezeki" :
-                               section.key === "love" ? "Asmara & Percintaan" :
-                               section.title;
+          const sectionTitle = isEn
+            ? (TITLE_MAP_EN[section.key || ""] || section.title)
+            : (section.key === "finance" ? "Ekonomi & Rezeki" :
+               section.key === "love" ? "Asmara & Percintaan" :
+               section.title);
 
           const sectionColor = section.key === "challenges" ? "orange" :
                                section.key === "opportunities" ? "blue" :
@@ -210,7 +245,9 @@ export function DailyNoteV2({
         <div className="mt-8 px-1">
           <div className="p-6 rounded-[2rem] bg-[#FCFAF5] border border-[#F1EEE7] shadow-sm relative overflow-hidden">
             {conclusion && (
-              <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Kesimpulan Hari Ini</p>
+              <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">
+                {isEn ? "Today's Conclusion" : "Kesimpulan Hari Ini"}
+              </p>
             )}
             <p className="text-sm leading-7 text-[#526053] italic">
               &ldquo;{humanize(conclusion || dailyGuidance.dailyNoteText || "")}&rdquo;

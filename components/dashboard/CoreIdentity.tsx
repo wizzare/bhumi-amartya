@@ -18,13 +18,16 @@ interface CoreIdentityProps {
     humanDesign: string;
     humanDesignPending: string;
     humanDesignNeedsTimezone?: string;
+    unavailable?: string;
+    calculatingInProgress?: string;
+    cannotCalculate?: string;
   };
 }
 
-const Stat = ({ label, value, subValue }: { label: string; value?: string | number; subValue?: string }) => (
+const Stat = ({ label, value, subValue, fallback = "Not available" }: { label: string; value?: string | number; subValue?: string; fallback?: string }) => (
   <div className="flex flex-col items-center justify-center p-3 min-h-[110px] border border-[#E8E9E5]/60 rounded-3xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
     <p className="text-base sm:text-lg font-bold text-[#4F6658] leading-tight text-center w-full break-words">
-      {value || "Belum tersedia"}
+      {value || fallback}
     </p>
     {subValue && <p className="text-[10px] text-[#3C3C3C] mt-1.5 text-center leading-tight font-semibold opacity-80">{subValue}</p>}
     <p className="text-[9px] text-[#7B8776] mt-auto pt-3 text-center uppercase tracking-[0.15em] font-bold">{label}</p>
@@ -62,14 +65,16 @@ export function CoreIdentity({
         value: hdState.reason === "needs_verified_timezone"
           ? labels.humanDesignNeedsTimezone || labels.humanDesignPending
           : labels.humanDesignPending,
-        subValue: "Perhitungan sedang berlangsung",
+        subValue: labels.calculatingInProgress || "Calculation in progress",
       };
     }
     return {
-      value: "Belum tersedia",
-      subValue: "Data Human Design belum dapat dihitung.",
+      value: labels.unavailable || "Not available",
+      subValue: labels.cannotCalculate || "Human Design data cannot be calculated.",
     };
   })();
+
+  const unavailableFallback = labels.unavailable || "Not available";
 
   return (
     <div className="mt-8 bhumi-card p-6 bg-[#FCFAF5]/50 shadow-none border-dashed">
@@ -77,10 +82,10 @@ export function CoreIdentity({
         {labels.title}
       </h2>
       <div className="grid grid-cols-2 gap-4">
-        <Stat label={labels.lifePath} value={lifePath} subValue={lifePathRole} />
-        <Stat label={labels.sunSign} value={sunSign} />
-        <Stat label={labels.arcanaCenter} value={arcanaCenter} />
-        <Stat label={labels.humanDesign} {...humanDesignPresentation} />
+        <Stat label={labels.lifePath} value={lifePath} subValue={lifePathRole} fallback={unavailableFallback} />
+        <Stat label={labels.sunSign} value={sunSign} fallback={unavailableFallback} />
+        <Stat label={labels.arcanaCenter} value={arcanaCenter} fallback={unavailableFallback} />
+        <Stat label={labels.humanDesign} {...humanDesignPresentation} fallback={unavailableFallback} />
       </div>
     </div>
   );
