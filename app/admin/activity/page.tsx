@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   ArrowDown,
@@ -42,6 +43,7 @@ import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getFounderTesterRecordsByUids, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { hasPrivilegedPageAccessForUid, isFounderUser } from "@/lib/auth/privilegedUser";
+import { isAdminUiExposed } from "@/lib/config/adminUiExposure";
 
 type DateRangeKey = "today" | "yesterday" | "7d" | "30d" | "custom";
 type SortField = "name" | "registered" | "activeDays" | "lastLogin" | "status";
@@ -628,6 +630,12 @@ type FetchStatus = "idle" | "loading" | "loaded" | "error";
 export default function AdminActivityPage() {
   const auth = useAuth();
   const profile = auth?.userProfile;
+  const router = useRouter();
+  // Build 106 hotfix: the legacy in-app admin console is not exposed in the
+  // production UI. When the admin UI is not enabled for this build, the route is
+  // inert and returns the visitor to the dashboard. Admin AUTHORIZATION
+  // (Firestore role, lifetime entitlement, security rules) is unaffected.
+  const adminUiExposed = isAdminUiExposed();
   const today = useMemo(() => dateKey(new Date()), []);
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
   const [range, setRange] = useState<DateRangeKey>("today");
@@ -672,7 +680,13 @@ export default function AdminActivityPage() {
     analytics: "Not loaded",
   });
 
-  const hasAdminAccess = hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
+  const hasAdminAccess = adminUiExposed && hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
+
+  useEffect(() => {
+    if (!adminUiExposed) {
+      router.replace("/dashboard");
+    }
+  }, [adminUiExposed, router]);
 
   const sendPersonalMessage = async () => {
     if (!selectedUser || !auth?.user?.uid || !personalSubject.trim() || !personalBody.trim()) return;
@@ -1332,6 +1346,10 @@ export default function AdminActivityPage() {
       setSortOrder("desc");
     }
   };
+
+  if (!adminUiExposed) {
+    return <main className="min-h-screen bg-[#F7F4ED] flex items-center justify-center text-[#526256]">Memuat...</main>;
+  }
 
   if (auth?.authLoading || auth?.profileLoading) {
     return <main className="min-h-screen bg-[#F7F4ED] flex items-center justify-center text-[#526256]">Memverifikasi akses admin...</main>;

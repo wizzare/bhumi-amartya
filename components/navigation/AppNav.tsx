@@ -3,11 +3,9 @@
 import { useMemo, useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Sprout, User, Activity, Shield } from "lucide-react";
+import { Compass, Crown, Home, MessageSquare, MoreHorizontal, Settings, Sprout, User } from "lucide-react";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
-import { useAuth } from "@/context/AuthContext";
-import { hasPrivilegedPageAccessForUid } from "@/lib/auth/privilegedUser";
 
 type NavLabelKey = keyof typeof translations.id.nav;
 type NavItem = {
@@ -35,18 +33,13 @@ export function AppNav() {
   const { language } = useLanguage();
   const t = translations[language];
   const [isMoreOpen, setIsMoreOpen] = useState(false);
-  const auth = useAuth();
-  const profile = auth?.userProfile;
-  const hasAdminAccess = hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
 
-  const moreItems = useMemo(() => {
-    const items = [...UTILITY_NAV_ITEMS];
-    if (hasAdminAccess) {
-      items.push({ Icon: Shield, label: "Admin", href: "/admin/activity", labelKey: "profile" as any });
-      items.push({ Icon: Activity, label: "Auth Diagnostics", href: "/admin/diagnostics", labelKey: "profile" as any });
-    }
-    return items;
-  }, [hasAdminAccess]);
+  // Build 106 hotfix: the "Lainnya" menu carries product surfaces only. The
+  // legacy in-app back-office console and the sign-in diagnostics page are not
+  // exposed in the production UI for any role. Back-office AUTHORIZATION
+  // (Firestore role, lifetime entitlement, security rules) is unaffected — see
+  // lib/auth/privilegedUser.ts.
+  const moreItems = useMemo(() => [...UTILITY_NAV_ITEMS], []);
 
   const desktopNavItems = useMemo(() => {
     return [...PRIMARY_NAV_ITEMS];

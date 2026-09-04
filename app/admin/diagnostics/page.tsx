@@ -2,20 +2,30 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ShieldAlert, RefreshCw, ArrowLeft, Activity } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { diagnosticRepository, GoogleSignInFailureEvent } from "@/lib/repositories/diagnosticRepository";
 import { hasPrivilegedPageAccessForUid } from "@/lib/auth/privilegedUser";
+import { isAdminUiExposed } from "@/lib/config/adminUiExposure";
 
 export default function AdminDiagnosticsPage() {
   const auth = useAuth();
   const profile = auth?.userProfile;
+  const router = useRouter();
+
+  // Build 106 hotfix: DEV_ONLY route. Auth Diagnostics is not part of the
+  // production UI. When the admin UI is not exposed (the shipped app), this
+  // route is inert and sends the visitor back to the dashboard. The
+  // hasPrivilegedPageAccessForUid role check below still applies on internal
+  // web/dev consoles where the admin UI is deliberately enabled.
+  const adminUiExposed = isAdminUiExposed();
 
   const [failures, setFailures] = useState<GoogleSignInFailureEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const hasAdminAccess = hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
+  const hasAdminAccess = adminUiExposed && hasPrivilegedPageAccessForUid(auth?.user?.uid, profile ?? null);
 
   const fetchFailures = async () => {
     setLoading(true);
@@ -32,10 +42,24 @@ export default function AdminDiagnosticsPage() {
   };
 
   useEffect(() => {
+    if (!adminUiExposed) {
+      router.replace("/dashboard");
+    }
+  }, [adminUiExposed, router]);
+
+  useEffect(() => {
     if (hasAdminAccess) {
       void fetchFailures();
     }
   }, [hasAdminAccess]);
+
+  if (!adminUiExposed) {
+    return (
+      <main className="min-h-screen bg-[#FCFAF5] flex items-center justify-center">
+        <p className="text-[#7B8776] animate-pulse font-medium">Memuat...</p>
+      </main>
+    );
+  }
 
   if (auth?.authLoading || auth?.profileLoading) {
     return (

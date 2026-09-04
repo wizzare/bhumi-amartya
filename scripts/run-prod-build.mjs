@@ -16,6 +16,9 @@ const env = {
   NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN: 'false',
   NEXT_PUBLIC_ENABLE_ANDROID_EMULATOR_QA_LOGIN: 'false',
   NEXT_PUBLIC_ENABLE_FOUNDER_PRE_RELEASE_QA: 'false',
+  // Build 106 hotfix: the legacy in-app admin console + Auth Diagnostics page are
+  // not exposed in the shipped production UI. Admin AUTHORIZATION is unaffected.
+  NEXT_PUBLIC_ENABLE_ADMIN_UI: 'false',
   NEXT_PUBLIC_WEB_APP_URL: 'https://bhumi-amartya-clean.vercel.app',
   NEXT_PUBLIC_BILLING_VERIFIER_URL: process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || 'https://bhumi-billing-verifier.vercel.app',
   NODE_ENV: 'production'
