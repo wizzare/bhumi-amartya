@@ -28,6 +28,9 @@ import {
   type TzolkinSectionContract,
 } from "@/lib/tzolkin/presentation";
 
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
+
 const GROUP_ICONS: Record<string, typeof Sparkles> = {
   "galactic-identity": Sparkles,
   "journey-rhythm": Layers3,
@@ -37,6 +40,8 @@ const GROUP_ICONS: Record<string, typeof Sparkles> = {
 };
 
 export default function TzolkinPage() {
+  const { language } = useLanguage();
+  const isEn = language === "en" || isEnlEdition();
   const [tzolkin, setTzolkin] = useState<TzolkinPresentationInput | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -75,7 +80,7 @@ export default function TzolkinPage() {
     void load();
   }, []);
 
-  const presentation = useMemo(() => buildTzolkinPresentation(tzolkin), [tzolkin]);
+  const presentation = useMemo(() => buildTzolkinPresentation(tzolkin, { isEn }), [tzolkin, isEn]);
 
   return (
     <ProtectedRoute>
@@ -84,7 +89,7 @@ export default function TzolkinPage() {
         <div className="mx-auto max-w-2xl">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
             <ArrowLeft size={16} />
-            Kembali ke Profil
+            {isEn ? "Back to Profile" : "Kembali ke Profil"}
           </Link>
 
           <header className="mb-8">
@@ -106,13 +111,15 @@ export default function TzolkinPage() {
           </header>
 
           {loading ? (
-            <p className="py-16 text-center text-[#7B8776]">Membaca siklus 260 Kin...</p>
+            <p className="py-16 text-center text-[#7B8776]">
+              {isEn ? "Reading the 260 Kin cycle..." : "Membaca siklus 260 Kin..."}
+            </p>
           ) : loadFailed ? (
-            <EmptyState message="Perhitungan Tzolkin belum dapat dibuka. Periksa kembali tanggal kelahiranmu." />
+            <EmptyState message={isEn ? "Tzolkin calculation is not yet available. Please check your birth date." : "Perhitungan Tzolkin belum dapat dibuka. Periksa kembali tanggal kelahiranmu."} />
           ) : presentation.status === "unavailable" ? (
-            <EmptyState message="Tanggal kelahiran belum tersedia untuk menghitung Tzolkin." />
+            <EmptyState message={isEn ? "Birth date is required to calculate Tzolkin." : "Tanggal kelahiran belum tersedia untuk menghitung Tzolkin."} />
           ) : (
-            <TzolkinContent presentation={presentation} />
+            <TzolkinContent presentation={presentation} isEn={isEn} />
           )}
         </div>
       </main>
@@ -124,12 +131,14 @@ function EmptyState({ message }: { message: string }) {
   return <p className="py-16 text-center leading-7 text-[#7B8776]">{message}</p>;
 }
 
-function TzolkinContent({ presentation }: { presentation: TzolkinPresentation }) {
+function TzolkinContent({ presentation, isEn }: { presentation: TzolkinPresentation; isEn: boolean }) {
   return (
     <div id="detail-tzolkin" className="space-y-10 scroll-mt-6">
       {presentation.status === "partial" && (
         <p className="rounded-2xl border border-[#E8E1D3] bg-white p-5 text-sm leading-7 text-[#7B8776]">
-          Pembacaan ini hanya menampilkan bagian yang tersedia dari data Tzolkin tersimpan. Relasi simbolik atau siklus yang tidak didukung disembunyikan.
+          {isEn
+            ? "This reading only displays available portions of stored Tzolkin data. Unsupported symbolic relations or cycles are hidden."
+            : "Pembacaan ini hanya menampilkan bagian yang tersedia dari data Tzolkin tersimpan. Relasi simbolik atau siklus yang tidak didukung disembunyikan."}
         </p>
       )}
 
@@ -148,7 +157,7 @@ function TzolkinContent({ presentation }: { presentation: TzolkinPresentation })
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {group.sections.map((section) => <TzolkinSectionCard key={section.sectionId} section={section} />)}
+              {group.sections.map((section) => <TzolkinSectionCard key={section.sectionId} section={section} isEn={isEn} />)}
             </div>
           </section>
         );
@@ -158,7 +167,7 @@ function TzolkinContent({ presentation }: { presentation: TzolkinPresentation })
         <section className="mx-auto max-w-xl rounded-3xl bg-[#4F5E52] p-6 text-white shadow-md">
           <div className="mb-5 flex items-center gap-2">
             <Sparkles size={18} className="text-[#D4AF37]" />
-            <h2 className="font-serif text-xl font-bold">Kesimpulan Dirimu</h2>
+            <h2 className="font-serif text-xl font-bold">{isEn ? "Your Synthesis" : "Kesimpulan Dirimu"}</h2>
           </div>
           <div className="space-y-4 text-sm leading-7 text-[#D2D8D0]">
             {presentation.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
@@ -169,15 +178,15 @@ function TzolkinContent({ presentation }: { presentation: TzolkinPresentation })
   );
 }
 
-function TzolkinSectionCard({ section }: { section: TzolkinSectionContract }) {
+function TzolkinSectionCard({ section, isEn }: { section: TzolkinSectionContract; isEn: boolean }) {
   return (
     <article className="min-w-0 rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
       <p className="break-words text-xs font-bold uppercase tracking-[0.14em] text-[#9AA394]">{section.label}</p>
       <p className="mt-2 break-words font-serif text-xl font-bold text-[#4F5E52]">{section.displayValue}</p>
       <details className="group mt-3 border-t border-[#F3EFE6] pt-3">
         <summary className="cursor-pointer list-none text-sm font-bold text-[#4F5E52] marker:content-none">
-          <span className="group-open:hidden">Lihat selengkapnya</span>
-          <span className="hidden group-open:inline">Tutup penjelasan</span>
+          <span className="group-open:hidden">{isEn ? "View details" : "Lihat selengkapnya"}</span>
+          <span className="hidden group-open:inline">{isEn ? "Close explanation" : "Tutup penjelasan"}</span>
         </summary>
         <p className="mt-3 text-sm leading-7 text-[#7B8776]">{section.fullExplanation}</p>
       </details>

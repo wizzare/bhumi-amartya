@@ -1,8 +1,9 @@
 "use client";
 
 import type { HumanDesignActivation } from "@/lib/humandesign/types";
+import { isEnlEdition } from "@/lib/config/edition";
 
-type Props = { humanDesign: Record<string, any> };
+type Props = { humanDesign: Record<string, any>; isEn?: boolean };
 type CenterKey = "head" | "ajna" | "throat" | "g" | "ego" | "spleen" | "sacral" | "solarPlexus" | "root";
 
 const PLANET_ORDER = ["Sun", "Earth", "North_Node", "South_Node", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "Chiron"];
@@ -115,7 +116,7 @@ function ActivationColumn({ title, rows, design }: { title: string; rows: HumanD
   );
 }
 
-export function HumanDesignBodygraphLite({ humanDesign }: Props) {
+export function HumanDesignBodygraphLite({ humanDesign, isEn = isEnlEdition() }: Props) {
   const diagnostic = humanDesign.diagnostic || {};
   const designRows = activations(humanDesign.designActivations?.length ? humanDesign.designActivations : humanDesign.raw_design_gates || diagnostic.raw_design_gates);
   const personalityRows = activations(humanDesign.personalityActivations?.length ? humanDesign.personalityActivations : humanDesign.raw_personality_gates || diagnostic.raw_personality_gates);

@@ -1,6 +1,8 @@
 "use client";
 
-type Props = { astrology: Record<string, any> };
+import { isEnlEdition } from "@/lib/config/edition";
+
+type Props = { astrology: Record<string, any>; isEn?: boolean };
 const signs = ["Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"];
 const glyphs: Record<string, string> = { Sun: "☉", Moon: "☽", Mercury: "☿", Venus: "♀", Mars: "♂", Jupiter: "♃", Saturn: "♄", Uranus: "♅", Neptune: "♆", Pluto: "♇", Chiron: "⚷", NorthNode: "☊", SouthNode: "☋", Lilith: "⚸" };
 const aspectColors: Record<string, string> = { Opposition: "#B84F45", Square: "#C86B4A", Trine: "#4E8B73", Sextile: "#4F7FA3", Conjunction: "#7B5C92" };
@@ -9,7 +11,7 @@ const polar = (longitude: number, radius: number) => {
   return { x: 210 + Math.cos(angle) * radius, y: 210 + Math.sin(angle) * radius };
 };
 
-export function NatalWheelLite({ astrology }: Props) {
+export function NatalWheelLite({ astrology, isEn = isEnlEdition() }: Props) {
   const planets = { ...(astrology.planets || {}) };
   if (astrology.lilith) planets.Lilith = { ...astrology.lilith, longitude: signs.indexOf(astrology.lilith.sign) * 30 + Number(astrology.lilith.degree) };
   const entries = Object.entries(planets).filter(([, value]: any) => Number.isFinite(Number(value.longitude)));

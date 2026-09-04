@@ -28,6 +28,8 @@ import {
   type WetonPresentationSectionId,
   type TulangWangiPresentation,
 } from "@/lib/weton/presentation";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 const SECTION_STYLES: Record<
   WetonPresentationSectionId,
@@ -47,6 +49,8 @@ const SECTION_STYLES: Record<
 };
 
 export default function WetonPage() {
+  const { language } = useLanguage();
+  const isEn = language === "en" || isEnlEdition();
   const [weton, setWeton] = useState<WetonPresentationInput | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -89,7 +93,7 @@ export default function WetonPage() {
     void load();
   }, []);
 
-  const presentation = useMemo(() => buildWetonPresentation(weton), [weton]);
+  const presentation = useMemo(() => buildWetonPresentation(weton, { isEn }), [weton, isEn]);
 
   return (
     <ProtectedRoute>
@@ -98,7 +102,7 @@ export default function WetonPage() {
         <div className="mx-auto max-w-lg">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
             <ArrowLeft size={16} />
-            Kembali ke Profil
+            {isEn ? "Back to Profile" : "Kembali ke Profil"}
           </Link>
 
           <header className="mb-8">
@@ -108,16 +112,20 @@ export default function WetonPage() {
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">{presentation.canonicalName}</p>
             <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{presentation.hero}</h1>
             <p className="mt-3 leading-7 text-[#7B8776]">
-              Membaca lapisan identitas Jawa melalui Hari, Pasaran, Neptu, Wuku, dan Pranata Mangsa secara reflektif.
+              {isEn
+                ? "Exploring Javanese identity layers through Day, Pasaran, Neptu, Wuku, and Pranata Mangsa reflectively."
+                : "Membaca lapisan identitas Jawa melalui Hari, Pasaran, Neptu, Wuku, dan Pranata Mangsa secara reflektif."}
             </p>
           </header>
 
           {loading ? (
-            <p className="py-16 text-center text-[#7B8776]">Membuka perhitungan Weton...</p>
+            <p className="py-16 text-center text-[#7B8776]">
+              {isEn ? "Loading Weton calculation..." : "Membuka perhitungan Weton..."}
+            </p>
           ) : loadFailed ? (
-            <EmptyState message="Perhitungan Weton belum dapat dibuka. Periksa kembali data tanggal kelahiranmu." />
+            <EmptyState message={isEn ? "Weton calculation is not yet available. Please check your birth details." : "Perhitungan Weton belum dapat dibuka. Periksa kembali data tanggal kelahiranmu."} />
           ) : presentation.status === "unavailable" ? (
-            <EmptyState message="Data kelahiran belum tersedia untuk menampilkan pembacaan Weton." />
+            <EmptyState message={isEn ? "Birth data is required to display your Weton reading." : "Data kelahiran belum tersedia untuk menampilkan pembacaan Weton."} />
           ) : (
             <div className="space-y-8">
               <div className="grid gap-4">
@@ -150,7 +158,7 @@ export default function WetonPage() {
                         </p>
                       </section>
                       {section.id === "identity" && presentation.tulangWangi && (
-                        <TulangWangiCard presentation={presentation.tulangWangi} />
+                        <TulangWangiCard presentation={presentation.tulangWangi} isEn={isEn} />
                       )}
                     </Fragment>
                   );
@@ -159,7 +167,9 @@ export default function WetonPage() {
 
               {presentation.status === "partial" && (
                 <p className="rounded-2xl border border-[#E8E1D3] bg-white p-5 text-sm leading-6 text-[#7B8776]">
-                  Beberapa bagian belum ditampilkan karena data sumbernya belum lengkap.
+                  {isEn
+                    ? "Some sections are not displayed because source data is incomplete."
+                    : "Beberapa bagian belum ditampilkan karena data sumbernya belum lengkap."}
                 </p>
               )}
 
@@ -167,7 +177,7 @@ export default function WetonPage() {
                 <section className="rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
                   <div className="mb-5 flex items-center gap-2">
                     <Sparkles size={18} className="text-[#D4AF37]" />
-                    <h2 className="text-xl font-serif font-bold">Kesimpulan Dirimu</h2>
+                    <h2 className="text-xl font-serif font-bold">{isEn ? "Your Synthesis" : "Kesimpulan Dirimu"}</h2>
                   </div>
                   <div className="space-y-4 text-sm leading-7 text-[#D2D8D0]">
                     {presentation.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
@@ -186,7 +196,7 @@ function EmptyState({ message }: { message: string }) {
   return <p className="py-16 text-center leading-7 text-[#7B8776]">{message}</p>;
 }
 
-function TulangWangiCard({ presentation }: { presentation: TulangWangiPresentation }) {
+function TulangWangiCard({ presentation, isEn }: { presentation: TulangWangiPresentation; isEn?: boolean }) {
   return (
     <aside data-testid="tulang-wangi-card" className="rounded-3xl border border-[#D8CDAF] bg-[#F7F1E2] p-6 shadow-sm">
       <div className="flex items-start gap-3">
@@ -194,15 +204,21 @@ function TulangWangiCard({ presentation }: { presentation: TulangWangiPresentati
           <Sparkles size={20} />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8A7650]">Wetonmu termasuk dalam kelompok Tulang Wangi</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8A7650]">
+            {isEn ? "Your Weton belongs to the Tulang Wangi group" : "Wetonmu termasuk dalam kelompok Tulang Wangi"}
+          </p>
           <h2 className="mt-1 font-serif text-2xl font-bold text-[#4F5E52]">{presentation.canonicalLabel}</h2>
-          <p className="mt-1 text-xs text-[#7B8776]">Dalam sebagian tradisi juga disebut {presentation.alternativeLabel}</p>
+          <p className="mt-1 text-xs text-[#7B8776]">
+            {isEn ? `In some traditions also called ${presentation.alternativeLabel}` : `Dalam sebagian tradisi juga disebut ${presentation.alternativeLabel}`}
+          </p>
         </div>
       </div>
       <p className="mt-5 font-medium leading-7 text-[#4F5E52]">{presentation.statusText}</p>
       <p className="mt-3 text-sm leading-7 text-[#6F786D]">{presentation.shortNarrative}</p>
       <details className="mt-5 border-t border-[#D8CDAF] pt-4">
-        <summary className="cursor-pointer text-sm font-bold text-[#4F5E52]">Apa itu Tulang Wangi?</summary>
+        <summary className="cursor-pointer text-sm font-bold text-[#4F5E52]">
+          {isEn ? "What is Tulang Wangi?" : "Apa itu Tulang Wangi?"}
+        </summary>
         <div className="mt-4 space-y-4 text-sm leading-7 text-[#6F786D]">
           {presentation.detailParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           <p className="rounded-2xl bg-white/60 p-4 text-xs leading-6 text-[#7B8776]">{presentation.culturalContext}</p>

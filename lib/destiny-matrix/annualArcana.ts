@@ -1,6 +1,7 @@
 import type { CanonicalDestinyMatrix } from "../types/destinyMatrix";
-import { destinyMatrixArcanaDictionary, type ArcanaDictionaryEntry } from "../data/destinyMatrixArcanaDictionary";
+import { destinyMatrixArcanaDictionary, destinyMatrixArcanaDictionaryEn, type ArcanaDictionaryEntry } from "../data/destinyMatrixArcanaDictionary";
 import { DESTINY_MATRIX_AGE_CYCLE } from "./topology";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type DestinyMatrixAnnualArcana = {
   age: number;
@@ -40,13 +41,14 @@ const clean = (value: string) => value
   .replace(/godaan/gi, "tarikan yang kuat")
   .replace(/kemakmuran/gi, "penciptaan nilai")
   .trim();
-const phrase = (value: string) => {
+const phrase = (value: string, isEn = false) => {
   const cleaned = clean(value);
-  return cleaned.toLocaleLowerCase("id-ID");
+  return isEn ? cleaned.charAt(0).toLowerCase() + cleaned.slice(1) : cleaned.toLocaleLowerCase("id-ID");
 };
 
-function meaning(value: number): ArcanaDictionaryEntry {
-  const result = destinyMatrixArcanaDictionary[value];
+function meaning(value: number, isEn = false): ArcanaDictionaryEntry {
+  const dict = isEn ? destinyMatrixArcanaDictionaryEn : destinyMatrixArcanaDictionary;
+  const result = dict[value] || destinyMatrixArcanaDictionary[value];
   if (!result) throw new Error(`Verified Arcana dictionary has no entry for ${value}.`);
   return result;
 }
@@ -121,11 +123,11 @@ export function resolveDestinyMatrixArcanaAtAge(matrix: CanonicalDestinyMatrix, 
   return nodeId ? graphValue(matrix, nodeId) : null;
 }
 
-function connectionMeanings(matrix: CanonicalDestinyMatrix) {
+function connectionMeanings(matrix: CanonicalDestinyMatrix, isEn = false) {
   const values = new Map(matrix.graph.nodes.map((node) => [node.id, node.value]));
   const at = (nodeId: string) => {
     const value = values.get(nodeId);
-    return value ? meaning(value) : null;
+    return value ? meaning(value, isEn) : null;
   };
   return {
     center: at("BM05"),
@@ -138,7 +140,9 @@ function connectionMeanings(matrix: CanonicalDestinyMatrix) {
 export function buildDestinyMatrixAnnualArcana(
   matrix: CanonicalDestinyMatrix,
   context: DestinyMatrixAnnualArcanaContext,
+  options: { isEn?: boolean } = {},
 ): DestinyMatrixAnnualArcana | null {
+  const isEn = options.isEn ?? isEnlEdition();
   const birth = parseBirthDate(context.birthDate);
   if (!birth) return null;
   const current = dateInTimezone(context.asOf ?? new Date(), context.timezone);
@@ -153,31 +157,57 @@ export function buildDestinyMatrixAnnualArcana(
 
   const start = birthdayInYear(birth, birth.year + rangeStartAge);
   const endExclusive = nextAge <= 79 ? birthdayInYear(birth, birth.year + nextAge) : null;
-  const annual = meaning(arcana);
-  const related = connectionMeanings(matrix);
+  const annual = meaning(arcana, isEn);
+  const related = connectionMeanings(matrix, isEn);
   if (!related.center) return null;
 
-  const centerConnection = `Pola intimu membantu fase ini melalui ${phrase(related.center.gift)}, selama ketegasan tidak berubah menjadi kebutuhan untuk mengendalikan seluruh hasil.`;
+  const centerConnection = isEn
+    ? `Your core pattern supports this phase through ${phrase(related.center.gift, isEn)}, provided your determination does not turn into an urge to micromanage every outcome.`
+    : `Pola intimu membantu fase ini melalui ${phrase(related.center.gift)}, selama ketegasan tidak berubah menjadi kebutuhan untuk mengendalikan seluruh hasil.`;
   const karmicConnection = related.karmic
-    ? `Pola lama dapat kembali terlihat melalui ${phrase(related.karmic.challenge)}, sehingga penyelesaian yang sadar lebih penting daripada mengulang respons yang terasa akrab.`
+    ? (isEn
+      ? `Past patterns may resurface through ${phrase(related.karmic.challenge, isEn)}, making conscious resolution more essential than reverting to familiar reactions.`
+      : `Pola lama dapat kembali terlihat melalui ${phrase(related.karmic.challenge)}, sehingga penyelesaian yang sadar lebih penting daripada mengulang respons yang terasa akrab.`)
     : "";
   const loveConnection = related.love
-    ? `Dalam kedekatan, fase ini dapat menajamkan kebutuhan akan ${phrase(related.love.relationshipPattern)}, sekaligus meminta batas dan kepercayaan yang lebih jujur.`
+    ? (isEn
+      ? `In intimacy, this phase may sharpen the need for ${phrase(related.love.relationshipPattern, isEn)}, while inviting deeper honesty and clearer boundaries.`
+      : `Dalam kedekatan, fase ini dapat menajamkan kebutuhan akan ${phrase(related.love.relationshipPattern)}, sekaligus meminta batas dan kepercayaan yang lebih jujur.`)
     : "";
   const moneyConnection = related.money
-    ? `Dalam karya dan sumber daya, perhatianmu diarahkan untuk ${phrase(related.money.growthDirection)}, dengan keputusan yang tetap perlu berpijak pada kenyataan.`
+    ? (isEn
+      ? `In work and resources, your focus is guided toward ${phrase(related.money.growthDirection, isEn)}, with decisions grounded in reality.`
+      : `Dalam karya dan sumber daya, perhatianmu diarahkan untuk ${phrase(related.money.growthDirection)}, dengan keputusan yang tetap perlu berpijak pada kenyataan.`)
     : "";
-  const practicalInvitation = `Pilih satu dorongan yang paling penting, periksa alasan di baliknya, lalu salurkan ke langkah yang jelas dan dapat dipertahankan.`;
+  const practicalInvitation = isEn
+    ? `Choose one key priority, reflect on what drives it, and channel it into a clear, sustainable step forward.`
+    : `Pilih satu dorongan yang paling penting, periksa alasan di baliknya, lalu salurkan ke langkah yang jelas dan dapat dipertahankan.`;
 
-  const paragraph1 = `Fase ini membawa perhatianmu pada ${phrase(annual.coreEssence)}, sehingga hal yang selama ini samar mungkin terasa lebih kuat dan lebih sulit diabaikan. Peluangnya muncul melalui ${phrase(annual.lightSide)}, sedangkan ketegangan dapat hadir ketika ${phrase(annual.shadowSide)} mengambil terlalu banyak ruang. ${centerConnection}`;
+  const paragraph1 = isEn
+    ? `This phase focuses your attention on ${phrase(annual.coreEssence, isEn)}, bringing subtle patterns into sharp relief so they can no longer be overlooked. Opportunity unfolds through ${phrase(annual.lightSide, isEn)}, while friction may arise when ${phrase(annual.shadowSide, isEn)} takes over. ${centerConnection}`
+    : `Fase ini membawa perhatianmu pada ${phrase(annual.coreEssence)}, sehingga hal yang selama ini samar mungkin terasa lebih kuat dan lebih sulit diabaikan. Peluangnya muncul melalui ${phrase(annual.lightSide)}, sedangkan ketegangan dapat hadir ketika ${phrase(annual.shadowSide)} mengambil terlalu banyak ruang. ${centerConnection}`;
   const paragraph2 = related.love && related.karmic
-    ? `${loveConnection} ${karmicConnection} Yang perlu dijaga adalah kemampuan memberi ruang, menyampaikan kebutuhan, dan memilih respons baru tanpa menganggap pola yang kembali muncul sebagai kegagalan.`
-    : `Hubungan dengan diri sendiri dan orang lain mungkin meminta perhatian yang lebih jujur selama fase ini. Pola yang tersedia mengajakmu menjaga batas tanpa menutup ruang bagi kedekatan. Respons yang perlahan dan sadar akan lebih membantu daripada kepastian yang dipaksakan.`;
+    ? (isEn
+      ? `${loveConnection} ${karmicConnection} What supports you is holding space, expressing your needs, and choosing fresh responses without judging recurring patterns as failure.`
+      : `${loveConnection} ${karmicConnection} Yang perlu dijaga adalah kemampuan memberi ruang, menyampaikan kebutuhan, dan memilih respons baru tanpa menganggap pola yang kembali muncul sebagai kegagalan.`)
+    : (isEn
+      ? `Your relationship with yourself and others invites deeper honesty during this phase. Available patterns encourage holding boundaries without closing the door to intimacy. Slow, conscious responses will serve you far better than forced certainty.`
+      : `Hubungan dengan diri sendiri dan orang lain mungkin meminta perhatian yang lebih jujur selama fase ini. Pola yang tersedia mengajakmu menjaga batas tanpa menutup ruang bagi kedekatan. Respons yang perlahan dan sadar akan lebih membantu daripada kepastian yang dipaksakan.`);
   const paragraph3 = related.money
-    ? `${moneyConnection} Ambisi dapat menjadi tenaga yang membangun ketika tidak dipakai untuk membuktikan harga diri atau menekan proses agar segera selesai. ${practicalInvitation}`
-    : `Arah kerja dan tindakan tetap dapat dibaca melalui tema utama fase ini. Kemajuan tidak harus dibuktikan lewat hasil yang tergesa-gesa atau janji materi tertentu. ${practicalInvitation}`;
+    ? (isEn
+      ? `${moneyConnection} Ambition becomes a constructive force when not used to prove self-worth or rush the unfolding process. ${practicalInvitation}`
+      : `${moneyConnection} Ambisi dapat menjadi tenaga yang membangun ketika tidak dipakai untuk membuktikan harga diri atau menekan proses agar segera selesai. ${practicalInvitation}`)
+    : (isEn
+      ? `Your direction in work and action can still be navigated through the central theme of this phase. Progress does not need to be proven through hasty results or specific material promises. ${practicalInvitation}`
+      : `Arah kerja dan tindakan tetap dapat dibaca melalui tema utama fase ini. Kemajuan tidak harus dibuktikan lewat hasil yang tergesa-gesa atau janji materi tertentu. ${practicalInvitation}`);
   const complete = Boolean(related.center && related.love && related.karmic && related.money);
-  const partialParagraph = `${loveConnection || karmicConnection || moneyConnection || "Bagian yang tersedia tetap mengajakmu memperhatikan respons yang sedang menguat."} Data pendukung yang belum tersedia tidak diganti dengan tafsir dari sistem lain. ${practicalInvitation}`;
+  const partialParagraph = isEn
+    ? `${loveConnection || karmicConnection || moneyConnection || "The available aspects encourage mindful attention to emerging dynamics."} Missing contextual data is never replaced by assumptions from other systems. ${practicalInvitation}`
+    : `${loveConnection || karmicConnection || moneyConnection || "Bagian yang tersedia tetap mengajakmu memperhatikan respons yang sedang menguat."} Data pendukung yang belum tersedia tidak diganti dengan tafsir dari sistem lain. ${practicalInvitation}`;
+
+  const ageRangeLabel = rangeStartAge === nextAge - 1
+    ? (isEn ? `Age ${rangeStartAge}` : `Usia ${rangeStartAge}`)
+    : (isEn ? `Ages ${rangeStartAge}–${nextAge - 1}` : `Usia ${rangeStartAge}–${nextAge - 1}`);
 
   return {
     age,
@@ -185,8 +215,8 @@ export function buildDestinyMatrixAnnualArcana(
     arcanaName: annual.name,
     periodStart: isoDate(start),
     periodEnd: endExclusive ? isoDate(previousDay(endExclusive)) : undefined,
-    ageRangeLabel: rangeStartAge === nextAge - 1 ? `Usia ${rangeStartAge}` : `Usia ${rangeStartAge}–${nextAge - 1}`,
-    shortTheme: phrase(annual.coreEssence),
+    ageRangeLabel,
+    shortTheme: phrase(annual.coreEssence, isEn),
     integratedParagraphs: complete ? [paragraph1, paragraph2, paragraph3] : [paragraph1, partialParagraph],
     centerConnection,
     loveConnection,

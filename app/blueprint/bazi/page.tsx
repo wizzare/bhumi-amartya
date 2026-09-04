@@ -20,7 +20,12 @@ import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import type { BaziPillar } from "@/lib/bazi/types";
 import { BaziMeaningService, type EnrichedBaziBlueprint } from "@/lib/bazi/baziMeaning";
 
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
+
 export default function BaziPage() {
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +39,7 @@ export default function BaziPage() {
         if (!storedBlueprint) return;
         const blueprint = storedBlueprint as unknown as Blueprint;
         if (blueprint.bazi) {
-          setBazi(BaziMeaningService.enrich(blueprint.bazi));
+          setBazi(BaziMeaningService.enrich(blueprint.bazi, { isEn }));
           return;
         }
         const birthDate = blueprint.input?.birthDate || profile?.birthDate;
@@ -45,13 +50,13 @@ export default function BaziPage() {
           birthTime,
           timezone: blueprint.input?.timezone || profile?.timezone,
         });
-        setBazi(BaziMeaningService.enrich(calculated));
+        setBazi(BaziMeaningService.enrich(calculated, { isEn }));
       } finally {
         setLoading(false);
       }
     }
     void load();
-  }, []);
+  }, [isEn]);
 
   return (
     <ProtectedRoute>
@@ -59,19 +64,23 @@ export default function BaziPage() {
         <AppNav />
         <div className="mx-auto max-w-lg">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
-            <ArrowLeft size={16} />Kembali ke Profil
+            <ArrowLeft size={16} />{isEn ? "Back to Profile" : "Kembali ke Profil"}
           </Link>
           <header className="mb-8">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F5E52] text-white">
               <CircleDot size={25} />
             </div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">BaZi</p>
-            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">Empat Pilar Takdirmu</h1>
-            <p className="mt-3 leading-7 text-[#7B8776]">Peta kelahiran yang membantu melihat sifat dasar, keseimbangan tenaga, dan musim perjalanan hidupmu dengan bahasa yang lebih dekat.</p>
+            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{isEn ? "Your Four Pillars of Destiny" : "Empat Pilar Takdirmu"}</h1>
+            <p className="mt-3 leading-7 text-[#7B8776]">
+              {isEn
+                ? "A natal map illuminating core nature, elemental balance, and the unfolding seasons of your life journey."
+                : "Peta kelahiran yang membantu melihat sifat dasar, keseimbangan tenaga, dan musim perjalanan hidupmu dengan bahasa yang lebih dekat."}
+            </p>
           </header>
 
           {loading ? (
-            <p className="py-16 text-center text-[#7B8776]">Menghitung Empat Pilar...</p>
+            <p className="py-16 text-center text-[#7B8776]">{isEn ? "Calculating Four Pillars..." : "Menghitung Empat Pilar..."}</p>
           ) : bazi ? (
             <div className="space-y-8">
               <section>
@@ -108,12 +117,26 @@ export default function BaziPage() {
                     ))}
                   </div>
                   <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#F5F1E8] pt-4 text-sm">
-                    {bazi.leastPresentElements.length === 5 ? <div className="col-span-2"><p className="font-bold text-[#4F5E52]">Sebaran Elemen Relatif Seimbang</p></div> : <>
-                      <div><p className="font-bold text-[#4F5E52]">Elemen Paling Sedikit</p><p className="text-[#7B8776]">{bazi.leastPresentElements.join(", ")}</p></div>
-                      <div><p className="font-bold text-[#4F5E52]">Elemen yang Lebih Dominan</p><p className="text-[#7B8776]">{bazi.mostPresentElements.join(", ")}</p></div>
-                    </>}
+                    {bazi.leastPresentElements.length === 5 ? (
+                      <div className="col-span-2"><p className="font-bold text-[#4F5E52]">{isEn ? "Relatively Balanced Elemental Distribution" : "Sebaran Elemen Relatif Seimbang"}</p></div>
+                    ) : (
+                      <>
+                        <div>
+                          <p className="font-bold text-[#4F5E52]">{isEn ? "Least Present Elements" : "Elemen Paling Sedikit"}</p>
+                          <p className="text-[#7B8776]">{bazi.leastPresentElements.join(", ")}</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-[#4F5E52]">{isEn ? "More Dominant Elements" : "Elemen yang Lebih Dominan"}</p>
+                          <p className="text-[#7B8776]">{bazi.mostPresentElements.join(", ")}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <p className="mt-4 text-xs leading-5 text-[#8A9489]">Bagian ini menunjukkan sebaran elemen yang terlihat pada empat pilar kelahiranmu. Angka ini belum menentukan elemen yang paling mendukung atau perlu dihindari, karena pembacaan tersebut membutuhkan analisis kekuatan energi, musim kelahiran, dan hubungan antarelemen.</p>
+                  <p className="mt-4 text-xs leading-5 text-[#8A9489]">
+                    {isEn
+                      ? "This section reflects the visible distribution of elements across your four natal pillars. These counts do not yet determine the most supportive or challenging elements, which requires in-depth analysis of seasonal strength and inter-element relationships."
+                      : "Bagian ini menunjukkan sebaran elemen yang terlihat pada empat pilar kelahiranmu. Angka ini belum menentukan elemen yang paling mendukung atau perlu dihindari, karena pembacaan tersebut membutuhkan analisis kekuatan energi, musim kelahiran, dan hubungan antarelemen."}
+                  </p>
                   <p className="mt-4 border-t border-[#F5F1E8] pt-4 text-sm leading-6 text-[#7B8776]">{bazi.fiveElementsDescription}</p>
                 </div>
               </section>
@@ -133,38 +156,38 @@ export default function BaziPage() {
               <section>
                 <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">Luck Pillar</h2>
                 <div className="rounded-2xl border border-[#D8D0C3] bg-[#F5F1E8] p-5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Siklus Saat Ini</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">{isEn ? "Current Cycle" : "Siklus Saat Ini"}</p>
                   <p className="mt-1 text-2xl font-serif font-bold text-[#4F5E52]">{bazi.currentLuckCycle.pillar.display}</p>
-                  <p className="mt-1 text-sm text-[#7B8776]">Usia {bazi.currentLuckCycle.startAge}–{bazi.currentLuckCycle.endAge}</p>
+                  <p className="mt-1 text-sm text-[#7B8776]">{isEn ? `Age ${bazi.currentLuckCycle.startAge}–${bazi.currentLuckCycle.endAge}` : `Usia ${bazi.currentLuckCycle.startAge}–${bazi.currentLuckCycle.endAge}`}</p>
                 </div>
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   {bazi.luckPillars.map((cycle) => (
                     <div key={cycle.index} className="rounded-xl border border-[#E8E1D3] bg-white p-3 text-center">
                       <p className="font-serif font-bold text-[#4F5E52]">{cycle.pillar.display}</p>
-                      <p className="mt-1 text-xs text-[#9AA394]">{cycle.startAge}–{cycle.endAge} tahun</p>
+                      <p className="mt-1 text-xs text-[#9AA394]">{isEn ? `${cycle.startAge}–${cycle.endAge} years` : `${cycle.startAge}–${cycle.endAge} tahun`}</p>
                     </div>
                   ))}
                 </div>
               </section>
 
               <section className="grid gap-4">
-                <Insight icon={Sparkles} title="Kekuatan" items={bazi.strengths} />
-                <Insight icon={Layers3} title="Tantangan" items={bazi.challenges} />
-                <Insight icon={BriefcaseBusiness} title="Gaya Karier" text={bazi.careerStyle} />
-                <Insight icon={Heart} title="Gaya Relasi" text={bazi.relationshipStyle} />
-                <Insight icon={Coins} title="Gaya Rezeki" text={bazi.moneyStyle} />
-                <Insight icon={Compass} title="Misi Kehidupan" text={bazi.lifeMission} />
+                <Insight icon={Sparkles} title={isEn ? "Strengths" : "Kekuatan"} items={bazi.strengths} />
+                <Insight icon={Layers3} title={isEn ? "Challenges" : "Tantangan"} items={bazi.challenges} />
+                <Insight icon={BriefcaseBusiness} title={isEn ? "Career Dynamics" : "Gaya Karier"} text={bazi.careerStyle} />
+                <Insight icon={Heart} title={isEn ? "Relational Dynamics" : "Gaya Relasi"} text={bazi.relationshipStyle} />
+                <Insight icon={Coins} title={isEn ? "Wealth & Resource Dynamics" : "Gaya Rezeki"} text={bazi.moneyStyle} />
+                <Insight icon={Compass} title={isEn ? "Life Mission" : "Misi Kehidupan"} text={bazi.lifeMission} />
               </section>
 
               <section className="rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
-                <div className="mb-5 flex items-center gap-2"><Sparkles size={18} className="text-[#D4AF37]" /><h2 className="text-xl font-serif font-bold">Kesimpulan BaZi</h2></div>
+                <div className="mb-5 flex items-center gap-2"><Sparkles size={18} className="text-[#D4AF37]" /><h2 className="text-xl font-serif font-bold">{isEn ? "BaZi Synthesis" : "Kesimpulan BaZi"}</h2></div>
                 <div className="space-y-4 text-sm leading-relaxed text-[#D2D8D0]">
                   {bazi.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                 </div>
               </section>
             </div>
           ) : (
-            <p className="py-16 text-center text-[#7B8776]">Data kelahiran belum lengkap untuk menghitung BaZi.</p>
+            <p className="py-16 text-center text-[#7B8776]">{isEn ? "Birth details are incomplete to calculate BaZi." : "Data kelahiran belum lengkap untuk menghitung BaZi."}</p>
           )}
         </div>
       </main>

@@ -6,6 +6,8 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 interface IdentityField {
   label: string;
   icon: LucideIcon;
@@ -28,6 +30,7 @@ export function IdentityExpansionPage({
   heroIcon: HeroIcon,
   fields,
 }: IdentityExpansionPageProps) {
+  const isEn = isEnlEdition();
   return (
     <ProtectedRoute>
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
@@ -35,7 +38,7 @@ export function IdentityExpansionPage({
         <div className="mx-auto max-w-lg">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
             <ArrowLeft size={16} />
-            Kembali ke Profil
+            {isEn ? "Back to Profile" : "Kembali ke Profil"}
           </Link>
 
           <header className="mb-8">
@@ -57,7 +60,9 @@ export function IdentityExpansionPage({
                     </div>
                     <div>
                       <h2 className="text-sm font-bold uppercase tracking-wider text-[#9AA394]">{label}</h2>
-                      <p className="mt-1 text-lg font-serif font-bold text-[#4F5E52]">Belum tersedia</p>
+                      <p className="mt-1 text-lg font-serif font-bold text-[#4F5E52]">
+                        {isEn ? "Not available" : "Belum tersedia"}
+                      </p>
                     </div>
                   </div>
                 </section>
@@ -67,10 +72,10 @@ export function IdentityExpansionPage({
             <section className="mt-10 rounded-2xl bg-[#4F5E52] p-6 text-white shadow-md">
               <div className="mb-4 flex items-center gap-2">
                 <Sparkles size={18} className="text-[#D4AF37]" />
-                <h2 className="text-lg font-bold">Kesimpulan</h2>
+                <h2 className="text-lg font-bold">{isEn ? "Summary" : "Kesimpulan"}</h2>
               </div>
               <p className="text-sm leading-relaxed text-[#D2D8D0]">
-                Blueprint sedang dipersiapkan pada versi Kara.
+                {isEn ? "Blueprint is being prepared for this edition." : "Blueprint sedang dipersiapkan pada versi Kara."}
               </p>
             </section>
           </div>

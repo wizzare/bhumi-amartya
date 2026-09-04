@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { isEnlEdition } from "@/lib/config/edition";
 
 export function AuditField({
   label,
@@ -13,16 +14,17 @@ export function AuditField({
   sourcePath: string;
   isFounder: boolean;
 }) {
+  const isEn = isEnlEdition();
   const isMissing = value === undefined || value === null || value === '' || (Array.isArray(value) && value.length === 0);
   
-  let displayValue = 'Belum tersedia';
+  let displayValue = isEn ? 'Not available' : 'Belum tersedia';
   if (!isMissing) {
     if (Array.isArray(value)) {
       displayValue = value.join(', ');
     } else if (typeof value === 'object') {
       displayValue = JSON.stringify(value);
     } else if (typeof value === 'boolean') {
-      displayValue = value ? 'Ya' : 'Tidak';
+      displayValue = value ? (isEn ? 'Yes' : 'Ya') : (isEn ? 'No' : 'Tidak');
     } else {
       displayValue = String(value);
     }

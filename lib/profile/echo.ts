@@ -1,5 +1,7 @@
-type RecordValue = Record<string, unknown>;
 import { getCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { isEnlEdition } from "@/lib/config/edition";
+
+type RecordValue = Record<string, unknown>;
 
 export type ContentState = "READY" | "PARTIAL" | "UNAVAILABLE" | "ERROR";
 
@@ -45,7 +47,9 @@ export type BlueprintDetailV1 = {
   destinyMatrix: Record<string, string>;
 };
 
-const unavailable = "Belum tersedia";
+
+const unavailableId = "Belum tersedia";
+const unavailableEn = "Not available";
 const forbiddenNarrativeTerms = /\b(?:life path|arcana|gate|channel|center|variable|house|node|planet|line|chakra|health chart|karmic tail|money line|love line|mother line|father line|ancestor line|soul searching|spiritual knowledge|authority|strategy|definition|incarnation cross|human design|destiny matrix|natal chart|blueprint gabungan|berdasarkan data|berdasarkan blueprint|engine|generated|system|area 1)\b/i;
 
 function record(value: unknown): RecordValue {
@@ -67,7 +71,7 @@ function read(source: unknown, paths: string[][]): unknown {
   return undefined;
 }
 
-function text(source: unknown, paths: string[][], fallback = unavailable): string {
+function text(source: unknown, paths: string[][], fallback = unavailableId): string {
   const value = read(source, paths);
   if (typeof value === "string" || typeof value === "number") return String(value);
   if (value && typeof value === "object") {
@@ -126,41 +130,45 @@ function identitySeed(blueprint: unknown) {
   };
 }
 
-export function createBlueprintSummary(blueprint: unknown): BlueprintSummaryV1 {
+export function createBlueprintSummary(blueprint: unknown, isEn?: boolean): BlueprintSummaryV1 {
+  const isEnglish = isEn ?? isEnlEdition();
+  const fallback = isEnglish ? unavailableEn : unavailableId;
   const humanDesign = getCanonicalHumanDesign(record(blueprint).humanDesign);
   return {
-    lifePath: text(blueprint, [["lifePath", "display"], ["lifePath", "number"], ["numerology", "number"]]),
-    arcanaCenter: text(blueprint, [["destinyMatrix", "arcanaCenter"], ["destinyMatrix", "center"], ["arcanaCenter", "number"], ["arcanaCenter"]]),
-    sunSign: text(blueprint, [["astrology", "sunSign"], ["natalChart", "sunSign"]]),
-    humanDesignType: humanDesign?.type ?? unavailable,
+    lifePath: text(blueprint, [["lifePath", "display"], ["lifePath", "number"], ["numerology", "number"]], fallback),
+    arcanaCenter: text(blueprint, [["destinyMatrix", "arcanaCenter"], ["destinyMatrix", "center"], ["arcanaCenter", "number"], ["arcanaCenter"]], fallback),
+    sunSign: text(blueprint, [["astrology", "sunSign"], ["natalChart", "sunSign"]], fallback),
+    humanDesignType: humanDesign?.type ?? fallback,
   };
 }
 
-export function createBlueprintDetail(blueprint: unknown): BlueprintDetailV1 {
-  const summary = createBlueprintSummary(blueprint);
+export function createBlueprintDetail(blueprint: unknown, isEn?: boolean): BlueprintDetailV1 {
+  const isEnglish = isEn ?? isEnlEdition();
+  const fallback = isEnglish ? unavailableEn : unavailableId;
+  const summary = createBlueprintSummary(blueprint, isEnglish);
   const humanDesign = getCanonicalHumanDesign(record(blueprint).humanDesign);
   return {
     coreIdentity: summary,
     humanDesign: {
       Type: summary.humanDesignType,
-      Profile: text(humanDesign, [["profile"]]),
-      Authority: text(humanDesign, [["authority"]]),
-      Strategy: text(humanDesign, [["strategy"]]),
-      Definition: text(humanDesign, [["definition"]]),
-      "Incarnation Cross": text(humanDesign, [["incarnationCross", "name"], ["incarnationCross"]]),
+      Profile: text(humanDesign, [["profile"]], fallback),
+      Authority: text(humanDesign, [["authority"]], fallback),
+      Strategy: text(humanDesign, [["strategy"]], fallback),
+      Definition: text(humanDesign, [["definition"]], fallback),
+      "Incarnation Cross": text(humanDesign, [["incarnationCross", "name"], ["incarnationCross"]], fallback),
     },
     natalChart: {
       Sun: summary.sunSign,
-      Moon: text(blueprint, [["astrology", "moonSign"], ["natalChart", "moonSign"]]),
-      Ascendant: text(blueprint, [["astrology", "risingSign"], ["astrology", "ascendant"], ["natalChart", "risingSign"], ["natalChart", "ascendant"]]),
-      "North Node": text(blueprint, [["astrology", "northNode", "sign"], ["natalChart", "northNode", "sign"], ["astrology", "northNode"]]),
-      "South Node": text(blueprint, [["astrology", "southNode", "sign"], ["natalChart", "southNode", "sign"], ["astrology", "southNode"]]),
-      MC: text(blueprint, [["astrology", "mc"], ["astrology", "midheaven"], ["natalChart", "mc"], ["natalChart", "midheaven"]]),
+      Moon: text(blueprint, [["astrology", "moonSign"], ["natalChart", "moonSign"]], fallback),
+      Ascendant: text(blueprint, [["astrology", "risingSign"], ["astrology", "ascendant"], ["natalChart", "risingSign"], ["natalChart", "ascendant"]], fallback),
+      "North Node": text(blueprint, [["astrology", "northNode", "sign"], ["natalChart", "northNode", "sign"], ["astrology", "northNode"]], fallback),
+      "South Node": text(blueprint, [["astrology", "southNode", "sign"], ["natalChart", "southNode", "sign"], ["astrology", "southNode"]], fallback),
+      MC: text(blueprint, [["astrology", "mc"], ["astrology", "midheaven"], ["natalChart", "mc"], ["natalChart", "midheaven"]], fallback),
     },
     destinyMatrix: {
       "Arcana Center": summary.arcanaCenter,
-      "Soul Searching": text(blueprint, [["destinyMatrix", "destinyIntelligence", "soulSearching"], ["destinyMatrix", "purposes", "soulSearching"]]),
-      "Spiritual Knowledge": text(blueprint, [["destinyMatrix", "destinyIntelligence", "spiritualKnowledge"], ["destinyMatrix", "purposes", "spiritualKnowledge"]]),
+      "Soul Searching": text(blueprint, [["destinyMatrix", "destinyIntelligence", "soulSearching"], ["destinyMatrix", "purposes", "soulSearching"]], fallback),
+      "Spiritual Knowledge": text(blueprint, [["destinyMatrix", "destinyIntelligence", "spiritualKnowledge"], ["destinyMatrix", "purposes", "spiritualKnowledge"]], fallback),
     },
   };
 }

@@ -72,7 +72,7 @@ export type WholeSignNarrativeCard = {
 export type WholeSignPresentation = {
   hero: {
     eyebrow: "Whole Sign Birth Chart";
-    title: "Rumah Kehidupan dalam Whole Sign";
+    title: string;
     metrics: Array<{ label: string; value: string }>;
     insight: string;
   };
@@ -100,7 +100,7 @@ export type WholeSignPresentation = {
     sunHouse: string | null;
     moonHouse: string | null;
     insight: string;
-    action: "Lihat detail selengkapnya";
+    action: string;
     href: "/blueprint/whole-sign";
   };
   sourceVersion: WholeSignResult["sourceVersion"];

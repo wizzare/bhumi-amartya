@@ -88,7 +88,21 @@ export type AstrocartographyOverallLocationSummary = {
   caution: string | null;
 };
 
-export type AstrocartographyCategoryName = "Ekonomi dan Peluang" | "Karier dan Visibilitas" | "Relasi dan Kolaborasi" | "Spiritualitas dan Kreativitas" | "Rumah dan Fondasi" | "Transformasi dan Pendewasaan" | "Pendidikan dan Pertumbuhan";
+export type AstrocartographyCategoryName =
+  | "Ekonomi dan Peluang"
+  | "Karier dan Visibilitas"
+  | "Relasi dan Kolaborasi"
+  | "Spiritualitas dan Kreativitas"
+  | "Rumah dan Fondasi"
+  | "Transformasi dan Pendewasaan"
+  | "Pendidikan dan Pertumbuhan"
+  | "Economy & Opportunity"
+  | "Career & Visibility"
+  | "Relationships & Collaboration"
+  | "Spirituality & Creativity"
+  | "Home & Foundation"
+  | "Transformation & Maturation"
+  | "Education & Growth";
 
 export type AstrocartographyCityReferenceResult = {
   cityId: string;
@@ -188,7 +202,7 @@ export type AstrocartographyLineReading = {
 };
 
 export type AstrocartographyPresentation = {
-  hero: { eyebrow: "Astrocartography"; title: "Peta Langitmu di Atas Bumi"; lineCount: number; insight: string };
+  hero: { eyebrow: "Astrocartography"; title: string; lineCount: number; insight: string };
   accuracyNotice: string;
   lineReadings: AstrocartographyLineReading[];
   travelThemes: string;
@@ -198,7 +212,7 @@ export type AstrocartographyPresentation = {
   growthThemes: string;
   summary: string[];
   availabilityStatus: AstrocartographyResult["birthDataStatus"];
-  profileCard: { title: "Astrocartography"; insight: string; action: "Lihat peta selengkapnya"; href: "/blueprint/astrocartography" };
+  profileCard: { title: "Astrocartography"; insight: string; action: string; href: "/blueprint/astrocartography" };
   sourceVersion: AstrocartographyResult["sourceVersion"];
   sourceClassification: AstrocartographyResult["sourceClassification"];
 };

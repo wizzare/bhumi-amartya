@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -9,6 +9,8 @@ import { storageProvider } from "@/lib/storage/storageProvider";
 import { BlueprintDetailV1, createBlueprintDetail } from "@/lib/profile/echo";
 import { calculateBhumiMatrix } from "@/lib/engines/calculateBhumiMatrix";
 import { buildDestinyMatrixVisualModel, type DestinyMatrixVisualModel } from "@/lib/visual/destinyMatrixVisualModel";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 function DataGroup({ title, values }: { title: string; values: Record<string, string> }) {
   return (
@@ -27,6 +29,8 @@ function DataGroup({ title, values }: { title: string; values: Record<string, st
 }
 
 export default function BlueprintPage() {
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [detail, setDetail] = useState<BlueprintDetailV1 | null>(null);
   const [matrix, setMatrix] = useState<DestinyMatrixVisualModel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +40,7 @@ export default function BlueprintPage() {
       try {
         const blueprint = await storageProvider.getUserBlueprint();
         if (blueprint) {
-          setDetail(createBlueprintDetail(blueprint));
+          setDetail(createBlueprintDetail(blueprint, isEn));
           const source = blueprint as unknown as { input?: { birthDate?: string } };
           if (source.input?.birthDate) {
             setMatrix(buildDestinyMatrixVisualModel(calculateBhumiMatrix(source.input.birthDate)));
@@ -47,7 +51,7 @@ export default function BlueprintPage() {
       }
     }
     void load();
-  }, []);
+  }, [isEn]);
 
   const core: Record<string, string> = detail ? {
     "Life Path": detail.coreIdentity.lifePath,
@@ -57,9 +61,9 @@ export default function BlueprintPage() {
   } : {};
   const matrixValues: Record<string, string> = matrix ? {
     "Arcana Center": matrix.center.values.join(" · "),
-    "Soul Searching": matrix.soulSearching.values.join(" � "),
+    "Soul Searching": matrix.soulSearching.values.join(" · "),
     "Socialization": matrix.socialization.values.join(" · "),
-    "Spiritual Knowledge": matrix.spiritualKnowledge.values.join(" � "),
+    "Spiritual Knowledge": matrix.spiritualKnowledge.values.join(" · "),
   } : {};
 
   return (
@@ -67,23 +71,39 @@ export default function BlueprintPage() {
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
         <div className="mx-auto max-w-lg">
-          <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]"><ArrowLeft size={16} />Kembali ke Profil</Link>
+          <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
+            <ArrowLeft size={16} />
+            {isEn ? "Back to Profile" : "Kembali ke Profil"}
+          </Link>
           <header className="mb-8">
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F5E52] text-white"><Compass size={25} /></div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">Blueprint</p>
-            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">Peta Dasar Dirimu</h1>
-            <p className="mt-3 leading-7 text-[#7B8776]">Halaman ini menampilkan data sistem yang menjadi bahan sintesis Profile Echo.</p>
+            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{isEn ? "Your Foundational Blueprint" : "Peta Dasar Dirimu"}</h1>
+            <p className="mt-3 leading-7 text-[#7B8776]">
+              {isEn
+                ? "This page displays the foundational system data synthesized into Profile Echo."
+                : "Halaman ini menampilkan data sistem yang menjadi bahan sintesis Profile Echo."}
+            </p>
           </header>
 
-          {loading ? <p className="text-center text-[#7B8776]">Membuka blueprint...</p> : detail ? (
+          {loading ? (
+            <p className="text-center text-[#7B8776]">{isEn ? "Loading blueprint..." : "Membuka blueprint..."}</p>
+          ) : detail ? (
             <div className="space-y-5">
               <DataGroup title="Core Identity" values={core} />
               <DataGroup title="Human Design" values={detail.humanDesign} />
               <DataGroup title="Natal Chart" values={detail.natalChart} />
               <DataGroup title="Destiny Matrix" values={matrixValues} />
-              <div className="flex items-center gap-2 rounded-2xl bg-[#F5F1E8] p-4 text-xs leading-5 text-[#7B8776]"><Sparkles size={15} />Data ini tidak menggantikan makna dan refleksi yang ada di Profile Echo.</div>
+              <div className="flex items-center gap-2 rounded-2xl bg-[#F5F1E8] p-4 text-xs leading-5 text-[#7B8776]">
+                <Sparkles size={15} />
+                {isEn
+                  ? "This data does not replace the meaning and reflection found in Profile Echo."
+                  : "Data ini tidak menggantikan makna dan refleksi yang ada di Profile Echo."}
+              </div>
             </div>
-          ) : <p className="text-center text-[#7B8776]">Blueprint belum tersedia.</p>}
+          ) : (
+            <p className="text-center text-[#7B8776]">{isEn ? "Blueprint is not yet available." : "Blueprint belum tersedia."}</p>
+          )}
         </div>
       </main>
     </ProtectedRoute>

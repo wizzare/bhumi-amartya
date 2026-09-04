@@ -71,3 +71,77 @@ export const LILITH_SIGN_MEANINGS: Record<string, { meaning: string; shadowTheme
   Aquarius: { meaning: "Keunikan, kebebasan sosial, dan keberanian melampaui norma.", shadowTheme: "Merasa terasing, menolak kedekatan, atau memberontak demi jarak.", growthInvitation: "Bawa keunikanmu ke komunitas tanpa kehilangan kapasitas untuk terhubung." },
   Pisces: { meaning: "Intuisi, imajinasi, belas kasih, dan batas spiritual.", shadowTheme: "Pelarian, pengorbanan diri, atau menyerap emosi yang bukan milikmu.", growthInvitation: "Hormati intuisi sambil membangun batas yang membuat kepekaanmu tetap jernih." },
 };
+
+export const ASTRO_PLANET_MEANINGS_EN: Record<string, string> = {
+  Sun: "core identity, vitality, and conscious purpose",
+  Moon: "emotional safety, instinct, and inner needs",
+  Ascendant: "social interface, first impression, and approach to life",
+  Rising: "social interface, first impression, and approach to life",
+  MC: "career culmination, public reputation, and highest contribution",
+  Midheaven: "career culmination, public reputation, and highest contribution",
+  Mercury: "thinking style, communication, and information processing",
+  Venus: "relational values, aesthetic appreciation, and magnetic attraction",
+  Mars: "drive to act, assertiveness, and physical vitality",
+  Jupiter: "growth orientation, wisdom, and horizon expansion",
+  Saturn: "discipline, healthy boundaries, and mature accountability",
+  Uranus: "innovative impulse, progressive insight, and radical freedom",
+  Neptune: "intuitive receptivity, spiritual empathy, and boundary dissolution",
+  Pluto: "transformative power, regenerative depth, and release of obsolete patterns",
+  NorthNode: "evolutionary growth edge and developmental trajectory",
+  SouthNode: "familiar baseline and comfortable patterns to outgrow",
+  Chiron: "vulnerable core that becomes a wellspring of healing wisdom",
+  Lilith: "shadow autonomy, primal instinct, and sovereign self-possession",
+};
+
+export const ASTRO_SIGN_MEANINGS_EN: Record<string, string> = {
+  Aries: "swiftly, courageously, directly, and with proactive initiative.",
+  Taurus: "with stability, grounded consistency, and sensory patience.",
+  Gemini: "with curiosity, agility, adaptability, and open communication.",
+  Cancer: "with sensitivity, emotional warmth, and nurturing care.",
+  Leo: "with radiant confidence, expressiveness, generosity, and creative pride.",
+  Virgo: "analytically, diligently, systematically, and with a focus on refinement.",
+  Libra: "diplomatically, harmoniously, and with an orientation toward balanced partnership.",
+  Scorpio: "with emotional intensity, perceptive depth, and transformative conviction.",
+  Sagittarius: "with enthusiasm, freedom, and an expansive quest for meaning.",
+  Capricorn: "with disciplined responsibility, practical clarity, and sustained focus.",
+  Aquarius: "with original independence, progressive vision, and communal insight.",
+  Pisces: "with empathy, gentle intuition, and fluid receptive feeling.",
+};
+
+export const ASTRO_HOUSE_MEANINGS_EN: Record<number, { title: string; desc: string }> = {
+  1: { title: "Self & Presence", desc: "entering the world, embodiment, and personal initiative" },
+  2: { title: "Self-Worth & Resources", desc: "security, core values, and material stewardship" },
+  3: { title: "Mind & Immediate Environment", desc: "learning, dialogue, and local connection" },
+  4: { title: "Home & Emotional Roots", desc: "family, sanctuary, and foundation of belonging" },
+  5: { title: "Creativity & Joy", desc: "creative self-expression, romance, and playful vitality" },
+  6: { title: "Daily Rhythm & Service", desc: "habits, craft, and physical well-being" },
+  7: { title: "Partnership & Relating", desc: "commitment, reciprocity, and one-on-one connection" },
+  8: { title: "Intimacy & Transformation", desc: "shared resources, deep vulnerability, and inner rebirth" },
+  9: { title: "Belief & Horizon Expansion", desc: "philosophy, higher wisdom, travel, and worldview" },
+  10: { title: "Career & Public Standing", desc: "vocation, mature responsibility, and recognized contribution" },
+  11: { title: "Community & Future Vision", desc: "friendship, collaboration, and collective aspiration" },
+  12: { title: "Inner Realm & Release", desc: "solitude, spiritual integration, and subconscious healing" },
+};
+
+export const ASTRO_ASPECT_MEANINGS_EN: Record<string, string> = {
+  Conjunction: "A potent union of two energies working in unison, bringing intense focus.",
+  Trine: "A harmonious and supportive flow, unlocking natural talents with ease.",
+  Square: "A dynamic tension generating friction, catalyzing significant conscious growth and action.",
+  Sextile: "A positive opportunity requiring deliberate initiative to reach its full potential.",
+  Opposition: "Two complementary poles creating heightened awareness to cultivate balance and integration.",
+};
+
+export const LILITH_SIGN_MEANINGS_EN: Record<string, { meaning: string; shadowTheme: string; growthInvitation: string }> = {
+  Aries: { meaning: "Autonomy, courage, and the right to exist unapologetically.", shadowTheme: "Suppressed rage or proving self-worth through reactive conflict.", growthInvitation: "Claim desires directly without making opposition your only fuel." },
+  Taurus: { meaning: "Bodily sovereignty, security, inherent self-worth, and grounded pleasure.", shadowTheme: "Fear of scarcity, guilt around receiving, or over-controlling the material realm.", growthInvitation: "Anchor security in an authentic relationship with your body and values." },
+  Gemini: { meaning: "Freedom of thought, unfiltered expression, and naming complex truths.", shadowTheme: "Self-censorship or using intellectual detachment to evade vulnerability.", growthInvitation: "Speak truth clearly while holding space for emotional nuance." },
+  Cancer: { meaning: "Emotional needs, ancestral belonging, and the right to feel safe.", shadowTheme: "Nurturing wounds, shame around needing others, or hyper-defensiveness.", growthInvitation: "Honor vulnerability without compromising your emotional boundaries." },
+  Leo: { meaning: "The right to shine, create, and express authentic sovereign pride.", shadowTheme: "Fear of exposure, shrinking from the spotlight, or validation craving.", growthInvitation: "Create from the center of your joy rather than performing for applause." },
+  Virgo: { meaning: "Integrity, somatic wisdom, competence, and instinctive discernment.", shadowTheme: "Punishing perfectionism, perpetual self-critique, or body rejection.", growthInvitation: "Let discernment serve as dedication rather than self-chastisement." },
+  Libra: { meaning: "True reciprocity, aesthetic magnetism, and relational sovereignty.", shadowTheme: "People-pleasing, burying grievances, or conflict-avoidant resentment.", growthInvitation: "Build partnerships that respect your distinct individuality and voice." },
+  Scorpio: { meaning: "Raw intimacy, regenerative power, and unfiltered psychological honesty.", shadowTheme: "Power struggles, jealousy, secrecy, or fear of emotional surrender.", growthInvitation: "Channel depth toward rebirth and healing rather than control." },
+  Sagittarius: { meaning: "Freedom of vision, philosophical truth, and unrestrained exploration.", shadowTheme: "Dogmatism, running from commitment, or bypassing uncomfortable feelings.", growthInvitation: "Live an expansive truth while honoring the real impact of your actions." },
+  Capricorn: { meaning: "Self-authored authority, endurance, and redefining personal success.", shadowTheme: "Fear of failure, internal rigidity, or struggles with hierarchical power.", growthInvitation: "Cultivate mature mastery without measuring your worth solely by output." },
+  Aquarius: { meaning: "Individuality, visionary autonomy, and boundary-pushing belonging.", shadowTheme: "Alienation, defensive aloofness, or rebelling merely for detachment.", growthInvitation: "Offer your unique vision to community without disconnecting from empathy." },
+  Pisces: { meaning: "Mystic intuition, oceanic empathy, and boundless creative imagination.", shadowTheme: "Escapism, martyr complexes, or absorbing emotional debris from others.", growthInvitation: "Honor your sensitivity while maintaining healthy boundaries." },
+};

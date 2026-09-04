@@ -88,13 +88,16 @@ const VALUE_TRANSLATIONS: Record<string, string> = {
 const INLINE_TRANSLATIONS = Object.entries(VALUE_TRANSLATIONS)
   .sort((a, b) => b[0].length - a[0].length);
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 function text(value: unknown): string {
   return typeof value === "string" ? value.trim() : value === null || value === undefined ? "" : String(value);
 }
 
-export function localizeHumanDesignValue(value: unknown): string {
+export function localizeHumanDesignValue(value: unknown, isEn = isEnlEdition()): string {
   const raw = text(value);
   if (!raw) return "";
+  if (isEn) return raw;
   const exact = VALUE_TRANSLATIONS[raw.toLowerCase()];
   if (exact) return exact;
 
@@ -105,15 +108,24 @@ export function localizeHumanDesignValue(value: unknown): string {
   return localized;
 }
 
-export function localizeHumanDesignDefinition(value: unknown): string {
+export function localizeHumanDesignDefinition(value: unknown, isEn = isEnlEdition()): string {
   const raw = text(value);
+  if (isEn) {
+    const englishNumeric: Record<string, string> = {
+      "1": "Single Definition",
+      "2": "Split Definition",
+      "3": "Triple Split Definition",
+      "4": "Quadruple Split Definition",
+    };
+    return englishNumeric[raw] || raw;
+  }
   const numericDefinitions: Record<string, string> = {
     "1": "Definisi Tunggal",
     "2": "Definisi Terpisah",
     "3": "Definisi Terpisah Tiga",
     "4": "Definisi Terpisah Empat",
   };
-  return numericDefinitions[raw] || localizeHumanDesignValue(raw);
+  return numericDefinitions[raw] || localizeHumanDesignValue(raw, false);
 }
 
 const CENTER_TRANSLATIONS: Record<string, string> = {
@@ -130,7 +142,8 @@ const CENTER_TRANSLATIONS: Record<string, string> = {
   root: "Akar",
 };
 
-export function localizeCenterName(value: string): string {
+export function localizeCenterName(value: string, isEn = isEnlEdition()): string {
+  if (isEn) return value;
   const normalized = value.replace(/([A-Z])/g, " $1").trim().toLowerCase();
   return CENTER_TRANSLATIONS[normalized] || value;
 }
@@ -535,14 +548,18 @@ function profileParagraphs(profile: string): [string, string] {
   ];
 }
 
-export function buildHumanDesignHumanMeaning(source: HumanDesignPresentationSource): HumanDesignHumanMeaning {
+export function buildHumanDesignHumanMeaning(
+  source: HumanDesignPresentationSource,
+  options?: { isEn?: boolean },
+): HumanDesignHumanMeaning {
+  const isEn = options?.isEn ?? false;
   const type = text(source.type);
   const strategy = text(source.strategy);
   const authority = text(source.authority);
   const profile = text(source.profile);
   const definition = text(source.definition);
-  const signature = localizeHumanDesignValue(source.signature) || "Rasa Selaras";
-  const notSelf = localizeHumanDesignValue(source.notSelfTheme) || "Ketegangan";
+  const signature = localizeHumanDesignValue(source.signature, isEn) || (isEn ? "Alignment" : "Rasa Selaras");
+  const notSelf = localizeHumanDesignValue(source.notSelfTheme, isEn) || (isEn ? "Resistance" : "Ketegangan");
   const channelValues = Array.isArray(source.channels) ? source.channels : [];
   const gateValues = Array.isArray(source.gates) ? source.gates.map(Number).filter((gate) => Number.isFinite(gate)) : [];
   const centersSource = source.centers && typeof source.centers === "object" ? source.centers as Record<string, unknown> : {};
@@ -553,27 +570,89 @@ export function buildHumanDesignHumanMeaning(source: HumanDesignPresentationSour
   ].map((activation: unknown) => Number((activation as Record<string, unknown>)?.gate))
     .filter((gate: number) => Number.isFinite(gate) && gate >= 1 && gate <= 64);
   const narrativeGates = [...new Set([...cross.gates, ...activationGates, ...gateValues])];
-  const variablesSource = source.variables?.advanced || source.variables || {};
-  const variableCode = variablesSource.variable || variablesSource.value || variablesSource.short_code;
-  const profileText = profileParagraphs(profile);
-  const primaryGate = firstActiveGate(source);
-  const primaryGateExperience = primaryGate ? GATE_EXPERIENCES[primaryGate] : null;
-
   const centers: Record<string, string> = {};
   for (const [key, value] of Object.entries(centersSource)) {
     const normalized = normalizedCenterKey(key);
     const meaning = CENTER_EXPERIENCES[normalized];
-    centers[key] = meaning
-      ? value === true ? meaning.defined : meaning.open
-      : value === true
-        ? "Energi pada pusat ini hadir dengan pola yang relatif konsisten. Gunakan kestabilannya tanpa menganggap orang lain harus memiliki ritme yang sama."
-        : "Pusat ini peka terhadap energi dari lingkungan. Pengalaman yang berubah-ubah dapat menjadi kebijaksanaan saat kamu tidak merasa harus mempertahankannya.";
+    if (isEn) {
+      centers[key] = value === true
+        ? "Energy in this center operates with relatively consistent definition. Lean into its stability without expecting others to share the same rhythm."
+        : "This center is receptive to the energy of your environment. Shifting sensations become wisdom when you do not feel obligated to hold onto them.";
+    } else {
+      centers[key] = meaning
+        ? value === true ? meaning.defined : meaning.open
+        : value === true
+          ? "Energi pada pusat ini hadir dengan pola yang relatif konsisten. Gunakan kestabilannya tanpa menganggap orang lain harus memiliki ritme yang sama."
+          : "Pusat ini peka terhadap energi dari lingkungan. Pengalaman yang berubah-ubah dapat menjadi kebijaksanaan saat kamu tidak merasa harus mempertahankannya.";
+    }
   }
 
   const channels: Record<string, string> = {};
-  for (const value of channelValues) channels[text(value)] = channelMeaning(value);
+  for (const value of channelValues) {
+    channels[text(value)] = isEn
+      ? `Channel ${value} connects your energy centers with a focused flow of creative and experiential dynamics.`
+      : channelMeaning(value);
+  }
   const gates: Record<number, string> = {};
-  for (const gate of [...new Set(gateValues)]) gates[gate] = gateMeaning(gate);
+  for (const gate of [...new Set(gateValues)]) {
+    gates[gate] = isEn
+      ? `Gate ${gate} represents a specific energetic nuance that enriches your unique perspective and contribution.`
+      : gateMeaning(gate);
+  }
+
+  if (isEn) {
+    const typeStories: Record<string, string> = {
+      "Manifesting Generator": "Your energy moves swiftly when something genuinely sparks a visceral response. You are naturally equipped to explore multiple paths and find efficiency once your body is fully engaged.",
+      Generator: "Your life force thrives when your chosen activities bring an inner sense of vitality. Dedication becomes your gift when your body truly wants to be involved, rather than when the mind feels obligated.",
+      Projector: "Your gift lies in your ability to perceive people, patterns, and systems with penetrating clarity. Your guidance is most valuable when recognized and invited into the right space.",
+      Manifestor: "You possess a natural drive to initiate and break new ground. Your freedom flows most smoothly when those affected are informed of your trajectory before you move.",
+      Reflector: "Your deep sensitivity samples the authentic quality of your environment and community. Time and healthy detachment allow you to discern what is truly yours from what you are mirroring.",
+    };
+    const enTypeLead = typeStories[type] || "Your natural energy operates with its own distinct rhythm that clarifies when your body is not pressured to match external tempos.";
+    const strategyStories: Record<string, string> = {
+      respond: "Your true direction naturally reveals itself when life offers something tangible for your body to respond to.",
+      invitation: "Being recognized and invited allows your wisdom to be received without the exhausting need to prove yourself.",
+      inform: "Informing those impacted before taking action clears resistance and opens a path for uninhibited freedom.",
+      lunar: "Major decisions require a full lunar cycle, giving all facets of your experience time to find clarity.",
+    };
+    const enStrategyLead = Object.entries(strategyStories).find(([k]) => strategy.toLowerCase().includes(k))?.[1] || "Clarity grows when action does not outpace your body's readiness.";
+    const authorityStories: Record<string, string> = {
+      sacral: "Honest choices arrive as simple visceral responses—there is either vital energy to engage, or none to spare.",
+      emotional: "Clarity emerges after your emotional wave has had time to rise and settle; pivotal decisions should not be made at emotional peaks.",
+      splenic: "Your intuition speaks quietly in the immediate present moment. It is an instinctual knowing rather than an elaborate explanation.",
+      self: "Your direction becomes clear when you hear yourself speak aloud and feel which path sounds like your true self.",
+      ego: "Commitments must arise from authentic willpower, not an urge to prove your self-worth.",
+      environment: "The right sounding board and physical environment help you sort through thoughts without allowing the mind to be the ultimate authority.",
+      mental: "The right sounding board and physical environment help you sort through thoughts without allowing the mind to be the ultimate authority.",
+      lunar: "A complete lunar cycle allows you to view significant choices from every angle before deciding.",
+    };
+    const enAuthorityLead = Object.entries(authorityStories).find(([k]) => authority.toLowerCase().includes(k))?.[1] || "Your body possesses its own quiet intelligence before the mind constructs arguments.";
+    const enProfileLead = `Your life role matures through lived experience and authentic engagement. Profile ${profile || "in this chart"} invites you to trust your unique path of expression without feeling pressured to conform to external expectations.`;
+    const enDefinitionLead = `Your ${definition || "energetic definition"} describes how your centers communicate. Certain answers mature internally, while others clarify through meaningful external encounters.`;
+    const enSignatureLead = `${signature} emerges when your energy, time, and choices align with what is truly yours, bringing an expansive sense of grounded peace.`;
+    const enNotSelfLead = `${notSelf} is neither a failure nor a judgment. It is simply a gentle inner alarm signaling that it is time to pause, rest, and realign with your natural rhythm.`;
+
+    return {
+      type: section("How Your Life Force Moves", enTypeLead),
+      strategy: section("Meeting Life and Opportunities", enStrategyLead),
+      authority: section("Your Inner Decision Compass", enAuthorityLead),
+      profile: section("The Role That Grows With You", enProfileLead),
+      definition: section("How Your Centers Connect", enDefinitionLead),
+      signature: section("The Feeling of Alignment", enSignatureLead),
+      notSelf: section("Signals to Pause and Realign", enNotSelfLead),
+      centers, channels, gates,
+      variables: {
+        digestion: "Honoring your body's natural digestive rhythm and dietary preferences supports your sustained vitality.",
+        cognition: "Your sensory awareness processes subtle nuances best when you give your senses space to breathe.",
+        environment: "Spaces that feel nurturing and aligned provide the restful foundation for your best work and reflection.",
+        motivation: "Your core inner drive operates cleanly when you stay anchored in genuine purpose rather than external pressure.",
+        perspective: "Your natural vantage point allows you to observe life with clarity when not entangled in temporary drama.",
+      },
+      incarnationCross: section("Themes of Your Life's Journey", cross.name ? `The ${cross.name} marks core developmental themes that accompany you through the major milestones of your journey.` : "Your incarnation cross themes unfold as you honor your authentic strategy and authority."),
+      summary: [enTypeLead, enStrategyLead, enAuthorityLead, enSignatureLead],
+    };
+  }
+
   const gateStory = (index: number) => gateMeaning(narrativeGates[index % Math.max(narrativeGates.length, 1)] || 0);
   const channelStory = (index: number) => channelValues.length
     ? channelMeaning(channelValues[index % channelValues.length])
@@ -616,7 +695,7 @@ export function buildHumanDesignHumanMeaning(source: HumanDesignPresentationSour
     `Cara energi tersambung menciptakan tempo pemrosesan yang khas. ${localizeHumanDesignDefinition(definition)} membantumu memahami mengapa kejernihan kadang utuh seketika dan kadang membutuhkan jembatan.`,
   ], 3);
   const profileLead = choose([
-    profileText[0],
+    profileParagraphs(profile)[0],
     `Peran hidupmu tumbuh lewat keberanian untuk ${profileNarrative(profile)}. Orang lain dapat melihat kualitas yang baru kamu sadari setelah pengalaman mengujinya.`,
     `Kamu belajar menjadi dirimu melalui pertemuan antara bakat dan pengalaman nyata. Profil ${profile} memberi ruang bagi proses untuk ${profileNarrative(profile)}.`,
     `Tidak semua bagian dari peranmu perlu dipahami sejak awal. Jalan ${profile} mematangkan kemampuan untuk ${profileNarrative(profile)} sedikit demi sedikit.`,
@@ -643,53 +722,18 @@ export function buildHumanDesignHumanMeaning(source: HumanDesignPresentationSour
   const crossFocus = crossGateStories.length
     ? crossGateStories.slice(0, 2).join(" sekaligus ")
     : "mengubah pengalaman menjadi arah yang semakin jujur";
-
-  const typeSection = section(
-    "Cara Energi Kehidupanmu Bergerak",
-    `${gateStory(0)} ${typeLead}`,
-    `${centerStory((narrativeGates[1] || 0) % Math.max(centerKeys.length, 1))} ${gateStory(6)}`,
-  );
-  const strategySection = section(
-    "Cara Menemui Kesempatan",
-    `${strategyLead} ${gateStory(1)}`,
-    `${channelStory(0)} ${notSelf} dapat menjadi alarm ketika langkah mendahului kesiapan; jeda membantumu melihat apakah jalan yang sama masih terbuka.`,
-  );
-  const authoritySection = section(
-    "Kompas Keputusan Batin",
-    `${authorityLead} ${variableExperience("cognition", source.cognition)}`,
-    `${gateStory(2)} Sinyal tubuh tersebut layak memperoleh waktu sebelum pikiran menyusun alasan atau memenuhi desakan dari luar.`,
-  );
-  const definitionSection = section(
-    "Cara Bagian Dirimu Terhubung",
-    `${definitionLead} ${channelStory(1)} ${gateStory(6)}`,
-    `${centerStory((narrativeGates[2] || 3) % Math.max(centerKeys.length, 1))} ${gateStory(7)}`,
-  );
-  const signatureSection = section(
-    "Rasa Saat Hidup Selaras",
-    `${signatureLead} ${variableExperience("environment", source.environment)}`,
-    `${gateStory(4)} ${variableExperience("cognition", source.cognition)} ${gateStory(9)}`,
-  );
-  const notSelfSection = section(
-    "Isyarat untuk Kembali",
-    `${notSelfLead} ${variableExperience("motivation", source.motivation)} ${centerStory((narrativeGates[3] || 5) % Math.max(centerKeys.length, 1))}`,
-    `${gateStory(5)} ${variableExperience("digestion", source.digestion)} Kembali pada ${localizedStrategy} sebelum membawa tuntutan berikutnya.`,
-  );
+  const primaryGate = cross.gates[0] || narrativeGates[0];
+  const primaryGateExperience = primaryGate ? GATE_EXPERIENCES[primaryGate] : null;
 
   return {
-    type: typeSection,
-    strategy: strategySection,
-    authority: authoritySection,
-    profile: section(
-      "Peran yang Bertumbuh Bersamamu",
-      `${profileLead} ${gateStory(3)}`,
-      `${choose([profileText[1], gateStory(8), centerStory(2), channelStory(1), variableExperience("environment", source.environment)], 2)} ${variableExperience("perspective", source.perspective)}`,
-    ),
-    definition: definitionSection,
-    signature: signatureSection,
-    notSelf: notSelfSection,
-    centers,
-    channels,
-    gates,
+    type: section("Cara Energi Kehidupanmu Bergerak", `${gateStory(0)} ${typeLead}`, `${centerStory((narrativeGates[1] || 0) % Math.max(centerKeys.length, 1))} ${gateStory(6)}`),
+    strategy: section("Cara Menemui Kesempatan", `${strategyLead} ${gateStory(1)}`, `${channelStory(0)} ${notSelf} dapat menjadi alarm ketika langkah mendahului kesiapan; jeda membantumu melihat apakah jalan yang sama masih terbuka.`),
+    authority: section("Kompas Keputusan Batin", `${authorityLead} ${variableExperience("cognition", source.cognition)}`, `${gateStory(2)} Sinyal tubuh tersebut layak memperoleh waktu sebelum pikiran menyusun alasan atau memenuhi desakan dari luar.`),
+    profile: section("Peran yang Bertumbuh Bersamamu", `${profileLead} ${gateStory(3)}`, `${choose([profileParagraphs(profile)[1], gateStory(8), centerStory(2), channelStory(1)], 2)} ${variableExperience("perspective", source.perspective)}`),
+    definition: section("Cara Bagian Dirimu Terhubung", `${definitionLead} ${channelStory(1)} ${gateStory(6)}`, `${centerStory((narrativeGates[2] || 3) % Math.max(centerKeys.length, 1))} ${gateStory(7)}`),
+    signature: section("Rasa Saat Hidup Selaras", `${signatureLead} ${variableExperience("environment", source.environment)}`, `${gateStory(4)} ${variableExperience("cognition", source.cognition)} ${gateStory(9)}`),
+    notSelf: section("Isyarat untuk Kembali", `${notSelfLead} ${variableExperience("motivation", source.motivation)} ${centerStory((narrativeGates[3] || 5) % Math.max(centerKeys.length, 1))}`, `${gateStory(5)} ${variableExperience("digestion", source.digestion)} Kembali pada ${localizedStrategy} sebelum membawa tuntutan berikutnya.`),
+    centers, channels, gates,
     variables: {
       digestion: variableExperience("digestion", source.digestion),
       cognition: variableExperience("cognition", source.cognition),
@@ -705,7 +749,6 @@ export function buildHumanDesignHumanMeaning(source: HumanDesignPresentationSour
     summary: [
       `${gateStory(0)} ${typeLead} ${profileLead}`,
       `${authorityLead} ${gateStory(2)} ${signatureLead} ${notSelfLead}`,
-      `${definitionLead} ${channelStory(0)} ${centerStory(4)} ${variableNarrative(variableCode)}`,
       `${variableExperience("environment", source.environment)} ${variableExperience("perspective", source.perspective)} Benang merah ${cross.gatesLabel ? `Gate ${cross.gatesLabel}` : "kehidupanmu"} mengajak seluruh pola ini menjadi cara hidup yang jujur dan dapat kamu rasakan sendiri.`,
     ],
   };

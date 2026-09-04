@@ -25,6 +25,8 @@ import {
   type VedicSectionContract,
 } from "@/lib/vedic/presentation";
 import type { Blueprint } from "@/lib/types/blueprint";
+import { useLanguage } from "@/app/context/LanguageContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 type LoadedVedic = {
   value: VedicPresentationInput;
@@ -43,6 +45,8 @@ const GROUP_ICONS: Record<string, typeof Sun> = {
 };
 
 export default function VedicPage() {
+  const { language } = useLanguage();
+  const isEn = isEnlEdition() || language === "en";
   const [loaded, setLoaded] = useState<LoadedVedic | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -96,8 +100,8 @@ export default function VedicPage() {
   }, []);
 
   const presentation = useMemo(
-    () => buildVedicPresentation(loaded?.value, { birthTimeAvailable: loaded?.birthTimeAvailable }),
-    [loaded],
+    () => buildVedicPresentation(loaded?.value, { birthTimeAvailable: loaded?.birthTimeAvailable, isEn }),
+    [loaded, isEn],
   );
 
   return (
@@ -107,7 +111,7 @@ export default function VedicPage() {
         <div className="mx-auto max-w-2xl">
           <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
             <ArrowLeft size={16} />
-            Kembali ke Profil
+            {isEn ? "Back to Profile" : "Kembali ke Profil"}
           </Link>
 
           <header className="mb-8">
@@ -129,13 +133,13 @@ export default function VedicPage() {
           </header>
 
           {loading ? (
-            <p className="py-16 text-center text-[#7B8776]">Membuka peta langit sidereal...</p>
+            <p className="py-16 text-center text-[#7B8776]">{isEn ? "Opening sidereal sky map..." : "Membuka peta langit sidereal..."}</p>
           ) : loadFailed ? (
-            <EmptyState message="Perhitungan Vedic Astrology belum dapat dibuka. Periksa kembali data waktu dan lokasi kelahiranmu." />
+            <EmptyState message={isEn ? "Vedic Astrology calculation could not be loaded. Please check your birth time and location details." : "Perhitungan Vedic Astrology belum dapat dibuka. Periksa kembali data waktu dan lokasi kelahiranmu."} />
           ) : presentation.status === "unavailable" ? (
-            <EmptyState message="Data Vedic Astrology belum tersedia. Waktu dan lokasi kelahiran lengkap diperlukan untuk memverifikasi Lagna dan Houses." />
+            <EmptyState message={isEn ? "Vedic Astrology data is not yet available. Complete birth time and location are required to verify Lagna and Houses." : "Data Vedic Astrology belum tersedia. Waktu dan lokasi kelahiran lengkap diperlukan untuk memverifikasi Lagna dan Houses."} />
           ) : (
-            <VedicContent presentation={presentation} />
+            <VedicContent presentation={presentation} isEn={isEn} />
           )}
         </div>
       </main>
@@ -147,12 +151,14 @@ function EmptyState({ message }: { message: string }) {
   return <p className="py-16 text-center leading-7 text-[#7B8776]">{message}</p>;
 }
 
-function VedicContent({ presentation }: { presentation: VedicPresentation }) {
+function VedicContent({ presentation, isEn }: { presentation: VedicPresentation; isEn: boolean }) {
   return (
     <div id="detail-vedic" className="space-y-10 scroll-mt-6">
       {presentation.status === "partial" && (
         <p className="rounded-2xl border border-[#E8E1D3] bg-white p-5 text-sm leading-7 text-[#7B8776]">
-          Pembacaan ini hanya menampilkan data yang dapat diverifikasi. Lagna, Houses, atau siklus yang tidak didukung oleh data kelahiran aktif disembunyikan.
+          {isEn
+            ? "This reading only displays verified data points. Lagna, Houses, or cycles that cannot be confirmed without exact birth time are safely omitted."
+            : "Pembacaan ini hanya menampilkan data yang dapat diverifikasi. Lagna, Houses, atau siklus yang tidak didukung oleh data kelahiran aktif disembunyikan."}
         </p>
       )}
 
@@ -169,7 +175,7 @@ function VedicContent({ presentation }: { presentation: VedicPresentation }) {
               </h2>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {group.sections.map((section) => <VedicSectionCard key={section.sectionId} section={section} />)}
+              {group.sections.map((section) => <VedicSectionCard key={section.sectionId} section={section} isEn={isEn} />)}
             </div>
           </section>
         );
@@ -179,7 +185,7 @@ function VedicContent({ presentation }: { presentation: VedicPresentation }) {
         <section className="mx-auto max-w-xl rounded-3xl bg-[#4F5E52] p-6 text-white shadow-md">
           <div className="mb-5 flex items-center gap-2">
             <Sparkles size={18} className="text-[#D4AF37]" />
-            <h2 className="font-serif text-xl font-bold">Kesimpulan Dirimu</h2>
+            <h2 className="font-serif text-xl font-bold">{isEn ? "Your Vedic Synthesis" : "Kesimpulan Dirimu"}</h2>
           </div>
           <div className="space-y-4 text-sm leading-7 text-[#D2D8D0]">
             {presentation.summary.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
@@ -190,15 +196,15 @@ function VedicContent({ presentation }: { presentation: VedicPresentation }) {
   );
 }
 
-function VedicSectionCard({ section }: { section: VedicSectionContract }) {
+function VedicSectionCard({ section, isEn }: { section: VedicSectionContract; isEn: boolean }) {
   return (
     <article className="min-w-0 rounded-2xl border border-[#E8E1D3] bg-white p-5 shadow-sm">
       <p className="break-words text-xs font-bold uppercase tracking-[0.14em] text-[#9AA394]">{section.label}</p>
       <p className="mt-2 break-words font-serif text-xl font-bold text-[#4F5E52]">{section.displayValue}</p>
       <details className="group mt-3 border-t border-[#F3EFE6] pt-3">
         <summary className="cursor-pointer list-none text-sm font-bold text-[#4F5E52] marker:content-none">
-          <span className="group-open:hidden">Lihat selengkapnya</span>
-          <span className="hidden group-open:inline">Tutup penjelasan</span>
+          <span className="group-open:hidden">{isEn ? "View details" : "Lihat selengkapnya"}</span>
+          <span className="hidden group-open:inline">{isEn ? "Close explanation" : "Tutup penjelasan"}</span>
         </summary>
         <p className="mt-3 text-sm leading-7 text-[#7B8776]">{section.fullExplanation}</p>
       </details>

@@ -1,4 +1,5 @@
 import type { BaziBlueprint, BaziElement, TenGodEntry } from "./types";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export interface EnrichedBaziBlueprint extends BaziBlueprint {
   dayMaster: BaziBlueprint["dayMaster"] & {
@@ -467,6 +468,19 @@ export const TEN_GODS_LOOKUP: Record<string, string> = {
   "Direct Resource": "Memiliki dorongan alami untuk belajar secara mendalam, memelihara tradisi pengetahuan, serta mencari kedamaian moral. Karunia tersembunyinya adalah kearifan mengayomi bagaikan pembimbing moral. Sisi bayangannya adalah kebiasaan berpikir terlalu teoritis tanpa tindakan nyata."
 };
 
+export const TEN_GODS_LOOKUP_EN: Record<string, string> = {
+  Friend: "Possesses a natural tendency toward independence and holding firmly to personal principles. Its hidden gift is inner fortitude and resilience. Its shadow is a stubborn resistance to outside input when fatigued.",
+  "Rob Wealth": "Driven by social agility and charismatic magnetism. Its hidden gift is discerning others' underlying motivations and mobilizing groups dynamically. Its shadow is an exhausting competitive drive and difficulty setting energetic boundaries.",
+  "Eating God": "Endowed with an innate orientation toward inner harmony, calm discernment, and genuine self-expression. Its hidden gift is pure creative flow and an ease of being that heals those around them. Its shadow is procrastination or retreating into passive comfort.",
+  "Hurting Officer": "Propelled by an urge to express original thought boldly and challenge orthodoxy. Its hidden gift is sharp, persuasive communicative brilliance. Its shadow is overly sharp critique that risks wounding sensitive bonds.",
+  "Indirect Wealth": "Naturally drawn to dynamic opportunities and calculated risks. Its hidden gift is resourcefulness and spotting latent value where others see obstacles. Its shadow is impatience with mundane details and restlessness when pacing slows.",
+  "Direct Wealth": "Values steady practical outcomes and conscientious stewardship of resources. Its hidden gift is reliability and disciplined sustainability. Its shadow is excessive anxiety over uncertainty and reluctance to invest in new ventures.",
+  "Seven Killings": "Driven by tough resilience under crisis and protective instincts. Its hidden gift is the courage to lead in high-stakes environments with steel integrity. Its shadow is persistent internal tension and a tendency to over-control outcomes.",
+  "Direct Officer": "Carries deep reverence for lawful order, social harmony, and moral responsibility. Its hidden gift is ethical leadership and trustworthy governance. Its shadow is fear of missteps and rigidity when facing minor rule infractions.",
+  "Indirect Resource": "Deeply drawn to specialized insights, philosophical depth, unconventional wisdom, and hidden patterns. Its hidden gift is profound originality and subtle perceptual awareness. Its shadow is cynicism or difficulty trusting the sincerity of connections.",
+  "Direct Resource": "Guided by an innate desire to study deeply, preserve wisdom traditions, and cultivate moral peace. Its hidden gift is mentoring guidance and comforting counsel. Its shadow is theoretical overthinking without grounding in practical execution.",
+};
+
 type TenGodPillar = "year" | "month" | "day" | "hour";
 
 const TEN_GODS_PILLAR_CONTEXT: Record<TenGodPillar, string> = {
@@ -474,6 +488,13 @@ const TEN_GODS_PILLAR_CONTEXT: Record<TenGodPillar, string> = {
   month: "Pada Pilar Bulan, pola ini terlihat dalam pekerjaan, tanggung jawab harian, dan hubunganmu dengan sistem. Kekuatan ini tumbuh ketika pengetahuan serta kemampuanmu dipakai untuk memberi kontribusi nyata.",
   day: "Pada Pilar Hari, pola ini terasa paling dekat dengan dirimu: cara kamu merasakan kebutuhan pribadi dan membangun kedekatan. Kejujuran pada pengalaman batin membantu kamu mengekspresikan diri tanpa menyembunyikan beban.",
   hour: "Pada Pilar Jam, pola ini hadir dalam ruang batin, gagasan, dan visi jangka panjang yang belum selalu terlihat orang lain. Waktu sunyi membantu pemahamanmu matang lalu berubah menjadi karya, perhatian, atau arah yang ingin kamu tinggalkan.",
+};
+
+const TEN_GODS_PILLAR_CONTEXT_EN: Record<TenGodPillar, string> = {
+  year: "In the Year Pillar, this archetype colors your early environment and how the world first perceives you. With maturity, you consciously choose which ancestral heritage to carry forward without repeating obsolete patterns.",
+  month: "In the Month Pillar, this archetype expresses through your career, daily responsibilities, and relationship to broader systems. This strength blossoms when your expertise is dedicated to tangible contribution.",
+  day: "In the Day Pillar, this archetype sits closest to your private core: how you experience intimate needs and form close bonds. Emotional honesty helps you express vulnerability without hiding beneath a facade.",
+  hour: "In the Hour Pillar, this archetype lives in your inner realm, future aspirations, and legacy that others do not always see immediately. Quiet hours allow these insights to mature into meaningful work and lasting wisdom.",
 };
 
 /**
@@ -484,20 +505,31 @@ export function buildTenGodsNarrative({
   tenGod,
   pillar,
   sourceMeaning,
+  isEn,
 }: {
   tenGod: string;
   pillar: TenGodPillar;
   stem?: string;
   dayMaster?: string;
   sourceMeaning?: string;
+  isEn?: boolean;
 }): string {
+  if (isEn) {
+    const core = sourceMeaning || TEN_GODS_LOOKUP_EN[tenGod] || "This archetype brings a distinctive signature to your lived experience.";
+    const coreLead = core.split(/(?<=[.!?])\s+/).filter(Boolean)[0] || core;
+    return `${coreLead} ${TEN_GODS_PILLAR_CONTEXT_EN[pillar]}`;
+  }
   const core = sourceMeaning || TEN_GODS_LOOKUP[tenGod] || "Pola ini membawa kecenderungan khas dalam cara kamu menjalani pengalaman.";
   const coreLead = core.split(/(?<=[.!?])\s+/).filter(Boolean)[0] || core;
   return `${coreLead} ${TEN_GODS_PILLAR_CONTEXT[pillar]}`;
 }
 
 export class BaziMeaningService {
-  public static enrich(blueprint: BaziBlueprint): EnrichedBaziBlueprint {
+  public static enrich(blueprint: BaziBlueprint, options: { isEn?: boolean } = {}): EnrichedBaziBlueprint {
+    const isEn = options.isEn ?? isEnlEdition();
+    if (isEn) {
+      return this.enrichEn(blueprint);
+    }
     const dayMasterPinyin = blueprint.dayMaster.pinyin;
     const dayMasterPolarity = blueprint.dayMaster.polarity;
     const fiveElements = blueprint.fiveElements;
@@ -1440,6 +1472,265 @@ export class BaziMeaningService {
       moneyStyle,
       lifeMission,
       summary
+    };
+  }
+
+  public static enrichEn(blueprint: BaziBlueprint): EnrichedBaziBlueprint {
+    const dm = blueprint.dayMaster;
+    const dayMasterPinyin = dm.pinyin;
+    const dayMasterPolarity = dm.polarity;
+    const dayMasterElement = dm.element;
+    const fiveElements = blueprint.fiveElements;
+    const tenGods = blueprint.tenGods;
+    const currentLuckCycle = blueprint.currentLuckCycle;
+
+    const dmEnMap: Record<string, { p1: string; p2: string; p3: string; strengths: string[]; challenges: string[]; career: string; rel: string; money: string; mission: string }> = {
+      Jia: {
+        p1: "Your inner nature moves with an innate drive to pioneer, stand upright, and direct energy toward constructive future growth. Your thinking is direct and structured, naturally spotting developmental potential in every circumstance. In making choices, you rely on a clear long-term vision and principled independence.",
+        p2: "Emotionally, you hold deep inner strength, though you may risk becoming rigid when external circumstances disrupt your expectations. Under pressure, you tend to shoulder burdens alone rather than asking for help. The key growth area is learning to soften and accept support without viewing it as compromise.",
+        p3: "Your true maturation unfolds as you learn that bending with the wind does not diminish your strength. By combining upright vision with genuine flexibility, your leadership becomes deeply inspiring.",
+        strengths: [
+          "Pioneering spirit with a natural urge to lead and break new ground",
+          "Upright character with firm long-term vision and principled integrity",
+          "Resilient drive to nurture growth in yourself and your community",
+        ],
+        challenges: [
+          "Tendency toward stubbornness when plans encounter unexpected resistance",
+          "Hesitation to compromise or admit personal vulnerability under stress",
+          "Impatience with slow developmental cycles, risking mental fatigue",
+        ],
+        career: "You thrive in roles where you can pioneer initiatives, design long-term growth structures, and guide teams toward clear milestones. Your leadership is principled and direct, inspiring others by example.",
+        rel: "In relationships, you commit as a steadfast protector who values absolute honesty. You show love by actively supporting your partner's aspirations, while learning that emotional vulnerability deepens true intimacy.",
+        money: "You view wealth as a vehicle for sustainable expansion and long-term security. Rather than chasing speculative gains, you invest methodically into foundations that endure across generations.",
+        mission: "Your life mission is to serve as an upright pillar of growth—pioneering constructive paths that elevate others and leaving behind enduring structures of wisdom and opportunity.",
+      },
+      Yi: {
+        p1: "Your inner nature flows with resilience, grace, and an innate skill in navigating around life's complexities. Your thinking is tactical and socially perceptive, effortlessly bridging diverse viewpoints. When deciding, you prioritize harmony, practical feasibility, and the enduring strength of collaborative networks.",
+        p2: "Emotionally, you are perceptive and sensitive to the energetic climate of your surroundings. Under pressure, you may find yourself absorbing external tension or deferring your own needs to maintain peace. Guard against losing your own anchor in communal currents.",
+        p3: "Your inner maturity deepens when you realize your adaptable nature is a profound gift, not an obligation to please everyone. Standing firmly on your own values allows you to collaborate from wholeness.",
+        strengths: [
+          "Remarkable adaptability and resourcefulness in navigating complex obstacles",
+          "Natural diplomacy and talent for cultivating harmonious, collaborative networks",
+          "Gentle resilience that bends with changing conditions without breaking",
+        ],
+        challenges: [
+          "Tendency to over-accommodate others to avoid relational discord",
+          "Difficulty standing independently without external validation or consensus",
+          "Risk of absorbing emotional turbulence from the surrounding environment",
+        ],
+        career: "You excel in collaborative ecosystems, strategic partnerships, diplomacy, and creative mediation. Your ability to weave alliances and find workable compromises makes you indispensable in complex organizations.",
+        rel: "In intimacy, you are attentive, empathetic, and nurturing. You express love through gentle presence and thoughtful support, seeking a partner with whom you can grow organically.",
+        money: "You perceive value in social networks and dynamic market trends. Wealth flows to you through partnerships, resourceful adaptation, and spotting synergistic opportunities that others overlook.",
+        mission: "Your life mission is to weave harmony and resilient connections—bridging differences, nurturing community vitality, and demonstrating that gentle persistence outlasts brute force.",
+      },
+      Bing: {
+        p1: "Your presence radiates warm, expressive vitality that naturally illuminates and enlivens your surroundings. Your thinking is expansive and big-picture oriented, fueled by optimism and enthusiasm for initiating meaningful change. You decide boldly, leading openly from the front.",
+        p2: "Emotionally, your enthusiasm burns bright and fast, but you are vulnerable to feeling depleted when efforts go unrecognized. Under pressure, you may push harder to project strength, risking sudden exhaustion. Cultivating quiet downtime restores your inner spark.",
+        p3: "True integration arrives when you learn to shine with warm generosity without needing constant public validation. Pacing your energy and honoring quiet contemplation keeps your vitality sustainable.",
+        strengths: [
+          "Vibrant, infectious enthusiasm that naturally inspires and motivates others",
+          "Expansive vision and courage to champion public initiatives openly",
+          "Generous warmth and transparent honesty that disarms cynicism",
+        ],
+        challenges: [
+          "Vulnerability to sudden burnout when high energy is not matched with quiet rest",
+          "Restlessness when projects require slow, repetitive, behind-the-scenes effort",
+          "Tendency to overlook subtle emotional nuances in the rush toward action",
+        ],
+        career: "You flourish on public stages, in visionary leadership, creative media, and inspirational advocacy. Your natural charisma and clarity of direction rally others around transformative goals.",
+        rel: "You love with expressive passion and open-hearted warmth. Shared adventures, laughter, and uplifting encouragement are your hallmarks, while learning that quiet, ordinary moments hold equal sacredness.",
+        money: "You approach wealth as dynamic, flowing energy. You find the greatest prosperity in visionary projects with broad societal impact, provided you maintain disciplined oversight on expenditures.",
+        mission: "Your life mission is to be a beacon of clarity, warmth, and hope—igniting courage in the hearts of others and illuminating pathways toward collective upliftment.",
+      },
+      Ding: {
+        p1: "Your inner nature illuminates the world with personal, focused warmth, like a guiding lantern offering quiet clarity. Your thinking is intuitive and discerning, attuned to subtle details beneath the surface. You make decisions with quiet reflection, aligning actions with heartfelt integrity.",
+        p2: "Emotionally, you keep feelings close to your chest, reserving deep vulnerability for a trusted inner circle. Under pressure, you may withdraw into cool solitude or harbor unspoken worry. Gentle, honest dialogue keeps your warmth accessible.",
+        p3: "Your wisdom blossoms when you share your focused light without fearing vulnerability. Trusting that sincere bonds can hold your private feelings allows your warmth to heal and comfort.",
+        strengths: [
+          "Penetrating analytical intuition that spots hidden details others miss",
+          "Deep devotion to personal crafts, specialized expertise, and authentic bonds",
+          "Quiet, reassuring warmth that provides a safe sanctuary for reflection",
+        ],
+        challenges: [
+          "Tendency to harbor unspoken worries and withdraw into cold solitude when hurt",
+          "Excessive caution in expressing vulnerability, creating unnecessary relational distance",
+          "Perfectionistic anxiety over minor flaws in specialized work",
+        ],
+        career: "You thrive in specialized craftsmanship, research, depth psychology, mentoring, and strategic advisory. Your ability to focus intensely on critical details produces work of rare refinement.",
+        rel: "You cherish deep, private, heart-to-heart intimacy. Loyalty and subtle emotional resonance matter far more than grand gestures, flourishing when trust is tenderly guarded.",
+        money: "Wealth comes to you through specialized expertise, proprietary knowledge, and focused dedication. You manage resources with quiet prudence and discerning value judgment.",
+        mission: "Your life mission is to bring focused illumination to hidden truths—mentoring individuals, refining specialized arts, and preserving sacred warmth in an often hurried world.",
+      },
+      Wu: {
+        p1: "Your inner nature carries a grounded, steadfast cadence, offering stability and shelter to those around you. Your thinking is pragmatic and anchored in daily reality, valuing proven foundations and steady consistency. In decisions, you hold firm like a protective mountain amidst changing seasons.",
+        p2: "Emotionally, your responses build gradually beneath the surface, rarely erupting in haste. Under stress, you may fortify yourself within a stoic silence, keeping frustrations contained. Allowing natural emotion to flow prevents inner ossification.",
+        p3: "Your journey reaches fulfillment as you soften rigidity and welcome new winds of change into your sanctuary. True stability lies not in resisting transformation, but in grounding it.",
+        strengths: [
+          "Steadfast dependability and grounded stability that anchors others in crises",
+          "Pragmatic realism and enduring patience in building lasting foundations",
+          "Protective loyalty and deep reverence for proven principles and commitments",
+        ],
+        challenges: [
+          "Reluctance to step outside established routines or embrace unfamiliar change",
+          "Tendency to bottle up frustrations until they ossify into rigid resistance",
+          "Risk of appearing aloof or unyielding when others seek spontaneous connection",
+        ],
+        career: "You excel in real estate, institutional management, governance, operations, and infrastructure. Your unflinching reliability creates solid platforms where others feel entirely secure.",
+        rel: "In relationships, you offer unshakable loyalty, tangible presence, and dependable devotion. You express love by creating a secure home base, while learning that sharing your inner doubts strengthens intimacy.",
+        money: "You value capital preservation, tangible assets, and patient accumulation. Your financial strength grows through methodical discipline, risk mitigation, and prudent stewardship.",
+        mission: "Your life mission is to provide an enduring sanctuary of stability—preserving foundational values, sheltering those in transition, and building structures that stand the test of time.",
+      },
+      Ji: {
+        p1: "Your inner nature possesses a nurturing instinct to patiently tend and cultivate inner potential in your community. Your thinking is practical, attentive to daily needs, and oriented toward concrete, caring outcomes. You make choices with maternal patience, ensuring everyone has fertile ground to flourish.",
+        p2: "Emotionally, you are deeply empathetic toward others' burdens, sometimes at the expense of your own boundaries. Under pressure, you may feel guilty when asserting personal limits. Practicing self-care ensures your wellspring remains replenished.",
+        p3: "Your inner growth matures as you cultivate your own soul with the same tender devotion you offer others. Healthy boundaries are the fences that protect your most fertile garden.",
+        strengths: [
+          "Exceptional nurturing capacity that patiently cultivates human potential",
+          "Practical resourcefulness and attention to daily communal well-being",
+          "Warm, non-judgmental acceptance that makes others feel safe and valued",
+        ],
+        challenges: [
+          "Difficulty saying no and setting firm personal boundaries",
+          "Guilt when prioritizing self-care over the continuous demands of others",
+          "Tendency to absorb hidden anxieties about the future of loved ones",
+        ],
+        career: "You shine in human development, education, healthcare, community organization, and practical logistics. Your patient care transforms raw talent into mature excellence.",
+        rel: "You love through thoughtful daily acts of service, emotional warmth, and attentive listening. Creating a comfortable, nourishing environment is your natural relational language.",
+        money: "You handle resources with practical wisdom, ensuring everyone is cared for. Wealth grows as you learn to value your own contributions and invest in your personal capacity.",
+        mission: "Your life mission is to tend the fertile soil of human potential—cultivating growth in others, fostering compassionate communities, and modeling quiet, unselfish service.",
+      },
+      Geng: {
+        p1: "Your inner nature is guided by resolute honesty, fair justice, and a strong drive to bring clarity and reform. Your thinking is logical, objective, and aimed straight at the core of any issue without compromise. In decisions, you demonstrate uncompromising resolve and ethical fortitude.",
+        p2: "Emotionally, you prefer to present an invulnerable front to the world, processing sentiment through the filter of logic. Under pressure, your tone can turn sharply critical when others seem slow or undisciplined. Balancing firmness with empathy is your mastery.",
+        p3: "Your mastery shines when your sharp blade is guided by compassionate understanding. Using strength to protect and elevate rather than merely judge transforms discipline into lasting honor.",
+        strengths: [
+          "Sharp, objective logic that cuts through confusion to core truths",
+          "Resolute courage to confront injustice and champion necessary structural reform",
+          "Incorruptible integrity and readiness to shoulder demanding responsibilities",
+        ],
+        challenges: [
+          "Blunt communication that can wound sensitive feelings without realizing it",
+          "Intolerance for perceived weakness, inefficiency, or indecision in others",
+          "Habit of suppressing personal vulnerability behind a stoic, unyielding facade",
+        ],
+        career: "You thrive in law, executive leadership, engineering, restructuring, surgery, and crisis management. When tough calls must be made without flinching, organizations turn to you.",
+        rel: "You express commitment through fierce loyalty and uncompromising truth. Intimacy deepens when you learn to lower your armor, letting your partner see the tender heart behind your protective shield.",
+        money: "You manage wealth with decisive discipline and structured efficiency. You cut through financial bloat and allocate capital strictly where it produces measurable utility.",
+        mission: "Your life mission is to champion truth, order, and justice—forging resilient systems, confronting stagnation, and using your strength to protect the vulnerable.",
+      },
+      Xin: {
+        p1: "Your inner nature is attuned to beauty, precision, and high refinement, always seeking true distinction. Your thinking is sharp, critical, and analytical, upholding exceptional aesthetic and intellectual standards. You decide with measured elegance, refusing cheap compromises.",
+        p2: "Emotionally, you are sensitive to relational discord and criticism, valuing environments free from roughness. Under pressure, you may detach and adopt an aloof posture to protect your self-respect. Recognizing that imperfection is human keeps your heart open.",
+        p3: "Your journey reaches depth when you discover beauty in the raw, unfinished aspects of life. Releasing impossible standards allows your natural elegance to inspire rather than intimidate.",
+        strengths: [
+          "Exacting precision, aesthetic refinement, and dedication to true quality",
+          "Sharp discernment that effortlessly elevates standards and filters out mediocrity",
+          "Dignified self-respect and principled independence in creative expression",
+        ],
+        challenges: [
+          "Overly harsh internal self-criticism when reality falls short of perfection",
+          "Hypersensitivity to criticism or roughness from the surrounding environment",
+          "Tendency to detach into aloof isolation when feeling misunderstood",
+        ],
+        career: "You excel in fine arts, architecture, luxury, editorial curation, high-precision analytics, and jewelry design. Your touch transforms raw materials into polished masterpieces.",
+        rel: "You seek partners who honor your refined standards and offer gentle, courteous devotion. Real intimacy flourishes when mutual appreciation is spoken sincerely and vulgarity is absent.",
+        money: "You value quality over sheer quantity. You prosper by cultivating rare, high-value assets and establishing premium standards that command enduring respect.",
+        mission: "Your life mission is to reveal beauty, dignity, and excellence—refining the cultural fabric, preserving elevated standards, and elevating human experience through art and integrity.",
+      },
+      Ren: {
+        p1: "Your inner nature moves with expansive dynamism, flowing freely to connect diverse ideas, frontiers, and communities. Your thinking is strategic, imaginative, and boundless, embracing broad horizons without rigid constraints. You make decisions with adaptive agility like a deep oceanic current.",
+        p2: "Emotionally, you flow like deep water—calm on top, with currents running beneath. Under pressure, you may be tempted to drift away from friction rather than confronting conflict directly. Grounding yourself in steady routines prevents aimless drifting.",
+        p3: "Your true power consolidates when your boundless river finds purposeful banks to channel its flow. Guiding expansive curiosity toward focused creation creates enduring impact.",
+        strengths: [
+          "Expansive, strategic thinking that readily connects diverse frontiers and concepts",
+          "Dynamic adaptability and freedom from rigid preconceptions",
+          "Resourceful intuition that turns obstacles into fertile avenues of exploration",
+        ],
+        challenges: [
+          "Restlessness and difficulty maintaining focus on repetitive daily maintenance",
+          "Tendency to drift away from difficult conversations rather than resolving conflict",
+          "Risk of scattering attention across too many intriguing opportunities simultaneously",
+        ],
+        career: "You flourish in international trade, strategic consulting, technology innovation, travel, and cross-cultural communication. Your ability to ride waves of change puts you ahead of the curve.",
+        rel: "You love with open-hearted curiosity and dynamic companionship. You need a partner who shares your love for exploration and honors your need for psychological freedom.",
+        money: "You recognize wealth in dynamic liquidity, market momentum, and strategic positioning. You build prosperity by channeling opportunities through innovative networks.",
+        mission: "Your life mission is to connect disparate worlds—bridging cultures, breaking down narrow boundaries, and flowing freely toward new horizons of human understanding.",
+      },
+      Gui: {
+        p1: "Your inner nature flows with quiet gentleness yet remarkable penetrating persistence, patiently wearing down obstacles over time. Your thinking is contemplative and deeply intuitive, discerning unspoken emotional currents. You make decisions by listening to quiet inner wisdom and moral truth.",
+        p2: "Emotionally, you are a receptive sponge for surrounding vibrations, requiring clean personal boundaries to stay centered. Under pressure, you may escape into fantasy or contemplative avoidance. Grounding your sensitivity in practical steps transforms empathy into strength.",
+        p3: "Your integration flourishes when you trust that quiet persistence moves mountains. Combining subtle intuition with decisive practical action allows your gentle wisdom to enrich the world.",
+        strengths: [
+          "Deep intuitive empathy that senses emotional undercurrents with great accuracy",
+          "Gentle, quiet persistence that wears down formidable barriers over time",
+          "Contemplative wisdom and capacity to bring soothing restoration to weary souls",
+        ],
+        challenges: [
+          "Tendency to be emotionally overwhelmed by negative environmental energies",
+          "Hesitation and self-doubt when required to make abrupt, assertive decisions",
+          "Habit of retreating into private contemplation instead of taking practical action",
+        ],
+        career: "You excel in psychology, spiritual mentorship, creative writing, research, and holistic healing. Your gentle intuition penetrates straight to the emotional core of complex dilemmas.",
+        rel: "In intimacy, you seek a sacred, soulful bond rooted in unspoken understanding. You offer unconditional empathy, flourishing when your partner provides a safe container for your sensitivity.",
+        money: "You view wealth as a quiet current that supports peace of mind. Prosperity flows when you align your specialized intuitive gifts with tangible needs in the world.",
+        mission: "Your life mission is to bring soothing restoration and quiet wisdom to humanity—nourishing dry spirits, healing hidden wounds, and demonstrating the quiet omnipotence of gentle love.",
+      },
+    };
+
+    const entry = dmEnMap[dayMasterPinyin] || dmEnMap.Jia;
+    const dayMasterDescription = `${entry.p1}\n\n${entry.p2}\n\n${entry.p3}`;
+
+    const enrichedTenGods = tenGods.map((e) => ({
+      ...e,
+      description: buildTenGodsNarrative({
+        tenGod: e.tenGod,
+        pillar: e.pillar,
+        isEn: true,
+      }),
+    }));
+
+    const elementsList: BaziElement[] = ["Wood", "Fire", "Earth", "Metal", "Water"];
+    const sortedElements = [...elementsList].sort((a, b) => fiveElements[b] - fiveElements[a]);
+    const maxCount = fiveElements[sortedElements[0]];
+    const minCount = fiveElements[sortedElements[sortedElements.length - 1]];
+    const dominantElements = elementsList.filter((e) => fiveElements[e] === maxCount && maxCount >= 2);
+    const leastPresentElements = elementsList.filter((e) => fiveElements[e] === minCount);
+    const mostPresentElements = dominantElements.length > 0 ? dominantElements : [sortedElements[0]];
+
+    const dominantText = dominantElements.length > 0
+      ? `Your chart highlights a prominent presence of ${dominantElements.join(" and ")}, providing natural drive and instinct in these areas.`
+      : "Your elemental counts are relatively balanced, offering an adaptable and flexible foundation.";
+    const leastText = leastPresentElements.length < 5
+      ? `In contrast, ${leastPresentElements.join(" and ")} appears in lower concentration, suggesting a sphere of life that invites conscious cultivation.`
+      : "";
+    const fiveElementsDescription = `Within your energetic blueprint, the five elements form a distinct landscape. ${dominantText} ${leastText} This overview reflects the visible distribution across your four pillars, serving as an observational map rather than a rigid prescription.`;
+
+    const p1Identity = `Your core identity centers on Day Master ${dayMasterPinyin} (${dayMasterElement}), expressing through a ${dayMasterPolarity.toLowerCase()} cadence. ${entry.p1} This energy achieves its finest maturity when your natural strengths are directed toward purposeful service.`;
+    const p2Patterns = `Across your four pillars, the interaction between ${mostPresentElements.join(" and ")} and ${leastPresentElements.join(" and ")} shapes your everyday responses. The relationship between your Month Pillar (${blueprint.monthPillar.element}) and Hour Pillar (${blueprint.hourPillar.element}) shows how outward professional responsibilities naturally integrate with your private long-term aspirations.`;
+    const p3Season = currentLuckCycle
+      ? `Currently, you are moving through the life chapter of the ${currentLuckCycle.pillar.display} pillar, spanning ages ${currentLuckCycle.startAge} to ${currentLuckCycle.endAge}. This phase highlights the energetic theme of ${currentLuckCycle.pillar.element}, inviting you to mature your capacities and align with deeper life integrity.`
+      : "Your life journey is currently traversing a natural developmental chapter, inviting you to integrate past lessons and thoughtfully navigate your next steps.";
+    const p4Direction = `${entry.mission} Sustainable fulfillment emerges when you build a steady pace that honors your natural rhythms rather than forcing arbitrary outcomes.`;
+
+    const summary = [p1Identity, p2Patterns, p3Season, p4Direction];
+
+    return {
+      ...blueprint,
+      dayMaster: {
+        ...blueprint.dayMaster,
+        description: dayMasterDescription,
+      },
+      tenGods: enrichedTenGods,
+      fiveElementsDescription,
+      leastPresentElements,
+      mostPresentElements,
+      strengths: entry.strengths,
+      challenges: entry.challenges,
+      careerStyle: entry.career,
+      relationshipStyle: entry.rel,
+      moneyStyle: entry.money,
+      lifeMission: entry.mission,
+      summary,
     };
   }
 }

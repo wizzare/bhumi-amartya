@@ -2,8 +2,9 @@
 
 import type { DestinyMatrixVisualModel, DestinyMatrixVisualValue } from "@/lib/visual/destinyMatrixVisualModel";
 import { DESTINY_MATRIX_AGE_CYCLE, DESTINY_MATRIX_TOPOLOGY } from "@/lib/destiny-matrix/topology";
+import { isEnlEdition } from "@/lib/config/edition";
 
-type Props = { matrix: DestinyMatrixVisualModel; birthDate?: string };
+type Props = { matrix: DestinyMatrixVisualModel; birthDate?: string; isEn?: boolean };
 
 export const chakraColors: Record<string, string> = {
   Sahasrara: "#A56BBC",
@@ -28,7 +29,7 @@ function getNodeColor(id: string) {
   return "#4F5E52";
 }
 
-export function MatrixDiagram({ matrix, birthDate, activeAge, activeArcana }: { matrix: DestinyMatrixVisualModel; birthDate?: string; activeAge?: number; activeArcana?: number }) {
+export function MatrixDiagram({ matrix, birthDate, activeAge, activeArcana, isEn = isEnlEdition() }: { matrix: DestinyMatrixVisualModel; birthDate?: string; activeAge?: number; activeArcana?: number; isEn?: boolean }) {
   const v = (id: string) => matrix.nodeMap[id] ?? 0;
 
   const registry = new Map(DESTINY_MATRIX_TOPOLOGY.nodes.map((node) => [node.nodeId, node]));
@@ -199,7 +200,7 @@ export function MatrixDiagram({ matrix, birthDate, activeAge, activeArcana }: { 
   const R_arrow = R - 15; // Point arrowheads exactly to corner node edges
 
   return (
-    <svg viewBox="-42 -40 484 480" className="h-auto w-full max-w-full" role="img" aria-label="Diagram Destiny Matrix dengan Arcana Tahunan">
+    <svg viewBox="-42 -40 484 480" className="h-auto w-full max-w-full" role="img" aria-label={isEn ? "Destiny Matrix diagram with Annual Arcana" : "Diagram Destiny Matrix dengan Arcana Tahunan"}>
       <defs>
         <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
           <path d="M 0 1.5 L 7 5 L 0 8.5 z" fill="#A56BBC" />
@@ -240,8 +241,12 @@ export function MatrixDiagram({ matrix, birthDate, activeAge, activeArcana }: { 
       <line x1={cx} y1={cy} x2={cx + R_arrow * 0.707} y2={cy - R_arrow * 0.707} stroke="#F57336" strokeWidth="1.5" marker-end="url(#arrow-orange)" />
 
       {/* Father & Mother Line text labels */}
-      <text x="-58" y="-7" transform="rotate(45 200 200)" textAnchor="middle" fontSize="6.5" fill="#A56BBC" fontWeight="bold" letterSpacing="0.06em">Garis Ayah</text>
-      <text x="58" y="-7" transform="rotate(-45 200 200)" textAnchor="middle" fontSize="6.5" fill="#F57336" fontWeight="bold" letterSpacing="0.06em">Garis Ibu</text>
+      <text x="-58" y="-7" transform="rotate(45 200 200)" textAnchor="middle" fontSize="6.5" fill="#A56BBC" fontWeight="bold" letterSpacing="0.06em">
+        {isEn ? "Father Line" : "Garis Ayah"}
+      </text>
+      <text x="58" y="-7" transform="rotate(-45 200 200)" textAnchor="middle" fontSize="6.5" fill="#F57336" fontWeight="bold" letterSpacing="0.06em">
+        {isEn ? "Mother Line" : "Garis Ibu"}
+      </text>
 
       {/* Love / Money channels lines (drawn along inner square side segment) */}
       <line x1={loveMoneyNodes[0].x} y1={loveMoneyNodes[0].y} x2={loveMoneyNodes[1].x} y2={loveMoneyNodes[1].y} stroke="#A56BBC" strokeWidth="1.5" marker-end="url(#arrow-purple)" />
@@ -251,15 +256,17 @@ export function MatrixDiagram({ matrix, birthDate, activeAge, activeArcana }: { 
       <line x1={loveMoneyNodes[2].x} y1={loveMoneyNodes[2].y} x2={cx + R_inner} y2={cy} stroke="#D8D0C3" strokeWidth="1.5" />
 
       {/* Icons for Love and Money */}
-      <text role="img" aria-label="Jalur Cinta" x={loveMoneyNodes[1].x - 12} y={loveMoneyNodes[1].y + 11} fontSize="11" fill="#D84242">♥</text>
-      <text role="img" aria-label="Jalur Uang" x={loveMoneyNodes[2].x + 4} y={loveMoneyNodes[2].y - 2} fontSize="11" fill="#83BE58" fontWeight="bold">$</text>
+      <text role="img" aria-label={isEn ? "Love Path" : "Jalur Cinta"} x={loveMoneyNodes[1].x - 12} y={loveMoneyNodes[1].y + 11} fontSize="11" fill="#D84242">♥</text>
+      <text role="img" aria-label={isEn ? "Money Path" : "Jalur Uang"} x={loveMoneyNodes[2].x + 4} y={loveMoneyNodes[2].y - 2} fontSize="11" fill="#83BE58" fontWeight="bold">$</text>
 
       {/* Age Perimeter Ticks and Labels */}
       {renderAgePerimeter()}
 
       {currentAge !== null && activeSegment >= 0 && <g transform="translate(274,-22)">
         <rect x="0" y="0" width="115" height="20" rx="10" fill="#F7E8C5" stroke="#C8962E" strokeWidth="0.8" />
-        <text x="57.5" y="13" textAnchor="middle" fontSize="7" fontWeight="700" fill="#76551E">USIA {currentAge} · ARCANA TAHUNAN {activeAnnualArcana ?? "—"}</text>
+        <text x="57.5" y="13" textAnchor="middle" fontSize="7" fontWeight="700" fill="#76551E">
+          {isEn ? `AGE ${currentAge} · ANNUAL ARCANA ${activeAnnualArcana ?? "—"}` : `USIA ${currentAge} · ARCANA TAHUNAN ${activeAnnualArcana ?? "—"}`}
+        </text>
       </g>}
 
       {/* Nodes */}
@@ -283,7 +290,7 @@ function StatusCard({ label, value }: { label: string; value: DestinyMatrixVisua
   );
 }
 
-export function DestinyMatrixVisual({ matrix, birthDate }: Props) {
+export function DestinyMatrixVisual({ matrix, birthDate, isEn }: Props) {
   return (
     <section className="bg-white p-4 sm:p-6 lg:p-8 rounded-3xl border border-[#DED7CA] shadow-sm">
       <div className="mb-6">
@@ -295,7 +302,7 @@ export function DestinyMatrixVisual({ matrix, birthDate }: Props) {
         {/* Matrix Diagram */}
         <div className="flex justify-center items-center">
           <div className="w-full max-w-[980px]">
-            <MatrixDiagram matrix={matrix} birthDate={birthDate} />
+            <MatrixDiagram matrix={matrix} birthDate={birthDate} isEn={isEn} />
           </div>
         </div>
 
