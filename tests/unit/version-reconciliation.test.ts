@@ -11,7 +11,7 @@ import {
   RELEASE_NAME,
 } from "../../src/lib/version";
 
-console.log("Running Build 106 version reconciliation tests\n");
+console.log("Running Build 107 version reconciliation tests\n");
 
 let passed = 0;
 let failed = 0;
@@ -30,11 +30,11 @@ function test(label: string, condition: boolean, detail?: string) {
 const versionContent = readFileSync(resolve(__dirname, "../../src/lib/version.ts"), "utf8");
 const layoutContent = readFileSync(resolve(__dirname, "../../app/layout.tsx"), "utf8");
 
-test("APP_VERSION is canonical 5.0.6", APP_VERSION === "5.0.6", `got "${APP_VERSION}"`);
+test("APP_VERSION is canonical 5.0.7", APP_VERSION === "5.0.7", `got "${APP_VERSION}"`);
 test("APP_VERSION derives from CURRENT_VERSION_NAME", APP_VERSION === CURRENT_VERSION_NAME);
 test(
-  "RELEASE_NAME is canonical V5 Build 106",
-  RELEASE_NAME === "BHUMI AMARTYA V5 BUILD 106",
+  "RELEASE_NAME is canonical V5 Build 107",
+  RELEASE_NAME === "BHUMI AMARTYA V5 BUILD 107",
   `got "${RELEASE_NAME}"`,
 );
 test(
@@ -47,6 +47,7 @@ test("version.ts does not import package.json", !versionContent.includes("packag
 test("active version source has no stale 4.4.5", !versionContent.includes("4.4.5"));
 test("active version source has no stale V4 BUILD 82", !versionContent.includes("V4 BUILD 82"));
 test("active display is not Build 105", !`${APP_VERSION} ${RELEASE_NAME}`.includes("5.0.5 BHUMI AMARTYA V5 BUILD 105"));
+test("active display is not Build 106", !`${APP_VERSION} ${RELEASE_NAME}`.includes("5.0.6 BHUMI AMARTYA V5 BUILD 106"));
 test(
   "root layout renders the canonical version exports",
   /Versi:\s*\{APP_VERSION\}\s*\{RELEASE_NAME\}/.test(layoutContent),
@@ -54,18 +55,18 @@ test(
 test("root layout has no stale 4.4.5", !layoutContent.includes("4.4.5"));
 test("root layout has no stale V4 BUILD 82", !layoutContent.includes("V4 BUILD 82"));
 
-// 2. Canonical BuildInfo is Build 106.
-test("CURRENT_VERSION_NAME is 5.0.6", CURRENT_VERSION_NAME === "5.0.6");
-test("CURRENT_VERSION_CODE is 106", CURRENT_VERSION_CODE === 106);
-test("CURRENT_BUILD_NUMBER is 106", CURRENT_BUILD_NUMBER === "106");
+// 2. Canonical BuildInfo is Build 107.
+test("CURRENT_VERSION_NAME is 5.0.7", CURRENT_VERSION_NAME === "5.0.7");
+test("CURRENT_VERSION_CODE is 107", CURRENT_VERSION_CODE === 107);
+test("CURRENT_BUILD_NUMBER is 107", CURRENT_BUILD_NUMBER === "107");
 
-// 3. Android release metadata is Build 106 and matches BuildInfo.
+// 3. Android release metadata is Build 107 and matches BuildInfo.
 const gradleContent = readFileSync(resolve(__dirname, "../../android/app/build.gradle"), "utf8");
 const androidVersionName = gradleContent.match(/versionName\s*"([^"]+)"/)?.[1];
 const androidVersionCode = gradleContent.match(/versionCode\s+(\d+)/)?.[1];
 
-test("android versionName is 5.0.6", androidVersionName === "5.0.6", `got "${androidVersionName}"`);
-test("android versionCode is 106", androidVersionCode === "106", `got "${androidVersionCode}"`);
+test("android versionName is 5.0.7", androidVersionName === "5.0.7", `got "${androidVersionName}"`);
+test("android versionCode is 107", androidVersionCode === "107", `got "${androidVersionCode}"`);
 test("Android and display version names agree", androidVersionName === APP_VERSION);
 test("Android versionCode matches canonical build number", androidVersionCode === CURRENT_BUILD_NUMBER);
 
