@@ -58,8 +58,9 @@ import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
 import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { isEnlEdition } from "@/lib/config/edition";
 
-const EMOTIONAL_STATES = [
+const EMOTIONAL_STATES_ID = [
   "😊 Lebih ringan",
   "😌 Lebih tenang",
   "😢 Sedih",
@@ -68,7 +69,16 @@ const EMOTIONAL_STATES = [
   "💭 Campur aduk",
 ];
 
-const BODY_SIGNALS = [
+const EMOTIONAL_STATES_EN = [
+  "😊 Lighter",
+  "😌 Calmer",
+  "😢 Sad",
+  "😔 Confused",
+  "😠 Angry",
+  "💭 Mixed feelings",
+];
+
+const BODY_SIGNALS_ID = [
   "Bahu tegang",
   "Dada terasa berat",
   "Tenggorokan terasa mengganjal",
@@ -76,6 +86,16 @@ const BODY_SIGNALS = [
   "Mata berkaca-kaca",
   "Tubuh lebih rileks",
   "Tidak ada sensasi khusus",
+];
+
+const BODY_SIGNALS_EN = [
+  "Tense shoulders",
+  "Heavy chest",
+  "Lump in throat",
+  "Stomach discomfort",
+  "Watery eyes",
+  "Body more relaxed",
+  "No particular sensation",
 ];
 
 function getStringValue(record: Record<string, unknown> | null, key: string): string | null {
@@ -100,6 +120,7 @@ function getNestedNumber(record: Record<string, unknown> | null, path: string[])
 }
 
 export default function JournalPage() {
+  const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();
   const userProfile = auth?.userProfile;
@@ -107,6 +128,9 @@ export default function JournalPage() {
     ? window.localStorage.getItem("bhumi_audit_user")
     : null;
   const activeUid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : "");
+
+  const emotionalStates = isEn ? EMOTIONAL_STATES_EN : EMOTIONAL_STATES_ID;
+  const bodySignalsList = isEn ? BODY_SIGNALS_EN : BODY_SIGNALS_ID;
 
   // State
   const [coreIdentity, setCoreIdentity] = useState<CoreIdentity | null>(null);
@@ -271,12 +295,13 @@ export default function JournalPage() {
   }, [auth, router, zoneBContext]);
 
   const handleLocalBodySignalToggle = (signal: string) => {
+    const noneText = isEn ? "No particular sensation" : "Tidak ada sensasi khusus";
     setLocalBodySignals((current) => {
-      if (signal === "Tidak ada sensasi khusus") {
+      if (signal === noneText) {
         return current.includes(signal) ? [] : [signal];
       }
 
-      const withoutNone = current.filter((item) => item !== "Tidak ada sensasi khusus");
+      const withoutNone = current.filter((item) => item !== noneText);
       if (withoutNone.includes(signal)) {
         return withoutNone.filter((item) => item !== signal);
       }
@@ -356,7 +381,7 @@ export default function JournalPage() {
       const detail = formatSection4SaveError(error);
       console.error("[Journal Page] Failed to save local journal", detail, error);
       trackError("failed_journal_save", undefined, "local");
-      alert(`Gagal menyimpan journaling.\n${detail}`);
+      alert(isEn ? `Failed to save journaling.\n${detail}` : `Gagal menyimpan journaling.\n${detail}`);
       return;
     }
 
@@ -468,7 +493,9 @@ export default function JournalPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-          <p className="text-[#4F5E52] text-lg">Persiapan ruang yang aman untuk dirimu...</p>
+          <p className="text-[#4F5E52] text-lg">
+            {isEn ? "Preparing a safe space for you..." : "Persiapan ruang yang aman untuk dirimu..."}
+          </p>
           <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-[#E8E9E5]">
             <div className="h-full w-3/4 animate-pulse rounded-full bg-[#4F5E52]" />
           </div>
@@ -486,13 +513,15 @@ export default function JournalPage() {
       return (
         <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
           <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-            <p className="text-[#4F5E52] text-lg">{loadError || "Prompt journaling belum siap."}</p>
+            <p className="text-[#4F5E52] text-lg">
+              {loadError || (isEn ? "Journaling prompt not ready." : "Prompt journaling belum siap.")}
+            </p>
           </div>
         </main>
       );
     }
 
-    const today = new Date().toLocaleDateString("id-ID", {
+    const today = new Date().toLocaleDateString(isEn ? "en-US" : "id-ID", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -506,10 +535,12 @@ export default function JournalPage() {
           <header className="bhumi-card p-7 bg-gradient-to-br from-[#FCFAF5] to-[#F5F1E8]">
             <p className="text-sm text-[#7B8776]">{today}</p>
             <h1 className="mt-3 text-3xl font-semibold text-[#4F5E52]">
-              📖 Journaling Hari Ini
+              {isEn ? "📖 Today's Journaling" : "📖 Journaling Hari Ini"}
             </h1>
             <p className="mt-4 text-[#7B8776] leading-relaxed">
-              Menulis membantu menyadari pola yang sering tidak terlihat saat hanya dipikirkan. Luangkan beberapa menit untuk mendengar isi hatimu hari ini.
+              {isEn
+                ? "Writing helps uncover patterns that are often missed when only thought about. Take a few minutes to listen to your inner world today."
+                : "Menulis membantu menyadari pola yang sering tidak terlihat saat hanya dipikirkan. Luangkan beberapa menit untuk mendengar isi hatimu hari ini."}
             </p>
           </header>
 
@@ -523,7 +554,9 @@ export default function JournalPage() {
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section A · Reflection Question</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">
+              {isEn ? "Section A · Reflection Question" : "Section A · Reflection Question"}
+            </h2>
             <ol className="mt-5 space-y-4">
               {localPrompt.questions.map((question, index) => (
                 <li key={question} className="rounded-2xl bg-white/70 p-4 text-[#4F5E52]">
@@ -535,9 +568,11 @@ export default function JournalPage() {
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section B · Journal Writing</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">
+              {isEn ? "Section B · Journal Writing" : "Section B · Journal Writing"}
+            </h2>
             <label className="mt-5 block text-sm font-medium text-[#7B8776]" htmlFor="journalText">
-              Tulis refleksimu di sini...
+              {isEn ? "Write your reflection here..." : "Tulis refleksimu di sini..."}
             </label>
             <textarea
               id="journalText"
@@ -548,17 +583,19 @@ export default function JournalPage() {
                 event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
               }}
               className="mt-3 min-h-56 w-full resize-none rounded-3xl border border-[#E8E9E5] bg-white p-5 text-[#4F5E52] outline-none transition focus:border-[#9BB89A] focus:ring-2 focus:ring-[#9BB89A]/20"
-              placeholder="Mulai dari satu kalimat yang paling jujur..."
+              placeholder={isEn ? "Start from the single most honest sentence..." : "Mulai dari satu kalimat yang paling jujur..."}
             />
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Body Awareness</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">
+              {isEn ? "Section C · Body Awareness" : "Section C · Body Awareness"}
+            </h2>
             <p className="mt-5 text-sm font-medium text-[#7B8776]">
-              Bagaimana perasaanmu setelah menulis?
+              {isEn ? "How do you feel after writing?" : "Bagaimana perasaanmu setelah menulis?"}
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {EMOTIONAL_STATES.map((state) => (
+              {emotionalStates.map((state) => (
                 <button
                   key={state}
                   type="button"
@@ -575,10 +612,10 @@ export default function JournalPage() {
             </div>
 
             <p className="mt-6 text-sm font-medium text-[#7B8776]">
-              Apakah ada sensasi pada tubuhmu?
+              {isEn ? "Do you notice any sensations in your body?" : "Apakah ada sensasi pada tubuhmu?"}
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {BODY_SIGNALS.map((signal) => (
+              {bodySignalsList.map((signal) => (
                 <label
                   key={signal}
                   className="flex items-center gap-3 rounded-2xl border border-[#E8E9E5] bg-white p-4 text-sm text-[#4F5E52]"
@@ -596,9 +633,11 @@ export default function JournalPage() {
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section D · Save</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">
+              {isEn ? "Section D · Save" : "Section D · Save"}
+            </h2>
             <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
-              Klik save hanya jika kamu sudah melakukan.
+              {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}
             </p>
             <button
               type="button"
@@ -606,24 +645,30 @@ export default function JournalPage() {
               disabled={localSaved}
               className="mt-3 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {localSaved ? "Refleksi tersimpan..." : "Simpan Refleksi"}
+              {localSaved
+                ? (isEn ? "Reflection saved..." : "Refleksi tersimpan...")
+                : (isEn ? "Save Reflection" : "Simpan Refleksi")}
             </button>
 
             {localInsight && (
               <div className="mt-6 space-y-4 rounded-3xl bg-[#FCFAF5] p-5">
                 <div>
-                  <p className="text-sm font-semibold text-[#4F5E52]">🌱 Insight Hari Ini</p>
+                  <p className="text-sm font-semibold text-[#4F5E52]">
+                    {isEn ? "🌱 Today's Insight" : "🌱 Insight Hari Ini"}
+                  </p>
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.insight}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#4F5E52]">✨ Fokus Besok</p>
+                  <p className="text-sm font-semibold text-[#4F5E52]">
+                    {isEn ? "✨ Tomorrow's Focus" : "✨ Fokus Besok"}
+                  </p>
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.tomorrowFocus}</p>
                 </div>
                 <button
                   onClick={() => router.push("/wellness")}
                   className="w-full py-3 mt-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest"
                 >
-                  Kembali ke Wellness
+                  {isEn ? "Back to Wellness" : "Kembali ke Wellness"}
                 </button>
               </div>
             )}

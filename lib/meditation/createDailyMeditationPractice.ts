@@ -9,6 +9,7 @@ import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBluep
 import { auth } from "@/lib/firebase/firebase";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export const MEDITATION_STORAGE_KEY = "bhumiMeditationEntries";
 
@@ -205,13 +206,133 @@ const THEME_PRACTICES: Record<MeditationTheme, { practices: string[]; affirmatio
   },
 };
 
+const THEME_PRACTICES_EN: Record<MeditationTheme, { practices: string[]; affirmation: string; mudras: MudraName[] }> = {
+  "Inner Child": {
+    practices: [
+      "Sit quietly for 5 minutes, gently visualizing your younger self resting in a safe, peaceful space.",
+      "Gentle movement: embrace yourself with both arms for 10 slow breaths, then gently relax your shoulders.",
+      "Breathwork: inhale for 4 counts, exhale for 6 counts.",
+    ],
+    affirmation: "I am allowed to feel safe being my gentle, authentic self.",
+    mudras: ["Anjali Mudra", "Yoni Mudra", "Prithvi Mudra"],
+  },
+  "Love Block": {
+    practices: [
+      "Sit quietly for 5 minutes with a hand on your chest, feeling your heart center without forcing it to open.",
+      "Gentle movement: open and close your arms slowly 12 times in rhythm with your breathing.",
+      "Breathwork: breathe into your chest for 4 counts, exhale for 6 counts.",
+    ],
+    affirmation: "I am worthy of receiving love without losing myself.",
+    mudras: ["Padma Mudra", "Anjali Mudra", "Yoni Mudra"],
+  },
+  "Money Block": {
+    practices: [
+      "Sit quietly for 5 minutes, placing one hand on your chest and one on your belly.",
+      "Gentle movement: 10 gentle shoulder rolls and 10 slow, grounded squats.",
+      "Breathwork: inhale for 4 counts, exhale for 6 counts.",
+    ],
+    affirmation: "I welcome abundance and support while staying grounded in who I am.",
+    mudras: ["Prithvi Mudra", "Kubera Mudra", "Surya Mudra"],
+  },
+  "Repeating Patterns": {
+    practices: [
+      "Sit for 5 minutes and observe recurring thoughts without getting swept away by them.",
+      "Gentle movement: walk slowly in place for 2 minutes with mindful steps.",
+      "Breathwork: inhale for 3 counts, hold for 2 counts, exhale for 6 counts.",
+    ],
+    affirmation: "I can choose a new, gentle response today.",
+    mudras: ["Gyan Mudra", "Vayu Mudra", "Hakini Mudra"],
+  },
+  "Self Worth": {
+    practices: [
+      "Sit for 5 minutes with palms resting on your thighs, feeling the grounded weight of your body.",
+      "Gentle movement: stand tall, draw your shoulders back gently, and release 8 times.",
+      "Breathwork: inhale for 4 counts, exhale for 4 counts.",
+    ],
+    affirmation: "My inherent worth does not need to be proven today.",
+    mudras: ["Hakini Mudra", "Surya Mudra", "Kubera Mudra"],
+  },
+  "Family Dynamics": {
+    practices: [
+      "Sit quietly for 5 minutes and visualize a soft, compassionate boundary surrounding you.",
+      "Gentle movement: gently roll your neck to the right and left 5 times each.",
+      "Breathwork: inhale for 4 counts, exhale while releasing tension in your jaw.",
+    ],
+    affirmation: "I can love others without carrying everything for them.",
+    mudras: ["Apana Mudra", "Anjali Mudra", "Shuni Mudra"],
+  },
+  "Karmic Lessons": {
+    practices: [
+      "Sit for 5 minutes and calmly reflect on lessons currently recurring in your life.",
+      "Gentle movement: rest in child's pose or a gentle forward fold for 1 minute.",
+      "Breathwork: inhale for 4 counts, exhale for 8 counts.",
+    ],
+    affirmation: "I learn and evolve without needing to judge or punish myself.",
+    mudras: ["Gyan Mudra", "Shuni Mudra", "Apana Mudra"],
+  },
+  "Ancestral Patterns": {
+    practices: [
+      "Sit for 5 minutes and feel your back supported firmly by the ground or your seat.",
+      "Gentle movement: gently tap your chest and arms for 2 minutes to restore presence.",
+      "Breathwork: inhale smoothly through your nose, exhale slowly through your mouth.",
+    ],
+    affirmation: "I honor my origins while choosing a conscious path forward.",
+    mudras: ["Prithvi Mudra", "Yoni Mudra", "Shuni Mudra"],
+  },
+  Forgiveness: {
+    practices: [
+      "Sit for 5 minutes and place your hand on the area of your body asking for space.",
+      "Gentle movement: gently shake out your hands and feet for 90 seconds.",
+      "Breathwork: inhale for 4 counts, exhale while softening your chest.",
+    ],
+    affirmation: "I give myself permission to let go, little by little.",
+    mudras: ["Apana Mudra", "Vayu Mudra", "Anjali Mudra"],
+  },
+  "Purpose & Calling": {
+    practices: [
+      "Sit for 5 minutes and connect with one small step that feels true and alive.",
+      "Gentle movement: stand in mountain pose for 1 minute, then take slow, mindful steps for 2 minutes.",
+      "Breathwork: inhale for 5 counts, exhale for 5 counts.",
+    ],
+    affirmation: "I follow my calling one conscious, grounded step at a time.",
+    mudras: ["Hakini Mudra", "Kubera Mudra", "Gyan Mudra"],
+  },
+  "Nervous System Grounding": {
+    practices: [
+      "Sit for 5 minutes and gently notice 5 things you can see in your space.",
+      "Gentle movement: press the soles of your feet firmly into the floor 10 times.",
+      "Breathwork: inhale for 4 counts, exhale for 7 counts.",
+    ],
+    affirmation: "My nervous system is allowed to return to a calm, safe rhythm.",
+    mudras: ["Prithvi Mudra", "Vayu Mudra", "Yoni Mudra"],
+  },
+  "Emotional Release": {
+    practices: [
+      "Sit for 5 minutes and let emotions arise without needing to tell a story about them.",
+      "Gentle movement: softly shake your shoulders, hands, and legs for 2 minutes.",
+      "Breathwork: inhale deeply through your nose, exhale with an audible sigh through your mouth.",
+    ],
+    affirmation: "I can feel my emotions fully without being overwhelmed by them.",
+    mudras: ["Apana Mudra", "Yoni Mudra", "Vayu Mudra"],
+  },
+  "Body Safety": {
+    practices: [
+      "Sit for 5 minutes feeling the points of contact between your body and the chair or floor.",
+      "Gentle movement: perform a slow body scan from head to toe for 3 minutes.",
+      "Breathwork: inhale for 4 counts, exhale for 6 counts.",
+    ],
+    affirmation: "I am learning to be present in my body with safety and trust.",
+    mudras: ["Gyan Mudra", "Prithvi Mudra", "Yoni Mudra"],
+  },
+};
+
 function getDateSeed(date = new Date()): number {
   return Number(date.toISOString().slice(0, 10).replaceAll("-", ""));
 }
 
-function chooseTheme(input: CreateDailyMeditationPracticeInput): MeditationTheme {
+function chooseTheme(input: CreateDailyMeditationPracticeInput, isEn: boolean): MeditationTheme {
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: "id",
+    language: isEn ? "en" : "id",
     profile: input.profile ?? null,
     blueprint: input.blueprint ?? null,
   });
@@ -247,28 +368,34 @@ function chooseTheme(input: CreateDailyMeditationPracticeInput): MeditationTheme
 function adaptPractices(
   input: CreateDailyMeditationPracticeInput,
   base: { practices: string[]; affirmation: string; mudra: MudraGuide | null },
+  isEn: boolean,
 ): { practices: string[]; affirmation: string; mudra: MudraGuide | null } {
   const practices = [...base.practices];
 
-  practices[0] = "Duduk 5-7 menit dan perhatikan bagian tubuh mana yang paling meminta pelan hari ini.";
-  practices[1] = "Gerakan ringan 2 menit, lalu berhenti sejenak sebelum memilih ritme yang paling bisa kamu jaga.";
+  if (!isEn) {
+    practices[0] = "Duduk 5-7 menit dan perhatikan bagian tubuh mana yang paling meminta pelan hari ini.";
+    practices[1] = "Gerakan ringan 2 menit, lalu berhenti sejenak sebelum memilih ritme yang paling bisa kamu jaga.";
+  }
 
   const mudraPracticeText = base.mudra
-    ? `Mudra: ${base.mudra.name} selama ${base.mudra.duration}.`
-    : "Ambil posisi tangan yang nyaman.";
+    ? (isEn
+        ? `Mudra: ${base.mudra.name} for ${base.mudra.duration}.`
+        : `Mudra: ${base.mudra.name} selama ${base.mudra.duration}.`)
+    : (isEn ? "Take a comfortable hand position." : "Ambil posisi tangan yang nyaman.");
   practices.splice(1, 0, mudraPracticeText);
 
   return { ...base, practices };
 }
 
 export function createDailyMeditationPractice(input: CreateDailyMeditationPracticeInput): DailyMeditationPractice {
-  const theme = chooseTheme(input);
-  const themeData = THEME_PRACTICES[theme];
+  const isEn = isEnlEdition();
+  const theme = chooseTheme(input, isEn);
+  const themeData = (isEn ? THEME_PRACTICES_EN : THEME_PRACTICES)[theme] ?? THEME_PRACTICES[theme];
   const lastMudra = input.previousMeditationEntries?.[0]?.mudraName;
   const availableMudras = themeData.mudras.filter((mudra) => mudra !== lastMudra);
   const mudraPool = availableMudras.length ? availableMudras : themeData.mudras;
   const mudraName = mudraPool[(getDateSeed() + theme.length + (input.previousMeditationEntries?.length ?? 0)) % mudraPool.length];
-  const mudraGuide = getMudraGuide(mudraName) ?? null;
+  const mudraGuide = getMudraGuide(mudraName, isEn) ?? null;
 
   const basePractice = {
     practices: themeData.practices,
@@ -276,7 +403,7 @@ export function createDailyMeditationPractice(input: CreateDailyMeditationPracti
     mudra: mudraGuide,
   };
 
-  const adapted = adaptPractices(input, basePractice);
+  const adapted = adaptPractices(input, basePractice, isEn);
 
   return {
     theme,
@@ -349,11 +476,23 @@ export function createMeditationReflection(input: {
   bodyReflection: string;
   blueprint?: UnknownRecord | null;
 }): MeditationReflection {
+  const isEn = isEnlEdition();
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: "id",
+    language: isEn ? "en" : "id",
     profile: null,
     blueprint: input.blueprint ?? null,
   });
+  if (isEn) {
+    const bodyLine = input.bodySignals.length > 0
+      ? `Signals such as ${input.bodySignals.join(", ").toLowerCase()} are gentle invitations to listen to your body at a slower pace.`
+      : "No particular sensation can also be a sign that your body is processing in its own subtle way.";
+
+    return {
+      insight: `Your body's response today indicates a part of you asking to be treated with greater gentleness. ${synthesis.blueprintSummary} ${bodyLine}`,
+      nextFocus: `Tomorrow, notice when your body begins to shift before your mind catches up. If a feeling of "${input.emotionalState || "mixed feelings"}" arises, give your breath space before taking action.`,
+    };
+  }
+
   const bodyLine = input.bodySignals.length > 0
     ? `Sinyal seperti ${input.bodySignals.join(", ").toLowerCase()} bisa menjadi undangan untuk mendengar tubuhmu lebih pelan.`
     : "Tidak ada sensasi khusus juga bisa menjadi tanda bahwa tubuhmu sedang memproses dengan caranya sendiri.";

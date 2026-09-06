@@ -20,11 +20,13 @@ import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerw
 import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { isEnlEdition } from "@/lib/config/edition";
 
 const WORKOUT_ACTIVITIES = [...Object.values(WORKOUT_DATABASE), ...INNERWORK_VARIATION_LIBRARY.workout];
 const WORKOUT_BY_ID = Object.fromEntries(WORKOUT_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function WorkoutPage() {
+  const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
@@ -152,7 +154,7 @@ export default function WorkoutPage() {
           practiceType: "workout",
           practiceTitle: context.title,
           durationMinutes: context.durationMinutes,
-          reflectionResult: reflectionResult || "Belum Yakin",
+          reflectionResult: reflectionResult || (isEn ? "Not sure" : "Belum Yakin"),
         });
       }
       trackEvent("complete_workout", uid);
@@ -161,7 +163,7 @@ export default function WorkoutPage() {
     } catch (err) {
       const detail = formatSection4SaveError(err);
       console.error("[WORKOUT_SAVE_ERROR]", detail, err);
-      alert(`Gagal menyimpan praktik olahraga.\n${detail}`);
+      alert(isEn ? `Failed to save workout practice.\n${detail}` : `Gagal menyimpan praktik olahraga.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -193,25 +195,29 @@ export default function WorkoutPage() {
         <div className="mx-auto max-w-lg">
           <Link href="/wellness" className="flex items-center gap-2 text-[#7B8776] mb-6 hover:text-[#4F5E52] transition-colors">
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Kembali ke Wellness</span>
+            <span className="text-sm font-medium">{isEn ? "Back to Wellness" : "Kembali ke Wellness"}</span>
           </Link>
 
-                    <header className="mb-8">
+          <header className="mb-8">
             <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center mb-6">
               <Dumbbell size={32} />
             </div>
             <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Workout</h1>
-            <p className="text-[#7B8776]">Gerakkan tubuhmu untuk melepaskan energi yang tertahan.</p>
+            <p className="text-[#7B8776]">
+              {isEn ? "Move your body to release stagnant energy." : "Gerakkan tubuhmu untuk melepaskan energi yang tertahan."}
+            </p>
             {workoutDoneToday && (
               <p className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
-                Latihan terakhir kamu tersimpan.
+                {isEn ? "Your last workout session has been saved." : "Latihan terakhir kamu tersimpan."}
               </p>
             )}
           </header>
 
           <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">
             <p className="text-[11px] text-[#7B8776] leading-relaxed italic text-center">
-              Aktivitas ini bersifat opsional dan bukan syarat untuk melanjutkan perjalananmu di Bhumi.
+              {isEn
+                ? "This practice is optional and not a requirement to continue your journey in Bhumi."
+                : "Aktivitas ini bersifat opsional dan bukan syarat untuk melanjutkan perjalananmu di Bhumi."}
             </p>
           </div>
 
@@ -227,7 +233,9 @@ export default function WorkoutPage() {
                     <h2 className="text-xl font-semibold text-[#4F5E52]">{activity.title}</h2>
                     <div className="flex items-center gap-2 mt-1 text-[#9AA394]">
                       <Clock size={14} />
-                      <span className="text-xs font-medium">{activity.durationMinutes} menit</span>
+                      <span className="text-xs font-medium">
+                        {isEn ? `${activity.durationMinutes} mins` : `${activity.durationMinutes} menit`}
+                      </span>
                     </div>
                   </div>
                   <div className={`p-2 rounded-full transition-colors ${selectedIds.has(activity.id) ? 'bg-orange-600 text-white' : 'bg-gray-100 text-gray-300'}`}>
@@ -240,7 +248,7 @@ export default function WorkoutPage() {
                   description={activity.description}
                   benefits={activity.benefits}
                   steps={activity.instruction}
-                  duration={`${activity.durationMinutes} menit`}
+                  duration={isEn ? `${activity.durationMinutes} mins` : `${activity.durationMinutes} menit`}
                   googleSearchPhrase={`${activity.title} exercise proper form`}
                   youtubeSearchPhrase={`${activity.title} beginner workout tutorial`}
                   accentClass="bg-orange-50 text-orange-600"
@@ -252,9 +260,14 @@ export default function WorkoutPage() {
           <div className="mt-12">
             {zoneBContext && (
               <div className="mb-6">
-                <p className="mb-3 text-center text-sm font-medium text-[#4F5E52]">Bagaimana keadaanmu setelah praktik?</p>
+                <p className="mb-3 text-center text-sm font-medium text-[#4F5E52]">
+                  {isEn ? "How do you feel after practice?" : "Bagaimana keadaanmu setelah praktik?"}
+                </p>
                 <div className="grid grid-cols-2 gap-2">
-                  {["Lebih Tenang", "Sama Saja", "Sedikit Lebih Berat", "Belum Yakin"].map((result) => (
+                  {(isEn
+                    ? ["Calmer", "Same", "Slightly heavier", "Not sure"]
+                    : ["Lebih Tenang", "Sama Saja", "Sedikit Lebih Berat", "Belum Yakin"]
+                  ).map((result) => (
                     <button
                       key={result}
                       type="button"
@@ -268,14 +281,14 @@ export default function WorkoutPage() {
               </div>
             )}
             <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
-              Klik save hanya jika kamu sudah melakukan.
+              {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}
             </p>
             <button
               onClick={handleSaveAll}
               disabled={!canSave || saving || saved}
               className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : canSave ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
             >
-              {saved ? 'Langkah Tersimpan ✨' : saving ? 'Menyimpan...' : 'Save'}
+              {saved ? (isEn ? 'Steps Saved ✨' : 'Langkah Tersimpan ✨') : saving ? (isEn ? 'Saving...' : 'Menyimpan...') : 'Save'}
             </button>
           </div>
           <MoanaRuntimeDiagnosticsPanel label="Workout Section 4 save flow" />

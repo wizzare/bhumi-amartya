@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { NavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
 import { NavigatorMode } from "@/lib/data/navigatorActionLibrary";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface WellnessNavigatorViewProps {
   state: NavigatorState;
@@ -38,7 +39,27 @@ const MODE_CONFIG: Record<NavigatorMode, { label: { id: string; en: string }; co
   }
 };
 
+function getCategoryLabel(category: string, isEn: boolean): string {
+  if (isEn) return category;
+  const map: Record<string, string> = {
+    Rest: "Istirahat",
+    Regulation: "Regulasi",
+    Grounding: "Penyelarasan",
+    Space: "Ruang Diri",
+    Journaling: "Jurnal",
+    Gratitude: "Rasa Syukur",
+    Identity: "Identitas Diri",
+    Presence: "Kehadiran",
+    Learning: "Pembelajaran",
+    Vision: "Visi & Arah",
+    Relational: "Relasi",
+  };
+  return map[category] ?? category;
+}
+
 export function WellnessNavigatorView({ state, language }: WellnessNavigatorViewProps) {
+  const isEn = isEnlEdition() || language === "en";
+  const langKey = isEn ? "en" : "id";
   const { mode, primaryAction, supportingActions } = state;
   const config = MODE_CONFIG[mode];
   const Icon = config.icon;
@@ -49,16 +70,16 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
         <div>
           <h4 className="text-[#4F6658] font-bold text-lg italic flex items-center gap-2">
             <Compass size={20} className="text-[#9BB89A]" />
-            {language === "id" ? "Langkah Berikutnya" : "Next Steps"}
+            {isEn ? "Next Steps" : "Langkah Berikutnya"}
           </h4>
           <p className="text-[10px] text-[#7B8776] font-bold uppercase tracking-widest mt-1">
-            {language === "id" ? "Panduan navigasi kondisimu" : "Navigator guide for your condition"}
+            {isEn ? "Navigator guide for your condition" : "Panduan navigasi kondisimu"}
           </p>
         </div>
 
         <div className={`px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 ${config.bgColor} ${config.color} border-current opacity-80`}>
           <Icon size={10} />
-          {config.label[language]}
+          {config.label[langKey]}
         </div>
       </header>
 
@@ -69,19 +90,19 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
         </div>
 
         <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-[0.3em] mb-3">
-          {language === "id" ? "Langkah Utama" : "Primary Action"}
+          {isEn ? "Primary Action" : "Langkah Utama"}
         </p>
 
         <h5 className="text-sm font-bold text-[#4F6658] mb-1">
-          {primaryAction.label[language]}
+          {primaryAction.label[langKey]}
         </h5>
 
         <div className="bg-[#FCFAF5] p-4 rounded-2xl border border-[#E8E9E5]/50">
           <p className="text-[13px] text-[#3C3C3C] font-bold italic leading-relaxed">
-            {primaryAction.microAction[language]}
+            {primaryAction.microAction[langKey]}
           </p>
           <p className="text-[10px] text-[#7B8776] mt-1 font-medium italic opacity-70">
-            {language === "id" ? "Waktu: < 1 Menit" : "Estimate: < 1 Minute"}
+            {isEn ? "Estimate: < 1 Minute" : "Waktu: < 1 Menit"}
           </p>
         </div>
 
@@ -91,7 +112,7 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
       {supportingActions.length > 0 && (
         <div className="space-y-3">
           <p className="text-[10px] font-bold text-[#7B8776] uppercase tracking-[0.2em] ml-2">
-            {language === "id" ? "Langkah Pendukung" : "Supporting Steps"}
+            {isEn ? "Supporting Steps" : "Langkah Pendukung"}
           </p>
           <div className="space-y-2">
             {supportingActions.map((action) => (
@@ -100,8 +121,8 @@ export function WellnessNavigatorView({ state, language }: WellnessNavigatorView
                   <Sparkles size={16} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-[#4F6658]">{action.label[language]}</p>
-                  <p className="text-[10px] text-[#7B8776] font-medium">{action.category}</p>
+                  <p className="text-xs font-bold text-[#4F6658]">{action.label[langKey]}</p>
+                  <p className="text-[10px] text-[#7B8776] font-medium">{getCategoryLabel(action.category, isEn)}</p>
                 </div>
               </div>
             ))}

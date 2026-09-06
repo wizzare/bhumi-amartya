@@ -1,3 +1,4 @@
+import { isEnlEdition } from "@/lib/config/edition";
 import { AuraScores } from "./auraAdapter";
 
 export interface AuraResult {
@@ -185,19 +186,188 @@ const AURA_STATIC_RECORDS: Record<string, AuraStaticData> = {
   }
 };
 
+const AURA_STATIC_RECORDS_EN: Record<string, AuraStaticData> = {
+  MERAH: {
+    name: "Red",
+    keyword: "Courage, Action, Resolve",
+    summary: "Red energy embodies vitality, grounded courage, resilience, and a decisive drive toward tangible action. You are practical, outcome-focused, and step forward to meet life's demands with clarity and determination.",
+    strengths: [
+      "Decisive and prompt decision-making.",
+      "Natural momentum for practical execution.",
+      "High physical and mental resilience.",
+      "Self-reliance and proactive initiative.",
+      "Steady leadership in demanding situations."
+    ],
+    challenges: [
+      "Tendency toward restlessness and impatience.",
+      "Vulnerability to frustration under slow pacing.",
+      "Difficulty delegating responsibilities to others.",
+      "Risk of personal exhaustion from relentless drive.",
+      "Focusing on targets while overlooking personal pacing."
+    ],
+    growth: "You are learning to balance bold action with intentional patience, recognizing that deliberate pauses and mindful pacing strengthen your long-term endeavors."
+  },
+  JINGGA: {
+    name: "Orange",
+    keyword: "Creativity, Expression, Enthusiasm",
+    summary: "Orange energy represents expressive creativity, social vitality, and an open engagement with new experiences. You bring warmth and inventive spark wherever you go, continuously discovering fresh ways to express your individuality.",
+    strengths: [
+      "Vivid imagination and creative problem-solving.",
+      "Engaging, expressive communication style.",
+      "Encouraging enthusiasm that inspires those around you.",
+      "Adaptability and openness to changing environments.",
+      "Warm emotional resonance and relational empathy."
+    ],
+    challenges: [
+      "Difficulty sustaining momentum on initiated projects.",
+      "Fluctuating focus and shifting motivation.",
+      "Heightened sensitivity to external criticism.",
+      "Reluctance to engage with rigid or repetitive routines.",
+      "Risk of dispersing energy across too many pursuits."
+    ],
+    growth: "You are being guided to channel creative energy into grounded consistency, committing to meaningful goals through completion while honoring your sense of play."
+  },
+  KUNING: {
+    name: "Yellow",
+    keyword: "Growth, Optimism, Learning",
+    summary: "Yellow energy signifies mental clarity, forward-looking optimism, intellectual curiosity, and a natural affinity for lifelong learning. You possess an analytical perspective and enjoy exploring how ideas connect.",
+    strengths: [
+      "Sharp analytical thinking and rapid comprehension.",
+      "Optimistic and solution-focused outlook.",
+      "Logical reasoning and structured discernment.",
+      "Eagerness to share knowledge and insights.",
+      "Openness to diverse viewpoints and methodologies."
+    ],
+    challenges: [
+      "Tendency toward mental overanalysis and overthinking.",
+      "Setting overly exacting standards for yourself.",
+      "Decision hesitation when evaluating too many variables.",
+      "Doubting your own readiness or depth of insight.",
+      "Restlessness during periods of routine or low mental stimulation."
+    ],
+    growth: "Your growth centers on bridging mental comprehension with everyday practice, allowing knowledge to mature into lived, heart-centered wisdom."
+  },
+  HIJAU: {
+    name: "Green",
+    keyword: "Empathy, Connection, Harmony",
+    summary: "Green energy reflects deep empathy, relational warmth, compassionate listening, and the creation of harmonious spaces. You offer a calming presence and have a natural capacity to cultivate mutual understanding.",
+    strengths: [
+      "Attentive, empathetic listening without hasty judgment.",
+      "Natural compassion and warmth in relationships.",
+      "Gift for resolving friction and encouraging harmony.",
+      "Intuitive awareness of interpersonal emotional balance.",
+      "Calming presence that fosters safety and trust."
+    ],
+    challenges: [
+      "Difficulty maintaining clear and healthy personal boundaries.",
+      "Prioritizing others' comfort at the expense of your own needs.",
+      "Absorbing environmental tension and emotional fatigue.",
+      "Reluctance to engage in constructive confrontation.",
+      "Carrying disproportionate responsibility for group harmony."
+    ],
+    growth: "You are learning to nurture your own well-being with the same care you extend to others, maintaining healthy boundaries to keep your presence balanced and sustainable."
+  },
+  BIRU: {
+    name: "Blue",
+    keyword: "Communication, Inspiration, Insight",
+    summary: "Blue energy symbolizes clear communication, inner composure, authentic truth, and thoughtful inspiration. You speak with purposeful reflection and bring balanced perspective to the people around you.",
+    strengths: [
+      "Clear, deliberate, and thoughtful communication.",
+      "Strong personal integrity and respect for honesty.",
+      "Ability to articulate complex ideas with simplicity.",
+      "Composed demeanor that brings calm to unsettled situations.",
+      "Trusted perspective that inspires clarity in others."
+    ],
+    challenges: [
+      "Guarding feelings to maintain an appearance of composure.",
+      "Appearing detached or emotionally distant at times.",
+      "Reluctance to express personal vulnerability.",
+      "Rigid adherence to fixed principles or expectations.",
+      "Internalizing thoughts rather than expressing them openly."
+    ],
+    growth: "You are invited to embrace authentic vulnerability, speaking not only from clarity and intellect, but also with genuine, heartfelt openness."
+  },
+  UNGU: {
+    name: "Violet",
+    keyword: "Intuition, Life Meaning, Reflection",
+    summary: "Violet energy represents intuitive depth, reflective perception, contemplation, and an enduring inquiry into life's meaning. You look beyond surface appearances and bring intentional awareness to your journey.",
+    strengths: [
+      "Keen intuition and inner self-guidance.",
+      "Depth of self-awareness and philosophical reflection.",
+      "Ability to perceive overarching patterns in life events.",
+      "Reflective discernment and nuanced understanding.",
+      "Appreciation for quiet contemplation and purposeful living."
+    ],
+    challenges: [
+      "Disconnecting from practical daily routines and physical grounding.",
+      "Heightened sensitivity to shifting emotional atmospheres.",
+      "Feelings of isolation or being misunderstood by peers.",
+      "Tendency toward excessive solitary withdrawal.",
+      "Struggling to convert intuitive insights into concrete action."
+    ],
+    growth: "Your focus is cultivating daily grounding practices, learning to translate reflective awareness and intuitive insight into practical, everyday steps."
+  },
+  EMAS: {
+    name: "Gold",
+    keyword: "Leadership, Presence, Manifestation",
+    summary: "Gold energy signifies visionary leadership, confident presence, an abundance mindset, and the capacity to manifest purposeful ideas. You possess an authentic charisma that inspires collective alignment and tangible outcomes.",
+    strengths: [
+      "Natural authority and inspirational leadership presence.",
+      "Capacity to organize resources and execute meaningful visions.",
+      "Constructive confidence and an abundance-oriented perspective.",
+      "Strategic focus on sustainable, long-term impact.",
+      "Ability to rally others around shared aspirations."
+    ],
+    challenges: [
+      "Tendency toward excessive control or perfectionism.",
+      "Uncompromising expectations of yourself and team members.",
+      "Reluctance to acknowledge personal vulnerability or limits.",
+      "Prioritizing external outcomes over personal equilibrium.",
+      "Assuming full responsibility rather than delegating smoothly."
+    ],
+    growth: "You are learning to enrich your leadership with humility and collaboration, recognizing that lasting impact comes from empowering others rather than controlling every detail."
+  },
+  PERAK: {
+    name: "Silver",
+    keyword: "Wisdom, Observation, Maturity",
+    summary: "Silver energy represents quiet maturity, perceptive observation, emotional composure, and objective perspective. You are a thoughtful observer who offers an unclouded mirror for others to see themselves clearly.",
+    strengths: [
+      "Quiet wisdom and steady emotional composure.",
+      "Objective, perceptive observation without premature bias.",
+      "Dependable, balanced counsel in complex situations.",
+      "Mature perspective during difficult transitions.",
+      "Inner centeredness and dignified self-possession."
+    ],
+    challenges: [
+      "Hesitation to step forward and take decisive initiative.",
+      "Tendency to retreat into detached observation.",
+      "Appearing aloof or uninvolved to those seeking connection.",
+      "Reluctance to engage fully in emotional vulnerability.",
+      "Holding valuable observations quietly instead of contributing them."
+    ],
+    growth: "You are encouraged to step beyond quiet observation and actively share your insights, supporting others with your grounded wisdom and calm maturity."
+  }
+};
+
 export function generateAuraResult(
   primary: string,
   secondary: string,
   shadow: string,
-  scores: Record<string, number>
+  scores: Record<string, number>,
+  isEn: boolean = isEnlEdition()
 ): AuraResult {
-  const primaryData = AURA_STATIC_RECORDS[primary] || AURA_STATIC_RECORDS.KUNING;
-  const secondaryData = AURA_STATIC_RECORDS[secondary] || AURA_STATIC_RECORDS.HIJAU;
-  const shadowData = AURA_STATIC_RECORDS[shadow] || AURA_STATIC_RECORDS.PERAK;
+  const records = isEn ? AURA_STATIC_RECORDS_EN : AURA_STATIC_RECORDS;
+  const primaryData = records[primary] || records.KUNING;
+  const secondaryData = records[secondary] || records.HIJAU;
+  const shadowData = records[shadow] || records.PERAK;
 
-  const supportExplanation = `Energi ${secondaryData.name} (${secondaryData.keyword}) dalam dirimu bertindak sebagai sistem pendukung yang memperkuat dan menyeimbangkan aura utama ${primaryData.name} (${primaryData.keyword}). Saat kamu memadukan aksi ${primaryData.keyword} dengan kecenderungan ${secondaryData.keyword}, kamu dapat mengekspresikan jati dirimu secara optimal dengan cara yang stabil dan konstruktif.`;
+  const supportExplanation = isEn
+    ? `Your ${secondaryData.name} energy (${secondaryData.keyword}) acts as a supportive foundation that balances and reinforces your dominant ${primaryData.name} aura (${primaryData.keyword}). By pairing the focus of ${primaryData.keyword} with the qualities of ${secondaryData.keyword}, you can express your authentic strengths in a balanced and constructive manner.`
+    : `Energi ${secondaryData.name} (${secondaryData.keyword}) dalam dirimu bertindak sebagai sistem pendukung yang memperkuat dan menyeimbangkan aura utama ${primaryData.name} (${primaryData.keyword}). Saat kamu memadukan aksi ${primaryData.keyword} dengan kecenderungan ${secondaryData.keyword}, kamu dapat mengekspresikan jati dirimu secara optimal dengan cara yang stabil dan konstruktif.`;
 
-  const shadowExplanation = `Energi ${shadowData.name} mewakili sisi bayangan (shadow) dalam dirimu. Sisi ini cenderung mengemuka saat kamu merasa lelah, stres, tertekan, atau kehilangan keselarasan batin. Ketika keseimbanganmu goyah, kecenderungan ${shadowData.keyword} dapat terdistorsi menjadi hambatan batin, seperti: ${shadowData.challenges[0]} atau ${shadowData.challenges[1]}. Menyadari sinyal ini membantumu melatih kesadaran diri (grounding) untuk kembali ke pusat keseimbanganmu.`;
+  const shadowExplanation = isEn
+    ? `Your ${shadowData.name} energy reflects your shadow tendency, which often surfaces during moments of fatigue, stress, or feeling ungrounded. When personal balance is disrupted, ${shadowData.keyword} tendencies may manifest as inner challenges, such as: ${shadowData.challenges[0]} or ${shadowData.challenges[1]}. Recognizing these patterns helps you practice grounding and gently return to your centered self.`
+    : `Energi ${shadowData.name} mewakili sisi bayangan (shadow) dalam dirimu. Sisi ini cenderung mengemuka saat kamu merasa lelah, stres, tertekan, atau kehilangan keselarasan batin. Ketika keseimbanganmu goyah, kecenderungan ${shadowData.keyword} dapat terdistorsi menjadi hambatan batin, seperti: ${shadowData.challenges[0]} atau ${shadowData.challenges[1]}. Menyadari sinyal ini membantumu melatih kesadaran diri (grounding) untuk kembali ke pusat keseimbanganmu.`;
 
   return {
     primaryAura: primary,

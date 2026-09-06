@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
 import { AuraService } from "@/lib/services/auraService";
+import { generateAuraResult } from "@/lib/services/auraResultGenerator";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export async function POST(request: Request) {
   try {
@@ -9,16 +11,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const { fullName, birthDate, birthTime, birthCity, latitude, longitude, timezone } = body;
+    const { fullName, birthDate, birthTime, birthCity, latitude, longitude, timezone, language } = body;
+    const isEn = language === "en" || isEnlEdition();
 
     if (!fullName || !birthDate || !birthCity) {
       return NextResponse.json(
-        { error: "Missing required fields: fullName, birthDate, and birthCity are required." },
+        {
+          error: isEn
+            ? "Missing required fields: fullName, birthDate, and birthCity are required."
+            : "Field wajib belum lengkap: nama lengkap, tanggal lahir, dan kota lahir harus diisi.",
+        },
         { status: 400 }
       );
     }
 
-    // Call the existing blueprint orchestration engine
     const blueprint = await generateBlueprint({
       uid: "aura-visitor",
       fullName,
@@ -30,8 +36,14 @@ export async function POST(request: Request) {
       timezone: timezone || null,
     });
 
-    // Run the Aura calculation service
-    const auraResult = AuraService.calculateAura(blueprint);
+    const baseResult = AuraService.calculateAura(blueprint);
+    const auraResult = generateAuraResult(
+      baseResult.primaryAura,
+      baseResult.secondaryAura,
+      baseResult.shadowAura,
+      baseResult.scores,
+      isEn
+    );
 
     return NextResponse.json(auraResult);
   } catch (error) {

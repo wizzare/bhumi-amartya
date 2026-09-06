@@ -20,6 +20,7 @@ import { storageProvider } from "@/lib/storage/storageProvider";
 import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { isEnlEdition } from "@/lib/config/edition";
 
 function saveActiveManifestation(uid: string, dateKey: string, manifestation: any): void {
   if (typeof window === "undefined" || !manifestation?.affirmation) return;
@@ -31,6 +32,7 @@ function saveActiveManifestation(uid: string, dateKey: string, manifestation: an
 }
 
 export default function ManifestasiPage() {
+  const isEn = isEnlEdition();
   const auth = useAuth();
   const router = useRouter();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
@@ -124,11 +126,19 @@ export default function ManifestasiPage() {
         }
       } catch (err) {
         // Absolute fallback to prevent empty page
-        setManifestation({
-          affirmation: "Hari ini aku memilih untuk hadir sepenuhnya bagi diriku sendiri.",
-          assumption: "Aku percaya bahwa setiap langkah kecilku membawa dampak besar.",
-          attraction: "Aku mengundang kedamaian dan kejernihan dalam setiap tindakanku."
-        });
+        if (isEn) {
+          setManifestation({
+            affirmation: "Today I choose to be fully present for myself.",
+            assumption: "I trust that every small step I take creates meaningful impact.",
+            attraction: "I invite peace and clarity into every action I take."
+          });
+        } else {
+          setManifestation({
+            affirmation: "Hari ini aku memilih untuk hadir sepenuhnya bagi diriku sendiri.",
+            assumption: "Aku percaya bahwa setiap langkah kecilku membawa dampak besar.",
+            attraction: "Aku mengundang kedamaian dan kejernihan dalam setiap tindakanku."
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -137,7 +147,7 @@ export default function ManifestasiPage() {
     if (auth?.authStateResolved) {
       fetchManifestation();
     }
-  }, [auth, auditUser]);
+  }, [auth, auditUser, isEn]);
 
   const handleComplete = async () => {
     const uid = auth?.user?.uid || (auditUser ? `${auditUser}_uid` : null);
@@ -149,7 +159,7 @@ export default function ManifestasiPage() {
       hasManifestation: Boolean(manifestation),
     });
     if (!uid || saved) {
-      if (!uid) alert("Silakan login terlebih dahulu untuk menyimpan praktik.");
+      if (!uid) alert(isEn ? "Please sign in first to save your practice." : "Silakan login terlebih dahulu untuk menyimpan praktik.");
       return;
     }
 
@@ -178,7 +188,7 @@ export default function ManifestasiPage() {
     } catch (err) {
       const detail = formatSection4SaveError(err);
       console.error("[MANIFESTASI_SAVE_ERROR]", detail, err);
-      alert(`Gagal menyimpan manifestasi.\n${detail}`);
+      alert(isEn ? `Failed to save manifestation.\n${detail}` : `Gagal menyimpan manifestasi.\n${detail}`);
     }
   };
 
@@ -199,15 +209,19 @@ export default function ManifestasiPage() {
         <div className="mx-auto max-w-lg">
           <Link href="/wellness" className="flex items-center gap-2 text-[#7B8776] mb-6 hover:text-[#4F5E52] transition-colors">
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Kembali ke Wellness</span>
+            <span className="text-sm font-medium">{isEn ? "Back to Wellness" : "Kembali ke Wellness"}</span>
           </Link>
 
           <header className="mb-10">
             <div className="w-16 h-16 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mb-6">
               <Sparkles size={32} />
             </div>
-            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Manifestasi Hari Ini</h1>
-            <p className="text-[#7B8776]">Menyelaraskan batin dengan energi dan niatmu.</p>
+            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">
+              {isEn ? "Today's Manifestation" : "Manifestasi Hari Ini"}
+            </h1>
+            <p className="text-[#7B8776]">
+              {isEn ? "Aligning inner space with your intention and energy." : "Menyelaraskan batin dengan energi dan niatmu."}
+            </p>
           </header>
 
           <div className="space-y-6">
@@ -262,14 +276,14 @@ export default function ManifestasiPage() {
 
             <div className="pt-4">
               <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
-                Klik save hanya jika kamu sudah melakukan.
+                {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}
               </p>
               <button
                 onClick={handleComplete}
                 disabled={saved}
                 className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]'}`}
               >
-                {saved ? 'Selesai ✨' : 'Save'}
+                {saved ? (isEn ? 'Done ✨' : 'Selesai ✨') : 'Save'}
               </button>
             </div>
           </div>

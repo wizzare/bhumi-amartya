@@ -7,6 +7,7 @@ import { readOwnedCacheArray, withActiveUid } from "@/lib/storage/derivedCacheOw
 import { auth } from "@/lib/firebase/firebase";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export const AUDIO_HEALING_STORAGE_KEY = "bhumiAudioHealingEntries";
 
@@ -98,6 +99,22 @@ export function createAudioHealingReflection(input: {
   bodySignals: string[];
   reflectionText: string;
 }): AudioHealingReflection {
+  const isEn = isEnlEdition();
+
+  if (isEn) {
+    const bodyLine = input.bodySignals.length > 0
+      ? `Your body signaled through ${input.bodySignals.join(", ").toLowerCase()}, so that response deserves gentle listening.`
+      : "Not feeling any particular sensation is also part of how your body processes audio today.";
+    const textLine = input.reflectionText.trim()
+      ? "Your notes show a small window of awareness recognizing what shifted after listening."
+      : "Even without many words, your body holds the awareness of what feels safer.";
+
+    return {
+      insight: `Your body's response shows that a part of you is making space for calm, even if everything isn't fully resolved yet. ${bodyLine} ${textLine}`,
+      nextFocus: `Tomorrow, notice what sounds or settings make your body feel most at ease. If a feeling of "${input.emotionalState || "mixed emotions"}" arises, give your breath time before judging the experience.`,
+    };
+  }
+
   const bodyLine = input.bodySignals.length > 0
     ? `Tubuhmu memberi sinyal lewat ${input.bodySignals.join(", ").toLowerCase()}, jadi respons itu layak didengar pelan-pelan.`
     : "Tidak ada sensasi khusus juga bisa menjadi bagian dari cara tubuhmu memproses audio hari ini.";

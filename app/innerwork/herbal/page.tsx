@@ -17,11 +17,13 @@ import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/inne
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import { getZoneBGuide, readZoneBContext, type ZoneBContext } from "@/lib/innerwork/zoneBContext";
+import { isEnlEdition } from "@/lib/config/edition";
 
 const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_VARIATION_LIBRARY.healthyFood];
 const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function HealthyFoodPage() {
+  const isEn = isEnlEdition();
   const auth = useAuth();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
@@ -101,7 +103,7 @@ export default function HealthyFoodPage() {
     } catch (err) {
       const detail = formatSection4SaveError(err);
       console.error("[HEALTHY_FOOD_SAVE_ERROR]", detail, err);
-      alert(`Gagal menyimpan pilihan Healthy Food.\n${detail}`);
+      alert(isEn ? `Failed to save Healthy Food selection.\n${detail}` : `Gagal menyimpan pilihan Healthy Food.\n${detail}`);
     } finally {
       setSaving(false);
     }
@@ -118,18 +120,22 @@ export default function HealthyFoodPage() {
         <div className="mx-auto max-w-lg">
           <Link href="/wellness" className="flex items-center gap-2 text-[#7B8776] mb-6 hover:text-[#4F5E52] transition-colors">
             <ArrowLeft size={20} />
-            <span className="text-sm font-medium">Kembali ke Wellness</span>
+            <span className="text-sm font-medium">{isEn ? "Back to Wellness" : "Kembali ke Wellness"}</span>
           </Link>
 
           <header className="mb-8">
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6">
               <Utensils size={32} />
             </div>
-            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Healthy Food</h1>
-            <p className="text-[#7B8776]">Rekomendasi makanan sehat, jamu, dan herbal untuk mendukung tubuhmu.</p>
+            <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">
+              {isEn ? "Healthy Food & Herbal Support" : "Healthy Food"}
+            </h1>
+            <p className="text-[#7B8776]">
+              {isEn ? "Recipes and herbal drinks to support your body." : "Rekomendasi makanan sehat, jamu, dan herbal untuk mendukung tubuhmu."}
+            </p>
             {zoneBContext && (
               <div className="mt-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 text-sm text-[#4F5E52]">
-                <p className="font-semibold">Disesuaikan dengan: {zoneBContext.title}</p>
+                <p className="font-semibold">{isEn ? `Adapted for: ${zoneBContext.title}` : `Disesuaikan dengan: ${zoneBContext.title}`}</p>
                 <p className="mt-1 text-[#7B8776]">{getZoneBGuide(zoneBContext).description}</p>
               </div>
             )}
@@ -137,7 +143,9 @@ export default function HealthyFoodPage() {
 
           <div className="mb-8 p-4 rounded-2xl bg-white border border-[#E8E9E5] shadow-sm">
             <p className="text-[11px] text-[#7B8776] leading-relaxed italic text-center">
-              Aktivitas ini bersifat opsional dan bukan syarat untuk melanjutkan perjalananmu di Bhumi.
+              {isEn
+                ? "This practice is optional and not a requirement to continue your journey in Bhumi."
+                : "Aktivitas ini bersifat opsional dan bukan syarat untuk melanjutkan perjalananmu di Bhumi."}
             </p>
           </div>
 
@@ -153,7 +161,9 @@ export default function HealthyFoodPage() {
                     <h2 className="text-xl font-semibold text-[#4F5E52]">{activity.title}</h2>
                     <div className="flex items-center gap-2 mt-1 text-[#9AA394]">
                       <Clock size={14} />
-                      <span className="text-xs font-medium">{activity.durationMinutes} menit persiapan</span>
+                      <span className="text-xs font-medium">
+                        {isEn ? `${activity.durationMinutes} mins prep` : `${activity.durationMinutes} menit persiapan`}
+                      </span>
                     </div>
                   </div>
                   <div className={`p-2 rounded-full transition-colors ${selectedIds.has(activity.id) ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-300'}`}>
@@ -165,7 +175,9 @@ export default function HealthyFoodPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Bahan-bahan</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">
+                      {isEn ? "Ingredients" : "Bahan-bahan"}
+                    </h3>
                     <div className="flex flex-wrap gap-2">
                       {activity.ingredients?.map((item, idx) => (
                         <span key={idx} className="px-3 py-1 bg-[#F5F1E8] text-[#4F5E52] rounded-lg text-xs font-medium">
@@ -176,7 +188,9 @@ export default function HealthyFoodPage() {
                   </div>
 
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">Cara Menyiapkan</h3>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#9AA394] mb-2">
+                      {isEn ? "Preparation steps" : "Cara Menyiapkan"}
+                    </h3>
                     <ul className="space-y-2">
                       {activity.instruction.map((step, idx) => (
                         <li key={idx} className="text-sm text-[#4F5E52] flex gap-3">
@@ -202,21 +216,22 @@ export default function HealthyFoodPage() {
 
           <div className="mt-12">
             <p className="mb-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
-              Klik save hanya jika kamu sudah melakukan.
+              {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}
             </p>
             <button
               onClick={handleSaveAll}
               disabled={selectedIds.size === 0 || saving || saved}
               className={`w-full py-5 rounded-2xl font-bold text-sm tracking-widest uppercase transition-all shadow-lg active:scale-[0.98] ${saved ? 'bg-emerald-600 text-white' : selectedIds.size > 0 ? 'bg-[#4F5E52] text-white hover:bg-[#3D4A3F]' : 'bg-[#E8E9E5] text-[#9AA394] cursor-not-allowed'}`}
             >
-              {saved ? 'Langkah Tersimpan ✨' : saving ? 'Menyimpan...' : 'Save'}
+              {saved ? (isEn ? 'Steps Saved ✨' : 'Langkah Tersimpan ✨') : saving ? (isEn ? 'Saving...' : 'Menyimpan...') : 'Save'}
             </button>
           </div>
 
           <div className="mt-10 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
             <p className="text-[10px] text-[#9AA394] text-center leading-relaxed">
-              Rekomendasi ini bersifat pendamping gaya hidup, bukan pengganti saran medis.
-              Jika kamu memiliki kondisi kesehatan tertentu, konsultasikan dengan tenaga profesional.
+              {isEn
+                ? "These recommendations are lifestyle support, not a substitute for medical advice. If you have specific health conditions, please consult a healthcare professional."
+                : "Rekomendasi ini bersifat pendamping gaya hidup, bukan pengganti saran medis. Jika kamu memiliki kondisi kesehatan tertentu, konsultasikan dengan tenaga profesional."}
             </p>
           </div>
           <MoanaRuntimeDiagnosticsPanel label="Healthy Food Section 4 save flow" />

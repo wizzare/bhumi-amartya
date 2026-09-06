@@ -1,4 +1,5 @@
 import React from "react";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface ChakraFocusItem {
   chakra: string;
@@ -11,10 +12,12 @@ interface ChakraBalanceCardProps {
 }
 
 export function ChakraBalanceCard({ chakraFocus }: ChakraBalanceCardProps) {
+  const isEn = isEnlEdition();
+
   return (
     <section className="rounded-[32px] bg-[#F5F3EE] p-7 shadow-soft border border-[#E8E9E5]">
-      <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">Keseimbangan chakra</p>
-      <h2 className="text-2xl font-semibold text-[#33413A]">Tempat energi kamu memanggil perhatian</h2>
+      <p className="text-[#7B8776] text-xs uppercase tracking-[0.24em] mb-2">{isEn ? "Chakra Balance" : "Keseimbangan chakra"}</p>
+      <h2 className="text-2xl font-semibold text-[#33413A]">{isEn ? "Where your energy calls for attention" : "Tempat energi kamu memanggil perhatian"}</h2>
       <div className="mt-6 space-y-4">
         {chakraFocus.map((item) => (
           <div key={item.chakra} className="rounded-[24px] border border-[#E8E9E5] bg-white p-5">

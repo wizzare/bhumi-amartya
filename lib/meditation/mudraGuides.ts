@@ -1,3 +1,5 @@
+import { isEnlEdition } from "@/lib/config/edition";
+
 export type MudraGuide = {
   name: string;
   duration: string;
@@ -109,8 +111,134 @@ export const MUDRA_GUIDES: Record<string, MudraGuide> = {
   },
 };
 
+export const MUDRA_GUIDES_EN: Record<string, MudraGuide> = {
+  "Prithvi Mudra": {
+    name: "Prithvi Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Touch the tip of your ring finger to the tip of your thumb.",
+      "Keep your other fingers relaxed.",
+      "Rest your hands comfortably on your thighs.",
+    ],
+    benefits: "Supports grounding, stability, and a gentle sense of safety in the body.",
+    affirmation: "I am safe and supported by the earth.",
+  },
+  "Gyan Mudra": {
+    name: "Gyan Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Touch the tip of your index finger to the tip of your thumb.",
+      "Keep your other fingers straight and relaxed.",
+      "Rest your hands on your knees with palms facing upward.",
+    ],
+    benefits: "Enhances mental clarity, awareness, and inner stillness.",
+    affirmation: "I listen to the wisdom within myself.",
+  },
+  "Anjali Mudra": {
+    name: "Anjali Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Bring both palms together at your heart center.",
+      "Keep your shoulders relaxed and ease into the posture.",
+      "Breathe gently into your chest.",
+    ],
+    benefits: "Connects with the heart, gratitude, and emotional tenderness.",
+    affirmation: "I return to my heart with gratitude.",
+  },
+  "Apana Mudra": {
+    name: "Apana Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Touch your thumb to your middle and ring fingertips.",
+      "Keep your index finger and pinky finger relaxed.",
+    ],
+    benefits: "Supports emotional release, letting go, and grounding.",
+    affirmation: "I release what no longer serves me.",
+  },
+  "Hakini Mudra": {
+    name: "Hakini Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Touch all fingertips of both hands lightly together.",
+      "Hold your hands softly in front of your chest.",
+      "Breathe slowly and evenly.",
+    ],
+    benefits: "Encourages focus, integration, and mental balance.",
+    affirmation: "My mind and intuition work in harmony.",
+  },
+  "Padma Mudra": {
+    name: "Padma Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Bring the bases of your palms, thumbs, and pinky fingers together.",
+      "Open your index, middle, and ring fingers like a blooming lotus.",
+      "Hold gently in front of your chest.",
+    ],
+    benefits: "Opens the heart to receptivity, compassion, and appreciation.",
+    affirmation: "My heart is open to give and receive love.",
+  },
+  "Shuni Mudra": {
+    name: "Shuni Mudra",
+    duration: "4-6 minutes",
+    steps: [
+      "Touch the tip of your middle finger to the tip of your thumb.",
+      "Allow the remaining three fingers to relax.",
+      "Rest your hands on your thighs with relaxed shoulders.",
+    ],
+    benefits: "Cultivates patience, gentle discipline, and stability through life's processes.",
+    affirmation: "I honor the process and grow in my own rhythm.",
+  },
+  "Surya Mudra": {
+    name: "Surya Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Fold your ring finger toward the base of your thumb.",
+      "Gently rest your thumb over your ring finger.",
+      "Keep your other fingers comfortably relaxed.",
+    ],
+    benefits: "Supports gentle vitality, warmth, and inner motivation when feeling sluggish.",
+    affirmation: "I consciously kindle my inner vitality.",
+  },
+  "Vayu Mudra": {
+    name: "Vayu Mudra",
+    duration: "4-6 minutes",
+    steps: [
+      "Fold your index finger to the base of your thumb.",
+      "Press gently with your thumb over the index knuckle.",
+      "Allow the other fingers to extend without tension.",
+    ],
+    benefits: "Helps soothe restlessness, mental chatter, and nervous tension.",
+    affirmation: "I create space for my mind to settle into calm.",
+  },
+  "Kubera Mudra": {
+    name: "Kubera Mudra",
+    duration: "3-5 minutes",
+    steps: [
+      "Join the tips of your thumb, index, and middle fingers.",
+      "Curl your ring finger and pinky into your palm.",
+      "Hold your intention with calm, steady breathing.",
+    ],
+    benefits: "Supports intentional focus, clear direction, and confident steps forward.",
+    affirmation: "My intention is clear and my actions are aligned.",
+  },
+  "Yoni Mudra": {
+    name: "Yoni Mudra",
+    duration: "5-7 minutes",
+    steps: [
+      "Join your thumbs and index fingertips pointing down to form a triangle.",
+      "Interlock or rest the other fingers comfortably together.",
+      "Place your hands gently below your navel.",
+    ],
+    benefits: "Encourages inner safety, intuitive connection, creativity, and emotional serenity.",
+    affirmation: "I return home to the safe space within myself.",
+  },
+};
+
 export type MudraName = keyof typeof MUDRA_GUIDES;
 
-export function getMudraGuide(name: MudraName): MudraGuide | undefined {
+export function getMudraGuide(name: MudraName, isEn = isEnlEdition()): MudraGuide | undefined {
+  if (isEn) {
+    return MUDRA_GUIDES_EN[name] ?? MUDRA_GUIDES[name];
+  }
   return MUDRA_GUIDES[name];
 }

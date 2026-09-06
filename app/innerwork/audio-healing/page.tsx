@@ -19,6 +19,7 @@ import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { formatSection4SaveError, logWellnessSection4Practice } from "@/lib/innerwork/wellnessSection4Logging";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagnostics";
+import { isEnlEdition } from "@/lib/config/edition";
 import {
   AUDIO_HEALING_EMBED_URL,
   AUDIO_HEALING_PLAYLIST_URL,
@@ -27,7 +28,7 @@ import {
   type AudioHealingReflection,
 } from "@/lib/audioHealing/localAudioHealing";
 
-const EMOTIONAL_STATES = [
+const EMOTIONAL_STATES_ID = [
   "😊 Lebih ringan",
   "😌 Lebih tenang",
   "😢 Sedih",
@@ -39,7 +40,19 @@ const EMOTIONAL_STATES = [
   "⚡ Lebih berenergi",
 ];
 
-const BODY_SIGNALS = [
+const EMOTIONAL_STATES_EN = [
+  "😊 Lighter",
+  "😌 Calmer",
+  "😢 Sad",
+  "😔 Confused",
+  "😠 Angry",
+  "💭 Mixed feelings",
+  "🫧 More relieved",
+  "🌙 Sleepy",
+  "⚡ More energized",
+];
+
+const BODY_SIGNALS_ID = [
   "Bahu tegang",
   "Dada terasa berat",
   "Tenggorokan terasa mengganjal",
@@ -52,7 +65,21 @@ const BODY_SIGNALS = [
   "Tidak ada sensasi khusus",
 ];
 
+const BODY_SIGNALS_EN = [
+  "Tense shoulders",
+  "Heavy chest",
+  "Lump in throat",
+  "Stomach discomfort",
+  "Watery eyes",
+  "Body more relaxed",
+  "Deeper breathing",
+  "Head feeling lighter",
+  "Drowsy",
+  "No particular sensation",
+];
+
 function AudioHealingExperience() {
+  const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
@@ -66,6 +93,9 @@ function AudioHealingExperience() {
   const [saved, setSaved] = useState(false);
   const [isWellnessLocked, setIsWellnessLocked] = useState(false);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
+
+  const emotionalStates = isEn ? EMOTIONAL_STATES_EN : EMOTIONAL_STATES_ID;
+  const bodySignalsList = isEn ? BODY_SIGNALS_EN : BODY_SIGNALS_ID;
 
   useEffect(() => {
     const initialize = async () => {
@@ -81,12 +111,13 @@ function AudioHealingExperience() {
   }, [auth]);
 
   const toggleBodySignal = (signal: string) => {
+    const noneText = isEn ? "No particular sensation" : "Tidak ada sensasi khusus";
     setBodySignals((current) => {
-      if (signal === "Tidak ada sensasi khusus") {
+      if (signal === noneText) {
         return current.includes(signal) ? [] : [signal];
       }
 
-      const withoutNone = current.filter((item) => item !== "Tidak ada sensasi khusus");
+      const withoutNone = current.filter((item) => item !== noneText);
       if (withoutNone.includes(signal)) {
         return withoutNone.filter((item) => item !== signal);
       }
@@ -103,7 +134,7 @@ function AudioHealingExperience() {
       profileUid: auth?.userProfile?.uid ?? null,
     });
     if (!activeUid) {
-      alert("Silakan login terlebih dahulu untuk menyimpan praktik.");
+      alert(isEn ? "Please sign in first to save your practice." : "Silakan login terlebih dahulu untuk menyimpan praktik.");
       return;
     }
 
@@ -150,7 +181,7 @@ function AudioHealingExperience() {
     } catch (err) {
       const detail = formatSection4SaveError(err);
       console.error("[AUDIO_HEALING_SAVE_ERROR]", detail, err);
-      alert(`Gagal menyimpan praktik audio healing.\n${detail}`);
+      alert(isEn ? `Failed to save audio healing practice.\n${detail}` : `Gagal menyimpan praktik audio healing.\n${detail}`);
     }
   };
 
@@ -166,35 +197,55 @@ function AudioHealingExperience() {
             🎧 Audio Healing
           </h1>
           <p className="mt-4 text-[#7B8776] leading-relaxed">
-            Pilih audio yang ingin kamu dengarkan hari ini. Setelah selesai, luangkan waktu sejenak untuk mencatat apa yang kamu rasakan di tubuh dan emosimu.
+            {isEn
+              ? "Choose the audio you want to listen to today. When you're done, take a moment to note what you notice in your body and emotions."
+              : "Pilih audio yang ingin kamu dengarkan hari ini. Setelah selesai, luangkan waktu sejenak untuk mencatat apa yang kamu rasakan di tubuh dan emosimu."}
           </p>
         </header>
 
         <section className="bhumi-card p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">Section A · Playlist</h2>
+          <h2 className="text-xl font-semibold text-[#4F5E52]">
+            {isEn ? "Section A · Playlist" : "Section A · Playlist"}
+          </h2>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-[#FCFAF5] p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Deskripsi</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">
+                {isEn ? "Description" : "Deskripsi"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
-                Audio Healing adalah ruang mendengarkan terpandu untuk membantu perhatian kembali pada tubuh dan suasana hati.
+                {isEn
+                  ? "Audio Healing is a guided listening space to help bring your attention back to your body and mood."
+                  : "Audio Healing adalah ruang mendengarkan terpandu untuk membantu perhatian kembali pada tubuh dan suasana hati."}
               </p>
             </div>
             <div className="rounded-2xl bg-[#FCFAF5] p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Durasi</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">
+                {isEn ? "Duration" : "Durasi"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
-                Mulai dari 10–15 menit. Kamu boleh berhenti lebih awal jika tubuh terasa cukup.
+                {isEn
+                  ? "Starts from 10–15 minutes. You may stop earlier if your body feels satisfied."
+                  : "Mulai dari 10–15 menit. Kamu boleh berhenti lebih awal jika tubuh terasa cukup."}
               </p>
             </div>
             <div className="rounded-2xl bg-[#FCFAF5] p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Sebaiknya Digunakan Saat</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">
+                {isEn ? "Best used when" : "Sebaiknya Digunakan Saat"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
-                Pikiran terasa ramai, tubuh sulit beristirahat, atau kamu membutuhkan teman yang tenang saat berefleksi.
+                {isEn
+                  ? "When your mind feels crowded, your body struggles to rest, or you need calm companionship while reflecting."
+                  : "Pikiran terasa ramai, tubuh sulit beristirahat, atau kamu membutuhkan teman yang tenang saat berefleksi."}
               </p>
             </div>
             <div className="rounded-2xl bg-[#FCFAF5] p-4">
-              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">Manfaat yang Diharapkan</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-[#9AA394]">
+                {isEn ? "Expected benefits" : "Manfaat yang Diharapkan"}
+              </p>
               <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
-                Napas terasa lebih teratur, tubuh lebih mudah diamati, dan emosi memperoleh ruang tanpa harus segera dijelaskan.
+                {isEn
+                  ? "Breathing feels more steady, the body becomes easier to observe, and emotions find space without needing an immediate explanation."
+                  : "Napas terasa lebih teratur, tubuh lebih mudah diamati, dan emosi memperoleh ruang tanpa harus segera dijelaskan."}
               </p>
             </div>
           </div>
@@ -211,17 +262,21 @@ function AudioHealingExperience() {
           </div>
 
           <p className="mt-5 text-sm leading-relaxed text-[#7B8776]">
-            Dengarkan tanpa memaksa tubuhmu untuk langsung tenang. Cukup perhatikan apa yang muncul.
+            {isEn
+              ? "Listen without forcing your body to calm down immediately. Simply notice what arises."
+              : "Dengarkan tanpa memaksa tubuhmu untuk langsung tenang. Cukup perhatikan apa yang muncul."}
           </p>
         </section>
 
         <section className="bhumi-card p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">Section B · Audio Healing Reflection</h2>
+          <h2 className="text-xl font-semibold text-[#4F5E52]">
+            {isEn ? "Section B · Audio Healing Reflection" : "Section B · Audio Healing Reflection"}
+          </h2>
           <p className="mt-5 text-sm font-medium text-[#7B8776]">
-            Bagaimana perasaanmu setelah mendengar audio healing?
+            {isEn ? "How do you feel after listening to the audio healing?" : "Bagaimana perasaanmu setelah mendengar audio healing?"}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {EMOTIONAL_STATES.map((state) => (
+            {emotionalStates.map((state) => (
               <button
                 key={state}
                 type="button"
@@ -238,10 +293,10 @@ function AudioHealingExperience() {
           </div>
 
           <p className="mt-6 text-sm font-medium text-[#7B8776]">
-            Apakah ada sensasi pada tubuhmu?
+            {isEn ? "Are there any sensations in your body?" : "Apakah ada sensasi pada tubuhmu?"}
           </p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {BODY_SIGNALS.map((signal) => (
+            {bodySignalsList.map((signal) => (
               <label
                 key={signal}
                 className="flex items-center gap-3 rounded-2xl border border-[#E8E9E5] bg-white p-4 text-sm text-[#4F5E52]"
@@ -258,7 +313,7 @@ function AudioHealingExperience() {
           </div>
 
           <label className="mt-6 block text-sm font-medium text-[#7B8776]" htmlFor="audioReflection">
-            Apa yang kamu sadari setelah mendengar audio ini?
+            {isEn ? "What did you notice after listening to this audio?" : "Apa yang kamu sadari setelah mendengar audio ini?"}
           </label>
           <textarea
             id="audioReflection"
@@ -269,14 +324,20 @@ function AudioHealingExperience() {
               event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
             }}
             className="mt-3 min-h-36 w-full resize-none rounded-3xl border border-[#E8E9E5] bg-white p-5 text-[#4F5E52] outline-none transition focus:border-[#9BB89A] focus:ring-2 focus:ring-[#9BB89A]/20"
-            placeholder="Tuliskan respons tubuhmu, emosimu, atau suara yang paling terasa..."
+            placeholder={
+              isEn
+                ? "Write down your body's response, emotions, or the sounds that resonated most..."
+                : "Tuliskan respons tubuhmu, emosimu, atau suara yang paling terasa..."
+            }
           />
         </section>
 
         <section className="bhumi-card p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Save</h2>
+          <h2 className="text-xl font-semibold text-[#4F5E52]">
+            {isEn ? "Section C · Save" : "Section C · Save"}
+          </h2>
           <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
-            Klik save hanya jika kamu sudah melakukan.
+            {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}
           </p>
           <button
             type="button"
@@ -284,24 +345,30 @@ function AudioHealingExperience() {
             disabled={saved}
             className="mt-3 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {saved ? "Pengalaman tersimpan..." : "Simpan Pengalaman"}
+            {saved
+              ? (isEn ? "Experience saved..." : "Pengalaman tersimpan...")
+              : (isEn ? "Save Experience" : "Simpan Pengalaman")}
           </button>
 
           {reflection && (
             <div className="mt-6 space-y-4 rounded-3xl bg-[#FCFAF5] p-5">
               <div>
-                <p className="text-sm font-semibold text-[#4F5E52]">🌱 Insight Hari Ini</p>
+                <p className="text-sm font-semibold text-[#4F5E52]">
+                  {isEn ? "🌱 Today's Insight" : "🌱 Insight Hari Ini"}
+                </p>
                 <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{reflection.insight}</p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#4F5E52]">✨ Fokus Besok</p>
+                <p className="text-sm font-semibold text-[#4F5E52]">
+                  {isEn ? "✨ Tomorrow's Focus" : "✨ Fokus Besok"}
+                </p>
                 <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{reflection.nextFocus}</p>
               </div>
               <button
                 onClick={() => router.push("/wellness")}
                 className="w-full py-3 mt-4 rounded-xl bg-[#4F5E52] text-white text-xs font-bold uppercase tracking-widest"
               >
-                Kembali ke Wellness
+                {isEn ? "Back to Wellness" : "Kembali ke Wellness"}
               </button>
             </div>
           )}

@@ -29,6 +29,7 @@ import { baselineWellnessEngine } from "@/lib/engines/baselineWellnessEngine";
 import { useAuth } from "@/context/AuthContext";
 import { userRepository, BaselineWellnessProfile } from "@/lib/repositories/userRepository";
 import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface WellnessAssessmentFlowProps {
   uid: string;
@@ -46,6 +47,25 @@ interface WellnessAssessmentFlowProps {
 
 type Stage = "intro" | "questions" | "results";
 
+function getDomainLabel(domain: string, isEn: boolean): string {
+  const map: Record<string, { id: string; en: string }> = {
+    BODY: { id: "Tubuh", en: "Body" },
+    EMOTION: { id: "Emosi", en: "Emotion" },
+    MIND: { id: "Pikiran", en: "Mind" },
+    RELATIONSHIP: { id: "Relasi", en: "Relationship" },
+    MEANING: { id: "Makna", en: "Meaning" },
+    REGULATION: { id: "Regulasi", en: "Regulation" },
+    SPIRITUALITY: { id: "Spiritualitas", en: "Spirituality" },
+    Tubuh: { id: "Tubuh", en: "Body" },
+    Emosi: { id: "Emosi", en: "Emotion" },
+    Pikiran: { id: "Pikiran", en: "Mind" },
+    Relasi: { id: "Relasi", en: "Relationship" },
+    Makna: { id: "Makna", en: "Meaning" },
+    Regulasi: { id: "Regulasi", en: "Regulation" },
+  };
+  return map[domain] ? map[domain][isEn ? "en" : "id"] : domain;
+}
+
 const QUESTIONS = [
   { id: 1, dimension: "BODY" as const, text: { id: "Saya bangun pagi dengan perasaan segar dan cukup istirahat.", en: "I wake up in the morning feeling refreshed and well-rested." } },
   { id: 2, dimension: "BODY" as const, text: { id: "Saya memiliki energi yang cukup untuk menyelesaikan tugas harian.", en: "I have enough energy to complete my daily tasks." } },
@@ -58,7 +78,9 @@ const QUESTIONS = [
 ];
 
 export function WellnessAssessmentFlow({ uid, language, startFresh = false, initialStage = "intro", onResultsLoaded, onStageChange }: WellnessAssessmentFlowProps) {
-  const t = translations[language];
+  const isEn = isEnlEdition() || language === "en";
+  const effectiveLang: "id" | "en" = isEn ? "en" : "id";
+  const t = translations[effectiveLang];
   const auth = useAuth();
   const userProfile = auth?.userProfile;
   const refreshUserProfile = auth?.refreshUserProfile;
@@ -112,7 +134,7 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
   const handleSubmit = async () => {
     if (Object.keys(answers).length < currentQuestions.length) return;
     if (!uid) {
-      setError(language === "id" ? "Sesi akun belum siap. Silakan masuk kembali lalu coba lagi." : "Your account session is not ready. Please sign in again and retry.");
+      setError(!isEn ? "Sesi akun belum siap. Silakan masuk kembali lalu coba lagi." : "Your account session is not ready. Please sign in again and retry.");
       return;
     }
 
@@ -188,11 +210,11 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
         await wellnessMappingRepository.saveMapping(uid, result);
       } catch (saveError) {
         console.error("[Kenali Diri] Reflection calculated but could not be saved", saveError);
-        setNotice(language === "id" ? "Refleksi berhasil dibuat. Kamu bisa melanjutkan perjalananmu dari sini." : "Your reflection is ready. You can continue your journey from here.");
+        setNotice(!isEn ? "Refleksi berhasil dibuat. Kamu bisa melanjutkan perjalananmu dari sini." : "Your reflection is ready. You can continue your journey from here.");
       }
     } catch (analysisError) {
       console.error("[Kenali Diri] Failed to calculate reflection", analysisError);
-      setError(language === "id" ? "Hasil refleksi belum dapat dibuat. Silakan periksa jawabanmu dan coba lagi." : "Your reflection could not be created. Please review your answers and retry.");
+      setError(!isEn ? "Hasil refleksi belum dapat dibuat. Silakan periksa jawabanmu dan coba lagi." : "Your reflection could not be created. Please review your answers and retry.");
     } finally {
       setLoading(false);
     }
@@ -205,16 +227,18 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
           <Sparkles size={40} />
         </div>
         <div className="space-y-4">
-          <h2 className="text-3xl font-serif text-[#4F5E52]">{isBaselinePending ? "Langkah Terakhir Onboarding" : t.kenaliDiri.title}</h2>
+          <h2 className="text-3xl font-serif text-[#4F5E52]">{isBaselinePending ? (isEn ? "Final Onboarding Step" : "Langkah Terakhir Onboarding") : t.kenaliDiri.title}</h2>
           <p className="text-[#7B8776] leading-relaxed max-w-sm mx-auto">
             {isBaselinePending
-              ? "Bhumi sudah mengenal identitasmu. Sekarang bantu Bhumi memahami kondisi dirimu saat ini melalui 15 pertanyaan singkat agar pendampingan menjadi lebih sesuai."
+              ? (isEn
+                  ? "Bhumi already knows your identity. Now help Bhumi understand your current state through 15 short questions so your guidance feels aligned."
+                  : "Bhumi sudah mengenal identitasmu. Sekarang bantu Bhumi memahami kondisi dirimu saat ini melalui 15 pertanyaan singkat agar pendampingan menjadi lebih sesuai.")
               : t.kenaliDiri.subtitle}
           </p>
         </div>
         <div className="pt-4">
           <button onClick={handleStart} className="bhumi-button w-full py-4 text-lg">
-            Mulai Pemetaan Awal →
+            {isBaselinePending ? (isEn ? "Start Initial Mapping →" : "Mulai Pemetaan Awal →") : (isEn ? "Start Reflection →" : "Mulai Refleksi →")}
           </button>
           <p className="mt-6 text-[10px] text-[#9AA394] italic px-8">
             {t.kenaliDiri.note}
@@ -231,8 +255,12 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
         <header className="flex justify-between items-end px-2">
             <div>
-                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isBaselinePending ? "Pemetaan Awal" : "Refleksi Harian"}</p>
-                <h3 className="text-xl font-serif text-[#4F5E52] italic">{isBaselinePending ? "Kenali Dirimu" : "Pemetaan Kondisi"}</h3>
+                <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">
+                  {isBaselinePending ? (isEn ? "Initial Mapping" : "Pemetaan Awal") : (isEn ? "Daily Reflection" : "Refleksi Harian")}
+                </p>
+                <h3 className="text-xl font-serif text-[#4F5E52] italic">
+                  {isBaselinePending ? (isEn ? "Know Yourself" : "Kenali Dirimu") : (isEn ? "Condition Mapping" : "Pemetaan Kondisi")}
+                </h3>
             </div>
             <p className="text-sm font-bold text-[#4F5E52]">{progress}%</p>
         </header>
@@ -245,7 +273,7 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
           {currentQuestions.map((q) => (
             <div key={q.id} className="bhumi-card p-6 bg-white border-none shadow-sm space-y-6">
               <p className="text-base font-medium text-[#4F5E52] leading-relaxed">
-                {q.text[language]}
+                {q.text[effectiveLang]}
               </p>
               <div className="grid grid-cols-5 gap-2.5">
                 {[1, 2, 3, 4, 5].map((score) => (
@@ -263,8 +291,8 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
                 ))}
               </div>
               <div className="flex justify-between px-1">
-                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{language === "id" ? "Tidak Sesuai" : "Disagree"}</span>
-                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{language === "id" ? "Sangat Sesuai" : "Agree"}</span>
+                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{!isEn ? "Tidak Sesuai" : "Disagree"}</span>
+                <span className="text-[9px] font-bold text-[#9AA394] uppercase tracking-[0.15em]">{!isEn ? "Sangat Sesuai" : "Agree"}</span>
               </div>
             </div>
           ))}
@@ -281,7 +309,7 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
             onClick={handleSubmit}
             className="bhumi-button w-full py-5 text-lg shadow-lg active:scale-[0.98] disabled:opacity-20 transition-all"
           >
-            {loading ? "Menyusun Pemetaan..." : (isBaselinePending ? "Selesaikan Pemetaan →" : "Lihat Hasil Refleksi →")}
+            {loading ? (isEn ? "Preparing Mapping..." : "Menyusun Pemetaan...") : (isBaselinePending ? (isEn ? "Complete Mapping →" : "Selesaikan Pemetaan →") : (isEn ? "View Reflection Results →" : "Lihat Hasil Refleksi →"))}
           </button>
         </div>
       </div>
@@ -298,18 +326,18 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
                 <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto text-[#4F5E52]">
                    <Sparkles size={32} />
                 </div>
-                <h3 className="text-2xl font-serif text-[#4F5E52]">Pemetaan Selesai</h3>
-                <p className="text-sm text-[#7B8776]">Terima kasih telah membantu Bhumi mengenal kondisimu saat ini. Pendampinganmu kini telah disesuaikan.</p>
+                <h3 className="text-2xl font-serif text-[#4F5E52]">{isEn ? "Mapping Complete" : "Pemetaan Selesai"}</h3>
+                <p className="text-sm text-[#7B8776]">{isEn ? "Thank you for helping Bhumi understand your current condition. Your guidance is now personalized." : "Terima kasih telah membantu Bhumi mengenal kondisimu saat ini. Pendampinganmu kini telah disesuaikan."}</p>
              </div>
 
              <section className="grid grid-cols-2 gap-3">
                 <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
-                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Mode Pendampingan</p>
-                   <p className="text-sm font-bold text-[#4F5E52]">{profile.navigatorMode}</p>
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isEn ? "Guidance Mode" : "Mode Pendampingan"}</p>
+                   <p className="text-sm font-bold text-[#4F5E52]">{isEn ? (profile.navigatorMode === "RECOVERY" ? "Recovery Mode" : profile.navigatorMode === "GROWTH" ? "Growth Mode" : "Reflection Mode") : profile.navigatorMode}</p>
                 </div>
                 <div className="p-4 bg-[#F5F1E8]/50 rounded-2xl border border-[#F5F1E8]">
-                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">Kekuatan Utama</p>
-                   <p className="text-sm font-bold text-[#4F5E52]">{profile.strongestDomain}</p>
+                   <p className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest mb-1">{isEn ? "Primary Strength" : "Kekuatan Utama"}</p>
+                   <p className="text-sm font-bold text-[#4F5E52]">{getDomainLabel(profile.strongestDomain, isEn)}</p>
                 </div>
              </section>
 
@@ -318,10 +346,10 @@ export function WellnessAssessmentFlow({ uid, language, startFresh = false, init
                    onClick={() => window.location.reload()}
                    className="bhumi-button w-full py-4 text-center block text-lg"
                 >
-                   Buka Ruang Wellness →
+                   {isEn ? "Open Wellness Space →" : "Buka Ruang Wellness →"}
                 </button>
                 <Link href="/dashboard" className="text-[10px] font-bold text-[#9AA394] uppercase tracking-widest block text-center hover:text-[#4F5E52] transition-colors">
-                   Kembali ke Dashboard
+                   {isEn ? "Back to Dashboard" : "Kembali ke Dashboard"}
                 </Link>
              </div>
           </div>

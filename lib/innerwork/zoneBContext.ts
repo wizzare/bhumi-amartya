@@ -1,5 +1,6 @@
 import type { JourneyInnerworkCompletion, JourneyInnerworkRecommendation } from "@/lib/types/journeyDailyRecord";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type ZoneBPracticeCategory = "journaling" | "meditation" | "breathwork" | "mudra" | "yoga" | "workout" | "manifestation" | "healthyFood";
 
@@ -53,7 +54,7 @@ export function readZoneBContext(search: string): ZoneBContext | null {
   };
 }
 
-const issueLanguage: Record<string, { focus: string; benefit: string; action: string }> = {
+const issueLanguageId: Record<string, { focus: string; benefit: string; action: string }> = {
   difficulty_resting: {
     focus: "kesulitan beristirahat tanpa rasa bersalah",
     benefit: "membantu tubuh mengenali bahwa berhenti sejenak tetap aman",
@@ -101,71 +102,168 @@ const issueLanguage: Record<string, { focus: string; benefit: string; action: st
   },
 };
 
+const issueLanguageEn: Record<string, { focus: string; benefit: string; action: string }> = {
+  difficulty_resting: {
+    focus: "resting without guilt",
+    benefit: "helps the body recognize that pausing is safe",
+    action: "Choose one demand that can be postponed today.",
+  },
+  over_responsibility: {
+    focus: "excessive burdens and over-responsibility",
+    benefit: "helps distinguish genuine care from carrying what isn't yours",
+    action: "Choose one burden you can set down.",
+  },
+  boundary_issue: {
+    focus: "personal boundaries",
+    benefit: "helps body and mind recognize space that needs protection",
+    action: "Formulate one clear, calm boundary statement.",
+  },
+  low_energy: {
+    focus: "energy restoration",
+    benefit: "reduces pressure and supports gradual recovery",
+    action: "Reduce one non-urgent activity today.",
+  },
+  anxiety: {
+    focus: "anxiety and bodily tension",
+    benefit: "brings awareness back to what is real right now",
+    action: "Choose one thing within your control right now.",
+  },
+  love_block: {
+    focus: "intimacy and safety in relationships",
+    benefit: "creates space for emotional needs without losing boundaries",
+    action: "Write down one honest need you wish to express.",
+  },
+  inner_child: {
+    focus: "unmet needs of your younger self",
+    benefit: "builds internal comfort, companionship, and safety",
+    action: "Offer yourself one form of comfort you once needed.",
+  },
+  money_block: {
+    focus: "money, self-worth, and security",
+    benefit: "helps separate financial reality from anxiety",
+    action: "Choose one small, realistic financial action step.",
+  },
+  self_worth: {
+    focus: "self-worth beyond accomplishments",
+    benefit: "reminds you that your worth needs no proof through performance",
+    action: "Note one personal quality that remains true without achievement.",
+  },
+};
+
 export function getZoneBGuide(context: ZoneBContext): ZoneBGuide {
-  const language = issueLanguage[context.issue] ?? {
-    focus: context.sourceTheme,
-    benefit: `membantu memberi ruang pada tema ${context.sourceTheme}`,
-    action: "Pilih satu langkah kecil yang terasa paling jujur.",
-  };
+  const isEn = isEnlEdition();
+  const issueDict = isEn ? issueLanguageEn : issueLanguageId;
+  const language = issueDict[context.issue] ?? (isEn
+    ? {
+        focus: context.sourceTheme,
+        benefit: `helps create space for ${context.sourceTheme}`,
+        action: "Choose one small step that feels most honest.",
+      }
+    : {
+        focus: context.sourceTheme,
+        benefit: `membantu memberi ruang pada tema ${context.sourceTheme}`,
+        action: "Pilih satu langkah kecil yang terasa paling jujur.",
+      });
+
   const shared = {
     title: context.title,
     durationMinutes: context.durationMinutes,
-    benefits: [language.benefit, "Membangun respons yang lebih sadar"],
-    reflectionQuestions: [
-      `Bagaimana tema ${language.focus} terasa dalam pengalamanmu hari ini?`,
-      "Apa yang paling dibutuhkan tubuh atau hatimu sekarang?",
-      language.action,
-    ],
+    benefits: isEn
+      ? [language.benefit, "Building a more mindful response"]
+      : [language.benefit, "Membangun respons yang lebih sadar"],
+    reflectionQuestions: isEn
+      ? [
+          `How does the theme of ${language.focus} feel in your experience today?`,
+          "What does your body or heart need most right now?",
+          language.action,
+        ]
+      : [
+          `Bagaimana tema ${language.focus} terasa dalam pengalamanmu hari ini?`,
+          "Apa yang paling dibutuhkan tubuh atau hatimu sekarang?",
+          language.action,
+        ],
   };
 
   switch (context.practiceCategory) {
     case "journaling":
       return {
         ...shared,
-        description: `Refleksi tertulis yang tetap berpusat pada ${language.focus}.`,
-        steps: ["Tuliskan situasi yang paling terasa.", "Pisahkan fakta, perasaan, dan kebutuhan.", language.action],
+        description: isEn
+          ? `Written reflection centered on ${language.focus}.`
+          : `Refleksi tertulis yang tetap berpusat pada ${language.focus}.`,
+        steps: isEn
+          ? ["Write down the situation that feels most present.", "Separate facts, feelings, and needs.", language.action]
+          : ["Tuliskan situasi yang paling terasa.", "Pisahkan fakta, perasaan, dan kebutuhan.", language.action],
       };
     case "meditation":
       return {
         ...shared,
-        description: `Meditasi untuk menemani ${language.focus} tanpa memaksa perubahan.`,
-        steps: ["Duduk atau berbaring nyaman.", "Ikuti sepuluh napas alami.", `Akui ${language.focus} dengan lembut.`, language.action],
+        description: isEn
+          ? `Meditation to accompany ${language.focus} without forcing change.`
+          : `Meditasi untuk menemani ${language.focus} tanpa memaksa perubahan.`,
+        steps: isEn
+          ? ["Sit or lie down comfortably.", "Follow ten natural breaths.", `Acknowledge ${language.focus} gently.`, language.action]
+          : ["Duduk atau berbaring nyaman.", "Ikuti sepuluh napas alami.", `Akui ${language.focus} dengan lembut.`, language.action],
       };
     case "breathwork":
       return {
         ...shared,
-        description: `Latihan napas untuk membantu tubuh melunak saat berhadapan dengan ${language.focus}.`,
-        steps: ["Tarik napas empat hitungan.", "Embuskan enam hitungan.", "Ulangi tanpa menahan napas.", language.action],
+        description: isEn
+          ? `Breathing practice to help the body soften around ${language.focus}.`
+          : `Latihan napas untuk membantu tubuh melunak saat berhadapan dengan ${language.focus}.`,
+        steps: isEn
+          ? ["Inhale for four counts.", "Exhale for six counts.", "Repeat without holding your breath.", language.action]
+          : ["Tarik napas empat hitungan.", "Embuskan enam hitungan.", "Ulangi tanpa menahan napas.", language.action],
       };
     case "mudra":
       return {
         ...shared,
-        description: `Posisi tangan sebagai jangkar perhatian untuk tema ${language.focus}.`,
-        steps: ["Bentuk posisi tangan sesuai nama praktik.", "Letakkan tangan dengan nyaman.", "Bernapas perlahan.", language.action],
+        description: isEn
+          ? `Hand posture as an anchor of awareness for ${language.focus}.`
+          : `Posisi tangan sebagai jangkar perhatian untuk tema ${language.focus}.`,
+        steps: isEn
+          ? ["Form the hand gesture as described.", "Rest hands comfortably.", "Breathe slowly.", language.action]
+          : ["Bentuk posisi tangan sesuai nama praktik.", "Letakkan tangan dengan nyaman.", "Bernapas perlahan.", language.action],
       };
     case "yoga":
       return {
         ...shared,
-        description: `Gerakan sadar yang dipilih untuk mendukung ${language.focus}.`,
-        steps: ["Siapkan alas yang stabil.", `Masuk ke ${context.title} secara perlahan.`, "Pertahankan napas alami.", "Keluar dari pose tanpa terburu-buru."],
+        description: isEn
+          ? `Mindful movement selected to support ${language.focus}.`
+          : `Gerakan sadar yang dipilih untuk mendukung ${language.focus}.`,
+        steps: isEn
+          ? ["Prepare a stable surface.", `Move into ${context.title} slowly.`, "Maintain natural breathing.", "Exit the pose without rushing."]
+          : ["Siapkan alas yang stabil.", `Masuk ke ${context.title} secara perlahan.`, "Pertahankan napas alami.", "Keluar dari pose tanpa terburu-buru."],
       };
     case "workout":
       return {
         ...shared,
-        description: `Gerak tubuh terukur yang tetap menjaga tema ${language.focus}.`,
-        steps: ["Mulai dengan pemanasan ringan.", "Lakukan gerakan dengan ritme yang masih memungkinkan bernapas nyaman.", "Kurangi intensitas bila tubuh menegang.", language.action],
+        description: isEn
+          ? `Measured physical movement that maintains awareness of ${language.focus}.`
+          : `Gerak tubuh terukur yang tetap menjaga tema ${language.focus}.`,
+        steps: isEn
+          ? ["Begin with a gentle warm-up.", "Move at a rhythm that allows easy breathing.", "Ease intensity if the body tenses.", language.action]
+          : ["Mulai dengan pemanasan ringan.", "Lakukan gerakan dengan ritme yang masih memungkinkan bernapas nyaman.", "Kurangi intensitas bila tubuh menegang.", language.action],
       };
     case "manifestation":
       return {
         ...shared,
-        description: `Arah refleksi dan niat yang disusun dengan membumi untuk ${language.focus}.`,
-        steps: ["Akui keadaan yang sedang berlangsung.", "Pilih satu niat yang realistis untuk hari ini.", "Tuliskan satu langkah kecil yang berada dalam kendalimu.", language.action],
+        description: isEn
+          ? `Grounded intention and reflection crafted for ${language.focus}.`
+          : `Arah refleksi dan niat yang disusun dengan membumi untuk ${language.focus}.`,
+        steps: isEn
+          ? ["Acknowledge current circumstances.", "Choose one realistic intention for today.", "Write down one small step within your control.", language.action]
+          : ["Akui keadaan yang sedang berlangsung.", "Pilih satu niat yang realistis untuk hari ini.", "Tuliskan satu langkah kecil yang berada dalam kendalimu.", language.action],
       };
     case "healthyFood":
       return {
         ...shared,
-        description: `Pilihan asupan sederhana yang mendukung ${language.focus} tanpa tuntutan perfeksionisme.`,
-        steps: ["Pilih satu pilihan yang tersedia dan sesuai kebutuhan tubuh.", "Nikmati perlahan tanpa menghakimi diri.", "Berhenti bila tubuh sudah cukup.", language.action],
+        description: isEn
+          ? `Simple nourishment supporting ${language.focus} without perfectionism.`
+          : `Pilihan asupan sederhana yang mendukung ${language.focus} tanpa tuntutan perfeksionisme.`,
+        steps: isEn
+          ? ["Select an accessible option suited to your body's needs.", "Savor slowly without self-judgment.", "Stop when your body feels nourished.", language.action]
+          : ["Pilih satu pilihan yang tersedia dan sesuai kebutuhan tubuh.", "Nikmati perlahan tanpa menghakimi diri.", "Berhenti bila tubuh sudah cukup.", language.action],
       };
   }
 }
@@ -180,13 +278,14 @@ export async function saveZoneBJourneyContext(params: {
   reflectionResponse?: string;
 }): Promise<void> {
   const { uid, date, context } = params;
+  const isEn = isEnlEdition();
   const recommendation: JourneyInnerworkRecommendation = {
     practiceId: context.practiceId,
     practiceType: context.practiceCategory,
     practiceTitle: context.title,
     durationMinutes: context.durationMinutes,
     intensity: "guided",
-    reason: `Praktik Zone B untuk tema ${context.sourceTheme}.`,
+    reason: isEn ? `Zone B practice for the theme of ${context.sourceTheme}.` : `Praktik Zone B untuk tema ${context.sourceTheme}.`,
     sourceSignals: [`zoneA:${context.issue}`, `zoneB:${context.practiceCategory}`, `sourceTheme:${context.sourceTheme}`],
   };
   const completion: JourneyInnerworkCompletion = {
@@ -199,7 +298,7 @@ export async function saveZoneBJourneyContext(params: {
     reflectionResult: params.reflectionResult,
     reflectionResponse: params.reflectionResponse,
     practiceHelped: params.reflectionResult
-      ? /lebih tenang|lebih ringan|lega/i.test(params.reflectionResult)
+      ? /calmer|lighter|relieved|lebih tenang|lebih ringan|lega/i.test(params.reflectionResult)
       : null,
     userFelt: params.reflectionResult,
   };
