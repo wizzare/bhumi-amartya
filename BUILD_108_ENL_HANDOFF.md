@@ -2,7 +2,7 @@
 **Developer & Agent Execution Guide**
 
 ```text
-STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 + CDI-108-01A DONE; CDI-108-02 IMPLEMENTED (SPRINT 5 BLOCKED)
+STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 + CDI-108-01A DONE; CDI-108-02 IMPLEMENTED; CDI-108-03 RESEARCH COMPLETE / FOUNDER DECISION REQUIRED (SPRINT 5 BLOCKED)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 CURRENT_BRANCH                  = recovery/build106-product-continuity
@@ -17,16 +17,27 @@ GATE_108_CDI                    = IN_PROGRESS
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
+> **CDI-108-03 Schumann research complete (2026-09-07).** Source research + architecture decision
+> are done: **[`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`](BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md)**.
+> Read-only probes of every realistic public Schumann source found **NO qualifying source**
+> (numeric API + valid-cert HTTPS + CORS + usable licence + reliability + provenance). The
+> incumbent stays 404; its successor is a JPEG-only Tomsk re-render; the true Tomsk upstream has an
+> expired TLS cert and no JSON; HeartMath GCMS is band-power (not SR peaks), undocumented,
+> unlicensed for this use, and currently empty. **Option A (direct client swap) is impossible.**
+> `SCHUMANN_API_URL` is unchanged; the honest fail-closed UI + `deriveEnvironmentBands` /
+> `hasSchumannObservation` gate (CDI-A3) are preserved and regression-locked
+> (`tests/unit/build108-cdi03-schumann-source-integrity.test.ts`, 16 checks). **Founder decision
+> required — D1 accept fail-closed (FRA records SCHUMANN = DEFERRED w/ rationale) · D2 authorize a
+> separate backend-gated ENV2 restoration project · D3 provide a private licensed provider.**
+>
 > **Current Founder direction (2026-09-07).** ENV2 scope and the mandatory Final Release Audit
 > are approved for documentation only. Both remain PLANNED; neither may be implemented/executed
-> now. This direction supersedes older next-action/approval holds below. After this documentation
-> checkpoint, continue the already authorized CDI-108-03 Schumann source research/architecture
-> task within its source-proven-before-implementation boundary. Do not reopen completed Chiron,
-> timezone, or HD client/recovery work absent regression evidence. HD service extras remain
+> now. This direction supersedes older next-action/approval holds below. Do not reopen completed
+> Chiron, timezone, or HD client/recovery work absent regression evidence. HD service extras remain
 > source-dependent; backfill is NOT READY and NOT authorized. Sprint 5 remains BLOCKED.
 >
 > **CORE DATA INTEGRITY GATE (2026-09-06).** Sprint 4 is complete. **Do NOT start Sprint 5.** The
@@ -51,7 +62,8 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > Completed CDI-C3: `CDI-108-01A` canonical IANA timezone propagation is complete. Pending blockers:
 > 1. Genuine Placidus production service deployment remains ops-gated.
 > 2. `CDI-108-02` — Human Design advanced variables.
-> 3. `CDI-108-03` — Schumann source replacement.
+> 3. `CDI-108-03` — Schumann source: RESEARCH COMPLETE 2026-09-07, no qualifying source, FOUNDER
+>    DECISION REQUIRED (D1/D2/D3) — see `BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`.
 > 4. `CDI-D1` — legacy data backfill, separately Founder-authorized only.
 >
 > Important Human Design audit refinement: the LIVE deployed Human Design `/calculate` contract
@@ -216,12 +228,12 @@ CDI_C1                         = DONE
 CDI_C2                         = DONE
 CDI_C3                         = DONE
 CDI_108_02_HUMAN_DESIGN        = DONE — CLIENT INTEGRITY / RECOVERY SAFETY; SERVICE EXTRAS SOURCE-DEPENDENT
-CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
+CDI_108_03_SCHUMANN            = RESEARCH_COMPLETE — NO QUALIFYING SOURCE — FOUNDER DECISION REQUIRED (D1/D2/D3)
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -237,15 +249,17 @@ All three root causes CONFIRMED.
 |---|---|---|
 | **Chiron wrong** | Swiss Ephemeris `/calculate-astrology` unreachable; silent local fallback derived Chiron from a **linear** ephemeris; Equal House mislabelled `placidusHouses`; CDI-108-01A timezone propagation is complete; genuine Placidus production deployment remains ops-gated. | **CDI-108-01 COMPLETE. CDI-108-01A COMPLETE. CDI-C1 DONE. CDI-C2 DONE. CDI-C3 DONE.** Committed Swiss Ephemeris-derived client-side Chiron table; old linear Chiron approximation removed; Chiron fixture accuracy 10/10; fail-closed persistence implemented; Whole Sign and Placidus explicitly separated. Genuine Placidus production service deployment remains ops-gated. No production backfill performed. |
 | **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The live deployed `/calculate` contract differs from repo `services/humandesign-api/main.py`; observed live payload already includes `digestion`, `environment`, `motivation`, and `cognition`. Apparently absent / unresolved: `perspective` and diagnostic Color/Tone/Base. | **PENDING — CDI-108-02.** CODEX must not assume the HD engine is the primary defect; continue from Founder review of CDI-108-01A / CDI-C3 and the refined HD audit. |
-| **Schumann `Data belum tersedia`** | Provider endpoint `schumannresonancelive.com/api/data.php` → **HTTP 404** (API path removed). Client-only fetch; no proxy under static export. Pre-existing since ≥ Build 106 (DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
+| **Schumann `Data belum tersedia`** | Provider endpoint `schumannresonancelive.com/api/data.php` → **HTTP 404** (API path removed). Client-only fetch; no proxy under static export. Pre-existing since ≥ Build 106 (DS-E1). No fabricated "healthy" values. | **RESEARCH COMPLETE — CDI-108-03** (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`). No qualifying genuine SR source exists; direct client swap impossible; `SCHUMANN_API_URL` unchanged; CDI-A3 preserved + regression-locked. **FOUNDER DECISION REQUIRED — D1 accept fail-closed / DEFERRED · D2 backend-gated ENV2 restoration project · D3 private licensed provider.** |
 
 Cross-cutting: **CDI-D1** — legacy data backfill is separately Founder-authorized only and is **not
 authorized now**.
 
-**Handoff action (2026-09-07):** the ENV2/FRA documentation checkpoint stops for Founder review.
-`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`: continue CDI-108-03 source research and
-architecture proof under the existing authorization. CDI-108-02 client/recovery implementation
-is complete; service extras/backfill remain separate. Do not implement ENV2 or execute FRA yet.
+**Handoff action (2026-09-07):** CDI-108-03 source research + architecture decision are COMPLETE
+(`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`) and stop for Founder review.
+`NEXT_SAFE_ACTION = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI`.
+No qualifying Schumann source exists; nothing to implement within the CDI gate. CDI-108-02
+client/recovery implementation is complete; HD service extras/backfill remain separate. Do not
+implement ENV2 or execute FRA yet.
 
 ```text
 PRODUCTION_FIRESTORE_WRITE = NOT AUTHORIZED

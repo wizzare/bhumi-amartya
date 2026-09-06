@@ -43,6 +43,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT + STATIC_GUARD",
   },
   {
+    name: "CDI-108-03 Schumann source integrity (no substitute, fail-closed, CDI-A3 gate)",
+    file: "tests/unit/build108-cdi03-schumann-source-integrity.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",

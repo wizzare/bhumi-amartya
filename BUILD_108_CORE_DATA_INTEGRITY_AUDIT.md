@@ -4,7 +4,7 @@
 ```text
 AUDIT_STATUS                        = READ_ONLY_ROOT_CAUSE_AUDIT_COMPLETE — FOUNDER-APPROVED 2026-09-06
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                        = IN_PROGRESS  (CDI-108-01 Chiron DONE · CDI-108-01A timezone DONE · CDI-108-02 HD refined audit DONE / impl NOT started · CDI-108-03 Schumann not started)
+GATE_108_CDI                        = IN_PROGRESS  (CDI-108-01 Chiron DONE · CDI-108-01A timezone DONE · CDI-108-02 HD refined audit DONE / impl NOT started · CDI-108-03 Schumann RESEARCH COMPLETE — NO QUALIFYING SOURCE — FOUNDER DECISION REQUIRED)
 TRIGGER                             = FOUNDER — three confirmed production defects from real users
 PRODUCTION_BASELINE                 = BUILD 107 (versionCode 107, versionName 5.0.7, commit d2ecb5e)
 WORKTREE                            = C:\tmp\bhumi-build106-recovery
@@ -18,7 +18,7 @@ FIRESTORE_MUTATIONS                 = 0
 EXTERNAL_PROBES                     = read-only GETs (schumannresonancelive.com/api/data.php -> 404;
                                      bhumi-human-design-api.vercel.app openapi/health) + one synthetic-data
                                      POST to /calculate (HD, no PII) — see §B.1a and §D
-NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                    = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 > **Governance marker.** `BUILD_106_RECOVERY_IN_PROGRESS` no longer represents this work. Current
@@ -27,7 +27,9 @@ NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFIN
 >
 > **Progress:** CDI-108-01 (Chiron ephemeris) — §C.8. CDI-108-01A (timezone canonicalization) —
 > §C.9. CDI-108-02 (Human Design) — refined READ-ONLY live-contract audit §B.8; implementation
-> NOT started. CDI-108-03 (Schumann) — not started.
+> NOT started. CDI-108-03 (Schumann) — source research + architecture decision COMPLETE
+> (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`): no qualifying genuine SR source exists;
+> `SCHUMANN_API_URL` unchanged; Founder decision D1/D2/D3 required.
 
 > **Scope discipline.** This document is a READ-ONLY audit. No product code, engine, adapter,
 > schema, migration, or Firestore document has been changed. No fix is implemented. Sprint 5 is
@@ -201,6 +203,39 @@ static export synced into Capacitor (`webDir: 'out'`). Consequences for Schumann
   `provenance: "modelled-series"` label and freshness contract.
 - **CDI-A3** — Keep the honest-unavailable UI and the `deriveEnvironmentBands` gate exactly as
   they are; only the data source changes.
+
+### A.6 CDI-108-03 source research + architecture decision — COMPLETE (2026-09-07)
+
+Full report: **[`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`](BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md)**.
+
+Read-only HTTPS probes against every realistic public Schumann-resonance source (2026-09-07):
+
+| Candidate | Outcome |
+|---|---|
+| `schumannresonancelive.com/api/data.php` (incumbent) | **404, unchanged.** All JSON paths removed. |
+| `schumannresonancelive.com/realtime/*.php` | **JPEG image only** (re-render of the Tomsk spectrogram); `card.php` is CORS-open but carries no numbers. Deriving SR1–SR5 from pixels = fabrication-adjacent → REJECT. |
+| `sosrff.tsu.ru` (Tomsk SOS — true upstream, genuine ELF station) | **TLS certificate EXPIRED**; image-only, no JSON; blocked by `usesCleartextTraffic="false"` → REJECT for any client use. |
+| HeartMath GCMS `nocc.heartmath.org/.../power_levels.php` | CORS-open but returns empty `[[0]]`; measures **broadband band power, not SR peaks**; no provenance fields; HeartMath ARR, no open-data licence; `gci-api.com` DNS-dead; live-data page removed → REJECT. |
+| `schumann-resonance.org`, `spaceweatherlive.com`, community mirrors, Cumiana/`vlf.it` | commercial app / NOAA-derived / Tomsk image re-renders / unreliable hobbyist site → REJECT. NOAA/USGS forbidden as substitutes. |
+
+```text
+QUALIFYING_SOURCE_FOUND = NO
+```
+
+No source is simultaneously: genuine SR measurement + numeric API + valid-cert HTTPS + CORS-open +
+usably licensed + reliable + provenance-bearing. **Option A (direct client API swap) is
+impossible.** Options B/C (Bhumi proxy / scheduled ingestion) are the only technical paths and all
+require a **Founder-gated backend** plus a **licensing review** plus (for the Tomsk route) a
+**scientifically-reviewed spectral-peak-extraction** step — a real project, best folded into
+`SPRINT-108-ENV2`, not a CDI source-swap.
+
+**Recommendation:** keep Schumann fail-closed for the Build 108 ENL release (unchanged from Builds
+106/107, already gate-passed); do not swap `SCHUMANN_API_URL`; do not build a proxy inside the CDI
+gate. **Founder decision required — D1 (accept fail-closed / DEFERRED in FRA) · D2 (authorize a
+separate backend-gated ENV2 restoration project) · D3 (provide a private licensed provider).** See
+§3.3 of the report. CDI-A3 (honest UI + `deriveEnvironmentBands` / `hasSchumannObservation` gate)
+is preserved and is now regression-locked by
+`tests/unit/build108-cdi03-schumann-source-integrity.test.ts` (16 checks, exit 0).
 
 ---
 
@@ -1124,10 +1159,17 @@ FIX_SCOPE                           = Engines + adapters + persistence + present
                                      static-surface guards are untouched by every proposed fix.
 
 BUILD_108_BLOCKERS_OPEN            =
-  CDI-A1  Schumann source replacement/repair (Founder chooses provider; verify reachability +
-          CORS from https://localhost + schema compatibility with normalizeSchumannResponse).
-  CDI-A2  If not CORS-open, stand up a Bhumi-owned normalising proxy.
+  CDI-A1  Schumann source replacement/repair. RESEARCH COMPLETE 2026-09-07 (§A.6 +
+          BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md): NO qualifying genuine SR source
+          exists (numeric API + valid-cert HTTPS + CORS + licence + reliability + provenance).
+          Direct client swap impossible. FOUNDER DECISION REQUIRED — D1 accept fail-closed /
+          DEFERRED · D2 authorize a backend-gated ENV2 restoration project · D3 provide a private
+          licensed provider. SCHUMANN_API_URL unchanged.
+  CDI-A2  If not CORS-open, stand up a Bhumi-owned normalising proxy. BLOCKED on CDI-A1 (no source)
+          and on Founder backend-deploy authorization.
   CDI-A3  Preserve the honest-unavailable UI + the deriveEnvironmentBands gate unchanged.
+          DONE — preserved and regression-locked by
+          tests/unit/build108-cdi03-schumann-source-integrity.test.ts (16 checks, exit 0).
   CDI-B1  perspective — adapter: derive from `data.variables.bottom_right` (name/value/def_type)
           instead of the absent `data.perspective`. NOT an engine change.
   CDI-B2  HumanDesignBodygraphLite.tsx — read `variables.short_code` (and/or render the 4
@@ -1153,7 +1195,7 @@ BUILD_108_BLOCKERS_OPEN            =
           re-fetch — see §B.8.3) + legacy Chiron, across Build 103–107 cohorts
           (Founder-authorised, non-destructive, convergence-safe). NOT STARTED.
 
-NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                    = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 ---

@@ -8,11 +8,11 @@ BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 DERIVED_SPRINT_COUNT            = 8 NUMBERED SPRINTS + ENV2 (+ 1 pre-Sprint-5 data-integrity gate)
 SPRINTS_COMPLETE               = 1, 2, 3, 4
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
+GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -21,8 +21,10 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > Root causes for the three confirmed production defects are CONFIRMED and **Founder-approved** in
 > **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron ephemeris) and CDI-108-01A
 > (timezone canonicalization) are done. CDI-108-02 client integrity/recovery safety is done
-> (§B.11); service extras remain source-dependent and backfill NOT READY.** CDI-108-03 source
-> research is the current task. No production data has
+> (§B.11); service extras remain source-dependent and backfill NOT READY. CDI-108-03 source
+> research + architecture decision are COMPLETE (2026-09-07) — no qualifying genuine Schumann
+> source exists; `SCHUMANN_API_URL` unchanged; Founder decision D1/D2/D3 required
+> (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`).** No production data has
 > been read or written; no backend deploy.
 
 ---
@@ -208,13 +210,14 @@ their existing numbering and scope. Do not reopen completed CDI work or Sprint 2
   - **CDI-108-01 — Chiron / natal accuracy — ✅ DONE (2026-09-06).** Removed `calculateApproximateChironLongitude` (linear model) and `buildApproximatePlacidusHouses` (Equal-house-as-Placidus). Added a committed Swiss Ephemeris Chiron table (`lib/astrology/data/chironEphemeris.json`, 1900–2100, 7-day samples; `lib/astrology/chironEphemeris.ts`, Catmull-Rom, validated max error 0.00083°). Local engine now emits genuine Whole Sign houses only + `houseSystem` label + `chironAccuracy` contract (never `"ephemeris"` from an approximation). Added `lib/config/astrologyApiUrl.ts` + `app/api/humandesign/astrology/route.ts` (Vercel proxy → configured Swiss Ephemeris service; fails closed with an explicit `calculationStatus`). `calculateNatalBasicsAsync` routes via `getAstrologyApiUrl()` with a Firebase auth header + bounded timeout; on ANY remote failure keeps the local chart (accurate table Chiron + genuine Whole Sign), never synthesising Placidus. `generateBlueprint` / `blueprintRecoveryEngine` persist `chiron` only when ephemeris-accurate and `placidusHouses` only when genuine — otherwise the field is undefined → `sanitizeForFirestore` drops it → `{merge:true}` preserves the stored value. Fixtures: `tests/fixtures/build108-cdi01-chiron-reference.json`; test `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts` (13 checks, EXIT 0). Old linear model: 8/10 wrong sign, max 78.65° error; new table: 12/12 correct. `tsc` EXIT 0; Build 107 guards 19/19 + 131/131. → **CDI-C1 DONE** (real ephemeris for Chiron; routing/config + honest Placidus/Whole-Sign separation; ephemeris SERVICE still needs deployment with `/calculate-astrology` for genuine Placidus — Founder/ops step, Chiron unaffected). **CDI-C2 DONE** (fail-closed provenance markers + declared-system label; stored Chiron preserved).
   - **CDI-108-01A — timezone canonicalization — ✅ DONE (2026-09-06).** Removed `Math.round(longitude / 15)` + browser-guess (`new Date().getTimezoneOffset()`) + `+07:00` default from setup / settings / `resolveNatalLocation` / recovery. New `lib/astrology/resolveIanaTimezone.ts`: deterministic offline lat/lon → IANA (`tz-lookup@6.1.25`, CC0, ~152 KB, zero deps); `canonicalizeNatalTimezone` keeps a valid stored IANA / `+HH:MM` value (never overwrites) → else geo-resolves → else `null` (fail closed to pending). `toUtcDate` now uses **luxon** for DST-correct IANA wall-clock → UTC. `CITY_FALLBACKS` upgraded to IANA names. Profile schema unchanged (`timezone?: string\|null`) — backward-compatible; `timezoneSource` union += `iana-geo`/`stored`/`unresolved`. Fixture generator derives fixture zones from `timezonefinder` (found + fixed a hand-labelled wrong zone: Denpasar was `Asia/Jakarta`, is `Asia/Makassar`); +2 fixtures (Kathmandu +5:45, Indiana). Test `tests/unit/build108-cdi01a-timezone-canonicalization.test.ts` (10 checks, EXIT 0). **CHIRON_END_TO_END_MAX_ERROR = 0.000420° (12/12 fixtures; target < 0.01° met by ~24×).** → **CDI-C3 DONE.**
   - **CDI-108-02 — Human Design advanced variables — REFINED READ-ONLY AUDIT DONE (audit §B.8); IMPLEMENTATION NOT STARTED.** The *deployed* engine (verified via synthetic POST 2026-09-06) DOES return top-level `digestion:"Active"` / `environment:"Observer"` / `motivation:"Receptive"` (arrow `def_type`) + `cognition:"Outer Vision"` (6-fold) + `variables.short_code:"PRR DLR"`; the adapter / normalizer / persistence / the "Advanced Variables" grid keys handle these correctly. **Confirmed defects:** (a) `perspective` — adapter reads an absent top-level key instead of `variables.bottom_right` (derivable, affects new users); (b) "Variables Arrows" — `HumanDesignBodygraphLite.tsx:203` reads `variables.variable \|\| variables.value` instead of stored `variables.short_code` (UI-only); (c) per-planet Color/Tone/Base — the deployed engine never emits a `diagnostic` block and IGNORES `debug` (needs another engine); (d) "Not stored" for the present fields on real users = **legacy blueprints** (local migration from stored `variables.<arrow>.def_type`, else re-fetch; `cognition` = re-fetch only); (e) `mass-recover-hd.ts` still corrupts `centers` (raw array) + drops activations/`openCenters`; (f) no explicit `perspective:` coercion in `normalizeBlueprint`; (g) HD variable/style narratives Indonesian-only; (h) "Story… being prepared." on CANONICAL types. HD **core** identity healthy; Build 107 convergence intact. → **CDI-B1** (perspective derive), **CDI-B2** (short_code UI key), **CDI-B3** (normalizer + mass-recover shape), **CDI-B4** (narrative i18n), **CDI-B5** (presentation gating), **CDI-B6** (Color/Tone/Base — needs a diagnostic-emitting engine, CDI-C1 class).
-  - **CDI-108-03 — Schumann source — NOT STARTED.** Provider endpoint `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**. Client-only fetch; static export forbids a proxy. Pre-existing since ≥ Build 106 (DS-E1). **No fabricated "healthy" values** — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` are genuine USGS/NOAA readings, guarded on `dataState`/`source.status === "available"`. → **CDI-A1** (choose replacement source), **CDI-A2** (Bhumi-owned proxy if not CORS-open), **CDI-A3** (keep honest-unavailable UI + `deriveEnvironmentBands` gate).
+  - **CDI-108-03 — Schumann source — RESEARCH + ARCHITECTURE DECISION DONE (2026-09-07); NO QUALIFYING SOURCE; FOUNDER DECISION REQUIRED.** Full report: `BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`. Read-only probes: incumbent `schumannresonancelive.com/api/data.php` still **404** (all JSON paths removed); its successor `/realtime/*.php` is a **JPEG-only** re-render of the Tomsk spectrogram; the true Tomsk upstream (`sosrff.tsu.ru`) has an **expired TLS cert** and no JSON; HeartMath GCMS `power_levels.php` is CORS-open but returns empty `[[0]]`, measures **broadband band power (not SR peaks)**, has no provenance fields, no open-data licence, and its live-data page was removed; `gci-api.com` is DNS-dead; other candidates are commercial apps / NOAA-derived / hobbyist. **`QUALIFYING_SOURCE_FOUND = NO`** → **Option A (direct client swap) impossible**; Options B/C (proxy / ingestion) need a Founder-gated backend + licensing review + (Tomsk route) reviewed spectral-peak extraction — a real project, best folded into ENV2. **No fabricated "healthy" values** — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` remain genuine USGS/NOAA readings, guarded on `dataState`/`source.status === "available"`. `SCHUMANN_API_URL` unchanged. → **CDI-A1** research done, blocked (no source). **CDI-A2** blocked on CDI-A1 + backend authz. **CDI-A3 DONE** — honest-unavailable UI + `deriveEnvironmentBands`/`hasSchumannObservation` gate preserved and regression-locked (`tests/unit/build108-cdi03-schumann-source-integrity.test.ts`, 16 checks). **Founder decision — D1** accept fail-closed (FRA: SCHUMANN = DEFERRED w/ rationale) · **D2** authorize a separate backend-gated ENV2 restoration project · **D3** provide a private licensed provider.
   - **CDI-D1 — Cross-user / legacy.** Post-fix, non-destructive, convergence-safe production **backfill** for HD advanced variables + Chiron across Build 103–107 cohorts. Founder-authorised and executed **separately**; not part of this gate's code work; **not authorised now**.
 - **BUILD_107_GUARDS:** every `CDI-*` fix must leave the Build 107 inheritance checklist (`BUILD_108_ENL_MASTER_SOT.md §3`) 100% intact — especially: a failed HD recalculation must never overwrite a CANONICAL stored `type`. Verified for CDI-108-01 + CDI-108-01A.
 - **CURRENT DISPOSITION (2026-09-07):** the pre-fix CDI-108-02 findings above are historical;
   §B.11 records completed client integrity/recovery safety. Preserve completed Chiron/timezone/HD;
-  service extras remain source-dependent and backfill NOT READY. Continue CDI-108-03 source
-  research/architecture under its existing authorization; source proof precedes local implementation.
+  service extras remain source-dependent and backfill NOT READY. CDI-108-03 source
+  research/architecture is COMPLETE — no qualifying source, Founder decision D1/D2/D3 required
+  (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`); nothing further to implement in-gate.
 - **EXIT_GATE:** Founder disposition/closure of the remaining CDI blockers before Sprint 5/ENV2.
   `CDI-D1` production backfill remains separately authorized only. ENV2/FRA planning does not close CDI.
 
@@ -460,12 +463,12 @@ disposition before release. Planning approval cannot satisfy implementation or r
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 SPRINTS_COMPLETE               = 1, 2, 3, 4
-GATE_108_CDI                   = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
+GATE_108_CDI                   = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
 SPRINT_5                       = BLOCKED
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 **MANDATORY RULES:**
