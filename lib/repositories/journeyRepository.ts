@@ -10,6 +10,7 @@ import { journeyStoryEngine } from "@/lib/engines/journeyStoryEngine";
 import { calculatePracticeEffectiveness } from "@/lib/engines/completionEngine";
 import { growthNarrativeEngine } from "@/lib/engines/growthNarrativeEngine";
 import { journeyNarrativeEngine } from "@/lib/engines/journeyNarrativeEngine";
+import { isEnlEdition } from "@/lib/config/edition";
 
 
 const dailyRecordDoc = (uid: string, appDate: string) =>
@@ -99,7 +100,7 @@ function createLocalDailyRecord(uid: string, appDate: string, initial: Partial<J
     userId: uid,
     date: appDate,
     appDate,
-    dayOfWeek: new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" })
+    dayOfWeek: new Intl.DateTimeFormat(isEnlEdition() ? "en-US" : "id-ID", { weekday: "long", timeZone: "UTC" })
       .format(new Date(`${appDate}T12:00:00Z`)),
     createdAt: now,
     updatedAt: now,
@@ -129,7 +130,7 @@ function createDailyRecordMergeBase(uid: string, appDate: string): Partial<Journ
     userId: uid,
     date: appDate,
     appDate,
-    dayOfWeek: new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" })
+    dayOfWeek: new Intl.DateTimeFormat(isEnlEdition() ? "en-US" : "id-ID", { weekday: "long", timeZone: "UTC" })
       .format(new Date(`${appDate}T12:00:00Z`)),
   };
 }
@@ -196,7 +197,7 @@ export const journeyRepository = {
       userId: uid,
       date: appDate,
       appDate,
-      dayOfWeek: new Intl.DateTimeFormat("id-ID", { weekday: "long", timeZone: "UTC" })
+      dayOfWeek: new Intl.DateTimeFormat(isEnlEdition() ? "en-US" : "id-ID", { weekday: "long", timeZone: "UTC" })
         .format(new Date(`${appDate}T12:00:00Z`)),
       createdAt: now,
       updatedAt: now,

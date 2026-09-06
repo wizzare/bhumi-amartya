@@ -1,12 +1,14 @@
 "use client";
 
 import type { JournalPrompt } from "@/lib/data/types";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface DailyPromptCardProps {
   prompt: JournalPrompt;
 }
 
 export function DailyPromptCard({ prompt }: DailyPromptCardProps) {
+  const isEn = isEnlEdition();
   return (
     <section className="mb-8">
       <div className="bhumi-card rounded-[28px] p-8 bg-gradient-to-br from-[#F7F4ED] to-[#FCFAF5] shadow-soft">
@@ -51,7 +53,7 @@ export function DailyPromptCard({ prompt }: DailyPromptCardProps) {
         {prompt.generatedBasedOn && (
           <div className="bg-[#FBF9F4] rounded-2xl p-4 border border-[#E8E9E5]">
             <p className="text-[#7B8776] font-medium mb-3 text-xs uppercase tracking-wide">
-              Membaca dirimu hari ini
+              {isEn ? "Reading yourself today" : "Membaca dirimu hari ini"}
             </p>
             <div className="space-y-2">
               {prompt.generatedBasedOn.lifePathInsight && (

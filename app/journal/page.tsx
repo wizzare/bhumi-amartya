@@ -54,25 +54,19 @@ import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { trackError, trackEvent } from "@/lib/analytics/usageAnalytics";
 import { InnerworkCelebration } from "@/components/ui/InnerworkCelebration";
+import { isEnlEdition } from "@/lib/config/edition";
 
-const EMOTIONAL_STATES = [
-  "😊 Lebih ringan",
-  "😌 Lebih tenang",
-  "😢 Sedih",
-  "😔 Bingung",
-  "😠 Marah",
-  "💭 Campur aduk",
-];
+function getEmotionalStates(): string[] {
+  return isEnlEdition()
+    ? ["😊 Lighter", "😌 Calmer", "😢 Sad", "😔 Confused", "😠 Angry", "💭 Mixed feelings"]
+    : ["😊 Lebih ringan", "😌 Lebih tenang", "😢 Sedih", "😔 Bingung", "😠 Marah", "💭 Campur aduk"];
+}
 
-const BODY_SIGNALS = [
-  "Bahu tegang",
-  "Dada terasa berat",
-  "Tenggorokan terasa mengganjal",
-  "Perut tidak nyaman",
-  "Mata berkaca-kaca",
-  "Tubuh lebih rileks",
-  "Tidak ada sensasi khusus",
-];
+function getBodySignals(): string[] {
+  return isEnlEdition()
+    ? ["Tense shoulders", "Heavy chest", "Lump in throat", "Stomach discomfort", "Watery eyes", "Body more relaxed", "No particular sensation"]
+    : ["Bahu tegang", "Dada terasa berat", "Tenggorokan terasa mengganjal", "Perut tidak nyaman", "Mata berkaca-kaca", "Tubuh lebih rileks", "Tidak ada sensasi khusus"];
+}
 
 function getStringValue(record: Record<string, unknown> | null, key: string): string | null {
   const value = record?.[key];
@@ -225,12 +219,13 @@ export default function JournalPage() {
   }, [auth, router]);
 
   const handleLocalBodySignalToggle = (signal: string) => {
+    const isNoneSignal = signal === "Tidak ada sensasi khusus" || signal === "No particular sensation";
     setLocalBodySignals((current) => {
-      if (signal === "Tidak ada sensasi khusus") {
+      if (isNoneSignal) {
         return current.includes(signal) ? [] : [signal];
       }
 
-      const withoutNone = current.filter((item) => item !== "Tidak ada sensasi khusus");
+      const withoutNone = current.filter((item) => item !== "Tidak ada sensasi khusus" && item !== "No particular sensation");
       if (withoutNone.includes(signal)) {
         return withoutNone.filter((item) => item !== signal);
       }
@@ -355,7 +350,7 @@ export default function JournalPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-          <p className="text-[#4F5E52] text-lg">Persiapan ruang yang aman untuk dirimu...</p>
+          <p className="text-[#4F5E52] text-lg">{isEnlEdition() ? "Preparing a safe space for you..." : "Persiapan ruang yang aman untuk dirimu..."}</p>
           <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-[#E8E9E5]">
             <div className="h-full w-3/4 animate-pulse rounded-full bg-[#4F5E52]" />
           </div>
@@ -373,13 +368,13 @@ export default function JournalPage() {
       return (
         <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
           <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-            <p className="text-[#4F5E52] text-lg">{loadError || "Prompt journaling belum siap."}</p>
+            <p className="text-[#4F5E52] text-lg">{loadError || (isEnlEdition() ? "Journaling prompt not ready." : "Prompt journaling belum siap.")}</p>
           </div>
         </main>
       );
     }
 
-    const today = new Date().toLocaleDateString("id-ID", {
+    const today = new Date().toLocaleDateString(isEnlEdition() ? "en-US" : "id-ID", {
       weekday: "long",
       year: "numeric",
       month: "long",
@@ -393,10 +388,12 @@ export default function JournalPage() {
           <header className="bhumi-card p-7 bg-gradient-to-br from-[#FCFAF5] to-[#F5F1E8]">
             <p className="text-sm text-[#7B8776]">{today}</p>
             <h1 className="mt-3 text-3xl font-semibold text-[#4F5E52]">
-              📖 Journaling Hari Ini
+              {isEnlEdition() ? "📖 Today's Journaling" : "📖 Journaling Hari Ini"}
             </h1>
             <p className="mt-4 text-[#7B8776] leading-relaxed">
-              Menulis membantu menyadari pola yang sering tidak terlihat saat hanya dipikirkan. Luangkan beberapa menit untuk mendengar isi hatimu hari ini.
+              {isEnlEdition()
+                ? "Writing helps you notice patterns often invisible when only thought about. Take a few minutes to listen to your heart today."
+                : "Menulis membantu menyadari pola yang sering tidak terlihat saat hanya dipikirkan. Luangkan beberapa menit untuk mendengar isi hatimu hari ini."}
             </p>
           </header>
 
@@ -424,7 +421,7 @@ export default function JournalPage() {
           <section className="bhumi-card p-6">
             <h2 className="text-xl font-semibold text-[#4F5E52]">Section B · Journal Writing</h2>
             <label className="mt-5 block text-sm font-medium text-[#7B8776]" htmlFor="journalText">
-              Tulis refleksimu di sini...
+              {isEnlEdition() ? "Write your reflection here..." : "Tulis refleksimu di sini..."}
             </label>
             <textarea
               id="journalText"
@@ -435,17 +432,17 @@ export default function JournalPage() {
                 event.currentTarget.style.height = `${event.currentTarget.scrollHeight}px`;
               }}
               className="mt-3 min-h-56 w-full resize-none rounded-3xl border border-[#E8E9E5] bg-white p-5 text-[#4F5E52] outline-none transition focus:border-[#9BB89A] focus:ring-2 focus:ring-[#9BB89A]/20"
-              placeholder="Mulai dari satu kalimat yang paling jujur..."
+              placeholder={isEnlEdition() ? "Start with the most honest sentence..." : "Mulai dari satu kalimat yang paling jujur..."}
             />
           </section>
 
           <section className="bhumi-card p-6">
             <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Body Awareness</h2>
             <p className="mt-5 text-sm font-medium text-[#7B8776]">
-              Bagaimana perasaanmu setelah menulis?
+              {isEnlEdition() ? "How do you feel after writing?" : "Bagaimana perasaanmu setelah menulis?"}
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {EMOTIONAL_STATES.map((state) => (
+              {getEmotionalStates().map((state) => (
                 <button
                   key={state}
                   type="button"
@@ -462,10 +459,10 @@ export default function JournalPage() {
             </div>
 
             <p className="mt-6 text-sm font-medium text-[#7B8776]">
-              Apakah ada sensasi pada tubuhmu?
+              {isEnlEdition() ? "Do you notice any sensations in your body?" : "Apakah ada sensasi pada tubuhmu?"}
             </p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              {BODY_SIGNALS.map((signal) => (
+              {getBodySignals().map((signal) => (
                 <label
                   key={signal}
                   className="flex items-center gap-3 rounded-2xl border border-[#E8E9E5] bg-white p-4 text-sm text-[#4F5E52]"
@@ -490,20 +487,20 @@ export default function JournalPage() {
               disabled={localSaved}
               className="mt-5 w-full rounded-full bg-[#4F5E52] px-6 py-4 text-sm font-medium text-white transition hover:bg-[#3D4A3F] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {localSaved ? "Refleksi tersimpan..." : "Simpan Refleksi"}
+              {localSaved ? (isEnlEdition() ? "Reflection saved..." : "Refleksi tersimpan...") : (isEnlEdition() ? "Save Reflection" : "Simpan Refleksi")}
             </button>
 
             {localInsight && (
               <div className="mt-6 space-y-4 rounded-3xl bg-[#FCFAF5] p-5">
                 <div>
-                  <p className="text-sm font-semibold text-[#4F5E52]">🌱 Insight Hari Ini</p>
+                  <p className="text-sm font-semibold text-[#4F5E52]">{isEnlEdition() ? "🌱 Today's Insight" : "🌱 Insight Hari Ini"}</p>
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.insight}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-[#4F5E52]">✨ Fokus Besok</p>
+                  <p className="text-sm font-semibold text-[#4F5E52]">{isEnlEdition() ? "✨ Tomorrow's Focus" : "✨ Fokus Besok"}</p>
                   <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{localInsight.tomorrowFocus}</p>
                 </div>
-                <p className="text-xs text-[#9BB89A]">Mengembalikanmu ke dashboard...</p>
+                <p className="text-xs text-[#9BB89A]">{isEnlEdition() ? "Returning you to dashboard..." : "Mengembalikanmu ke dashboard..."}</p>
               </div>
             )}
           </section>

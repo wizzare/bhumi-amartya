@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { safeJsonParse } from "@/lib/storage/safeJson";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface InnerworkCelebrationProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface InnerworkCelebrationProps {
 
 export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
   const router = useRouter();
+  const isEn = isEnlEdition();
   const [sessionCount, setSessionCount] = useState(0);
 
   useEffect(() => {
@@ -40,16 +42,20 @@ export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
         </div>
 
         <h2 className="text-2xl font-semibold text-[#4F5E52]">
-          Praktik berhasil disimpan 🌱
+          {isEn ? "Practice saved successfully 🌱" : "Praktik berhasil disimpan 🌱"}
         </h2>
 
         <p className="mt-4 leading-relaxed text-[#7B8776]">
-          Kamu sudah menyelesaikan sesi hari ini. Pelan-pelan, langkah kecil seperti ini yang membentuk perubahan besar.
+          {isEn
+            ? "You've completed today's session. Slowly, small steps like these shape great change."
+            : "Kamu sudah menyelesaikan sesi hari ini. Pelan-pelan, langkah kecil seperti ini yang membentuk perubahan besar."}
         </p>
 
         {sessionCount >= 2 && (
           <p className="mt-4 font-medium text-[#4F5E52] bg-[#F5F1E8] p-4 rounded-2xl">
-            Kamu sudah menyelesaikan beberapa sesi. Terima kasih sudah tetap hadir untuk dirimu sendiri.
+            {isEn
+              ? "You've completed several sessions. Thank you for staying present for yourself."
+              : "Kamu sudah menyelesaikan beberapa sesi. Terima kasih sudah tetap hadir untuk dirimu sendiri."}
           </p>
         )}
 
@@ -58,7 +64,7 @@ export function InnerworkCelebration({ isOpen }: InnerworkCelebrationProps) {
           onClick={() => router.push("/wellness")}
           className="bhumi-button mt-8 w-full"
         >
-          Kembali ke Wellness
+          {isEn ? "Back to Wellness" : "Kembali ke Wellness"}
         </button>
       </div>
     </div>

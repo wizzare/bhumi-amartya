@@ -29,7 +29,7 @@ export type DailyManifestation = {
 };
 
 export type DailyConclusion = {
-  title: "Kesimpulan Hari Ini";
+  title: "Kesimpulan Hari Ini" | "Today's Conclusion";
   text: string;
   localDateKey: string;
   timezone: string;

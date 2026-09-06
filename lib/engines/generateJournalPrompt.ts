@@ -9,6 +9,7 @@
 
 import type { CoreIdentity, JournalPrompt, AIGenerationContext } from "../data/types";
 import { buildUnifiedBlueprintSynthesis } from "@/lib/dailyGuidance/unifiedBlueprintSynthesis";
+import { isEnlEdition } from "@/lib/config/edition";
 
 // ============= PROMPT THEMES BY LIFE PATH =============
 
@@ -127,6 +128,63 @@ const prompts = {
   ],
 };
 
+const promptsEN = {
+  selfWorth: [
+    "Which part of you has been most tired lately, but hasn't had the chance to be truly heard?",
+    "What do you need from yourself today?",
+    "If your body could speak, what would it want to tell you?",
+    "Who are you beyond everything you do?",
+  ],
+  relationships: [
+    "In your relationships with people around you, where are your boundaries softest?",
+    "What are you afraid of losing if you truly say 'no'?",
+    "Who is the version of you that hasn't yet shown up in front of them?",
+    "What are you sacrificing to stay connected with others?",
+  ],
+  grief: [
+    "What is currently leaving you, and what would you like to say to it?",
+    "Where did this wound begin?",
+    "Which part of you is not yet ready to let go?",
+    "If you allowed yourself to cry wholeheartedly, what sound would come out?",
+  ],
+  creativity: [
+    "Which version of you is most afraid of being seen?",
+    "What wants to be created through your hands?",
+    "If no one were judging, what would you express?",
+    "What art within you is still searching for its form?",
+  ],
+  fear: [
+    "What fear whispers to your ear most frequently?",
+    "If courage had a color, what color would resonate most with you?",
+    "What would change if you were not afraid?",
+    "Where is your fear trying to protect you?",
+  ],
+  anger: [
+    "What anger within you hasn't been allowed to be angry?",
+    "Which power of yours is currently being suppressed?",
+    "What wants to be corrected with a louder voice?",
+    "Which part of you wants to stand tall?",
+  ],
+  rest: [
+    "What is asking to stop and be rested?",
+    "Where is your body saying 'enough'?",
+    "What rhythm do you truly want to follow?",
+    "If permitted, what would you let go of today?",
+  ],
+  presence: [
+    "What is happening beneath your surface that you rarely notice?",
+    "Right now, what does your body want to tell you?",
+    "What is beautiful about your life that you usually miss?",
+    "If you were truly here right now, what do you notice?",
+  ],
+  healing: [
+    "Which part of your old wound is searching for light?",
+    "What have you learned about yourself through the pain?",
+    "Where is your healing journey currently leading you?",
+    "Who are you becoming after all of this?",
+  ],
+};
+
 // ============= PROMPT GENERATION LOGIC =============
 
 export function generateJournalPrompt(
@@ -139,8 +197,9 @@ export function generateJournalPrompt(
   }
 ): JournalPrompt {
   const { lifePath, arcanaCenter, humanDesign } = coreIdentity;
+  const isEn = isEnlEdition();
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: "id",
+    language: isEn ? "en" : "id",
     profile: null,
     blueprint: {
       lifePath: { number: lifePath },
@@ -203,7 +262,8 @@ export function generateJournalPrompt(
   // ---------------------------------
 
   const themeKey = primaryTheme as keyof typeof prompts;
-  const promptOptions = prompts[themeKey] || prompts.selfWorth;
+  const activePrompts = isEn ? promptsEN : prompts;
+  const promptOptions = activePrompts[themeKey] || activePrompts.selfWorth;
   const selectedPrompt =
     promptOptions[Math.floor(Math.random() * promptOptions.length)];
 
@@ -242,14 +302,20 @@ export function generateJournalPrompt(
     subPrompts,
     theme: primaryTheme,
     emotionalDepth,
-    purpose: `Mengeksplorasi ${primaryTheme} yang sedang hadir dalam hidupmu saat ini.`,
+    purpose: isEn
+      ? `Exploring the theme of ${primaryTheme} currently present in your life.`
+      : `Mengeksplorasi ${primaryTheme} yang sedang hadir dalam hidupmu saat ini.`,
     relatedArea,
     generatedBasedOn: {
-      lifePathInsight:
-        "Refleksi hari ini diarahkan pada satu pertanyaan yang terasa jujur, bukan pada jawaban yang harus sempurna.",
-      arcanaInsight:
-        "Ada ruang untuk melihat pola lama dengan lembut lalu memilih respons yang lebih sehat.",
-      humanDesignInsight: "Ritme dukungan hari ini dimulai dari mendengar tubuh sebelum memaksa keputusan.",
+      lifePathInsight: isEn
+        ? "Today's reflection is directed toward one question that feels honest, not an answer that must be perfect."
+        : "Refleksi hari ini diarahkan pada satu pertanyaan yang terasa jujur, bukan pada jawaban yang harus sempurna.",
+      arcanaInsight: isEn
+        ? "There is room to look at old patterns gently and then choose a healthier response."
+        : "Ada ruang untuk melihat pola lama dengan lembut lalu memilih respons yang lebih sehat.",
+      humanDesignInsight: isEn
+        ? "Today's support rhythm starts from listening to your body before forcing a decision."
+        : "Ritme dukungan hari ini dimulai dari mendengar tubuh sebelum memaksa keputusan.",
       emotionalPattern: context?.emotionalPattern,
     },
   };
@@ -261,6 +327,7 @@ function generateSubPrompts(
   theme: string,
   coreIdentity: CoreIdentity
 ): string[] {
+  const isEn = isEnlEdition();
   const baseSubPrompts: Record<string, string[]> = {
     selfWorth: [
       "Apa kepercayaan yang paling sulit kamu pegang tentang dirimu?",
@@ -268,7 +335,7 @@ function generateSubPrompts(
     ],
     relationships: [
       "Bagaimana caramu mencintai berbeda dengan cara orang lain mencintaimu?",
-      "Apa yang butuh didengar dalam hubungan ini?",
+      "Apa yang mebutuh didengar dalam hubungan ini?",
     ],
     grief: [
       "Apa yang akan kamu pelajari jika kamu membiarkan diri sedih sepenuhnya?",
@@ -300,7 +367,47 @@ function generateSubPrompts(
     ],
   };
 
-  return baseSubPrompts[theme] || [];
+  const baseSubPromptsEN: Record<string, string[]> = {
+    selfWorth: [
+      "What is the hardest belief for you to hold about yourself?",
+      "If you could accept one thing about yourself today, what would it be?",
+    ],
+    relationships: [
+      "How is the way you love different from how others love you?",
+      "What needs to be heard in this relationship?",
+    ],
+    grief: [
+      "What would you learn if you allowed yourself to be fully sad?",
+      "What still remains after this loss?",
+    ],
+    creativity: [
+      "What is the purest form of your expression?",
+      "Who is the true artist within you?",
+    ],
+    fear: [
+      "What is your fear trying to protect?",
+      "If fear were a friend, what would it want to teach you?",
+    ],
+    anger: [
+      "What truth is your anger fighting against?",
+      "If anger could speak with compassion, what would it say?",
+    ],
+    rest: [
+      "What is asking for permission to be imperfect?",
+      "How does it feel to give yourself grace?",
+    ],
+    presence: [
+      "What beautiful thing is happening around you right now?",
+      "If you only listened without changing anything, what do you hear?",
+    ],
+    healing: [
+      "Which part of you is becoming more whole?",
+      "What is the greatest learning from this journey?",
+    ],
+  };
+
+  const activeMap = isEn ? baseSubPromptsEN : baseSubPrompts;
+  return activeMap[theme] || [];
 }
 
 // ============= EXPORT for use in components =============

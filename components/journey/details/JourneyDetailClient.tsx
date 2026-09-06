@@ -19,6 +19,7 @@ import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDia
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { sanitizeNarrative } from "@/lib/profile/narrativeHumanizer";
+import { isEnlEdition } from "@/lib/config/edition";
 
 
 interface JourneyDetailClientProps {
@@ -42,6 +43,12 @@ const NAVIGATOR_MODE_MAP: Record<string, string> = {
   GROWTH: "Mode Pertumbuhan",
 };
 
+const NAVIGATOR_MODE_MAP_EN: Record<string, string> = {
+  RECOVERY: "Recovery Mode",
+  REFLECTION: "Reflection Mode",
+  GROWTH: "Growth Mode",
+};
+
 const DOMAIN_MAP: Record<string, string> = {
   BODY: "Tubuh",
   EMOTION: "Emosi",
@@ -49,6 +56,15 @@ const DOMAIN_MAP: Record<string, string> = {
   RELATIONSHIP: "Relasi",
   MEANING: "Makna",
   REGULATION: "Regulasi Diri",
+};
+
+const DOMAIN_MAP_EN: Record<string, string> = {
+  BODY: "Body",
+  EMOTION: "Emotion",
+  MIND: "Mind",
+  RELATIONSHIP: "Relationship",
+  MEANING: "Meaning",
+  REGULATION: "Self-Regulation",
 };
 
 const PRACTICE_NAME_MAP: Record<string, string> = {
@@ -66,8 +82,37 @@ const PRACTICE_NAME_MAP: Record<string, string> = {
   food: "Makanan Sehat",
 };
 
-function indonesianize(text: string): string {
+const PRACTICE_NAME_MAP_EN: Record<string, string> = {
+  journaling: "Journal",
+  journal: "Journal",
+  meditation: "Meditation",
+  audioHealing: "Audio Healing",
+  "audio-healing": "Audio Healing",
+  manifestation: "Manifestation",
+  manifestasi: "Manifestation",
+  yoga: "Yoga",
+  workout: "Workout",
+  "healthy-food": "Healthy Eating",
+  herbal: "Healthy Eating",
+  food: "Healthy Eating",
+};
+
+function indonesianize(text: string, isEn = false): string {
   if (!text) return "";
+  if (isEn) {
+    const replaced = text
+      .replace(/\bRECOVERY\b/g, "Recovery")
+      .replace(/\bREFLECTION\b/g, "Reflection")
+      .replace(/\bGROWTH\b/g, "Growth")
+      .replace(/\bBODY\b/g, "Body")
+      .replace(/\bEMOTION\b/g, "Emotion")
+      .replace(/\bMIND\b/g, "Mind")
+      .replace(/\bRELATIONSHIP\b/g, "Relationship")
+      .replace(/\bMEANING\b/g, "Meaning")
+      .replace(/\bREGULATION\b/g, "Self-Regulation");
+    return sanitizeNarrative(replaced);
+  }
+
   const replaced = text
     .replace(/\bboundaries\b/gi, "batas diri")
     .replace(/\bresponsibility\b/gi, "tanggung jawab")
@@ -102,6 +147,7 @@ function indonesianize(text: string): string {
 
 export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const auth = useAuth();
+  const isEn = isEnlEdition();
   const [history, setHistory] = useState<DailyState[]>([]);
   const [story, setStory] = useState<GrowthStory | null>(null);
   const [learning, setLearning] = useState<JourneyDailyMemory | null>(null);
@@ -225,7 +271,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         console.log("J8 after setStory");
       } catch (error: any) {
         console.error("JOURNEY RUNTIME ERROR", error);
-        setReadError(error?.message || "Gagal memuat detail perjalanan.");
+        setReadError(error?.message || (isEn ? "Failed to load journey details." : "Gagal memuat detail perjalanan."));
       } finally {
         setLoading(false);
       }
@@ -239,7 +285,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <p className="text-[#4F5E52] animate-pulse">Bhumi sedang menyiapkan detail perjalananmu...</p>
+        <p className="text-[#4F5E52] animate-pulse">{isEn ? "Bhumi is preparing your journey details..." : "Bhumi sedang menyiapkan detail perjalananmu..."}</p>
       </main>
     );
   }
@@ -248,7 +294,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
     if (readError) {
       return (
         <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center space-y-4">
-           <p className="text-sm text-amber-800 font-medium">Terjadi kendala saat memuat data perjalanan.</p>
+           <p className="text-sm text-amber-800 font-medium">{isEn ? "An issue occurred while loading your journey data." : "Terjadi kendala saat memuat data perjalanan."}</p>
            {process.env.NODE_ENV !== "production" && (
              <p className="text-xs text-[#7B8776] break-words">{readError}</p>
            )}
@@ -257,7 +303,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
              onClick={() => { setLoading(true); setReadError(null); window.location.reload(); }}
              className="px-4 py-2 bg-[#4F5E52] text-white text-xs font-bold rounded-xl uppercase tracking-wider"
            >
-             Coba Lagi
+             {isEn ? "Try Again" : "Coba Lagi"}
            </button>
         </div>
       );
@@ -270,11 +316,15 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
              <Sparkles size={32} />
            </div>
            <p className="text-[#7B8776] leading-relaxed italic">
-             Perjalananmu baru saja dimulai. Bhumi sedang menyiapkan peta perjalanan berdasarkan refleksi dan praktik yang kamu lakukan.
+             {isEn
+               ? "Your journey has just begun. Bhumi is preparing a journey map based on your reflections and practices."
+               : "Perjalananmu baru saja dimulai. Bhumi sedang menyiapkan peta perjalanan berdasarkan refleksi dan praktik yang kamu lakukan."}
            </p>
         </div>
       );
     }
+
+    const practiceMap = isEn ? PRACTICE_NAME_MAP_EN : PRACTICE_NAME_MAP;
 
     switch (id) {
       case "stage":
@@ -284,22 +334,22 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
               <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-6 text-[#4F5E52]">
                 <Sparkles size={32} />
               </div>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-4">{indonesianize(story.stage.label)}</h2>
-              <p className="text-[#7B8776] leading-relaxed italic">{indonesianize(story.stage.description)}</p>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-4">{indonesianize(story.stage.label, isEn)}</h2>
+              <p className="text-[#7B8776] leading-relaxed italic">{indonesianize(story.stage.description, isEn)}</p>
             </div>
             
             {/* Theme Evolution */}
             {learning?.growthNarrative?.growthNarrative && (
               <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm">
-                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-4">Evolusi Tema Dirimu</p>
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-4">{isEn ? "Your Theme Evolution" : "Evolusi Tema Dirimu"}</p>
                 <div className="text-sm text-[#4F5E52] font-semibold space-y-2 whitespace-pre-line text-center bg-[#F5F1E8]/30 py-4 rounded-2xl">
-                  {indonesianize(learning.growthNarrative.growthNarrative)}
+                  {indonesianize(learning.growthNarrative.growthNarrative, isEn)}
                 </div>
                 {learning.growthNarrative.currentLesson && (
-                  <p className="text-xs text-[#7B8776] mt-4 leading-relaxed text-center">Pelajaran saat ini: “{indonesianize(learning.growthNarrative.currentLesson)}”</p>
+                  <p className="text-xs text-[#7B8776] mt-4 leading-relaxed text-center">{isEn ? `Current lesson: “${indonesianize(learning.growthNarrative.currentLesson, isEn)}”` : `Pelajaran saat ini: “${indonesianize(learning.growthNarrative.currentLesson)}”`}</p>
                 )}
                 {learning.growthNarrative.nextInvitation && (
-                  <p className="text-xs text-[#4F5E52] font-bold mt-2 text-center">Undangan berikutnya: {indonesianize(learning.growthNarrative.nextInvitation)}</p>
+                  <p className="text-xs text-[#4F5E52] font-bold mt-2 text-center">{isEn ? `Next invitation: ${indonesianize(learning.growthNarrative.nextInvitation, isEn)}` : `Undangan berikutnya: ${indonesianize(learning.growthNarrative.nextInvitation)}`}</p>
                 )}
               </div>
             )}
@@ -307,15 +357,17 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             {/* Coach Memory */}
             {learning?.coachMemory?.coachMemory && (
               <div className="bhumi-card p-6 bg-[#F5F1E8] text-[#344A38] border border-[#DDE7DB] shadow-sm">
-                <p className="text-xs font-bold text-[#4F5E52]/70 uppercase tracking-widest mb-3">Catatan Pembelajaran Bhumi</p>
-                <p className="text-sm leading-relaxed font-medium">{indonesianize(learning.coachMemory.coachMemory)}</p>
+                <p className="text-xs font-bold text-[#4F5E52]/70 uppercase tracking-widest mb-3">{isEn ? "Bhumi Learning Notes" : "Catatan Pembelajaran Bhumi"}</p>
+                <p className="text-sm leading-relaxed font-medium">{indonesianize(learning.coachMemory.coachMemory, isEn)}</p>
               </div>
             )}
 
             <div className="bhumi-card p-6 bg-[#F5F1E8]/50 border-none">
-                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-2">Insight Pertumbuhan</p>
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-2">{isEn ? "Growth Insights" : "Insight Pertumbuhan"}</p>
                 <p className="text-sm text-[#7B8776] leading-relaxed">
-                    Tahap ini mencerminkan sejauh mana praktik harianmu telah terintegrasi dalam kesadaranmu. Setiap langkah kecil adalah bagian dari fondasi yang lebih besar.
+                    {isEn
+                      ? "This stage reflects how far your daily practices have integrated into your awareness. Every small step is part of a larger foundation."
+                      : "Tahap ini mencerminkan sejauh mana praktik harianmu telah terintegrasi dalam kesadaranmu. Setiap langkah kecil adalah bagian dari fondasi yang lebih besar."}
                 </p>
             </div>
           </div>
@@ -325,30 +377,30 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         return (
           <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm space-y-6">
             <div>
-              <h2 className="text-xs font-bold text-[#9AA394] uppercase tracking-[0.2em] mb-4">Fokus Saat Ini</h2>
-              <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{indonesianize(story.growthFocus)}</p>
+              <h2 className="text-xs font-bold text-[#9AA394] uppercase tracking-[0.2em] mb-4">{isEn ? "Current Focus" : "Fokus Saat Ini"}</h2>
+              <p className="text-2xl font-serif text-[#4F5E52] leading-snug">{indonesianize(story.growthFocus, isEn)}</p>
               <div className="mt-6 pt-6 border-t border-[#F5F1E8]">
-                <p className="text-sm font-bold text-[#4F5E52] mb-2">Yang sedang tumbuh</p>
-                <p className="text-sm text-[#7B8776]">{indonesianize(story.growingAreas[0])}</p>
+                <p className="text-sm font-bold text-[#4F5E52] mb-2">{isEn ? "What is growing" : "Yang sedang tumbuh"}</p>
+                <p className="text-sm text-[#7B8776]">{indonesianize(story.growingAreas[0], isEn)}</p>
               </div>
             </div>
 
             {learning?.weeklyLearning?.weeklyPattern && (
               <div className="pt-6 border-t border-[#F5F1E8]">
-                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Pola 7 Hari Terakhir</p>
-                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.weeklyLearning.weeklyPattern)}</p>
+                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">{isEn ? "Last 7 Days Pattern" : "Pola 7 Hari Terakhir"}</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.weeklyLearning.weeklyPattern, isEn)}</p>
                 {learning.weeklyLearning.coachObservation && (
-                  <p className="text-xs text-[#7B8776] mt-2 italic">“{indonesianize(learning.weeklyLearning.coachObservation)}”</p>
+                  <p className="text-xs text-[#7B8776] mt-2 italic">“{indonesianize(learning.weeklyLearning.coachObservation, isEn)}”</p>
                 )}
               </div>
             )}
 
             {learning?.monthlyLearning?.monthlyTheme && (
               <div className="pt-6 border-t border-[#F5F1E8]">
-                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">Tema 30 Hari Terakhir</p>
-                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyTheme)}</p>
+                <p className="text-xs font-bold text-[#9AA394] uppercase tracking-widest mb-2">{isEn ? "Last 30 Days Theme" : "Tema 30 Hari Terakhir"}</p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyTheme, isEn)}</p>
                 {learning.monthlyLearning.monthlyNarrative && (
-                  <p className="text-xs text-[#7B8776] mt-2 leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyNarrative)}</p>
+                  <p className="text-xs text-[#7B8776] mt-2 leading-relaxed">{indonesianize(learning.monthlyLearning.monthlyNarrative, isEn)}</p>
                 )}
               </div>
             )}
@@ -357,37 +409,37 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
       case "attention":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-2">Yang Meminta Perhatian</h2>
+            <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-2">{isEn ? "Requesting Attention" : "Yang Meminta Perhatian"}</h2>
             {story.attentionAreas.map((area, idx) => (
                 <div key={idx} className="bhumi-card p-6 bg-white border-none shadow-sm flex items-center gap-4">
                     <div className="p-2 rounded-xl bg-amber-50 text-amber-600">
                         <Heart size={20} />
                     </div>
-                    <span className="font-bold text-[#4F5E52]">{indonesianize(area)}</span>
+                    <span className="font-bold text-[#4F5E52]">{indonesianize(area, isEn)}</span>
                 </div>
             ))}
 
             <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm space-y-4">
-                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest">Efektivitas Praktik Harian</p>
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest">{isEn ? "Daily Practice Effectiveness" : "Efektivitas Praktik Harian"}</p>
                 {learning?.practiceInsights?.practiceInsights && learning.practiceInsights.practiceInsights.length > 0 ? (
                   <div className="space-y-4">
                     {learning.practiceInsights.practiceInsights.map(({ practice, helpfulScore }) => {
-                      let levelLabel = "Sangat Membantu";
+                      let levelLabel = isEn ? "Very Helpful" : "Sangat Membantu";
                       let levelColor = "bg-[#4F5E52]";
                       if (helpfulScore < 35) {
-                        levelLabel = "Berat / Butuh Penyesuaian";
+                        levelLabel = isEn ? "Heavy / Needs Adjustment" : "Berat / Butuh Penyesuaian";
                         levelColor = "bg-amber-600";
                       } else if (helpfulScore < 60) {
-                        levelLabel = "Cukup Membantu";
+                        levelLabel = isEn ? "Moderately Helpful" : "Cukup Membantu";
                         levelColor = "bg-[#7B8776]";
                       } else if (helpfulScore < 75) {
-                        levelLabel = "Membantu";
+                        levelLabel = isEn ? "Helpful" : "Membantu";
                         levelColor = "bg-[#4F5E52]/80";
                       }
                       return (
                         <div key={practice} className="space-y-1">
                           <div className="flex justify-between text-sm">
-                            <span className="font-bold text-[#4F5E52]">{indonesianize(PRACTICE_NAME_MAP[practice.toLowerCase()] || practice)}</span>
+                            <span className="font-bold text-[#4F5E52]">{indonesianize(practiceMap[practice.toLowerCase()] || practice, isEn)}</span>
                             <span className="text-xs text-[#7B8776]">{levelLabel}</span>
                           </div>
                           <div className="w-full bg-[#F5F1E8] h-2 rounded-full overflow-hidden">
@@ -399,7 +451,9 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                   </div>
                 ) : (
                   <p className="text-xs text-[#7B8776] leading-relaxed italic">
-                    Belum cukup data untuk mengukur efektivitas praktikmu. Teruskan perjalananmu dan Bhumi akan mulai mengenali praktik yang paling membantu untukmu.
+                    {isEn
+                      ? "Not enough data yet to measure your practice effectiveness. Continue your journey and Bhumi will recognize which practices help you most."
+                      : "Belum cukup data untuk mengukur efektivitas praktikmu. Teruskan perjalananmu dan Bhumi akan mulai mengenali praktik yang paling membantu untukmu."}
                   </p>
                 )}
             </div>
@@ -411,11 +465,13 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             <div className="w-20 h-20 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-8 border border-[#DDE7DB]">
                 <Flag size={36} className="text-[#4F5E52]" />
             </div>
-            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7B8776] mb-3">Target Berikutnya</p>
-            <h2 className="text-2xl font-serif mb-6 text-[#4F5E52]">{indonesianize(story.nextMilestone)}</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.3em] text-[#7B8776] mb-3">{isEn ? "Next Target" : "Target Berikutnya"}</p>
+            <h2 className="text-2xl font-serif mb-6 text-[#4F5E52]">{indonesianize(story.nextMilestone, isEn)}</h2>
             <div className="bg-[#FCFAF5] p-5 rounded-2xl border border-[#E8E9E5]">
                 <p className="text-sm text-[#526053] leading-relaxed font-medium">
-                    Teruslah melangkah. Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada pencapaian ini.
+                    {isEn
+                      ? "Keep taking steps. Every day you walk with awareness brings you closer to this milestone."
+                      : "Teruslah melangkah. Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada pencapaian ini."}
                 </p>
             </div>
           </div>
@@ -423,7 +479,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
       case "history":
         return (
           <div className="space-y-4">
-            <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-4">Riwayat Aktivitas</h2>
+            <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-4">{isEn ? "Activity History" : "Riwayat Aktivitas"}</h2>
             {history.length > 0 ? (
               <div className="space-y-3">
                   {history.map((state) => (
@@ -441,7 +497,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                         ))}
                       </div>
                       <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
-                        {state.moodLevel ? `Kondisi ${state.moodLevel}` : "-"}
+                        {state.moodLevel ? (isEn ? `Condition ${state.moodLevel}` : `Kondisi ${state.moodLevel}`) : "-"}
                       </div>
                     </div>
                   ))}
@@ -449,14 +505,16 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             ) : (
               <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
                  <p className="text-[#7B8776] leading-relaxed italic">
-                   Belum ada catatan aktivitas di perjalananmu. Praktik dan refleksi harianmu akan mulai muncul di sini.
+                   {isEn
+                     ? "No activity records in your journey yet. Your daily practices and reflections will appear here."
+                     : "Belum ada catatan aktivitas di perjalananmu. Praktik dan refleksi harianmu akan mulai muncul di sini."}
                  </p>
               </div>
             )}
           </div>
         );
       default:
-        return <p className="text-center text-[#7B8776]">Bagian ini sedang disiapkan.</p>;
+        return <p className="text-center text-[#7B8776]">{isEn ? "This section is being prepared." : "Bagian ini sedang disiapkan."}</p>;
     }
   };
 
@@ -471,7 +529,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             className="inline-flex items-center gap-2 text-[#7B8776] text-sm font-bold uppercase tracking-widest mb-8 hover:text-[#4F5E52] transition-colors"
           >
             <ArrowLeft size={16} />
-            Kembali ke Perjalanan
+            {isEn ? "Back to Journey" : "Kembali ke Perjalanan"}
           </Link>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">

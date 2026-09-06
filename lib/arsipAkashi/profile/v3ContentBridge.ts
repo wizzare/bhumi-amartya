@@ -25,6 +25,8 @@ function applyReadingContent(
  * Keeps the approved V3 room/card metadata and visual shell, while transferring
  * ownership of every opened content field to the Arsip Akashi reading runtime.
  */
+import { isEnlEdition } from "@/lib/config/edition";
+
 export function applyArsipAkashiContentToV3Section(
   section: ProfileSection,
   viewModel: ArsipAkashiProfileViewModel,
@@ -36,7 +38,7 @@ export function applyArsipAkashiContentToV3Section(
     roomReadings.map((reading) => [reading.title, reading]),
   );
 
-  if (section.title === "ASAL USUL & PERADABAN") {
+  if (section.title === "ASAL USUL & PERADABAN" || section.title === "ORIGINS & CIVILIZATION") {
     const cards = section.cards.map((card) => {
       const reading = readingsByTitle.get(card.title);
       if (!reading) return null;
@@ -59,7 +61,7 @@ export function applyArsipAkashiContentToV3Section(
     return { ...section, cards: cards as ProfileCard[] };
   }
 
-  if (section.title === "FASE KEHIDUPAN SAAT INI") {
+  if (section.title === "FASE KEHIDUPAN SAAT INI" || section.title === "CURRENT LIFE PHASE") {
     const orderedReadings = roomReadings.sort((a, b) => a.order - b.order);
     return {
       ...section,
@@ -106,7 +108,7 @@ export function buildSoulLettersV3Section(
   if (viewModel.soulLetters.length !== 3) return null;
 
   return {
-    title: "SURAT JIWA",
+    title: isEnlEdition() ? "SOUL LETTERS" : "SURAT JIWA",
     cards: [...viewModel.soulLetters]
       .sort((a, b) => a.order - b.order)
       .map(soulLetterToV3Card),

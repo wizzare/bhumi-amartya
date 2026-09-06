@@ -1,5 +1,6 @@
 import { DailyState } from "@/lib/repositories/dailyStateRepository";
 import { JourneyDailyRecord, PracticeEffectivenessSummary, PracticeInsightItem } from "@/lib/types/journeyDailyRecord";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type CompletionStatus = "none" | "daily" | "deep" | "full";
 export type CompletionItemId =
@@ -27,15 +28,19 @@ export interface CompletionSummary {
 }
 
 export function getCompletionItems(state: DailyState | null): CompletionItem[] {
+  const isEn = isEnlEdition();
+  const manifestLabel = isEn ? "Manifestation" : "Manifestasi";
+  const foodLabel = isEn ? "Healthy Eating" : "Makanan Sehat";
+
   if (!state) {
     return [
       { id: "journal", label: "Journaling", completed: false },
       { id: "meditation", label: "Meditation", completed: false },
       { id: "audio", label: "Audio Healing", completed: false },
-      { id: "manifest", label: "Manifestasi", completed: false },
+      { id: "manifest", label: manifestLabel, completed: false },
       { id: "yoga", label: "Yoga", completed: false },
       { id: "workout", label: "Workout", completed: false },
-      { id: "food", label: "Makanan Sehat", completed: false },
+      { id: "food", label: foodLabel, completed: false },
     ];
   }
 
@@ -43,33 +48,34 @@ export function getCompletionItems(state: DailyState | null): CompletionItem[] {
     { id: "journal", label: "Journaling", completed: Boolean(state.journalingDone) },
     { id: "meditation", label: "Meditation", completed: Boolean(state.meditationDone) },
     { id: "audio", label: "Audio Healing", completed: Boolean(state.audioHealingDone) },
-    { id: "manifest", label: "Manifestasi", completed: Boolean(state.manifestDone) },
+    { id: "manifest", label: manifestLabel, completed: Boolean(state.manifestDone) },
     { id: "yoga", label: "Yoga", completed: Boolean(state.yogaDone) },
     { id: "workout", label: "Workout", completed: Boolean(state.workoutDone) },
-    { id: "food", label: "Makanan Sehat", completed: Boolean(state.herbalDone) },
+    { id: "food", label: foodLabel, completed: Boolean(state.herbalDone) },
   ];
 }
 
 export function getCompletionSummary(state: DailyState | null): CompletionSummary {
+  const isEn = isEnlEdition();
   const items = getCompletionItems(state);
   const count = items.filter((item) => item.completed).length;
   const total = items.length;
 
   let status: CompletionStatus = "none";
-  let label = "Mulai harimu";
+  let label = isEn ? "Start your day" : "Mulai harimu";
 
   if (count >= total) {
     status = "full";
-    label = "Selesai sepenuhnya";
+    label = isEn ? "Fully completed" : "Selesai sepenuhnya";
   } else if (count >= 3) {
     status = "deep";
-    label = "Praktik mendalam";
+    label = isEn ? "Deep practice" : "Praktik mendalam";
   } else if (count >= 1) {
     status = "daily";
-    label = "Ritme berjalan";
+    label = isEn ? "Rhythm in motion" : "Ritme berjalan";
   }
 
-    return {
+  return {
     count,
     total,
     status,
@@ -145,6 +151,7 @@ export function mergeDailyStatesWithJourneyRecords(
 }
 
 export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): PracticeEffectivenessSummary {
+  const isEn = isEnlEdition();
   const last30 = records.slice(0, 30);
   const practiceStats: Record<string, { total: number; helpful: number; heavy: number; neutral: number; unknown: number }> = {};
 
@@ -153,7 +160,7 @@ export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): P
     if (!comp.completed) return;
 
     // Resolve practice title/type
-    const practice = rec.innerworkRecommendation?.practiceTitle || comp.actualPracticeType || rec.innerworkRecommendation?.practiceType || "Praktik Kesadaran";
+    const practice = rec.innerworkRecommendation?.practiceTitle || comp.actualPracticeType || rec.innerworkRecommendation?.practiceType || (isEn ? "Mindfulness Practice" : "Praktik Kesadaran");
     
     if (!practiceStats[practice]) {
       practiceStats[practice] = { total: 0, helpful: 0, heavy: 0, neutral: 0, unknown: 0 };
@@ -164,11 +171,22 @@ export function calculatePracticeEffectiveness(records: JourneyDailyRecord[]): P
     const result = (comp.reflectionResult || "").toLowerCase();
     const helped = comp.practiceHelped;
 
-    if (helped === true || result.includes("tenang") || result.includes("helpful") || result.includes("baik")) {
+    if (
+      helped === true ||
+      result.includes("tenang") || result.includes("helpful") || result.includes("baik") ||
+      result.includes("calm") || result.includes("peaceful") || result.includes("good")
+    ) {
       practiceStats[practice].helpful++;
-    } else if (helped === false || result.includes("berat") || result.includes("heavy") || result.includes("susah")) {
+    } else if (
+      helped === false ||
+      result.includes("berat") || result.includes("heavy") || result.includes("susah") ||
+      result.includes("hard") || result.includes("difficult")
+    ) {
       practiceStats[practice].heavy++;
-    } else if (result.includes("biasa") || result.includes("neutral") || result.includes("sedang")) {
+    } else if (
+      result.includes("biasa") || result.includes("neutral") || result.includes("sedang") ||
+      result.includes("normal") || result.includes("ordinary") || result.includes("moderate")
+    ) {
       practiceStats[practice].neutral++;
     } else {
       practiceStats[practice].unknown++;

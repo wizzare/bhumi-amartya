@@ -21,20 +21,26 @@ import {
   buildSoulLettersV3Section,
 } from "@/lib/arsipAkashi/profile/v3ContentBridge";
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 function slugify(title: string) {
   return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
 function sectionIntro(title: string) {
-  if (title === "ASAL USUL & PERADABAN") {
-    return "Bagian ini adalah refleksi simbolik dari sintesis peta dirimu. Ini bukan klaim literal tentang asal-usul atau peradaban masa lalu.";
+  const isEn = isEnlEdition();
+  if (title === "ASAL USUL & PERADABAN" || title === "ORIGINS & CIVILIZATION") {
+    return isEn
+      ? "This section is a symbolic reflection of your soul map synthesis. It is not a literal claim about past origins or civilizations."
+      : "Bagian ini adalah refleksi simbolik dari sintesis peta dirimu. Ini bukan klaim literal tentang asal-usul atau peradaban masa lalu.";
   }
 
-  return `Menyelami lebih dalam lapisan ${title.toLowerCase()}.`;
+  return isEn ? `Diving deeper into your ${title.toLowerCase()}.` : `Menyelami lebih dalam lapisan ${title.toLowerCase()}.`;
 }
 
 function humanize(text: string): string {
   if (!text) return "";
+  if (isEnlEdition()) return text;
 
   const temp = text
     .replace(/related to/gi, "berhubungan dengan")
@@ -98,7 +104,7 @@ function InsightCard({ card }: { card: ProfileCard }) {
                 onClick={() => setExpanded(!expanded)}
                 className="mt-1 text-left text-[10px] font-bold uppercase tracking-widest text-[#9AA394]"
               >
-                Lihat selengkapnya
+                {isEnlEdition() ? "See more" : "Lihat selengkapnya"}
               </button>
             )}
           </div>
@@ -106,7 +112,7 @@ function InsightCard({ card }: { card: ProfileCard }) {
         {!hasItems && (
           <button
             type="button"
-            aria-label={`${expanded ? "Tutup" : "Buka"} bacaan ${card.title}`}
+            aria-label={isEnlEdition() ? `${expanded ? "Close" : "Open"} reading ${card.title}` : `${expanded ? "Tutup" : "Buka"} bacaan ${card.title}`}
             aria-expanded={expanded}
             onClick={() => setExpanded(!expanded)}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F1E8] text-[#7B8776]"
@@ -261,11 +267,11 @@ export default function ProfileSectionClient({ section }: { section: string }) {
           <div className="mx-auto max-w-lg">
             <BhumiPageHeader className="mb-8" />
             <Link href="/profile" className="mb-8 inline-flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-[#7B8776]">
-              <ArrowLeft size={16} />Kembali ke Profil
+              <ArrowLeft size={16} />{isEnlEdition() ? "Back to Profile" : "Kembali ke Profil"}
             </Link>
 
             {loading ? (
-              <p className="text-center text-[#7B8776]">Membuka bagian ini...</p>
+              <p className="text-center text-[#7B8776]">{isEnlEdition() ? "Opening this section..." : "Membuka bagian ini..."}</p>
             ) : profileSection ? (
               <>
                 <header className="mb-8 text-center">
@@ -282,7 +288,7 @@ export default function ProfileSectionClient({ section }: { section: string }) {
                 </div>
               </>
             ) : (
-              <p className="text-center text-[#7B8776]">Bagian ini belum tersedia.</p>
+              <p className="text-center text-[#7B8776]">{isEnlEdition() ? "This section is not yet available." : "Bagian ini belum tersedia."}</p>
             )}
           </div>
         </main>

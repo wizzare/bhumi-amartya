@@ -12,6 +12,7 @@ import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { getCompletionSummary, mergeDailyStateWithJourneyRecord, CompletionSummary } from "@/lib/engines/completionEngine";
 import { ChevronRight, Flag, Heart, History, Target, TrendingUp } from "lucide-react";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
+import { isEnlEdition } from "@/lib/config/edition";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
@@ -19,6 +20,7 @@ import { normalizeJourneyRecord } from "@/lib/services/journeyReadAdapter";
 
 export default function JourneyPage() {
   const auth = useAuth();
+  const isEn = isEnlEdition();
   const [todaySummary, setTodaySummary] = useState<CompletionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [readError, setReadError] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function JourneyPage() {
         if (todayRecord) normalizeJourneyRecord(todayRecord);
       } catch (error) {
         console.error("Failed to load journey:", error);
-        setReadError(error instanceof Error ? error.message : "Gagal memuat Journey.");
+        setReadError(error instanceof Error ? error.message : (isEn ? "Failed to load Journey." : "Gagal memuat Journey."));
       } finally {
         setLoading(false);
       }
@@ -67,17 +69,19 @@ export default function JourneyPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <p className="text-[#4F5E52] animate-pulse">Bhumi sedang menyiapkan riwayat perjalananmu...</p>
+        <p className="text-[#4F5E52] animate-pulse">
+          {isEn ? "Bhumi is preparing your journey history..." : "Bhumi sedang menyiapkan riwayat perjalananmu..."}
+        </p>
       </main>
     );
   }
 
   const menuItems = [
-    { id: "stage", name: "Tahap Pertumbuhan", icon: <TrendingUp size={24} /> },
-    { id: "focus", name: "Fokus Saat Ini", icon: <Target size={24} /> },
-    { id: "attention", name: "Yang Meminta Perhatian", icon: <Heart size={24} /> },
-    { id: "milestone", name: "Milestone Berikutnya", icon: <Flag size={24} /> },
-    { id: "history", name: "Riwayat Aktivitas", icon: <History size={24} /> },
+    { id: "stage", name: isEn ? "Growth Stage" : "Tahap Pertumbuhan", icon: <TrendingUp size={24} /> },
+    { id: "focus", name: isEn ? "Current Focus" : "Fokus Saat Ini", icon: <Target size={24} /> },
+    { id: "attention", name: isEn ? "What Needs Attention" : "Yang Meminta Perhatian", icon: <Heart size={24} /> },
+    { id: "milestone", name: isEn ? "Next Milestone" : "Milestone Berikutnya", icon: <Flag size={24} /> },
+    { id: "history", name: isEn ? "Activity History" : "Riwayat Aktivitas", icon: <History size={24} /> },
   ];
 
   return (
@@ -88,8 +92,10 @@ export default function JourneyPage() {
           <div className="mx-auto max-w-lg space-y-8">
             <BhumiPageHeader />
             <header className="text-center">
-              <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">Perjalananmu</h1>
-              <p className="text-[#7B8776] text-sm">Menyimak setiap langkah kecil dan pertumbuhanmu.</p>
+              <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">{isEn ? "Your Journey" : "Perjalananmu"}</h1>
+              <p className="text-[#7B8776] text-sm">
+                {isEn ? "Honoring every small step and your growth." : "Menyimak setiap langkah kecil dan pertumbuhanmu."}
+              </p>
             </header>
 
             {readError && process.env.NODE_ENV !== "production" && (
@@ -115,9 +121,11 @@ export default function JourneyPage() {
             </div>
 
             {todaySummary && todaySummary.count > 0 && (
-              <p className="text-center text-xs text-[#9AA394]">Aktivitas hari ini tersimpan di riwayatmu.</p>
+              <p className="text-center text-xs text-[#9AA394]">
+                {isEn ? "Today's activities are saved in your history." : "Aktivitas hari ini tersimpan di riwayatmu."}
+              </p>
             )}
-            <ProfileShareCardSection title="Bagikan perjalananmu di Bhumi Amartya" />
+            <ProfileShareCardSection title={isEn ? "Share your journey on Bhumi Amartya" : "Bagikan perjalananmu di Bhumi Amartya"} />
             {process.env.NODE_ENV === "development" && <MoanaRuntimeDiagnosticsPanel label="Journey main page readback" />}
           </div>
         </main>

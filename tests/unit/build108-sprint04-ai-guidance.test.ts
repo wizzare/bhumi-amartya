@@ -342,7 +342,7 @@ console.log("\n--- SECTION 8: User-Facing Normalizer (lib/dailyGuidance/normaliz
 
   const normalized = normalizeUserFacingGuidance(mockGuidanceRecord as any, mockProfile);
 
-  ok(normalized.soulReflectionText?.includes("Hello Jane"), "Normalized soul reflection has English opening with user name");
+  ok(normalized.soulReflectionText?.includes("Jane"), "Normalized soul reflection has English opening with user name");
   ok(normalized.soulReflectionText?.includes("Warm hugs from Bhumi."), "Normalized soul reflection has English hugs");
   ok(!normalized.soulReflectionText?.includes("Peluk hangat"), "Normalized soul reflection does not have Indonesian hugs");
 

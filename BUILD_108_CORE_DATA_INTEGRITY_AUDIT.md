@@ -4,7 +4,7 @@
 ```text
 AUDIT_STATUS                        = READ_ONLY_ROOT_CAUSE_AUDIT_COMPLETE — FOUNDER-APPROVED 2026-09-06
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                        = IN_PROGRESS  (CDI-108-01 Chiron DONE · CDI-108-01A timezone DONE · CDI-108-02 HD refined audit DONE / impl NOT started · CDI-108-03 Schumann RESEARCH COMPLETE — NO QUALIFYING SOURCE — FOUNDER DECISION REQUIRED)
+GATE_108_CDI                        = READY_TO_CLOSE — FOUNDER RATIFICATION PENDING  (CDI-108-01 Chiron DONE · CDI-108-01A timezone DONE · CDI-108-02 HD client integrity DONE · CDI-108-03 Schumann D1 ACCEPTED_UNAVAILABLE / fail-closed PASS · CDI_BLOCKERS_OPEN = 0 · see §G)
 TRIGGER                             = FOUNDER — three confirmed production defects from real users
 PRODUCTION_BASELINE                 = BUILD 107 (versionCode 107, versionName 5.0.7, commit d2ecb5e)
 WORKTREE                            = C:\tmp\bhumi-build106-recovery
@@ -18,7 +18,7 @@ FIRESTORE_MUTATIONS                 = 0
 EXTERNAL_PROBES                     = read-only GETs (schumannresonancelive.com/api/data.php -> 404;
                                      bhumi-human-design-api.vercel.app openapi/health) + one synthetic-data
                                      POST to /calculate (HD, no PII) — see §B.1a and §D
-NEXT_SAFE_ACTION                    = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                    = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05
 ```
 
 > **Governance marker.** `BUILD_106_RECOVERY_IN_PROGRESS` no longer represents this work. Current
@@ -231,11 +231,24 @@ require a **Founder-gated backend** plus a **licensing review** plus (for the To
 
 **Recommendation:** keep Schumann fail-closed for the Build 108 ENL release (unchanged from Builds
 106/107, already gate-passed); do not swap `SCHUMANN_API_URL`; do not build a proxy inside the CDI
-gate. **Founder decision required — D1 (accept fail-closed / DEFERRED in FRA) · D2 (authorize a
-separate backend-gated ENV2 restoration project) · D3 (provide a private licensed provider).** See
-§3.3 of the report. CDI-A3 (honest UI + `deriveEnvironmentBands` / `hasSchumannObservation` gate)
-is preserved and is now regression-locked by
-`tests/unit/build108-cdi03-schumann-source-integrity.test.ts` (16 checks, exit 0).
+gate. CDI-A3 (honest UI + `deriveEnvironmentBands` / `hasSchumannObservation` gate) is preserved and
+is now regression-locked by `tests/unit/build108-cdi03-schumann-source-integrity.test.ts`
+(16 checks, exit 0).
+
+**FOUNDER DECISION — D1 APPROVED (2026-09-07).** Accept Schumann fail-closed for Build 108 because
+no qualifying trustworthy source exists.
+
+```text
+CDI_108_03_RESEARCH            = COMPLETE
+CDI_108_03_DATA_INTEGRITY      = PASS
+CDI_108_03_SOURCE_RESTORATION  = ACCEPTED_UNAVAILABLE
+CDI_108_03_FAIL_CLOSED         = PASS
+```
+
+Constraints ratified: do not replace `SCHUMANN_API_URL` with an unqualified provider; do not
+build/deploy a proxy; do not infer Schumann from NOAA/USGS/weather; do not derive numeric Schumann
+observations from JPEG/spectrogram pixels. Future source-restoration research moves to
+**`SPRINT-108-ENV2`**. Final disposition of this and all remaining CDI items: **§G**.
 
 ---
 
@@ -1195,7 +1208,7 @@ BUILD_108_BLOCKERS_OPEN            =
           re-fetch — see §B.8.3) + legacy Chiron, across Build 103–107 cohorts
           (Founder-authorised, non-destructive, convergence-safe). NOT STARTED.
 
-NEXT_SAFE_ACTION                    = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                    = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05
 ```
 
 ---
@@ -1396,3 +1409,93 @@ PLAY_UPLOAD                     = NOT AUTHORIZED
 ```
 
 **STOP AND WAIT FOR FOUNDER REVIEW.**
+
+---
+
+## G. FINAL CDI DISPOSITION AUDIT (2026-09-07)
+
+**Authorization & method.** Founder approved **CDI-108-03 = D1** (accept Schumann fail-closed; no
+provider swap, no proxy, no NOAA/USGS/weather inference, no JPEG-pixel derivation; future
+source-restoration research moves to `SPRINT-108-ENV2`). Founder then authorized this **disposition
+audit only** — classify every remaining CDI item and decide whether `GATE_108_CDI` can close with
+honest unavailable states and no fabricated data. **No implementation, deployment, backfill,
+production read/write, version bump, build, sign, or upload was performed or authorized.**
+
+### G.1 CDI-108-03 — D1 applied
+
+```text
+CDI_108_03_RESEARCH            = COMPLETE
+CDI_108_03_DATA_INTEGRITY      = PASS
+CDI_108_03_SOURCE_RESTORATION  = ACCEPTED_UNAVAILABLE
+CDI_108_03_FAIL_CLOSED         = PASS
+```
+
+`SCHUMANN_API_URL` unchanged. Honest "unavailable" UI + the `deriveEnvironmentBands` /
+`hasSchumannObservation` gate (CDI-A3) preserved and regression-locked
+(`tests/unit/build108-cdi03-schumann-source-integrity.test.ts`, 16 checks, EXIT 0). No fabricated
+Stable/Quiet/healthy values (§A.3 / §2.6). Future live-source research is deferred to
+`SPRINT-108-ENV2` (Bhumi environmental proxy vs scheduled ingestion/cache; licence review;
+reviewed spectral-peak extraction if the Tomsk image is ever used).
+
+### G.2 Disposition of the three original CDI defects
+
+| Defect | Resolution | Honest state? | Fabrication? | Disposition |
+|---|---|---|---|---|
+| **CDI-108-01 Chiron** (+ CDI-108-01A timezone) | Committed Swiss Ephemeris Chiron table; linear model + Equal-house-as-Placidus removed; deterministic offline IANA timezone + luxon DST; fail-closed, non-destructive persistence; Whole Sign / Placidus explicitly separated. 12/12 fixtures; end-to-end residual 0.000420°. | YES — genuine ephemeris; `houseSystem` label declared; "Not available" when absent; fails closed to `pending` when no timezone resolves. | NO | **RESOLVED** for all new calculations. Legacy chart convergence → **POST_RELEASE_BACKFILL** (CDI-D1). Genuine Placidus cusps → **REQUIRES_FOUNDER_OPS** (CDI-C1 service deployment). |
+| **CDI-108-02 HD advanced variables** | Founder-approved implementation (§B.11): perspective derived from labelled `variables.bottom_right` only; Variables-Arrows UI key fixed to `short_code`; explicit normalizer coercion; `mass-recover-hd` centers/`openCenters`/activation shape hardened; narrative i18n; recovery safety (rejects incomplete/noncanonical payloads, never overwrites a CANONICAL `type`). | YES — new-fetch fields display real values; legacy/absent fields render an honest "not stored" / source-unavailable state; no synthesis. | NO | **RESOLVED** (client integrity / recovery safety). Residual sub-items in G.3. |
+| **CDI-108-03 Schumann** | D1 — accept fail-closed. | YES — "Data belum tersedia" / "unavailable". | NO | **ACCEPTED_UNAVAILABLE** (G.1). |
+
+### G.3 Classification of remaining items
+
+| # | Item | Evidence | Classification | Rationale |
+|---|---|---|---|---|
+| 1 | **HD Cognition = SOURCE_DEPENDENT_PARTIAL** | Deployed `/calculate` returns `cognition` on fresh fetches (§B.8.1); legacy blueprints predate the field; not locally derivable. Adapter / schema / normalizer / persistence / UI all handle it (§B.11 row). | **ACCEPTED_DEFERRED** | New-user path is correct; legacy shows an honest unavailable state; no fabrication. Legacy convergence is a re-fetch, folded into **POST_RELEASE_BACKFILL** (CDI-D1). Not a gate blocker. |
+| 2 | **HD Color/Tone/Base = SOURCE_UNAVAILABLE** | Deployed engine emits no `diagnostic` block and **ignores `debug`** (§B.8.1, verified 2026-09-06). UI renders an honest source-unavailable state; `mass-recover-hd` no longer fabricates activation detail. | **ACCEPTED_DEFERRED** (data), **REQUIRES_FOUNDER_OPS** (means) | No engine currently available emits it; the client never synthesises it. Obtaining it needs a diagnostic-emitting HD engine deployment — a future sprint / ops decision, tracked but **not** blocking an honest release. |
+| 3 | **HD service runtime validation = pending** | The refined HD contract was verified via a synthetic read-only `POST /calculate` (§B.8.1), not in-app browser/Android runtime. Build 107 HD convergence guard (fail-closed; a failed recompute never overwrites a CANONICAL `type`) is GREEN (19/19). | **ACCEPTED_DEFERRED** → Sprint 8 / `GATE_108_FRA §3.8` | This is pre-release *verification*, not implementation. The client already fails closed on any HD anomaly. It gates FRA / release, **not** CDI closure or Sprint 5. |
+| 4 | **HD legacy backfill = not ready / not authorized** | CDI-D1. Non-destructive, convergence-safe production backfill of HD advanced variables across Build 103–107 cohorts. `HD_BACKFILL_READY = NO`. | **POST_RELEASE_BACKFILL** | Legacy users see honest "not stored"; no destructive downgrade (convergence guard intact). Separately Founder-authorized; not a gate blocker. |
+| 5 | **Genuine Placidus backend deployment = ops-gated** | Chiron is accurate without it (client-side table). Houses currently = genuine Whole Sign, labelled `houseSystem:"whole-sign"`; no misleading "placidus" label anywhere (§C.8). `getAstrologyApiUrl()` + `/api/humandesign/astrology` proxy already built and fail closed. | **REQUIRES_FOUNDER_OPS** (CDI-C1 residual) | Deploying `services/humandesign-api` with `/calculate-astrology` on a hosted HTTPS runtime yields genuine Placidus cusps. The current state is honest and non-fabricated → not a gate blocker. |
+| 6 | **Legacy natal backfill = not authorized** | Backfill accurate Chiron + canonical timezone for Build 103–107 natal charts. Fail-closed persistence means a failed recompute never overwrites a stored value. | **POST_RELEASE_BACKFILL** (CDI-D1) | New users fixed immediately; legacy charts keep their stored values with no destructive rewrite. Separately Founder-authorized; not a gate blocker. |
+
+### G.4 `BLOCKING_BUILD_108` determination
+
+```text
+BLOCKING_BUILD_108 (for GATE_108_CDI closure) = NONE
+```
+
+Every remaining item resolves to an **honest unavailable / pending state with no fabricated data**.
+Items 3, 5 and CDI-D1 still gate the **release** (Sprint 8 pre-release verification, `GATE_108_FRA`,
+and separate ops/backfill authorizations) — they do **not** gate CDI closure or Sprint 5
+resumption.
+
+### G.5 Gate decision
+
+```text
+GATE_108_CDI                   = READY_TO_CLOSE — FOUNDER RATIFICATION PENDING
+CDI_BLOCKERS_OPEN              = 0
+ACCEPTED_DEFERRED_ITEMS        = 4
+   - HD Cognition (legacy re-fetch; new-user path PASS)
+   - HD Color/Tone/Base (honest source-unavailable; needs a diagnostic-emitting engine)
+   - HD service runtime validation (Sprint 8 / GATE_108_FRA §3.8 runtime evidence)
+   - Schumann live source restoration (moved to SPRINT-108-ENV2)
+OPS_GATED_ITEMS                = 2
+   - Genuine Placidus service deployment (CDI-C1 residual — hosted HTTPS runtime)
+   - Diagnostic-emitting HD engine for per-planet Color/Tone/Base
+BACKFILL_GATED_ITEMS          = 2  (both CDI-D1, separately Founder-authorized only)
+   - HD legacy advanced-variable backfill (Build 103–107 cohorts)
+   - Legacy natal Chiron / timezone backfill (Build 103–107 cohorts)
+SPRINT_108_05_CAN_RESUME       = YES — upon Founder ratification of GATE_108_CDI closure
+NEXT_SAFE_ACTION               = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05-PROFILE-JOURNEY-JOURNAL
+PRODUCTION_FIRESTORE_WRITE     = NOT AUTHORIZED
+PRODUCTION_BACKFILL            = NOT AUTHORIZED
+BACKEND_DEPLOY                 = NOT AUTHORIZED
+VERSION_BUMP / BUILD / SIGN / UPLOAD = NOT AUTHORIZED
+```
+
+**Recommendation:** `GATE_108_CDI` can close. All four CDI defects (Chiron, timezone, HD advanced
+variables, Schumann) are resolved to honest, non-fabricated states; every open item is
+ACCEPTED_DEFERRED, REQUIRES_FOUNDER_OPS, or POST_RELEASE_BACKFILL, and none prevents an honest
+release. Closing the gate unblocks `SPRINT-108-05`; it does **not** authorize release, ops
+deployment, or any backfill — those retain their separate gates (`GATE_108_FRA`, CDI-C1 ops,
+CDI-D1).
+
+**STOP FOR FOUNDER REVIEW.**

@@ -15,9 +15,11 @@ import {
   type WeeklySoulReportOutput,
 } from "@/lib/reports/createWeeklySoulReport";
 import { syncDerivedCacheFromStorageProvider } from "@/lib/storage/syncDerivedCache";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export default function WeeklyReportPage() {
   const auth = useAuth();
+  const isEn = isEnlEdition();
   const [report, setReport] = useState<WeeklySoulReportOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);
@@ -62,7 +64,7 @@ export default function WeeklyReportPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-          <p className="text-[#4F5E52] text-lg">Menyusun Laporan Jiwa Mingguan...</p>
+          <p className="text-[#4F5E52] text-lg">{isEn ? "Composing Weekly Soul Report..." : "Menyusun Laporan Jiwa Mingguan..."}</p>
         </div>
       </main>
     );
@@ -77,7 +79,7 @@ export default function WeeklyReportPage() {
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-24">
         <AppNav />
         <div className="mx-auto max-w-md text-center">
-          <p className="text-[#7B8776]">Gagal memuat laporan. Silakan coba kembali.</p>
+          <p className="text-[#7B8776]">{isEn ? "Failed to load report. Please try again." : "Gagal memuat laporan. Silakan coba kembali."}</p>
         </div>
       </main>
     );
@@ -88,81 +90,81 @@ export default function WeeklyReportPage() {
       <AppNav />
       <div className="mx-auto max-w-md space-y-6">
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-semibold text-[#4F5E52]">Laporan Mingguan Jiwa</h1>
-          <p className="mt-2 text-[#7B8776]">Ringkasan perjalanan innerwork kamu selama 7 hari terakhir.</p>
+          <h1 className="text-3xl font-semibold text-[#4F5E52]">{isEn ? "Weekly Soul Report" : "Laporan Mingguan Jiwa"}</h1>
+          <p className="mt-2 text-[#7B8776]">{isEn ? "A summary of your innerwork journey over the past 7 days." : "Ringkasan perjalanan innerwork kamu selama 7 hari terakhir."}</p>
           <p className="mt-1 text-sm text-[#9AA69A]">{formatWeeklyRange(report)}</p>
         </header>
 
         {!hasWeeklySoulReportData(report) ? (
           <div className="bhumi-card p-8 text-center bg-white/70 border border-dashed border-[#4F5E52]/20">
-            <p className="text-[#4F5E52] font-medium mb-2">Jejak Belum Terlihat</p>
+            <p className="text-[#4F5E52] font-medium mb-2">{isEn ? "No Traces Yet" : "Jejak Belum Terlihat"}</p>
             <p className="text-[#7B8776] text-sm leading-relaxed">
-              Mulai Journal, Meditasi, atau Audio Healing agar laporan mingguanmu terbentuk.
+              {isEn ? "Start journaling, meditating, or listening to audio healing so your weekly report can take shape." : "Mulai Journal, Meditasi, atau Audio Healing agar laporan mingguanmu terbentuk."}
             </p>
             <Link href="/dashboard" className="bhumi-button mt-6 inline-flex">
-              Mulai Innerwork Hari Ini
+              {isEn ? "Start Innerwork Today" : "Mulai Innerwork Hari Ini"}
             </Link>
           </div>
         ) : (
           <div className="space-y-5">
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">📅 Minggu Ini</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "📅 This Week" : "📅 Minggu Ini"}</p>
               <p className="mt-2 text-sm text-[#7B8776]">{formatWeeklyRange(report)}</p>
               <div className="mt-4 grid grid-cols-3 gap-3">
                 <div className="rounded-2xl bg-[#F7F8F5] p-3 text-center">
-                  <p className="text-xs text-[#7B8776]">Journal</p>
+                  <p className="text-xs text-[#7B8776]">{isEn ? "Journal" : "Journal"}</p>
                   <p className="text-lg font-semibold text-[#4F5E52]">{report.totalJournal}</p>
                 </div>
                 <div className="rounded-2xl bg-[#F7F8F5] p-3 text-center">
-                  <p className="text-xs text-[#7B8776]">Meditasi</p>
+                  <p className="text-xs text-[#7B8776]">{isEn ? "Meditation" : "Meditasi"}</p>
                   <p className="text-lg font-semibold text-[#4F5E52]">{report.totalMeditation}</p>
                 </div>
                 <div className="rounded-2xl bg-[#F7F8F5] p-3 text-center">
-                  <p className="text-xs text-[#7B8776]">Audio</p>
+                  <p className="text-xs text-[#7B8776]">{isEn ? "Audio" : "Audio"}</p>
                   <p className="text-lg font-semibold text-[#4F5E52]">{report.totalAudioHealing}</p>
                 </div>
               </div>
             </section>
 
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">🌱 Tema Dominan</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "🌱 Dominant Theme" : "🌱 Tema Dominan"}</p>
               <p className="mt-2 text-2xl font-semibold text-[#4F5E52]">{report.dominantTheme}</p>
               <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
-                Tema ini terlihat paling sering muncul dalam pola innerwork kamu minggu ini.
+                {isEn ? "This theme appeared most frequently in your innerwork patterns this week." : "Tema ini terlihat paling sering muncul dalam pola innerwork kamu minggu ini."}
               </p>
             </section>
 
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">🫀 Emosi &amp; Tubuh</p>
-              <p className="mt-3 text-sm text-[#7B8776]"><span className="font-medium text-[#4F5E52]">Pola emosi:</span> {report.emotionalPattern}</p>
-              <p className="mt-1 text-sm text-[#7B8776]"><span className="font-medium text-[#4F5E52]">Pola tubuh:</span> {report.bodyPattern}</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "🫀 Emotion & Body" : "🫀 Emosi & Tubuh"}</p>
+              <p className="mt-3 text-sm text-[#7B8776]"><span className="font-medium text-[#4F5E52]">{isEn ? "Emotional pattern:" : "Pola emosi:"}</span> {report.emotionalPattern}</p>
+              <p className="mt-1 text-sm text-[#7B8776]"><span className="font-medium text-[#4F5E52]">{isEn ? "Body pattern:" : "Pola tubuh:"}</span> {report.bodyPattern}</p>
               <p className="mt-3 text-sm leading-relaxed text-[#4F5E52]">{report.growthSummary}</p>
             </section>
 
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">✨ Kaitan Dengan Blueprint</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "✨ Blueprint Connection" : "✨ Kaitan Dengan Blueprint"}</p>
               <p className="mt-3 text-sm leading-relaxed text-[#4F5E52]">{report.blueprintReflection}</p>
             </section>
 
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">🧭 Fokus Minggu Depan</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "🧭 Next Week's Focus" : "🧭 Fokus Minggu Depan"}</p>
               <div className="mt-3 space-y-2 text-sm text-[#4F5E52]">
-                <p><span className="font-medium">Fokus:</span> {report.recommendedFocusNextWeek}</p>
+                <p><span className="font-medium">{isEn ? "Focus:" : "Fokus:"}</span> {report.recommendedFocusNextWeek}</p>
                 <p><span className="font-medium">Journal:</span> {report.recommendedJournalPrompt}</p>
-                <p><span className="font-medium">Meditasi:</span> {report.recommendedMeditation}</p>
+                <p><span className="font-medium">{isEn ? "Meditation:" : "Meditasi:"}</span> {report.recommendedMeditation}</p>
                 <p><span className="font-medium">Audio Healing:</span> {report.recommendedAudioHealing}</p>
               </div>
             </section>
 
             <section className="rounded-3xl border border-[#E8E9E5] bg-white p-6">
-              <p className="text-sm font-semibold text-[#4F5E52]">🌙 Pesan Penutup</p>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "🌙 Closing Message" : "🌙 Pesan Penutup"}</p>
               <p className="mt-3 text-sm leading-7 text-[#4F5E52]">{report.closingMessage}</p>
             </section>
 
             {/* TODO: create shareable weekly report image/card */}
 
             <Link href="/dashboard" className="block rounded-2xl bg-[#4F5E52] px-4 py-3 text-center text-sm font-medium text-white transition hover:bg-[#3D4A3F]">
-              Kembali ke Dashboard
+              {isEn ? "Back to Dashboard" : "Kembali ke Dashboard"}
             </Link>
           </div>
         )}

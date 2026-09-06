@@ -5,6 +5,7 @@ import {
   writeOwnedCacheObject,
 } from "@/lib/storage/derivedCacheOwnership";
 import { getCanonicalHumanDesignType } from "@/lib/humandesign/hdAudit";
+import { isEnlEdition } from "@/lib/config/edition";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -48,7 +49,8 @@ function getDateOnly(value: unknown): string | null {
 }
 
 function toDateLabel(value: string): string {
-  return new Date(`${value}T00:00:00`).toLocaleDateString("id-ID", {
+  const isEn = isEnlEdition();
+  return new Date(`${value}T00:00:00`).toLocaleDateString(isEn ? "en-US" : "id-ID", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -127,19 +129,31 @@ function filterLastSevenDays(entries: UnknownRecord[], weekStart: string, weekEn
 }
 
 function buildBlueprintReflection(blueprint: UnknownRecord | null | undefined): string {
+  const isEn = isEnlEdition();
   const lifePath = getNumber(blueprint, ["lifePath", "number"]) ?? getNumber(blueprint, ["numerology", "number"]);
   const humanDesignType = getCanonicalHumanDesignType((blueprint as any)?.humanDesign);
   const arcanaCenter = getNumber(blueprint, ["arcanaCenter", "number"]) ?? getNumber(blueprint, ["destinyMatrix", "center"]);
   const sunSign = getString(blueprint, ["sunSign", "sign"]) ?? getString(blueprint, ["natalChart", "sunSign"]);
 
   const lines: string[] = [];
-  if (lifePath) lines.push("Minggu ini, perjalananmu tampak lebih mudah tumbuh lewat langkah kecil yang konsisten daripada dorongan besar yang sulit dijaga.");
-  if (humanDesignType) lines.push("Tubuhmu cenderung memberi sinyal yang lebih jelas saat ritmemu tidak dipaksa.");
-  if (arcanaCenter) lines.push("Ada undangan untuk melihat pola lama dengan jujur, lalu membuka ruang bagi respons yang lebih baru.");
-  if (sunSign) lines.push("Cara kamu merawat emosi minggu ini mungkin terasa lebih personal saat kamu memberi ruang pada kebutuhan yang biasanya dilewati.");
+  if (isEn) {
+    if (lifePath) lines.push("This week, your journey seems to grow more easily through small, consistent steps than large pushes that are hard to maintain.");
+    if (humanDesignType) lines.push("Your body tends to give clearer signals when your rhythm is not forced.");
+    if (arcanaCenter) lines.push("There is an invitation to look at old patterns honestly, then make room for newer responses.");
+    if (sunSign) lines.push("The way you care for your emotions this week might feel more personal when you give space to needs that are usually passed over.");
 
-  if (lines.length === 0) {
-    return "Perjalananmu akan terasa lebih selaras ketika kamu mendengar sinyal tubuhmu sebelum mengambil keputusan besar.";
+    if (lines.length === 0) {
+      return "Your journey will feel more aligned when you listen to your body's signals before making big decisions.";
+    }
+  } else {
+    if (lifePath) lines.push("Minggu ini, perjalananmu tampak lebih mudah tumbuh lewat langkah kecil yang konsisten daripada dorongan besar yang sulit dijaga.");
+    if (humanDesignType) lines.push("Tubuhmu cenderung memberi sinyal yang lebih jelas saat ritmemu tidak dipaksa.");
+    if (arcanaCenter) lines.push("Ada undangan untuk melihat pola lama dengan jujur, lalu membuka ruang bagi respons yang lebih baru.");
+    if (sunSign) lines.push("Cara kamu merawat emosi minggu ini mungkin terasa lebih personal saat kamu memberi ruang pada kebutuhan yang biasanya dilewati.");
+
+    if (lines.length === 0) {
+      return "Perjalananmu akan terasa lebih selaras ketika kamu mendengar sinyal tubuhmu sebelum mengambil keputusan besar.";
+    }
   }
 
   return lines.join(" ");
@@ -152,9 +166,16 @@ function buildGrowthSummary(input: {
   consistencyScore: number;
 }): string {
   const { totalActivities, dominantTheme, streakDays, consistencyScore } = input;
+  const isEn = isEnlEdition();
 
   if (totalActivities === 0) {
-    return "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.";
+    return isEn
+      ? "There has been no innerwork activity in the past 7 days, so the report is waiting for your first trace this week."
+      : "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.";
+  }
+
+  if (isEn) {
+    return `In the past 7 days, you completed ${totalActivities} innerwork activities. The theme appearing most frequently was ${dominantTheme}, with a rhythm of ${streakDays} consecutive days and a consistency score of ${consistencyScore}. This shows your journey is moving slowly but genuinely, especially when you choose to show up for yourself.`;
   }
 
   return `Dalam 7 hari terakhir kamu menyelesaikan ${totalActivities} aktivitas innerwork. Hal yang paling sering muncul adalah ${dominantTheme}, dengan ritme ${streakDays} hari berturut-turut dan consistency score ${consistencyScore}. Ini menunjukkan perjalananmu sedang bergerak pelan tapi nyata, terutama saat kamu memilih hadir untuk dirimu sendiri.`;
@@ -166,20 +187,29 @@ function buildWeeklyReflection(input: {
   streakDays: number;
 }): string {
   const { totalActivities, previousWeekActivities, streakDays } = input;
+  const isEn = isEnlEdition();
 
   if (totalActivities === 0) {
-    return "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.";
+    return isEn
+      ? "This week is still waiting for its first trace. You can start from one small practice that feels most achievable."
+      : "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.";
   }
 
   if (totalActivities > previousWeekActivities) {
-    return "Minggu ini kamu tampak lebih konsisten hadir untuk dirimu sendiri dibanding minggu sebelumnya.";
+    return isEn
+      ? "This week you seemed more consistently present for yourself compared to the previous week."
+      : "Minggu ini kamu tampak lebih konsisten hadir untuk dirimu sendiri dibanding minggu sebelumnya.";
   }
 
   if (streakDays >= 7) {
-    return "Minggu ini memperlihatkan ritme yang mulai bisa kamu percaya. Tidak perlu dibuat besar; cukup dijaga agar tetap manusiawi.";
+    return isEn
+      ? "This week shows a rhythm you can begin to trust. No need to make it big; just keep it humane."
+      : "Minggu ini memperlihatkan ritme yang mulai bisa kamu percaya. Tidak perlu dibuat besar; cukup dijaga agar tetap manusiawi.";
   }
 
-  return "Minggu ini tetap punya gerak. Bahkan ketika belum penuh, ada bagian dari dirimu yang masih memilih kembali.";
+  return isEn
+    ? "This week still has movement. Even when not full, a part of you still chooses to return."
+    : "Minggu ini tetap punya gerak. Bahkan ketika belum penuh, ada bagian dari dirimu yang masih memilih kembali.";
 }
 
 function buildClosingMessage(input: {
@@ -188,32 +218,53 @@ function buildClosingMessage(input: {
   bodyPattern: string;
 }): string {
   const { dominantTheme, emotionalPattern, bodyPattern } = input;
+  const isEn = isEnlEdition();
+
+  if (isEn) {
+    return `This week shows that your journey is not always linear, but still has a gentle direction. ${dominantTheme} appears repeatedly as an invitation to recognize what you are learning about yourself, not as pressure to finish quickly. When emotions like ${emotionalPattern} arise, your body also speaks through signals like ${bodyPattern}. That is a sign that you are processing, not failing. Next week, you can continue with a more humane rhythm: one conscious step, one breath pause, then returning to choose what makes you feel more whole. You don't need to be perfect to grow. Simply keep showing up, because your presence itself is a real form of healing.`;
+  }
 
   return `Minggu ini memperlihatkan bahwa perjalananmu tidak selalu lurus, tetapi tetap punya arah yang lembut. ${dominantTheme} tampak berulang sebagai undangan untuk mengenali apa yang sedang kamu pelajari tentang dirimu, bukan sebagai tekanan untuk cepat selesai. Saat emosi seperti ${emotionalPattern} muncul, tubuhmu juga berbicara lewat sinyal seperti ${bodyPattern}. Itu tanda bahwa dirimu sedang memproses, bukan gagal. Minggu depan, kamu bisa melanjutkan dengan ritme yang lebih manusiawi: satu langkah sadar, satu jeda napas, lalu kembali memilih hal yang membuatmu merasa lebih utuh. Kamu tidak perlu menjadi sempurna untuk bertumbuh. Cukup terus hadir, karena kehadiranmu sendiri sudah menjadi bentuk healing yang nyata.`;
 }
 
 function defaultReport(weekStart: string, weekEnd: string, blueprint: UnknownRecord | null | undefined): WeeklySoulReportOutput {
+  const isEn = isEnlEdition();
   return {
     weekStart,
     weekEnd,
     totalJournal: 0,
     totalMeditation: 0,
     totalAudioHealing: 0,
-    dominantTheme: "Belum ada pola dominan",
-    emotionalPattern: "Belum ada pola emosi",
-    bodyPattern: "Belum ada pola tubuh",
-    growthSummary: "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.",
-    weeklyReflection: "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.",
+    dominantTheme: isEn ? "No dominant pattern yet" : "Belum ada pola dominan",
+    emotionalPattern: isEn ? "No emotional pattern yet" : "Belum ada pola emosi",
+    bodyPattern: isEn ? "No body pattern yet" : "Belum ada pola tubuh",
+    growthSummary: isEn
+      ? "There has been no innerwork activity in the past 7 days, so the report is waiting for your first trace this week."
+      : "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.",
+    weeklyReflection: isEn
+      ? "This week is still waiting for its first trace. You can start from one small practice that feels most achievable."
+      : "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.",
     blueprintReflection: buildBlueprintReflection(blueprint),
-    recommendedFocusNextWeek: "Mulai dari satu praktik kecil setiap hari agar ritme innerwork-mu terbentuk.",
-    recommendedJournalPrompt: "Hari ini, apa yang paling ingin didengar oleh dirimu tanpa dihakimi?",
-    recommendedMeditation: "Grounding napas 5 menit sambil meletakkan perhatian pada dada dan perut.",
-    recommendedAudioHealing: "Pilih audio yang paling menenangkan tubuhmu, lalu dengarkan tanpa target berlebihan.",
-    closingMessage: "Kamu boleh mulai pelan. Perjalananmu tidak ditentukan oleh seberapa cepat kamu berubah, tetapi oleh seberapa jujur kamu hadir untuk dirimu dari hari ke hari.",
+    recommendedFocusNextWeek: isEn
+      ? "Start from one small practice every day so your innerwork rhythm takes shape."
+      : "Mulai dari satu praktik kecil setiap hari agar ritme innerwork-mu terbentuk.",
+    recommendedJournalPrompt: isEn
+      ? "Today, what does yourself want to hear most without being judged?"
+      : "Hari ini, apa yang paling ingin didengar oleh dirimu tanpa dihakimi?",
+    recommendedMeditation: isEn
+      ? "5-minute breath grounding while bringing attention to your chest and abdomen."
+      : "Grounding napas 5 menit sambil meletakkan perhatian pada dada dan perut.",
+    recommendedAudioHealing: isEn
+      ? "Choose the audio that calms your body most, then listen without excessive targets."
+      : "Pilih audio yang paling menenangkan tubuhmu, lalu dengarkan tanpa target berlebihan.",
+    closingMessage: isEn
+      ? "You are allowed to start slowly. Your journey is not defined by how fast you change, but by how honestly you show up for yourself day by day."
+      : "Kamu boleh mulai pelan. Perjalananmu tidak ditentukan oleh seberapa cepat kamu berubah, tetapi oleh seberapa jujur kamu hadir untuk dirimu dari hari ke hari.",
   };
 }
 
 export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoulReportOutput {
+  const isEn = isEnlEdition();
   const now = new Date();
   const weekEndDate = new Date(now);
   const weekStartDate = new Date(now);
@@ -253,10 +304,10 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
   const bodySignalCounts = countBodySignals(allEntries);
   const emotionalPattern =
     getString(input.compiledInnerwork, ["emotionalPattern"])
-    ?? topOrFallback(emotionalCounts, "emosi sedang bergerak naik-turun");
+    ?? topOrFallback(emotionalCounts, isEn ? "emotions are fluctuating" : "emosi sedang bergerak naik-turun");
   const bodyPattern =
     getString(input.compiledInnerwork, ["bodyPattern"])
-    ?? topOrFallback(bodySignalCounts, "tubuhmu meminta jeda yang lebih lembut");
+    ?? topOrFallback(bodySignalCounts, isEn ? "your body is asking for a gentler pause" : "tubuhmu meminta jeda yang lebih lembut");
 
   const streakDays = getNumber(input.progressData, ["streakDays"]) ?? 0;
   const consistencyScore = getNumber(input.progressData, ["consistencyScore"]) ?? 0;
@@ -286,22 +337,22 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
     recommendedFocusNextWeek:
       getString(input.healingInsights, ["weeklyFocus", "practice"])
       ?? getString(input.compiledInnerwork, ["weeklyMessage"])
-      ?? "Fokus pada konsistensi lembut: satu praktik kecil setiap hari.",
+      ?? (isEn ? "Focus on gentle consistency: one small practice every day." : "Fokus pada konsistensi lembut: satu praktik kecil setiap hari."),
     recommendedJournalPrompt:
       getString(input.compiledInnerwork, ["recommendedNextJournalQuestion"])
       ?? getString(input.healingInsights, ["recommendedJournal"])
       ?? getString(input.journeyData, ["recommendedNextStep", "journal"])
-      ?? "Apa kebutuhan paling jujur dari dirimu minggu ini?",
+      ?? (isEn ? "What is your most honest need from yourself this week?" : "Apa kebutuhan paling jujur dari dirimu minggu ini?"),
     recommendedMeditation:
       getString(input.compiledInnerwork, ["recommendedMeditationFocus"])
       ?? getString(input.healingInsights, ["recommendedMeditation"])
       ?? getString(input.journeyData, ["recommendedNextStep", "meditation"])
-      ?? "Meditasi napas 7 menit untuk menenangkan sistem saraf.",
+      ?? (isEn ? "7-minute breath meditation to calm the nervous system." : "Meditasi napas 7 menit untuk menenangkan sistem saraf."),
     recommendedAudioHealing:
       getString(input.compiledInnerwork, ["recommendedAudioHealingFocus"])
       ?? getString(input.healingInsights, ["recommendedAudioHealing"])
       ?? getString(input.journeyData, ["recommendedNextStep", "audioHealing"])
-      ?? "Audio grounding lembut sambil mengamati sinyal tubuhmu.",
+      ?? (isEn ? "Gentle audio grounding while observing your body signals." : "Audio grounding lembut sambil mengamati sinyal tubuhmu."),
     closingMessage: buildClosingMessage({
       dominantTheme,
       emotionalPattern,

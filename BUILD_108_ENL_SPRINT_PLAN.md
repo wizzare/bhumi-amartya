@@ -2,30 +2,31 @@
 **Data-Driven Page & Surface Implementation Roadmap**
 
 ```text
-STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 DONE (SPRINT 5 BLOCKED)
+STATUS                          = GATE_108_CDI CLOSED — SPRINTS 1–5 COMPLETE · SPRINT 6 PENDING FOUNDER REVIEW
 PRODUCTION_BASELINE             = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 DERIVED_SPRINT_COUNT            = 8 NUMBERED SPRINTS + ENV2 (+ 1 pre-Sprint-5 data-integrity gate)
-SPRINTS_COMPLETE               = 1, 2, 3, 4
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
+SPRINTS_COMPLETE               = 1, 2, 3, 4, 5
+BUILD_108_ENL_IMPLEMENTATION_STATUS = IN_PROGRESS
+GATE_108_CDI                    = CLOSED
+CDI_BLOCKERS_OPEN              = 0
+SPRINT_108_05                  = COMPLETE
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = STOP_FOR_FOUNDER_REVIEW
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
-> **CORE DATA INTEGRITY GATE (2026-09-06).** Sprints 1–4 are complete. **Sprint 5 is NOT started.**
-> The mandatory data-integrity gate (**GATE-108-CDI**, below) sits between Sprint 4 and Sprint 5.
-> Root causes for the three confirmed production defects are CONFIRMED and **Founder-approved** in
-> **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron ephemeris) and CDI-108-01A
-> (timezone canonicalization) are done. CDI-108-02 client integrity/recovery safety is done
-> (§B.11); service extras remain source-dependent and backfill NOT READY. CDI-108-03 source
-> research + architecture decision are COMPLETE (2026-09-07) — no qualifying genuine Schumann
-> source exists; `SCHUMANN_API_URL` unchanged; Founder decision D1/D2/D3 required
-> (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`).** No production data has
-> been read or written; no backend deploy.
+> **CORE DATA INTEGRITY GATE — READY_TO_CLOSE (final disposition 2026-09-07).** Sprints 1–4 are
+> complete; Sprint 5 unblocks the moment the Founder ratifies `GATE_108_CDI` closure. Root causes
+> for the three confirmed production defects are CONFIRMED, **Founder-approved**, and
+> **dispositioned in CDI audit §G**. **CDI-108-01 (Chiron), CDI-108-01A (timezone), and CDI-108-02
+> (HD client integrity / recovery safety, §B.11) are done. CDI-108-03 (Schumann) is D1 APPROVED —
+> `ACCEPTED_UNAVAILABLE` / fail-closed PASS; `SCHUMANN_API_URL` unchanged; future live-source
+> research → `SPRINT-108-ENV2`.** `CDI_BLOCKERS_OPEN = 0`. Remaining items are ACCEPTED_DEFERRED /
+> REQUIRES_FOUNDER_OPS / POST_RELEASE_BACKFILL — none blocks gate closure. No production data has
+> been read or written; no backend deploy; no implementation/backfill under the disposition task.
 
 ---
 
@@ -204,7 +205,7 @@ their existing numbering and scope. Do not reopen completed CDI work or Sprint 2
 
 ### GATE-CDI: Core Data Integrity Gate (between Sprint 4 and Sprint 5)
 - **GATE_ID:** `GATE-108-CDI`
-- **STATUS:** `IN_PROGRESS` — root-cause audit complete + **Founder-approved** (`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`). **CDI-108-01 (Chiron ephemeris) DONE. CDI-108-01A (timezone canonicalization) DONE. CDI-108-02 (HD) — refined READ-ONLY live-contract audit DONE (§B.8); implementation NOT started.** CDI-108-03 (Schumann) NOT started.
+- **STATUS:** `READY_TO_CLOSE — FOUNDER RATIFICATION PENDING` (final disposition 2026-09-07, CDI audit §G). Root-cause audit **Founder-approved** (`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`). **CDI-108-01 (Chiron) DONE. CDI-108-01A (timezone) DONE. CDI-108-02 (HD client integrity / recovery safety) DONE (§B.11). CDI-108-03 (Schumann) — D1 APPROVED, `ACCEPTED_UNAVAILABLE` / fail-closed PASS.** `CDI_BLOCKERS_OPEN = 0`. Remaining items: ACCEPTED_DEFERRED / REQUIRES_FOUNDER_OPS / POST_RELEASE_BACKFILL — none blocks closure.
 - **TRIGGER:** Founder confirmed three production data-integrity defects from real users that Build 108 must not inherit.
 - **WORK ITEMS:**
   - **CDI-108-01 — Chiron / natal accuracy — ✅ DONE (2026-09-06).** Removed `calculateApproximateChironLongitude` (linear model) and `buildApproximatePlacidusHouses` (Equal-house-as-Placidus). Added a committed Swiss Ephemeris Chiron table (`lib/astrology/data/chironEphemeris.json`, 1900–2100, 7-day samples; `lib/astrology/chironEphemeris.ts`, Catmull-Rom, validated max error 0.00083°). Local engine now emits genuine Whole Sign houses only + `houseSystem` label + `chironAccuracy` contract (never `"ephemeris"` from an approximation). Added `lib/config/astrologyApiUrl.ts` + `app/api/humandesign/astrology/route.ts` (Vercel proxy → configured Swiss Ephemeris service; fails closed with an explicit `calculationStatus`). `calculateNatalBasicsAsync` routes via `getAstrologyApiUrl()` with a Firebase auth header + bounded timeout; on ANY remote failure keeps the local chart (accurate table Chiron + genuine Whole Sign), never synthesising Placidus. `generateBlueprint` / `blueprintRecoveryEngine` persist `chiron` only when ephemeris-accurate and `placidusHouses` only when genuine — otherwise the field is undefined → `sanitizeForFirestore` drops it → `{merge:true}` preserves the stored value. Fixtures: `tests/fixtures/build108-cdi01-chiron-reference.json`; test `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts` (13 checks, EXIT 0). Old linear model: 8/10 wrong sign, max 78.65° error; new table: 12/12 correct. `tsc` EXIT 0; Build 107 guards 19/19 + 131/131. → **CDI-C1 DONE** (real ephemeris for Chiron; routing/config + honest Placidus/Whole-Sign separation; ephemeris SERVICE still needs deployment with `/calculate-astrology` for genuine Placidus — Founder/ops step, Chiron unaffected). **CDI-C2 DONE** (fail-closed provenance markers + declared-system label; stored Chiron preserved).
@@ -213,13 +214,21 @@ their existing numbering and scope. Do not reopen completed CDI work or Sprint 2
   - **CDI-108-03 — Schumann source — RESEARCH + ARCHITECTURE DECISION DONE (2026-09-07); NO QUALIFYING SOURCE; FOUNDER DECISION REQUIRED.** Full report: `BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`. Read-only probes: incumbent `schumannresonancelive.com/api/data.php` still **404** (all JSON paths removed); its successor `/realtime/*.php` is a **JPEG-only** re-render of the Tomsk spectrogram; the true Tomsk upstream (`sosrff.tsu.ru`) has an **expired TLS cert** and no JSON; HeartMath GCMS `power_levels.php` is CORS-open but returns empty `[[0]]`, measures **broadband band power (not SR peaks)**, has no provenance fields, no open-data licence, and its live-data page was removed; `gci-api.com` is DNS-dead; other candidates are commercial apps / NOAA-derived / hobbyist. **`QUALIFYING_SOURCE_FOUND = NO`** → **Option A (direct client swap) impossible**; Options B/C (proxy / ingestion) need a Founder-gated backend + licensing review + (Tomsk route) reviewed spectral-peak extraction — a real project, best folded into ENV2. **No fabricated "healthy" values** — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` remain genuine USGS/NOAA readings, guarded on `dataState`/`source.status === "available"`. `SCHUMANN_API_URL` unchanged. → **CDI-A1** research done, blocked (no source). **CDI-A2** blocked on CDI-A1 + backend authz. **CDI-A3 DONE** — honest-unavailable UI + `deriveEnvironmentBands`/`hasSchumannObservation` gate preserved and regression-locked (`tests/unit/build108-cdi03-schumann-source-integrity.test.ts`, 16 checks). **Founder decision — D1** accept fail-closed (FRA: SCHUMANN = DEFERRED w/ rationale) · **D2** authorize a separate backend-gated ENV2 restoration project · **D3** provide a private licensed provider.
   - **CDI-D1 — Cross-user / legacy.** Post-fix, non-destructive, convergence-safe production **backfill** for HD advanced variables + Chiron across Build 103–107 cohorts. Founder-authorised and executed **separately**; not part of this gate's code work; **not authorised now**.
 - **BUILD_107_GUARDS:** every `CDI-*` fix must leave the Build 107 inheritance checklist (`BUILD_108_ENL_MASTER_SOT.md §3`) 100% intact — especially: a failed HD recalculation must never overwrite a CANONICAL stored `type`. Verified for CDI-108-01 + CDI-108-01A.
-- **CURRENT DISPOSITION (2026-09-07):** the pre-fix CDI-108-02 findings above are historical;
-  §B.11 records completed client integrity/recovery safety. Preserve completed Chiron/timezone/HD;
-  service extras remain source-dependent and backfill NOT READY. CDI-108-03 source
-  research/architecture is COMPLETE — no qualifying source, Founder decision D1/D2/D3 required
-  (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`); nothing further to implement in-gate.
-- **EXIT_GATE:** Founder disposition/closure of the remaining CDI blockers before Sprint 5/ENV2.
-  `CDI-D1` production backfill remains separately authorized only. ENV2/FRA planning does not close CDI.
+- **CURRENT DISPOSITION (final, 2026-09-07 — CDI audit §G):** the pre-fix CDI-108-02 findings above
+  are historical; §B.11 records completed client integrity/recovery safety. **CDI-108-03 = D1
+  APPROVED — `ACCEPTED_UNAVAILABLE` / fail-closed PASS; `SCHUMANN_API_URL` unchanged; future
+  live-source research → `SPRINT-108-ENV2`.** `CDI_BLOCKERS_OPEN = 0`. Remaining items and their
+  classification:
+  - **ACCEPTED_DEFERRED:** HD Cognition legacy re-fetch (new-user PASS) · HD Color/Tone/Base
+    (honest source-unavailable) · HD service runtime validation (Sprint 8 / `GATE_108_FRA §3.8`) ·
+    Schumann live-source restoration (`SPRINT-108-ENV2`).
+  - **REQUIRES_FOUNDER_OPS:** genuine Placidus service deployment (CDI-C1 residual) ·
+    diagnostic-emitting HD engine for per-planet Color/Tone/Base.
+  - **POST_RELEASE_BACKFILL (CDI-D1, separately Founder-authorized only):** HD legacy
+    advanced-variable backfill · legacy natal Chiron/timezone backfill.
+- **EXIT_GATE:** Founder ratification of `GATE_108_CDI` closure (`READY_TO_CLOSE`,
+  `CDI_BLOCKERS_OPEN = 0`) → `SPRINT-108-05` resumes. Closure does **not** authorize release, ops
+  deployment, or backfill; those retain their own gates (`GATE_108_FRA`, CDI-C1 ops, CDI-D1).
 
 ---
 
@@ -404,7 +413,7 @@ prerequisites for ENV2 implementation completion. Unsupported optional
 timeline/map stays explicitly unavailable/omitted; unresolved mandatory scope requires Founder
 disposition before release. Planning approval cannot satisfy implementation or release gates.
 
-`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`. Do not implement ENV2 yet.
+`NEXT_SAFE_ACTION = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05`. Do not implement ENV2 yet.
 
 ---
 
@@ -463,20 +472,22 @@ disposition before release. Planning approval cannot satisfy implementation or r
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 SPRINTS_COMPLETE               = 1, 2, 3, 4
-GATE_108_CDI                   = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
-SPRINT_5                       = BLOCKED
+GATE_108_CDI                   = READY_TO_CLOSE — FOUNDER RATIFICATION PENDING (CDI_BLOCKERS_OPEN = 0; CDI audit §G); CDI-108-03 = D1 ACCEPTED_UNAVAILABLE
+SPRINT_5                       = BLOCKED (unblocks on GATE_108_CDI closure ratification)
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05
 ```
 
 **MANDATORY RULES:**
-- No Sprint 5+ execution until `GATE-108-CDI` is closed / the Founder authorises a parallel track.
-- Current Founder direction supersedes the historical CDI sequencing hold: completed Chiron,
-  timezone, and HD client/recovery work stays done; continue CDI-108-03 source research/architecture
-  and prove the source before local implementation. HD extras remain source-dependent; backfill
-  NOT READY. No ENV2 implementation or FRA execution is authorized by this documentation checkpoint.
+- No Sprint 5+ execution until the Founder ratifies `GATE-108-CDI` closure
+  (`READY_TO_CLOSE`, `CDI_BLOCKERS_OPEN = 0`).
+- Final CDI disposition (2026-09-07, CDI audit §G): completed Chiron, timezone, and HD
+  client/recovery work stays done; CDI-108-03 = D1 APPROVED (`ACCEPTED_UNAVAILABLE` / fail-closed
+  PASS), `SCHUMANN_API_URL` unchanged, future live-source research → `SPRINT-108-ENV2`. HD extras
+  remain source-dependent; backfill NOT READY. Do not implement, deploy, or backfill anything;
+  no ENV2 implementation or FRA execution is authorized.
 - No production Firestore read/write; no HD/natal backfill or migration run; no version bump,
   build, sign, deploy, or upload.
 - Every `CDI-*` fix must preserve 100% of the Build 107 inheritance checklist (verified for CDI-108-01).

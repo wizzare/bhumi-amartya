@@ -17,6 +17,8 @@ import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorSe
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 type LocalRecord = Record<string, unknown>;
 
 function profileName(profile: LocalRecord): string {
@@ -24,7 +26,7 @@ function profileName(profile: LocalRecord): string {
     const value = profile[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return "Penghuni Bhumi";
+  return isEnlEdition() ? "Bhumi Resident" : "Penghuni Bhumi";
 }
 
 function readLocalManifestation(uid: string, dateKey: string): DailyGuidance["manifestation"] | undefined {

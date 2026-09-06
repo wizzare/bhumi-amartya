@@ -31,6 +31,8 @@ import { applyArsipAkashiContentToV3Section, buildSoulLettersV3Section } from "@
 import { classifyProfileReadiness, type ProfileReadiness } from "@/lib/arsipAkashi/profile/readiness";
 import { isCurrentProfilePageLoad, resolveProfilePageLoadState, type ProfileDailyGuidanceSource } from "@/lib/profile/profilePageLoadState";
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 type LocalRecord = Record<string, unknown>;
 
 function profileName(profile: LocalRecord): string {
@@ -38,7 +40,7 @@ function profileName(profile: LocalRecord): string {
     const value = profile[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return "Penghuni Bhumi";
+  return isEnlEdition() ? "Bhumi Resident" : "Penghuni Bhumi";
 }
 
 function slugify(title: string) {
@@ -59,71 +61,72 @@ type BlueprintCard = {
 
 function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
   void bazi;
+  const isEn = isEnlEdition();
   const cards: BlueprintCard[] = [
     {
       title: "Life Path",
       icon: "🔢",
-      desc: "Jalan belajar dan pertumbuhan jiwamu.",
+      desc: isEn ? "Your soul's path of learning and growth." : "Jalan belajar dan pertumbuhan jiwamu.",
       href: "/blueprint/numerology"
     },
     {
       title: "Destiny Matrix",
       icon: "🜂",
-      desc: "Pola energi, pelajaran, dan potensi yang membentuk perjalananmu.",
+      desc: isEn ? "Energy patterns, lessons, and potential shaping your journey." : "Pola energi, pelajaran, dan potensi yang membentuk perjalananmu.",
       href: "/blueprint/destiny-matrix"
     },
     {
       title: "Human Design",
       icon: "⚡",
-      desc: "Cara alami energimu bekerja dan mengambil keputusan.",
+      desc: isEn ? "How your energy naturally operates and makes decisions." : "Cara alami energimu bekerja dan mengambil keputusan.",
       href: "/blueprint/human-design"
     },
     {
       title: "Natal Chart",
       icon: "🌙",
-      desc: "Peta langit saat kamu lahir dan pengaruhnya dalam hidupmu.",
+      desc: isEn ? "Sky map at birth and its influence on your life." : "Peta langit saat kamu lahir dan pengaruhnya dalam hidupmu.",
       href: "/blueprint/natal-chart"
     },
     {
       title: "Weton",
       icon: "🌾",
-      desc: "Jejak hari dan pasaran kelahiran dalam tradisi Jawa.",
+      desc: isEn ? "Birth day and market day traces in Javanese tradition." : "Jejak hari dan pasaran kelahiran dalam tradisi Jawa.",
       href: "/blueprint/weton"
     },
     {
       title: "BaZi",
       icon: "☯️",
-      desc: "Empat pilar dan keseimbangan unsur pada waktu kelahiranmu.",
+      desc: isEn ? "Four pillars and elemental balance at your birth time." : "Empat pilar dan keseimbangan unsur pada waktu kelahiranmu.",
       href: "/blueprint/bazi"
     },
     {
       title: "Vedic Astrology",
       icon: "🕉️",
-      desc: "Peta langit kelahiran melalui tradisi astrologi Vedik.",
+      desc: isEn ? "Birth sky map through Vedic astrology tradition." : "Peta langit kelahiran melalui tradisi astrologi Vedik.",
       href: "/blueprint/vedic"
     },
     {
       title: "Tzolkin Maya",
       icon: "☀️",
-      desc: "Kode waktu dan ritme kesadaran dari kalender sakral Maya.",
+      desc: isEn ? "Time codes and consciousness rhythms from sacred Mayan calendar." : "Kode waktu dan ritme kesadaran dari kalender sakral Maya.",
       href: "/blueprint/tzolkin"
     },
     {
       title: "Whole Sign Birth Chart",
       icon: "♈",
-      desc: "Rumah kehidupan melalui astrologi tropical dengan sistem Whole Sign.",
+      desc: isEn ? "Life houses through tropical astrology with Whole Sign system." : "Rumah kehidupan melalui astrologi tropical dengan sistem Whole Sign.",
       href: "/blueprint/whole-sign"
     },
     {
       title: "Astrocartography",
       icon: "🌍",
-      desc: "Peta dunia yang menunjukkan wilayah tempat tema planet kelahiranmu lebih menonjol.",
+      desc: isEn ? "World map showing regions where your natal planetary themes are prominent." : "Peta dunia yang menunjukkan wilayah tempat tema planet kelahiranmu lebih menonjol.",
       href: "/blueprint/astrocartography"
     },
     {
       title: "Zi Wei Dou Shu",
       icon: "✦",
-      desc: "Peta dua belas istana dan bintang yang membentuk perjalanan hidupmu.",
+      desc: isEn ? "Map of twelve palaces and stars shaping your life journey." : "Peta dua belas istana dan bintang yang membentuk perjalanan hidupmu.",
       href: "/blueprint/zi-wei"
     }
   ];
@@ -133,8 +136,8 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
       <div className="mb-2 flex items-center gap-2">
         <Sparkles size={20} className="text-[#9AA394]" />
         <div>
-          <h2 className="text-xl font-serif text-[#4F5E52]">Cetak Biru Jiwa</h2>
-          <p className="text-sm text-[#7B8776] mt-1">Sebelas cermin utama untuk mengenal dirimu lebih dalam.</p>
+          <h2 className="text-xl font-serif text-[#4F5E52]">{isEn ? "Soul Blueprint" : "Cetak Biru Jiwa"}</h2>
+          <p className="text-sm text-[#7B8776] mt-1">{isEn ? "Eleven primary mirrors for deeper self-knowledge." : "Sebelas cermin utama untuk mengenal dirimu lebih dalam."}</p>
         </div>
       </div>
       
@@ -154,7 +157,7 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
         ))}
       </div>
       <p className="text-center text-[10px] uppercase tracking-wider text-[#9AA394] mt-4">
-        Klik masing-masing bagian untuk melihat pembacaan lengkap.
+        {isEn ? "Click each section to view the full reading." : "Klik masing-masing bagian untuk melihat pembacaan lengkap."}
       </p>
     </section>
   );
@@ -332,8 +335,9 @@ export default function ProfilePage() {
     };
   }, [auditUser]);
 
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">Membuka profilmu...</main>;
-  if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu.</p></main>;
+  const isEn = isEnlEdition();
+  if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">{isEn ? "Opening your profile..." : "Membuka profilmu..."}</main>;
+  if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">{isEn ? "Your profile is not ready yet. Please complete your birth data first." : "Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu."}</p></main>;
 
     return (
     <ProtectedRoute>
@@ -344,7 +348,7 @@ export default function ProfilePage() {
             <BhumiPageHeader />
             <header className="text-center">
               <h1 className="text-3xl font-serif text-[#4F5E52]">{name}</h1>
-              <p className="mt-2 text-sm text-[#7B8776]">Selamat datang kembali di Bhumi. Mari melihat dirimu dengan lebih jernih.</p>
+              <p className="mt-2 text-sm text-[#7B8776]">{isEn ? "Welcome back to Bhumi. Let's see yourself more clearly." : "Selamat datang kembali di Bhumi. Mari melihat dirimu dengan lebih jernih."}</p>
             </header>
 
             <IdentitasJiwaHub bazi={bazi} />
@@ -353,11 +357,11 @@ export default function ProfilePage() {
             <section>
               <header className="mb-5 px-1">
                 <h2 className="text-xl font-serif text-[#4F5E52]">Arsip Akashi</h2>
-                <p className="mt-1 text-sm text-[#7B8776]">Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam.</p>
+                <p className="mt-1 text-sm text-[#7B8776]">{isEn ? "Choose a room to explore a deeper layer of yourself." : "Pilih satu ruang untuk mengenal lapisan dirimu lebih dalam."}</p>
               </header>
               {profileSections.length === 0 ? (
                 <div className="rounded-2xl border border-[#E8E9E5] bg-white p-8 text-center">
-                  <p className="text-sm text-[#7B8776]">Arsip Akashi sedang disiapkan. Bagian profil lainnya tetap dapat kamu jelajahi.</p>
+                  <p className="text-sm text-[#7B8776]">{isEn ? "Akashic Archive is being prepared. Other profile sections are still available for exploration." : "Arsip Akashi sedang disiapkan. Bagian profil lainnya tetap dapat kamu jelajahi."}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
@@ -366,7 +370,7 @@ export default function ProfilePage() {
                     <Link key={slugify(section.title)} href={`/profile/${slugify(section.title)}`} className="bhumi-card flex min-h-44 flex-col items-center justify-center p-5 text-center transition-transform active:scale-95 hover:shadow-md">
                       <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Sparkles size={24} /></div>
                       <h3 className="text-sm font-semibold text-[#4F5E52]">{section.title}</h3>
-                      <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} bacaan</p>
+                      <p className="mt-2 text-[10px] leading-4 text-[#8A9489]">{insightCount(section)} {isEn ? "readings" : "bacaan"}</p>
                     </Link>
                   );
                 })}

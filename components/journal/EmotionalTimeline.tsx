@@ -1,12 +1,14 @@
 "use client";
 
 import type { EmotionalMemory } from "@/lib/data/types";
+import { isEnlEdition } from "@/lib/config/edition";
 
 interface EmotionalTimelineProps {
   memory: EmotionalMemory;
 }
 
 export function EmotionalTimeline({ memory }: EmotionalTimelineProps) {
+  const isEn = isEnlEdition();
   if (memory.healingMilestones.length === 0) {
     return null;
   }
@@ -33,7 +35,7 @@ export function EmotionalTimeline({ memory }: EmotionalTimelineProps) {
                 {/* Content */}
                 <div className="bg-white rounded-xl p-4">
                   <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                    {new Date(milestone.date).toLocaleDateString("id-ID", {
+                    {new Date(milestone.date).toLocaleDateString(isEn ? "en-US" : "id-ID", {
                       weekday: "short",
                       year: "numeric",
                       month: "short",

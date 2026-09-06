@@ -5,44 +5,45 @@
  */
 
 import type { JournalEntry, EmotionalAnalysis, EmotionalCheckIn } from "../data/types";
+import { isEnlEdition } from "@/lib/config/edition";
 
 // ============= EMOTION KEYWORD MAPS =============
 
 const emotionKeywords = {
-  grief: ["sedih", "hilang", "tidak bisa", "merindu", "sakit", "kosong", "hampa", "mati", "lepas", "akhir"],
-  anger: ["marah", "kesal", "membenci", "dendam", "kecewa", "benci", "rasanya", "unfair", "seharusnya"],
-  fear: ["takut", "khawatir", "gelisah", "panik", "cemas", "was-was", "berani", "bisa", "mungkin", "bagaimana"],
-  joy: ["bahagia", "syukur", "cinta", "indah", "beruntung", "bersyukur", "menyenangkan", "gembirakan"],
-  confusion: ["bingung", "tidak tahu", "tidak jelas", "ragu", "tidak mengerti", "bagaimana", "kenapa", "apa"],
-  resignation: ["menyerah", "sudah", "tidak ada", "tidak bisa", "semua hilang", "sia-sia", "percuma"],
-  hope: ["kemungkinan", "bisa", "mungkin", "harapan", "akan", "dimulai", "baru", "mencoba"],
-  ambivalence: ["dan juga", "tapi juga", "di sisi lain", "sekaligus", "both", "atau"],
+  grief: ["sedih", "hilang", "tidak bisa", "merindu", "sakit", "kosong", "hampa", "mati", "lepas", "akhir", "sad", "grief", "loss", "lost", "missing", "hurt", "empty", "vacant", "pain"],
+  anger: ["marah", "kesal", "membenci", "dendam", "kecewa", "benci", "rasanya", "unfair", "seharusnya", "angry", "mad", "annoyed", "hate", "resentful", "disappointed", "furious", "rage"],
+  fear: ["takut", "khawatir", "gelisah", "panik", "cemas", "was-was", "berani", "bisa", "mungkin", "bagaimana", "afraid", "fear", "anxious", "worry", "worried", "panic", "scared", "nervous"],
+  joy: ["bahagia", "syukur", "cinta", "indah", "beruntung", "bersyukur", "menyenangkan", "gembirakan", "happy", "joy", "grateful", "gratitude", "love", "beautiful", "blessed"],
+  confusion: ["bingung", "tidak tahu", "tidak jelas", "ragu", "tidak mengerti", "bagaimana", "kenapa", "apa", "confused", "doubt", "unclear", "uncertain", "puzzled", "don't know"],
+  resignation: ["menyerah", "sudah", "tidak ada", "tidak bisa", "semua hilang", "sia-sia", "percuma", "give up", "giving up", "futile", "useless", "pointless", "resigned"],
+  hope: ["kemungkinan", "bisa", "mungkin", "harapan", "akan", "dimulai", "baru", "mencoba", "hope", "hopeful", "possible", "new", "try", "trying", "beginning"],
+  ambivalence: ["dan juga", "tapi juga", "di sisi lain", "sekaligus", "both", "atau", "on the other hand", "conflicted", "torn"],
 };
 
 const woundKeywords: Record<string, string[]> = {
-  abandonment: ["ditinggalkan", "sendirian", "tidak", "membutuhkan", "takut ditinggalkan", "pergi"],
-  worthlessness: ["tidak berharga", "tidak cukup", "tidak layak", "bodoh", "gagal", "tidak pantas"],
-  control: ["harus", "seharusnya", "tidak boleh", "saya yang harus", "tanggung jawab saya", "kutip"],
-  vulnerability: ["terlihat", "dibuka", "rentan", "terluka", "sakit", "lemah"],
-  authenticity: ["pura-pura", "palsu", "tidak benar", "peran", "harus menjadi", "harapan mereka"],
-  power: ["tidak kuat", "powerless", "tidak bisa mengontrol", "dikontrol", "dipaksa"],
-  belonging: ["tidak cocok", "aneh", "berbeda", "tidak diterima", "tidak ada tempat", "outsider"],
+  abandonment: ["ditinggalkan", "sendirian", "tidak", "membutuhkan", "takut ditinggalkan", "pergi", "abandoned", "alone", "left behind", "lonely", "deserted"],
+  worthlessness: ["tidak berharga", "tidak cukup", "tidak layak", "bodoh", "gagal", "tidak pantas", "worthless", "not enough", "unworthy", "foolish", "failed", "failure"],
+  control: ["harus", "seharusnya", "tidak boleh", "saya yang harus", "tanggung jawab saya", "kutip", "must", "should", "control", "responsibility", "have to"],
+  vulnerability: ["terlihat", "dibuka", "rentan", "terluka", "sakit", "lemah", "vulnerable", "exposed", "weak", "hurt"],
+  authenticity: ["pura-pura", "palsu", "tidak benar", "peran", "harus menjadi", "harapan mereka", "fake", "pretending", "inauthentic", "role", "expectations"],
+  power: ["tidak kuat", "powerless", "tidak bisa mengontrol", "dikontrol", "dipaksa", "helpless", "forced", "powerless"],
+  belonging: ["tidak cocok", "aneh", "berbeda", "tidak diterima", "tidak ada tempat", "outsider", "outcast", "don't fit", "unaccepted", "stranger"],
 };
 
 const selfTalkPatterns = {
-  critical: ["saya", "selalu", "tidak pernah", "bodoh", "gagal", "jelek", "salah"],
-  compassionate: ["mengizinkan", "mungkin", "tidak apa-apa", "baik-baik saja", "cukup baik", "sabar"],
-  resigned: ["tidak bisa", "sudah", "sia-sia", "tak ada harapan", "kehidupan seperti ini"],
+  critical: ["saya", "selalu", "tidak pernah", "bodoh", "gagal", "jelek", "salah", "stupid", "always", "never", "wrong", "failure", "bad"],
+  compassionate: ["mengizinkan", "mungkin", "tidak apa-apa", "baik-baik saja", "cukup baik", "sabar", "it's ok", "its ok", "okay", "gentle", "patient", "good enough", "allow"],
+  resigned: ["tidak bisa", "sudah", "sia-sia", "tak ada harapan", "kehidupan seperti ini", "cannot", "can't", "hopeless", "useless", "no point"],
 };
 
 // ============= NERVOUS SYSTEM DETECTION =============
 
 const nervousSystemMarkers = {
-  dysregulated: ["tidak bisa fokus", "overwhelmed", "terlalu banyak", "jantung", "bergetar", "merasa"],
-  activated: ["energi tinggi", "cemas", "tidak bisa tidur", "restless", "hidup", "takut"],
-  calm: ["tenang", "damai", "santai", "rileks", "nyaman", "aman"],
-  grounded: ["terhubung", "present", "bumi", "stabil", "foundation", "akar"],
-  floaty: ["jauh", "disconnect", "tidak nyata", "mimpi", "kosong", "hilang"],
+  dysregulated: ["tidak bisa fokus", "overwhelmed", "terlalu banyak", "jantung", "bergetar", "merasa", "can't focus", "too much", "heart racing", "shaking", "unfocused"],
+  activated: ["energi tinggi", "cemas", "tidak bisa tidur", "restless", "hidup", "takut", "high energy", "anxious", "can't sleep", "insomnia"],
+  calm: ["tenang", "damai", "santai", "rileks", "nyaman", "aman", "calm", "peaceful", "relaxed", "comfortable", "safe"],
+  grounded: ["terhubung", "present", "bumi", "stabil", "foundation", "akar", "connected", "present", "grounded", "stable", "root"],
+  floaty: ["jauh", "disconnect", "tidak nyata", "mimpi", "kosong", "hilang", "distant", "disconnected", "unreal", "dreamy", "floaty", "numb"],
 };
 
 // ============= ANALYSIS FUNCTION =============
@@ -244,12 +245,12 @@ function extractThemes(content: string): string[] {
   const themes: Record<string, number> = {};
 
   const themeKeywords = {
-    relationship: ["orang", "hubungan", "dia", "dia", "cinta", "jarak"],
-    work: ["kerja", "job", "project", "team", "boss"],
-    family: ["keluarga", "orang tua", "ibu", "ayah", "saudara"],
-    health: ["kesehatan", "tubuh", "sakit", "energi", "istirahat"],
-    identity: ["siapa", "diri", "saya", "identity", "purpose"],
-    spirituality: ["spiritual", "soul", "purpose", "meaning", "faith"],
+    relationship: ["orang", "hubungan", "dia", "dia", "cinta", "jarak", "relationship", "partner", "love", "connection", "distance"],
+    work: ["kerja", "job", "project", "team", "boss", "work", "career", "office"],
+    family: ["keluarga", "orang tua", "ibu", "ayah", "saudara", "family", "parents", "mother", "father", "siblings"],
+    health: ["kesehatan", "tubuh", "sakit", "energi", "istirahat", "health", "body", "sick", "energy", "rest", "tired"],
+    identity: ["siapa", "diri", "saya", "identity", "purpose", "who", "myself", "self"],
+    spirituality: ["spiritual", "soul", "purpose", "meaning", "faith", "god", "universe"],
   };
 
   for (const [theme, keywords] of Object.entries(themeKeywords)) {
@@ -314,6 +315,10 @@ function detectExhaustion(
     "sick of it",
     "selesai",
     "tidak mampu",
+    "tired",
+    "drained",
+    "worn out",
+    "can't go on",
   ];
 
   const count = tirednessMarkers.filter((m) => content.includes(m)).length;
@@ -336,10 +341,10 @@ function detectExhaustion(
 
 function detectAvoidancePatterns(content: string): string[] {
   const avoidanceMarkers = {
-    numbing: ["tidak peduli", "numb", "space out", "distract"],
-    rationalizing: ["tapi", "alasan", "excuse", "teknis"],
-    minimizing: ["tidak apa-apa", "fine", "tidak masalah", "trivial"],
-    denying: ["tidak terjadi", "tidak nyata", "tidak mungkin"],
+    numbing: ["tidak peduli", "numb", "space out", "distract", "don't care", "whatever", "ignore"],
+    rationalizing: ["tapi", "alasan", "excuse", "teknis", "but", "reason", "logic", "technical"],
+    minimizing: ["tidak apa-apa", "fine", "tidak masalah", "trivial", "whatever", "no big deal", "doesn't matter"],
+    denying: ["tidak terjadi", "tidak nyata", "tidak mungkin", "didn't happen", "not real", "impossible", "deny"],
   };
 
   const patterns: string[] = [];
@@ -361,6 +366,21 @@ function generateGentleInsight(
   themes: string[],
   wounds: { wound: string; intensity: string }[]
 ): string {
+  const isEn = isEnlEdition();
+  if (isEn) {
+    const insightsEN: Record<string, string> = {
+      grief: "There is a part of you that is grieving. This sadness is proof that you have loved. Allow yourself to feel it fully.",
+      anger: "Your anger is a voice for something important. There is a truth behind this emotion that deserves to be heard.",
+      fear: "The fear you feel is a protective instinct. But you are stronger than you think.",
+      joy: "This joy is a reminder that life is also beautiful. Thank yourself for this moment.",
+      confusion: "Confusion is part of the search for truth. It is okay not to know everything right now.",
+      resignation: "The feeling of giving up might be an invitation to change strategy, not to stop.",
+      hope: "There is light that you see. Slowly, follow that light.",
+      ambivalence: "You can feel both things at once. This complexity is a sign of emotional maturity.",
+    };
+    return insightsEN[tone] || "What you are feeling is valid and worthy of being heard.";
+  }
+
   const insights: Record<string, string> = {
     grief: "Ada bagian dari dirimu yang sedang berduka. Kesedihan ini adalah bukti bahwa kamu telah mencintai. Izinkan diri untuk merasakan sepenuhnya.",
     anger: "Kemarahanmu adalah suara untuk sesuatu yang penting. Ada kebenaran di balik emosi ini yang layak didengar.",
@@ -383,6 +403,23 @@ function generateHealingDirection(
   exhaustion: string,
   wounds: { wound: string; intensity: string }[]
 ): string {
+  const isEn = isEnlEdition();
+  if (isEn) {
+    if (exhaustion === "critical") {
+      return "The first priority is true rest. Your body needs to stop. Allow yourself to be unproductive.";
+    }
+    if (tone === "grief") {
+      return "The direction of healing is through acceptance, not jumping to being 'okay'. Let yourself feel what needs to be felt.";
+    }
+    if (tone === "anger") {
+      return "This anger is energy. Channel it into something meaningful - expression, movement, or building boundaries.";
+    }
+    if (nervousSystem === "dysregulated") {
+      return "Your nervous system needs soothing. Start with slow breathing, physical connection with the ground, or gentle movement.";
+    }
+    return "Healing happens through gently asking yourself what is truly needed right now.";
+  }
+
   if (exhaustion === "critical") {
     return "Prioritas pertama adalah istirahat sejati. Tubuhmu membutuhkan untuk berhenti. Izinkan diri untuk tidak produktif.";
   }
@@ -408,6 +445,23 @@ function generateSuggestedInnerwork(
   nervousSystem: string,
   exhaustion: string
 ): string {
+  const isEn = isEnlEdition();
+  if (isEn) {
+    if (exhaustion === "critical") {
+      return "Rest without purpose. Sleep, lie down, or just exist without doing anything.";
+    }
+    if (nervousSystem === "dysregulated") {
+      return "Somatic grounding: Feel your feet on the ground, hold something cold, or listen to nature sounds.";
+    }
+    if (tone === "grief" || tone === "anger") {
+      return "Expressive movement: Dance, uncensored speed writing, or movements that release emotion.";
+    }
+    if (tone === "confusion") {
+      return "Silent meditation: Sit with the question without trying to answer it. Let answers come on their own.";
+    }
+    return "Uncensored writing: Pour everything out without judgment for 10-15 minutes.";
+  }
+
   if (exhaustion === "critical") {
     return "Istirahat tanpa tujuan. Tidur, berbaring, atau hanya ada tanpa melakukan apa-apa.";
   }

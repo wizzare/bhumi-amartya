@@ -9,6 +9,7 @@ import type {
   HealingRecommendation,
   CoreIdentity,
 } from "../data/types";
+import { isEnlEdition } from "@/lib/config/edition";
 
 // ============= RECOMMENDATION LIBRARY =============
 
@@ -290,6 +291,278 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
   ],
 };
 
+const healingLibraryEN: Record<string, HealingRecommendation[]> = {
+  rest: [
+    {
+      id: "rest-1",
+      type: "somatic",
+      title: "Restorative Laying Meditation",
+      description:
+        "Lying down with no agenda other than to exist. This is not sleeping; it is the simplest form of healing.",
+      duration: 15,
+      basedOnEmotionalAnalysis: "Exhaustion detected - body needs permission to stop",
+      addressesWound: "burnout, over-giving, collapse",
+      supportedBy: "somatic psychology - parasympathetic activation",
+      instructions: [
+        "Find a warm and comfortable spot on the floor",
+        "Lie down with legs slightly apart, hands at your sides",
+        "Place something heavy (a weighted blanket) on your chest and abdomen",
+        "Close your eyes and allow your body to completely relax",
+        "There is nothing to do. Simply exist.",
+      ],
+      tips: [
+        "Set a timer so you don't have to worry about time",
+        "This is not meditation - your mind is free to wander",
+        "If you fall asleep, that is perfect",
+      ],
+      bestTiming: "immediately",
+      frequency: "daily if possible",
+      integratesWithPractice: ["grounding", "nature-connection"],
+      supportiveReminder:
+        "Rest is spiritual work. You do not need to do anything to be worthy.",
+    },
+    {
+      id: "rest-2",
+      type: "meditation",
+      title: "Forgiveness to Self Meditation",
+      description:
+        "Meditation to release self-judgment and allow yourself to be humanly imperfect.",
+      duration: 10,
+      basedOnEmotionalAnalysis: "Exhaustion from self-criticism",
+      addressesWound: "perfectionism, self-worth, control",
+      supportedBy: "self-compassion research",
+      instructions: [
+        "Sit comfortably, hands over your heart",
+        "Take a deep breath and say: 'I forgive myself for this oversight'",
+        "Take another deep breath and say: 'I allow myself to learn'",
+        "Repeat several times, letting the words sink in",
+        "End with: 'I am good enough, right now'",
+      ],
+      tips: [
+        "If tears come, let them - that is release",
+        "No need to be 'perfect' - authenticity is more important",
+      ],
+      bestTiming: "today",
+      frequency: "as-needed, especially after self-criticism spirals",
+      integratesWithPractice: ["journaling", "inner-child-work"],
+      supportiveReminder:
+        "Self-forgiveness is a radical decision of love. You are worthy.",
+    },
+  ],
+
+  grounding: [
+    {
+      id: "grounding-1",
+      type: "somatic",
+      title: "5-4-3-2-1 Grounding Technique",
+      description:
+        "Fast sensory technique to return to your body when feeling overwhelmed or dissociated.",
+      duration: 5,
+      basedOnEmotionalAnalysis: "Dysregulated nervous system",
+      addressesWound: "anxiety, dissociation, panic",
+      supportedBy: "somatic psychology, trauma-informed care",
+      instructions: [
+        "Notice 5 things you can see - speak their color, shape, texture",
+        "Notice 4 things you can touch - feel different textures",
+        "Notice 3 things you can hear - listen closely",
+        "Notice 2 things you can smell - take a whiff of anything around",
+        "Notice 1 thing you can taste in your mouth - water, flavor",
+      ],
+      tips: [
+        "Do it slowly, there is no rush",
+        "Use when anxiety rises before it reaches its peak",
+        "Can be done anywhere, anytime",
+      ],
+      bestTiming: "immediately",
+      frequency: "as-needed",
+      integratesWithPractice: ["breathwork", "presence"],
+      supportiveReminder:
+        "You are safe. Your body is here, right now. This is reality, not fear.",
+    },
+    {
+      id: "grounding-2",
+      type: "somatic",
+      title: "Earthing - Bare Feet on Soil",
+      description:
+        "Direct physical connection with the earth to reset the nervous system. Simple, yet powerful.",
+      duration: 10,
+      basedOnEmotionalAnalysis: "Need for nervous system reset",
+      addressesWound: "disconnection, floating, overwhelm",
+      supportedBy: "grounding science, earthing research",
+      instructions: [
+        "Find a spot with soil, grass, or sand (not asphalt)",
+        "Take off your shoes and socks",
+        "Stand or sit with bare feet touching the earth",
+        "Feel the connection between your feet and the ground",
+        "If you wish, place your hands on the ground as well",
+        "Sit with this for 10 minutes",
+      ],
+      tips: [
+        "Morning or late afternoon is best (less intense heat)",
+        "Even a city park works well",
+        "Can be combined with walking meditation",
+      ],
+      bestTiming: "today",
+      frequency: "3x weekly ideal",
+      integratesWithPractice: ["nature-connection", "breathwork"],
+      supportiveReminder:
+        "The earth will hold your weight. Allow yourself to rely on something stable.",
+    },
+  ],
+
+  release: [
+    {
+      id: "release-1",
+      type: "movement",
+      title: "Anger Release Through Movement",
+      description:
+        "Express suppressed anger through free movement, without judgment.",
+      duration: 10,
+      basedOnEmotionalAnalysis: "Suppressed anger or rage",
+      addressesWound: "powerlessness, injustice, boundary violation",
+      supportedBy: "somatic psychology, emotional release therapy",
+      instructions: [
+        "Find a private space (bedroom, studio)",
+        "Choose music that makes you feel strong (rock, hip-hop, intense)",
+        "Start with gentle swaying, then allow your body to move more intensely",
+        "Let anger out through movement - punching a pillow, kicking, jumping",
+        "No need to look good - this is about energy, not aesthetics",
+        "Let sounds out if needed - shout, growl, or cry",
+      ],
+      tips: [
+        "Prepare pillows or a punching bag if needed",
+        "A closed room is best for privacy",
+        "Don't worry about being 'right' - authenticity is the goal",
+      ],
+      bestTiming: "immediately",
+      frequency: "1-3x weekly during high-anger periods",
+      integratesWithPractice: ["journaling", "emotional-processing"],
+      supportiveReminder:
+        "Your anger is valid. Your voice deserves to be heard. This energy seeks expression, not repression.",
+    },
+    {
+      id: "release-2",
+      type: "creative",
+      title: "Grief Release Writing",
+      description:
+        "Write quickly without censorship to release suppressed grief.",
+      duration: 15,
+      basedOnEmotionalAnalysis: "Suppressed grief or loss",
+      addressesWound: "unprocessed loss, abandonment, endings",
+      supportedBy: "expressive writing research, grief psychology",
+      instructions: [
+        "Take paper and a pen",
+        "Write by hand (not on a laptop - kinesthetic movement matters)",
+        "Without stopping, write everything you are pained to say",
+        "No censorship, grammar, or structure - only flow",
+        "Write for 15 minutes non-stop",
+        "Optional: re-read or tear up the paper as a release ritual",
+      ],
+      tips: [
+        "If tears come, that is good - let them flow",
+        "No need to make 'sense' - words can be messy",
+        "Repeat until it feels sufficiently released",
+      ],
+      bestTiming: "today",
+      frequency: "weekly during grief processing",
+      integratesWithPractice: ["journaling", "ritual-closure"],
+      supportiveReminder:
+        "Your grief is proof of love. There is room for all these feelings here.",
+    },
+  ],
+
+  presence: [
+    {
+      id: "presence-1",
+      type: "meditation",
+      title: "5-Minute Breath Awareness",
+      description: "A simple meditation to return to the present moment.",
+      duration: 5,
+      basedOnEmotionalAnalysis: "Anxiety about future or rumination",
+      addressesWound: "worry, control, disconnection",
+      supportedBy: "mindfulness research",
+      instructions: [
+        "Sit comfortably",
+        "Close your eyes",
+        "Simply observe your breath - no need to change it",
+        "Inhale deeply, exhale slowly",
+        "If thoughts wander, gently return to the breath",
+        "Do this for 5 minutes",
+      ],
+      tips: [
+        "No need for 'perfect' meditation - thoughts are allowed to exist",
+        "Focus on physical sensations: the sound of breath, chest movement",
+      ],
+      bestTiming: "immediately",
+      frequency: "daily if possible",
+      integratesWithPractice: ["grounding", "journaling"],
+      supportiveReminder:
+        "The present moment is safe. Your breath brings you home to your body.",
+    },
+  ],
+
+  authenticity: [
+    {
+      id: "authenticity-1",
+      type: "reflection",
+      title: "Core Values Clarification",
+      description:
+        "Identify your true core values vs values you pursue for others.",
+      duration: 20,
+      basedOnEmotionalAnalysis: "Inauthenticity or people-pleasing patterns",
+      addressesWound: "abandonment fears, self-worth tied to others' approval",
+      supportedBy: "values-based living, psychology of authenticity",
+      instructions: [
+        "Write a list of 10 values you think are important (honesty, love, success, etc.)",
+        "For each, mark: 'this is MINE' or 'this is expected by OTHERS'",
+        "Circle the truest ones for you with a star",
+        "Write: How can I live these values more fully?",
+        "Identify one small step for this week",
+      ],
+      tips: [
+        "Honesty here is crucial - no one else needs to see this",
+        "Values from others aren't 'bad' - they just need to be recognized",
+      ],
+      bestTiming: "this-week",
+      frequency: "quarterly review",
+      integratesWithPractice: ["journaling", "boundary-work"],
+      supportiveReminder:
+        "Living authentically starts with knowing who you are beyond expectations. That is courageous.",
+    },
+  ],
+
+  boundaries: [
+    {
+      id: "boundaries-1",
+      type: "reflection",
+      title: "Boundary Setting Ritual",
+      description:
+        "Formulate and strengthen personal boundaries that are weak or breached.",
+      duration: 15,
+      basedOnEmotionalAnalysis: "People-pleasing or boundary violation",
+      addressesWound: "self-worth, power, resentment",
+      supportedBy: "boundary psychology",
+      instructions: [
+        "Identify one boundary you frequently compromise",
+        "Write: The boundary I want to establish is...",
+        "Write: The reason I am afraid to set this is...",
+        "Write: If I set this boundary, my life will change into...",
+        "Stand in front of a mirror and state the boundary out loud",
+        "Write a plan to communicate this boundary",
+      ],
+      tips: [
+        "The first boundary is the hardest - start small",
+        "It takes repetition to trust your own boundaries",
+      ],
+      bestTiming: "today",
+      frequency: "as-needed for new boundaries",
+      integratesWithPractice: ["journaling", "authentic-speaking"],
+      supportiveReminder:
+        "Your boundaries are a form of love - for yourself and for others. Boundaries make relationships healthier.",
+    },
+  ],
+};
+
 // ============= RECOMMENDATION GENERATOR =============
 
 export function generateHealingRecommendation(
@@ -297,14 +570,16 @@ export function generateHealingRecommendation(
   coreIdentity: CoreIdentity
 ): HealingRecommendation[] {
   const recommendations: HealingRecommendation[] = [];
+  const isEn = isEnlEdition();
+  const library = isEn ? healingLibraryEN : healingLibrary;
 
   // ---------------------------------
   // Prioritize by exhaustion level
   // ---------------------------------
 
   if (analysis.emotionalExhaustion === "critical") {
-    recommendations.push(...(healingLibrary.rest || []));
-    recommendations.push(...(healingLibrary.grounding || []));
+    recommendations.push(...(library.rest || []));
+    recommendations.push(...(library.grounding || []));
     return recommendations.slice(0, 2); // Only suggest 2 top priorities
   }
 
@@ -313,20 +588,20 @@ export function generateHealingRecommendation(
   // ---------------------------------
 
   if (analysis.emotionalTone === "grief") {
-    recommendations.push(...(healingLibrary.release || []));
-    recommendations.push(...(healingLibrary.presence || []));
+    recommendations.push(...(library.release || []));
+    recommendations.push(...(library.presence || []));
   } else if (analysis.emotionalTone === "anger") {
-    recommendations.push(...(healingLibrary.release || []));
-    recommendations.push(...(healingLibrary.boundaries || []));
+    recommendations.push(...(library.release || []));
+    recommendations.push(...(library.boundaries || []));
   } else if (analysis.emotionalTone === "fear") {
-    recommendations.push(...(healingLibrary.grounding || []));
-    recommendations.push(...(healingLibrary.presence || []));
+    recommendations.push(...(library.grounding || []));
+    recommendations.push(...(library.presence || []));
   } else if (analysis.emotionalTone === "joy") {
-    recommendations.push(...(healingLibrary.presence || []));
-    recommendations.push(...(healingLibrary.authenticity || []));
+    recommendations.push(...(library.presence || []));
+    recommendations.push(...(library.authenticity || []));
   } else if (analysis.emotionalTone === "confusion") {
-    recommendations.push(...(healingLibrary.presence || []));
-    recommendations.push(...(healingLibrary.authenticity || []));
+    recommendations.push(...(library.presence || []));
+    recommendations.push(...(library.authenticity || []));
   }
 
   // ---------------------------------
@@ -334,28 +609,28 @@ export function generateHealingRecommendation(
   // ---------------------------------
   if (coreIdentity.lifePath === 4 || coreIdentity.lifePath === 8) {
     if (!recommendations.some((r) => r.id.includes("boundaries"))) {
-      recommendations.push(...(healingLibrary.boundaries || []));
+      recommendations.push(...(library.boundaries || []));
     }
   }
 
   if (coreIdentity.humanDesign.toLowerCase().includes("generator")) {
     if (!recommendations.some((r) => r.id.includes("grounding"))) {
-      recommendations.push(...(healingLibrary.grounding || []));
+      recommendations.push(...(library.grounding || []));
     }
   }
 
   if (coreIdentity.arcanaCenter >= 15) {
     if (!recommendations.some((r) => r.id.includes("authenticity"))) {
-      recommendations.push(...(healingLibrary.authenticity || []));
+      recommendations.push(...(library.authenticity || []));
     }
   }
 
   if (analysis.recurringWounds.includes("money block")) {
-    recommendations.push(...(healingLibrary.grounding || []));
+    recommendations.push(...(library.grounding || []));
   }
 
   if (analysis.recurringWounds.includes("self-worth")) {
-    recommendations.push(...(healingLibrary.authenticity || []));
+    recommendations.push(...(library.authenticity || []));
   }
 
   // ---------------------------------
@@ -367,7 +642,7 @@ export function generateHealingRecommendation(
     analysis.nervousSystemDetection === "activated"
   ) {
     if (!recommendations.some((r) => r.id.includes("grounding"))) {
-      recommendations.push(...(healingLibrary.grounding || []));
+      recommendations.push(...(library.grounding || []));
     }
   }
 

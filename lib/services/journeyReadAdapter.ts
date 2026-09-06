@@ -1,4 +1,5 @@
 import type { JourneyDailyRecord } from "@/lib/types/journeyDailyRecord";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export type JourneyActivityStatus = "completed" | "started" | "skipped" | "available";
 
@@ -34,6 +35,7 @@ function activityIdentity(type: string, id: string, title: string): string {
 }
 
 export function normalizeJourneyRecord(record: JourneyDailyRecord): JourneyDayViewModel {
+  const isEn = isEnlEdition();
   const v4 = wellness(record);
   const recommendations = (v4.recommendations || {}) as Record<string, any>;
   const practices = Array.isArray(v4.practices) ? v4.practices : [];
@@ -47,7 +49,7 @@ export function normalizeJourneyRecord(record: JourneyDailyRecord): JourneyDayVi
     activities.set(activityIdentity("recommendation", id, item.title || id), {
       id: `recommendation:${id}`,
       title: item.title || id,
-      type: `Rekomendasi ${item.period || "hari ini"}`,
+      type: isEn ? `Recommendation ${item.period || "today"}` : `Rekomendasi ${item.period || "hari ini"}`,
       status,
       timestamp: item.completedAt || item.acknowledgedAt || item.displayedAt,
       source: "v4",
@@ -61,7 +63,7 @@ export function normalizeJourneyRecord(record: JourneyDailyRecord): JourneyDayVi
     activities.set(key, {
       id: `practice:${id}`,
       title: String(item.practiceTitle || id),
-      type: String(item.practiceType || "Praktik"),
+      type: String(item.practiceType || (isEn ? "Practice" : "Praktik")),
       status: item.completed ? "completed" : item.started ? "started" : item.skipped ? "skipped" : "available",
       timestamp: item.completedAt,
       source: existing ? "mixed" : "v4",
@@ -100,7 +102,7 @@ export function normalizeJourneyRecord(record: JourneyDailyRecord): JourneyDayVi
   return {
     localDate: record.appDate || record.date,
     sourceTypes: [legacy ? "legacy" : null, v4Present ? "v4" : null].filter((item): item is "legacy" | "v4" => Boolean(item)),
-    conditionSummary: context.explanation || context.primaryCondition || record.dailyScanSummary || record.catatanSummary || "Catatan faktual tersedia.",
+    conditionSummary: context.explanation || context.primaryCondition || record.dailyScanSummary || record.catatanSummary || (isEn ? "Factual notes available." : "Catatan faktual tersedia."),
     activeContexts: [context.activeContext, ...(Array.isArray(v4.checkIn?.lifeSituation) ? v4.checkIn.lifeSituation : [])].filter((item): item is string => Boolean(item)),
     activities: [...activities.values()],
     reflection: record.innerworkCompletion?.reflectionResult || record.innerworkCompletion?.reflectionResponse || record.catatanMainDirection,

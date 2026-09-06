@@ -10,6 +10,7 @@ import { dailyStateRepository } from "@/lib/repositories/dailyStateRepository";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { normalizeJournalEntryPrivacy } from "@/lib/journal/privacy";
 import type { JournalEntryPrivacy } from "@/lib/journal/privacy";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export const JOURNAL_STORAGE_KEY = "bhumiJournalEntries";
 export const JOURNAL_DRAFT_PREFIX = "bhumiJournalDraft";
@@ -200,6 +201,89 @@ const THEME_BANK: Record<JournalTheme, { dashboardQuestion: string; questions: s
   },
 };
 
+const THEME_BANK_EN: Record<JournalTheme, { dashboardQuestion: string; questions: string[] }> = {
+  "Inner Child": {
+    dashboardQuestion: "When was the last time you felt you had to be strong when you actually wanted to be heard?",
+    questions: [
+      "What childhood memory still frequently comes to your mind?",
+      "What did your younger self want to hear most?",
+      "Which part of you is still trying to get validation?",
+    ],
+  },
+  "Love Block": {
+    dashboardQuestion: "What pattern often appears when you want to love or receive love?",
+    questions: [
+      "What usually makes you hold back when you want to open your heart?",
+      "When do you feel love must be fought for by sacrificing yourself?",
+      "What form of love actually feels safe for you?",
+    ],
+  },
+  "Money Block": {
+    dashboardQuestion: "What old belief about money still influences your choices today?",
+    questions: [
+      "What statement about money did you hear most often growing up?",
+      "Where do you feel guilty when receiving more?",
+      "What does financial security mean if it doesn't need to be proven to anyone?",
+    ],
+  },
+  "Repeating Patterns": {
+    dashboardQuestion: "What pattern feels repeated in your life, even if the situation looks different?",
+    questions: [
+      "What situation lately feels like a repetition from the past?",
+      "What automatic response usually appears before you get to choose consciously?",
+      "What small choice can break that pattern today?",
+    ],
+  },
+  "Self Worth": {
+    dashboardQuestion: "Where are you still measuring your self-worth from other people's responses?",
+    questions: [
+      "When do you feel you have to be useful to remain worthy of love?",
+      "What quality of yours do you often diminish?",
+      "How would it feel if your self-worth didn't need to be proven today?",
+    ],
+  },
+  "Family Dynamics": {
+    dashboardQuestion: "What family role is still carried over in the way you make decisions?",
+    questions: [
+      "What role did you take most often in your family?",
+      "Which part of that role still feels heavy until now?",
+      "What healthy boundary do you want to build without losing love?",
+    ],
+  },
+  "Karmic Lessons": {
+    dashboardQuestion: "What lesson keeps coming until you truly listen to it?",
+    questions: [
+      "What life theme feels like it keeps repeating in your journey?",
+      "What is life currently asking you to release or learn?",
+      "If this experience were a teacher, what message does it bring?",
+    ],
+  },
+  "Ancestral Patterns": {
+    dashboardQuestion: "What ancestral pattern do you want to honor without having to continue it?",
+    questions: [
+      "What family pattern do you notice living in your decisions?",
+      "What burden might not be entirely yours?",
+      "What inner legacy do you want to transform into wisdom?",
+    ],
+  },
+  Forgiveness: {
+    dashboardQuestion: "What are you ready to release without having to justify what happened?",
+    questions: [
+      "Who or which part of yourself is still waiting for forgiveness?",
+      "What pain have you been holding onto just to feel safe?",
+      "What form of letting go feels realistic for today?",
+    ],
+  },
+  "Purpose & Calling": {
+    dashboardQuestion: "What calling is slowly asking for a larger space in your life?",
+    questions: [
+      "What activity makes you feel more alive and connected?",
+      "What fear arises when you imagine living more aligned with your calling?",
+      "What small step can you take without waiting for everything to be perfect?",
+    ],
+  },
+};
+
 const THEMES = Object.keys(THEME_BANK) as JournalTheme[];
 
 function getDateSeed(date: Date): number {
@@ -211,35 +295,33 @@ export function getTodayJournalPrompt(
   previousEntries: LocalJournalEntry[] = [],
   date = new Date(),
 ): JournalPrompt {
+  const isEn = isEnlEdition();
   const lifePathSeed = context.lifePathNumber ?? 0;
   const arcanaSeed = context.arcanaCenter ?? 0;
   const designSeed = context.humanDesignType?.length ?? 0;
   const previousSeed = previousEntries.length;
   const themeIndex = (getDateSeed(date) + lifePathSeed + arcanaSeed + designSeed + previousSeed) % THEMES.length;
   const theme = THEMES[themeIndex];
+  const bank = isEn ? THEME_BANK_EN : THEME_BANK;
 
   return {
     theme,
-    ...THEME_BANK[theme],
+    ...bank[theme],
   };
 }
 
-// W1: honest generic journal state used when no Wellness Section 1-2 context is present.
-// This is NOT a fabricated theme/context — it is a neutral free-writing prompt that keeps
-// the legacy question/insight UI working without implying a Section-2 handoff.
-export const GENERIC_JOURNAL_THEME = "Refleksi Bebas" as const;
+export const GENERIC_JOURNAL_THEME = "Refleksi Bebas";
 
 export function createGenericJournalPrompt(
   previousEntries: LocalJournalEntry[] = [],
 ): JournalPrompt {
-  // Reuse the same reflective question bank as today's seeded prompt so legacy behavior
-  // (questions + AI insight) is preserved, but present a neutral theme label.
+  const isEn = isEnlEdition();
   const seeded = getTodayJournalPrompt(
     { birthDate: null, sunSign: null, lifePathNumber: 0, humanDesignType: null, arcanaCenter: 0, natalChart: null, destinyMatrix: null },
     previousEntries,
   );
   return {
-    theme: GENERIC_JOURNAL_THEME,
+    theme: isEn ? "Free Reflection" : GENERIC_JOURNAL_THEME,
     dashboardQuestion: seeded.dashboardQuestion,
     questions: seeded.questions,
   };
@@ -374,8 +456,9 @@ export function generateLocalJournalInsight(input: {
   bodySignals: string[];
   context: BlueprintJournalContext;
 }): JournalInsight {
+  const isEn = isEnlEdition();
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: "id",
+    language: isEn ? "en" : "id",
     profile: null,
     blueprint: {
       lifePath: { number: input.context.lifePathNumber },
@@ -385,6 +468,17 @@ export function generateLocalJournalInsight(input: {
       natalChart: input.context.natalChart,
     },
   });
+
+  if (isEn) {
+    const bodyLine = input.bodySignals.length > 0
+      ? `Your body is signaling through ${input.bodySignals.join(", ").toLowerCase()}, so this process deserves to be approached gently.`
+      : "Your body has not shown specific signals yet, and that is also valuable information.";
+
+    return {
+      insight: `From your writing, the theme of ${input.theme} seems to be asking for space to be heard without judgment. Today's synthesis points toward ${synthesis.practiceThemes.reflection}, so you may be learning to respond to life from awareness rather than old habits. ${bodyLine}`,
+      tomorrowFocus: `Tomorrow, pay attention to moments when the emotion "${input.emotionalState || "mixed feelings"}" arises. Take a small pause before acting, then ask: what need do I actually want to hear right now?`,
+    };
+  }
 
   const bodyLine = input.bodySignals.length > 0
     ? `Tubuhmu memberi sinyal melalui ${input.bodySignals.join(", ").toLowerCase()}, jadi proses ini layak didekati dengan lembut.`

@@ -2,28 +2,31 @@
 **Comprehensive Localization & Surface Classification Ledger**
 
 ```text
-STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 DONE (SPRINTS 1–4 COMPLETE; SPRINT 5 BLOCKED)
+STATUS                          = GATE_108_CDI CLOSED — SPRINTS 1–5 COMPLETE · SPRINT 6 PENDING FOUNDER REVIEW
 BASELINE                        = BUILD 107 (versionCode 107, versionName 5.0.7)
 TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
 BLUEPRINT_ENGINES_AUDITED       = 11
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
+BUILD_108_ENL_IMPLEMENTATION_STATUS = IN_PROGRESS
+GATE_108_CDI                    = CLOSED
+CDI_BLOCKERS_OPEN              = 0
+SPRINT_108_05                  = COMPLETE
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = STOP_FOR_FOUNDER_REVIEW
 ```
 
-> **CORE DATA INTEGRITY GATE (2026-09-06).** Three confirmed production data-integrity defects
-> (Schumann, Human Design advanced variables, Chiron) gate Sprint 5. Root causes CONFIRMED and
-> **Founder-approved** in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron
-> ephemeris) and CDI-108-01A (timezone canonicalization) are complete**; **CDI-108-02 client
-> integrity/recovery safety is done (§B.11)**; service extras remain source-dependent and
-> backfill NOT READY. CDI-108-03 source research + architecture decision are COMPLETE (2026-09-07):
-> no qualifying genuine Schumann source exists, `SCHUMANN_API_URL` is unchanged, and a Founder
-> decision (D1/D2/D3) is required — see `BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`.
-> ENL status is unchanged; §8 is the data-integrity ledger for the affected surfaces/engines.
+> **CORE DATA INTEGRITY GATE — READY_TO_CLOSE (final disposition 2026-09-07).** Three confirmed
+> production data-integrity defects (Schumann, Human Design advanced variables, Chiron) blocked
+> Sprint 5. Root causes CONFIRMED, **Founder-approved**, and **dispositioned in
+> `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md` §G**. **CDI-108-01 (Chiron) + CDI-108-01A (timezone) +
+> CDI-108-02 (HD client integrity / recovery safety, §B.11) are DONE. CDI-108-03 (Schumann) is
+> D1 APPROVED — `ACCEPTED_UNAVAILABLE` / fail-closed PASS; `SCHUMANN_API_URL` unchanged; future
+> live-source research → `SPRINT-108-ENV2`.** `CDI_BLOCKERS_OPEN = 0`. All four defects resolve to
+> honest, non-fabricated states; remaining items are ACCEPTED_DEFERRED / REQUIRES_FOUNDER_OPS /
+> POST_RELEASE_BACKFILL (none blocks closure). `SPRINT_108_05` unblocks on Founder ratification of
+> gate closure. ENL status is unchanged; §8 is the data-integrity ledger for the affected surfaces.
 
 ---
 
@@ -65,7 +68,7 @@ and hybrid architectures, preferring provider replacement without Android client
 Preserve Build 107 HD convergence/admin and diagnostics removal, security/billing, completed
 Chiron/timezone CDI, Schumann fail-closed behavior, and Environment provenance separation.
 
-`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`. This addendum does not close CDI or start ENV2.
+`NEXT_SAFE_ACTION = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05`. This addendum does not close CDI or start ENV2.
 
 ---
 
@@ -251,31 +254,36 @@ Audited 105 components in `components/`:
 
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 RESEARCH COMPLETE (NO QUALIFYING SOURCE; FOUNDER DECISION D1/D2/D3); COMPLETED CDI PRESERVED
+GATE_108_CDI                    = READY_TO_CLOSE — FOUNDER RATIFICATION PENDING (CDI_BLOCKERS_OPEN = 0; CDI audit §G); CDI-108-03 = D1 ACCEPTED_UNAVAILABLE
 SPRINT_108_ENV2                 = PLANNED
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION                = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05
 ```
 
 ---
 
 ## 8. Core Data Integrity Ledger (2026-09-06)
 
-**Current checkpoint (2026-09-07):** completed Chiron/timezone and HD client/recovery work is
-preserved; HD service extras remain source-dependent and backfill NOT READY. CDI-108-03 source
-research + architecture decision are COMPLETE — no qualifying genuine Schumann source exists,
-`SCHUMANN_API_URL` unchanged, Founder decision D1/D2/D3 required
-(`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`). The original defect descriptions
-below are historical audit evidence; HD implementation results in CDI audit §B.11 supersede
-their pre-fix status. They are not instructions to reopen completed CDI work.
+**Final CDI disposition (2026-09-07, CDI audit §G):** `GATE_108_CDI = READY_TO_CLOSE`,
+`CDI_BLOCKERS_OPEN = 0`. Completed Chiron/timezone and HD client/recovery work is preserved.
+**CDI-108-03 = D1 APPROVED — `ACCEPTED_UNAVAILABLE` / fail-closed PASS; `SCHUMANN_API_URL`
+unchanged; future live-source research → `SPRINT-108-ENV2`.** Remaining items and their
+classification: **ACCEPTED_DEFERRED** — HD Cognition legacy re-fetch (new-user PASS) · HD
+Color/Tone/Base (honest source-unavailable) · HD service runtime validation (Sprint 8 /
+`GATE_108_FRA §3.8`) · Schumann live-source restoration (`SPRINT-108-ENV2`). **REQUIRES_FOUNDER_OPS**
+— genuine Placidus service deployment (CDI-C1) · diagnostic-emitting HD engine for Color/Tone/Base.
+**POST_RELEASE_BACKFILL** (CDI-D1) — HD legacy advanced-variable backfill · legacy natal
+Chiron/timezone backfill. None blocks gate closure. The original defect descriptions below are
+historical audit evidence; CDI audit §B.11 / §C.8 / §C.9 / §A.6 / §G supersede their pre-fix
+status. They are not instructions to reopen completed CDI work.
 
-Read-only root-cause audit: **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. All three root causes
-CONFIRMED. Classification below is orthogonal to the ENL localisation classification in §2–§5.
+Read-only root-cause audit: **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. All root causes CONFIRMED
+and dispositioned. Classification below is orthogonal to the ENL localisation classification in §2–§5.
 
 | Surface / Engine | Data-Integrity Status | Root cause (confirmed) | Cohorts affected | Blocker |
 |---|---|---|---|---|
-| `app/dashboard/environment/page.tsx` · `components/dashboard/EnvironmentContextCard.tsx` · `lib/environment/{schumann,service}.ts(x)` | **DATA_SOURCE_DEAD — CDI-108-03 RESEARCH COMPLETE 2026-09-07** | `SCHUMANN_API_URL` = `https://schumannresonancelive.com/api/data.php` returns **HTTP 404** (all JSON paths removed; successor is JPEG-only). Client-only fetch (static export forbids a proxy). Fresh installs have no cache → honest "Data belum tersedia". Pre-existing since ≥ Build 106 (DS-E1). **No qualifying genuine SR source exists** (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md`): Tomsk upstream cert-expired + image-only; HeartMath GCMS band-power/undocumented/unlicensed/empty; `gci-api.com` DNS-dead. Direct client swap impossible; `SCHUMANN_API_URL` unchanged. | New + all legacy (cohort-independent; no per-user data) | **FOUNDER DECISION D1/D2/D3.** CDI-A1 research done / blocked (no source); CDI-A2 blocked (CDI-A1 + backend authz); **CDI-A3 DONE** (regression-locked, `tests/unit/build108-cdi03-schumann-source-integrity.test.ts`) |
+| `app/dashboard/environment/page.tsx` · `components/dashboard/EnvironmentContextCard.tsx` · `lib/environment/{schumann,service}.ts(x)` | **CDI-108-03 = D1 APPROVED — ACCEPTED_UNAVAILABLE / FAIL-CLOSED PASS (2026-09-07)** | `SCHUMANN_API_URL` = `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**; **no qualifying genuine SR source exists anywhere** (`BUILD_108_CDI_108_03_SCHUMANN_SOURCE_RESTORATION.md` / CDI audit §A.6): successor JPEG-only; Tomsk upstream cert-expired + image-only; HeartMath GCMS band-power/undocumented/unlicensed/empty; `gci-api.com` DNS-dead. Client-only fetch (static export forbids a proxy). Fresh installs → honest "Data belum tersedia". Pre-existing since ≥ Build 106 (DS-E1). No fabricated values. | New + all legacy (cohort-independent; no per-user data) | **NONE (gate).** `CDI_108_03_DATA_INTEGRITY = PASS`, `CDI_108_03_FAIL_CLOSED = PASS`. `SCHUMANN_API_URL` unchanged; no proxy; no NOAA/USGS/weather inference; no JPEG-pixel derivation. CDI-A3 DONE + regression-locked (`tests/unit/build108-cdi03-schumann-source-integrity.test.ts`, 16 checks). Future live-source research → `SPRINT-108-ENV2` (ACCEPTED_DEFERRED). |
 | Same — Earth Activity / Geomagnetic cards | **HEALTHY (verified not fabricated)** | `dataState === "available"` / `source.status === "available"` guards on both render surfaces; `V5_DECISION_LOG` D-#509 forbids fabricated `Stabil`. `deriveEnvironmentBands` defaults a missing Schumann band to `quiet` but that only feeds the spiritual block, gated on `hasSchumannObservation`. | — | (preserved + regression-locked, CDI-A3) |
 | `app/blueprint/human-design/page.tsx` — Type/Strategy/Authority/Profile/Definition/Centers/Gates/Channels | **HEALTHY** | Maps correctly from `services/humandesign-api/main.py`; Build 107 convergence intact (`getHdState` CANONICAL ⇔ `hdEngineVersion === "gaia-hd-v1"`). | — | — |
 | `components/blueprint/HumanDesignBodygraphLite.tsx` · `lib/humandesign/hdkitAdapter.ts` · `lib/repositories/blueprintRepository.ts` · `scripts/mass-recover-hd.ts` | **ADVANCED_LAYER_BROKEN — refined against the LIVE contract (audit §B.8)** | The **deployed** engine DOES return top-level `digestion:"Active"` / `environment:"Observer"` / `motivation:"Receptive"` (arrow `def_type`) + `cognition:"Outer Vision"` (6-fold) + `variables.short_code:"PRR DLR"`; the adapter / normalizer / persistence / the "Advanced Variables" grid keys handle these correctly. Confirmed defects: **(a)** `perspective` — adapter reads an absent top-level key instead of deriving from `variables.bottom_right`; **(b)** "Variables Arrows" — `HumanDesignBodygraphLite.tsx:203` reads `variables.variable \|\| variables.value` instead of the stored `variables.short_code`; **(c)** per-planet Color/Tone/Base — the deployed engine never emits a `diagnostic` block and IGNORES `debug` (not obtainable from this engine); **(d)** "Not stored" for the present fields on real users = **legacy blueprints** predating the engine field (local migration from stored `variables.<arrow>.def_type`, else re-fetch; `cognition` = re-fetch only); **(e)** `mass-recover-hd.ts` still writes `centers` as a raw array + omits `diagnostic`/activations/`openCenters`; **(f)** no explicit `perspective:` coercion in `normalizeBlueprint`. | New (perspective + arrows-display) + `mass-recover-hd` cohort + pre-engine-field legacy | CDI-B1 (perspective derive) / B2 (short_code UI key) / B3 (normalizer + mass-recover shape) / B6 (Color/Tone/Base needs another engine) |

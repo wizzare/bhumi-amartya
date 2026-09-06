@@ -4,8 +4,13 @@
 
 ```text
 TASK_ID                    = CDI-108-03-SCHUMANN-SOURCE-RESTORATION
-PARENT_GATE                = GATE_108_CDI  (IN_PROGRESS)
-CDI_108_03_SCHUMANN        = RESEARCH_COMPLETE — NO QUALIFYING SOURCE FOUND — FOUNDER DECISION REQUIRED
+PARENT_GATE                = GATE_108_CDI  (READY_TO_CLOSE — Founder ratification pending; see CDI audit §G)
+CDI_108_03_SCHUMANN        = D1 APPROVED (2026-09-07) — ACCEPTED_UNAVAILABLE / fail-closed PASS
+CDI_108_03_RESEARCH        = COMPLETE
+CDI_108_03_DATA_INTEGRITY  = PASS
+CDI_108_03_SOURCE_RESTORATION = ACCEPTED_UNAVAILABLE
+CDI_108_03_FAIL_CLOSED     = PASS
+FUTURE_SOURCE_RESEARCH     = SPRINT-108-ENV2
 PRODUCTION_BASELINE        = BUILD 107 (versionCode 107, versionName 5.0.7, commit d2ecb5e)
 WORKTREE                   = C:\tmp\bhumi-build106-recovery
 BRANCH                     = recovery/build106-product-continuity
@@ -17,8 +22,14 @@ FIRESTORE_MUTATIONS        = 0
 EXTERNAL_PROBES            = read-only HTTPS GET/OPTIONS to public candidate endpoints only (no auth, no PII)
 SCHUMANN_API_URL_CHANGED   = NO
 PROXY_OR_BACKEND_BUILT     = NO
-NEXT_SAFE_ACTION           = FOUNDER_DECISION_ON_CDI_108_03_OPTIONS  (then CONTINUE_CURRENT_GATE_108_CDI)
+NEXT_SAFE_ACTION           = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE -> RESUME SPRINT-108-05
 ```
+
+> **Founder decision — D1 APPROVED (2026-09-07).** Accept Schumann fail-closed for Build 108
+> because no qualifying trustworthy source exists. Do not replace `SCHUMANN_API_URL` with an
+> unqualified provider; do not build/deploy a proxy; do not infer Schumann from NOAA/USGS/weather;
+> do not derive numeric Schumann observations from JPEG/spectrogram pixels. Future source-restoration
+> research moves to `SPRINT-108-ENV2`. §3.3 options D2/D3 are **not** taken.
 
 > **Scope discipline.** This document is research + an architecture recommendation. `SCHUMANN_API_URL`
 > is unchanged. No proxy, ingestion job, or backend was created or deployed. No production Firestore
@@ -334,14 +345,14 @@ convergence, admin withdrawal, orphan-route removal, or static-surface guards.
 CDI_108_01_CHIRON             = COMPLETE
 CDI_108_01A_TIMEZONE          = COMPLETE
 CDI_108_02_HUMAN_DESIGN       = DONE (client integrity / recovery safety); service extras source-dependent
-CDI_108_03_SCHUMANN           = RESEARCH_COMPLETE — NO QUALIFYING SOURCE — FOUNDER DECISION REQUIRED (D1 / D2 / D3, §3.3)
-CDI_D1_LEGACY_BACKFILL        = PENDING — NOT AUTHORIZED
-GATE_108_CDI                  = IN_PROGRESS
-SPRINT_108_05                 = BLOCKED
-SPRINT_108_ENV2               = PLANNED
+CDI_108_03_SCHUMANN           = D1 APPROVED — ACCEPTED_UNAVAILABLE / fail-closed PASS (2026-09-07)
+CDI_D1_LEGACY_BACKFILL        = PENDING — NOT AUTHORIZED (POST_RELEASE_BACKFILL)
+GATE_108_CDI                  = READY_TO_CLOSE — FOUNDER RATIFICATION PENDING (CDI_BLOCKERS_OPEN = 0; see CDI audit §G)
+SPRINT_108_05                 = BLOCKED → UNBLOCKS ON GATE_108_CDI CLOSURE RATIFICATION
+SPRINT_108_ENV2               = PLANNED (now also owns future Schumann live-source research)
 GATE_108_FRA                  = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION              = FOUNDER_DECISION_ON_CDI_108_03 → CONTINUE_CURRENT_GATE_108_CDI
+NEXT_SAFE_ACTION              = FOUNDER_RATIFY_GATE_108_CDI_CLOSURE → RESUME SPRINT-108-05
 PRODUCTION_FIRESTORE_WRITE    = NOT AUTHORIZED
 PRODUCTION_BACKFILL           = NOT AUTHORIZED
 BACKEND_DEPLOY                = NOT AUTHORIZED

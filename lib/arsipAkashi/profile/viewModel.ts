@@ -3,6 +3,8 @@ import { buildInsightModel, renderSoulLetters, sanitizeNarrative } from "../synt
 import { renderReadings } from "../readings/readingEngine";
 import { READING_COUNTS } from "../readings/definitions";
 
+import { isEnlEdition } from "@/lib/config/edition";
+
 export interface ArsipAkashiProfileRoom {
   id: string;
   title: string;
@@ -114,20 +116,21 @@ export function buildArsipAkashiProfileViewModel(input: ArsipAkashiInput): Arsip
     }
   }
 
+  const isEn = isEnlEdition();
   // Surat Jiwa
   const soulLetters = letters.map((l, i) => ({
     id: l.letterId,
     title: l.title,
     subtitle: l.letterId === "letter-to-past-self"
-      ? "Untuk bagian dirimu yang pernah berjuang dan bertahan."
+      ? (isEn ? "For the part of you that once struggled and survived." : "Untuk bagian dirimu yang pernah berjuang dan bertahan.")
       : l.letterId === "letter-to-present-self"
-        ? "Untuk memahami fase yang sedang kamu jalani sekarang."
-        : "Dari bagian dirimu yang telah bertumbuh dan melihat lebih jernih.",
+        ? (isEn ? "To understand the phase you're currently going through." : "Untuk memahami fase yang sedang kamu jalani sekarang.")
+        : (isEn ? "From the part of you that has grown and sees more clearly." : "Dari bagian dirimu yang telah bertumbuh dan melihat lebih jernih."),
     paragraphs: l.paragraphs,
     deepExplanation: l.paragraphs.join("\n\n"),
     practicalReflection: l.letterId === "letter-to-past-self"
-      ? "Bagian mana dari dirimu di masa lalu yang hari ini ingin kamu temui dengan lebih lembut?"
-      : "Satu pilihan kecil apa yang dapat kamu ambil hari ini untuk mendekat pada dirimu di masa depan?",
+      ? (isEn ? "Which part of your past self would you like to meet more gently today?" : "Bagian mana dari dirimu di masa lalu yang hari ini ingin kamu temui dengan lebih lembut?")
+      : (isEn ? "What one small choice can you make today to move closer to your future self?" : "Satu pilihan kecil apa yang dapat kamu ambil hari ini untuk mendekat pada dirimu di masa depan?"),
     order: i + 1,
   }));
 
