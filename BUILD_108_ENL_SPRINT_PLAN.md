@@ -2,14 +2,20 @@
 **Data-Driven Page & Surface Implementation Roadmap**
 
 ```text
-STATUS                          = NOT_STARTED (PLAN DERIVED FROM READ-ONLY AUDIT)
+STATUS                          = PAUSED AFTER SPRINT 4 — CORE DATA INTEGRITY GATE OPEN
 PRODUCTION_BASELINE             = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
-DERIVED_SPRINT_COUNT            = 8 SPRINTS
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
+DERIVED_SPRINT_COUNT            = 8 SPRINTS (+ 1 pre-Sprint-5 data-integrity gate)
+SPRINTS_COMPLETE               = 1, 2, 3, 4
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
+
+> **PAUSE NOTICE (2026-09-06).** Sprints 1–4 are complete. **Sprint 5 is NOT started.** A mandatory
+> data-integrity gate (**GATE-CDI**, below) now sits between Sprint 4 and Sprint 5. Root causes for
+> the three confirmed production defects are recorded in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**
+> and all are CONFIRMED. No `CDI-*` fix is implemented; no production data has been read or written.
 
 ---
 
@@ -174,8 +180,23 @@ flowchart TD
 
 ---
 
+### GATE-CDI: Core Data Integrity Gate (between Sprint 4 and Sprint 5)
+- **GATE_ID:** `GATE-108-CDI`
+- **STATUS:** `OPEN` — read-only root-cause audit complete (`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`); all three root causes CONFIRMED; Founder review pending.
+- **TRIGGER:** Founder confirmed three production data-integrity defects from real users that Build 108 must not inherit.
+- **BLOCKERS (must be dispositioned by the Founder before Sprint 5 proceeds):**
+  - **A — Schumann.** Provider endpoint `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**. Client-only fetch; static export forbids a proxy. Fresh installs have no cache → honest "Data belum tersedia". Pre-existing since ≥ Build 106 (DS-E1). **No fabricated "healthy" values** — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` are genuine USGS/NOAA readings, guarded on `dataState`/`source.status === "available"`. → **CDI-A1** (choose replacement source), **CDI-A2** (Bhumi-owned proxy if not CORS-open), **CDI-A3** (keep honest-unavailable UI + `deriveEnvironmentBands` gate).
+  - **B — Human Design advanced variables.** Deployed engine `services/humandesign-api/main.py` `POST /calculate` computes only the 4 binary Variable arrows (`variables` + `short_code`); never derives PHS Digestion/Environment/Motivation/Perspective/Cognition; withholds raw Color/Tone/Base unless `debug=true` (never sent). `variables.short_code` read against wrong UI keys in `HumanDesignBodygraphLite.tsx`. `calculateAdvancedVariables()` is orphaned. `scripts/mass-recover-hd.ts` drops `diagnostic`/activations and corrupts `centers`. HD **core** identity (type/strategy/authority/profile) is healthy; Build 107 convergence intact. → **CDI-B1** (engine emits PHS values + raw Color/Tone/Base without debug, or wire `calculateAdvancedVariables()`), **CDI-B2** (fix UI key read + English `presentation.ts` variables), **CDI-B3** (fix `mass-recover-hd` shape + add `perspective` to `normalizeBlueprint`), **CDI-B4** (localise HD variable/style narratives — `variableIntelligence.ts`, `styleEngine.ts` — currently Indonesian-only), **CDI-B5** (fix "Story for this section is being prepared." on CANONICAL types via `executeHumanMeaningRuntime` gating).
+  - **C — Chiron.** Swiss Ephemeris `/calculate-astrology` (`swe.CHIRON`) unreachable in production — `HUMAN_DESIGN_SERVICE_URL` undefined in the static-export bundle → `http://localhost:8000` → blocked by the `https://localhost` WebView; no `/api` astrology proxy. Silent local fallback derives Chiron from a **linear ephemeris** (`251.35 + days·0.019777`); `astronomy-engine` has no Chiron body → sign/degree/house frequently wrong. `buildApproximatePlacidusHouses` returns Equal-House cusps stored as `placidusHouses`; Chiron never re-derived on read. → **CDI-C1** (real ephemeris: deploy the service + `NEXT_PUBLIC` URL / `/api` proxy, or a vetted TS Chiron ephemeris; stop mislabelling Equal houses), **CDI-C2** (re-derive on read or add an "approximate/unverified" provenance label), **CDI-C3** (carry a real IANA timezone from city selection).
+  - **D — Cross-user / legacy.** Post-fix, non-destructive, convergence-safe production **backfill** for HD advanced variables + Chiron across Build 103–107 cohorts. → **CDI-D1** — Founder-authorised and executed **separately**; not part of this gate's code work; **not authorised now**.
+- **BUILD_107_GUARDS:** every `CDI-*` fix must leave the Build 107 inheritance checklist (`BUILD_108_ENL_MASTER_SOT.md §3`) 100% intact — especially: a failed HD recalculation must never overwrite a CANONICAL stored `type`.
+- **EXIT_GATE:** Founder reviews `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md` and rules on sequencing — (a) land the `CDI-*` engine/adapter/presentation fixes before Sprint 5, or (b) resume Sprint 5 in parallel with a dedicated data-integrity track. `CDI-D1` (production backfill) stays deferred until its own explicit authorisation.
+
+---
+
 ### SPRINT 5: Profile, Journey & Journal Hubs
 - **SPRINT_ID:** `SPRINT-108-05-PROFILE-JOURNEY-JOURNAL`
+- **STATUS:** `BLOCKED` — cannot start until `GATE-108-CDI` is dispositioned by the Founder.
 - **PAGES:**
   - `app/profile/page.tsx` (Profile Hub)
   - `app/profile/[section]/page.tsx` (Profile Section Detail)
@@ -328,8 +349,16 @@ flowchart TD
 ## 3. Governance Invariant
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+SPRINTS_COMPLETE               = 1, 2, 3, 4
+GATE-108-CDI                   = OPEN (audit complete; Founder review pending)
+SPRINT_5                       = BLOCKED
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 ```
 
-**MANDATORY RULE:** No sprint execution may begin until the Founder reviews and approves this implementation plan.
+**MANDATORY RULES:**
+- No Sprint 5+ execution until `GATE-108-CDI` is dispositioned by the Founder.
+- No `CDI-*` fix implemented until the Founder reviews `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`.
+- No production Firestore read/write; no HD/natal backfill or migration run; no version bump,
+  build, sign, deploy, or upload.
+- Every `CDI-*` fix must preserve 100% of the Build 107 inheritance checklist.

@@ -2,7 +2,7 @@
 **Bhumi Amartya — Dedicated English-Language Edition & Architecture**
 
 ```text
-STATUS                          = IN_PROGRESS (SPRINT-108-02-DASHBOARD COMPLETE)
+STATUS                          = PAUSED (SPRINT 4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 INITIATIVE                      = BUILD 108 ENL
@@ -10,10 +10,19 @@ PURPOSE                         = Dedicated English-Language Edition / Global Re
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
-BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_02_COMPLETE
-NEXT_SAFE_ACTION                = SPRINT_03_BLUEPRINT_CORE
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
+
+> **PAUSE NOTICE (2026-09-06).** Sprint 4 is complete. Sprint 5 is **NOT** started. The Founder
+> confirmed three production data-integrity defects from real users that Build 108 must not
+> inherit: (1) Schumann data unavailable, (2) Human Design advanced variables not stored /
+> incomplete, (3) Chiron position reported incorrect. A read-only root-cause audit is complete and
+> recorded in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`** (added to the mandatory reading order
+> and the authority hierarchy below). All three root causes are CONFIRMED. No fix is implemented;
+> no production Firestore mutation has occurred; no version bump / build / sign / deploy / upload.
+> `NEXT_SAFE_ACTION = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT`.
 
 ---
 
@@ -47,14 +56,17 @@ For all Build 108 ENL activities, the authority conflict order is:
 1. **Explicit Founder Instruction** for the current task.
 2. **Authorized Repository & Runtime Evidence** from the recovery worktree.
 3. **`BUILD_108_ENL_MASTER_SOT.md`** (this document) — Primary product & architectural authority.
-4. **`BUILD_108_ENL_PAGE_AUDIT.md`** — Exhaustive 51-route read-only audit report and copy gap analysis.
-5. **`BUILD_108_ENL_SCOPE_MATRIX.md`** — Surface-by-surface status & classification ledger.
-6. **`BUILD_108_ENL_SPRINT_PLAN.md`** — Data-driven 8-sprint implementation sequence.
-7. **`BUILD_108_ENL_HANDOFF.md`** — Operational handoff & task progression rules.
-8. **`BUILD_108_ENL_RELEASE_PLAN.md`** — Release gates, verification suites, and deployment checklists.
-9. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
-10. **Provenance-verified V5 documents** (`V5_*.md`).
-11. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
+4. **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`** — Canonical root-cause record for the three
+   confirmed production data-integrity defects (Schumann, Human Design advanced variables, Chiron)
+   that gate Sprint 5. Authoritative for the `CDI-*` blocker set.
+5. **`BUILD_108_ENL_PAGE_AUDIT.md`** — Exhaustive 51-route read-only audit report and copy gap analysis.
+6. **`BUILD_108_ENL_SCOPE_MATRIX.md`** — Surface-by-surface status & classification ledger.
+7. **`BUILD_108_ENL_SPRINT_PLAN.md`** — Data-driven 8-sprint implementation sequence.
+8. **`BUILD_108_ENL_HANDOFF.md`** — Operational handoff & task progression rules.
+9. **`BUILD_108_ENL_RELEASE_PLAN.md`** — Release gates, verification suites, and deployment checklists.
+10. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
+11. **Provenance-verified V5 documents** (`V5_*.md`).
+12. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
 
 ---
 
@@ -187,12 +199,32 @@ The 8 implementation sprints (specified in detail in `BUILD_108_ENL_SPRINT_PLAN.
 ## 7. Governance Status & Next Steps
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = SPRINT_04_COMPLETE (AI Guidance, Prompts, Local Deterministic Fallbacks, Normalization & Birthday Messages 100% Native English)
-NEXT_SAFE_ACTION                = SPRINT-108-05-PROFILE-JOURNEY-JOURNAL
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE (English AI guidance, prompts, local fallbacks, normalization, birthday messages)
+SPRINT_5_STATUS                 = NOT_STARTED — BLOCKED pending Founder review of BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 ```
 
-**Guardrails:**
-- NO product code edits may take place until the Founder approves this Master SOT, the Page Audit (`BUILD_108_ENL_PAGE_AUDIT.md`), and the Sprint Plan (`BUILD_108_ENL_SPRINT_PLAN.md`).
-- NO version bump to 108 or 5.0.8.
-- NO APK or AAB generation.
-- NO deployment or publishing.
+### 7.1 Core Data Integrity Hold (2026-09-06)
+
+Three production data-integrity defects were confirmed by the Founder from real-user reports.
+Build 108 ENL must not inherit them. Read-only root-cause audit complete
+(`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`); all three root causes CONFIRMED:
+
+| Defect | Root cause (confirmed) | Open blockers |
+|---|---|---|
+| **Schumann `Data belum tersedia`** | Upstream provider endpoint `schumannresonancelive.com/api/data.php` returns **HTTP 404** — API path removed/moved. Pre-existing since ≥ Build 106 (residual DS-E1). No fabricated "healthy" values — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` are genuine USGS/NOAA readings. | CDI-A1, CDI-A2, CDI-A3 |
+| **HD advanced variables "Not stored"** | Deployed engine (`services/humandesign-api/main.py` `POST /calculate`) computes only the 4 binary Variable arrows; never derives the PHS Digestion/Environment/Motivation/Perspective/Cognition values; withholds raw Color/Tone/Base unless `debug=true` (never sent). Stored `variables.short_code` read against wrong UI keys. `calculateAdvancedVariables()` orphaned. `mass-recover-hd.ts` drops activations + corrupts `centers`. HD **core** identity is healthy — Build 107 convergence intact. | CDI-B1..CDI-B5 |
+| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` (`swe.CHIRON`) unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` proxy). Silent local fallback derives Chiron from a hand-rolled **linear ephemeris** (`astronomy-engine` has no Chiron); sign/degree/house frequently wrong. Houses are Equal House mislabelled `placidusHouses`. | CDI-C1, CDI-C2, CDI-C3 |
+
+Cross-cutting: **CDI-D1** — post-fix, non-destructive, convergence-safe production backfill for
+HD advanced variables + Chiron across Build 103–107 cohorts (Founder-authorised, separate).
+
+**Guardrails (reaffirmed and extended):**
+- NO product code edits for the `CDI-*` fixes until the Founder reviews and approves the audit.
+- NO Sprint 5 execution until the Founder rules on sequencing (fix `CDI-*` first vs. resume ENL
+  sprints in parallel).
+- NO production Firestore read or write; NO backfill of any kind.
+- NO version bump to 108 or 5.0.8; NO APK/AAB; NO deployment or publishing.
+- Every proposed `CDI-*` fix must preserve 100% of the Build 107 inheritance checklist (§3) —
+  HD `type` convergence, admin-console withdrawal, orphan-route removal, static-surface guards.

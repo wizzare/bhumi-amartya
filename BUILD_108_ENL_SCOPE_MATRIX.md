@@ -2,14 +2,19 @@
 **Comprehensive Localization & Surface Classification Ledger**
 
 ```text
-STATUS                          = NOT_STARTED (FOUNDATION AUDIT & SPECIFICATION COMPLETE)
+STATUS                          = PAUSED (SPRINTS 1–4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
 BASELINE                        = BUILD 107 (versionCode 107, versionName 5.0.7)
 TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
 BLUEPRINT_ENGINES_AUDITED       = 11
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_PAGE_AUDIT_AND_SPRINT_PLAN
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 ```
+
+> **PAUSE NOTICE (2026-09-06).** Three confirmed production data-integrity defects (Schumann,
+> Human Design advanced variables, Chiron) gate Sprint 5. Root causes are CONFIRMED in
+> **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. This matrix's ENL localisation status is unchanged;
+> §8 below adds the data-integrity ledger for the affected surfaces/engines.
 
 ---
 
@@ -172,6 +177,29 @@ Audited 105 components in `components/`:
 ## 7. Operational Status & Sign-off
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = NOT_STARTED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_BUILD_108_ENL_SOT
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
 ```
+
+---
+
+## 8. Core Data Integrity Ledger (2026-09-06)
+
+Read-only root-cause audit: **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. All three root causes
+CONFIRMED. Classification below is orthogonal to the ENL localisation classification in §2–§5.
+
+| Surface / Engine | Data-Integrity Status | Root cause (confirmed) | Cohorts affected | Blocker |
+|---|---|---|---|---|
+| `app/dashboard/environment/page.tsx` · `components/dashboard/EnvironmentContextCard.tsx` · `lib/environment/{schumann,service}.ts(x)` | **DATA_SOURCE_DEAD** | `SCHUMANN_API_URL` = `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**. Client-only fetch (static export forbids a proxy). Fresh installs have no cache → honest "Data belum tersedia". Pre-existing since ≥ Build 106 (DS-E1). | New + all legacy (cohort-independent; no per-user data) | CDI-A1 / A2 / A3 |
+| Same — Earth Activity / Geomagnetic cards | **HEALTHY (verified not fabricated)** | `dataState === "available"` / `source.status === "available"` guards on both render surfaces; `V5_DECISION_LOG` D-#509 forbids fabricated `Stabil`. `deriveEnvironmentBands` defaults a missing Schumann band to `quiet` but that only feeds the spiritual block, gated on `hasSchumannObservation`. | — | (preserve guard during CDI-A) |
+| `app/blueprint/human-design/page.tsx` — Type/Strategy/Authority/Profile/Definition/Centers/Gates/Channels | **HEALTHY** | Maps correctly from `services/humandesign-api/main.py`; Build 107 convergence intact (`getHdState` CANONICAL ⇔ `hdEngineVersion === "gaia-hd-v1"`). | — | — |
+| `components/blueprint/HumanDesignBodygraphLite.tsx` · `lib/humandesign/{hdkitAdapter,presentation,calculateAdvancedVariables}.ts` · `lib/repositories/blueprintRepository.ts` | **ADVANCED_LAYER_BROKEN** | Deployed engine emits only the 4 binary Variable arrows (`variables` + `short_code`); never derives PHS Digestion/Environment/Motivation/Perspective/Cognition; withholds raw Color/Tone/Base unless `debug=true` (never sent). `variables.short_code` read against wrong UI keys (`variable`/`value`/`advanced`). `calculateAdvancedVariables()` orphaned. `scripts/mass-recover-hd.ts` drops `diagnostic`/activations + writes a raw array into `centers`. `perspective` missing from `normalizeBlueprint`'s explicit HD list. | New + `mass-recover-hd` cohort + pre-V2 legacy | CDI-B1..B5 |
+| `lib/humandesign/intelligence/{variableIntelligence,styleEngine}.ts` + Profile → Potential cards + `lib/orchestrators/localDailyGuidanceFallback.ts` | **INDONESIAN_ONLY (no `isEn`)** | Hardcoded Indonesian HD variable/style narratives; `presentation.ts` English `variables.*` are generic constants ignoring real values. `app/blueprint/human-design/page.tsx:195` shows "Story for this section is being prepared." on CANONICAL types when `executeHumanMeaningRuntime` returns `{ok:false}`. | ENL users | CDI-B4 / CDI-B5 |
+| `app/blueprint/natal-chart/page.tsx` · `lib/astrology/calculateNatalBasics.ts` · `lib/dailyGuidance/unifiedBlueprintSynthesis.ts` | **CHIRON_APPROXIMATION_WRONG** | Swiss Ephemeris `/calculate-astrology` (`swe.CHIRON`) unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` astrology proxy). Silent local fallback derives Chiron from `251.35 + days·0.019777` (linear; `astronomy-engine` has no Chiron) → sign/degree/house frequently wrong. `buildApproximatePlacidusHouses` returns Equal-House cusps stored as `placidusHouses`. `normalizeBlueprint` never re-derives Chiron on read. | New + all cohorts computed via the local fallback | CDI-C1 / C2 / C3 |
+
+**Cross-cutting — CDI-D1:** non-destructive, convergence-safe production backfill for HD advanced
+variables + Chiron across Build 103–107 cohorts, AFTER the upstream calculations are fixed.
+Founder-authorised and executed separately; **not authorised now.**
+
+**Inheritance guard:** every `CDI-*` fix must leave the Build 107 inheritance checklist
+(`BUILD_108_ENL_MASTER_SOT.md §3`) 100% intact.
