@@ -2,7 +2,7 @@
 **Bhumi Amartya — Dedicated English-Language Edition & Architecture**
 
 ```text
-STATUS                          = PAUSED (SPRINT 4 COMPLETE — CDI-108-01A DONE; CDI-108-02 IMPLEMENTED / HELD FOR FOUNDER REVIEW)
+STATUS                          = PAUSED (SPRINT 4 COMPLETE; CURRENT CDI GATE; ENV2/FRA PLANNED)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 NEXT_PRIMARY_AGENT              = CODEX
@@ -13,7 +13,10 @@ TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -92,9 +95,11 @@ For all Build 108 ENL activities, the authority conflict order is:
 7. **`BUILD_108_ENL_SPRINT_PLAN.md`** — Data-driven 8-sprint implementation sequence.
 8. **`BUILD_108_ENL_HANDOFF.md`** — Operational handoff & task progression rules.
 9. **`BUILD_108_ENL_RELEASE_PLAN.md`** — Release gates, verification suites, and deployment checklists.
-10. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
-11. **Provenance-verified V5 documents** (`V5_*.md`).
-12. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
+10. **`BUILD_108_FINAL_RELEASE_AUDIT.md`** — Mandatory whole-product final acceptance protocol,
+    evidence reconciliation, and pre-version/build/sign gate; must be read before final acceptance.
+11. **`BUILD_107_HOTFIX_RELEASE.md`** & **`BUILD_106_MASTER_SOT.md`** — Historical baseline lineage.
+12. **Provenance-verified V5 documents** (`V5_*.md`).
+13. Legacy documents (`SOT.md`, `PRD.md`, `TODO.md`, `BUILD_100_*.md`) remain historical and non-authoritative.
 
 ---
 
@@ -181,6 +186,158 @@ INTENTIONALLY_UNTRANSLATED_TERMS    = CULTURAL_TERMS_CANONICAL_PRESERVED
 
 ---
 
+### 4.3 Environmental Intelligence v2 — Founder-approved scope (2026-09-07)
+
+```text
+SPRINT_ID                      = SPRINT-108-ENV2
+SPRINT_108_ENV2                 = PLANNED
+SPRINT_108_ENV2_STATUS          = PLANNED
+ENV2_IMPLEMENTATION            = NOT AUTHORIZED
+ENV2_SOURCE_RESEARCH_REQUIRED   = YES — BEFORE IMPLEMENTATION
+ENV2_BACKEND_REQUIRED           = UNDETERMINED — SOURCE/ARCHITECTURE EVIDENCE REQUIRED
+ENV2_RELEASE_RISK               = OPEN — DATA ACCESS, ATTRIBUTION, FRESHNESS, AND RUNTIME VALIDATION
+POSITION                       = AFTER GATE_108_CDI CLOSES; BEFORE FINAL BUILD 108 RELEASE
+NEXT_SAFE_ACTION               = CONTINUE_CURRENT_GATE_108_CDI
+```
+
+The Founder approved this product scope and documentation, not ENV2 implementation. ENV2 is an
+additional named sprint; existing Sprints 5–8 retain their numbers and scope. Prefer ENV2 before
+or alongside subsequent Environment-related product work after CDI closure. Completed Sprint 2
+and completed CDI items are not reopened merely to schedule ENV2. Scheduling alongside other
+work does not waive CDI closure or the separate implementation authorization.
+
+**Product scope:** trustworthy environmental context for the user's location, presented in a
+Dashboard **Atmosphere & Volcanic** card and an Environment detail section/page. A trend/timeline
+is conditional on suitable historical observations. A map/plume visualization is conditional on
+licensed, reliable spatial/plume data. No new route, source integration, or visualization is
+claimed as implemented by this scope decision.
+
+| Data domain | Planned fields | Scientific boundary |
+|---|---|---|
+| Air quality | AQI, PM2.5, PM10, NO2, O3, CO, surface SO2 concentration | Preserve pollutant units and the AQI standard/averaging period; distinguish measured, modelled, and forecast values. |
+| Atmosphere | Total-column SO2 | Retain the original scientific unit and provenance; never treat a vertical column as surface inhalation concentration. |
+| Wind | Speed, direction, movement relative to user location | Preserve height/level, time, direction convention, units, and spatial context; a local wind vector alone does not prove a plume trajectory. |
+| Volcanic context | `plumeDetected`, `probableVolcanicOrigin`, `probableSource`, `attributionConfidence` | Unknown is explicit; positive plume/origin/source claims require supporting observations. |
+
+`SURFACE_SO2`, `ATMOSPHERIC_COLUMN_SO2`, and `VOLCANIC_ATTRIBUTION` are separate domains. Never
+transform one into another. SO2 alone cannot establish volcanic origin. Never name a volcano
+without supported attribution using evidence such as plume location/geometry, wind trajectory,
+source/volcano location, timing, and source observation provenance. If that evidence is
+insufficient, `probableSource = null`; weak attribution remains unknown, not a named low-confidence
+guess. `plumeDetected = false` must not be used as a default for missing observations.
+
+Schumann Resonance, NOAA Kp, earthquakes, weather, and generic geomagnetic activity are not
+substitutes for atmospheric SO2 or volcanic plume measurements. Keep cultural/spiritual
+interpretation clearly separate from measured environmental facts.
+
+**Canonical model design requirement (documentation contract, not an implemented schema):**
+
+```text
+EnvironmentalConditionPayload {
+  airQuality: { aqi, pm25, pm10, no2, o3, co, surfaceSo2 }
+  atmosphere: { totalColumnSo2 }
+  wind: { speed, direction, movementRelativeToUserLocation }
+  volcanic: {
+    plumeDetected: boolean | null
+    probableVolcanicOrigin: boolean | null
+    probableSource: sourceReference | null
+    attributionConfidence: evidenceBackedAssessment | null
+    evidenceRefs: provenanceReference[]
+  }
+  provenance
+  freshness
+  updatedAt
+}
+
+Every datum carries or resolves through an explicit metadata reference to:
+SOURCE, OBSERVED_AT, FETCHED_AT, FRESHNESS, QUALITY, PROVENANCE.
+Numeric data also retains its original unit, measurement type, spatial coverage,
+and applicable level/averaging interval. Forecast valid time is not observed time.
+```
+
+The payload timestamp must not replace per-datum observation times or make mixed-age data appear
+fresh. Each datum can be available, unavailable, unknown, or stale independently; unavailable
+values are null with a reason, never synthetic zeroes. Define dataset-specific freshness and
+cache limits during source research; re-fetching never resets the age of an observation. Keep
+gaps in history, and exclude unsupported/stale inputs from positive attribution or health advice.
+
+**Fail closed and health copy:** render unavailable/unknown when data or attribution is
+insufficient. Never fabricate “Normal”, “Stable”, “Safe”, “Volcanic plume detected”, or a source
+volcano. Recommendations remain conservative. Atmospheric-column SO2 cannot directly support
+personal exposure or health claims. Surface air-quality advice requires relevant surface
+measurements or established AQI data. All ENL UI, copy, error, stale, and unknown states must be
+native English; existing multilingual behavior remains compatible.
+
+**Required research before implementation:** compare authoritative/measurement-backed providers
+separately for surface air quality, atmospheric SO2 column, wind, and volcanic activity/plumes.
+For every candidate record the following, using explicit unknown/unverified values where needed:
+
+```text
+SOURCE =
+DATASET =
+MEASUREMENT_TYPE =
+SPATIAL_RESOLUTION =
+TEMPORAL_RESOLUTION =
+HISTORY_AVAILABLE =
+HTTPS =
+API =
+CORS =
+RATE_LIMIT =
+LICENSING =
+ANDROID_COMPATIBILITY =
+PROVENANCE =
+RELIABILITY =
+VERDICT =
+```
+
+Windy screenshots and Windy visualization are not canonical Bhumi data sources. Evaluate
+(A) direct client APIs, (B) a Bhumi environmental proxy, (C) scheduled ingestion/cache, and
+(D) a hybrid. Prefer isolation of provider changes from the Android client; the final choice
+must follow source evidence, static Next export/Capacitor constraints, HTTPS/CORS, access terms,
+rate limits, freshness, provenance, replacement strategy, and failure behavior. A backend is
+not yet proven necessary, selected, or authorized for deployment.
+
+**Inheritance and release:** preserve HD convergence, completed Chiron/timezone CDI, Admin and
+Auth Diagnostics removal, security/billing, Schumann fail-closed behavior, and existing
+Environment provenance separation. ENV2 cannot close or bypass `GATE_108_CDI`. Its future
+implementation must satisfy the ENV2 acceptance criteria in the sprint plan and the additional
+evidence requirements within the existing seven release gates. Scope approval grants no
+production reads/writes, provider commitment, deployment, version bump, build/sign, or upload.
+
+---
+
+### 4.4 Mandatory Build 108 Final Release Audit — 2026-09-07
+
+```text
+GATE_ID = GATE_108_FRA
+GATE_NAME = FINAL_RELEASE_AUDIT
+GATE_108_FRA = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+```
+
+[`BUILD_108_FINAL_RELEASE_AUDIT.md`](BUILD_108_FINAL_RELEASE_AUDIT.md) defines the mandatory
+**complete-product** audit, not a changed-file review. It runs only after all Build 108
+implementation sprints, `GATE_108_CDI`, ENV2, and all Founder-approved remediation are complete,
+and must PASS **before** versionCode 108 / versionName 5.0.8, final production build, signing,
+or Play upload. It is PLANNED only; do not execute it now or modify runtime code for this addition.
+
+The audit covers new-user and Build 103–107 legacy journeys; auth; setup/timezone/DST;
+billing/entitlements and separate admin authorization; every Sprint 1–7/ENV2/CDI/recovery requirement;
+every production route and child surface; HD/natal/Environment data; actual generated and fallback
+ENL output; security/privacy; and source ancestry/worktree/release provenance. Every requirement
+must identify implementation, test evidence, runtime evidence, and PASS/PARTIAL/DEFERRED/FAIL.
+Targets: UNKNOWN=0, UNACCOUNTED=0, FALSE_PASS=0, USER_VISIBLE_ID_LEAK=0,
+USER_VISIBLE_MS_LEAK=0, RELEASE_CRITICAL_GAPS_OPEN=0. The full domain checklist, evidence rules,
+provenance fields, and final report in that document are mandatory, not optional examples.
+
+Within unchanged Sprint 8 numbering, pre-release verification/FRA precedes the release version/
+artifact phase. Existing seven release gates remain mandatory: final artifact/signing proof and
+publication approval occur afterward. FRA PASS cannot claim those future checks as executed or
+authorize restricted actions. Completed CDI implementation is preserved; the final whole-product
+regression audit only reopens fixes if evidence demonstrates regression.
+
+---
+
 ## 5. Audit Results & Current Baseline Metrics
 
 An exhaustive 51-route code audit (detailed in `BUILD_108_ENL_PAGE_AUDIT.md`) produced the following exact metrics:
@@ -222,6 +379,12 @@ The 8 implementation sprints (specified in detail in `BUILD_108_ENL_SPRINT_PLAN.
 7. **Sprint 7: Settings, Paywall, Legal & Static Pages** (`settings`, `premium-bhumi`, `upgrade`, `tentang`, `syarat-ketentuan`, `kebijakan-privasi`, `bantuan`, `kontak`).
 8. **Sprint 8: Final Regression, Build Verification & Release Protocol** (Full test suite, static surface guard, version bump to 108 / 5.0.8, signed AAB/APK build, Founder sign-off).
 
+**Additional sprint:** `SPRINT-108-ENV2 — Environmental Intelligence v2` is PLANNED after
+`GATE_108_CDI` closes and before final release, preferably before/alongside subsequent
+Environment-related work. Sprints 5–8 are not renumbered. See §4.3 and the sprint plan.
+After all implementation/remediation, Sprint 8 must pass `GATE_108_FRA` (§4.4) before its
+authorized version bump/build/sign phase. `BUILD_108_CAN_PROCEED_TO_RELEASE = NO` now.
+
 ---
 
 ## 7. Governance Status & Next Steps
@@ -239,10 +402,13 @@ CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
 CDI_C1                         = DONE
 CDI_C2                         = DONE
 CDI_C3                         = DONE
-CDI_108_02_HUMAN_DESIGN        = IMPLEMENTED — FOUNDER REVIEW REQUIRED
+CDI_108_02_HUMAN_DESIGN        = DONE — CLIENT INTEGRITY / RECOVERY SAFETY; SERVICE EXTRAS SOURCE-DEPENDENT
 CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -266,8 +432,12 @@ authorized now**.
 
 **Guardrails:**
 - NEXT PRIMARY AGENT: CODEX.
-- NEXT SAFE ACTION: `FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION`.
-- CDI-108-02 / CDI-108-03 not started until the Founder rules on sequencing.
+- NEXT SAFE ACTION: `CONTINUE_CURRENT_GATE_108_CDI`.
+- Current Founder direction (2026-09-07) supersedes the historical pending entries above:
+  CDI-108-02 client integrity/recovery safety is done (CDI audit §B.11); service extras remain
+  source-dependent and HD backfill NOT READY. CDI-108-03 source research/architecture is the
+  current authorized task; prove the source/architecture before local implementation. Do not
+  reopen completed CDI work absent regression evidence. ENV2/FRA remain PLANNED only.
 - NO Sprint 5 execution until `GATE_108_CDI` is closed / the Founder authorises a parallel track.
 - NO production Firestore write; NO backfill of any kind.
 - Production read-only probes are not implicitly authorized beyond evidence already collected.

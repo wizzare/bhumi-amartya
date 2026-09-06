@@ -8,17 +8,84 @@ TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
 BLUEPRINT_ENGINES_AUDITED       = 11
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 > **CORE DATA INTEGRITY GATE (2026-09-06).** Three confirmed production data-integrity defects
 > (Schumann, Human Design advanced variables, Chiron) gate Sprint 5. Root causes CONFIRMED and
 > **Founder-approved** in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron
-> ephemeris) and CDI-108-01A (timezone canonicalization) are complete**; **CDI-108-02 (Human
-> Design) has a refined READ-ONLY live-contract audit (§B.8), implementation not started**;
-> CDI-108-03 (Schumann) not started. This matrix's ENL localisation status is unchanged; §8 is
+> ephemeris) and CDI-108-01A (timezone canonicalization) are complete**; **CDI-108-02 client
+> integrity/recovery safety is done (§B.11)**; service extras remain source-dependent and
+> backfill NOT READY. CDI-108-03 source research is the current task. ENL status is unchanged; §8 is
 > the data-integrity ledger for the affected surfaces/engines.
+
+---
+
+## ENV2 Planned Scope Addendum — 2026-09-07
+
+`SPRINT_108_ENV2 = PLANNED`. Founder-approved scope only; no implementation or new route exists
+from this decision. Execute only after `GATE_108_CDI` closes and before final Build 108 release,
+preferably before/alongside subsequent Environment-related product work. Existing Sprints 5–8
+are not renumbered; completed CDI items and Sprint 2 are not reopened. The 51-route inventory
+below remains the existing route inventory, not evidence of ENV2 completion.
+
+| Planned surface/contract | Status | Scope and acceptance boundary |
+|---|---|---|
+| Dashboard Atmosphere & Volcanic card | `PLANNED` | Location-relevant context; native English values, source/age/quality, unavailable/unknown states; no invented Normal/Stable/Safe/plume status. |
+| Environment detail section/page | `PLANNED` | Separate air quality, atmosphere, wind, and volcanic context; route design follows research and static-export/Android verification. |
+| Trend/timeline | `PLANNED — CONDITIONAL` | Only with reliable historical observations, original timestamps/units, and gaps preserved. |
+| Map/plume visualization | `PLANNED — CONDITIONAL` | Only with licensed/reliable spatial source data; no Windy screenshots or visualization as canonical data. |
+| `airQuality` | `PLANNED` | AQI, PM2.5, PM10, NO2, O3, CO, surface SO2 concentration; preserve units and AQI standard/period. |
+| `atmosphere` | `PLANNED` | Total-column SO2 with original scientific unit/provenance; no conversion into surface exposure. |
+| `wind` | `PLANNED` | Speed, direction, movement relative to user location with time, level, units, and directional convention. |
+| `volcanic` | `PLANNED` | `plumeDetected`, `probableVolcanicOrigin`, `probableSource`, `attributionConfidence`; source attribution requires evidence, otherwise `probableSource = null`. |
+| `EnvironmentalConditionPayload` | `DESIGN REQUIRED` | `airQuality`, `atmosphere`, `wind`, `volcanic`, `provenance`, `freshness`, `updatedAt`; every datum carries/resolves SOURCE, OBSERVED_AT, FETCHED_AT, FRESHNESS, QUALITY, PROVENANCE. |
+
+`SURFACE_SO2`, `ATMOSPHERIC_COLUMN_SO2`, and `VOLCANIC_ATTRIBUTION` remain separate and cannot
+be substituted or transformed into one another. SO2 alone cannot establish volcanic origin.
+Naming a volcano requires supported plume location/geometry, wind trajectory, source location,
+timing, and observation provenance as relevant to the attribution method. Missing evidence means
+unknown, not a negative detection or a guessed volcano. Schumann, NOAA Kp, earthquakes, weather,
+and geomagnetic activity cannot substitute for SO2/plume observations.
+
+Surface air-quality advice must use relevant surface measurements/established AQI; column SO2
+cannot directly support personal exposure/health claims. Cultural/spiritual interpretation is
+separate from measured facts. Native English ENL states and multilingual compatibility are required.
+
+Source research is required independently for all four data domains using the full candidate
+matrix in `BUILD_108_ENL_MASTER_SOT.md §4.3`. Compare direct client, proxy, scheduled ingestion/cache,
+and hybrid architectures, preferring provider replacement without Android client churn.
+`ENV2_BACKEND_REQUIRED = UNDETERMINED`; no provider or infrastructure commitment is approved.
+Preserve Build 107 HD convergence/admin and diagnostics removal, security/billing, completed
+Chiron/timezone CDI, Schumann fail-closed behavior, and Environment provenance separation.
+
+`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`. This addendum does not close CDI or start ENV2.
+
+---
+
+## Final Release Audit Coverage — 2026-09-07
+
+`GATE_108_FRA = PLANNED`; `BUILD_108_CAN_PROCEED_TO_RELEASE = NO`. The mandatory protocol is
+[`BUILD_108_FINAL_RELEASE_AUDIT.md`](BUILD_108_FINAL_RELEASE_AUDIT.md). This gate must re-audit the
+complete product and every production route/child surface, not only changed files, after all
+implementation sprints, CDI closure, ENV2, and Founder-approved remediation, before release
+version bump/final production build/signing/upload. Do not execute it now.
+
+The future requirement ledger must cover Sprints 1–7, ENV2, CDI-108-01/01A/02/03, migrations/recovery,
+Sprint 8 verification, and all approved remediation. For every requirement record REQUIREMENT,
+IMPLEMENTATION, TEST_EVIDENCE, RUNTIME_EVIDENCE, STATUS=PASS/PARTIAL/DEFERRED/FAIL; targets are
+UNKNOWN=0, UNACCOUNTED=0, FALSE_PASS=0. Prior ENGLISH_READY classifications are earlier scope
+evidence, not FRA PASS. Reconcile the actual candidate route inventory with all authorized route
+changes; no Admin/Auth Diagnostics/dev/debug/deprecated/orphan surface may be exposed.
+
+Cover new/legacy cohorts, auth/setup/timezone, Free/Premium/Lifetime/Admin, core data, generated/
+fallback ENL copy, security/privacy, and source provenance using the full audit checklist. Preserve
+user-authored historical content while requiring zero application-generated Indonesian/Malay
+leakage. No runtime code, route, version, or artifact changes are authorized here.
 
 ---
 
@@ -182,13 +249,22 @@ Audited 105 components in `components/`:
 
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 ---
 
 ## 8. Core Data Integrity Ledger (2026-09-06)
+
+**Current checkpoint (2026-09-07):** completed Chiron/timezone and HD client/recovery work is
+preserved; HD service extras remain source-dependent and backfill NOT READY. Continue CDI-108-03
+source research/architecture within its existing authorization. The original defect descriptions
+below are historical audit evidence; HD implementation results in CDI audit §B.11 supersede
+their pre-fix status. They are not instructions to reopen completed CDI work.
 
 Read-only root-cause audit: **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. All three root causes
 CONFIRMED. Classification below is orthogonal to the ENL localisation classification in §2–§5.

@@ -11,13 +11,24 @@ INITIATIVE                      = BUILD 108 ENL
 PURPOSE                         = Dedicated English-Language Edition of Bhumi Amartya
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
-DERIVED_SPRINT_COUNT            = 8 SPRINTS
+DERIVED_SPRINT_COUNT            = 8 NUMBERED SPRINTS + ENV2
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
+> **Current Founder direction (2026-09-07).** ENV2 scope and the mandatory Final Release Audit
+> are approved for documentation only. Both remain PLANNED; neither may be implemented/executed
+> now. This direction supersedes older next-action/approval holds below. After this documentation
+> checkpoint, continue the already authorized CDI-108-03 Schumann source research/architecture
+> task within its source-proven-before-implementation boundary. Do not reopen completed Chiron,
+> timezone, or HD client/recovery work absent regression evidence. HD service extras remain
+> source-dependent; backfill is NOT READY and NOT authorized. Sprint 5 remains BLOCKED.
+>
 > **CORE DATA INTEGRITY GATE (2026-09-06).** Sprint 4 is complete. **Do NOT start Sprint 5.** The
 > next primary agent is **CODEX**. Build 108 ENL remains paused for `GATE_108_CDI`.
 >
@@ -64,12 +75,13 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 
 Any coding agent operating on Build 108 ENL MUST strictly adhere to the following invariants:
 
-1. **Do NOT start Sprint 5 or the next CDI implementation yet.**
+1. **Continue the current CDI gate; do NOT start Sprint 5 or ENV2, or execute FRA yet.**
    - Build 108 ENL remains **PAUSED_FOR_CORE_DATA_INTEGRITY** with
      `GATE_108_CDI = IN_PROGRESS`. Sprint 5 is NOT started.
    - **CDI-108-01 (Chiron) and CDI-108-01A (timezone canonicalization / CDI-C3) are done.**
-     No further `CDI-*` fix (CDI-108-02 HD, CDI-108-03 Schumann) may be implemented until
-     the Founder reviews the completed refined HD audit and rules on sequencing.
+     CDI-108-02 client integrity/recovery safety is also done. CDI-108-03 source restoration is
+     the current authorized task: research and prove source/architecture before local implementation.
+     This documentation task does not broaden production, provider-commitment, or deployment authority.
 2. **Do NOT bump version yet.**
    - `versionCode` remains `107` and `versionName` remains `"5.0.7"` until the sprint release stage.
 3. **Do NOT build, sign, or upload artifacts yet.**
@@ -118,6 +130,53 @@ Detailed specifications for each sprint are in `BUILD_108_ENL_SPRINT_PLAN.md`:
 - **Sprint 7: Settings, Paywall, Legal & Static Pages** (`settings`, `premium-bhumi`, `upgrade`, `tentang`, `syarat-ketentuan`, `kebijakan-privasi`, `bantuan`, `kontak`).
 - **Sprint 8: Final Regression, Build Verification & Release Protocol** (Full test suite, static surface guard, version bump to 108 / 5.0.8, signed AAB/APK build, Founder sign-off).
 
+### 3.1 ENV2 and Final Release Audit placement — current planning authority
+
+```text
+SPRINT_108_ENV2_STATUS = PLANNED
+ENV2_PRODUCT_SCOPE = Dashboard Atmosphere & Volcanic card; Environment detail section/page;
+                     conditional history/timeline and licensed/reliable map/plume visualization
+ENV2_DATA_DOMAINS = surface air quality; atmospheric SO2 column; wind; volcanic attribution
+ENV2_SOURCE_RESEARCH_REQUIRED = YES — BEFORE IMPLEMENTATION
+ENV2_BACKEND_REQUIRED = UNDETERMINED — RESEARCH/ARCHITECTURE EVIDENCE REQUIRED
+ENV2_RELEASE_RISK = OPEN — DATA ACCESS, ATTRIBUTION, FRESHNESS, AND RUNTIME VALIDATION
+BUILD_108_SPRINT_ORDER = Sprints 1–4 COMPLETE -> current CDI gate -> Sprints 5–7 and ENV2
+                        -> Sprint 8 pre-release verification/FRA -> authorized release phase
+GATE_NAME = FINAL_RELEASE_AUDIT
+GATE_108_FRA = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI
+```
+
+ENV2 follows CDI closure and precedes final release; prefer before/alongside subsequent
+Environment-related product work. Sprints 5–8 are not renumbered. All implementation/remediation,
+including ENV2, must precede FRA. Do not reopen completed CDI items just to schedule ENV2; the
+later mandatory FRA re-audits the complete product, not only changed files.
+
+Read `BUILD_108_ENL_MASTER_SOT.md §4.3` and the ENV2 sprint specification before future ENV2
+research/implementation. They define the canonical `EnvironmentalConditionPayload`, per-datum
+SOURCE/OBSERVED_AT/FETCHED_AT/FRESHNESS/QUALITY/PROVENANCE, original scientific units, separate
+surface SO2/column SO2/volcanic attribution, and the full provider comparison matrix. SO2 alone
+never proves volcanic origin; insufficient attribution means `probableSource = null`. Never
+fabricate Normal/Stable/Safe/plume/source-volcano states. Column SO2 cannot imply personal
+exposure. ENL copy is native English; cultural/spiritual readings stay separate from facts.
+
+Research surface AQI/pollutants, column SO2, wind, and volcanic observations separately. Compare
+direct APIs, proxy, scheduled ingestion/cache, and hybrid; prefer isolating provider changes from
+Android. No Windy screenshots/visualization as canonical data. No source, backend, or paid
+provider commitment has been selected/approved. Preserve HD/Chiron/timezone, admin/diagnostics
+removal, security/billing, Schumann fail-closed behavior, and Environment provenance separation.
+
+Read **`BUILD_108_FINAL_RELEASE_AUDIT.md`** before future final acceptance. It defines all 11
+mandatory domains, requirement-by-requirement test/runtime evidence, the complete route/child
+surface sweep, cohort coverage, provenance, and the final report. Targets are UNKNOWN=0,
+UNACCOUNTED=0, FALSE_PASS=0 and no release-critical gaps. FRA must PASS before versionCode 108 /
+versionName 5.0.8, final production build, signing, or Play upload. Existing seven release gates
+still apply; artifact/signing evidence follows FRA and is not falsely claimed beforehand.
+
+**Documentation exit:** commit documentation only; do not execute ENV2/FRA or version/build/sign/
+deploy/upload. **STOP FOR FOUNDER REVIEW.** The next work remains the current CDI gate.
+
 ---
 
 ## 4. Quick Verification Commands
@@ -156,10 +215,13 @@ CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
 CDI_C1                         = DONE
 CDI_C2                         = DONE
 CDI_C3                         = DONE
-CDI_108_02_HUMAN_DESIGN        = IMPLEMENTED — FOUNDER REVIEW REQUIRED
+CDI_108_02_HUMAN_DESIGN        = DONE — CLIENT INTEGRITY / RECOVERY SAFETY; SERVICE EXTRAS SOURCE-DEPENDENT
 CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -180,9 +242,10 @@ All three root causes CONFIRMED.
 Cross-cutting: **CDI-D1** — legacy data backfill is separately Founder-authorized only and is **not
 authorized now**.
 
-**Handoff action:** STOP. The CDI-108-02 Human Design implementation is complete. Hand over for
-`FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION` under the explicit
-authorization boundary below.
+**Handoff action (2026-09-07):** the ENV2/FRA documentation checkpoint stops for Founder review.
+`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`: continue CDI-108-03 source research and
+architecture proof under the existing authorization. CDI-108-02 client/recovery implementation
+is complete; service extras/backfill remain separate. Do not implement ENV2 or execute FRA yet.
 
 ```text
 PRODUCTION_FIRESTORE_WRITE = NOT AUTHORIZED

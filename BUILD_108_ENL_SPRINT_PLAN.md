@@ -5,11 +5,14 @@
 STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 DONE (SPRINT 5 BLOCKED)
 PRODUCTION_BASELINE             = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
-DERIVED_SPRINT_COUNT            = 8 SPRINTS (+ 1 pre-Sprint-5 data-integrity gate)
+DERIVED_SPRINT_COUNT            = 8 NUMBERED SPRINTS + ENV2 (+ 1 pre-Sprint-5 data-integrity gate)
 SPRINTS_COMPLETE               = 1, 2, 3, 4
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+GATE_108_CDI                    = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -17,8 +20,9 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > The mandatory data-integrity gate (**GATE-108-CDI**, below) sits between Sprint 4 and Sprint 5.
 > Root causes for the three confirmed production defects are CONFIRMED and **Founder-approved** in
 > **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron ephemeris) and CDI-108-01A
-> (timezone canonicalization) are done. CDI-108-02 (HD) has a refined READ-ONLY live-contract audit
-> (§B.8); implementation not started.** CDI-108-03 (Schumann) not started. No production data has
+> (timezone canonicalization) are done. CDI-108-02 client integrity/recovery safety is done
+> (§B.11); service extras remain source-dependent and backfill NOT READY.** CDI-108-03 source
+> research is the current task. No production data has
 > been read or written; no backend deploy.
 
 ---
@@ -32,11 +36,23 @@ flowchart TD
     S1[Sprint 1: Onboarding, Auth & Core Shell] --> S2[Sprint 2: Dashboard & Core Identity]
     S2 --> S3[Sprint 3: 11 Blueprint Presentation Engines]
     S3 --> S4[Sprint 4: AI Guidance & Local Fallbacks]
-    S4 --> S5[Sprint 5: Profile, Journey & Journal Hubs]
+    S4 --> CDI[GATE_108_CDI must close]
+    CDI --> S5[Sprint 5: Profile, Journey & Journal Hubs]
     S5 --> S6[Sprint 6: Wellness, Healing & Innerwork]
     S6 --> S7[Sprint 7: Settings, Paywall & Legal Pages]
-    S7 --> S8[Sprint 8: Final Regression, Build & Release QA]
+    S7 --> S8[Sprint 8: Pre-release verification]
+    CDI --> ENV2[SPRINT-108-ENV2: Planned; separate implementation approval]
+    ENV2 --> S8
+    R[All Founder-approved remediation complete] --> S8
+    S8 --> FRA[GATE_108_FRA: Complete-product audit; PLANNED]
+    FRA -->|PASS and separate Founder authorization| REL[Sprint 8: Version bump, final build, sign]
+    REL --> PUB[Final artifact gates and Founder approval before Play upload]
 ```
+
+ENV2 is an additional named sprint approved for planning on 2026-09-07. It follows CDI closure
+and precedes final release; prefer execution before/alongside subsequent Environment-related
+product work. The diagram expresses dependencies, not permission to implement. Sprints 5–8 keep
+their existing numbering and scope. Do not reopen completed CDI work or Sprint 2 to schedule ENV2.
 
 ---
 
@@ -195,7 +211,12 @@ flowchart TD
   - **CDI-108-03 — Schumann source — NOT STARTED.** Provider endpoint `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**. Client-only fetch; static export forbids a proxy. Pre-existing since ≥ Build 106 (DS-E1). **No fabricated "healthy" values** — `Aktivitas Bumi = Stabil` / `Geomagnetik = Tenang` are genuine USGS/NOAA readings, guarded on `dataState`/`source.status === "available"`. → **CDI-A1** (choose replacement source), **CDI-A2** (Bhumi-owned proxy if not CORS-open), **CDI-A3** (keep honest-unavailable UI + `deriveEnvironmentBands` gate).
   - **CDI-D1 — Cross-user / legacy.** Post-fix, non-destructive, convergence-safe production **backfill** for HD advanced variables + Chiron across Build 103–107 cohorts. Founder-authorised and executed **separately**; not part of this gate's code work; **not authorised now**.
 - **BUILD_107_GUARDS:** every `CDI-*` fix must leave the Build 107 inheritance checklist (`BUILD_108_ENL_MASTER_SOT.md §3`) 100% intact — especially: a failed HD recalculation must never overwrite a CANONICAL stored `type`. Verified for CDI-108-01 + CDI-108-01A.
-- **EXIT_GATE:** Founder reviews CDI-108-01A + the refined HD audit (§B.8) and rules on sequencing — (a) proceed with CDI-108-02 implementation (per-field: UI fix / adapter derive / migration / re-fetch) and CDI-108-03 before Sprint 5, or (b) resume Sprint 5 in parallel with a dedicated data-integrity track. `CDI-D1` (production backfill) stays deferred until its own explicit authorisation.
+- **CURRENT DISPOSITION (2026-09-07):** the pre-fix CDI-108-02 findings above are historical;
+  §B.11 records completed client integrity/recovery safety. Preserve completed Chiron/timezone/HD;
+  service extras remain source-dependent and backfill NOT READY. Continue CDI-108-03 source
+  research/architecture under its existing authorization; source proof precedes local implementation.
+- **EXIT_GATE:** Founder disposition/closure of the remaining CDI blockers before Sprint 5/ENV2.
+  `CDI-D1` production backfill remains separately authorized only. ENV2/FRA planning does not close CDI.
 
 ---
 
@@ -316,17 +337,94 @@ flowchart TD
 
 ---
 
+### SPRINT-108-ENV2: Environmental Intelligence v2
+
+- **SPRINT_ID:** `SPRINT-108-ENV2`
+- **STATUS:** `SPRINT_108_ENV2 = PLANNED` — scope/documentation approved; implementation NOT authorized.
+- **POSITION:** After `GATE_108_CDI` closes; before final Build 108 release. Prefer before/alongside
+  subsequent Environment-related product work. No renumbering of Sprints 5–8 or reopening of
+  completed CDI items.
+- **PRODUCT SCOPE:** Dashboard Atmosphere & Volcanic card; Environment detail section/page;
+  trend/timeline only if historical data supports it; map/plume visualization only if licensed,
+  reliable spatial data supports it.
+- **DATA DOMAINS:** Surface air quality (AQI, PM2.5, PM10, NO2, O3, CO, surface SO2); atmospheric
+  total-column SO2; wind speed/direction/movement relative to user location; volcanic context
+  (`plumeDetected`, `probableVolcanicOrigin`, `probableSource`, `attributionConfidence`).
+- **CONTRACT:** Design `EnvironmentalConditionPayload` with `airQuality`, `atmosphere`, `wind`,
+  `volcanic`, `provenance`, `freshness`, `updatedAt`, following `MASTER_SOT §4.3`. Every datum
+  carries/resolves SOURCE, OBSERVED_AT, FETCHED_AT, FRESHNESS, QUALITY, PROVENANCE. Retain original
+  scientific units, spatial/temporal context, AQI standard, and measured/modelled/forecast identity.
+
+**Research phase — required before any implementation:**
+
+1. Evaluate authoritative/measurement-backed providers separately for surface air quality,
+   atmospheric SO2 column, wind, and volcanic activity/plume context. No provider is selected here.
+2. For each candidate record SOURCE, DATASET, MEASUREMENT_TYPE, SPATIAL_RESOLUTION,
+   TEMPORAL_RESOLUTION, HISTORY_AVAILABLE, HTTPS, API, CORS, RATE_LIMIT, LICENSING,
+   ANDROID_COMPATIBILITY, PROVENANCE, RELIABILITY, VERDICT. Unknowns remain explicitly unverified.
+   Windy screenshots/visualization cannot be Bhumi's canonical data source.
+3. Compare direct client APIs, a Bhumi environmental proxy, scheduled ingestion/cache, and hybrid
+   designs. Prefer provider changes isolated from the Android client. Verify static Next export,
+   Capacitor HTTPS/CORS, rate limits, access terms, dataset freshness, cache expiry, failures,
+   source replacement, and location-data handling. Backend need remains undetermined.
+4. Define dataset-specific freshness/quality acceptance and a conservative attribution method
+   before implementation; present a reviewable architecture with evidence and open limitations.
+   No external/paid provider commitment or backend deployment is authorized.
+
+**Implementation acceptance criteria (future work, not executed tests):**
+
+- Keep `SURFACE_SO2`, `ATMOSPHERIC_COLUMN_SO2`, `VOLCANIC_ATTRIBUTION` distinct; never derive one
+  from another. Column SO2 retains its original scientific unit and cannot imply personal exposure.
+- SO2 alone never establishes volcanic origin. Attribution uses supported plume location/geometry,
+  wind trajectory, source location, timing, and observation provenance. With insufficient evidence,
+  `probableSource = null`; unknown detection/origin/confidence is explicit. Never fabricate Normal,
+  Stable, Safe, Volcanic plume detected, or a source volcano.
+- No Schumann, NOAA Kp, earthquake, weather, or generic geomagnetic substitution for SO2/plumes.
+- Conservative surface air-quality advice uses relevant surface observations/established AQI.
+  Cultural/spiritual content is separated from measured facts. ENL copy is native English,
+  including unavailable, unknown, error, stale, and partial states; multilingual behavior persists.
+- Deterministic tests must cover valid/partial/malformed/missing data, original units, datum-level
+  provenance persistence, timestamps/forecast identity, timeout/provider errors, fresh/stale/no
+  cache, temporal/spatial mismatch, history gaps, and independent domain failures.
+- Attribution tests must cover SO2-only input, weak/conflicting/missing/old evidence (null source),
+  and evidence-supported positive cases, plus NOAA/USGS/Schumann isolation and prohibited health
+  claims. Do not equate a green unit suite with observed provider or UI correctness.
+- Verify actual provider contracts and rendered Dashboard/detail states, including Android/static
+  export, failures, provenance/freshness, and any conditional timeline/map. Run Build 107 HD and
+  production-surface guards, Chiron/timezone/HD CDI tests, Environment regressions, TSC, and relevant
+  release suites. Completed CDI logic, admin/diagnostics removal, security, and billing stay intact.
+
+**EXIT GATE:** source/terms and architecture evidence accepted; authorized implementation meets
+the above pre-artifact checks and applicable ENV2 acceptance requirements in release Gates 1–5.
+Final artifact verification (Gate 6) and publication approval (Gate 7) follow FRA; they are not
+prerequisites for ENV2 implementation completion. Unsupported optional
+timeline/map stays explicitly unavailable/omitted; unresolved mandatory scope requires Founder
+disposition before release. Planning approval cannot satisfy implementation or release gates.
+
+`NEXT_SAFE_ACTION = CONTINUE_CURRENT_GATE_108_CDI`. Do not implement ENV2 yet.
+
+---
+
 ### SPRINT 8: Final Regression, Build Verification & Release Protocol
 - **SPRINT_ID:** `SPRINT-108-08-RELEASE-QA`
+- **CURRENT GATE STATE:** `GATE_108_FRA = PLANNED`; `BUILD_108_CAN_PROCEED_TO_RELEASE = NO`.
+  Do not execute the final audit or release actions yet.
 - **PAGES:**
   - Repository-wide verification across all 51 routes.
 - **CURRENT_GAPS:**
   - Unsynchronized version identifiers (`versionCode = 107`, `versionName = "5.0.7"`).
   - Release artifacts not yet generated.
-- **TARGET:**
+- **TARGET — PRE-RELEASE VERIFICATION PHASE:**
   - Execute full repository-wide TypeScript verification (`npx tsc --noEmit`).
   - Run full release test suite (`npm run test:release`).
   - Run automated regex scan confirming 0 hardcoded Indonesian strings on visible surfaces.
+  - After all implementation sprints, CDI closure, ENV2, and all approved remediation, execute
+    the mandatory complete-product `GATE_108_FRA` protocol in `BUILD_108_FINAL_RELEASE_AUDIT.md`.
+    It covers all 11 domains, every requirement/route/child surface, test AND actual runtime
+    evidence, source ancestry/worktree, and the full final report. Targets: UNKNOWN=0,
+    UNACCOUNTED=0, FALSE_PASS=0, zero ID/MS application-copy leakage and no release-critical gaps.
+  - Only FRA PASS unlocks eligibility for the following separately authorized release phase.
+- **TARGET — RELEASE PHASE (FRA PASS + EXPLICIT FOUNDER AUTHORIZATION REQUIRED):**
   - Atomically bump versions across `build.gradle`, `buildInfo.ts`, `version.ts`, and tests:
     - `versionCode = 108`
     - `versionName = "5.0.8"`
@@ -337,17 +435,23 @@ flowchart TD
   - Stop and request Founder Final Sign-Off.
 - **DEPENDENCIES:**
   - Android SDK, JDK 17, production keystore properties.
+  - All implementation sprints, `GATE_108_CDI`, ENV2, and Founder-approved remediation complete
+    before FRA. ENV2 remains PLANNED until separate implementation authorization.
 - **BUILD_107_GUARDS:**
   - Complete verification of all 8 items on the `BUILD_107_INHERITANCE_CHECKLIST`.
 - **TESTS_REQUIRED:**
   - Full emulator test suite (29+ test files, 0 failures).
   - `build107-production-surface-guard.test.ts` (131/131 PASS).
   - `build107-hd-existing-user-convergence.test.ts` (19/19 PASS).
-  - `version-reconciliation.test.ts` (retargeted to 108 / 5.0.8).
+  - `version-reconciliation.test.ts` (107 / 5.0.7 before FRA; retargeted to 108 / 5.0.8 only in
+    the authorized post-FRA release bump, then rerun against that source).
 - **ACCEPTANCE_CRITERIA:**
-  - All 7 Release Gates in `BUILD_108_ENL_RELEASE_PLAN.md` are 100% satisfied.
+  - FRA PASS at the audited pre-version source HEAD before bump/build/sign; a later source change
+    requires evidence impact review and revalidation. No earlier sprint result substitutes for FRA.
+  - All 7 Release Gates in `BUILD_108_ENL_RELEASE_PLAN.md` are satisfied in their proper phase;
+    artifact/signing and final publication approval follow FRA, never count as pre-executed proof.
   - Zero warnings or errors in production build.
-- **EXIT_GATE:** Signed AAB generated; Founder explicit sign-off granted.
+- **EXIT_GATE:** FRA PASS, final artifact evidence, and Founder explicit release sign-off.
 
 ---
 
@@ -356,15 +460,20 @@ flowchart TD
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 SPRINTS_COMPLETE               = 1, 2, 3, 4
-GATE-108-CDI                   = IN_PROGRESS  (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
+GATE_108_CDI                   = IN_PROGRESS — CDI-108-03 SOURCE RESEARCH; COMPLETED CDI PRESERVED
 SPRINT_5                       = BLOCKED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+SPRINT_108_ENV2                 = PLANNED
+GATE_108_FRA                    = PLANNED
+BUILD_108_CAN_PROCEED_TO_RELEASE = NO
+NEXT_SAFE_ACTION                = CONTINUE_CURRENT_GATE_108_CDI
 ```
 
 **MANDATORY RULES:**
 - No Sprint 5+ execution until `GATE-108-CDI` is closed / the Founder authorises a parallel track.
-- No CDI-108-02 / CDI-108-03 implementation until the Founder reviews CDI-108-01 and rules on
-  sequencing.
+- Current Founder direction supersedes the historical CDI sequencing hold: completed Chiron,
+  timezone, and HD client/recovery work stays done; continue CDI-108-03 source research/architecture
+  and prove the source before local implementation. HD extras remain source-dependent; backfill
+  NOT READY. No ENV2 implementation or FRA execution is authorized by this documentation checkpoint.
 - No production Firestore read/write; no HD/natal backfill or migration run; no version bump,
   build, sign, deploy, or upload.
 - Every `CDI-*` fix must preserve 100% of the Build 107 inheritance checklist (verified for CDI-108-01).
