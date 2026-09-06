@@ -5,14 +5,15 @@
 STATUS                          = PAUSED (SPRINT 4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
+NEXT_PRIMARY_AGENT              = CODEX
 INITIATIVE                      = BUILD 108 ENL
 PURPOSE                         = Dedicated English-Language Edition / Global Release
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+GATE_108_CDI                    = IN_PROGRESS
+NEXT_SAFE_ACTION                = CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -23,21 +24,28 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > **Founder-approved**, and recorded in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`** (mandatory
 > reading order + authority hierarchy below). All three root causes CONFIRMED.
 >
-> `GATE_108_CDI` is **IN_PROGRESS** (§7.1):
-> - **CDI-108-01 (Chiron ephemeris) — DONE.** Linear Chiron + Equal-house-as-Placidus removed;
->   committed Swiss Ephemeris table + canonical-service proxy route; fail-closed, non-destructive.
-> - **CDI-108-01A (timezone canonicalization) — DONE.** `longitude / 15` + browser-guess + `+07:00`
->   default removed; deterministic offline lat/lon → IANA (`tz-lookup`); luxon DST-correct
->   wall-clock → UTC; a valid stored zone is never overwritten; fail closed to pending when
->   unresolved. End-to-end Chiron residual 0.000420° (12/12 fixtures).
-> - **CDI-108-02 (Human Design) — refined READ-ONLY live-contract audit DONE; implementation NOT
->   started.** The *deployed* engine returns `digestion/environment/motivation/cognition`; the
->   confirmed defects are a `perspective` adapter gap, a `variables.short_code` UI-key mismatch,
->   the absence of per-planet Color/Tone/Base, legacy blueprints needing migration/re-fetch, and
->   the `mass-recover-hd.ts` `centers` corruption. See audit §B.8.
-> - **CDI-108-03 (Schumann) — NOT started.**
-> The obsolete marker `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies to this work.
-> No production Firestore mutation; no backend deploy; no version bump / build / sign / deploy / upload.
+> `GATE_108_CDI` is **IN_PROGRESS** (§7.1). The next primary agent is **CODEX**.
+>
+> Completed state: `SPRINT_108_01 = COMPLETE`, `SPRINT_108_02 = COMPLETE`, `SPRINT_108_03 = COMPLETE`,
+> `SPRINT_108_04 = COMPLETE`, `SPRINT_108_05 = BLOCKED`; `CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE`,
+> `CDI_C1 = DONE`, `CDI_C2 = DONE`, `CDI_C3 = OPEN`.
+>
+> Important completed Chiron state: old linear Chiron approximation removed; Swiss Ephemeris-derived
+> client-side Chiron table implemented; Chiron fixture accuracy 10/10; fail-closed persistence
+> implemented; Whole Sign and Placidus explicitly separated; no production backfill performed.
+>
+> Pending blockers: `CDI-108-01A` canonical IANA timezone propagation / `CDI-C3`; genuine Placidus
+> production service deployment remains ops-gated; `CDI-108-02` Human Design advanced variables;
+> `CDI-108-03` Schumann source replacement; `CDI-D1` legacy data backfill, separately Founder-authorized only.
+>
+> Important HD audit refinement: the LIVE deployed Human Design `/calculate` contract differs from
+> repo `services/humandesign-api/main.py`. Observed live payload already includes `digestion`,
+> `environment`, `motivation`, and `cognition`. Apparently absent / unresolved: `perspective` and
+> diagnostic Color/Tone/Base. CODEX must **NOT** assume the HD engine is the primary defect.
+>
+> The obsolete marker `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies to this work. No production
+> Firestore mutation; no backend deploy; no version bump / build / sign / deploy / upload. Production
+> read-only probes are not implicitly authorized beyond evidence already collected.
 
 ---
 
@@ -217,12 +225,23 @@ The 8 implementation sprints (specified in detail in `BUILD_108_ENL_SPRINT_PLAN.
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
 LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE
-CDI_108_01_CHIRON              = DONE (2026-09-06, commit dccaf08)
-CDI_108_01A_TIMEZONE          = DONE (2026-09-06)
-CDI_108_02_HUMAN_DESIGN        = REFINED READ-ONLY AUDIT DONE (§B.8) — IMPLEMENTATION NOT_STARTED
-CDI_108_03_SCHUMANN            = NOT_STARTED
-SPRINT_5_STATUS                 = NOT_STARTED — BLOCKED behind GATE_108_CDI
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+SPRINT_108_01                  = COMPLETE
+SPRINT_108_02                  = COMPLETE
+SPRINT_108_03                  = COMPLETE
+SPRINT_108_04                  = COMPLETE
+SPRINT_108_05                  = BLOCKED
+CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
+CDI_C1                         = DONE
+CDI_C2                         = DONE
+CDI_C3                         = OPEN
+CDI_108_02_HUMAN_DESIGN        = PENDING — ADVANCED VARIABLES
+CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
+CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
+NEXT_SAFE_ACTION                = CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT
+PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
+PRODUCTION_BACKFILL             = NOT AUTHORIZED
+BACKEND_DEPLOY                  = NOT AUTHORIZED
+PLAY_UPLOAD                     = NOT AUTHORIZED
 ```
 
 ### 7.1 Core Data Integrity Gate — `GATE_108_CDI` (opened 2026-09-06)
@@ -233,18 +252,20 @@ three root causes CONFIRMED.
 
 | Defect | Root cause (confirmed) | Status |
 |---|---|---|
-| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production; local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`; plus `longitude / 15` timezone inference. | **DONE — CDI-108-01 (§C.8) + CDI-108-01A (§C.9).** Committed Swiss Ephemeris Chiron table (12/12 fixtures correct sign); linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy for the canonical service; deterministic IANA timezone (`tz-lookup`) + luxon DST-correct conversion — no `longitude / 15`; Whole Sign / Placidus separate + labelled; fail-closed, non-destructive persistence. **CHIRON_END_TO_END_MAX_ERROR = 0.000420°.** Residual: deploy the ephemeris service for genuine Placidus houses (CDI-C1 ops step). |
-| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The deployed engine **does** return `digestion/environment/motivation/cognition`; adapter/normalizer/persistence/UI-grid-keys handle them. Confirmed defects: (a) `perspective` — adapter reads an absent top-level key instead of `variables.bottom_right` (derivable); (b) **Variables Arrows** — `HumanDesignBodygraphLite.tsx` reads `variables.variable/value` instead of the stored `variables.short_code` (UI-only); (c) per-planet **Color/Tone/Base** — deployed engine never emits them, ignores `debug` (needs another engine — CDI-B6); (d) "Not stored" for the present fields on real users = **legacy blueprints** (migrate from stored `variables`, else re-fetch); (e) `mass-recover-hd.ts` still corrupts `centers` + drops activations; (f) HD variable/style narratives Indonesian-only; (g) "Story for this section is being prepared." on CANONICAL types. HD **core** identity healthy. | **REFINED READ-ONLY AUDIT DONE (§B.8). IMPLEMENTATION NOT STARTED — CDI-108-02** (CDI-B1..B6, per-field). |
+| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production; local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`; timezone propagation remains the open CDI-C3 continuity blocker. | **CDI-108-01 COMPLETE. CDI-C1 DONE. CDI-C2 DONE. CDI-C3 OPEN.** Committed Swiss Ephemeris-derived client-side Chiron table; old linear Chiron approximation removed; Chiron fixture accuracy 10/10; fail-closed persistence implemented; Whole Sign and Placidus explicitly separated. Genuine Placidus production service deployment remains ops-gated. No production backfill performed. |
+| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The live deployed `/calculate` contract differs from repo `services/humandesign-api/main.py`; observed live payload already includes `digestion`, `environment`, `motivation`, and `cognition`. Apparently absent / unresolved: `perspective` and diagnostic Color/Tone/Base. | **PENDING — CDI-108-02.** CODEX must not assume the HD engine is the primary defect; start from `CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT`. |
 | **Schumann `Data belum tersedia`** | Upstream provider endpoint `schumannresonancelive.com/api/data.php` returns **HTTP 404**. Pre-existing since ≥ Build 106 (residual DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
 
-Cross-cutting: **CDI-D1** — post-fix, non-destructive, convergence-safe production backfill for
-HD advanced variables + Chiron across Build 103–107 cohorts (Founder-authorised, separate; NOT
-authorised now).
+Cross-cutting: **CDI-D1** — legacy data backfill is separately Founder-authorized only and is **not
+authorized now**.
 
 **Guardrails:**
+- NEXT PRIMARY AGENT: CODEX.
+- NEXT SAFE ACTION: `CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT`.
 - CDI-108-02 / CDI-108-03 not started until the Founder rules on sequencing.
 - NO Sprint 5 execution until `GATE_108_CDI` is closed / the Founder authorises a parallel track.
-- NO production Firestore read or write; NO backfill of any kind.
+- NO production Firestore write; NO backfill of any kind.
+- Production read-only probes are not implicitly authorized beyond evidence already collected.
 - NO version bump to 108 or 5.0.8; NO APK/AAB; NO deployment or publishing.
 - Every `CDI-*` fix preserves 100% of the Build 107 inheritance checklist (§3) — verified for
   CDI-108-01 (HD convergence 19/19, production-surface guard 131/131, `tsc` EXIT 0).
