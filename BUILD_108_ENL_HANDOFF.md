@@ -2,7 +2,7 @@
 **Developer & Agent Execution Guide**
 
 ```text
-STATUS                          = PAUSED (SPRINT 4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
+STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 DONE (SPRINT 5 BLOCKED)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 CURRENT_BRANCH                  = recovery/build106-product-continuity
@@ -11,18 +11,26 @@ PURPOSE                         = Dedicated English-Language Edition of Bhumi Am
 TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DERIVED_SPRINT_COUNT            = 8 SPRINTS
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 DONE · CDI-108-02 / CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
-> **PAUSE NOTICE (2026-09-06).** Sprint 4 is complete. **Do NOT start Sprint 5.** The Founder
-> confirmed three production data-integrity defects (Schumann unavailable · Human Design advanced
-> variables not stored/incomplete · Chiron position incorrect). Read-only root-cause audit is
-> complete in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`** — all three root causes CONFIRMED.
-> No `CDI-*` fix may be implemented, no production Firestore read/write or backfill may occur, and
-> no version bump / build / sign / deploy / upload is permitted until the Founder reviews the audit
-> and rules on sequencing.
+> **CORE DATA INTEGRITY GATE (2026-09-06).** Sprint 4 is complete. **Do NOT start Sprint 5.** The
+> read-only root-cause audit (**`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**) is **Founder-approved**;
+> all three root causes CONFIRMED. `GATE_108_CDI` is IN_PROGRESS:
+> - **CDI-108-01 (Chiron / natal accuracy) — DONE.** Linear Chiron + Equal-house-as-Placidus
+>   removed; committed Swiss Ephemeris table (`lib/astrology/chironEphemeris.ts` +
+>   `lib/astrology/data/chironEphemeris.json`); `getAstrologyApiUrl()` +
+>   `app/api/humandesign/astrology` proxy; fail-closed, non-destructive persistence.
+>   Test: `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts`.
+> - **CDI-108-02 (Human Design advanced variables) — NOT STARTED.**
+> - **CDI-108-03 (Schumann source) — NOT STARTED.**
+>
+> No further `CDI-*` implementation, no production Firestore read/write or backfill, and no version
+> bump / build / sign / deploy / upload until the Founder reviews CDI-108-01 and rules on
+> sequencing. The obsolete marker `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies to this work.
 
 ---
 
@@ -32,9 +40,11 @@ Any coding agent operating on Build 108 ENL MUST strictly adhere to the followin
 
 1. **Do NOT modify product code yet.**
    - Code modification, refactoring, or translation PRs may only begin AFTER explicit Founder sign-off.
-   - The Build 108 ENL initiative is currently **PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT**. Sprint 5
-     is NOT started. No `CDI-*` fix from `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md` may be
-     implemented until the Founder reviews that audit.
+   - The Build 108 ENL initiative is currently **PAUSED_FOR_CORE_DATA_INTEGRITY** with
+     `GATE_108_CDI = IN_PROGRESS`. Sprint 5 is NOT started. **CDI-108-01 (Chiron) is done;**
+     no further `CDI-*` fix (CDI-108-02 HD, CDI-108-03 Schumann) from
+     `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md` may be implemented until the Founder reviews
+     CDI-108-01 and rules on sequencing.
 2. **Do NOT bump version yet.**
    - `versionCode` remains `107` and `versionName` remains `"5.0.7"` until the sprint release stage.
 3. **Do NOT build, sign, or upload artifacts yet.**
@@ -109,31 +119,33 @@ node --import tsx tests/unit/version-reconciliation.test.ts
 ## 5. Current Task State & Handoff Action
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
+GATE_108_CDI                    = IN_PROGRESS
 LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE
-SPRINT_5_STATUS                 = NOT_STARTED (BLOCKED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
+CDI_108_01_CHIRON              = DONE (commit <cdi-01 fix>; test build108-cdi01-chiron-natal-accuracy EXIT 0)
+CDI_108_02_HUMAN_DESIGN        = NOT_STARTED
+CDI_108_03_SCHUMANN            = NOT_STARTED
+SPRINT_5_STATUS                 = NOT_STARTED (BLOCKED behind GATE_108_CDI)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
 ```
 
-### 5.1 Core Data Integrity Hold (2026-09-06)
+### 5.1 Core Data Integrity Gate — `GATE_108_CDI` (2026-09-06)
 
-Sprint 4 completed (English AI guidance, prompts, local deterministic fallbacks, normalization,
-birthday messages). Before Sprint 5, the Founder confirmed three production data-integrity defects
-that Build 108 must not inherit. A READ-ONLY root-cause audit is complete:
-**`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. All three root causes CONFIRMED.
+Read-only root-cause audit **Founder-approved**: **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**.
+All three root causes CONFIRMED.
 
-| Defect | Confirmed root cause | Blockers |
+| Defect | Confirmed root cause | Status |
 |---|---|---|
-| Schumann `Data belum tersedia` | Provider endpoint `schumannresonancelive.com/api/data.php` → **HTTP 404** (API path removed). Client-only fetch; no proxy possible under static export. Fresh installs have no cache. Pre-existing since ≥ Build 106 (DS-E1). No fabricated "healthy" values. | CDI-A1, CDI-A2, CDI-A3 |
-| HD advanced variables "Not stored" | Deployed engine (`services/humandesign-api/main.py` `POST /calculate`) emits only the 4 binary Variable arrows; never derives PHS Digestion/Environment/Motivation/Perspective/Cognition; withholds raw Color/Tone/Base unless `debug=true` (never sent). `variables.short_code` read against wrong UI keys. `calculateAdvancedVariables()` orphaned. `mass-recover-hd.ts` drops activations + corrupts `centers`. HD **core** identity healthy; Build 107 convergence intact. | CDI-B1..CDI-B5 |
-| Chiron wrong | Swiss Ephemeris `/calculate-astrology` unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` proxy). Silent local fallback derives Chiron from a linear ephemeris (`astronomy-engine` has no Chiron). Houses are Equal House mislabelled `placidusHouses`. | CDI-C1, CDI-C2, CDI-C3 |
+| **Chiron wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` proxy). Silent local fallback derived Chiron from a **linear** ephemeris (`astronomy-engine` has no Chiron). Houses were Equal House mislabelled `placidusHouses`. | **DONE — CDI-108-01.** Committed Swiss Ephemeris Chiron table (`lib/astrology/chironEphemeris.ts` + `data/chironEphemeris.json`); linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy route → configured ephemeris service; Whole Sign / Placidus kept separate + labelled; fail-closed (`chironAccuracy` / `houseSystem`), non-destructive persistence. `tsc` EXIT 0; CDI-01 test 13/13; Build 107 guards intact. Ops residual: deploy the ephemeris service for genuine Placidus (CDI-C1); CDI-C3 setup timezone. |
+| **HD advanced variables "Not stored"** | Deployed HD engine emits only the 4 binary Variable arrows; PHS values not derived; raw Color/Tone/Base debug-gated; stored `variables.short_code` read against wrong UI keys; `calculateAdvancedVariables()` orphaned; `mass-recover-hd.ts` drops activations + corrupts `centers`. HD **core** identity healthy; Build 107 convergence intact. (Probe note: the *deployed* engine returns top-level digestion/environment/motivation/cognition — audit §F.2 — refines CDI-108-02.) | **NOT STARTED — CDI-108-02** (CDI-B1..B5). |
+| **Schumann `Data belum tersedia`** | Provider endpoint `schumannresonancelive.com/api/data.php` → **HTTP 404** (API path removed). Client-only fetch; no proxy under static export. Pre-existing since ≥ Build 106 (DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
 
 Cross-cutting: **CDI-D1** — post-fix, non-destructive, convergence-safe production backfill for
 HD advanced variables + Chiron (Build 103–107 cohorts), Founder-authorised and separate.
 
-**Handoff action:** STOP. Await Founder review of `BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md` and the
-Founder's ruling on whether to (a) execute the `CDI-*` fixes before resuming ENL sprints, or
-(b) resume Sprint 5 in parallel with a dedicated data-integrity track.
+**Handoff action:** STOP. Await Founder review of CDI-108-01 and the Founder's ruling on whether to
+(a) proceed with CDI-108-02 / CDI-108-03 before resuming ENL sprints, or (b) resume Sprint 5 in
+parallel with a dedicated data-integrity track.
 
 ### 5.2 Prior Sprint 4 Accomplishments (for reference)
 

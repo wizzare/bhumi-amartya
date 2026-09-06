@@ -94,7 +94,15 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
     planets: data.natalChart?.planets ?? data.astrology?.planets ?? undefined,
     northNode: data.natalChart?.northNode ?? data.astrology?.northNode ?? undefined,
     southNode: data.natalChart?.southNode ?? data.astrology?.southNode ?? undefined,
+    // CDI-108-01: `chiron` (and the accuracy / house-system markers) are carried
+    // through from whatever is already stored. generateBlueprint only writes
+    // `chiron` when it is ephemeris-accurate, so a fail-closed regeneration can
+    // never blank or downgrade a previously-verified value.
     chiron: data.natalChart?.chiron ?? data.astrology?.chiron ?? undefined,
+    chironAccuracy: (data.natalChart as any)?.chironAccuracy ?? (data.astrology as any)?.chironAccuracy ?? undefined,
+    houseSystem: (data.natalChart as any)?.houseSystem ?? (data.astrology as any)?.houseSystem ?? undefined,
+    ascendantLongitude: (data.natalChart as any)?.ascendantLongitude ?? (data.astrology as any)?.ascendantLongitude ?? undefined,
+    midheavenLongitude: (data.natalChart as any)?.midheavenLongitude ?? (data.astrology as any)?.midheavenLongitude ?? undefined,
     lilith: savedLilith ?? calculatedLilith,
     placidusHouses: data.natalChart?.placidusHouses ?? data.astrology?.placidusHouses ?? undefined,
     wholeSignHouses: data.natalChart?.wholeSignHouses ?? data.astrology?.wholeSignHouses ?? undefined,

@@ -66,6 +66,11 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
     ascendant: "Aries",
   }));
 
+  // CDI-108-01: same fail-closed rule as generateBlueprint — never persist an
+  // approximate Chiron or a synthesised Placidus; { merge: true } keeps any
+  // previously-stored verified value.
+  const chironIsEphemeris = natalBasics.chironAccuracy === "ephemeris";
+  const genuinePlacidus = natalBasics.houseSystem === "placidus";
   const natalChart = {
     sunSign: natalBasics.sunSign || "Aries",
     moonSign: natalBasics.moonSign || undefined,
@@ -73,13 +78,17 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
     ascendant: natalBasics.ascendant || undefined,
     midheaven: natalBasics.midheaven || undefined,
     mc: natalBasics.midheaven || undefined,
+    ascendantLongitude: natalBasics.ascendantLongitude ?? undefined,
+    midheavenLongitude: natalBasics.midheavenLongitude ?? undefined,
     planets: natalBasics.planets || undefined,
     northNode: natalBasics.northNode || undefined,
     southNode: natalBasics.southNode || undefined,
-    chiron: natalBasics.chiron || undefined,
+    chiron: chironIsEphemeris ? (natalBasics.chiron || undefined) : undefined,
+    chironAccuracy: natalBasics.chironAccuracy,
+    houseSystem: natalBasics.houseSystem,
     lilith: natalBasics.lilith || undefined,
-    houses: natalBasics.houses || undefined,
-    placidusHouses: natalBasics.placidusHouses || undefined,
+    houses: genuinePlacidus ? (natalBasics.houses || undefined) : undefined,
+    placidusHouses: genuinePlacidus ? (natalBasics.placidusHouses || undefined) : undefined,
     wholeSignHouses: natalBasics.wholeSignHouses || undefined,
     elements: natalBasics.elements || undefined,
   };

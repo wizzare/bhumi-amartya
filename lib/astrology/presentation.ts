@@ -34,7 +34,9 @@ export type NatalIdentityContext = { sun?: string; moon?: string; ascendant?: st
 
 const signOf = (a: any, p: string): string | undefined => p === "Sun" ? a.sunSign || a.planets?.Sun?.sign : p === "Moon" ? a.moonSign || a.planets?.Moon?.sign : p === "Ascendant" ? a.risingSign || a.ascendant || a.planets?.ASC?.sign : p === "Midheaven" ? a.mc || a.midheaven || a.planets?.MC?.sign : a.planets?.[p]?.sign;
 const positionOf = (a: any, p: string) => a.planets?.[p];
-const houseOf = (a: any, p: string) => { const pos = positionOf(a, p); return pos?.placidusHouse || pos?.house; };
+// CDI-108-01: fall back to the genuine Whole Sign house when no Placidus cusps
+// exist (local-only chart). The natal page labels which system is in effect.
+const houseOf = (a: any, p: string) => { const pos = positionOf(a, p); return pos?.placidusHouse || pos?.house || pos?.wholeSignHouse; };
 const first = (text: string) => text.split(/(?<=[.!?])\s+/)[0] || text;
 const houseText = (house?: number, isEn = isEnlEdition()) => house ? (isEn ? ASTRO_HOUSE_MEANINGS_EN[house] : NATAL_HOUSE_MEANINGS_ID[house]) : undefined;
 const CHART_RULERS: Record<string, string> = { Aries: "Mars", Taurus: "Venus", Gemini: "Mercury", Cancer: "Moon", Leo: "Sun", Virgo: "Mercury", Libra: "Venus", Scorpio: "Mars", Sagittarius: "Jupiter", Capricorn: "Saturn", Aquarius: "Saturn", Pisces: "Jupiter" };
@@ -233,10 +235,10 @@ export function buildNatalPresentation(astrology: any, options: { isEn?: boolean
   const elements = astrology.elements || {}; const modalities = astrology.modalities || {};
   const dominantElements = Object.entries(elements).sort((a: any, b: any) => Number(b[1]) - Number(a[1])).slice(0, 2).map(([key]) => key);
   const dominantModalities = Object.entries(modalities).sort((a: any, b: any) => Number(b[1]) - Number(a[1])).slice(0, 2).map(([key]) => key);
-  const houseCounts: Record<number, number> = {}; Object.values(astrology.planets || {}).forEach((p: any) => { const h = p?.placidusHouse || p?.house; if (h) houseCounts[h] = (houseCounts[h] || 0) + 1; });
+  const houseCounts: Record<number, number> = {}; Object.values(astrology.planets || {}).forEach((p: any) => { const h = p?.placidusHouse || p?.house || p?.wholeSignHouse; if (h) houseCounts[h] = (houseCounts[h] || 0) + 1; });
   const houseEmphasis = Object.entries(houseCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([h, count]) => {
     const house = Number(h);
-    const planets = Object.entries(astrology.planets || {}).filter(([, pos]: any) => (pos?.placidusHouse || pos?.house) === house).map(([planet]) => planet);
+    const planets = Object.entries(astrology.planets || {}).filter(([, pos]: any) => (pos?.placidusHouse || pos?.house || pos?.wholeSignHouse) === house).map(([planet]) => planet);
     const meta = isEn
       ? (ASTRO_HOUSE_MEANINGS_EN[house] || { title: `House ${h}`, desc: "highlighted area of experience" })
       : (NATAL_HOUSE_MEANINGS_ID[house] || { title: `Rumah ${h}`, desc: "area pengalaman yang sedang disorot" });

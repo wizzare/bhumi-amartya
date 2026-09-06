@@ -94,6 +94,12 @@ export interface NatalChartBlueprint {
   northNode?: string;
   southNode?: string;
   chiron?: string;
+  /** CDI-108-01: provenance of `chiron`. "ephemeris" is never set from an approximation. */
+  chironAccuracy?: "ephemeris" | "unavailable";
+  /** CDI-108-01: declared house system. "placidus" only from genuine ephemeris cusps. */
+  houseSystem?: "placidus" | "whole-sign" | "none";
+  ascendantLongitude?: number;
+  midheavenLongitude?: number;
   lilith?: BlackMoonLilith;
   elements?: NatalBalance;
   modalities?: NatalBalance;

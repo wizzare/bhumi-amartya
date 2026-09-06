@@ -722,7 +722,10 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     polarities: readAvailable(blueprint, [["astrology", "polarities"], ["natalChart", "polarities"]]),
     dominantHouses: readAvailable(blueprint, [["astrology", "dominantHouses"], ["natalChart", "dominantHouses"], ["astrology", "dominance", "dominantHouse"], ["natalChart", "dominance", "dominantHouse"]]),
     housePlacements: readAvailable(blueprint, [["astrology", "housePlacements"], ["natalChart", "housePlacements"], ["astrology", "planets"], ["natalChart", "planets"], ["natalChart", "houses"]]),
-    placidusHouses: readAvailable(blueprint, [["astrology", "placidusHouses"], ["natalChart", "placidusHouses"], ["astrology", "houses"], ["natalChart", "houses"]]),
+    // CDI-108-01: keep house systems distinct — neither signal is back-filled
+    // from a generic `houses` object (which could be either system depending on
+    // provenance). Each reads only its own explicitly-typed field.
+    placidusHouses: readAvailable(blueprint, [["astrology", "placidusHouses"], ["natalChart", "placidusHouses"]]),
     wholeSignHouses: readAvailable(blueprint, [["astrology", "wholeSignHouses"], ["natalChart", "wholeSignHouses"]]),
     majorAspects: readAvailable(blueprint, [["astrology", "majorAspects"], ["natalChart", "majorAspects"], ["astrology", "aspects"], ["natalChart", "aspects"]]),
     patterns: readAvailable(blueprint, [["astrology", "patterns"], ["natalChart", "patterns"]]),

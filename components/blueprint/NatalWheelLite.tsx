@@ -16,8 +16,8 @@ export function NatalWheelLite({ astrology, isEn = isEnlEdition() }: Props) {
   if (astrology.lilith) planets.Lilith = { ...astrology.lilith, longitude: signs.indexOf(astrology.lilith.sign) * 30 + Number(astrology.lilith.degree) };
   const entries = Object.entries(planets).filter(([, value]: any) => Number.isFinite(Number(value.longitude)));
   const aspects = Array.isArray(astrology.aspects) ? astrology.aspects : [];
-  const ascLongitude = astrology.placidusHouses?.house1?.longitude ?? astrology.houses?.house1?.longitude;
-  const mcLongitude = astrology.midheavenLongitude ?? astrology.placidusHouses?.house10?.longitude;
+  const ascLongitude = astrology.ascendantLongitude ?? astrology.placidusHouses?.house1?.longitude ?? astrology.houses?.house1?.longitude ?? astrology.wholeSignHouses?.house1?.longitude;
+  const mcLongitude = astrology.midheavenLongitude ?? astrology.placidusHouses?.house10?.longitude ?? astrology.houses?.house10?.longitude ?? astrology.wholeSignHouses?.house10?.longitude;
 
   return (
     <section className="rounded-3xl border border-[#DED7CA] bg-white p-4 shadow-sm">
@@ -32,7 +32,7 @@ export function NatalWheelLite({ astrology, isEn = isEnlEdition() }: Props) {
           return <g key={sign}><line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#D8D0C3" /><text x={label.x} y={label.y} textAnchor="middle" dominantBaseline="middle" fontSize="10" fontWeight="700" fill="#6D756D">{sign.slice(0, 3)}</text></g>;
         })}
         {Array.from({ length: 12 }, (_, index) => {
-          const cusp = astrology.placidusHouses?.[`house${index + 1}`] || astrology.houses?.[`house${index + 1}`];
+          const cusp = astrology.placidusHouses?.[`house${index + 1}`] || astrology.houses?.[`house${index + 1}`] || astrology.wholeSignHouses?.[`house${index + 1}`];
           if (!cusp || !Number.isFinite(Number(cusp.longitude))) return null;
           const outer = polar(Number(cusp.longitude), 150); const inner = polar(Number(cusp.longitude), 92); const label = polar(Number(cusp.longitude) + 8, 113);
           return <g key={index}><line x1={outer.x} y1={outer.y} x2={inner.x} y2={inner.y} stroke="#857968" strokeWidth="1.2" /><text x={label.x} y={label.y} fontSize="9" textAnchor="middle" fill="#857968">{index + 1}</text></g>;

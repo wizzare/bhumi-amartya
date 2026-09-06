@@ -403,9 +403,13 @@ function testEchoBlueprint(): void {
 /* ------------------------------------------------- 13. Calculation Engines Integrity */
 function testEngineIntegrity(): void {
   const diff = execSync("git diff --name-only HEAD", { cwd: ROOT, encoding: "utf-8" });
+  // Sprint 3 froze the mathematical calculation routines. CDI-108-01 (Founder-
+  // authorised, post-Sprint-4) is the one sanctioned exception: it replaces the
+  // Chiron linear approximation / Equal-house-as-Placidus in calculateNatalBasics.ts
+  // with a real Swiss Ephemeris path. That file is therefore change-controlled by
+  // CDI-108-01 below, not frozen — every other engine stays frozen.
   const forbiddenEngines = [
     "calculateHumanDesign.ts",
-    "calculateNatalBasics.ts",
     "calculateNumerology.ts",
     "calculateBazi.ts",
     "calculateWeton.ts",
@@ -419,6 +423,14 @@ function testEngineIntegrity(): void {
     const touched = diff.split("\n").some((f) => f.includes(engine));
     eq(touched, false, `Calculation engine ${engine} MUST NOT be modified`);
   }
+
+  // CDI-108-01 intent guard for calculateNatalBasics.ts: no linear Chiron, no
+  // synthesised Placidus, real ephemeris in use.
+  const natalSrc = fs.readFileSync(path.join(ROOT, "lib/astrology/calculateNatalBasics.ts"), "utf-8");
+  ok(!/function\s+calculateApproximateChironLongitude/.test(natalSrc), "CDI-108-01: linear Chiron helper is removed");
+  ok(!/function\s+buildApproximatePlacidusHouses/.test(natalSrc), "CDI-108-01: Equal-house-as-Placidus builder is removed");
+  ok(natalSrc.includes("chironLongitudeAt"), "CDI-108-01: Swiss Ephemeris Chiron table is used");
+  ok(natalSrc.includes('houseSystem: "whole-sign"'), "CDI-108-01: local engine declares the Whole Sign house system");
 }
 
 /* ------------------------------------------------- 14. Detail Page Source Invariants */

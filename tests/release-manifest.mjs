@@ -25,6 +25,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "CDI-108-01 Chiron / natal ephemeris accuracy",
+    file: "tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",

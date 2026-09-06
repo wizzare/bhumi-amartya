@@ -2,19 +2,21 @@
 **Comprehensive Localization & Surface Classification Ledger**
 
 ```text
-STATUS                          = PAUSED (SPRINTS 1–4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
+STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 DONE (SPRINTS 1–4 COMPLETE; SPRINT 5 BLOCKED)
 BASELINE                        = BUILD 107 (versionCode 107, versionName 5.0.7)
 TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
 BLUEPRINT_ENGINES_AUDITED       = 11
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 Chiron DONE · CDI-108-02 HD / CDI-108-03 Schumann NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
 ```
 
-> **PAUSE NOTICE (2026-09-06).** Three confirmed production data-integrity defects (Schumann,
-> Human Design advanced variables, Chiron) gate Sprint 5. Root causes are CONFIRMED in
-> **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. This matrix's ENL localisation status is unchanged;
-> §8 below adds the data-integrity ledger for the affected surfaces/engines.
+> **CORE DATA INTEGRITY GATE (2026-09-06).** Three confirmed production data-integrity defects
+> (Schumann, Human Design advanced variables, Chiron) gate Sprint 5. Root causes CONFIRMED and
+> **Founder-approved** in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron /
+> natal accuracy) is complete** (§8). This matrix's ENL localisation status is unchanged; §8 is
+> the data-integrity ledger for the affected surfaces/engines.
 
 ---
 
@@ -177,8 +179,9 @@ Audited 105 components in `components/`:
 ## 7. Operational Status & Sign-off
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY_AUDIT
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
+BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 DONE · CDI-108-02 / CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
 ```
 
 ---
@@ -195,7 +198,7 @@ CONFIRMED. Classification below is orthogonal to the ENL localisation classifica
 | `app/blueprint/human-design/page.tsx` — Type/Strategy/Authority/Profile/Definition/Centers/Gates/Channels | **HEALTHY** | Maps correctly from `services/humandesign-api/main.py`; Build 107 convergence intact (`getHdState` CANONICAL ⇔ `hdEngineVersion === "gaia-hd-v1"`). | — | — |
 | `components/blueprint/HumanDesignBodygraphLite.tsx` · `lib/humandesign/{hdkitAdapter,presentation,calculateAdvancedVariables}.ts` · `lib/repositories/blueprintRepository.ts` | **ADVANCED_LAYER_BROKEN** | Deployed engine emits only the 4 binary Variable arrows (`variables` + `short_code`); never derives PHS Digestion/Environment/Motivation/Perspective/Cognition; withholds raw Color/Tone/Base unless `debug=true` (never sent). `variables.short_code` read against wrong UI keys (`variable`/`value`/`advanced`). `calculateAdvancedVariables()` orphaned. `scripts/mass-recover-hd.ts` drops `diagnostic`/activations + writes a raw array into `centers`. `perspective` missing from `normalizeBlueprint`'s explicit HD list. | New + `mass-recover-hd` cohort + pre-V2 legacy | CDI-B1..B5 |
 | `lib/humandesign/intelligence/{variableIntelligence,styleEngine}.ts` + Profile → Potential cards + `lib/orchestrators/localDailyGuidanceFallback.ts` | **INDONESIAN_ONLY (no `isEn`)** | Hardcoded Indonesian HD variable/style narratives; `presentation.ts` English `variables.*` are generic constants ignoring real values. `app/blueprint/human-design/page.tsx:195` shows "Story for this section is being prepared." on CANONICAL types when `executeHumanMeaningRuntime` returns `{ok:false}`. | ENL users | CDI-B4 / CDI-B5 |
-| `app/blueprint/natal-chart/page.tsx` · `lib/astrology/calculateNatalBasics.ts` · `lib/dailyGuidance/unifiedBlueprintSynthesis.ts` | **CHIRON_APPROXIMATION_WRONG** | Swiss Ephemeris `/calculate-astrology` (`swe.CHIRON`) unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` astrology proxy). Silent local fallback derives Chiron from `251.35 + days·0.019777` (linear; `astronomy-engine` has no Chiron) → sign/degree/house frequently wrong. `buildApproximatePlacidusHouses` returns Equal-House cusps stored as `placidusHouses`. `normalizeBlueprint` never re-derives Chiron on read. | New + all cohorts computed via the local fallback | CDI-C1 / C2 / C3 |
+| `app/blueprint/natal-chart/page.tsx` · `lib/astrology/calculateNatalBasics.ts` · `lib/astrology/chironEphemeris.ts` · `app/api/humandesign/astrology/route.ts` | **CHIRON — FIXED (CDI-108-01, 2026-09-06)** | Was: Swiss Ephemeris `/calculate-astrology` unreachable → silent linear Chiron (`251.35 + days·0.019777`) + Equal-House cusps stored as `placidusHouses`. Now: committed Swiss Ephemeris Chiron table (`chironLongitudeAt`, 1900–2100, < 0.001° error, 10/10 fixtures correct sign); linear model + `buildApproximatePlacidusHouses` deleted; local engine emits genuine Whole Sign houses + `houseSystem` label + `chironAccuracy` contract; `getAstrologyApiUrl()` + proxy route reach the canonical service for genuine Placidus; fail-closed + non-destructive persistence (`chiron` persisted only when `chironAccuracy==="ephemeris"`). | New users fixed immediately; **legacy backfill (CDI-D1) NOT done — Founder-gated** | CDI-C1 (deploy ephemeris service — ops), CDI-C3 (setup timezone) |
 
 **Cross-cutting — CDI-D1:** non-destructive, convergence-safe production backfill for HD advanced
 variables + Chiron across Build 103–107 cohorts, AFTER the upstream calculations are fixed.

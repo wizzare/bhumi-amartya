@@ -1,0 +1,371 @@
+{
+  "generatedAtUtc": "2026-09-06T04:27:14Z",
+  "source": "pyswisseph 2.10.03 + seas_18.se1 (Swiss Ephemeris)",
+  "oldLinearModel": {
+    "anchorDeg": 251.35,
+    "rateDegPerDay": 0.019777,
+    "j2000Jd": 2451545.0
+  },
+  "fixtures": [
+    {
+      "label": "hindenburg_era_gemini",
+      "birthLocal": "1937-05-20T07:25",
+      "timezone": "America/New_York",
+      "utcOffsetHours": -4.0,
+      "birthUtc": "1937-05-20T11:25:00Z",
+      "jdUt": 2428673.9756944445,
+      "latitude": 40.7128,
+      "longitude": -74.006,
+      "place": "New York, USA",
+      "expected": {
+        "chironLongitude": 81.98227,
+        "chironSign": "Gemini",
+        "chironDegree": 21.9823,
+        "chironHousePlacidus": 12,
+        "chironHouseWholeSign": 1,
+        "ascendantSign": "Gemini",
+        "ascendantLongitude": 87.08455,
+        "midheavenSign": "Pisces",
+        "midheavenLongitude": 332.99776
+      },
+      "oldLinear": {
+        "chironLongitude": 159.02975,
+        "chironSign": "Virgo",
+        "chironDegree": 9.0298,
+        "errorDegrees": 77.0475,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 81.98245,
+        "chironSign": "Gemini",
+        "chironDegree": 21.9824,
+        "errorDegrees": 0.000178,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "post_war_aquarius",
+      "birthLocal": "1955-03-01T23:45",
+      "timezone": "Asia/Jakarta",
+      "utcOffsetHours": 7.5,
+      "birthUtc": "1955-03-01T16:15:00Z",
+      "jdUt": 2435168.1770833335,
+      "latitude": -6.2088,
+      "longitude": 106.8456,
+      "place": "Jakarta, Indonesia",
+      "expected": {
+        "chironLongitude": 302.66966,
+        "chironSign": "Aquarius",
+        "chironDegree": 2.6697,
+        "chironHousePlacidus": 3,
+        "chironHouseWholeSign": 3,
+        "ascendantSign": "Sagittarius",
+        "ascendantLongitude": 243.68125,
+        "midheavenSign": "Leo",
+        "midheavenLongitude": 147.07764
+      },
+      "oldLinear": {
+        "chironLongitude": 287.46557,
+        "chironSign": "Capricorn",
+        "chironDegree": 17.4656,
+        "errorDegrees": 15.2041,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 302.67001,
+        "chironSign": "Aquarius",
+        "chironDegree": 2.67,
+        "errorDegrees": 0.000357,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "hd_snapshot_pisces",
+      "birthLocal": "1968-02-21T09:00",
+      "timezone": "Europe/Istanbul",
+      "utcOffsetHours": 2.0,
+      "birthUtc": "1968-02-21T07:00:00Z",
+      "jdUt": 2439907.7916666665,
+      "latitude": 41.0082,
+      "longitude": 28.9784,
+      "place": "Istanbul, Turkiye",
+      "expected": {
+        "chironLongitude": 357.66821,
+        "chironSign": "Pisces",
+        "chironDegree": 27.6682,
+        "chironHousePlacidus": 12,
+        "chironHouseWholeSign": 12,
+        "ascendantSign": "Aries",
+        "ascendantLongitude": 24.38313,
+        "midheavenSign": "Capricorn",
+        "midheavenLongitude": 283.11961
+      },
+      "oldLinear": {
+        "chironLongitude": 21.20093,
+        "chironSign": "Aries",
+        "chironDegree": 21.2009,
+        "errorDegrees": 23.5327,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 357.66853,
+        "chironSign": "Pisces",
+        "chironDegree": 27.6685,
+        "errorDegrees": 0.000317,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "chiron_taurus_retro",
+      "birthLocal": "1977-11-15T04:30",
+      "timezone": "Australia/Sydney",
+      "utcOffsetHours": 11.0,
+      "birthUtc": "1977-11-14T17:30:00Z",
+      "jdUt": 2443462.2291666665,
+      "latitude": -33.8688,
+      "longitude": 151.2093,
+      "place": "Sydney, Australia",
+      "expected": {
+        "chironLongitude": 32.54798,
+        "chironSign": "Taurus",
+        "chironDegree": 2.548,
+        "chironHousePlacidus": 7,
+        "chironHouseWholeSign": 8,
+        "ascendantSign": "Libra",
+        "ascendantLongitude": 206.18361,
+        "midheavenSign": "Cancer",
+        "midheavenLongitude": 106.04928
+      },
+      "oldLinear": {
+        "chironLongitude": 91.49704,
+        "chironSign": "Cancer",
+        "chironDegree": 1.497,
+        "errorDegrees": 58.9491,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 32.54778,
+        "chironSign": "Taurus",
+        "chironDegree": 2.5478,
+        "errorDegrees": 0.000198,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "widhi_case_gemini",
+      "birthLocal": "1985-05-03T23:45",
+      "timezone": "Asia/Jakarta",
+      "utcOffsetHours": 7.0,
+      "birthUtc": "1985-05-03T16:45:00Z",
+      "jdUt": 2446189.1979166665,
+      "latitude": -6.2088,
+      "longitude": 106.8456,
+      "place": "Jakarta, Indonesia",
+      "expected": {
+        "chironLongitude": 66.77867,
+        "chironSign": "Gemini",
+        "chironDegree": 6.7787,
+        "chironHousePlacidus": 4,
+        "chironHouseWholeSign": 5,
+        "ascendantSign": "Aquarius",
+        "ascendantLongitude": 309.205,
+        "midheavenSign": "Scorpio",
+        "midheavenLongitude": 222.06171
+      },
+      "oldLinear": {
+        "chironLongitude": 145.4283,
+        "chironSign": "Leo",
+        "chironDegree": 25.4283,
+        "errorDegrees": 78.6496,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 66.77884,
+        "chironSign": "Gemini",
+        "chironDegree": 6.7788,
+        "errorDegrees": 0.000166,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "cancer_fast_arc",
+      "birthLocal": "1990-06-15T14:30",
+      "timezone": "Asia/Kolkata",
+      "utcOffsetHours": 5.5,
+      "birthUtc": "1990-06-15T09:00:00Z",
+      "jdUt": 2448057.875,
+      "latitude": 19.076,
+      "longitude": 72.8777,
+      "place": "Mumbai, India",
+      "expected": {
+        "chironLongitude": 106.04788,
+        "chironSign": "Cancer",
+        "chironDegree": 16.0479,
+        "chironHousePlacidus": 9,
+        "chironHouseWholeSign": 10,
+        "ascendantSign": "Libra",
+        "ascendantLongitude": 200.07317,
+        "midheavenSign": "Cancer",
+        "midheavenLongitude": 109.6505
+      },
+      "oldLinear": {
+        "chironLongitude": 182.38513,
+        "chironSign": "Libra",
+        "chironDegree": 2.3851,
+        "errorDegrees": 76.3372,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 106.04803,
+        "chironSign": "Cancer",
+        "chironDegree": 16.048,
+        "errorDegrees": 0.000149,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "millennium_sagittarius",
+      "birthLocal": "2001-09-11T08:46",
+      "timezone": "America/Los_Angeles",
+      "utcOffsetHours": -7.0,
+      "birthUtc": "2001-09-11T15:46:00Z",
+      "jdUt": 2452164.1569444444,
+      "latitude": 34.0522,
+      "longitude": -118.2437,
+      "place": "Los Angeles, USA",
+      "expected": {
+        "chironLongitude": 263.05193,
+        "chironSign": "Sagittarius",
+        "chironDegree": 23.0519,
+        "chironHousePlacidus": 3,
+        "chironHouseWholeSign": 3,
+        "ascendantSign": "Libra",
+        "ascendantLongitude": 195.97324,
+        "midheavenSign": "Cancer",
+        "midheavenLongitude": 107.51624
+      },
+      "oldLinear": {
+        "chironLongitude": 263.59507,
+        "chironSign": "Sagittarius",
+        "chironDegree": 23.5951,
+        "errorDegrees": 0.5431,
+        "signMatch": true
+      },
+      "newTable": {
+        "chironLongitude": 263.05202,
+        "chironSign": "Sagittarius",
+        "chironDegree": 23.052,
+        "errorDegrees": 8.5e-05,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "chiron_pisces_station",
+      "birthLocal": "2013-07-04T12:00",
+      "timezone": "Europe/London",
+      "utcOffsetHours": 1.0,
+      "birthUtc": "2013-07-04T11:00:00Z",
+      "jdUt": 2456477.9583333335,
+      "latitude": 51.5074,
+      "longitude": -0.1278,
+      "place": "London, UK",
+      "expected": {
+        "chironLongitude": 343.68492,
+        "chironSign": "Pisces",
+        "chironDegree": 13.6849,
+        "chironHousePlacidus": 6,
+        "chironHouseWholeSign": 7,
+        "ascendantSign": "Virgo",
+        "ascendantLongitude": 178.23188,
+        "midheavenSign": "Gemini",
+        "midheavenLongitude": 87.69995
+      },
+      "oldLinear": {
+        "chironLongitude": 348.90912,
+        "chironSign": "Pisces",
+        "chironDegree": 18.9091,
+        "errorDegrees": 5.2242,
+        "signMatch": true
+      },
+      "newTable": {
+        "chironLongitude": 343.6845,
+        "chironSign": "Pisces",
+        "chironDegree": 13.6845,
+        "errorDegrees": 0.000422,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "recent_aries",
+      "birthLocal": "2024-01-01T00:01",
+      "timezone": "Pacific/Auckland",
+      "utcOffsetHours": 13.0,
+      "birthUtc": "2023-12-31T11:01:00Z",
+      "jdUt": 2460309.959027778,
+      "latitude": -36.8485,
+      "longitude": 174.7633,
+      "place": "Auckland, New Zealand",
+      "expected": {
+        "chironLongitude": 15.46034,
+        "chironSign": "Aries",
+        "chironDegree": 15.4603,
+        "chironHousePlacidus": 7,
+        "chironHouseWholeSign": 8,
+        "ascendantSign": "Virgo",
+        "ascendantLongitude": 163.41768,
+        "midheavenSign": "Gemini",
+        "midheavenLongitude": 80.47051
+      },
+      "oldLinear": {
+        "chironLongitude": 64.69459,
+        "chironSign": "Gemini",
+        "chironDegree": 4.6946,
+        "errorDegrees": 49.2343,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 15.4607,
+        "chironSign": "Aries",
+        "chironDegree": 15.4607,
+        "errorDegrees": 0.000359,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "southern_no_dst",
+      "birthLocal": "1995-08-09T18:20",
+      "timezone": "Asia/Jakarta",
+      "utcOffsetHours": 7.0,
+      "birthUtc": "1995-08-09T11:20:00Z",
+      "jdUt": 2449938.972222222,
+      "latitude": -8.65,
+      "longitude": 115.2167,
+      "place": "Denpasar, Indonesia",
+      "expected": {
+        "chironLongitude": 175.78938,
+        "chironSign": "Virgo",
+        "chironDegree": 25.7894,
+        "chironHousePlacidus": 7,
+        "chironHouseWholeSign": 7,
+        "ascendantSign": "Pisces",
+        "ascendantLongitude": 332.36243,
+        "midheavenSign": "Sagittarius",
+        "midheavenLongitude": 244.66266
+      },
+      "oldLinear": {
+        "chironLongitude": 219.58759,
+        "chironSign": "Scorpio",
+        "chironDegree": 9.5876,
+        "errorDegrees": 43.7982,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 175.78926,
+        "chironSign": "Virgo",
+        "chironDegree": 25.7893,
+        "errorDegrees": 0.000112,
+        "signMatch": true
+      }
+    }
+  ]
+}

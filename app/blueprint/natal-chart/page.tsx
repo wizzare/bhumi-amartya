@@ -326,7 +326,14 @@ export default function NatalChartPage() {
               {/* Life Areas */}
               <div>
                 <h2 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#7B8776]">{isEn ? "Prominent Life Areas" : "Area Kehidupan yang Menonjol"}</h2>
-                <p className="mb-4 text-sm text-[#7B8776]">{isEn ? "Top 3 life areas with the greatest energetic focus:" : "Top 3 area kehidupan dengan konsentrasi energi terbesar:"}</p>
+                <p className="mb-1 text-sm text-[#7B8776]">{isEn ? "Top 3 life areas with the greatest energetic focus:" : "Top 3 area kehidupan dengan konsentrasi energi terbesar:"}</p>
+                <p className="mb-4 text-xs text-[#9AA394]">
+                  {(() => {
+                    const hs = (nc.houseSystem as string) || "whole-sign";
+                    const label = hs === "placidus" ? "Placidus" : hs === "whole-sign" ? (isEn ? "Whole Sign" : "Whole Sign (Seluruh Tanda)") : (isEn ? "not yet available" : "belum tersedia");
+                    return isEn ? `House system: ${label}` : `Sistem rumah: ${label}`;
+                  })()}
+                </p>
                 <div className="grid gap-3">
                   {topHouses.map((h, i) => (
                     <div key={i} className="flex items-center gap-4 rounded-2xl border border-[#E8E1D3] bg-white p-4 shadow-sm">

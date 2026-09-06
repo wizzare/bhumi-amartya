@@ -1,6 +1,23 @@
 import * as Astronomy from "astronomy-engine";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { BlackMoonLilith, NatalAspect, NatalBalance, NatalDominance, NatalPattern, PlanetaryPosition } from "@/lib/types/blueprint";
+import { chironLongitudeAt, chironIsRetrograde } from "@/lib/astrology/chironEphemeris";
+import { getAstrologyApiUrl } from "@/lib/config/astrologyApiUrl";
+
+/**
+ * CDI-108-01 — Chiron / house-system accuracy contract.
+ *
+ * `chironAccuracy: "ephemeris"` ONLY when Chiron came from a real ephemeris
+ * (the Swiss Ephemeris table `chironLongitudeAt`, or the remote Swiss Ephemeris
+ * service). It is NEVER set from an approximation. Callers must not persist
+ * `chiron` unless `chironAccuracy === "ephemeris"`.
+ *
+ * `houseSystem: "placidus"` ONLY when genuine Placidus cusps were supplied by
+ * the ephemeris service. The local engine can only produce genuine Whole Sign
+ * houses, so it reports `"whole-sign"` and never synthesises Placidus.
+ */
+export type NatalChironAccuracy = "ephemeris" | "unavailable";
+export type NatalHouseSystem = "placidus" | "whole-sign" | "none";
 
 export type NatalBasicsInput = {
   birthDate?: string | null;
@@ -35,7 +52,13 @@ export type NatalBasics = {
   northNode?: string;
   southNode?: string;
   chiron?: string;
+  /** Provenance of `chiron` / `planets.Chiron`. "ephemeris" is never set from an approximation. */
+  chironAccuracy: NatalChironAccuracy;
   lilith?: BlackMoonLilith;
+  /** Declared house system for `houses` / per-planet house numbers. "placidus" only from genuine cusps. */
+  houseSystem: NatalHouseSystem;
+  ascendantLongitude?: number;
+  midheavenLongitude?: number;
   houses?: Record<string, { sign: string; degree: number; longitude: number }>;
   placidusHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
   wholeSignHouses?: Record<string, { sign: string; degree: number; longitude: number }>;
@@ -262,7 +285,10 @@ function getGeocentricLongitudeLocal(bodyName: string, date: Date): number {
   if (bodyName === "Moon") return Astronomy.EclipticGeoMoon(date).lon;
   if (bodyName === "NorthNode") return calculateMeanNorthNodeLongitude(date);
   if (bodyName === "SouthNode") return calculateMeanNorthNodeLongitude(date) + 180;
-  if (bodyName === "Chiron") return calculateApproximateChironLongitude(date);
+  // CDI-108-01: Chiron is NOT computed here. astronomy-engine has no Chiron body,
+  // and the former fixed-rate linear approximation is removed — Chiron now comes
+  // from the Swiss Ephemeris table (chironLongitudeAt) or the remote ephemeris
+  // service, and fails closed otherwise.
 
   const bodyEnum = (Astronomy.Body as any)[bodyName];
   if (!bodyEnum) return 0;
@@ -273,12 +299,6 @@ function calculateMeanNorthNodeLongitude(date: Date): number {
   const j2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
   const days = (date.getTime() - j2000) / 86_400_000;
   return normalizeLongitude(125.04452 - 0.0529538083 * days);
-}
-
-function calculateApproximateChironLongitude(date: Date): number {
-  const j2000 = Date.UTC(2000, 0, 1, 12, 0, 0);
-  const days = (date.getTime() - j2000) / 86_400_000;
-  return normalizeLongitude(251.35 + days * 0.019777);
 }
 
 function calculateMeanBlackMoonLilithLongitude(date: Date): number {
@@ -308,18 +328,11 @@ function buildWholeSignHouses(ascendantLongitude: number): Record<string, { sign
   return houses;
 }
 
-function buildApproximatePlacidusHouses(ascendantLongitude: number): Record<string, { sign: string; degree: number; longitude: number }> {
-  const houses: Record<string, { sign: string; degree: number; longitude: number }> = {};
-  for (let i = 0; i < 12; i++) {
-    const longitude = normalizeLongitude(ascendantLongitude + i * 30);
-    houses[houseKey(i + 1)] = {
-      sign: signFromLongitude(longitude),
-      degree: degreeInSign(longitude),
-      longitude: Number(longitude.toFixed(4)),
-    };
-  }
-  return houses;
-}
+// CDI-108-01: buildApproximatePlacidusHouses() was removed. It produced Equal
+// House cusps (ascendant + i*30) but stored them as `placidusHouses`, so any
+// derived house was Placidus-in-name-only. Genuine Placidus cusps depend
+// continuously on latitude/longitude/time and can only come from the Swiss
+// Ephemeris service. The local engine now emits genuine Whole Sign houses only.
 
 function determineHouse(longitude: number, houses: Record<string, { longitude: number }>): number | undefined {
   const cusps = Array.from({ length: 12 }, (_, index) => ({
@@ -507,7 +520,9 @@ function buildNatalIntelligence(planets: Record<string, PlanetaryPosition>) {
 }
 
 function calculatePlanetsLocal(date: Date): Record<string, PlanetaryPosition> {
-  const planetNames = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "NorthNode", "SouthNode", "Chiron"] as const;
+  // CDI-108-01: Chiron omitted here — added separately from the Swiss Ephemeris
+  // table (chironLongitudeAt) so it is never a linear approximation.
+  const planetNames = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto", "NorthNode", "SouthNode"] as const;
   const planets: any = {};
   const yesterday = new Date(date.getTime() - 24 * 60 * 60 * 1000);
 
@@ -532,6 +547,8 @@ function calculatePlanetsLocal(date: Date): Record<string, PlanetaryPosition> {
   return planets;
 }
 
+const PENDING_ACCURACY = { chironAccuracy: "unavailable" as const, houseSystem: "none" as const };
+
 export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
   const sunSign = input.birthDate ? calculateSunSign(input.birthDate) : "Unknown";
   const location = resolveNatalLocation(input);
@@ -543,6 +560,7 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
       moonSign: null,
       ascendant: null,
       midheaven: null,
+      ...PENDING_ACCURACY,
       status: "pending",
       source: "local-natal-mvp",
       note: "Natal Moon, Ascendant, and Midheaven require birth date, birth time, timezone, and astrology engine.",
@@ -556,6 +574,7 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
       moonSign: null,
       ascendant: null,
       midheaven: null,
+      ...PENDING_ACCURACY,
       status: "pending",
       source: "local-natal-mvp",
       note: "Natal Moon, Ascendant, and Midheaven require a valid timezone offset.",
@@ -571,6 +590,7 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
         moonSign,
         ascendant: null,
         midheaven: null,
+        ...PENDING_ACCURACY,
         status: "partial",
         source: "local-natal-mvp",
         note: "Ascendant and Midheaven require birth location coordinates. Add latitude/longitude or a supported city fallback.",
@@ -579,11 +599,25 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
 
     const ascendantLongitude = calculateAscendantLongitude(utcDate, location.latitude, location.longitude);
     const midheavenLongitude = calculateMidheavenLongitude(utcDate, location.longitude);
-    const placidusHouses = buildApproximatePlacidusHouses(ascendantLongitude);
+    // CDI-108-01: the local engine produces GENUINE Whole Sign houses only.
+    // Placidus cusps are not synthesised here — they come from the ephemeris service.
     const wholeSignHouses = buildWholeSignHouses(ascendantLongitude);
-    const planets = enrichNatalPlanets(calculatePlanetsLocal(utcDate), placidusHouses, wholeSignHouses);
+
+    const rawPlanets = calculatePlanetsLocal(utcDate);
+    const chironLongitude = chironLongitudeAt(utcDate);
+    const chironAccuracy: NatalChironAccuracy = chironLongitude !== null ? "ephemeris" : "unavailable";
+    if (chironLongitude !== null) {
+      rawPlanets.Chiron = {
+        sign: signFromLongitude(chironLongitude),
+        degree: degreeInSign(chironLongitude),
+        longitude: Number(normalizeLongitude(chironLongitude).toFixed(4)),
+        retrograde: chironIsRetrograde(utcDate) ?? false,
+      };
+    }
+    const planets = enrichNatalPlanets(rawPlanets, undefined, wholeSignHouses);
+
     const lilithLongitude = calculateMeanBlackMoonLilithLongitude(utcDate);
-    const lilithHouse = determineHouse(lilithLongitude, placidusHouses);
+    const lilithHouse = determineHouse(lilithLongitude, wholeSignHouses);
     if (!lilithHouse) throw new Error("Unable to resolve Mean Black Moon Lilith house.");
     const lilith: BlackMoonLilith = {
       sign: signFromLongitude(lilithLongitude),
@@ -597,14 +631,16 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
       moonSign,
       ascendant: signFromLongitude(ascendantLongitude),
       midheaven: signFromLongitude(midheavenLongitude),
+      ascendantLongitude: Number(normalizeLongitude(ascendantLongitude).toFixed(4)),
+      midheavenLongitude: Number(normalizeLongitude(midheavenLongitude).toFixed(4)),
       planets,
       northNode: planets.NorthNode?.sign,
       southNode: planets.SouthNode?.sign,
       chiron: planets.Chiron?.sign,
+      chironAccuracy,
       lilith,
-      houses: placidusHouses,
-      placidusHouses,
       wholeSignHouses,
+      houseSystem: "whole-sign",
       ...intelligence,
       status: "ready",
       source: "astronomy-engine-fallback",
@@ -616,6 +652,7 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
       moonSign: null,
       ascendant: null,
       midheaven: null,
+      ...PENDING_ACCURACY,
       status: "pending",
       source: "local-natal-mvp",
       note: "Natal Moon, Ascendant, and Midheaven require astrology engine.",
@@ -623,7 +660,31 @@ export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
   }
 }
 
+async function resolveFirebaseAuthHeaders(): Promise<Record<string, string>> {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  try {
+    const { auth } = await import("@/lib/firebase/config");
+    const user = auth?.currentUser;
+    if (user) {
+      const idToken = await user.getIdToken();
+      if (idToken) headers["Authorization"] = `Bearer ${idToken}`;
+    }
+  } catch {
+    // headerless fallback — the proxy also honours a dev bypass in non-prod
+  }
+  if (process.env.NODE_ENV !== "production" || process.env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN === "true") {
+    headers["x-dev-secret"] = "bhumi-dev-bypass";
+  }
+  return headers;
+}
+
+const ASTRO_REMOTE_TIMEOUT_MS = 15_000;
+
 export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promise<NatalBasics> {
+  // The local result already carries an accurate ephemeris Chiron (table) and
+  // genuine Whole Sign houses. The remote call only ADDS genuine Placidus cusps
+  // + a second-source Chiron; on any failure we keep the local result unchanged
+  // (fail closed — never synthesise Placidus, never downgrade to an approximation).
   const localResult = calculateNatalBasics(input);
   if (localResult.status !== "ready") return localResult;
 
@@ -631,44 +692,59 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
   if (!timezone) return localResult;
 
   try {
-    const SERVICE_URL = process.env.HUMAN_DESIGN_SERVICE_URL || "http://localhost:8000";
-    const url = `${SERVICE_URL.replace(/\/$/, "")}/calculate-astrology`;
-
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        birthDate: input.birthDate,
-        birthTime: input.birthTime,
-        timezone: timezone,
-        latitude: input.latitude,
-        longitude: input.longitude
-      })
-    });
+    const url = getAstrologyApiUrl();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ASTRO_REMOTE_TIMEOUT_MS);
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: "POST",
+        headers: await resolveFirebaseAuthHeaders(),
+        body: JSON.stringify({
+          birthDate: input.birthDate,
+          birthTime: input.birthTime,
+          timezone,
+          latitude: input.latitude,
+          longitude: input.longitude,
+        }),
+        cache: "no-store",
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (response.ok) {
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
       if (data && data.status === "ready" && data.planets) {
+        const genuinePlacidus =
+          data.placidusHouses && typeof data.placidusHouses === "object"
+            ? Object.keys(data.placidusHouses).length >= 12
+            : false;
         const planets = enrichNatalPlanets(
           data.planets,
-          data.placidusHouses || data.houses,
-          data.wholeSignHouses,
+          genuinePlacidus ? data.placidusHouses : undefined,
+          data.wholeSignHouses || localResult.wholeSignHouses,
         );
+        const remoteChiron = data.chiron || planets.Chiron?.sign || null;
         const intelligence = buildNatalIntelligence(planets);
-        const lilith = localResult.lilith;
         return {
           sunSign: planets.Sun?.sign || localResult.sunSign,
           moonSign: planets.Moon?.sign || localResult.moonSign,
           ascendant: data.ascendant || localResult.ascendant,
           midheaven: data.midheaven || localResult.midheaven,
+          ascendantLongitude: data.ascendantLongitude ?? localResult.ascendantLongitude,
+          midheavenLongitude: data.midheavenLongitude ?? localResult.midheavenLongitude,
           planets,
           northNode: planets.NorthNode?.sign,
           southNode: planets.SouthNode?.sign,
-          chiron: planets.Chiron?.sign,
-          lilith,
-          houses: data.houses || data.placidusHouses || localResult.houses,
-          placidusHouses: data.placidusHouses || data.houses || localResult.placidusHouses,
+          chiron: remoteChiron || localResult.chiron,
+          chironAccuracy: remoteChiron ? "ephemeris" : localResult.chironAccuracy,
+          lilith: localResult.lilith,
+          houses: genuinePlacidus ? (data.houses || data.placidusHouses) : undefined,
+          placidusHouses: genuinePlacidus ? data.placidusHouses : undefined,
           wholeSignHouses: data.wholeSignHouses || localResult.wholeSignHouses,
+          houseSystem: genuinePlacidus ? "placidus" : "whole-sign",
           elements: data.elements || intelligence.elements,
           modalities: data.modalities || intelligence.modalities,
           polarities: data.polarities || intelligence.polarities,
@@ -676,12 +752,12 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
           patterns: data.patterns || intelligence.patterns,
           dominance: data.dominance || intelligence.dominance,
           status: "ready",
-          source: "swiss-ephemeris"
+          source: "swiss-ephemeris",
         };
       }
     }
   } catch (error) {
-    console.warn("[Natal Basics] Failed to calculate using remote Swiss Ephemeris, falling back to astronomy-engine.", error);
+    console.warn("[Natal Basics] Remote Swiss Ephemeris unavailable; keeping local chart (table Chiron + Whole Sign houses).", error);
   }
 
   return localResult;

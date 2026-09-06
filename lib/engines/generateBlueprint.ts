@@ -94,6 +94,11 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     astrocartography,
   });
 
+  // CDI-108-01: persist `chiron` ONLY when it came from a real ephemeris. When it
+  // did not, leave the field undefined — sanitizeForFirestore drops undefined and
+  // the { merge: true } write preserves any previously-stored (verified) value.
+  const chironIsEphemeris = natalBasics.chironAccuracy === "ephemeris";
+  const genuinePlacidus = natalBasics.houseSystem === "placidus";
   const natalChart = {
     sunSign: natalBasics.sunSign,
     moonSign: natalBasics.moonSign ?? undefined,
@@ -101,13 +106,17 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     ascendant: natalBasics.ascendant ?? undefined,
     midheaven: natalBasics.midheaven ?? undefined,
     mc: natalBasics.midheaven ?? undefined,
+    ascendantLongitude: natalBasics.ascendantLongitude ?? undefined,
+    midheavenLongitude: natalBasics.midheavenLongitude ?? undefined,
     planets: natalBasics.planets ?? undefined,
     northNode: natalBasics.northNode ?? natalBasics.planets?.NorthNode?.sign ?? undefined,
     southNode: natalBasics.southNode ?? natalBasics.planets?.SouthNode?.sign ?? undefined,
-    chiron: natalBasics.chiron ?? natalBasics.planets?.Chiron?.sign ?? undefined,
+    chiron: chironIsEphemeris ? (natalBasics.chiron ?? natalBasics.planets?.Chiron?.sign ?? undefined) : undefined,
+    chironAccuracy: natalBasics.chironAccuracy,
+    houseSystem: natalBasics.houseSystem,
     lilith: natalBasics.lilith,
-    houses: natalBasics.houses ?? natalBasics.placidusHouses ?? undefined,
-    placidusHouses: natalBasics.placidusHouses ?? natalBasics.houses ?? undefined,
+    houses: genuinePlacidus ? (natalBasics.houses ?? natalBasics.placidusHouses ?? undefined) : undefined,
+    placidusHouses: genuinePlacidus ? (natalBasics.placidusHouses ?? natalBasics.houses ?? undefined) : undefined,
     wholeSignHouses: natalBasics.wholeSignHouses ?? undefined,
     elements: natalBasics.elements ?? undefined,
     modalities: natalBasics.modalities ?? undefined,
