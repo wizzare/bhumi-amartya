@@ -1222,7 +1222,7 @@ MARKERS           = BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_I
                     GATE_108_CDI = IN_PROGRESS  (CDI-108-01 DONE)
 ```
 
-### F.3 CDI-108-01A (timezone canonicalization) + CDI-108-02 refined READ-ONLY audit — commit `<pending>`
+### F.3 CDI-108-01A (timezone canonicalization) + CDI-108-02 refined READ-ONLY audit — commit `d102924`
 
 ```text
 CDI-108-01A — implemented. CDI-108-02 — READ-ONLY refinement only (no implementation).
@@ -1254,7 +1254,7 @@ BACKEND_DEPLOY / VERSION_BUMP / BUILD / SIGN / UPLOAD = none
 EXTERNAL_PROBES    = read-only synthetic POST /calculate (HD, no PII) 2026-09-06 — response shape
                     recorded in §B.8.1; `debug:true` verified ignored. GET /openapi.json + /health.
 COMMITS_CREATED   = 00e500f (docs checkpoint) + dccaf08 (CDI-108-01) + 174e2c3 (SHA fill)
-                    + <this CDI-108-01A + refined-HD-audit commit>
+                    + d102924 (CDI-108-01A + refined HD audit)
 KNOWN_LIMITATIONS =
   - tz-lookup adds ~152 KB unpacked (~55 KB gzip) to bundles importing calculateNatalBasics.
   - The city geocoder (Photon) returns no timezone; the polygon lookup supplies it deterministically.
