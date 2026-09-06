@@ -128,7 +128,6 @@ async function main() {
 
   // ---- 3. calculateNatalBasics: accurate Chiron, genuine Whole Sign, no fake Placidus ----
   await check("3  calculateNatalBasics() — ephemeris Chiron, Whole-Sign houses, NO synthesised Placidus", () => {
-    let checkedDegree = 0;
     for (const fx of ref.fixtures) {
       const nb = calculateNatalBasics({
         birthDate: fx.birthLocal.slice(0, 10),
@@ -147,13 +146,11 @@ async function main() {
       assert.equal(nb.planets?.Chiron?.sign, fx.expected.chironSign, `${fx.label}: planets.Chiron sign`);
       assert.equal(typeof nb.ascendantLongitude, "number", `${fx.label}: ascendantLongitude present`);
       assert.equal(typeof nb.midheavenLongitude, "number", `${fx.label}: midheavenLongitude present`);
-      if (nb.planets?.Chiron) {
-        const derr = angDiff(nb.planets.Chiron.longitude, fx.expected.chironLongitude);
-        if (derr < 0.5) checkedDegree += 1;
-        assert.ok(derr < 2.0, `${fx.label}: Chiron longitude drift ${derr.toFixed(3)}° too large`);
-      }
+      // CDI-108-01A: with canonical IANA timezone + luxon DST-correct conversion,
+      // the end-to-end Chiron longitude matches Swiss Ephemeris to < 0.01°.
+      const derr = angDiff(nb.planets!.Chiron!.longitude, fx.expected.chironLongitude);
+      assert.ok(derr < 0.01, `${fx.label}: end-to-end Chiron residual ${derr.toFixed(6)}° must be < 0.01°`);
     }
-    assert.ok(checkedDegree >= ref.fixtures.length - 3, `expected most fixtures within 0.5°, got ${checkedDegree}/${ref.fixtures.length}`);
   });
 
   // ---- 4. calculateNatalBasicsAsync: fail closed ----

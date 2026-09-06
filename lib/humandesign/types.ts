@@ -97,7 +97,10 @@ export type HumanDesignChart = {
     | "connection_error";
   // Build 31 Audit Metadata
   timezone?: string | null;
-  timezoneSource?: "user" | "city-fallback" | "browser-guess" | "longitude-approx" | "verified-lookup" | "default";
+  // CDI-108-01A: "iana-geo" (deterministic polygon lookup from coordinates),
+  // "stored" (a preserved valid stored value), "unresolved" (fail closed).
+  // "longitude-approx" / "browser-guess" are retained only for historical records.
+  timezoneSource?: "user" | "city-fallback" | "browser-guess" | "longitude-approx" | "verified-lookup" | "default" | "iana-geo" | "stored" | "unresolved";
   calculationSource?: string;
   calculatedAt?: string;
   inputHash?: string;

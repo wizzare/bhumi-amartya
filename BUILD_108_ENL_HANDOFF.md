@@ -12,25 +12,32 @@ TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DERIVED_SPRINT_COUNT            = 8 SPRINTS
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 DONE · CDI-108-02 / CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
 > **CORE DATA INTEGRITY GATE (2026-09-06).** Sprint 4 is complete. **Do NOT start Sprint 5.** The
 > read-only root-cause audit (**`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**) is **Founder-approved**;
 > all three root causes CONFIRMED. `GATE_108_CDI` is IN_PROGRESS:
-> - **CDI-108-01 (Chiron / natal accuracy) — DONE.** Linear Chiron + Equal-house-as-Placidus
->   removed; committed Swiss Ephemeris table (`lib/astrology/chironEphemeris.ts` +
->   `lib/astrology/data/chironEphemeris.json`); `getAstrologyApiUrl()` +
->   `app/api/humandesign/astrology` proxy; fail-closed, non-destructive persistence.
->   Test: `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts`.
-> - **CDI-108-02 (Human Design advanced variables) — NOT STARTED.**
+> - **CDI-108-01 (Chiron ephemeris) — DONE.** Linear Chiron + Equal-house-as-Placidus removed;
+>   committed Swiss Ephemeris table (`lib/astrology/chironEphemeris.ts` + `data/chironEphemeris.json`);
+>   `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy; fail-closed, non-destructive.
+> - **CDI-108-01A (timezone canonicalization) — DONE.** `longitude / 15` + browser-guess + `+07:00`
+>   default removed; deterministic offline lat/lon → IANA (`lib/astrology/resolveIanaTimezone.ts`,
+>   `tz-lookup@6.1.25`); luxon DST-correct wall-clock → UTC; a valid stored zone is never
+>   overwritten; fail closed to pending. End-to-end Chiron residual 0.000420° (12/12 fixtures).
+>   Test: `tests/unit/build108-cdi01a-timezone-canonicalization.test.ts`.
+> - **CDI-108-02 (Human Design) — refined READ-ONLY live-contract audit DONE (audit §B.8);
+>   implementation NOT STARTED.** Live engine returns `digestion/environment/motivation/cognition`;
+>   the confirmed defects are a `perspective` adapter gap, a `variables.short_code` UI-key
+>   mismatch, absent per-planet Color/Tone/Base, legacy blueprints needing migration/re-fetch,
+>   and the `mass-recover-hd.ts` `centers` corruption.
 > - **CDI-108-03 (Schumann source) — NOT STARTED.**
 >
-> No further `CDI-*` implementation, no production Firestore read/write or backfill, and no version
-> bump / build / sign / deploy / upload until the Founder reviews CDI-108-01 and rules on
-> sequencing. The obsolete marker `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies to this work.
+> No further `CDI-*` implementation, no production Firestore read/write or backfill, no backend
+> deploy, and no version bump / build / sign / deploy / upload until the Founder reviews CDI-108-01A
+> + the refined HD audit and rules on sequencing. `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies.
 
 ---
 
@@ -123,10 +130,11 @@ BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
 LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE
 CDI_108_01_CHIRON              = DONE (commit dccaf08; test build108-cdi01-chiron-natal-accuracy EXIT 0)
-CDI_108_02_HUMAN_DESIGN        = NOT_STARTED
+CDI_108_01A_TIMEZONE          = DONE (test build108-cdi01a-timezone-canonicalization EXIT 0; CHIRON_END_TO_END_MAX_ERROR = 0.000420°)
+CDI_108_02_HUMAN_DESIGN        = REFINED READ-ONLY AUDIT DONE (audit §B.8) — IMPLEMENTATION NOT_STARTED
 CDI_108_03_SCHUMANN            = NOT_STARTED
 SPRINT_5_STATUS                 = NOT_STARTED (BLOCKED behind GATE_108_CDI)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 ### 5.1 Core Data Integrity Gate — `GATE_108_CDI` (2026-09-06)
@@ -136,16 +144,17 @@ All three root causes CONFIRMED.
 
 | Defect | Confirmed root cause | Status |
 |---|---|---|
-| **Chiron wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` proxy). Silent local fallback derived Chiron from a **linear** ephemeris (`astronomy-engine` has no Chiron). Houses were Equal House mislabelled `placidusHouses`. | **DONE — CDI-108-01.** Committed Swiss Ephemeris Chiron table (`lib/astrology/chironEphemeris.ts` + `data/chironEphemeris.json`); linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy route → configured ephemeris service; Whole Sign / Placidus kept separate + labelled; fail-closed (`chironAccuracy` / `houseSystem`), non-destructive persistence. `tsc` EXIT 0; CDI-01 test 13/13; Build 107 guards intact. Ops residual: deploy the ephemeris service for genuine Placidus (CDI-C1); CDI-C3 setup timezone. |
-| **HD advanced variables "Not stored"** | Deployed HD engine emits only the 4 binary Variable arrows; PHS values not derived; raw Color/Tone/Base debug-gated; stored `variables.short_code` read against wrong UI keys; `calculateAdvancedVariables()` orphaned; `mass-recover-hd.ts` drops activations + corrupts `centers`. HD **core** identity healthy; Build 107 convergence intact. (Probe note: the *deployed* engine returns top-level digestion/environment/motivation/cognition — audit §F.2 — refines CDI-108-02.) | **NOT STARTED — CDI-108-02** (CDI-B1..B5). |
+| **Chiron wrong** | Swiss Ephemeris `/calculate-astrology` unreachable; silent local fallback derived Chiron from a **linear** ephemeris; Equal House mislabelled `placidusHouses`; plus `longitude / 15` timezone inference. | **DONE — CDI-108-01 + CDI-108-01A.** Committed Swiss Ephemeris Chiron table; linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy; deterministic IANA timezone (`tz-lookup`) + luxon DST-correct conversion — no `longitude / 15`; Whole Sign / Placidus separate + labelled; fail-closed (`chironAccuracy` / `houseSystem`), non-destructive. `tsc` EXIT 0; CDI-01 13/13; CDI-01A 10/10 (residual 0.000420°); Build 107 19/19 + 131/131. Ops residual: deploy the ephemeris service for genuine Placidus (CDI-C1). |
+| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The deployed engine DOES return `digestion/environment/motivation/cognition`; adapter/normalizer/persistence/UI-grid-keys handle them. Confirmed defects: `perspective` adapter gap (reads absent key, not `variables.bottom_right`); `variables.short_code` UI-key mismatch (`HumanDesignBodygraphLite.tsx` reads `variable`/`value`); per-planet Color/Tone/Base absent from the engine (ignores `debug`); "Not stored" on real users = legacy blueprints (local migration from stored `variables`, else re-fetch); `mass-recover-hd.ts` still corrupts `centers` + drops activations; narratives Indonesian-only; "Story… being prepared." on CANONICAL types. | **REFINED READ-ONLY AUDIT DONE. IMPLEMENTATION NOT STARTED — CDI-108-02** (CDI-B1..B6, per-field). |
 | **Schumann `Data belum tersedia`** | Provider endpoint `schumannresonancelive.com/api/data.php` → **HTTP 404** (API path removed). Client-only fetch; no proxy under static export. Pre-existing since ≥ Build 106 (DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
 
 Cross-cutting: **CDI-D1** — post-fix, non-destructive, convergence-safe production backfill for
 HD advanced variables + Chiron (Build 103–107 cohorts), Founder-authorised and separate.
 
-**Handoff action:** STOP. Await Founder review of CDI-108-01 and the Founder's ruling on whether to
-(a) proceed with CDI-108-02 / CDI-108-03 before resuming ENL sprints, or (b) resume Sprint 5 in
-parallel with a dedicated data-integrity track.
+**Handoff action:** STOP. Await Founder review of CDI-108-01A + the refined HD audit (§B.8), and the
+Founder's ruling on whether to (a) proceed with CDI-108-02 implementation (per-field: UI fix /
+adapter derive / migration / re-fetch) and CDI-108-03 before resuming ENL sprints, or (b) resume
+Sprint 5 in parallel with a dedicated data-integrity track.
 
 ### 5.2 Prior Sprint 4 Accomplishments (for reference)
 

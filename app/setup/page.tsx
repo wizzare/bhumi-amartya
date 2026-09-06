@@ -21,6 +21,7 @@ import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
 import { Timestamp } from "firebase/firestore";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
+import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import { storageProvider } from "@/lib/storage/storageProvider";
 
 interface SetupDebugState {
@@ -173,33 +174,18 @@ export default function SetupPage() {
   }, [effectiveUser]);
 
   /**
-   * BUILD 31: Advanced Timezone Resolution
+   * CDI-108-01A: canonical timezone resolution.
+   * Deterministic IANA zone from the selected city's coordinates (DST-correct
+   * downstream). No `longitude / 15` inference, no browser guess, no `+07:00`
+   * default. If nothing resolves, `timezone` is null and the natal chart stays
+   * pending until a real timezone is available.
    */
   const resolveFinalTimezone = (city: CitySelection | null, fallback: any) => {
-    // 1. If fallback matched a major city, use its verified offset
-    if (fallback?.timezone) {
-      return { timezone: fallback.timezone, source: "city-fallback" as const };
-    }
-
-    // 2. If we have coordinates from autocomplete, approximate from longitude
-    if (city?.longitude !== undefined) {
-      const hours = Math.round(city.longitude / 15);
-      const sign = hours >= 0 ? "+" : "-";
-      const offset = `${sign}${Math.abs(hours).toString().padStart(2, '0')}:00`;
-      return { timezone: offset, source: "longitude-approx" as const };
-    }
-
-    // 3. Browser guess as last resort
-    try {
-      const offsetMinutes = -new Date().getTimezoneOffset();
-      const hours = Math.floor(Math.abs(offsetMinutes) / 60);
-      const minutes = Math.abs(offsetMinutes) % 60;
-      const sign = offsetMinutes >= 0 ? "+" : "-";
-      const offset = `${sign}${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      return { timezone: offset, source: "browser-guess" as const };
-    } catch {
-      return { timezone: "+07:00", source: "default" as const };
-    }
+    return canonicalizeNatalTimezone({
+      storedTimezone: fallback?.timezone ?? null,
+      latitude: city?.latitude ?? fallback?.latitude ?? null,
+      longitude: city?.longitude ?? fallback?.longitude ?? null,
+    });
   };
 
   const finalizeSetup = async () => {
@@ -233,8 +219,14 @@ export default function SetupPage() {
       const nextLatitude = selectedCity?.latitude ?? cityFallback?.latitude ?? null;
       const nextLongitude = selectedCity?.longitude ?? cityFallback?.longitude ?? null;
 
-      // BUILD 31: Fix P0 Volatility - Remove hardcoded +07:00
+      // CDI-108-01A: canonical IANA timezone from the selected city's coordinates.
       const { timezone: nextTimezone, source: timezoneSource } = resolveFinalTimezone(selectedCity, cityFallback);
+
+      if (!nextTimezone) {
+        setLoading(false);
+        setFormError(t.setup?.cityRequired || "Select a birth city from the list so location coordinates are detected.");
+        return;
+      }
 
       const birthCountry = selectedCity?.country ?? null;
 

@@ -1,8 +1,10 @@
 import * as Astronomy from "astronomy-engine";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { BlackMoonLilith, NatalAspect, NatalBalance, NatalDominance, NatalPattern, PlanetaryPosition } from "@/lib/types/blueprint";
+import { DateTime } from "luxon";
 import { chironLongitudeAt, chironIsRetrograde } from "@/lib/astrology/chironEphemeris";
 import { getAstrologyApiUrl } from "@/lib/config/astrologyApiUrl";
+import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 
 /**
  * CDI-108-01 — Chiron / house-system accuracy contract.
@@ -79,21 +81,23 @@ export type NatalLocationFallback = {
   timezone: string;
 };
 
+// CDI-108-01A: deep fallback for the "birth city string only, no coordinates"
+// case. IANA names (not fixed offsets) so DST is handled correctly downstream.
 const CITY_FALLBACKS: Record<string, NatalLocationFallback> = {
-  jakarta: { latitude: -6.2088, longitude: 106.8456, timezone: "+07:00" },
-  bandung: { latitude: -6.9175, longitude: 107.6191, timezone: "+07:00" },
-  surabaya: { latitude: -7.2575, longitude: 112.7521, timezone: "+07:00" },
-  yogyakarta: { latitude: -7.7956, longitude: 110.3695, timezone: "+07:00" },
-  bali: { latitude: -8.65, longitude: 115.2167, timezone: "+08:00" },
-  denpasar: { latitude: -8.65, longitude: 115.2167, timezone: "+08:00" },
-  makassar: { latitude: -5.1476, longitude: 119.4327, timezone: "+08:00" },
-  medan: { latitude: 3.5952, longitude: 98.6722, timezone: "+07:00" },
-  palembang: { latitude: -2.9761, longitude: 104.7754, timezone: "+07:00" },
-  semarang: { latitude: -6.9667, longitude: 110.4167, timezone: "+07:00" },
-  jayapura: { latitude: -2.5916, longitude: 140.669, timezone: "+09:00" },
-  london: { latitude: 51.5074, longitude: -0.1278, timezone: "+00:00" },
-  singapore: { latitude: 1.3521, longitude: 103.8198, timezone: "+08:00" },
-  "new york": { latitude: 40.7128, longitude: -74.006, timezone: "-05:00" },
+  jakarta: { latitude: -6.2088, longitude: 106.8456, timezone: "Asia/Jakarta" },
+  bandung: { latitude: -6.9175, longitude: 107.6191, timezone: "Asia/Jakarta" },
+  surabaya: { latitude: -7.2575, longitude: 112.7521, timezone: "Asia/Jakarta" },
+  yogyakarta: { latitude: -7.7956, longitude: 110.3695, timezone: "Asia/Jakarta" },
+  bali: { latitude: -8.65, longitude: 115.2167, timezone: "Asia/Makassar" },
+  denpasar: { latitude: -8.65, longitude: 115.2167, timezone: "Asia/Makassar" },
+  makassar: { latitude: -5.1476, longitude: 119.4327, timezone: "Asia/Makassar" },
+  medan: { latitude: 3.5952, longitude: 98.6722, timezone: "Asia/Jakarta" },
+  palembang: { latitude: -2.9761, longitude: 104.7754, timezone: "Asia/Jakarta" },
+  semarang: { latitude: -6.9667, longitude: 110.4167, timezone: "Asia/Jakarta" },
+  jayapura: { latitude: -2.5916, longitude: 140.669, timezone: "Asia/Jayapura" },
+  london: { latitude: 51.5074, longitude: -0.1278, timezone: "Europe/London" },
+  singapore: { latitude: 1.3521, longitude: 103.8198, timezone: "Asia/Singapore" },
+  "new york": { latitude: 40.7128, longitude: -74.006, timezone: "America/New_York" },
 };
 
 const ZODIAC_SIGNS = [
@@ -147,19 +151,19 @@ export function resolveNatalLocation(input: NatalBasicsInput): NatalLocationFall
     Number.isFinite(input.longitude)
   ) {
     const fallback = findCityFallback(input.birthCity);
-
-    // BUILD 31: If we have coordinates but no timezone, approximate it from longitude
-    let timezone = input.timezone || fallback?.timezone || "";
-    if (!timezone && input.longitude !== null) {
-       const hours = Math.round(input.longitude / 15);
-       const sign = hours >= 0 ? "+" : "-";
-       timezone = `${sign}${Math.abs(hours).toString().padStart(2, '0')}:00`;
-    }
+    // CDI-108-01A: keep a valid stored timezone; otherwise resolve a real IANA
+    // zone from the coordinates. NO `longitude / 15` inference. `null` when
+    // nothing is resolvable (caller fails closed).
+    const { timezone } = canonicalizeNatalTimezone({
+      storedTimezone: input.timezone ?? fallback?.timezone ?? null,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    });
 
     return {
       latitude: input.latitude,
       longitude: input.longitude,
-      timezone: timezone,
+      timezone: timezone ?? "",
     };
   }
 
@@ -210,25 +214,31 @@ function getOffsetString(timezone: string, date: Date = new Date()): string {
 }
 
 function toUtcDate(birthDate: string, birthTime: string, timezone: string): Date | null {
-  let offsetMinutes = parseTimezoneOffsetMinutes(timezone);
-  if (offsetMinutes === null) {
-    const [year, month, day] = birthDate.split("-").map(Number);
-    const [hour, minute] = birthTime.split(":").map(Number);
-    if ([year, month, day, hour, minute].every(Number.isFinite)) {
-      const resolved = getOffsetString(timezone, new Date(Date.UTC(year, month - 1, day, hour, minute)));
-      if (resolved) {
-        offsetMinutes = parseTimezoneOffsetMinutes(resolved);
-      }
-    }
-  }
-  if (offsetMinutes === null) return null;
-
   const [year, month, day] = birthDate.split("-").map(Number);
   const [hour, minute] = birthTime.split(":").map(Number);
   if (![year, month, day, hour, minute].every(Number.isFinite)) return null;
 
-  const utcMs = Date.UTC(year, month - 1, day, hour, minute) - offsetMinutes * 60_000;
-  return new Date(utcMs);
+  // Explicit fixed offset (e.g. "+07:00"): apply it directly.
+  const fixedOffset = parseTimezoneOffsetMinutes(timezone);
+  if (fixedOffset !== null) {
+    return new Date(Date.UTC(year, month - 1, day, hour, minute) - fixedOffset * 60_000);
+  }
+
+  // CDI-108-01A: IANA zone -> DST-correct wall-clock -> UTC via luxon. luxon
+  // resolves the offset for the exact birth instant, including DST changeovers
+  // and the ambiguous / skipped hour, which the old Intl-probe approach could
+  // miss by an hour near a transition.
+  const dt = DateTime.fromObject(
+    { year, month, day, hour, minute },
+    { zone: (timezone || "").trim() },
+  );
+  if (dt.isValid) return dt.toUTC().toJSDate();
+
+  // Last resort: probe the offset with Intl at the approximate birth instant.
+  const resolved = getOffsetString(timezone, new Date(Date.UTC(year, month - 1, day, hour, minute)));
+  const probed = parseTimezoneOffsetMinutes(resolved);
+  if (probed === null) return null;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute) - probed * 60_000);
 }
 
 function signFromLongitude(longitude: number): string {
@@ -552,7 +562,14 @@ const PENDING_ACCURACY = { chironAccuracy: "unavailable" as const, houseSystem: 
 export function calculateNatalBasics(input: NatalBasicsInput): NatalBasics {
   const sunSign = input.birthDate ? calculateSunSign(input.birthDate) : "Unknown";
   const location = resolveNatalLocation(input);
-  const timezone = input.timezone || location?.timezone || null;
+  // CDI-108-01A: canonical timezone — a valid stored IANA / +HH:MM value wins;
+  // otherwise a deterministic IANA zone from coordinates; otherwise null (which
+  // makes this return `pending` — no fabricated offset).
+  const { timezone } = canonicalizeNatalTimezone({
+    storedTimezone: input.timezone ?? location?.timezone ?? null,
+    latitude: input.latitude ?? location?.latitude ?? null,
+    longitude: input.longitude ?? location?.longitude ?? null,
+  });
 
   if (!input.birthDate || !input.birthTime || !timezone) {
     return {
@@ -688,7 +705,12 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
   const localResult = calculateNatalBasics(input);
   if (localResult.status !== "ready") return localResult;
 
-  const timezone = input.timezone || resolveNatalLocation(input)?.timezone || null;
+  const location = resolveNatalLocation(input);
+  const { timezone } = canonicalizeNatalTimezone({
+    storedTimezone: input.timezone ?? location?.timezone ?? null,
+    latitude: input.latitude ?? location?.latitude ?? null,
+    longitude: input.longitude ?? location?.longitude ?? null,
+  });
   if (!timezone) return localResult;
 
   try {

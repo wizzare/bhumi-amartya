@@ -31,6 +31,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "CDI-108-01A natal timezone canonicalization (IANA, DST, fail closed)",
+    file: "tests/unit/build108-cdi01a-timezone-canonicalization.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",

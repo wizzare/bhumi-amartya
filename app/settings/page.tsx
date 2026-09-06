@@ -14,6 +14,7 @@ import { translations } from "@/lib/data/translations";
 import { useAuth } from "@/context/AuthContext";
 import { getLocalUserSession } from "@/lib/auth/getLocalUserSession";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
+import { canonicalizeNatalTimezone, isUsableStoredTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import {
   createDefaultUserPlan,
   getOrCreateLocalUserPlan,
@@ -609,22 +610,26 @@ export default function SettingsPage() {
     const nextLatitude = selectedCity?.latitude ?? (cityChanged ? cityFallback?.latitude : currentProfile.latitude) ?? null;
     const nextLongitude = selectedCity?.longitude ?? (cityChanged ? cityFallback?.longitude : currentProfile.longitude) ?? null;
 
-    // BUILD 31: Robust timezone resolution for settings
-    let nextTimezone = "timezone" in currentProfile ? (currentProfile as any).timezone : null;
-    let timezoneSource = "timezoneSource" in currentProfile ? (currentProfile as any).timezoneSource : "default";
+    // CDI-108-01A: canonical timezone resolution.
+    // Preserve a valid stored IANA / +HH:MM value; only re-resolve when the city
+    // changed or the stored value is unusable. Deterministic IANA from
+    // coordinates — no `longitude / 15`, no `+07:00` default.
+    const storedTimezone = "timezone" in currentProfile ? (currentProfile as any).timezone : null;
+    let nextTimezone: string | null = storedTimezone ?? null;
+    let timezoneSource = "timezoneSource" in currentProfile ? (currentProfile as any).timezoneSource : "stored";
 
-    if (cityChanged || !nextTimezone) {
-      if (cityFallback?.timezone) {
-        nextTimezone = cityFallback.timezone;
-        timezoneSource = "city-fallback";
-      } else if (nextLongitude !== null) {
-        const hours = Math.round(nextLongitude / 15);
-        const sign = hours >= 0 ? "+" : "-";
-        nextTimezone = `${sign}${Math.abs(hours).toString().padStart(2, '0')}:00`;
-        timezoneSource = "longitude-approx";
-      } else {
-        nextTimezone = "+07:00";
-        timezoneSource = "default";
+    if (cityChanged || !isUsableStoredTimezone(storedTimezone)) {
+      const resolved = canonicalizeNatalTimezone({
+        storedTimezone: cityChanged ? null : storedTimezone,
+        latitude: nextLatitude,
+        longitude: nextLongitude,
+      });
+      if (resolved.timezone) {
+        nextTimezone = resolved.timezone;
+        timezoneSource = resolved.source;
+      } else if (isUsableStoredTimezone(storedTimezone)) {
+        nextTimezone = storedTimezone;
+        timezoneSource = "stored";
       }
     }
 

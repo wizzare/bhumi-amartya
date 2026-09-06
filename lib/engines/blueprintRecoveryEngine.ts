@@ -6,6 +6,7 @@ import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 import { calculateNatalBasicsAsync } from "@/lib/astrology/calculateNatalBasics";
+import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
@@ -41,7 +42,13 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
   const birthCountry = input.birthCountry || null;
   const latitude = input.latitude ?? null;
   const longitude = input.longitude ?? null;
-  const timezone = input.timezone || "UTC";
+  // CDI-108-01A: recover a missing timezone through a deterministic IANA lookup
+  // from coordinates — never `longitude / 15`, never a blanket "UTC" for the
+  // natal chart. If it cannot be resolved the natal input is left undefined so
+  // the chart stays pending (BaZi / Vedic keep a benign default).
+  const canonicalTz = canonicalizeNatalTimezone({ storedTimezone: input.timezone ?? null, latitude, longitude });
+  const natalTimezone = canonicalTz.timezone;
+  const timezone = canonicalTz.timezone || "UTC";
   const fullName = input.fullName || input.displayName || "User";
 
   const lifePathBlueprint = calculateLifePath(birthDate);
@@ -59,7 +66,7 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
     birthCountry,
     latitude,
     longitude,
-    timezone,
+    timezone: natalTimezone,
   }).catch(() => ({
     sunSign: "Aries",
     moonSign: "Aries",

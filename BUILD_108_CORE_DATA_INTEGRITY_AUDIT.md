@@ -4,7 +4,7 @@
 ```text
 AUDIT_STATUS                        = READ_ONLY_ROOT_CAUSE_AUDIT_COMPLETE — FOUNDER-APPROVED 2026-09-06
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                        = IN_PROGRESS  (CDI-108-01 Chiron DONE · CDI-108-02 HD not started · CDI-108-03 Schumann not started)
+GATE_108_CDI                        = IN_PROGRESS  (CDI-108-01 Chiron DONE · CDI-108-01A timezone DONE · CDI-108-02 HD refined audit DONE / impl NOT started · CDI-108-03 Schumann not started)
 TRIGGER                             = FOUNDER — three confirmed production defects from real users
 PRODUCTION_BASELINE                 = BUILD 107 (versionCode 107, versionName 5.0.7, commit d2ecb5e)
 WORKTREE                            = C:\tmp\bhumi-build106-recovery
@@ -18,12 +18,16 @@ FIRESTORE_MUTATIONS                 = 0
 EXTERNAL_PROBES                     = read-only GETs (schumannresonancelive.com/api/data.php -> 404;
                                      bhumi-human-design-api.vercel.app openapi/health) + one synthetic-data
                                      POST to /calculate (HD, no PII) — see §B.1a and §D
-NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01 (then CDI-108-02 / CDI-108-03 sequencing)
+NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 > **Governance marker.** `BUILD_106_RECOVERY_IN_PROGRESS` no longer represents this work. Current
 > markers: `BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY`,
 > `GATE_108_CDI = IN_PROGRESS`. Sprint 5 remains BLOCKED.
+>
+> **Progress:** CDI-108-01 (Chiron ephemeris) — §C.8. CDI-108-01A (timezone canonicalization) —
+> §C.9. CDI-108-02 (Human Design) — refined READ-ONLY live-contract audit §B.8; implementation
+> NOT started. CDI-108-03 (Schumann) — not started.
 
 > **Scope discipline.** This document is a READ-ONLY audit. No product code, engine, adapter,
 > schema, migration, or Firestore document has been changed. No fix is implemented. Sprint 5 is
@@ -459,6 +463,192 @@ HD_ROOT_CAUSE                      = CONFIRMED
 
 ---
 
+## B.8 CDI-108-02 — REFINED LIVE-CONTRACT AUDIT (READ-ONLY, 2026-09-06)
+
+> Founder evidence: *"The deployed production HD API is not identical to repo
+> `services/humandesign-api/main.py`."* Confirmed. §B.1–§B.3 above traced repo `main.py`;
+> this section re-traces the **live deployed contract** and supersedes §B.2–§B.3 / §B.6 where
+> they differ. Method: read-only synthetic POST (no PII) to
+> `https://bhumi-human-design-api.vercel.app/calculate` on 2026-09-06, plus a static re-read of
+> the adapter → normalizer → persistence → recovery → UI chain.
+
+### B.8.1 The live `/calculate` response (synthetic input; verified 2026-09-06)
+
+Top-level keys: `type, strategy, authority, profile, definition, signature, notSelfTheme,
+inc_cross, incarnationCross, definedCenters, openCenters, gatesPersonality, gatesDesign, channels,
+variables, digestion, environment, motivation, cognition, status, calculationStatus, source`.
+
+```jsonc
+"digestion":   "Active",        // == variables.top_left.def_type    (arrow qualitative, NOT PHS 6-fold)
+"environment":  "Observer",     // == variables.bottom_left.def_type
+"motivation":   "Receptive",    // == variables.top_right.def_type
+"cognition":    "Outer Vision", // genuine 6-fold PHS Cognition (Smell/Taste/Outer Vision/Inner Vision/Feeling/Touch)
+// "perspective" — ABSENT top-level
+"variables": {
+  "top_right":    { "value":"right","name":"Motivation",  "aspect":"Personality (Mind)","def_type":"Receptive", "tone":4 },
+  "bottom_right": { "value":"right","name":"Perspective", "aspect":"Personality (View)","def_type":"Peripheral","tone":4 },
+  "top_left":     { "value":"left", "name":"Digestion",   "aspect":"Design (Brain)",    "def_type":"Active",    "tone":3 },
+  "bottom_left":  { "value":"right","name":"Environment", "aspect":"Design (Body)",     "def_type":"Observer",  "tone":4 },
+  "short_code":   "PRR DLR"
+}
+// diagnostic — ABSENT.  personalityActivations / designActivations — ABSENT.
+// `debug:true` in the request body is IGNORED (identical response; no diagnostic block).
+```
+
+**Correction to §B.2/§B.3/§B.6/§B.7:** the deployed engine **is not** repo `main.py`. It DOES
+return top-level `digestion / environment / motivation / cognition`; it does NOT gate anything
+behind `debug`; there is no repo-`main.py`-style debug path to obtain raw Color/Tone/Base.
+`digestion/environment/motivation` are the **arrow `def_type`** (a binary L/R qualitative label),
+not the Ra-Uru-Hu PHS 6-fold Determination/Environment/Motivation. `cognition` IS the true 6-fold.
+
+### B.8.2 Field-by-field trace against the LIVE contract
+
+adapter = `lib/humandesign/hdkitAdapter.ts::calculateWithHdkit` ready branch ·
+proxy = `app/api/humandesign/calculate/route.ts` (full pass-through: `{...data, hdEngineVersion,
+calculationQuality, source, hdAuditStatus}`) · normalizer = `blueprintRepository.normalizeBlueprint`
+HD block · persistence = `saveUserBlueprint` → `sanitizeForFirestore` → `setDoc({merge:true})` ·
+recovery = `mass-recover-hd.ts::canonicalChart` + `blueprintRecoveryEngine.triggerBackgroundHdCalculation` ·
+UI = `components/blueprint/HumanDesignBodygraphLite.tsx` ("Advanced Variables" grid + "Variables
+Arrows" + "Color / Tone / Base").
+
+```text
+FIELD              = Digestion
+LIVE_API_RETURNS   = YES — top-level `digestion:"Active"` (== variables.top_left.def_type)
+ADAPTER_READS      = YES — `digestion: data.digestion || null`
+SCHEMA_SUPPORTS    = YES — HumanDesignChart.digestion: string|null
+NORMALIZER_PRESERVES = YES — `digestion: savedHumanDesign?.digestion ?? null` (explicit)
+PERSISTENCE_WRITES = YES — a fresh onboard stores "Active"
+RECOVERY_PRESERVES = YES — mass-recover-hd `digestion: data.digestion || null`; background recalcalc via adapter
+UI_KEY_EXPECTED    = humanDesign.digestion   (HumanDesignBodygraphLite.tsx grid)
+UI_KEY_ACTUAL      = humanDesign.digestion   — CORRECT KEY
+ROOT_CAUSE         = NOT an engine/adapter/normalizer/UI bug for NEW users. A chart calculated by
+                     the current deployed engine stores & shows the value. "Not stored" users hold
+                     LEGACY blueprints persisted before the engine emitted `digestion`.
+                     -> LOCAL MIGRATION possible from `variables.top_left.def_type` when the
+                        `variables` object was persisted; otherwise RE-FETCH.
+
+FIELD              = Environment    (identical chain; LIVE `environment:"Observer"` == variables.bottom_left.def_type)
+  UI_KEY_EXPECTED/ACTUAL = humanDesign.environment / humanDesign.environment  — CORRECT
+  ROOT_CAUSE       = legacy blueprints -> local-migratable from variables.bottom_left, else re-fetch.
+
+FIELD              = Motivation     (identical chain; LIVE `motivation:"Receptive"` == variables.top_right.def_type)
+  UI_KEY_EXPECTED/ACTUAL = humanDesign.motivation / humanDesign.motivation  — CORRECT
+  ROOT_CAUSE       = legacy blueprints -> local-migratable from variables.top_right, else re-fetch.
+
+FIELD              = Cognition
+LIVE_API_RETURNS   = YES — `cognition:"Outer Vision"` (genuine 6-fold PHS Cognition; NOT an arrow)
+ADAPTER_READS      = YES — `cognition: data.cognition || null`
+SCHEMA_SUPPORTS    = YES ; NORMALIZER_PRESERVES = YES (explicit) ; PERSISTENCE_WRITES = YES
+RECOVERY_PRESERVES = YES (mass-recover + background recalc)
+UI_KEY_EXPECTED/ACTUAL = humanDesign.cognition / humanDesign.cognition  — CORRECT
+ROOT_CAUSE         = legacy blueprints. NOT locally derivable (no `variables.cognition`; needs the
+                     Design-Sun tone the engine used). -> RE-FETCH ONLY.
+
+FIELD              = Perspective
+LIVE_API_RETURNS   = NO top-level `perspective`. BUT `variables.bottom_right =
+                     {value:"right", name:"Perspective", def_type:"Peripheral", tone:4}` IS returned.
+ADAPTER_READS      = `perspective: data.perspective || null`  -> ALWAYS null (reads an absent key)
+SCHEMA_SUPPORTS    = YES — HumanDesignChart.perspective: string|null
+NORMALIZER_PRESERVES = WEAK — no explicit `perspective:` line; carried only by the ...savedHumanDesign
+                     spread; a null saved value stays null.
+PERSISTENCE_WRITES = writes null ; RECOVERY_PRESERVES = mass-recover writes null
+UI_KEY_EXPECTED/ACTUAL = humanDesign.perspective / humanDesign.perspective (CORRECT key) -> null -> "Not stored"
+ROOT_CAUSE         = ADAPTER GAP — it reads `data.perspective` (never sent) instead of deriving from
+                     `data.variables.bottom_right` (always sent). Affects EVERY user incl. new.
+                     Perspective IS derivable from returned data. Fix = one adapter line + an
+                     explicit `perspective:` coercion in `normalizeBlueprint`; a one-time recompute
+                     from the stored `variables.bottom_right` migrates existing users (no re-fetch).
+
+FIELD              = Variables Arrows  (short_code / the variables object)
+LIVE_API_RETURNS   = YES — `variables.short_code:"PRR DLR"` + the 4 arrow objects
+ADAPTER_READS      = YES — `variables: data.variables || null` (whole object)
+SCHEMA_SUPPORTS    = YES — variables: Record<string,unknown>|null
+NORMALIZER_PRESERVES = YES — `variables: savedHumanDesign?.variables ?? null` (explicit)
+PERSISTENCE_WRITES = YES — the full {top_right,…,short_code} object is stored
+UI_KEY_EXPECTED    = HumanDesignBodygraphLite.tsx:203
+                     `const variables = humanDesign.variables?.advanced || humanDesign.variables || {}`
+                     then `variables.variable || variables.value || "Not stored"`
+UI_KEY_ACTUAL      = stored object has `short_code`, `top_right`, `top_left`, `bottom_right`,
+                     `bottom_left` — NO `variable`, NO `value`, NO `advanced`
+ROOT_CAUSE         = CONFIRMED PURE UI KEY MISMATCH. The datum IS stored for every engine-sourced
+                     chart; the bodygraph reads keys that never exist -> "Not stored". Fix is a
+                     UI read (`variables.short_code`, and/or render the 4 arrows). NO re-fetch,
+                     NO migration. Affects ALL users incl. new.
+
+FIELD              = Color / Tone / Base  (per planetary activation)
+LIVE_API_RETURNS   = NO. No `diagnostic`, no `personalityActivations`/`designActivations`;
+                     `debug:true` is ignored. Only the 4 arrow tones (`variables.<arrow>.tone`,
+                     1–6) exist — NOT per-planet color/tone/base.
+ADAPTER_READS      = `toActivations(data.personalityActivations || data.diagnostic?.raw_personality_gates)` -> []
+SCHEMA_SUPPORTS    = YES — HumanDesignActivation.{color?,tone?,base?}, diagnostic, raw_*_gates
+NORMALIZER_PRESERVES = YES if present (they are not)
+PERSISTENCE_WRITES = [] empty activation arrays
+RECOVERY_PRESERVES = mass-recover-hd OMITS diagnostic/raw_*_gates/activations from canonicalChart entirely
+UI_KEY_EXPECTED/ACTUAL = bodygraph checks `row.color || row.tone || row.base` across rows -> none -> "Not stored"
+ROOT_CAUSE         = DATA-AVAILABILITY LIMITATION of the deployed engine. Cannot be obtained from
+                     the existing engine and is NOT locally derivable (needs the raw ephemeris
+                     positions). Requires an engine that emits a diagnostic/activations block
+                     (self-host repo `services/humandesign-api`, or a TS HD ephemeris) — same
+                     class as CDI-C1.
+
+FIELD              = centers  (mass-recover corruption — still present)
+mass-recover-hd `canonicalChart.centers = data.definedCenters || []` writes a RAW ARRAY
+(["Ajna","G_Center",…]) into a field typed `{head:boolean, ajna:boolean, …}`. `normalizeBlueprint`
+then does `centers: {...fallback.centers, ...savedHumanDesign?.centers}` — spreading an array into
+an object yields `{0:"Ajna",1:"G_Center",…, head:null, ajna:null,…}`, so `chart.centers.sacral`
+stays null. `openCenters` is not mapped at all. The bodygraph partially recovers via
+channel-derived centers. -> `mass-recover-hd.ts` STILL corrupts `centers` and drops activations
+(unchanged). The script is not run without `--execute` + Founder approval.
+```
+
+### B.8.3 Refined answers
+
+```text
+HD_LIVE_CONTRACT_VERIFIED       = YES (synthetic POST 2026-09-06; response shape above)
+HD_ADVANCED_FIELDS_LIVE         = digestion / environment / motivation = arrow def_type (present)
+                                 cognition = 6-fold PHS value (present)
+                                 perspective = ABSENT top-level, PRESENT + derivable in variables.bottom_right
+                                 short_code = present ("PRR DLR")
+                                 per-planet Color/Tone/Base = ABSENT (debug ignored; no diagnostic)
+HD_ADAPTER_GAPS                 = (1) `perspective: data.perspective || null` reads an absent key
+                                     instead of deriving from `data.variables.bottom_right`.
+                                 (2) no other gap for the present fields — adapter maps
+                                     digestion/environment/motivation/cognition/variables correctly.
+HD_PERSISTENCE_GAPS            = (1) `normalizeBlueprint` has no explicit `perspective:` coercion
+                                     (spread-only; fragile).
+                                 (2) otherwise digestion/cognition/motivation/environment/variables
+                                     are explicitly preserved — NO drop.
+HD_UI_MAPPING_GAPS            = CONFIRMED — `HumanDesignBodygraphLite.tsx:203` reads
+                                 `variables.variable || variables.value` (nonexistent) instead of
+                                 `variables.short_code` (and/or the 4 `top_*/bottom_*` arrows).
+                                 The "Advanced Variables" grid keys (humanDesign.digestion etc.) are
+                                 CORRECT.
+HD_RECOVERY_GAPS             = `mass-recover-hd.ts` (a) writes `centers` as a raw array (corrupt),
+                                 (b) omits `diagnostic`/`raw_*_gates`/activations, (c) omits
+                                 `openCenters`, (d) writes `perspective: data.perspective || null`
+                                 (always null). `blueprintRecoveryEngine` background recalc goes
+                                 through the adapter and is only missing `perspective` (same adapter gap).
+HD_BACKFILL_REQUIREMENT_REFINED =
+  - Variables Arrows display  -> NO backfill. Pure UI key fix (CDI-B2).
+  - perspective              -> NO re-fetch. Adapter derive + normalizer coercion + a one-time
+                                recompute from the stored `variables.bottom_right` (local migration).
+  - digestion/environment/motivation -> LOCAL MIGRATION from stored `variables.<arrow>.def_type`
+                                for charts that persisted `variables`; RE-FETCH for older charts
+                                without `variables`.
+  - cognition                -> RE-FETCH ONLY (not locally derivable).
+  - Color/Tone/Base          -> needs a diagnostic-emitting engine first (out of scope of the
+                                existing engine); no backfill possible until then.
+  - `mass-recover-hd.ts` centers/activations/openCenters shape  -> fix the script BEFORE any
+                                future recovery run; re-run only under Founder authorisation.
+  All backfill is Founder-authorised, non-destructive, convergence-safe (`isCanonicalHumanDesign`
+  guard), and NOT performed in this pass.
+```
+
+**Do NOT implement CDI-108-02 yet** — the field-by-field root cause is now proven; the Founder
+decides sequencing and which backfill path per field.
+
+---
+
 ## C. CHIRON ACCURACY
 
 ### C.1 Complete flow as built
@@ -716,13 +906,122 @@ RELEASE_BLOCKERS_REMAINING    = Deploy services/humandesign-api (or an equivalen
 
 ---
 
+## C.9 CDI-108-01A — Timezone Canonicalization — EXECUTION RESULT (2026-09-06, Founder-authorised)
+
+**Goal:** remove longitude-derived / approximate timezone offsets from canonical natal
+calculation. **Change class:** engines + setup/settings UI + recovery engine + one new deterministic
+resolver + one dependency + one test. NO production Firestore read/write, NO backend deploy, NO
+version bump / build / sign / upload. `tsc --noEmit` EXIT 0; Build 107 guards intact (HD
+convergence 19/19, production-surface guard 131/131); non-emulator release suite PASS=22 FAIL=0.
+
+### What was wrong (audit chain: setup city → coordinates → IANA → profile → blueprint input → natal calc → API payload)
+
+| Stage | Pre-fix defect |
+|---|---|
+| `app/setup/page.tsx::resolveFinalTimezone` | `Math.round(city.longitude / 15)` → `"+HH:00"` offset; then `new Date().getTimezoneOffset()` (the CURRENT date's offset — DST-wrong for any historical birth); then hardcoded `"+07:00"`. |
+| `app/settings/page.tsx` (regenerate) | same `Math.round(nextLongitude / 15)` + `"+07:00"` default. |
+| `lib/astrology/calculateNatalBasics.ts::resolveNatalLocation` | `Math.round(input.longitude / 15)` when timezone missing. `CITY_FALLBACKS` were fixed offsets (`"+00:00"` for London, `"-05:00"` for New York) — DST-wrong half the year. |
+| `lib/astrology/calculateNatalBasics.ts::toUtcDate` | for an IANA name, probed the offset with `Intl` on `Date.UTC(y,m,d,h,mi)` treating local time as UTC — can be an hour off within ~1 h of a DST transition. |
+| `lib/engines/blueprintRecoveryEngine.ts` | `const timezone = input.timezone || "UTC"` for the natal chart. |
+
+### Fix
+
+| File | Change |
+|---|---|
+| `lib/astrology/resolveIanaTimezone.ts` | **NEW.** `resolveIanaTimezone(lat, lon)` — deterministic offline polygon lookup (`tz-lookup`, CC0, pure JS, ~152 KB, no I/O) → IANA name or `null`. `isUsableStoredTimezone()` (real IANA or `+HH:MM`; bare `UTC`/`GMT`/`""`/`default` = absent). `canonicalizeNatalTimezone({storedTimezone, latitude, longitude})` → keep a valid stored value (never overwrite) → else deterministic IANA from coordinates → else `null` (fail closed). |
+| `package.json` / `package-lock.json` | `tz-lookup@6.1.25` (exact pin, CC0, zero transitive deps). `types/tz-lookup.d.ts` shim. |
+| `lib/astrology/calculateNatalBasics.ts` | `resolveNatalLocation` + `calculateNatalBasics` + `calculateNatalBasicsAsync` all use `canonicalizeNatalTimezone` — no `longitude / 15`. `CITY_FALLBACKS` upgraded to IANA names (`Asia/Jakarta`, `Asia/Makassar` for Bali, `America/New_York`, `Europe/London`, …). `toUtcDate` uses **luxon** `DateTime.fromObject({...},{zone})` for IANA zones → DST-correct wall-clock → UTC (incl. the ambiguous / skipped hour); the fixed-offset fast path and an `Intl` last-resort are kept. |
+| `app/setup/page.tsx` · `app/settings/page.tsx` | `resolveFinalTimezone` / the inline block → `canonicalizeNatalTimezone`. No `longitude/15`, no browser guess, no `+07:00` default. Setup blocks completion if the timezone cannot be resolved. Settings preserves a valid stored value unless the city changed. |
+| `lib/engines/blueprintRecoveryEngine.ts` | recovery resolves a missing timezone through `canonicalizeNatalTimezone` (deterministic IANA from stored coordinates); if unresolved the **natal** input is left undefined (chart stays pending — no fabricated offset); BaZi/Vedic keep a benign `"UTC"`. |
+| `lib/humandesign/types.ts` | `timezoneSource` union += `"iana-geo"`, `"stored"`, `"unresolved"` (historical `"longitude-approx"`/`"browser-guess"` retained for old records). Profile schema unchanged (`timezone?: string \| null`) — **backward-compatible**. |
+| `scripts/generate-chiron-ephemeris.py` | fixture timezones are now derived by `timezonefinder` from the coordinates (same deterministic-polygon approach as `tz-lookup`) — a fixture can no longer carry a hand-assigned wrong zone. This found and fixed a real error: `southern_no_dst` (Denpasar/Bali) was hand-labelled `Asia/Jakarta` but is `Asia/Makassar` (WITA). Added `kathmandu_fractional` (+5:45) and `indiana_border_zone` fixtures → **12 fixtures**. |
+| `tests/unit/build108-cdi01a-timezone-canonicalization.test.ts` | **NEW** — 10 deterministic checks (registered in `tests/release-manifest.mjs`). |
+| `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts` | end-to-end Chiron degree tolerance tightened from `< 2.0°` / "most fixtures" to `< 0.01°` for **all** fixtures. |
+
+### Re-run of all Chiron fixtures — end-to-end longitude residual AFTER the timezone fix
+
+| FIXTURE | Resolved IANA (tz-lookup == timezonefinder) | end-to-end Chiron residual vs Swiss Ephemeris |
+|---|---|---|
+| hindenburg_era_gemini | America/New_York | 0.000130° |
+| post_war_aquarius | Asia/Jakarta | 0.000340° |
+| hd_snapshot_pisces | Europe/Istanbul | 0.000290° |
+| chiron_taurus_retro | Australia/Sydney | 0.000180° |
+| widhi_case_gemini | Asia/Jakarta | 0.000130° |
+| cancer_fast_arc | Asia/Kolkata | 0.000120° |
+| millennium_sagittarius | America/Los_Angeles | 0.000070° |
+| chiron_pisces_station | Europe/London | 0.000420° |
+| recent_aries | Pacific/Auckland | 0.000360° |
+| southern_no_dst | **Asia/Makassar** (was wrongly `Asia/Jakarta`) | 0.000080° |
+| kathmandu_fractional | Asia/Kathmandu (+5:45) | 0.000160° |
+| indiana_border_zone | America/Indiana/Indianapolis | 0.000140° |
+
+```text
+CHIRON_END_TO_END_MAX_ERROR = 0.000420°   (target: < 0.01° — MET, by ~24×)
+CHIRON_FIXTURES_PASS        = 12 / 12  (sign + < 0.01° longitude, end to end through calculateNatalBasics)
+```
+
+### Exit report (mandated keys)
+
+```text
+CDI_C3_STATUS                 = DONE. Setup and Settings now resolve a real IANA zone from the
+                                selected city's coordinates (tz-lookup polygon), stored on the
+                                profile as an IANA name. `resolveNatalLocation` / recovery no longer
+                                approximate `+HH:00` from longitude. (The city geocoder — Photon —
+                                still returns no timezone itself; the deterministic polygon lookup
+                                supplies it.)
+IANA_TIMEZONE_PERSISTENCE     = New profiles persist `timezone` as an IANA name (e.g. "Asia/Jakarta")
+                                + `timezoneSource:"iana-geo"`. Schema unchanged (`string|null`) —
+                                backward-compatible. A valid stored IANA / `+HH:MM` value is never
+                                overwritten (Settings + `canonicalizeNatalTimezone`).
+DST_HANDLING                 = `toUtcDate` converts IANA wall-clock -> UTC with luxon, which
+                                resolves the offset for the exact birth instant incl. DST
+                                changeovers. Test 4 verifies 03:30 America/New_York == 07:30 UTC in
+                                July (EDT) vs 08:30 UTC in January (EST).
+CHIRON_END_TO_END_MAX_ERROR  = 0.000420°  (was up to ~0.5° in CDI-108-01 due to Node-Intl vs
+                                zoneinfo offset differences; the luxon + IANA path collapses it).
+CHIRON_FIXTURES_PASS         = 12 / 12
+HD_LIVE_CONTRACT_VERIFIED     = YES — see §B.8.
+HD_ADVANCED_FIELDS_LIVE       = digestion/environment/motivation = arrow def_type (present);
+                                cognition = 6-fold (present); perspective = absent top-level but
+                                present/derivable in variables.bottom_right; short_code present;
+                                per-planet Color/Tone/Base absent (debug ignored).
+HD_ADAPTER_GAPS               = perspective read from an absent key instead of
+                                `data.variables.bottom_right`; no gap for the present fields.
+HD_PERSISTENCE_GAPS           = no explicit `perspective:` coercion in `normalizeBlueprint`
+                                (spread-only); digestion/cognition/motivation/environment/variables
+                                are explicitly preserved (no drop).
+HD_UI_MAPPING_GAPS            = CONFIRMED — `HumanDesignBodygraphLite.tsx:203` reads
+                                `variables.variable || variables.value` instead of
+                                `variables.short_code` / the 4 arrows. The Advanced Variables grid
+                                keys (`humanDesign.digestion` etc.) are correct.
+HD_RECOVERY_GAPS              = `mass-recover-hd.ts` writes `centers` as a raw array (corrupt),
+                                omits diagnostic/raw_*_gates/activations + openCenters, writes
+                                perspective=null. Background recalc (blueprintRecoveryEngine) is
+                                only missing perspective (same adapter gap).
+HD_BACKFILL_REQUIREMENT_REFINED =
+   Variables Arrows display -> UI key fix only, no backfill.
+   perspective              -> adapter derive + normalizer coercion + local recompute from stored
+                               variables.bottom_right (no re-fetch).
+   digestion/environment/motivation -> local migration from stored variables.<arrow>.def_type
+                               where `variables` exists; re-fetch for older charts without it.
+   cognition                -> re-fetch only (not locally derivable).
+   Color/Tone/Base          -> needs a diagnostic-emitting engine first; no backfill until then.
+   mass-recover-hd.ts shape -> fix the script before any future recovery run.
+GATE_108_CDI                 = IN_PROGRESS. CDI-108-01 DONE. CDI-108-01A DONE. CDI-108-02 refined
+                               read-only audit DONE (root cause proven field-by-field; implementation
+                               NOT started). CDI-108-03 (Schumann) NOT started.
+NEXT_SAFE_ACTION             = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
+```
+
+---
+
 ## D. CROSS-USER / LEGACY DATA
 
 | Subsystem | New users | `mass-recover-hd` cohort (Build 106/107) | Build 103/104/105 & pre-V2 legacy | Backfill needed? |
 |---|---|---|---|---|
 | **Schumann** | "Data belum tersedia" | same | same | **No** — cohort-independent, no per-user stored data. Fix = a working source; the localStorage 24 h accumulation then resumes for everyone. |
-| **Human Design** | `type/strategy/authority/profile` CANONICAL; advanced vars `null`; activations `[]` | CANONICAL type; advanced vars `null`; **activations omitted; `centers` shape degraded** | Pre-V2: aggregate gates/channels only — `HD_ACTIVATION_STORAGE_AUDIT.md`: "cannot be losslessly reconstructed from aggregate gates" → full re-fetch per user required | **Yes**, after the engine emits the fields. Steps: (1) engine fix (CDI-B1); (2) per-user re-run against birth data with the `isCanonicalHumanDesign` overwrite guard; (3) fix `mass-recover-hd` `canonicalChart` shape (CDI-B3); (4) Founder-authorised production write. |
-| **Chiron** | Suspect (linear model) | Suspect | `V3_JOKER`-era users: full `planets.Chiron` with degree/house, all from the linear model. Pre-expansion legacy: may have only `sunSign/moonSign/risingSign`, no Chiron. | **Yes**, after a real ephemeris exists (CDI-C1). Steps: per-user recompute of `natalChart.chiron` + `planets.Chiron` + true Placidus cusps; must not destroy other valid natal fields; Founder-authorised production write. |
+| **Human Design** (REFINED §B.8) | fresh onboard: digestion/environment/motivation/cognition stored + shown; `perspective` null (adapter gap); Variables-Arrows shown "Not stored" (UI key); Color/Tone/Base "Not stored" (engine) | CANONICAL type; digestion/etc present IF `variables` persisted; **`centers` shape degraded; activations/openCenters omitted** | pre-engine-field charts: digestion/etc `null` — "Not stored" | **Per field:** Variables-Arrows = UI fix only (no backfill). `perspective` = adapter derive + local recompute from stored `variables.bottom_right`. digestion/environment/motivation = local migration from `variables.<arrow>.def_type`, else re-fetch. cognition = re-fetch only. Color/Tone/Base = blocked on CDI-B6. `mass-recover-hd.ts` shape = fix before any re-run. All Founder-authorised, non-destructive, `isCanonicalHumanDesign`-guarded. |
+| **Chiron** | **FIXED (CDI-108-01 + 01A)** — accurate table Chiron; canonical IANA timezone | was: linear model + longitude/15 TZ | `V3_JOKER`-era users: `planets.Chiron` from the linear model + longitude-approx TZ; pre-expansion: `sunSign/moonSign/risingSign` only | **Yes (CDI-D1, deferred)** — per-user recompute of `natalChart.chiron` + `planets.Chiron` (table) + a resolved IANA `timezone`, and true Placidus cusps once the ephemeris service is deployed; non-destructive; Founder-authorised production write. |
 
 **Non-destructive rule for any future backfill:** never overwrite a valid CANONICAL HD `type`
 (the Build 107 convergence invariant); never blank a natal field that is already correct; write
@@ -741,21 +1040,45 @@ HUMAN_DESIGN_CORE_STATUS             = HEALTHY — type / strategy / authority /
                                        / centers / gates / channels resolve and persist; Build 107
                                        convergence intact.
 
-HUMAN_DESIGN_ADVANCED_VARIABLES_STATUS = BROKEN — Digestion / Environment / Motivation /
-                                       Perspective / Cognition + variants + per-gate Color / Tone /
-                                       Base absent for all cohorts (engine does not emit / debug-
-                                       gated). The one stored datum (variables.short_code) is
-                                       rendered against wrong keys. Local derivation orphaned.
-                                       Narrative fallbacks Indonesian-only.
+HUMAN_DESIGN_ADVANCED_VARIABLES_STATUS = BROKEN — root cause REFINED & PROVEN field-by-field
+                                       against the LIVE deployed contract (§B.8, supersedes §B.2–§B.3):
+                                       • digestion / environment / motivation / cognition ARE
+                                         returned by the live engine and ARE mapped / preserved /
+                                         persisted / read with correct UI keys — "Not stored" for
+                                         these = LEGACY blueprints (pre-dating the engine field);
+                                         digestion/environment/motivation are locally migratable
+                                         from stored `variables.<arrow>.def_type`, cognition needs
+                                         a re-fetch.
+                                       • perspective — ADAPTER GAP: reads an absent top-level key
+                                         instead of deriving from `variables.bottom_right` (which
+                                         is returned). Affects new users too. Locally derivable.
+                                       • Variables Arrows — CONFIRMED UI KEY MISMATCH: bodygraph
+                                         reads `variables.variable/value` instead of
+                                         `variables.short_code`. Data IS stored. UI-only fix.
+                                       • per-planet Color / Tone / Base — genuine DATA-AVAILABILITY
+                                         limitation: the deployed engine never emits a diagnostic
+                                         block and ignores `debug`. Needs a different/self-hosted
+                                         engine (CDI-C1 class).
+                                       • `mass-recover-hd.ts` still corrupts `centers` (raw array)
+                                         and drops activations / openCenters.
+                                       • HD variable/style narratives Indonesian-only (CDI-B4);
+                                         "Story for this section is being prepared." on CANONICAL
+                                         types (CDI-B5).
+                                       HD CORE identity remains HEALTHY.
 
 CHIRON_STATUS                        = FIXED (CDI-108-01, 2026-09-06) — Chiron now from a committed
                                        Swiss Ephemeris table (10/10 fixtures correct sign, < 0.001°
                                        vs Swiss Ephemeris); linear model + Equal-house-as-Placidus
                                        removed; Whole Sign / Placidus kept separate and labelled;
-                                       fail-closed persistence preserves stored data. Residual:
-                                       deploy the ephemeris service for genuine Placidus houses
-                                       (CDI-C1 ops step); CDI-C3 setup timezone; CDI-D1 legacy
-                                       backfill (Founder-gated).
+                                       fail-closed persistence preserves stored data.
+                                       CDI-108-01A (2026-09-06) — timezone canonicalization DONE:
+                                       `longitude / 15` + browser-guess + `+07:00` default removed;
+                                       deterministic offline lat/lon → IANA (tz-lookup); luxon
+                                       DST-correct wall-clock → UTC; valid stored zone never
+                                       overwritten; fail closed to pending when unresolved.
+                                       CHIRON_END_TO_END_MAX_ERROR = 0.000420° (12/12 fixtures).
+                                       Residual: deploy the ephemeris service for genuine Placidus
+                                       (CDI-C1 ops step); CDI-D1 legacy natal backfill (Founder-gated).
 
 NEW_USER_AFFECTED                    = YES (all three)
 
@@ -774,18 +1097,25 @@ ROOT_CAUSES_CONFIRMED               =
   1. Schumann — provider API path schumannresonancelive.com/api/data.php returns 404
      (endpoint removed/moved). CONFIRMED.
      Secondary CORS-from-https://localhost risk: UNVERIFIED until a live endpoint exists.
-  2. Human Design advanced variables — deployed engine (main.py /calculate) computes only 4 arrows;
-     PHS 6-fold values never derived; Cognition never computed; raw Color/Tone/Base debug-gated and
-     not requested; variables.short_code rendered against wrong UI keys; calculateAdvancedVariables()
-     orphaned; mass-recover-hd.ts drops activations + corrupts `centers`; variable narratives
-     Indonesian-only. CONFIRMED.
+  2. Human Design advanced variables — REFINED against the LIVE deployed contract (§B.8, supersedes
+     the repo-`main.py` analysis in §B.2–§B.3). The deployed engine DOES return
+     digestion/environment/motivation/cognition; the adapter/normalizer/persistence handle them.
+     Confirmed root causes: (a) `perspective` — adapter reads an absent top-level key instead of
+     `variables.bottom_right` (derivable); (b) Variables Arrows — UI reads `variables.variable/value`
+     instead of `variables.short_code` (stored); (c) per-planet Color/Tone/Base — the deployed
+     engine never emits them and ignores `debug` (needs another engine); (d) "Not stored" for the
+     present fields on production users = LEGACY blueprints (re-fetch or local migration from
+     stored `variables`); (e) `mass-recover-hd.ts` still corrupts `centers` + drops activations;
+     (f) HD variable/style narratives Indonesian-only; (g) "Story for this section is being
+     prepared." on CANONICAL types. CONFIRMED. Implementation NOT started.
   3. Chiron — Swiss Ephemeris /calculate-astrology unreachable in production (no NEXT_PUBLIC/proxy;
      http://localhost:8000 blocked) -> local fallback always used -> Chiron from a linear ephemeris
      (astronomy-engine has no Chiron) -> sign/degree/house wrong; Equal-house cusps mislabelled
-     `placidusHouses`. CONFIRMED — **RESOLVED by CDI-108-01 (see §C.8)**: committed Swiss
-     Ephemeris table for Chiron; linear model + fake Placidus removed; `getAstrologyApiUrl()` +
-     `/api/humandesign/astrology` proxy route added for the canonical service; fail-closed,
-     non-destructive persistence.
+     `placidusHouses`; plus `longitude / 15` timezone inference. CONFIRMED — **RESOLVED by
+     CDI-108-01 (§C.8) + CDI-108-01A (§C.9)**: committed Swiss Ephemeris Chiron table; linear model
+     + fake Placidus removed; `getAstrologyApiUrl()` + `/api/humandesign/astrology` proxy for the
+     canonical service; deterministic IANA timezone (tz-lookup) + luxon DST-correct conversion;
+     fail-closed, non-destructive persistence; end-to-end Chiron residual 0.000420° (12/12 fixtures).
 
 FIX_SCOPE                           = Engines + adapters + persistence + presentation + one
                                      migration script + (later, Founder-gated) a production
@@ -798,27 +1128,32 @@ BUILD_108_BLOCKERS_OPEN            =
           CORS from https://localhost + schema compatibility with normalizeSchumannResponse).
   CDI-A2  If not CORS-open, stand up a Bhumi-owned normalising proxy.
   CDI-A3  Preserve the honest-unavailable UI + the deriveEnvironmentBands gate unchanged.
-  CDI-B1  HD engine: emit PHS Digestion/Environment/Motivation/Perspective/Cognition + variants;
-          expose raw Color/Tone/Base without a debug flag (or wire calculateAdvancedVariables()).
-  CDI-B2  Fix HumanDesignBodygraphLite.tsx Variables-Arrows key read (short_code / top_*); make
-          presentation.ts English `variables.*` consume the real values.
-  CDI-B3  Fix mass-recover-hd.ts canonicalChart (add diagnostic/activations, correct `centers`);
-          add `perspective` to normalizeBlueprint's explicit HD field list.
+  CDI-B1  perspective — adapter: derive from `data.variables.bottom_right` (name/value/def_type)
+          instead of the absent `data.perspective`. NOT an engine change.
+  CDI-B2  HumanDesignBodygraphLite.tsx — read `variables.short_code` (and/or render the 4
+          `top_*/bottom_*` arrows) instead of `variables.variable || variables.value`. UI-only.
+  CDI-B3  normalizeBlueprint — add an explicit `perspective:` coercion. Fix mass-recover-hd.ts
+          `canonicalChart` shape: `centers` as `{head:bool,…}`, add `openCenters`, keep
+          diagnostic/activations if present. (Script not run without Founder authorisation.)
   CDI-B4  Localise HD variable/style narratives (variableIntelligence.ts, styleEngine.ts, the
-          channel/cross/definition intelligence files, and their consumers incl.
-          localDailyGuidanceFallback).
+          channel/cross/definition intelligence files, consumers incl. localDailyGuidanceFallback);
+          make presentation.ts English `variables.*` consume the real values.
   CDI-B5  Trace + fix "Story for this section is being prepared." on CANONICAL types
           (executeHumanMeaningRuntime {ok:false} gating in app/blueprint/human-design/page.tsx).
-  CDI-C1  Restore a real Chiron ephemeris: make Swiss Ephemeris /calculate-astrology reachable in
-          production (deploy + NEXT_PUBLIC URL or /api proxy) OR add a vetted TS Chiron ephemeris;
-          stop labelling Equal houses as `placidusHouses`.
-  CDI-C2  Re-derive natal chart on read OR add an "approximate/unverified" provenance label for
-          fallback-sourced natal data (parity with HD provenance).
-  CDI-C3  Carry a real IANA timezone from city selection through setup.
-  CDI-D1  Post-fix backfill plan for HD advanced variables + Chiron across Build 103–107 cohorts
-          (Founder-authorised, non-destructive, convergence-safe).
+  CDI-B6  Per-planet Color / Tone / Base — obtain a diagnostic-emitting engine (self-host
+          services/humandesign-api with its debug path, or a vetted TS HD ephemeris). Same class
+          as CDI-C1. Until then "Color / Tone / Base = Not stored" is a truthful limitation.
+  CDI-C1  DONE (Chiron table) + deploy the Swiss Ephemeris service for genuine Placidus houses
+          (ops step remaining).
+  CDI-C2  DONE — fail-closed provenance (`chironAccuracy` / `houseSystem`) + declared-system label;
+          stored Chiron preserved, never downgraded.
+  CDI-C3  DONE (CDI-108-01A) — deterministic IANA timezone from city coordinates through setup /
+          settings / recovery; luxon DST-correct conversion; no `longitude / 15`.
+  CDI-D1  Post-fix backfill for HD advanced variables (per-field: UI-only / local-migration /
+          re-fetch — see §B.8.3) + legacy Chiron, across Build 103–107 cohorts
+          (Founder-authorised, non-destructive, convergence-safe). NOT STARTED.
 
-NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CORE_DATA_INTEGRITY_AUDIT
+NEXT_SAFE_ACTION                    = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 ---
@@ -880,11 +1215,57 @@ KNOWN_LIMITATIONS =
     — it differs from repo `services/humandesign-api/main.py`. This refines CDI-108-02 scope; it
     does NOT change the "Not stored" user symptom (adapter/persistence/UI-key side). Recorded for
     the HD phase; not acted on here.
-EXACT_NEXT_RECOVERY_TASK = Founder review of CDI-108-01; then Founder sequencing of CDI-108-02
-    (Human Design advanced variables) and CDI-108-03 (Schumann source). Sprint 5 stays BLOCKED.
+EXACT_NEXT_RECOVERY_TASK = Founder review of CDI-108-01; then Founder sequencing of CDI-108-01A +
+    CDI-108-02 (see F.3) and CDI-108-03 (Schumann source). Sprint 5 stays BLOCKED.
     CDI-D1 (legacy natal backfill) remains separately gated.
 MARKERS           = BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
                     GATE_108_CDI = IN_PROGRESS  (CDI-108-01 DONE)
+```
+
+### F.3 CDI-108-01A (timezone canonicalization) + CDI-108-02 refined READ-ONLY audit — commit `<pending>`
+
+```text
+CDI-108-01A — implemented. CDI-108-02 — READ-ONLY refinement only (no implementation).
+
+FILES_CHANGED       = 15
+  new:  lib/astrology/resolveIanaTimezone.ts, types/tz-lookup.d.ts,
+        tests/unit/build108-cdi01a-timezone-canonicalization.test.ts
+  mod:  lib/astrology/calculateNatalBasics.ts, app/setup/page.tsx, app/settings/page.tsx,
+        lib/engines/blueprintRecoveryEngine.ts, lib/humandesign/types.ts,
+        package.json, package-lock.json, scripts/generate-chiron-ephemeris.py,
+        lib/astrology/data/chironEphemeris.json (regenerated — unchanged bytes for the table;
+        tests/fixtures/build108-cdi01-chiron-reference.json (12 fixtures now, timezonefinder-derived),
+        tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts (tolerance tightened to < 0.01°),
+        tests/release-manifest.mjs,
+        BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md (+ SOT / SCOPE_MATRIX / HANDOFF / SPRINT_PLAN)
+DEPENDENCY_ADDED    = tz-lookup@6.1.25 (CC0-1.0, ~152 KB, pure JS, zero transitive deps) — the
+                     deterministic offline lat/lon → IANA polygon source the Founder required.
+TESTS_RUN / EXIT CODES =
+  npx tsc --noEmit                                                 EXIT 0
+  tests/unit/build108-cdi01a-timezone-canonicalization.test.ts     EXIT 0  (10 checks; CHIRON_END_TO_END_MAX_ERROR = 0.000420°)
+  tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts          EXIT 0  (13 checks, < 0.01° tolerance)
+  tests/unit/build108-sprint03-blueprints.test.ts                  EXIT 0  (174 assertions)
+  tests/unit/build108-sprint01-shell.test.ts                       EXIT 0  (168 assertions)
+  tests/unit/build107-hd-existing-user-convergence.test.ts         EXIT 0  (19/19)
+  tests/unit/build107-production-surface-guard.test.ts             EXIT 0  (131/131)
+  node scripts/run-release-tests.mjs --skip-emulator               EXIT 0  (PASS=22 FAIL=0 SKIPPED=9 emulator)
+PRODUCTION_READS / WRITES / FIRESTORE_MUTATIONS = 0 / 0 / 0
+BACKEND_DEPLOY / VERSION_BUMP / BUILD / SIGN / UPLOAD = none
+EXTERNAL_PROBES    = read-only synthetic POST /calculate (HD, no PII) 2026-09-06 — response shape
+                    recorded in §B.8.1; `debug:true` verified ignored. GET /openapi.json + /health.
+COMMITS_CREATED   = 00e500f (docs checkpoint) + dccaf08 (CDI-108-01) + 174e2c3 (SHA fill)
+                    + <this CDI-108-01A + refined-HD-audit commit>
+KNOWN_LIMITATIONS =
+  - tz-lookup adds ~152 KB unpacked (~55 KB gzip) to bundles importing calculateNatalBasics.
+  - The city geocoder (Photon) returns no timezone; the polygon lookup supplies it deterministically.
+  - Per-planet HD Color/Tone/Base cannot be obtained from the deployed engine (CDI-B6).
+  - CDI-108-02 is a READ-ONLY refinement — nothing implemented; the Founder decides the per-field
+    fix + backfill path (§B.8.3).
+EXACT_NEXT_RECOVERY_TASK = Founder review of CDI-108-01A and the §B.8 refined HD audit; then Founder
+    sequencing of CDI-108-02 implementation (per-field: UI fix / adapter derive / migration /
+    re-fetch) and CDI-108-03 (Schumann). Sprint 5 stays BLOCKED.
+MARKERS           = BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
+                    GATE_108_CDI = IN_PROGRESS  (CDI-108-01 DONE · CDI-108-01A DONE · CDI-108-02 audit DONE)
 ```
 
 **STOP AND WAIT FOR FOUNDER REVIEW.**

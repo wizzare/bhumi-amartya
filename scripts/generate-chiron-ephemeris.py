@@ -35,6 +35,12 @@ from zoneinfo import ZoneInfo
 
 import swisseph as swe
 
+try:
+    from timezonefinder import TimezoneFinder
+    _TF = TimezoneFinder()
+except Exception:  # pragma: no cover
+    _TF = None
+
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 EPHE = os.path.join(REPO, "node_modules", "swisseph", "ephe")
 swe.set_ephe_path(EPHE)
@@ -146,19 +152,32 @@ while d < end_jd - 8 * STEP_DAYS:
     d += 1.0  # daily sweep across the whole 200-year span
 
 # ---- Reference fixtures --------------------------------------------------
-# (label, year, month, day, hour, minute, tz, lat, lon, place)
+# (label, year, month, day, hour, minute, lat, lon, place). The IANA timezone
+# is derived from the coordinates by timezonefinder at generation time — the
+# same deterministic-polygon approach the app uses (tz-lookup) — so a fixture
+# can never carry a hand-assigned wrong zone.
 FIXTURES = [
-    ("hindenburg_era_gemini",   1937,  5, 20,  7, 25, "America/New_York",   40.7128,  -74.0060, "New York, USA"),
-    ("post_war_aquarius",       1955,  3,  1, 23, 45, "Asia/Jakarta",       -6.2088,  106.8456, "Jakarta, Indonesia"),
-    ("hd_snapshot_pisces",      1968,  2, 21,  9,  0, "Europe/Istanbul",     41.0082,   28.9784, "Istanbul, Turkiye"),
-    ("chiron_taurus_retro",     1977, 11, 15,  4, 30, "Australia/Sydney",   -33.8688,  151.2093, "Sydney, Australia"),
-    ("widhi_case_gemini",       1985,  5,  3, 23, 45, "Asia/Jakarta",       -6.2088,  106.8456, "Jakarta, Indonesia"),
-    ("cancer_fast_arc",         1990,  6, 15, 14, 30, "Asia/Kolkata",       19.0760,   72.8777, "Mumbai, India"),
-    ("millennium_sagittarius",  2001,  9, 11,  8, 46, "America/Los_Angeles", 34.0522, -118.2437, "Los Angeles, USA"),
-    ("chiron_pisces_station",   2013,  7,  4, 12,  0, "Europe/London",       51.5074,   -0.1278, "London, UK"),
-    ("recent_aries",            2024,  1,  1,  0,  1, "Pacific/Auckland",   -36.8485,  174.7633, "Auckland, New Zealand"),
-    ("southern_no_dst",         1995,  8,  9, 18, 20, "Asia/Jakarta",       -8.6500,  115.2167, "Denpasar, Indonesia"),
+    ("hindenburg_era_gemini",   1937,  5, 20,  7, 25,  40.7128,  -74.0060, "New York, USA"),
+    ("post_war_aquarius",       1955,  3,  1, 23, 45,  -6.2088,  106.8456, "Jakarta, Indonesia (WIB)"),
+    ("hd_snapshot_pisces",      1968,  2, 21,  9,  0,  41.0082,   28.9784, "Istanbul, Turkiye"),
+    ("chiron_taurus_retro",     1977, 11, 15,  4, 30, -33.8688,  151.2093, "Sydney, Australia (DST)"),
+    ("widhi_case_gemini",       1985,  5,  3, 23, 45,  -6.2088,  106.8456, "Jakarta, Indonesia (WIB)"),
+    ("cancer_fast_arc",         1990,  6, 15, 14, 30,  19.0760,   72.8777, "Mumbai, India (+5:30)"),
+    ("millennium_sagittarius",  2001,  9, 11,  8, 46,  34.0522, -118.2437, "Los Angeles, USA (PDT)"),
+    ("chiron_pisces_station",   2013,  7,  4, 12,  0,  51.5074,   -0.1278, "London, UK (BST)"),
+    ("recent_aries",            2024,  1,  1,  0,  1, -36.8485,  174.7633, "Auckland, New Zealand (NZDT)"),
+    ("southern_no_dst",         1995,  8,  9, 18, 20,  -8.6500,  115.2167, "Denpasar, Bali, Indonesia (WITA, not WIB)"),
+    ("kathmandu_fractional",    1979,  4, 12,  6, 15,  27.7172,   85.3240, "Kathmandu, Nepal (+5:45)"),
+    ("indiana_border_zone",     1966, 10,  2,  3, 40,  39.7684,  -86.1581, "Indianapolis, USA (sub-national zone)"),
 ]
+
+def resolve_tz(lat, lon):
+    if _TF is None:
+        raise RuntimeError("timezonefinder is required to derive fixture timezones")
+    z = _TF.timezone_at(lat=lat, lng=lon)
+    if not z:
+        raise RuntimeError(f"no timezone for {lat},{lon}")
+    return z
 
 def utc_instant(y, m, d, hh, mm, tzname):
     local = datetime(y, m, d, hh, mm, tzinfo=ZoneInfo(tzname))
@@ -188,7 +207,8 @@ ref = {"generatedAtUtc": table["generatedAtUtc"],
        "fixtures": []}
 
 rows = []
-for (label, y, m, d, hh, mm, tzname, lat, lon, place) in FIXTURES:
+for (label, y, m, d, hh, mm, lat, lon, place) in FIXTURES:
+    tzname = resolve_tz(lat, lon)
     u, off = utc_instant(y, m, d, hh, mm, tzname)
     jd = jd_ut(u.year, u.month, u.day, u.hour + u.minute / 60.0 + u.second / 3600.0)
 

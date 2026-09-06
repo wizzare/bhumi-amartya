@@ -11,8 +11,8 @@ TOTAL_ROUTES_AUDITED            = 51
 TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 Chiron DONE · CDI-108-02 HD / CDI-108-03 Schumann NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -23,12 +23,21 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > **Founder-approved**, and recorded in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`** (mandatory
 > reading order + authority hierarchy below). All three root causes CONFIRMED.
 >
-> `GATE_108_CDI` is now **IN_PROGRESS**: **CDI-108-01 (Chiron / natal accuracy) is complete**
-> (§7.1) — the linear Chiron approximation and Equal-house-as-Placidus are removed, replaced with a
-> committed Swiss Ephemeris table + a canonical-service proxy route, fail-closed and
-> non-destructive. **CDI-108-02 (Human Design) and CDI-108-03 (Schumann) are NOT started.**
+> `GATE_108_CDI` is **IN_PROGRESS** (§7.1):
+> - **CDI-108-01 (Chiron ephemeris) — DONE.** Linear Chiron + Equal-house-as-Placidus removed;
+>   committed Swiss Ephemeris table + canonical-service proxy route; fail-closed, non-destructive.
+> - **CDI-108-01A (timezone canonicalization) — DONE.** `longitude / 15` + browser-guess + `+07:00`
+>   default removed; deterministic offline lat/lon → IANA (`tz-lookup`); luxon DST-correct
+>   wall-clock → UTC; a valid stored zone is never overwritten; fail closed to pending when
+>   unresolved. End-to-end Chiron residual 0.000420° (12/12 fixtures).
+> - **CDI-108-02 (Human Design) — refined READ-ONLY live-contract audit DONE; implementation NOT
+>   started.** The *deployed* engine returns `digestion/environment/motivation/cognition`; the
+>   confirmed defects are a `perspective` adapter gap, a `variables.short_code` UI-key mismatch,
+>   the absence of per-planet Color/Tone/Base, legacy blueprints needing migration/re-fetch, and
+>   the `mass-recover-hd.ts` `centers` corruption. See audit §B.8.
+> - **CDI-108-03 (Schumann) — NOT started.**
 > The obsolete marker `BUILD_106_RECOVERY_IN_PROGRESS` no longer applies to this work.
-> No production Firestore mutation; no version bump / build / sign / deploy / upload.
+> No production Firestore mutation; no backend deploy; no version bump / build / sign / deploy / upload.
 
 ---
 
@@ -208,11 +217,12 @@ The 8 implementation sprints (specified in detail in `BUILD_108_ENL_SPRINT_PLAN.
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
 LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE
-CDI_108_01_CHIRON              = DONE (2026-09-06)
-CDI_108_02_HUMAN_DESIGN        = NOT_STARTED
+CDI_108_01_CHIRON              = DONE (2026-09-06, commit dccaf08)
+CDI_108_01A_TIMEZONE          = DONE (2026-09-06)
+CDI_108_02_HUMAN_DESIGN        = REFINED READ-ONLY AUDIT DONE (§B.8) — IMPLEMENTATION NOT_STARTED
 CDI_108_03_SCHUMANN            = NOT_STARTED
 SPRINT_5_STATUS                 = NOT_STARTED — BLOCKED behind GATE_108_CDI
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 ### 7.1 Core Data Integrity Gate — `GATE_108_CDI` (opened 2026-09-06)
@@ -223,8 +233,8 @@ three root causes CONFIRMED.
 
 | Defect | Root cause (confirmed) | Status |
 |---|---|---|
-| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production (`HUMAN_DESIGN_SERVICE_URL` undefined → `http://localhost:8000` blocked; no `/api` proxy). Local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`. | **DONE — CDI-108-01 (§C.8 of the audit).** Committed Swiss Ephemeris Chiron table (10/10 fixtures correct sign, < 0.001° error); linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy added for the canonical service; Whole Sign / Placidus kept separate + labelled; fail-closed, non-destructive persistence. Residual: deploy the ephemeris service for genuine Placidus (CDI-C1 ops step); CDI-C3 setup timezone. |
-| **HD advanced variables "Not stored"** | Deployed HD engine emits only the 4 binary Variable arrows; PHS values not derived; raw Color/Tone/Base debug-gated; stored `variables.short_code` read against wrong UI keys; `calculateAdvancedVariables()` orphaned; `mass-recover-hd.ts` drops activations + corrupts `centers`. HD **core** identity healthy — Build 107 convergence intact. (Probe refinement: the *deployed* engine does return top-level digestion/environment/motivation/cognition — see audit §F.2.) | **NOT STARTED — CDI-108-02** (CDI-B1..B5). |
+| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production; local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`; plus `longitude / 15` timezone inference. | **DONE — CDI-108-01 (§C.8) + CDI-108-01A (§C.9).** Committed Swiss Ephemeris Chiron table (12/12 fixtures correct sign); linear model + fake Placidus removed; `getAstrologyApiUrl()` + `app/api/humandesign/astrology` proxy for the canonical service; deterministic IANA timezone (`tz-lookup`) + luxon DST-correct conversion — no `longitude / 15`; Whole Sign / Placidus separate + labelled; fail-closed, non-destructive persistence. **CHIRON_END_TO_END_MAX_ERROR = 0.000420°.** Residual: deploy the ephemeris service for genuine Placidus houses (CDI-C1 ops step). |
+| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The deployed engine **does** return `digestion/environment/motivation/cognition`; adapter/normalizer/persistence/UI-grid-keys handle them. Confirmed defects: (a) `perspective` — adapter reads an absent top-level key instead of `variables.bottom_right` (derivable); (b) **Variables Arrows** — `HumanDesignBodygraphLite.tsx` reads `variables.variable/value` instead of the stored `variables.short_code` (UI-only); (c) per-planet **Color/Tone/Base** — deployed engine never emits them, ignores `debug` (needs another engine — CDI-B6); (d) "Not stored" for the present fields on real users = **legacy blueprints** (migrate from stored `variables`, else re-fetch); (e) `mass-recover-hd.ts` still corrupts `centers` + drops activations; (f) HD variable/style narratives Indonesian-only; (g) "Story for this section is being prepared." on CANONICAL types. HD **core** identity healthy. | **REFINED READ-ONLY AUDIT DONE (§B.8). IMPLEMENTATION NOT STARTED — CDI-108-02** (CDI-B1..B6, per-field). |
 | **Schumann `Data belum tersedia`** | Upstream provider endpoint `schumannresonancelive.com/api/data.php` returns **HTTP 404**. Pre-existing since ≥ Build 106 (residual DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
 
 Cross-cutting: **CDI-D1** — post-fix, non-destructive, convergence-safe production backfill for

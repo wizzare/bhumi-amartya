@@ -8,14 +8,16 @@ TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
 BLUEPRINT_ENGINES_AUDITED       = 11
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 Chiron DONE · CDI-108-02 HD / CDI-108-03 Schumann NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 > **CORE DATA INTEGRITY GATE (2026-09-06).** Three confirmed production data-integrity defects
 > (Schumann, Human Design advanced variables, Chiron) gate Sprint 5. Root causes CONFIRMED and
-> **Founder-approved** in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron /
-> natal accuracy) is complete** (§8). This matrix's ENL localisation status is unchanged; §8 is
+> **Founder-approved** in **`BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md`**. **CDI-108-01 (Chiron
+> ephemeris) and CDI-108-01A (timezone canonicalization) are complete**; **CDI-108-02 (Human
+> Design) has a refined READ-ONLY live-contract audit (§B.8), implementation not started**;
+> CDI-108-03 (Schumann) not started. This matrix's ENL localisation status is unchanged; §8 is
 > the data-integrity ledger for the affected surfaces/engines.
 
 ---
@@ -180,8 +182,8 @@ Audited 105 components in `components/`:
 
 ```text
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 DONE · CDI-108-02 / CDI-108-03 NOT STARTED)
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01
+GATE_108_CDI                    = IN_PROGRESS (CDI-108-01 + CDI-108-01A DONE · CDI-108-02 refined audit DONE/impl NOT STARTED · CDI-108-03 NOT STARTED)
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_AND_HD_REFINED_AUDIT
 ```
 
 ---
@@ -196,9 +198,9 @@ CONFIRMED. Classification below is orthogonal to the ENL localisation classifica
 | `app/dashboard/environment/page.tsx` · `components/dashboard/EnvironmentContextCard.tsx` · `lib/environment/{schumann,service}.ts(x)` | **DATA_SOURCE_DEAD** | `SCHUMANN_API_URL` = `https://schumannresonancelive.com/api/data.php` returns **HTTP 404**. Client-only fetch (static export forbids a proxy). Fresh installs have no cache → honest "Data belum tersedia". Pre-existing since ≥ Build 106 (DS-E1). | New + all legacy (cohort-independent; no per-user data) | CDI-A1 / A2 / A3 |
 | Same — Earth Activity / Geomagnetic cards | **HEALTHY (verified not fabricated)** | `dataState === "available"` / `source.status === "available"` guards on both render surfaces; `V5_DECISION_LOG` D-#509 forbids fabricated `Stabil`. `deriveEnvironmentBands` defaults a missing Schumann band to `quiet` but that only feeds the spiritual block, gated on `hasSchumannObservation`. | — | (preserve guard during CDI-A) |
 | `app/blueprint/human-design/page.tsx` — Type/Strategy/Authority/Profile/Definition/Centers/Gates/Channels | **HEALTHY** | Maps correctly from `services/humandesign-api/main.py`; Build 107 convergence intact (`getHdState` CANONICAL ⇔ `hdEngineVersion === "gaia-hd-v1"`). | — | — |
-| `components/blueprint/HumanDesignBodygraphLite.tsx` · `lib/humandesign/{hdkitAdapter,presentation,calculateAdvancedVariables}.ts` · `lib/repositories/blueprintRepository.ts` | **ADVANCED_LAYER_BROKEN** | Deployed engine emits only the 4 binary Variable arrows (`variables` + `short_code`); never derives PHS Digestion/Environment/Motivation/Perspective/Cognition; withholds raw Color/Tone/Base unless `debug=true` (never sent). `variables.short_code` read against wrong UI keys (`variable`/`value`/`advanced`). `calculateAdvancedVariables()` orphaned. `scripts/mass-recover-hd.ts` drops `diagnostic`/activations + writes a raw array into `centers`. `perspective` missing from `normalizeBlueprint`'s explicit HD list. | New + `mass-recover-hd` cohort + pre-V2 legacy | CDI-B1..B5 |
+| `components/blueprint/HumanDesignBodygraphLite.tsx` · `lib/humandesign/hdkitAdapter.ts` · `lib/repositories/blueprintRepository.ts` · `scripts/mass-recover-hd.ts` | **ADVANCED_LAYER_BROKEN — refined against the LIVE contract (audit §B.8)** | The **deployed** engine DOES return top-level `digestion:"Active"` / `environment:"Observer"` / `motivation:"Receptive"` (arrow `def_type`) + `cognition:"Outer Vision"` (6-fold) + `variables.short_code:"PRR DLR"`; the adapter / normalizer / persistence / the "Advanced Variables" grid keys handle these correctly. Confirmed defects: **(a)** `perspective` — adapter reads an absent top-level key instead of deriving from `variables.bottom_right`; **(b)** "Variables Arrows" — `HumanDesignBodygraphLite.tsx:203` reads `variables.variable \|\| variables.value` instead of the stored `variables.short_code`; **(c)** per-planet Color/Tone/Base — the deployed engine never emits a `diagnostic` block and IGNORES `debug` (not obtainable from this engine); **(d)** "Not stored" for the present fields on real users = **legacy blueprints** predating the engine field (local migration from stored `variables.<arrow>.def_type`, else re-fetch; `cognition` = re-fetch only); **(e)** `mass-recover-hd.ts` still writes `centers` as a raw array + omits `diagnostic`/activations/`openCenters`; **(f)** no explicit `perspective:` coercion in `normalizeBlueprint`. | New (perspective + arrows-display) + `mass-recover-hd` cohort + pre-engine-field legacy | CDI-B1 (perspective derive) / B2 (short_code UI key) / B3 (normalizer + mass-recover shape) / B6 (Color/Tone/Base needs another engine) |
 | `lib/humandesign/intelligence/{variableIntelligence,styleEngine}.ts` + Profile → Potential cards + `lib/orchestrators/localDailyGuidanceFallback.ts` | **INDONESIAN_ONLY (no `isEn`)** | Hardcoded Indonesian HD variable/style narratives; `presentation.ts` English `variables.*` are generic constants ignoring real values. `app/blueprint/human-design/page.tsx:195` shows "Story for this section is being prepared." on CANONICAL types when `executeHumanMeaningRuntime` returns `{ok:false}`. | ENL users | CDI-B4 / CDI-B5 |
-| `app/blueprint/natal-chart/page.tsx` · `lib/astrology/calculateNatalBasics.ts` · `lib/astrology/chironEphemeris.ts` · `app/api/humandesign/astrology/route.ts` | **CHIRON — FIXED (CDI-108-01, 2026-09-06)** | Was: Swiss Ephemeris `/calculate-astrology` unreachable → silent linear Chiron (`251.35 + days·0.019777`) + Equal-House cusps stored as `placidusHouses`. Now: committed Swiss Ephemeris Chiron table (`chironLongitudeAt`, 1900–2100, < 0.001° error, 10/10 fixtures correct sign); linear model + `buildApproximatePlacidusHouses` deleted; local engine emits genuine Whole Sign houses + `houseSystem` label + `chironAccuracy` contract; `getAstrologyApiUrl()` + proxy route reach the canonical service for genuine Placidus; fail-closed + non-destructive persistence (`chiron` persisted only when `chironAccuracy==="ephemeris"`). | New users fixed immediately; **legacy backfill (CDI-D1) NOT done — Founder-gated** | CDI-C1 (deploy ephemeris service — ops), CDI-C3 (setup timezone) |
+| `app/blueprint/natal-chart/page.tsx` · `lib/astrology/{calculateNatalBasics,chironEphemeris,resolveIanaTimezone}.ts` · `app/api/humandesign/astrology/route.ts` · `app/setup/page.tsx` · `app/settings/page.tsx` | **CHIRON + TIMEZONE — FIXED (CDI-108-01 + CDI-108-01A, 2026-09-06)** | Was: linear Chiron (`251.35 + days·0.019777`) + Equal-House cusps stored as `placidusHouses` + `Math.round(longitude / 15)` timezone offsets + browser-guess + `+07:00` default. Now: committed Swiss Ephemeris Chiron table (`chironLongitudeAt`, 1900–2100, < 0.001° interp error, **12/12 fixtures correct sign**); linear model + `buildApproximatePlacidusHouses` deleted; genuine Whole Sign houses + `houseSystem` / `chironAccuracy` contract; `getAstrologyApiUrl()` + proxy route for genuine Placidus; **deterministic offline lat/lon → IANA (`tz-lookup@6.1.25`) + luxon DST-correct wall-clock → UTC**; a valid stored zone is never overwritten; fail closed to pending when unresolved. `CHIRON_END_TO_END_MAX_ERROR = 0.000420°`. Profile schema unchanged (`timezone?: string\|null`) — backward-compatible. | New users fixed immediately; **legacy backfill (CDI-D1) NOT done — Founder-gated** | CDI-C1 (deploy ephemeris service — ops step) |
 
 **Cross-cutting — CDI-D1:** non-destructive, convergence-safe production backfill for HD advanced
 variables + Chiron across Build 103–107 cohorts, AFTER the upstream calculations are fixed.

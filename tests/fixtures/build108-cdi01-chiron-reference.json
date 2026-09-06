@@ -1,5 +1,5 @@
 {
-  "generatedAtUtc": "2026-09-06T04:27:14Z",
+  "generatedAtUtc": "2026-09-06T04:51:56Z",
   "source": "pyswisseph 2.10.03 + seas_18.se1 (Swiss Ephemeris)",
   "oldLinearModel": {
     "anchorDeg": 251.35,
@@ -52,7 +52,7 @@
       "jdUt": 2435168.1770833335,
       "latitude": -6.2088,
       "longitude": 106.8456,
-      "place": "Jakarta, Indonesia",
+      "place": "Jakarta, Indonesia (WIB)",
       "expected": {
         "chironLongitude": 302.66966,
         "chironSign": "Aquarius",
@@ -124,7 +124,7 @@
       "jdUt": 2443462.2291666665,
       "latitude": -33.8688,
       "longitude": 151.2093,
-      "place": "Sydney, Australia",
+      "place": "Sydney, Australia (DST)",
       "expected": {
         "chironLongitude": 32.54798,
         "chironSign": "Taurus",
@@ -160,7 +160,7 @@
       "jdUt": 2446189.1979166665,
       "latitude": -6.2088,
       "longitude": 106.8456,
-      "place": "Jakarta, Indonesia",
+      "place": "Jakarta, Indonesia (WIB)",
       "expected": {
         "chironLongitude": 66.77867,
         "chironSign": "Gemini",
@@ -196,7 +196,7 @@
       "jdUt": 2448057.875,
       "latitude": 19.076,
       "longitude": 72.8777,
-      "place": "Mumbai, India",
+      "place": "Mumbai, India (+5:30)",
       "expected": {
         "chironLongitude": 106.04788,
         "chironSign": "Cancer",
@@ -232,7 +232,7 @@
       "jdUt": 2452164.1569444444,
       "latitude": 34.0522,
       "longitude": -118.2437,
-      "place": "Los Angeles, USA",
+      "place": "Los Angeles, USA (PDT)",
       "expected": {
         "chironLongitude": 263.05193,
         "chironSign": "Sagittarius",
@@ -268,7 +268,7 @@
       "jdUt": 2456477.9583333335,
       "latitude": 51.5074,
       "longitude": -0.1278,
-      "place": "London, UK",
+      "place": "London, UK (BST)",
       "expected": {
         "chironLongitude": 343.68492,
         "chironSign": "Pisces",
@@ -304,7 +304,7 @@
       "jdUt": 2460309.959027778,
       "latitude": -36.8485,
       "longitude": 174.7633,
-      "place": "Auckland, New Zealand",
+      "place": "Auckland, New Zealand (NZDT)",
       "expected": {
         "chironLongitude": 15.46034,
         "chironSign": "Aries",
@@ -334,35 +334,107 @@
     {
       "label": "southern_no_dst",
       "birthLocal": "1995-08-09T18:20",
-      "timezone": "Asia/Jakarta",
-      "utcOffsetHours": 7.0,
-      "birthUtc": "1995-08-09T11:20:00Z",
-      "jdUt": 2449938.972222222,
+      "timezone": "Asia/Makassar",
+      "utcOffsetHours": 8.0,
+      "birthUtc": "1995-08-09T10:20:00Z",
+      "jdUt": 2449938.9305555555,
       "latitude": -8.65,
       "longitude": 115.2167,
-      "place": "Denpasar, Indonesia",
+      "place": "Denpasar, Bali, Indonesia (WITA, not WIB)",
       "expected": {
-        "chironLongitude": 175.78938,
+        "chironLongitude": 175.78418,
         "chironSign": "Virgo",
-        "chironDegree": 25.7894,
-        "chironHousePlacidus": 7,
-        "chironHouseWholeSign": 7,
-        "ascendantSign": "Pisces",
-        "ascendantLongitude": 332.36243,
-        "midheavenSign": "Sagittarius",
-        "midheavenLongitude": 244.66266
+        "chironDegree": 25.7842,
+        "chironHousePlacidus": 8,
+        "chironHouseWholeSign": 8,
+        "ascendantSign": "Aquarius",
+        "ascendantLongitude": 317.64336,
+        "midheavenSign": "Scorpio",
+        "midheavenLongitude": 230.10527
       },
       "oldLinear": {
-        "chironLongitude": 219.58759,
+        "chironLongitude": 219.58676,
         "chironSign": "Scorpio",
-        "chironDegree": 9.5876,
-        "errorDegrees": 43.7982,
+        "chironDegree": 9.5868,
+        "errorDegrees": 43.8026,
         "signMatch": false
       },
       "newTable": {
-        "chironLongitude": 175.78926,
+        "chironLongitude": 175.78407,
         "chironSign": "Virgo",
-        "chironDegree": 25.7893,
+        "chironDegree": 25.7841,
+        "errorDegrees": 0.000112,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "kathmandu_fractional",
+      "birthLocal": "1979-04-12T06:15",
+      "timezone": "Asia/Kathmandu",
+      "utcOffsetHours": 5.5,
+      "birthUtc": "1979-04-12T00:45:00Z",
+      "jdUt": 2443975.53125,
+      "latitude": 27.7172,
+      "longitude": 85.324,
+      "place": "Kathmandu, Nepal (+5:45)",
+      "expected": {
+        "chironLongitude": 38.22444,
+        "chironSign": "Taurus",
+        "chironDegree": 8.2244,
+        "chironHousePlacidus": 1,
+        "chironHouseWholeSign": 1,
+        "ascendantSign": "Taurus",
+        "ascendantLongitude": 35.71686,
+        "midheavenSign": "Capricorn",
+        "midheavenLongitude": 294.30314
+      },
+      "oldLinear": {
+        "chironLongitude": 101.64862,
+        "chironSign": "Cancer",
+        "chironDegree": 11.6486,
+        "errorDegrees": 63.4242,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 38.22462,
+        "chironSign": "Taurus",
+        "chironDegree": 8.2246,
+        "errorDegrees": 0.000183,
+        "signMatch": true
+      }
+    },
+    {
+      "label": "indiana_border_zone",
+      "birthLocal": "1966-10-02T03:40",
+      "timezone": "America/Indiana/Indianapolis",
+      "utcOffsetHours": -5.0,
+      "birthUtc": "1966-10-02T08:40:00Z",
+      "jdUt": 2439400.861111111,
+      "latitude": 39.7684,
+      "longitude": -86.1581,
+      "place": "Indianapolis, USA (sub-national zone)",
+      "expected": {
+        "chironLongitude": 353.23684,
+        "chironSign": "Pisces",
+        "chironDegree": 23.2368,
+        "chironHousePlacidus": 7,
+        "chironHouseWholeSign": 7,
+        "ascendantSign": "Virgo",
+        "ascendantLongitude": 151.65876,
+        "midheavenSign": "Taurus",
+        "midheavenLongitude": 56.76101
+      },
+      "oldLinear": {
+        "chironLongitude": 11.17537,
+        "chironSign": "Aries",
+        "chironDegree": 11.1754,
+        "errorDegrees": 17.9385,
+        "signMatch": false
+      },
+      "newTable": {
+        "chironLongitude": 353.23673,
+        "chironSign": "Pisces",
+        "chironDegree": 23.2367,
         "errorDegrees": 0.000112,
         "signMatch": true
       }
