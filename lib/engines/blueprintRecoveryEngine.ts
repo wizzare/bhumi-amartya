@@ -48,15 +48,16 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
   // the chart stays pending (BaZi / Vedic keep a benign default).
   const canonicalTz = canonicalizeNatalTimezone({ storedTimezone: input.timezone ?? null, latitude, longitude });
   const natalTimezone = canonicalTz.timezone;
-  const timezone = canonicalTz.timezone || "UTC";
+  const timezone = canonicalTz.timezone;
+  const calculationTimezone = timezone || "UTC";
   const fullName = input.fullName || input.displayName || "User";
 
   const lifePathBlueprint = calculateLifePath(birthDate);
   const nameNumerology = calculateNumerology(fullName, birthDate);
   const destinyMatrix = calculateDestinyMatrixForBlueprint(birthDate);
   const weton = calculateWeton({ birthDate, birthTime });
-  const bazi = calculateBazi({ birthDate, birthTime, timezone });
-  const vedic = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone });
+  const bazi = calculateBazi({ birthDate, birthTime, timezone: calculationTimezone });
+  const vedic = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone: calculationTimezone });
   const tzolkin = calculateTzolkin({ birthDate });
 
   const natalBasics: any = await calculateNatalBasicsAsync({
@@ -236,7 +237,12 @@ export async function triggerBackgroundHdCalculation(
   const birthCountry = profile.birthCountry || currentBlueprint.input?.birthCountry || null;
   const latitude = profile.latitude ?? currentBlueprint.input?.latitude ?? null;
   const longitude = profile.longitude ?? currentBlueprint.input?.longitude ?? null;
-  const timezone = profile.timezone || currentBlueprint.input?.timezone || "UTC";
+  const canonicalTz = canonicalizeNatalTimezone({
+    storedTimezone: profile.timezone ?? currentBlueprint.input?.timezone ?? null,
+    latitude,
+    longitude,
+  });
+  const timezone = canonicalTz.timezone;
 
   if (!birthDate) return;
 

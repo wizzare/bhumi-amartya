@@ -1,4 +1,5 @@
 import * as Astronomy from "astronomy-engine";
+import { DateTime } from "luxon";
 
 export type HumanDesignType =
   | "Generator"
@@ -110,48 +111,18 @@ export function birthDateTimeToUtcDate(
       return new Date(utcMs);
     }
 
-    // BUILD 31: If timezone is missing, we check for named timezone or longitude
-    if (timezone && !timezone.includes("+") && !timezone.includes("-")) {
-      try {
-        const dateStr = `${birthDate}T${time}Z`;
-        const date = new Date(dateStr);
-        const formatter = new Intl.DateTimeFormat('en-US', {
-          timeZone: timezone,
-          year: 'numeric',
-          month: 'numeric',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: 'numeric',
-          second: 'numeric',
-          hour12: false
-        });
-
-        const parts = formatter.formatToParts(date);
-        const p: Record<string, string> = {};
-        parts.forEach(part => p[part.type] = part.value);
-
-        const tzDate = Date.UTC(
-          parseInt(p.year),
-          parseInt(p.month) - 1,
-          parseInt(p.day),
-          parseInt(p.hour) === 24 ? 0 : parseInt(p.hour),
-          parseInt(p.minute),
-          parseInt(p.second)
-        );
-
-        const offset = (tzDate - date.getTime());
-        return new Date(Date.UTC(year, month - 1, day, hour, minute, second) - offset);
-      } catch (e) {
-        console.warn("[HD TIMEZONE] Intl fallback failed for", timezone, e);
-      }
+    if (timezone) {
+      const zoned = DateTime.fromObject(
+        { year, month, day, hour, minute, second },
+        { zone: timezone.trim() },
+      );
+      if (zoned.isValid) return zoned.toUTC().toJSDate();
     }
 
-    // BUILD 31 PROTECTION: We still allow longitude approximation for CALCULATIONS
-    // but the repair logic will mark it as "approximate" and avoid overwriting "ready" charts.
-    if (typeof longitude === "number" && Number.isFinite(longitude)) {
-      const approximateUtcOffsetHours = Math.round(longitude / 15);
-      return new Date(Date.UTC(year, month - 1, day, hour - approximateUtcOffsetHours, minute, second));
-    }
+    // CDI-108-01A: no longitude-derived timezone approximation. If callers
+    // cannot provide a verified IANA zone or explicit offset, the diagnostic HD
+    // fallback fails closed and returns no candidate chart.
+    void longitude;
   }
 
   // BUILD 31: Return an invalid date rather than guessing +07:00 if data is missing

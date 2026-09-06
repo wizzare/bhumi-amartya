@@ -70,6 +70,8 @@ async function main() {
       "app/setup/page.tsx",
       "app/settings/page.tsx",
       "lib/engines/blueprintRecoveryEngine.ts",
+      "lib/humandesign/calculateHumanDesignType.ts",
+      "app/api/humandesign/calculate/route.ts",
     ];
     for (const f of files) {
       const src = fs.readFileSync(path.join(ROOT, f), "utf-8")
@@ -81,6 +83,23 @@ async function main() {
     const natalSrc = fs.readFileSync(path.join(ROOT, "lib/astrology/calculateNatalBasics.ts"), "utf-8");
     assert.ok(natalSrc.includes("canonicalizeNatalTimezone"), "calculateNatalBasics must use canonicalizeNatalTimezone");
     assert.ok(natalSrc.includes('from "luxon"'), "toUtcDate must use luxon for DST-correct IANA conversion");
+  });
+
+  await check("1b  natal / HD refresh paths do not fabricate '+07:00' or 'UTC' when timezone is unresolved", () => {
+    const settingsSrc = fs.readFileSync(path.join(ROOT, "app/settings/page.tsx"), "utf-8");
+    assert.ok(!/timezone:\s*input\.timezone\s*\|\|\s*["']\+07:00["']/.test(settingsSrc), "settings HD refresh must not default missing timezone to +07:00");
+
+    const hdApiSrc = fs.readFileSync(path.join(ROOT, "app/api/humandesign/calculate/route.ts"), "utf-8");
+    assert.ok(!/body\.timezone[\s\S]*?:\s*["']\+07:00["']/.test(hdApiSrc), "HD calculate proxy must not default missing timezone to +07:00");
+    assert.ok(hdApiSrc.includes('calculationStatus: "needs_verified_timezone"'), "HD calculate proxy must fail closed when timezone is unresolved");
+
+    const recoverySrc = fs.readFileSync(path.join(ROOT, "lib/engines/blueprintRecoveryEngine.ts"), "utf-8");
+    assert.ok(!/input:\s*\{[\s\S]*?timezone:\s*canonicalTz\.timezone\s*\|\|\s*["']UTC["'][\s\S]*?\}/.test(recoverySrc), "recovery input must not persist UTC as a fabricated natal timezone");
+    assert.ok(!/profile\.timezone\s*\|\|\s*currentBlueprint\.input\?\.timezone\s*\|\|\s*["']UTC["']/.test(recoverySrc), "background HD recovery must not default missing timezone to UTC");
+
+    const hdTypeSrc = fs.readFileSync(path.join(ROOT, "lib/humandesign/calculateHumanDesignType.ts"), "utf-8")
+      .split("\n").filter((l) => !l.trim().startsWith("//") && !l.trim().startsWith("*")).join("\n");
+    assert.ok(!/Math\.round\(\s*longitude\s*\/\s*15\s*\)/.test(hdTypeSrc), "diagnostic HD fallback must not infer timezone from longitude");
   });
 
   // ---- 2. Deterministic geo → IANA ----

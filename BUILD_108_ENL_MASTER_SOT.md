@@ -2,7 +2,7 @@
 **Bhumi Amartya — Dedicated English-Language Edition & Architecture**
 
 ```text
-STATUS                          = PAUSED (SPRINT 4 COMPLETE — HELD FOR CORE DATA INTEGRITY AUDIT)
+STATUS                          = PAUSED (SPRINT 4 COMPLETE — CDI-108-01A DONE / HELD FOR CDI SEQUENCING)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 NEXT_PRIMARY_AGENT              = CODEX
@@ -13,7 +13,7 @@ TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
-NEXT_SAFE_ACTION                = CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_CDI_C3_AND_HD_REFINED_AUDIT
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -28,13 +28,13 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 >
 > Completed state: `SPRINT_108_01 = COMPLETE`, `SPRINT_108_02 = COMPLETE`, `SPRINT_108_03 = COMPLETE`,
 > `SPRINT_108_04 = COMPLETE`, `SPRINT_108_05 = BLOCKED`; `CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE`,
-> `CDI_C1 = DONE`, `CDI_C2 = DONE`, `CDI_C3 = OPEN`.
+> `CDI_C1 = DONE`, `CDI_C2 = DONE`, `CDI_C3 = DONE`.
 >
 > Important completed Chiron state: old linear Chiron approximation removed; Swiss Ephemeris-derived
 > client-side Chiron table implemented; Chiron fixture accuracy 10/10; fail-closed persistence
 > implemented; Whole Sign and Placidus explicitly separated; no production backfill performed.
 >
-> Pending blockers: `CDI-108-01A` canonical IANA timezone propagation / `CDI-C3`; genuine Placidus
+> Completed CDI-C3: `CDI-108-01A` canonical IANA timezone propagation is complete. Pending blockers: genuine Placidus
 > production service deployment remains ops-gated; `CDI-108-02` Human Design advanced variables;
 > `CDI-108-03` Schumann source replacement; `CDI-D1` legacy data backfill, separately Founder-authorized only.
 >
@@ -233,11 +233,11 @@ SPRINT_108_05                  = BLOCKED
 CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
 CDI_C1                         = DONE
 CDI_C2                         = DONE
-CDI_C3                         = OPEN
+CDI_C3                         = DONE
 CDI_108_02_HUMAN_DESIGN        = PENDING — ADVANCED VARIABLES
 CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
-NEXT_SAFE_ACTION                = CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_01A_CDI_C3_AND_HD_REFINED_AUDIT
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -252,8 +252,8 @@ three root causes CONFIRMED.
 
 | Defect | Root cause (confirmed) | Status |
 |---|---|---|
-| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production; local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`; timezone propagation remains the open CDI-C3 continuity blocker. | **CDI-108-01 COMPLETE. CDI-C1 DONE. CDI-C2 DONE. CDI-C3 OPEN.** Committed Swiss Ephemeris-derived client-side Chiron table; old linear Chiron approximation removed; Chiron fixture accuracy 10/10; fail-closed persistence implemented; Whole Sign and Placidus explicitly separated. Genuine Placidus production service deployment remains ops-gated. No production backfill performed. |
-| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The live deployed `/calculate` contract differs from repo `services/humandesign-api/main.py`; observed live payload already includes `digestion`, `environment`, `motivation`, and `cognition`. Apparently absent / unresolved: `perspective` and diagnostic Color/Tone/Base. | **PENDING — CDI-108-02.** CODEX must not assume the HD engine is the primary defect; start from `CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT`. |
+| **Chiron placement wrong** | Swiss Ephemeris `/calculate-astrology` unreachable in production; local fallback used a hand-rolled **linear** Chiron (`astronomy-engine` has no Chiron); houses were Equal House mislabelled `placidusHouses`; CDI-108-01A timezone propagation is complete; genuine Placidus production deployment remains ops-gated. | **CDI-108-01 COMPLETE. CDI-108-01A COMPLETE. CDI-C1 DONE. CDI-C2 DONE. CDI-C3 DONE.** Committed Swiss Ephemeris-derived client-side Chiron table; old linear Chiron approximation removed; Chiron fixture accuracy 10/10; fail-closed persistence implemented; Whole Sign and Placidus explicitly separated. Genuine Placidus production service deployment remains ops-gated. No production backfill performed. |
+| **HD advanced variables "Not stored"** | **Refined against the LIVE deployed contract (audit §B.8).** The live deployed `/calculate` contract differs from repo `services/humandesign-api/main.py`; observed live payload already includes `digestion`, `environment`, `motivation`, and `cognition`. Apparently absent / unresolved: `perspective` and diagnostic Color/Tone/Base. | **PENDING — CDI-108-02.** CODEX must not assume the HD engine is the primary defect; continue from Founder review of CDI-108-01A / CDI-C3 and the refined HD audit. |
 | **Schumann `Data belum tersedia`** | Upstream provider endpoint `schumannresonancelive.com/api/data.php` returns **HTTP 404**. Pre-existing since ≥ Build 106 (residual DS-E1). No fabricated "healthy" values. | **NOT STARTED — CDI-108-03** (CDI-A1..A3). |
 
 Cross-cutting: **CDI-D1** — legacy data backfill is separately Founder-authorized only and is **not
@@ -261,7 +261,7 @@ authorized now**.
 
 **Guardrails:**
 - NEXT PRIMARY AGENT: CODEX.
-- NEXT SAFE ACTION: `CDI-108-01A-TIMEZONE-CANONICALIZATION_THEN_HD_LIVE_CONTRACT_REFINED_AUDIT`.
+- NEXT SAFE ACTION: `FOUNDER_REVIEW_OF_CDI_108_01A_CDI_C3_AND_HD_REFINED_AUDIT`.
 - CDI-108-02 / CDI-108-03 not started until the Founder rules on sequencing.
 - NO Sprint 5 execution until `GATE_108_CDI` is closed / the Founder authorises a parallel track.
 - NO production Firestore write; NO backfill of any kind.

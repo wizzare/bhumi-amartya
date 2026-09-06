@@ -27,7 +27,7 @@ async function runTests() {
       const req = new Request("http://localhost:3000/api/humandesign/calculate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta" }),
+        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta", timezone: "+07:00" }),
       });
       const res = await POST(req);
       test("Tanpa Token returns HTTP 401 Unauthorized", res.status === 401);
@@ -43,7 +43,7 @@ async function runTests() {
           "Content-Type": "application/json",
           "Authorization": "Bearer invalid_id_token_12345",
         },
-        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta" }),
+        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta", timezone: "+07:00" }),
       });
       const res = await POST(req);
       test("Token Invalid returns HTTP 403 Forbidden", res.status === 403);
@@ -87,7 +87,23 @@ async function runTests() {
       test("Payload Invalid returns HTTP 400 Bad Request", res.status === 400);
     }
 
-    // 5. Upstream Timeout -> 503 Service Unavailable
+    // 5. Missing Timezone -> 400 needs_verified_timezone
+    {
+      const req = new Request("http://localhost:3000/api/humandesign/calculate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-dev-secret": "bhumi-dev-bypass",
+        },
+        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta" }),
+      });
+      const res = await POST(req);
+      test("Missing Timezone returns HTTP 400", res.status === 400);
+      const data = await res.json();
+      test("Missing Timezone returns needs_verified_timezone", data.calculationStatus === "needs_verified_timezone");
+    }
+
+    // 6. Upstream Timeout -> 503 Service Unavailable
     {
       // Mock fetch with aborted signal simulation
       const originalFetch = globalThis.fetch;
@@ -102,7 +118,7 @@ async function runTests() {
           "Content-Type": "application/json",
           "x-dev-secret": "bhumi-dev-bypass",
         },
-        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta" }),
+        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta", timezone: "+07:00" }),
       });
       const res = await POST(req);
       test("Upstream Timeout returns HTTP 503 Service Unavailable", res.status === 503);
@@ -110,7 +126,7 @@ async function runTests() {
       globalThis.fetch = originalFetch;
     }
 
-    // 6. Rate Limit -> 429 Too Many Requests
+    // 7. Rate Limit -> 429 Too Many Requests
     {
       const originalFetch = globalThis.fetch;
       globalThis.fetch = async () => new Response("{}", {
@@ -127,7 +143,7 @@ async function runTests() {
             "x-forwarded-for": "192.168.1.99",
             "x-dev-secret": "bhumi-dev-bypass",
           },
-          body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta" }),
+          body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta", timezone: "+07:00" }),
         });
         lastRes = await POST(req);
       }

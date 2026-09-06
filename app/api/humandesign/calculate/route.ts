@@ -189,7 +189,7 @@ export async function POST(request: Request) {
     const birthDate = typeof body.birthDate === "string" ? body.birthDate.trim() : "";
     const birthTime = typeof body.birthTime === "string" ? body.birthTime.trim() : "";
     const birthPlace = typeof body.birthPlace === "string" ? body.birthPlace.trim() : (typeof body.birthCity === "string" ? body.birthCity.trim() : "");
-    const timezone = typeof body.timezone === "string" && body.timezone.trim() ? body.timezone.trim() : "+07:00";
+    const timezone = typeof body.timezone === "string" && body.timezone.trim() ? body.timezone.trim() : null;
     const latitude = typeof body.latitude === "number" && Number.isFinite(body.latitude) ? body.latitude : null;
     const longitude = typeof body.longitude === "number" && Number.isFinite(body.longitude) ? body.longitude : null;
 
@@ -198,6 +198,19 @@ export async function POST(request: Request) {
       return corsJson(
         request,
         { status: "error", calculationStatus: "missing_input", note: "Valid birthDate (YYYY-MM-DD), birthTime (HH:mm), and birthPlace are required." },
+        {
+          status: 400,
+          headers: {
+            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+          },
+        }
+      );
+    }
+
+    if (!timezone) {
+      return corsJson(
+        request,
+        { status: "error", calculationStatus: "needs_verified_timezone", note: "A verified IANA timezone or explicit UTC offset is required for Human Design calculation." },
         {
           status: 400,
           headers: {

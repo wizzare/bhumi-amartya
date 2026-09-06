@@ -113,7 +113,7 @@ async function fetchHumanDesign(input: {
         fullName: input.fullName,
         birthDate: input.birthDate,
         birthTime: input.birthTime,
-        timezone: input.timezone || "+07:00",
+        timezone: input.timezone,
       }),
     });
 
@@ -615,8 +615,10 @@ export default function SettingsPage() {
     // changed or the stored value is unusable. Deterministic IANA from
     // coordinates — no `longitude / 15`, no `+07:00` default.
     const storedTimezone = "timezone" in currentProfile ? (currentProfile as any).timezone : null;
-    let nextTimezone: string | null = storedTimezone ?? null;
-    let timezoneSource = "timezoneSource" in currentProfile ? (currentProfile as any).timezoneSource : "stored";
+    let nextTimezone: string | null = isUsableStoredTimezone(storedTimezone) ? storedTimezone.trim() : null;
+    let timezoneSource = nextTimezone
+      ? ("timezoneSource" in currentProfile ? (currentProfile as any).timezoneSource : "stored")
+      : "unresolved";
 
     if (cityChanged || !isUsableStoredTimezone(storedTimezone)) {
       const resolved = canonicalizeNatalTimezone({
@@ -628,8 +630,11 @@ export default function SettingsPage() {
         nextTimezone = resolved.timezone;
         timezoneSource = resolved.source;
       } else if (isUsableStoredTimezone(storedTimezone)) {
-        nextTimezone = storedTimezone;
+        nextTimezone = storedTimezone.trim();
         timezoneSource = "stored";
+      } else {
+        nextTimezone = null;
+        timezoneSource = "unresolved";
       }
     }
 
