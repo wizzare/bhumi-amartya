@@ -1269,3 +1269,47 @@ MARKERS           = BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_I
 ```
 
 **STOP AND WAIT FOR FOUNDER REVIEW.**
+
+---
+
+## B.10 CDI-108-02 — Advanced Variables Refined Audit Checkpoint (2026-09-06)
+
+**Authorization and method:** Founder approved `CDI-108-01A` / `CDI-C3` and authorized this
+READ-ONLY re-audit. It re-checked the recorded synthetic LIVE `/calculate` evidence in §B.8.1
+against the current local proxy, adapter, canonical schema, normalizer, persistence, recovery, and
+`HumanDesignBodygraphLite` / Human Design page. No new production probe, production Firestore
+read/write, recovery run, deployment, build, signing, or upload occurred.
+
+| FIELD | LIVE_API_RETURNS | ROUTE_PRESERVES | ADAPTER_READS | SCHEMA_SUPPORTS | NORMALIZER_PRESERVES | PERSISTENCE_WRITES | RECOVERY_PRESERVES | UI_EXPECTS / UI_RECEIVES | ROOT_CAUSE | FIX_REQUIRED |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Digestion | YES, `top_left.def_type` | YES, full pass-through | YES | YES | YES, explicit | YES | YES | `humanDesign.digestion` / same | Legacy charts predate field | Local migration from stored arrow or re-fetch |
+| Environment | YES, `bottom_left.def_type` | YES | YES | YES | YES, explicit | YES | YES | `humanDesign.environment` / same | Legacy charts predate field | Local migration from stored arrow or re-fetch |
+| Motivation | YES, `top_right.def_type` | YES | YES | YES | YES, explicit | YES | YES | `humanDesign.motivation` / same | Legacy charts predate field | Local migration from stored arrow or re-fetch |
+| Perspective | NO top-level; YES, derivable from `variables.bottom_right.def_type` | YES, variables object | NO, reads absent `data.perspective` | YES | WEAK, saved-object spread only | Null | Null in both recovery paths | `humanDesign.perspective` / null | Adapter derivation gap; affects new and existing users | Derive in adapter, coerce in normalizer, local migration from stored variables |
+| Cognition | YES, six-fold top-level value | YES | YES | YES | YES, explicit | YES | YES | `humanDesign.cognition` / same | Legacy charts only; not locally derivable | Re-fetch only where absent |
+| Variables / arrows | YES, four arrow objects plus `short_code` | YES | YES, whole object | YES | YES, explicit | YES | YES | UI reads `variable` or `value` / stored key is `short_code` | Confirmed UI key mismatch; data is stored | UI-only key/render fix; no backfill |
+| Color / Tone / Base | NO per-planet diagnostic/activations; `debug` ignored | YES if supplied | Empty activations because none supplied | YES, optional activation fields | YES if supplied | Empty arrays | `mass-recover-hd` drops activation detail | row activation Color/Tone/Base / none | Live-engine data availability limitation | Diagnostic-emitting engine before any backfill |
+| Activations | NO diagnostic/personality/design activation arrays | YES if supplied | Supports both payload shapes | YES | YES if present | Empty arrays | Background preserves adapter result; recovery script drops them | bodygraph supports activation rows / no live rows | Engine absent now; recovery script unsafe later | Engine plus repair script before any recovery run |
+| Centers | YES, `definedCenters` plus `openCenters` | YES | YES, normalizes defined centers | YES, typed map | YES for typed saved map | Background adapter path preserves typed map; recovery script writes raw array | bodygraph reads typed keys / raw-array cohort becomes null keys | `mass-recover-hd.ts` corrupts centers and omits `openCenters` | Repair script before any authorized run; no current production mutation |
+
+```text
+HD_LIVE_CONTRACT_VERIFIED       = YES — existing synthetic evidence from 2026-09-06; no new live probe authorized.
+HD_ADVANCED_FIELDS_AVAILABLE    = digestion, environment, motivation, cognition, variables.short_code, four arrows; perspective derivable only; per-planet Color/Tone/Base and activation diagnostics unavailable.
+HD_ADAPTER_GAPS                 = perspective only for current live fields; it reads an absent top-level key.
+HD_SCHEMA_GAPS                  = NONE for the audited fields; schema supports optional diagnostic activations and typed centers.
+HD_NORMALIZATION_GAPS           = perspective is spread-only rather than explicitly coerced; all observed live fields otherwise preserve.
+HD_PERSISTENCE_GAPS             = NONE for fresh adapter output; perspective persists null because the adapter supplies null.
+HD_RECOVERY_GAPS                = mass-recover-hd corrupts centers and drops openCenters/activations; background recovery shares only the perspective adapter gap.
+HD_UI_MAPPING_GAPS              = variables.short_code versus variables.variable/value mismatch; advanced-field grid keys are correct.
+HD_NEW_USER_IMPACT              = perspective and Variables-Arrows are broken for new users; Color/Tone/Base unavailable by live-engine contract; other observed advanced fields persist and display.
+HD_EXISTING_USER_IMPACT         = absent legacy advanced fields remain absent; recovery-script cohort may have corrupted centers and lost activations.
+HD_BACKFILL_REQUIREMENT_REFINED = UI arrows need no backfill; perspective local migration; digestion/environment/motivation local migration where variables exist else re-fetch; cognition re-fetch; Color/Tone/Base blocked on engine; repair recovery script before a Founder-authorized run.
+CDI_108_02_ROOT_CAUSE_CONFIDENCE = HIGH — source trace agrees with the existing live-contract evidence; no runtime or production assertion is claimed.
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_HD_REFINED_AUDIT
+PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
+PRODUCTION_BACKFILL             = NOT AUTHORIZED
+BACKEND_DEPLOY                  = NOT AUTHORIZED
+PLAY_UPLOAD                     = NOT AUTHORIZED
+```
+
+**STOP AND WAIT FOR FOUNDER REVIEW.**
