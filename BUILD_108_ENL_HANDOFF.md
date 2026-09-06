@@ -122,7 +122,7 @@ node --import tsx tests/unit/version-reconciliation.test.ts
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
 LAST_COMPLETED_SPRINT           = SPRINT-108-04-AI-GUIDANCE
-CDI_108_01_CHIRON              = DONE (commit <cdi-01 fix>; test build108-cdi01-chiron-natal-accuracy EXIT 0)
+CDI_108_01_CHIRON              = DONE (commit dccaf08; test build108-cdi01-chiron-natal-accuracy EXIT 0)
 CDI_108_02_HUMAN_DESIGN        = NOT_STARTED
 CDI_108_03_SCHUMANN            = NOT_STARTED
 SPRINT_5_STATUS                 = NOT_STARTED (BLOCKED behind GATE_108_CDI)

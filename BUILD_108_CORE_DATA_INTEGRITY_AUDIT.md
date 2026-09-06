@@ -835,7 +835,7 @@ FILES               = + BUILD_108_CORE_DATA_INTEGRITY_AUDIT.md (new)
 PRODUCTION_READS/WRITES/FIRESTORE_MUTATIONS = 0 / 0 / 0
 ```
 
-### F.2 CDI-108-01 (Chiron / natal accuracy) — commit `<pending>` — see §C.8 for the full result
+### F.2 CDI-108-01 (Chiron / natal accuracy) — commit `dccaf08` — see §C.8 for the full result
 
 ```text
 FILES_CHANGED       = 20
@@ -865,7 +865,7 @@ EXTERNAL_PROBES    = read-only GET schumannresonancelive.com/api/data.php (404);
                     one POST /calculate (HD) with SYNTHETIC birth data (no PII) to confirm the
                     deployed contract. No astrology endpoint is deployed there (GET
                     /calculate-astrology -> 404) — recorded for CDI-C1 / CDI-108-02.
-COMMITS_CREATED   = 00e500f (docs checkpoint) + <this CDI-108-01 fix commit>
+COMMITS_CREATED   = 00e500f (docs checkpoint) + dccaf08 (CDI-108-01 fix)
 TRACKED_WORKTREE_STATE   = all listed files committed
 UNTRACKED_FILES_PRESERVED = scripts/.build106-production-admin-provision.mjs (untouched)
 KNOWN_LIMITATIONS =
