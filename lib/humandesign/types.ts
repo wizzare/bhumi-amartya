@@ -55,6 +55,23 @@ export type HumanDesignDiagnostic = {
   raw_design_gates: HumanDesignActivation[];
 };
 
+export type HumanDesignVariables = Record<string, unknown> & {
+  short_code?: string;
+  shortCode?: string;
+  top_right?: Record<string, unknown>;
+  bottom_right?: Record<string, unknown>;
+  top_left?: Record<string, unknown>;
+  bottom_left?: Record<string, unknown>;
+  advanced?: Record<string, unknown>;
+  variable?: string;
+  value?: string;
+};
+
+export type HumanDesignAdvancedFieldSources = Partial<Record<
+  "digestion" | "environment" | "motivation" | "perspective" | "cognition",
+  "live-top-level" | "variables.bottom_right.def_type" | "unavailable"
+>>;
+
 export type HumanDesignChart = {
   type: string | null;
   strategy: string | null;
@@ -66,6 +83,7 @@ export type HumanDesignChart = {
     gates: (number | string)[];
   };
   centers: HumanDesignCenters;
+  openCenters?: string[];
   gates: number[];
   channels: string[];
   diagnostic?: HumanDesignDiagnostic | null;
@@ -73,12 +91,13 @@ export type HumanDesignChart = {
   designActivations?: HumanDesignActivation[];
   raw_personality_gates?: HumanDesignActivation[];
   raw_design_gates?: HumanDesignActivation[];
-  variables: Record<string, unknown> | null;
+  variables: HumanDesignVariables | null;
   digestion: string | null;
   cognition: string | null;
   motivation: string | null;
   environment: string | null;
   perspective: string | null;
+  advancedFieldSources?: HumanDesignAdvancedFieldSources;
   status: HumanDesignStatus;
   source: HumanDesignSource;
   accuracy?: HumanDesignAccuracy;
@@ -153,6 +172,7 @@ export const createPendingHumanDesignChart = (note: string): HumanDesignChart =>
       gates: [],
     },
     centers: emptyHumanDesignCenters(),
+    openCenters: [],
     gates: [],
     channels: [],
     diagnostic: null,
@@ -166,6 +186,7 @@ export const createPendingHumanDesignChart = (note: string): HumanDesignChart =>
     motivation: null,
     environment: null,
     perspective: null,
+    advancedFieldSources: {},
     status: "pending",
     source: "pending",
     note,

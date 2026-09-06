@@ -2,7 +2,7 @@
 **Bhumi Amartya — Dedicated English-Language Edition & Architecture**
 
 ```text
-STATUS                          = PAUSED (SPRINT 4 COMPLETE — CDI-108-01A DONE; CDI-108-02 REFINED AUDIT COMPLETE / HELD FOR CDI SEQUENCING)
+STATUS                          = PAUSED (SPRINT 4 COMPLETE — CDI-108-01A DONE; CDI-108-02 IMPLEMENTED / HELD FOR FOUNDER REVIEW)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 NEXT_PRIMARY_AGENT              = CODEX
@@ -13,7 +13,7 @@ TOTAL_USER_FACING_PAGES         = 48
 DEV_OR_DEPRECATED_SURFACES      = 3
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -38,8 +38,10 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > production service deployment remains ops-gated; `CDI-108-02` Human Design advanced variables;
 > `CDI-108-03` Schumann source replacement; `CDI-D1` legacy data backfill, separately Founder-authorized only.
 >
-> Founder approved CDI-108-01A / CDI-C3. The authorized follow-on CDI-108-02 refined audit is
-> complete; implementation, recovery, deployment, and backfill remain Founder-gated.
+> Founder approved CDI-108-01A / CDI-C3 and CDI-108-02 implementation. The CDI-108-02 code now
+> preserves the proven live fields, safely derives Perspective, fixes Variables Arrows mapping, and
+> hardens the unapproved recovery script. Recovery execution, deployment, and backfill remain
+> Founder-gated.
 >
 > Important HD audit refinement: the LIVE deployed Human Design `/calculate` contract differs from
 > repo `services/humandesign-api/main.py`. Observed live payload already includes `digestion`,
@@ -237,10 +239,10 @@ CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
 CDI_C1                         = DONE
 CDI_C2                         = DONE
 CDI_C3                         = DONE
-CDI_108_02_HUMAN_DESIGN        = REFINED AUDIT COMPLETE — IMPLEMENTATION NOT AUTHORIZED
+CDI_108_02_HUMAN_DESIGN        = IMPLEMENTED — FOUNDER REVIEW REQUIRED
 CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -264,7 +266,7 @@ authorized now**.
 
 **Guardrails:**
 - NEXT PRIMARY AGENT: CODEX.
-- NEXT SAFE ACTION: `FOUNDER_REVIEW_OF_HD_REFINED_AUDIT`.
+- NEXT SAFE ACTION: `FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION`.
 - CDI-108-02 / CDI-108-03 not started until the Founder rules on sequencing.
 - NO Sprint 5 execution until `GATE_108_CDI` is closed / the Founder authorises a parallel track.
 - NO production Firestore write; NO backfill of any kind.

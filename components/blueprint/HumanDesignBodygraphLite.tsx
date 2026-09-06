@@ -128,6 +128,9 @@ export function HumanDesignBodygraphLite({ humanDesign, isEn = isEnlEdition() }:
   const activeGates = new Set<number>([...aggregateGates, ...designGates, ...personalityGates, ...channelGates]);
   const channelCenters = new Set(activeChannels.flatMap((channel) => CHANNELS[channel].centers));
   const variables = humanDesign.variables?.advanced || humanDesign.variables || {};
+  const variableCode = variables.short_code || variables.shortCode || variables.variable || variables.value;
+  const storedUnavailable = isEn ? "Unavailable in this stored blueprint" : "Tidak tersedia pada blueprint tersimpan ini";
+  const sourceUnavailable = isEn ? "Unavailable from current calculation source" : "Tidak tersedia dari sumber kalkulasi saat ini";
 
   return (
     <section className="rounded-3xl border border-[#D9D0C2] bg-[#F5F0E8] p-4 shadow-sm">
@@ -197,11 +200,11 @@ export function HumanDesignBodygraphLite({ humanDesign, isEn = isEnlEdition() }:
       <div className="mt-3 rounded-2xl bg-white p-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-[#7B8776]">Advanced Variables</h3>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {["digestion", "environment", "motivation", "perspective", "cognition"].map((key) => <div key={key} className="rounded-xl bg-[#F7F3EC] p-3"><p className="text-[9px] font-bold uppercase text-[#9A9388]">{key}</p><p className="mt-1 text-xs font-semibold text-[#4F5E52]">{humanDesign[key] || "Not stored"}</p></div>)}
+          {["digestion", "environment", "motivation", "perspective", "cognition"].map((key) => <div key={key} className="rounded-xl bg-[#F7F3EC] p-3"><p className="text-[9px] font-bold uppercase text-[#9A9388]">{key}</p><p className="mt-1 text-xs font-semibold text-[#4F5E52]">{humanDesign[key] || storedUnavailable}</p></div>)}
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
-          <div className="rounded-xl border border-[#E7E0D4] p-3 text-xs"><span className="font-bold text-[#4F5E52]">Variables Arrows:</span> {variables.variable || variables.value || "Not stored"}</div>
-          <div className="rounded-xl border border-[#E7E0D4] p-3 text-xs"><span className="font-bold text-[#4F5E52]">Color / Tone / Base:</span> {designRows.concat(personalityRows).some((row) => row.color || row.tone || row.base) ? "Available in activation rows" : "Not stored"}</div>
+          <div className="rounded-xl border border-[#E7E0D4] p-3 text-xs"><span className="font-bold text-[#4F5E52]">Variables Arrows:</span> {variableCode || storedUnavailable}</div>
+          <div className="rounded-xl border border-[#E7E0D4] p-3 text-xs"><span className="font-bold text-[#4F5E52]">Color / Tone / Base:</span> {designRows.concat(personalityRows).some((row) => row.color !== undefined || row.tone !== undefined || row.base !== undefined) ? "Available in activation rows" : sourceUnavailable}</div>
         </div>
       </div>
     </section>

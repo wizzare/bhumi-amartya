@@ -2,7 +2,7 @@
 **Developer & Agent Execution Guide**
 
 ```text
-STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 + CDI-108-01A DONE; CDI-108-02 REFINED AUDIT COMPLETE (SPRINT 5 BLOCKED)
+STATUS                          = CORE DATA INTEGRITY GATE OPEN — CDI-108-01 + CDI-108-01A DONE; CDI-108-02 IMPLEMENTED (SPRINT 5 BLOCKED)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 CURRENT_BRANCH                  = recovery/build106-product-continuity
@@ -14,7 +14,7 @@ TOTAL_USER_FACING_PAGES         = 48
 DERIVED_SPRINT_COUNT            = 8 SPRINTS
 BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
 GATE_108_CDI                    = IN_PROGRESS
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
 RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 ```
 
@@ -49,9 +49,10 @@ RELEASE_GATE                    = FOUNDER_SIGN_OFF_REQUIRED
 > `perspective` and diagnostic Color/Tone/Base. CODEX must **NOT** assume the HD engine is the
 > primary defect.
 >
-> Founder approved the completed CDI-108-01A / CDI-C3 result. This authorization covers the
-> `CDI-108-02-HUMAN-DESIGN-ADVANCED-VARIABLES-REFINED-AUDIT` only; it does not authorize an
-> implementation, recovery run, production backfill, or backend deployment. No further `CDI-*`
+> Founder approved the completed CDI-108-01A / CDI-C3 result and the CDI-108-02 implementation.
+> CDI-108-02 now preserves live advanced fields end-to-end, derives Perspective only from labelled
+> source data, fixes the Variables Arrows key, and hardens the unapproved recovery path. It does
+> not authorize a recovery run, production backfill, or backend deployment. No further `CDI-*`
 > implementation, no production Firestore read/write or backfill, no backend
 > deploy, and no version bump / build / sign / deploy / upload until explicit Founder authorization.
 > Production read-only probes are not implicitly authorized beyond evidence already collected.
@@ -155,10 +156,10 @@ CDI_108_01_CHIRON_NATAL_ACCURACY = COMPLETE
 CDI_C1                         = DONE
 CDI_C2                         = DONE
 CDI_C3                         = DONE
-CDI_108_02_HUMAN_DESIGN        = REFINED AUDIT COMPLETE — IMPLEMENTATION NOT AUTHORIZED
+CDI_108_02_HUMAN_DESIGN        = IMPLEMENTED — FOUNDER REVIEW REQUIRED
 CDI_108_03_SCHUMANN            = PENDING — SOURCE REPLACEMENT
 CDI_D1_LEGACY_BACKFILL         = PENDING — NOT AUTHORIZED
-NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_HD_REFINED_AUDIT
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION
 PRODUCTION_FIRESTORE_WRITE      = NOT AUTHORIZED
 PRODUCTION_BACKFILL             = NOT AUTHORIZED
 BACKEND_DEPLOY                  = NOT AUTHORIZED
@@ -179,8 +180,8 @@ All three root causes CONFIRMED.
 Cross-cutting: **CDI-D1** — legacy data backfill is separately Founder-authorized only and is **not
 authorized now**.
 
-**Handoff action:** STOP. The refined Human Design audit is complete. Hand over for
-`FOUNDER_REVIEW_OF_HD_REFINED_AUDIT` under the explicit
+**Handoff action:** STOP. The CDI-108-02 Human Design implementation is complete. Hand over for
+`FOUNDER_REVIEW_OF_CDI_108_02_IMPLEMENTATION` under the explicit
 authorization boundary below.
 
 ```text

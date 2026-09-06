@@ -5,6 +5,8 @@ import { readFileSync, existsSync, writeFileSync } from "fs";
 import { createHash } from "crypto";
 import { getHdState } from "../lib/humandesign/hdState";
 import { isCanonicalHumanDesign } from "../lib/humandesign/hdAudit";
+import { canonicalizeNatalTimezone } from "../lib/astrology/resolveIanaTimezone";
+import { mergeVerifiedHumanDesignChart, normalizeLiveHumanDesignResponse } from "../lib/humandesign/liveContract";
 
 function getAdmin() {
   if (getApps().length) return { db: getFirestore(), auth: getAuth() };
@@ -43,11 +45,12 @@ function getBirthProfile(userDoc: any) {
   const birthDate = userDoc?.birthDate || userDoc?.dateOfBirth || userDoc?.profile?.birthDate || userDoc?.profile?.blueprintInput?.birthDate;
   const birthTime = userDoc?.birthTime || userDoc?.timeOfBirth || userDoc?.profile?.birthTime || userDoc?.profile?.blueprintInput?.birthTime;
   const birthCity = userDoc?.birthCity || userDoc?.birthPlace || userDoc?.cityOfBirth || userDoc?.placeOfBirth || userDoc?.profile?.birthCity || userDoc?.profile?.blueprintInput?.birthCity;
-  const timezone = userDoc?.timezone || userDoc?.profile?.timezone || "+07:00";
+  const storedTimezone = userDoc?.timezone || userDoc?.profile?.timezone || null;
   const latitude = userDoc?.latitude ?? userDoc?.profile?.latitude ?? null;
   const longitude = userDoc?.longitude ?? userDoc?.profile?.longitude ?? null;
+  const timezone = canonicalizeNatalTimezone({ storedTimezone, latitude, longitude }).timezone;
 
-  if (birthDate && birthTime && birthCity) {
+  if (birthDate && birthTime && birthCity && timezone) {
     return { birthDate, birthTime, birthCity, timezone, latitude, longitude };
   }
   return null;
@@ -250,35 +253,10 @@ async function runMassRecovery() {
           if (!isValidResponseShape(data)) throw new Error("Invalid API response shape");
 
           const now = new Date().toISOString();
-          const canonicalChart = {
-            type: data.type,
-            strategy: data.strategy,
-            authority: data.authority,
-            profile: data.profile,
-            definition: data.definition || "Single Definition",
-            incarnationCross: {
-              name: data.inc_cross || data.incarnationCross || null,
-              gates: [],
-            },
-            centers: data.definedCenters || [],
-            gates: (data.gatesPersonality || []).concat(data.gatesDesign || []).map(Number),
-            channels: data.channels || [],
-            variables: data.variables || null,
-            digestion: data.digestion || null,
-            cognition: data.cognition || null,
-            motivation: data.motivation || null,
-            environment: data.environment || null,
-            perspective: data.perspective || null,
-            status: "ready",
-            source: "human-design-py",
-            accuracy: "verified",
-            calculationQuality: "verified",
-            hdEngineVersion: "gaia-hd-v1",
-            hdAuditStatus: "validated",
-            generatedAt: now,
-            updatedAt: now,
-            calculationStatus: "completed",
-          };
+          const canonicalChart = normalizeLiveHumanDesignResponse(data, now);
+          if (!canonicalChart || !isCanonicalHumanDesign(canonicalChart)) {
+            throw new Error("Incomplete or non-canonical Human Design calculation");
+          }
 
           const bpRef = db.collection("blueprints").doc(candidate.uid);
           const bpSnap = await bpRef.get();
@@ -292,10 +270,15 @@ async function runMassRecovery() {
             return { ok: false, hashedUid, guarded: true };
           }
 
+          const mergedChart = mergeVerifiedHumanDesignChart(existingBp?.humanDesign, canonicalChart);
+          if (!mergedChart) {
+            return { ok: false, hashedUid, guarded: true };
+          }
+
           await bpRef.set({
             ...existingBp,
             uid: candidate.uid,
-            humanDesign: canonicalChart,
+            humanDesign: mergedChart,
             updatedAt: now,
           }, { merge: true });
 

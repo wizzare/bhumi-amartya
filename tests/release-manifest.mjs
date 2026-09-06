@@ -37,6 +37,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "CDI-108-02 Human Design advanced variables preservation and recovery safety",
+    file: "tests/unit/build108-cdi02-hd-advanced-variables.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",

@@ -253,7 +253,7 @@ export function buildHumanDesignReading(source: HumanDesignPresentationSource): 
   const openCount = centers.filter((value) => value === false).length;
   const channelCount = Array.isArray(source.channels) ? source.channels.length : 0;
   const variables = source.variables?.advanced || source.variables || {};
-  const variableCode = variables.variable || variables.value || variables.short_code;
+  const variableCode = variables.short_code || variables.shortCode || variables.variable || variables.value;
   const digestion = localizeHumanDesignValue(source.digestion) || "ritme cerna yang alami";
   const environment = localizeHumanDesignValue(source.environment) || "lingkungan yang terasa tepat";
   const cognition = localizeHumanDesignValue(source.cognition) || "kepekaan tubuh";
@@ -642,11 +642,11 @@ export function buildHumanDesignHumanMeaning(
       notSelf: section("Signals to Pause and Realign", enNotSelfLead),
       centers, channels, gates,
       variables: {
-        digestion: "Honoring your body's natural digestive rhythm and dietary preferences supports your sustained vitality.",
-        cognition: "Your sensory awareness processes subtle nuances best when you give your senses space to breathe.",
-        environment: "Spaces that feel nurturing and aligned provide the restful foundation for your best work and reflection.",
-        motivation: "Your core inner drive operates cleanly when you stay anchored in genuine purpose rather than external pressure.",
-        perspective: "Your natural vantage point allows you to observe life with clarity when not entangled in temporary drama.",
+        digestion: source.digestion ? `Your Digestion value is ${source.digestion}. Honoring this bodily rhythm supports sustained vitality.` : "Digestion is unavailable in this stored chart.",
+        cognition: source.cognition ? `Your Cognition value is ${source.cognition}. Give this sensory awareness room to notice subtle nuance.` : "Cognition is unavailable in this stored chart.",
+        environment: source.environment ? `Your Environment value is ${source.environment}. Spaces that respect this quality support reflection and rest.` : "Environment is unavailable in this stored chart.",
+        motivation: source.motivation ? `Your Motivation value is ${source.motivation}. Let this inner drive stay anchored in genuine purpose.` : "Motivation is unavailable in this stored chart.",
+        perspective: source.perspective ? `Your Perspective value is ${source.perspective}. This vantage point can bring clarity when it is not entangled in temporary drama.` : "Perspective is unavailable in this stored chart.",
       },
       incarnationCross: section("Themes of Your Life's Journey", cross.name ? `The ${cross.name} marks core developmental themes that accompany you through the major milestones of your journey.` : "Your incarnation cross themes unfold as you honor your authentic strategy and authority."),
       summary: [enTypeLead, enStrategyLead, enAuthorityLead, enSignatureLead],

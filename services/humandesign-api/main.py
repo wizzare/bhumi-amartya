@@ -162,6 +162,17 @@ def channel_rows(channels: dict) -> list[dict]:
     ]
 
 
+def variable_def_type(variables: Any, key: str) -> Optional[str]:
+    if not isinstance(variables, dict):
+        return None
+    arrow = variables.get(key)
+    if not isinstance(arrow, dict):
+        return None
+    name = str(arrow.get("name") or "").strip().lower()
+    value = arrow.get("def_type")
+    return str(value).strip() if name and value is not None and str(value).strip() else None
+
+
 @app.post("/calculate")
 async def calculate_human_design(hd_input: HumanDesignInput):
     try:
@@ -233,6 +244,9 @@ async def calculate_human_design(hd_input: HumanDesignInput):
             hd_constants.TYPE_DETAILS_MAP["Unknown"],
         )
 
+        variables = result[11]
+        personality_gates = planet_gate_rows(gates, "prs")
+        design_gates = planet_gate_rows(gates, "des")
         response = {
             "type": energy_type,
             "profile": hd_constants.PROFILE_DB.get(profile, f"{profile[0]}/{profile[1]}"),
@@ -257,14 +271,23 @@ async def calculate_human_design(hd_input: HumanDesignInput):
             ],
             "gatesPersonality": gates_by_label(gates, "prs"),
             "gatesDesign": gates_by_label(gates, "des"),
-            "variables": result[11],
+            "variables": variables,
+            "digestion": variable_def_type(variables, "top_left"),
+            "environment": variable_def_type(variables, "bottom_left"),
+            "motivation": variable_def_type(variables, "top_right"),
+            "perspective": variable_def_type(variables, "bottom_right"),
+            "cognition": None,
+            "personalityActivations": personality_gates,
+            "designActivations": design_gates,
+            "diagnostic": {
+                "raw_personality_gates": personality_gates,
+                "raw_design_gates": design_gates,
+            },
             "status": "ready",
             "source": "human-design-py"
         }
         if hd_input.debug or os.getenv("HD_DEBUG", "").lower() == "true":
-            personality_gates = planet_gate_rows(gates, "prs")
-            design_gates = planet_gate_rows(gates, "des")
-            response["diagnostic"] = {
+            response["diagnostic"].update({
                 "input": {
                     "name": name_val,
                     "year": year_val,
@@ -297,7 +320,7 @@ async def calculate_human_design(hd_input: HumanDesignInput):
                 "authority_raw": authority,
                 "profile": hd_constants.PROFILE_DB.get(profile, f"{profile[0]}/{profile[1]}"),
                 "profile_raw": list(profile),
-            }
+            })
 
         return response
     except Exception:

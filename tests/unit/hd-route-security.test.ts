@@ -73,6 +73,30 @@ async function runTests() {
       globalThis.fetch = originalFetch;
     }
 
+    // 3b. Live advanced fields are passed through without route-level loss.
+    {
+      const originalFetch = globalThis.fetch;
+      globalThis.fetch = async () => new Response(JSON.stringify({
+        status: "ready",
+        type: "Projector",
+        digestion: "Active",
+        environment: "Observer",
+        motivation: "Receptive",
+        cognition: "Outer Vision",
+        variables: { short_code: "PRR DLR" },
+      }), { status: 200, headers: { "Content-Type": "application/json" } });
+
+      const req = new Request("http://localhost:3000/api/humandesign/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-dev-secret": "bhumi-dev-bypass" },
+        body: JSON.stringify({ birthDate: "1985-05-03", birthTime: "23:45", birthPlace: "Jakarta", timezone: "+07:00" }),
+      });
+      const res = await POST(req);
+      const data = await res.json();
+      test("Route preserves live advanced fields", data.digestion === "Active" && data.environment === "Observer" && data.motivation === "Receptive" && data.cognition === "Outer Vision" && data.variables?.short_code === "PRR DLR");
+      globalThis.fetch = originalFetch;
+    }
+
     // 4. Payload Invalid -> 400 Bad Request
     {
       const req = new Request("http://localhost:3000/api/humandesign/calculate", {

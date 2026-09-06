@@ -137,6 +137,7 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
       ...fallbackHumanDesign.centers,
       ...savedHumanDesign?.centers,
     },
+    openCenters: savedHumanDesign?.openCenters ?? [],
     gates: savedHumanDesign?.gates ?? [],
     channels: savedHumanDesign?.channels ?? [],
     diagnostic: savedHumanDesign?.diagnostic ?? null,
@@ -149,6 +150,8 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
     cognition: savedHumanDesign?.cognition ?? null,
     motivation: savedHumanDesign?.motivation ?? null,
     environment: savedHumanDesign?.environment ?? null,
+    perspective: savedHumanDesign?.perspective ?? null,
+    advancedFieldSources: savedHumanDesign?.advancedFieldSources ?? {},
     status: humanDesignStatus,
     source:
       savedHumanDesign?.source === "hdkit" || savedHumanDesign?.source === "error" || savedHumanDesign?.source === "local-fallback" || savedHumanDesign?.source === "human-design-py" || savedHumanDesign?.source === "verified-override"
