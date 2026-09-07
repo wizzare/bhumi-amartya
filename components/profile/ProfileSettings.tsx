@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isEnlEdition } from "@/lib/config/edition";
 
 type ProfileSettingsProps = {
   fullName: string;
@@ -21,13 +22,15 @@ export function ProfileSettings({
   isSavingLanguage = false,
   googleConnected,
 }: ProfileSettingsProps) {
+  const isEn = isEnlEdition() || language === "en";
+
   return (
     <section className="bhumi-card p-6 sm:p-8">
       <div className="mb-6">
         <p className="text-sm uppercase tracking-[0.22em] text-[#7B8776]">
           Settings
         </p>
-        <h2 className="mt-2 text-2xl text-[#4F5E52]">Preferensi ruangmu</h2>
+        <h2 className="mt-2 text-2xl text-[#4F5E52]">{isEn ? "Space Preferences" : "Preferensi ruangmu"}</h2>
       </div>
 
       <div className="space-y-5">
@@ -52,7 +55,7 @@ export function ProfileSettings({
               disabled={isSavingFullName || !fullName.trim()}
               className="rounded-full bg-[#4F5E52] px-5 py-3 text-sm text-white transition hover:bg-[#3e4b42] disabled:opacity-60"
             >
-              {isSavingFullName ? "Menyimpan..." : "Simpan"}
+              {isSavingFullName ? (isEn ? "Saving..." : "Menyimpan...") : (isEn ? "Save" : "Simpan")}
             </button>
           </div>
         </div>
@@ -62,7 +65,7 @@ export function ProfileSettings({
             htmlFor="profile-language"
             className="text-sm uppercase tracking-[0.18em] text-[#8B9488]"
           >
-            Bahasa
+            {isEn ? "Language" : "Bahasa"}
           </label>
           <select
             id="profile-language"

@@ -15,17 +15,19 @@ import {
   type GooglePlayPurchase,
 } from "@/lib/billing/googlePlayBilling";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
+import { isEnlEdition } from "@/lib/config/edition";
 
 type PurchaseState = "idle" | "loading" | "success" | "error";
 
 export default function UpgradePage() {
   const auth = useAuth();
+  const isEn = isEnlEdition();
   const [product, setProduct] = useState<GooglePlayProduct | null>(null);
   const [state, setState] = useState<PurchaseState>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const billingAvailable = useMemo(() => isGooglePlayBillingAvailable(), []);
 
-  const activeUntil = useMemo(() => formatAccessUntil((auth?.userProfile as any)?.accessUntil), [auth?.userProfile]);
+  const activeUntil = useMemo(() => formatAccessUntil((auth?.userProfile as any)?.accessUntil, isEn), [auth?.userProfile, isEn]);
   // Canonical entitlement source (Build 85 P0): active trial and premium both
   // count as premium access; status label distinguishes TRIAL / PREMIUM / FREE.
   const entitlement = useMemo(
@@ -55,7 +57,7 @@ export default function UpgradePage() {
       })
       .catch((error) => {
         console.warn("[GOOGLE PLAY PRODUCT LOAD FAILED]", error);
-        if (!cancelled) setMessage("Produk Premium belum bisa dimuat dari Google Play.");
+        if (!cancelled) setMessage(isEn ? "Google Play premium products could not be loaded." : "Produk Premium belum bisa dimuat dari Google Play.");
       });
 
     return () => {
@@ -66,13 +68,17 @@ export default function UpgradePage() {
   const verifyAndRefresh = async (purchase: GooglePlayPurchase) => {
     const verification = await processAndVerifyPurchaseToken(purchase);
     if (!verification.active) {
-      setMessage("Pembelian tercatat, tetapi statusnya belum aktif dari Google Play.");
+      setMessage(isEn ? "Purchase recorded, but status is not yet active on Google Play." : "Pembelian tercatat, tetapi statusnya belum aktif dari Google Play.");
       return;
     }
 
     await auth?.refreshUserProfile();
     setState("success");
-    setMessage(`Premium aktif sampai ${formatAccessUntil(verification.accessUntil)}.`);
+    setMessage(
+      isEn
+        ? `Premium active until ${formatAccessUntil(verification.accessUntil, isEn)}.`
+        : `Premium aktif sampai ${formatAccessUntil(verification.accessUntil, isEn)}.`
+    );
   };
 
   const handlePurchase = async () => {
@@ -82,11 +88,11 @@ export default function UpgradePage() {
     try {
       const result = await purchasePremiumSubscription();
       const purchase = findPremiumPurchase(result.purchases);
-      if (!purchase) throw new Error("Token pembelian Premium tidak ditemukan.");
+      if (!purchase) throw new Error(isEn ? "Purchase token not found." : "Token pembelian Premium tidak ditemukan.");
       await verifyAndRefresh(purchase);
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? error.message : "Pembelian belum berhasil diproses.");
+      setMessage(error instanceof Error ? error.message : (isEn ? "Purchase could not be processed." : "Pembelian belum berhasil diproses."));
     }
   };
 
@@ -99,13 +105,13 @@ export default function UpgradePage() {
       const purchase = findPremiumPurchase(result.purchases);
       if (!purchase) {
         setState("idle");
-        setMessage("Tidak ada pembelian Premium aktif yang bisa dipulihkan.");
+        setMessage(isEn ? "No active Premium purchase found to restore." : "Tidak ada pembelian Premium aktif yang bisa dipulihkan.");
         return;
       }
       await verifyAndRefresh(purchase);
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? error.message : "Restore pembelian belum berhasil.");
+      setMessage(error instanceof Error ? error.message : (isEn ? "Restore purchase was unsuccessful." : "Restore pembelian belum berhasil."));
     }
   };
 
@@ -117,7 +123,9 @@ export default function UpgradePage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7B8776]">Premium</p>
           <h1 className="mt-3 font-serif text-4xl font-semibold text-[#2F4438]">Bhumi Premium</h1>
           <p className="mt-4 max-w-xl text-sm leading-7 text-[#657066]">
-            Akses Premium dikelola dari server setelah pembelian Google Play berhasil diverifikasi.
+            {isEn
+              ? "Premium access is managed from the server after Google Play purchase is successfully verified."
+              : "Akses Premium dikelola dari server setelah pembelian Google Play berhasil diverifikasi."}
           </p>
         </div>
 
@@ -128,19 +136,21 @@ export default function UpgradePage() {
               <p className="mt-2 text-2xl font-semibold text-[#2F4438]">{statusLabel}</p>
             </div>
             <p className="rounded-[8px] border border-[#D8D0C3] px-3 py-2 text-right text-sm font-semibold text-[#4F5E52]">
-              {activeUntil || "Belum aktif"}
+              {activeUntil || (isEn ? "Inactive" : "Belum aktif")}
             </p>
           </div>
 
           <div className="grid gap-3 py-5 text-sm text-[#4F5E52]">
             <Row label="Product ID" value={GOOGLE_PLAY_PRODUCT_ID} />
             <Row label="Base Plan" value="monthly" />
-            <Row label="Harga" value={price} />
+            <Row label={isEn ? "Price" : "Harga"} value={price} />
           </div>
 
           {!billingAvailable ? (
             <p className="rounded-[8px] border border-[#D8D0C3] bg-[#F5F1E8] p-4 text-sm leading-6 text-[#657066]">
-              Pembelian Google Play hanya tersedia dari aplikasi Android yang dipasang melalui Google Play.
+              {isEn
+                ? "Google Play purchases are only available from Android devices installed via Google Play."
+                : "Pembelian Google Play hanya tersedia dari aplikasi Android yang dipasang melalui Google Play."}
             </p>
           ) : (
             <div className="grid gap-3">
@@ -150,7 +160,7 @@ export default function UpgradePage() {
                 disabled={state === "loading"}
                 className="bhumi-button w-full disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {state === "loading" ? "Memproses..." : "Beli Premium Bulanan"}
+                {state === "loading" ? (isEn ? "Processing..." : "Memproses...") : (isEn ? "Subscribe Monthly Premium" : "Beli Premium Bulanan")}
               </button>
               <button
                 type="button"
@@ -158,7 +168,7 @@ export default function UpgradePage() {
                 disabled={state === "loading"}
                 className="w-full rounded-[8px] border border-[#CFC6B8] bg-white px-4 py-3 text-sm font-semibold text-[#4F5E52] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Pulihkan Pembelian
+                {isEn ? "Restore Purchases" : "Pulihkan Pembelian"}
               </button>
             </div>
           )}
@@ -171,7 +181,7 @@ export default function UpgradePage() {
         </div>
 
         <Link href="/dashboard" className="text-sm font-semibold text-[#7B8776] transition-colors hover:text-[#4F5E52]">
-          Kembali ke Dasbor
+          {isEn ? "Back to Dashboard" : "Kembali ke Dasbor"}
         </Link>
       </section>
     </main>
@@ -191,19 +201,19 @@ function findPremiumPurchase(purchases: GooglePlayPurchase[]) {
   return purchases.find((purchase) => purchase.products?.includes(GOOGLE_PLAY_PRODUCT_ID)) ?? purchases[0] ?? null;
 }
 
-function formatAccessUntil(value: unknown) {
+function formatAccessUntil(value: unknown, isEn: boolean) {
   if (!value) return "";
-  if (typeof value === "string") return formatDate(value);
+  if (typeof value === "string") return formatDate(value, isEn);
   if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
-    return formatDate(value.toDate());
+    return formatDate(value.toDate(), isEn);
   }
   return "";
 }
 
-function formatDate(value: string | Date) {
+function formatDate(value: string | Date, isEn: boolean) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(isEn ? "en-US" : "id-ID", {
     day: "2-digit",
     month: "short",
     year: "numeric",

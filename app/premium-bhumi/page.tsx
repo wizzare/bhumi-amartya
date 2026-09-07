@@ -13,13 +13,15 @@ import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
-import { purchaseAndRecoverPremium, restoreAndRecoverPremium } from "@/lib/billing/googlePlayBilling";
+import { purchaseAndRecoverPremium, restoreAndRecoverPremium, queryPremiumSubscription, GOOGLE_PLAY_BASE_PLAN_ID } from "@/lib/billing/googlePlayBilling";
+import { isEnlEdition } from "@/lib/config/edition";
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
   const auth = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
+  const isEn = isEnlEdition();
   const [profile, setProfile] = useState<any>(null);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,28 @@ export default function PremiumBhumiPage() {
   const [restoring, setRestoring] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [priceLabel, setPriceLabel] = useState(isEn ? "per month" : "per bulan");
+
+  useEffect(() => {
+    let cancelled = false;
+    queryPremiumSubscription()
+      .then((product) => {
+        if (cancelled) return;
+        const formattedPrice = product?.offers
+          ?.find((offer) => offer.basePlanId === GOOGLE_PLAY_BASE_PLAN_ID)
+          ?.pricingPhases?.[0]?.formattedPrice
+          || product?.offers?.[0]?.pricingPhases?.[0]?.formattedPrice;
+        if (formattedPrice) {
+          setPriceLabel(isEn ? `${formattedPrice}/month` : `${formattedPrice}/bulan`);
+        }
+      })
+      .catch(() => {
+        setPriceLabel(isEn ? "via Google Play" : "melalui Google Play");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isEn]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -73,19 +97,19 @@ export default function PremiumBhumiPage() {
     try {
       const recovery = await purchaseAndRecoverPremium(async () => { await auth?.refreshUserProfile?.(); }, Boolean(isPremium));
       if (recovery.state === "ACCESS_ACTIVE") {
-        setMessage(t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan.");
+        setMessage(isEn ? "Purchase successful! Premium Bhumi access activated." : (t.premiumBhumi?.purchaseSuccess || "Pembelian berhasil! Akses Premium Bhumi diaktifkan."));
         setTimeout(() => router.refresh(), 1500);
-      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setError("Tidak ada pembelian aktif yang dapat diverifikasi.");
-      else if (recovery.state === "PAYMENT_PENDING") setError("Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
-      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi tanpa membeli ulang.");
-      else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian terdeteksi, tetapi penyimpanan akses belum berhasil. Silakan coba verifikasi ulang.");
-      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
-      else setError("Pembelian ditolak oleh penyedia atau tidak lagi aktif. Gunakan Pulihkan Pembelian bila status berubah.");
+      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setError(isEn ? "No active purchase could be verified." : "Tidak ada pembelian aktif yang dapat diverifikasi.");
+      else if (recovery.state === "PAYMENT_PENDING") setError(isEn ? "Payment is being processed by Google Play. You do not need to purchase again. Status will update once payment is complete." : "Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
+      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError(isEn ? "Verification is temporarily unavailable. Please try again without repurchasing." : "Verifikasi sementara belum tersedia. Silakan coba lagi tanpa membeli ulang.");
+      else if (recovery.state === "PERSISTENCE_FAILURE") setError(isEn ? "Purchase detected, but saving access was unsuccessful. Please try verifying again." : "Pembelian terdeteksi, tetapi penyimpanan akses belum berhasil. Silakan coba verifikasi ulang.");
+      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError(isEn ? "Access verified, but profile could not be refreshed yet. Please reload the page." : "Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
+      else setError(isEn ? "Purchase failed or is no longer active. Use Restore Purchases if status changes." : "Pembelian ditolak oleh penyedia atau tidak lagi aktif. Gunakan Pulihkan Pembelian bila status berubah.");
     } catch (err: any) {
       if (err?.message?.includes("USER_CANCELED") || err?.code === "USER_CANCELED") {
         setMessage(null);
       } else {
-        setError(err?.message || t.premiumBhumi?.purchaseFailed || "Pembelian gagal. Silakan coba lagi.");
+        setError(err?.message || t.premiumBhumi?.purchaseFailed || (isEn ? "Purchase failed. Please try again." : "Pembelian gagal. Silakan coba lagi."));
       }
     } finally {
       setPurchasing(false);
@@ -99,16 +123,16 @@ export default function PremiumBhumiPage() {
     try {
       const recovery = await restoreAndRecoverPremium(async () => { await auth?.refreshUserProfile?.(); }, Boolean(isPremium));
       if (recovery.state === "ACCESS_ACTIVE") {
-        setMessage(t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!");
+        setMessage(isEn ? "Purchases successfully restored & verified!" : (t.premiumBhumi?.restoreSuccess || "Pembelian berhasil dipulihkan & diverifikasi!"));
         setTimeout(() => router.refresh(), 1500);
-      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setMessage(t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan.");
-      else if (recovery.state === "PAYMENT_PENDING") setError("Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
-      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError("Verifikasi sementara belum tersedia. Silakan coba lagi.");
-      else if (recovery.state === "PERSISTENCE_FAILURE") setError("Pembelian ditemukan, tetapi akses belum tersimpan. Silakan coba pulihkan lagi.");
-      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError("Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
-      else setError("Pembelian aktif ditolak oleh penyedia. Periksa status langganan Google Play.");
+      } else if (recovery.state === "NO_ACTIVE_PURCHASE") setMessage(isEn ? "No active subscription found to restore." : (t.premiumBhumi?.restoreNotFound || "Tidak ada langganan aktif yang ditemukan untuk dipulihkan."));
+      else if (recovery.state === "PAYMENT_PENDING") setError(isEn ? "Payment is being processed by Google Play. You do not need to purchase again. Status will update once payment is complete." : "Pembayaran sedang diproses oleh Google Play. Kamu tidak perlu membeli ulang. Status akan diperbarui setelah pembayaran selesai.");
+      else if (recovery.state === "RETRYABLE_VERIFICATION_FAILURE") setError(isEn ? "Verification is temporarily unavailable. Please try again without repurchasing." : "Verifikasi sementara belum tersedia. Silakan coba lagi.");
+      else if (recovery.state === "PERSISTENCE_FAILURE") setError(isEn ? "Purchase detected, but saving access was unsuccessful. Please try verifying again." : "Pembelian ditemukan, tetapi akses belum tersimpan. Silakan coba pulihkan lagi.");
+      else if (recovery.state === "PROFILE_REFRESH_FAILURE") setError(isEn ? "Access verified, but profile could not be refreshed yet. Please reload the page." : "Akses telah diverifikasi, tetapi profil belum dapat diperbarui. Silakan muat ulang halaman.");
+      else setError(isEn ? "Purchase failed or is no longer active. Use Restore Purchases if status changes." : "Pembelian aktif ditolak oleh penyedia. Periksa status langganan Google Play.");
     } catch (err: any) {
-      setError(err?.message || t.premiumBhumi?.restoreFailed || "Pulihkan gagal. Silakan coba lagi.");
+      setError(err?.message || t.premiumBhumi?.restoreFailed || (isEn ? "Restore failed. Please try again." : "Pulihkan gagal. Silakan coba lagi."));
     } finally {
       setRestoring(false);
     }
@@ -118,7 +142,7 @@ export default function PremiumBhumiPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="bhumi-card p-12 text-center max-w-md w-full bg-white border-none shadow-xl">
-          <p className="text-[#4F5E52] text-xl font-serif italic">Memuat Premium Bhumi...</p>
+          <p className="text-[#4F5E52] text-xl font-serif italic">{isEn ? "Loading Premium Bhumi..." : "Memuat Premium Bhumi..."}</p>
         </div>
       </main>
     );
@@ -183,7 +207,7 @@ export default function PremiumBhumiPage() {
 
             {accessUntil && (
               <div className="text-sm text-[#7B8776] border-t border-[#F5F1E8] pt-3">
-                <p>{t.premiumBhumi?.accessUntil || "Akses hingga"}: {accessUntil.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
+                <p>{t.premiumBhumi?.accessUntil || "Akses hingga"}: {accessUntil.toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
               </div>
             )}
           </div>
@@ -241,12 +265,12 @@ export default function PremiumBhumiPage() {
               {purchasing ? (
                 <>
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  <span>{t.premiumBhumi?.processing || "Memproses..."}</span>
+                  <span>{t.premiumBhumi?.processing || (isEn ? "Processing..." : "Memproses...")}</span>
                 </>
               ) : (
                 <>
                   <CreditCard className="h-5 w-5" />
-                  <span>{t.premiumBhumi?.subscribeButton || "Langganan Sekarang"}</span>
+                  <span>{t.premiumBhumi?.subscribeButton || (isEn ? "Subscribe Now" : "Langganan Sekarang")}</span>
                 </>
               )}
             </button>
@@ -259,19 +283,21 @@ export default function PremiumBhumiPage() {
               {restoring ? (
                 <>
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#4F5E52]/30 border-t-[#4F5E52]" />
-                  <span>{t.premiumBhumi?.restoring || "Memulihkan..."}</span>
+                  <span>{t.premiumBhumi?.restoring || (isEn ? "Restoring..." : "Memulihkan...")}</span>
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-5 w-5" />
-                  <span>{t.premiumBhumi?.restoreButton || "Pulihkan Pembelian"}</span>
+                  <span>{t.premiumBhumi?.restoreButton || (isEn ? "Restore Purchases" : "Pulihkan Pembelian")}</span>
                 </>
               )}
             </button>
           </div>
 
           <p className="text-xs text-[#9BB89A] text-center">
-            {t.premiumBhumi?.subscriptionNote || "Langganan bulanan Rp25.000/bulan. Dapat dibatalkan kapan saja melalui Google Play."}
+            {isEn
+              ? `Monthly subscription ${priceLabel}. Cancel anytime via Google Play.`
+              : `Langganan bulanan ${priceLabel}. Dapat dibatalkan kapan saja melalui Google Play.`}
           </p>
         </section>
 
@@ -286,21 +312,21 @@ export default function PremiumBhumiPage() {
               <p className="font-medium text-[#4F5E52] mb-1">{t.premiumBhumi?.freeIncludes || "Termasuk gratis:"}</p>
               <ul className="text-[#7B8776] space-y-1">
                 <li>Dashboard</li>
-                <li>Lainnya</li>
-                <li>Pengaturan</li>
+                <li>{isEn ? "Others" : "Lainnya"}</li>
+                <li>{isEn ? "Settings" : "Pengaturan"}</li>
                 <li>Premium Bhumi</li>
               </ul>
             </div>
             <div className="p-3 rounded-xl bg-white border border-[#E8E9E5]">
               <p className="font-medium text-[#4F5E52] mb-1">{t.premiumBhumi?.premiumRequires || "Membutuhkan Premium:"}</p>
               <ul className="text-[#7B8776] space-y-1">
-                <li>Profil</li>
+                <li>{isEn ? "Profile" : "Profil"}</li>
                 <li>Wellness</li>
                 <li>Journey</li>
-                <li>Refleksi Jiwa</li>
+                <li>{isEn ? "Soul Reflection" : "Refleksi Jiwa"}</li>
                 <li>Audio Healing</li>
-                <li>Manifestasi</li>
-                <li>Catatan Hari Ini</li>
+                <li>{isEn ? "Manifestation" : "Manifestasi"}</li>
+                <li>{isEn ? "Today's Notes" : "Catatan Hari Ini"}</li>
               </ul>
             </div>
           </div>

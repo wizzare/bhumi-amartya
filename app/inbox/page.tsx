@@ -25,12 +25,20 @@ import { useAuth } from "@/context/AuthContext";
 import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
 import { classifyCommunicationError, communicationErrorCode, communicationErrorMessage, type CommunicationErrorKind } from "@/lib/services/communicationError";
 import { CommunicationMessage, CommunicationType } from "@/lib/types/communication";
+import { isEnlEdition } from "@/lib/config/edition";
 
-const SUPPORT_CATEGORIES = [
+const SUPPORT_CATEGORIES_ID = [
   ["SUGGESTION", "Saran Pengembangan"],
   ["BUG_REPORT", "Error atau Bug"],
   ["GENERAL_FEEDBACK", "Masukan Umum"],
   ["ACCOUNT_SUPPORT", "Bantuan Akun atau Aplikasi"],
+] as const;
+
+const SUPPORT_CATEGORIES_EN = [
+  ["SUGGESTION", "Feature Suggestion"],
+  ["BUG_REPORT", "Error or Bug"],
+  ["GENERAL_FEEDBACK", "General Feedback"],
+  ["ACCOUNT_SUPPORT", "Account or App Help"],
 ] as const;
 
 export default function InboxPage() {
@@ -38,10 +46,28 @@ export default function InboxPage() {
   const { language } = useLanguage();
   const auth = useAuth();
   const uid = auth?.user?.uid;
+  const isEn = isEnlEdition() || language === "en";
+  const SUPPORT_CATEGORIES = isEn ? SUPPORT_CATEGORIES_EN : SUPPORT_CATEGORIES_ID;
 
   const it = useMemo(() => {
     const t = (translations[language] as any);
-    return t.inbox || {
+    return t.inbox || (isEn ? {
+      title: "Inbox",
+      subtitle: "Messages and insights for your journey.",
+      empty: "No messages yet. Keep moving forward!",
+      markAllRead: "Mark all as read",
+      filters: {
+        all: "All",
+        unread: "Unread",
+      },
+      groups: {
+        today: "Today",
+        yesterday: "Yesterday",
+        last7Days: "Last 7 Days",
+        thisMonth: "This Month",
+        older: "Older",
+      }
+    } : {
       title: "Inbox",
       subtitle: "Pesan dan wawasan untuk perjalananmu.",
       empty: "Belum ada pesan. Teruskan melangkah!",
@@ -57,8 +83,8 @@ export default function InboxPage() {
         thisMonth: "Bulan Ini",
         older: "Lebih Lama",
       }
-    };
-  }, [language]);
+    });
+  }, [language, isEn]);
 
   const [messages, setMessages] = useState<CommunicationMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +144,7 @@ export default function InboxPage() {
     setSendState("sending");
     setSendErrorCode(null);
     try {
-      await CommunicationCenterService.submitUserSupportMessage({ authenticatedUid: uid, userName: auth?.user?.displayName || "Sahabat Bhumi", category, subject: subject.trim(), content: body.trim() });
+      await CommunicationCenterService.submitUserSupportMessage({ authenticatedUid: uid, userName: auth?.user?.displayName || (isEn ? "Bhumi Friend" : "Sahabat Bhumi"), category, subject: subject.trim(), content: body.trim() });
       setSubject(""); setBody(""); setSendState("sent"); setComposeOpen(false); await loadInbox();
     } catch (error) { setSendState("error"); setSendErrorCode(communicationErrorCode(error)); }
   };
@@ -227,14 +253,18 @@ export default function InboxPage() {
         </header>
 
         <section className="bhumi-card p-5">
-          <button type="button" onClick={() => setComposeOpen((value) => !value)} className="w-full text-left text-sm font-bold text-[#4F5E52]">{composeOpen ? "Tutup Kirim Pesan" : "Kirim Pesan ke Bhumi"}</button>
+          <button type="button" onClick={() => setComposeOpen((value) => !value)} className="w-full text-left text-sm font-bold text-[#4F5E52]">
+            {composeOpen
+              ? (isEn ? "Close Message" : "Tutup Kirim Pesan")
+              : (isEn ? "Send a Message to Bhumi" : "Kirim Pesan ke Bhumi")}
+          </button>
           {composeOpen && <form onSubmit={handleSend} className="mt-4 space-y-3">
-            <label className="block text-xs font-bold text-[#7B8776]">Kategori<select value={category} onChange={(event) => setCategory(event.target.value as typeof category)} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm">{SUPPORT_CATEGORIES.map(([val, label]) => <option key={val} value={val}>{label}</option>)}</select></label>
-            <label className="block text-xs font-bold text-[#7B8776]">Subjek<input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={140} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
-            <label className="block text-xs font-bold text-[#7B8776]">Pesan<textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={4000} rows={5} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
-            <button disabled={sendState === "sending"} className="rounded-xl bg-[#4F5E52] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{sendState === "sending" ? "Mengirim..." : "Kirim"}</button>
-            {sendState === "sent" && <p className="text-xs text-emerald-700">Pesan terkirim.</p>}
-            {sendState === "error" && <p className="text-xs text-red-700">Pesan gagal dikirim. Silakan coba lagi.{process.env.NODE_ENV !== "production" && ` Kode: ${sendErrorCode || "unknown"}`}</p>}
+            <label className="block text-xs font-bold text-[#7B8776]">{isEn ? "Category" : "Kategori"}<select value={category} onChange={(event) => setCategory(event.target.value as typeof category)} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm">{SUPPORT_CATEGORIES.map(([val, label]) => <option key={val} value={val}>{label}</option>)}</select></label>
+            <label className="block text-xs font-bold text-[#7B8776]">{isEn ? "Subject" : "Subjek"}<input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={140} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
+            <label className="block text-xs font-bold text-[#7B8776]">{isEn ? "Message" : "Pesan"}<textarea value={body} onChange={(event) => setBody(event.target.value)} maxLength={4000} rows={5} className="mt-1 w-full rounded-xl border border-[#E8E9E5] bg-white p-3 text-sm" required /></label>
+            <button disabled={sendState === "sending"} className="rounded-xl bg-[#4F5E52] px-4 py-3 text-sm font-bold text-white disabled:opacity-50">{sendState === "sending" ? (isEn ? "Sending..." : "Mengirim...") : (isEn ? "Send" : "Kirim")}</button>
+            {sendState === "sent" && <p className="text-xs text-emerald-700">{isEn ? "Message sent." : "Pesan terkirim."}</p>}
+            {sendState === "error" && <p className="text-xs text-red-700">{isEn ? "Message failed to send. Please try again." : "Pesan gagal dikirim. Silakan coba lagi."}{process.env.NODE_ENV !== "production" && ` Code: ${sendErrorCode || "unknown"}`}</p>}
           </form>}
         </section>
 
@@ -248,11 +278,11 @@ export default function InboxPage() {
           </FilterButton>
         </div>
 
-        {offline && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-medium">Koneksi sedang offline.</p><p className="mt-1">Pesan yang sudah tampil tetap tersedia. Hubungkan kembali untuk memuat atau mengirim pesan.</p><button type="button" onClick={() => void loadInbox()} className="mt-3 rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-bold">Coba lagi</button></div>}
+        {offline && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-medium">{isEn ? "You're currently offline." : "Koneksi sedang offline."}</p><p className="mt-1">{isEn ? "Messages already shown remain available. Reconnect to load or send messages." : "Pesan yang sudah tampil tetap tersedia. Hubungkan kembali untuk memuat atau mengirim pesan."}</p><button type="button" onClick={() => void loadInbox()} className="mt-3 rounded-xl border border-amber-300 bg-white px-4 py-2 text-xs font-bold">{isEn ? "Try again" : "Coba lagi"}</button></div>}
         {loading ? (
-          <div className="py-20 text-center text-[#7B8776]">Memuat pesan...</div>
+          <div className="py-20 text-center text-[#7B8776]">{isEn ? "Loading messages..." : "Memuat pesan..."}</div>
         ) : loadError ? (
-          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">{loadErrorKind ? communicationErrorMessage(loadErrorKind) : 'Inbox tidak dapat dimuat.'}</p>{process.env.NODE_ENV !== 'production' && rawErrorDetail && <p className="text-[10px] text-red-400 font-mono break-all mt-2">[DEV] {rawErrorDetail}</p>}<button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">Coba lagi</button></div>
+          <div className="bhumi-card p-12 text-center space-y-3"><p className="text-[#4F5E52] font-medium">{loadErrorKind ? communicationErrorMessage(loadErrorKind) : (isEn ? 'Inbox could not be loaded.' : 'Inbox tidak dapat dimuat.')}</p>{process.env.NODE_ENV !== 'production' && rawErrorDetail && <p className="text-[10px] text-red-400 font-mono break-all mt-2">[DEV] {rawErrorDetail}</p>}<button type="button" onClick={() => void loadInbox()} className="rounded-xl border border-[#E8E9E5] bg-white px-4 py-2 text-xs font-bold text-[#4F5E52]">{isEn ? "Try again" : "Coba lagi"}</button></div>
         ) : groupedMessages.length === 0 ? (
           <div className="bhumi-card p-12 text-center space-y-4">
             <div className="mx-auto w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center">
@@ -294,7 +324,7 @@ export default function InboxPage() {
                         <div className="flex items-center gap-3 mt-3">
                           <span className="text-[10px] text-[#9AA394] flex items-center gap-1">
                             <Clock size={10} />
-                            {typeof msg.createdAt === "string" && DateTime.fromISO(msg.createdAt).isValid ? DateTime.fromISO(msg.createdAt).toRelative() : "Baru saja"}
+                            {typeof msg.createdAt === "string" && DateTime.fromISO(msg.createdAt).isValid ? DateTime.fromISO(msg.createdAt).toRelative() : (isEn ? "Just now" : "Baru saja")}
                           </span>
                           {msg.deepLink && (
                             <span className="text-[10px] font-bold text-[#4F5E52] flex items-center gap-1">
@@ -332,7 +362,7 @@ export default function InboxPage() {
             >
               <div className="flex justify-between items-start shrink-0 mb-4">
                 <h2 className="text-xl font-bold text-[#4F5E52]">{selectedMessage.title}</h2>
-                <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52] shrink-0 ml-4">Tutup</button>
+                <button type="button" onClick={() => setSelectedMessage(null)} className="text-[#7B8776] text-sm font-bold hover:text-[#4F5E52] shrink-0 ml-4">{isEn ? "Close" : "Tutup"}</button>
               </div>
               <p className="text-xs text-[#9AA394] shrink-0 mb-4">{typeof selectedMessage.createdAt === "string" && DateTime.fromISO(selectedMessage.createdAt).isValid ? DateTime.fromISO(selectedMessage.createdAt).toLocaleString(DateTime.DATETIME_MED) : selectedMessage.createdAt}</p>
               <div className="p-4 bg-[#FCFAF5] rounded-2xl text-sm text-[#4F5E52] leading-relaxed whitespace-pre-wrap overflow-y-auto min-h-0 flex-1 overscroll-behavior-contain">
@@ -340,7 +370,7 @@ export default function InboxPage() {
               </div>
               {selectedMessage.deepLink && (
                 <button type="button" onClick={() => { setSelectedMessage(null); router.push(selectedMessage.deepLink!); }} className="w-full rounded-xl bg-[#4F5E52] py-3 text-sm font-bold text-white text-center shrink-0 mt-4">
-                  {selectedMessage.action || "Buka Tautan"}
+                  {selectedMessage.action || (isEn ? "Open Link" : "Buka Tautan")}
                 </button>
               )}
             </div>

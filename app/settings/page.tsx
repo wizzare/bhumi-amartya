@@ -43,6 +43,7 @@ import { cancelDailyReminders, getDailyReminderEnabled, refreshGentleNightRemind
 import { registerFcmToken } from "@/lib/notifications/fcmRegistration";
 import { fcmTokenRepository } from "@/lib/repositories/fcmTokenRepository";
 import { Capacitor } from "@capacitor/core";
+import { isEnlEdition } from "@/lib/config/edition";
 
 const LANGUAGE_STORAGE_KEY = "bhumiLanguage";
 
@@ -62,20 +63,21 @@ const HUMAN_DESIGN_PENDING: LocalHumanDesign = {
   note: "Human Design service is not running.",
 };
 
-function toDisplayDate(value: unknown): string | null {
+function toDisplayDate(value: unknown, language?: "id" | "en"): string | null {
   if (!value) return null;
+  const locale = isEnlEdition() || language === "en" ? "en-US" : "id-ID";
   if (typeof value === "string") {
     const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   }
   if (value instanceof Date) {
-    return value.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    return value.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   }
   if (typeof value === "object" && "toDate" in value && typeof value.toDate === "function") {
-    return value.toDate().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    return value.toDate().toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   }
   if (typeof value === "object" && "seconds" in value && typeof value.seconds === "number") {
-    return new Date(value.seconds * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    return new Date(value.seconds * 1000).toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
   }
   return null;
 }
@@ -201,6 +203,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { language: appLanguage, setLanguage } = useLanguage();
   const t = translations[appLanguage];
+  const isEn = isEnlEdition() || appLanguage === "en";
   const auth = useAuth();
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);
@@ -357,28 +360,28 @@ export default function SettingsPage() {
     let label: string = billingPresentation.state === "premium_active" && resolvedBadge === "Penghuni Bhumi"
       ? "Premium Bhumi"
       : resolvedBadge;
-    let description = "Akses publik aktif";
+    let description = isEn ? "Public access active" : "Akses publik aktif";
     let color = "bg-[#F5F1E8] text-[#7B8776] border-[#E8E9E5]";
     let Icon = Shield;
 
     if (isFounder) {
       label = "Founder Bhumi";
-      description = "Akses Penuh Selamanya";
+      description = isEn ? "Full Access Forever" : "Akses Penuh Selamanya";
       color = "bg-[#FDF6E2] text-[#B7791F] border-[#F6E05E]";
       Icon = ShieldCheck;
     } else if (billingPresentation.state === "premium_active") {
       label = resolvedBadge === "Penghuni Bhumi" ? "Premium Bhumi" : resolvedBadge;
-      description = "Akses Premium Aktif";
+      description = isEn ? "Active Premium Access" : "Akses Premium Aktif";
       color = "bg-[#E6FFFA] text-[#319795] border-[#81E6D9]";
       Icon = ShieldCheck;
     } else if (billingPresentation.state === "trial_active") {
       label = resolvedBadge;
-      description = "Masa Uji Coba Aktif";
+      description = isEn ? "Active Trial Period" : "Masa Uji Coba Aktif";
       color = "bg-[#EBF8FF] text-[#2B6CB0] border-[#90CDF4]";
       Icon = Shield;
     } else if (billingPresentation.state === "trial_exhausted" || billingPresentation.state === "premium_expired") {
       label = resolvedBadge;
-      description = "Masa Uji Coba Berakhir";
+      description = isEn ? "Trial Period Ended" : "Masa Uji Coba Berakhir";
       color = "bg-[#FFF5F5] text-[#C53030] border-[#FEB2B2]";
       Icon = ShieldAlert;
     }
@@ -390,15 +393,17 @@ export default function SettingsPage() {
       color,
       Icon,
     };
-  }, [billingPresentation.state, originalProfile, resolvedBadge]);
+  }, [billingPresentation.state, isEn, originalProfile, resolvedBadge]);
 
   const membershipDisplay = useMemo(() => {
     const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
 
     if (isFounder) {
       return {
-        title: "Akses Lifetime Founder",
-        subtitle: "Terima kasih atas kontribusi Anda membangun Bhumi.",
+        title: isEn ? "Founder Lifetime Access" : "Akses Lifetime Founder",
+        subtitle: isEn
+          ? "Thank you for your contribution to building Bhumi."
+          : "Terima kasih atas kontribusi Anda membangun Bhumi.",
         remaining: null,
         nextBilling: null,
         pro: true,
@@ -407,8 +412,10 @@ export default function SettingsPage() {
 
     if (billingPresentation.state === "premium_active") {
       return {
-        title: "Paket Premium Aktif",
-        subtitle: "Akses penuh ke seluruh konten & analisis personal.",
+        title: isEn ? "Active Premium" : "Paket Premium Aktif",
+        subtitle: isEn
+          ? "Full access to all content & personal analysis."
+          : "Akses penuh ke seluruh konten & analisis personal.",
         remaining: null,
         nextBilling: null,
         pro: true,
@@ -427,9 +434,11 @@ export default function SettingsPage() {
         daysRemaining = Math.max(0, Math.ceil(diff / (24 * 60 * 60 * 1000)));
       }
       return {
-        title: "Masa Uji Coba Premium",
-        subtitle: `Uji coba premium aktif. Sisa ${daysRemaining} hari lagi.`,
-        remaining: `${daysRemaining} Hari`,
+        title: isEn ? "Active Trial" : "Masa Uji Coba Premium",
+        subtitle: isEn
+          ? `Premium trial active. ${daysRemaining} days left.`
+          : `Uji coba premium aktif. Sisa ${daysRemaining} hari lagi.`,
+        remaining: isEn ? `${daysRemaining} Days` : `${daysRemaining} Hari`,
         nextBilling: null,
         pro: false,
       };
@@ -437,31 +446,37 @@ export default function SettingsPage() {
 
     if (billingPresentation.state === "trial_exhausted" || billingPresentation.state === "premium_expired") {
       return {
-        title: "Masa Uji Coba Berakhir",
-        subtitle: "Perpanjang akses untuk melanjutkan perjalanan pertumbuhan batinmu.",
-        remaining: "0 Hari",
+        title: isEn ? "Trial Expired" : "Masa Uji Coba Berakhir",
+        subtitle: isEn
+          ? "Renew access to continue your inner growth journey."
+          : "Perpanjang akses untuk melanjutkan perjalanan pertumbuhan batinmu.",
+        remaining: isEn ? "0 Days" : "0 Hari",
         nextBilling: null,
         pro: false,
       };
     }
 
     return {
-      title: "Akses Publik Bhumi",
-      subtitle: "Fitur inti tersedia. Paket premium sedang disiapkan.",
+      title: isEn ? "Public Access" : "Akses Publik Bhumi",
+      subtitle: isEn
+        ? "Core features available. Premium plan is being prepared."
+        : "Fitur inti tersedia. Paket premium sedang disiapkan.",
       remaining: null,
       nextBilling: null,
       pro: false,
     };
-  }, [billingPresentation.state, originalProfile, resolvedBadge]);
+  }, [billingPresentation.state, isEn, originalProfile, resolvedBadge]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
-      "Apakah kamu yakin ingin menghapus data Blueprint dan Human Design? Kamu akan diarahkan kembali ke halaman Setup untuk menghitung ulang."
+      isEn
+        ? "Are you sure you want to delete your Blueprint and Human Design data? You'll be redirected back to the Setup page to recalculate."
+        : "Apakah kamu yakin ingin menghapus data Blueprint dan Human Design? Kamu akan diarahkan kembali ke halaman Setup untuk menghitung ulang."
     );
     if (!confirmed) return;
 
     setSaving(true);
-    setMessage("Sedang membersihkan data...");
+    setMessage(isEn ? "Cleaning up data..." : "Sedang membersihkan data...");
 
     try {
       await storageProvider.deleteUserBlueprint();
@@ -479,14 +494,14 @@ export default function SettingsPage() {
       router.replace("/setup");
     } catch (error) {
       console.error("[Settings] Cleanup failed", error);
-      setMessage("Gagal membersihkan data. Silakan coba lagi.");
+      setMessage(isEn ? "Failed to clean up data. Please try again." : "Gagal membersihkan data. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }
   };
 
   const handleSignOut = async () => {
-    const confirmed = window.confirm("Keluar dari akun?");
+    const confirmed = window.confirm(isEn ? "Sign out of your account?" : "Keluar dari akun?");
     if (!confirmed) return;
 
     setSigningOut(true);
@@ -504,24 +519,28 @@ export default function SettingsPage() {
       router.replace("/");
     } catch (error) {
       console.error("[Settings] Sign out failed", error);
-      setMessage("Gagal keluar akun. Silakan coba lagi.");
+      setMessage(isEn ? "Failed to sign out. Please try again." : "Gagal keluar akun. Silakan coba lagi.");
       setSigningOut(false);
     }
   };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      "PERINGATAN: Menghapus akun akan menghapus profil, data Blueprint, Journal, dan semua aktivitasmu secara permanen. Tindakan ini tidak dapat dibatalkan.\n\nApakah kamu yakin ingin melanjutkan?"
+      isEn
+        ? "WARNING: Deleting your account will permanently remove your profile, Blueprint data, Journal, and all your activity. This action cannot be undone.\n\nAre you sure you want to continue?"
+        : "PERINGATAN: Menghapus akun akan menghapus profil, data Blueprint, Journal, dan semua aktivitasmu secara permanen. Tindakan ini tidak dapat dibatalkan.\n\nApakah kamu yakin ingin melanjutkan?"
     );
     if (!confirmed) return;
 
     const secondConfirmation = window.confirm(
-      "Apakah kamu benar-benar yakin? Semua data akan hilang selamanya."
+      isEn
+        ? "Are you absolutely sure? All data will be lost forever."
+        : "Apakah kamu benar-benar yakin? Semua data akan hilang selamanya."
     );
     if (!secondConfirmation) return;
 
     setSaving(true);
-    setMessage("Sedang menghapus akun dan data...");
+    setMessage(isEn ? "Deleting account and data..." : "Sedang menghapus akun dan data...");
 
     try {
       const user = firebaseAuth.currentUser;
@@ -538,7 +557,11 @@ export default function SettingsPage() {
           await deleteUser(user);
         } catch (authError: any) {
           if (authError.code === "auth/requires-recent-login") {
-            alert("Untuk keamanan, kamu perlu masuk kembali (re-login) sebelum dapat menghapus akun.");
+            alert(
+              isEn
+                ? "For security, you need to sign in again (re-login) before you can delete your account."
+                : "Untuk keamanan, kamu perlu masuk kembali (re-login) sebelum dapat menghapus akun."
+            );
             if (auth?.logout) {
               await auth.logout();
             } else {
@@ -555,14 +578,18 @@ export default function SettingsPage() {
 
       // 3. Cleanup local state
       clearBhumiSessionForSignOut();
-      setMessage("Akun berhasil dihapus.");
+      setMessage(isEn ? "Account successfully deleted." : "Akun berhasil dihapus.");
 
       setTimeout(() => {
         router.replace("/");
       }, 2000);
     } catch (error) {
       console.error("[Settings] Delete account failed", error);
-      setMessage("Gagal menghapus akun. Silakan hubungi dukungan jika masalah berlanjut.");
+      setMessage(
+        isEn
+          ? "Failed to delete account. Please contact support if the problem persists."
+          : "Gagal menghapus akun. Silakan hubungi dukungan jika masalah berlanjut."
+      );
     } finally {
       setSaving(false);
     }
@@ -589,11 +616,19 @@ export default function SettingsPage() {
 
     if (isBirthFieldEdited) {
       if (!birthTime || !birthTime.trim()) {
-        setMessage("Jam kelahiran wajib diisi untuk pemetaan Human Design yang akurat.");
+        setMessage(
+          isEn
+            ? "Birth time is required for an accurate Human Design mapping."
+            : "Jam kelahiran wajib diisi untuk pemetaan Human Design yang akurat."
+        );
         return;
       }
       if (!selectedCity || selectedCity.latitude == null || selectedCity.longitude == null) {
-        setMessage("Pilih kota kelahiran dari daftar autocomplete agar koordinat lokasi terdeteksi.");
+        setMessage(
+          isEn
+            ? "Select your birth city from the autocomplete list so the location coordinates can be detected."
+            : "Pilih kota kelahiran dari daftar autocomplete agar koordinat lokasi terdeteksi."
+        );
         return;
       }
     }
@@ -715,10 +750,10 @@ export default function SettingsPage() {
       setLanguage(language);
       setOriginalProfile(nextProfile);
       setPlan(nextPlan);
-      setMessage("Data berhasil diperbarui. Blueprint-mu sudah diperbarui.");
+      setMessage(isEn ? "Data updated successfully. Your Blueprint has been refreshed." : "Data berhasil diperbarui. Blueprint-mu sudah diperbarui.");
     } catch (error) {
       console.error("[Settings] Save failed", error);
-      setMessage("Gagal menyimpan pengaturan. Silakan coba lagi.");
+      setMessage(isEn ? "Failed to save settings. Please try again." : "Gagal menyimpan pengaturan. Silakan coba lagi.");
     } finally {
       setSaving(false);
     }
@@ -728,7 +763,7 @@ export default function SettingsPage() {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
         <div className="rounded-3xl bg-white p-8 shadow-xl text-center max-w-md w-full">
-          <p className="text-[#4F5E52] text-lg">Membuka pengaturan...</p>
+          <p className="text-[#4F5E52] text-lg">{isEn ? "Opening settings..." : "Membuka pengaturan..."}</p>
         </div>
       </main>
     );
@@ -748,7 +783,7 @@ export default function SettingsPage() {
 
         <section className="bhumi-card space-y-5 p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">{t.settings.userData}</h2>
-          <Field label={t.settings.name} value={fullName} placeholder="Belum dilengkapi" onChange={setFullName} />
+          <Field label={t.settings.name} value={fullName} placeholder={isEn ? "Not filled in yet" : "Belum dilengkapi"} onChange={setFullName} />
           <Field
             label="Email"
             value={email}
@@ -766,7 +801,7 @@ export default function SettingsPage() {
             {t.settings.birthCity}
             <CityAutocomplete
               value={birthCity}
-              placeholder={birthCity ? t.settings.birthCity : "Belum dilengkapi"}
+              placeholder={birthCity ? t.settings.birthCity : (isEn ? "Not filled in yet" : "Belum dilengkapi")}
               onInputChange={(value) => {
                 setBirthCity(value);
                 setSelectedCity(null);
@@ -791,16 +826,22 @@ export default function SettingsPage() {
             <option value="en">English</option>
           </select>
           <p className="text-xs text-[#9BB89A]">
-            Preferensi bahasa akan disimpan untuk sistem terjemahan yang sudah tersedia.
+            {isEn
+              ? "Your language preference will be saved for the translation system already available."
+              : "Preferensi bahasa akan disimpan untuk sistem terjemahan yang sudah tersedia."}
           </p>
-          {/* TODO: apply language preference globally across all app text */}
         </section>
 
         <section className="bhumi-card space-y-4 p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">Dukungan Bhumi</h2>
+          <h2 className="text-xl font-semibold text-[#4F5E52]">{isEn ? "Bhumi Support" : "Dukungan Bhumi"}</h2>
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E8E9E5] bg-white px-5 py-4">
-            <div><p className="text-sm font-semibold text-[#4F5E52]">Pengingat Harian</p><p className="mt-1 text-xs text-[#7B8776]">Sapa ruangmu sekitar pukul 21.00 waktu perangkat.</p>{notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">Izin notifikasi ditolak di perangkat.</p>}{notificationState === "disable-error" && <p className="mt-1 text-xs text-amber-700">Token notifikasi belum dapat dinonaktifkan. Coba lagi saat koneksi stabil.</p>}</div>
-            <button type="button" role="switch" aria-checked={dailyReminderEnabled} aria-label="Pengingat Harian" onClick={() => void toggleDailyReminder(!dailyReminderEnabled)} className={`relative h-7 w-12 rounded-full transition ${dailyReminderEnabled ? "bg-[#4F5E52]" : "bg-[#D6D8D2]"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${dailyReminderEnabled ? "left-6" : "left-1"}`} /></button>
+            <div>
+              <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "Daily Reminder" : "Pengingat Harian"}</p>
+              <p className="mt-1 text-xs text-[#7B8776]">{isEn ? "A gentle nudge around 9 PM device time." : "Sapa ruangmu sekitar pukul 21.00 waktu perangkat."}</p>
+              {notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">{isEn ? "Notification permission was denied on this device." : "Izin notifikasi ditolak di perangkat."}</p>}
+              {notificationState === "disable-error" && <p className="mt-1 text-xs text-amber-700">{isEn ? "The notification token could not be disabled yet. Try again once your connection is stable." : "Token notifikasi belum dapat dinonaktifkan. Coba lagi saat koneksi stabil."}</p>}
+            </div>
+            <button type="button" role="switch" aria-checked={dailyReminderEnabled} aria-label={isEn ? "Daily Reminder" : "Pengingat Harian"} onClick={() => void toggleDailyReminder(!dailyReminderEnabled)} className={`relative h-7 w-12 rounded-full transition ${dailyReminderEnabled ? "bg-[#4F5E52]" : "bg-[#D6D8D2]"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${dailyReminderEnabled ? "left-6" : "left-1"}`} /></button>
           </div>
         </section>
 
@@ -824,7 +865,7 @@ export default function SettingsPage() {
           )}
 
                 <div className="pt-4 border-t border-[#F5F1E8]">
-            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">Status Akses</p>
+            <p className="text-[10px] font-bold text-[#9BB89A] uppercase tracking-widest mb-3">{isEn ? "Access Status" : "Status Akses"}</p>
             {membershipDisplay.pro ? (
               <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 flex items-center justify-between">
                 <div>
@@ -841,7 +882,7 @@ export default function SettingsPage() {
                   <p className="text-lg font-bold text-[#4F5E52]">{membershipDisplay.title}</p>
                   <p className="text-xs text-[#7B8776] mt-0.5">{membershipDisplay.subtitle}</p>
                   {membershipDisplay.remaining !== null ? (
-                    <p className="text-xs text-[#7B8776] mt-1">Sisa trial: {membershipDisplay.remaining} hari</p>
+                    <p className="text-xs text-[#7B8776] mt-1">{isEn ? `Trial remaining: ${membershipDisplay.remaining}` : `Sisa trial: ${membershipDisplay.remaining} hari`}</p>
                   ) : null}
                   {membershipDisplay.nextBilling ? (
                     <p className="text-xs text-[#7B8776] mt-1">Next billing date: {membershipDisplay.nextBilling}</p>
@@ -855,7 +896,7 @@ export default function SettingsPage() {
               href="/premium-bhumi"
               className="mt-4 w-full rounded-2xl border border-[#E5DCD0] bg-white px-5 py-3 text-[#4F5E52] transition hover:bg-[#F5F1E8] text-center block font-medium"
             >
-              Kelola Langganan Premium
+              {isEn ? "Manage Premium" : "Kelola Langganan Premium"}
             </Link>
           </div>
         </section>
@@ -871,20 +912,20 @@ export default function SettingsPage() {
               href="/tentang"
               className="w-full rounded-2xl border border-[#E5DCD0] bg-white px-5 py-3 text-[#4F5E52] transition hover:bg-[#F5F1E8] text-center block"
             >
-              Tentang Bhumi Amartya
+              {isEn ? "About Bhumi Amartya" : "Tentang Bhumi Amartya"}
             </Link>
             <button
               type="button"
               onClick={() => window.open("https://wedhaswara.my.id/privacy-policy-bhumi-amartya", "_blank")}
               className="w-full rounded-2xl border border-[#E5DCD0] bg-white px-5 py-3 text-[#4F5E52] transition hover:bg-[#F5F1E8] text-center block"
             >
-              Kebijakan Privasi
+              {isEn ? "Privacy Policy" : "Kebijakan Privasi"}
             </button>
             <Link
               href="/syarat-ketentuan"
               className="w-full rounded-2xl border border-[#E5DCD0] bg-white px-5 py-3 text-[#4F5E52] transition hover:bg-[#F5F1E8] text-center block"
             >
-              Syarat & Ketentuan
+              {isEn ? "Terms & Conditions" : "Syarat & Ketentuan"}
             </Link>
             <button
               type="button"
@@ -898,9 +939,11 @@ export default function SettingsPage() {
         </section>
 
         <section className="bhumi-card space-y-4 p-6 border-red-100 bg-red-50/10">
-          <h2 className="text-xl font-semibold text-red-800">Zona Bahaya</h2>
+          <h2 className="text-xl font-semibold text-red-800">{isEn ? "Danger Zone" : "Zona Bahaya"}</h2>
           <p className="text-sm text-red-700 leading-relaxed">
-            Jika data Blueprint atau Human Design kamu terlihat salah, gunakan opsi ini untuk menghapus data lama dan menghitung ulang dari awal.
+            {isEn
+              ? "If your Blueprint or Human Design data looks incorrect, use this option to delete the old data and recalculate from scratch."
+              : "Jika data Blueprint atau Human Design kamu terlihat salah, gunakan opsi ini untuk menghapus data lama dan menghitung ulang dari awal."}
           </p>
           <button
             type="button"
@@ -908,13 +951,15 @@ export default function SettingsPage() {
             disabled={saving}
             className="w-full rounded-2xl bg-red-50/10 border border-red-200 px-5 py-3 text-red-700 transition hover:bg-red-50 font-medium disabled:opacity-50"
           >
-            Hapus & Perbaiki Blueprint
+            {isEn ? "Reset & Recalculate Blueprint" : "Hapus & Perbaiki Blueprint"}
           </button>
 
           <div className="pt-4 border-t border-red-100">
-            <h3 className="text-sm font-semibold text-red-800 mb-2">Penghapusan Akun</h3>
+            <h3 className="text-sm font-semibold text-red-800 mb-2">{isEn ? "Account Deletion" : "Penghapusan Akun"}</h3>
             <p className="text-xs text-red-600 mb-4">
-              Menghapus akun akan menghapus profil, data Blueprint, dan Journal secara permanen.
+              {isEn
+                ? "Deleting your account will permanently remove your profile, Blueprint data, and Journal."
+                : "Menghapus akun akan menghapus profil, data Blueprint, dan Journal secara permanen."}
             </p>
             <button
               type="button"
@@ -922,7 +967,7 @@ export default function SettingsPage() {
               disabled={saving}
               className="w-full rounded-2xl bg-red-600 px-5 py-3 text-white transition hover:bg-red-700 font-medium disabled:opacity-50"
             >
-              Hapus Akun
+              {isEn ? "Delete Account" : "Hapus Akun"}
             </button>
           </div>
         </section>
