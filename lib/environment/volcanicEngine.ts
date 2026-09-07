@@ -98,6 +98,25 @@ export function evaluateVolcanicContext(params: {
     attributionText: "Smithsonian Institution Global Volcanism Program & Copernicus ECMWF CAMS",
   };
 
+  // FAIL-CLOSED INVARIANT (BUILD 108):
+  // 1. Column SO2 is currently unavailable (no qualifying direct client source).
+  // 2. GVP commercial database licensing is UNRESOLVED.
+  // In production builds without explicit override, named source attribution fails closed.
+  const isProductionCommercialBuild = process.env.NODE_ENV === "production" && process.env.ENABLE_DEV_VOLCANIC_ATTRIBUTION !== "true";
+
+  if (isProductionCommercialBuild || totalColumnSo2UgM2 === undefined) {
+    return {
+      plumeDetected: null,
+      probableVolcanicOrigin: null,
+      probableSource: null,
+      attributionConfidence: "unknown",
+      attributionRationale: "Atmospheric column SO2 observation and volcanic attribution are currently unavailable (fail-closed).",
+      evidenceRefs: ["build108_volcanic_fail_closed"],
+      nearbyKnownVolcanoes: [],
+      provenance,
+    };
+  }
+
   if (nearby.length === 0) {
     return {
       plumeDetected: null,

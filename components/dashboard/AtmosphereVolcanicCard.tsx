@@ -126,14 +126,14 @@ export function AtmosphereVolcanicCard({ payload, loading }: AtmosphereVolcanicC
           </div>
           <div className="mt-1">
             <span className="text-sm font-bold text-[#4F5E52]">
-              {volcanic.probableSource ? volcanic.probableSource.name : "None Detected"}
+              {volcanic.probableSource ? volcanic.probableSource.name : "Unavailable"}
             </span>
             <p className="text-[10px] font-medium text-[#7B8776] mt-0.5">
               Confidence: {volcanic.attributionConfidence}
             </p>
           </div>
           <p className="text-[9px] text-[#9AA394] mt-2 truncate">
-            {volcanic.nearbyKnownVolcanoes.length} known in 250km
+            {volcanic.nearbyKnownVolcanoes.length > 0 ? `${volcanic.nearbyKnownVolcanoes.length} known in 250km` : "Source Gated"}
           </p>
         </div>
       </div>

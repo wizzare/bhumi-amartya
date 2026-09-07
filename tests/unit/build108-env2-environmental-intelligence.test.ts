@@ -32,6 +32,8 @@ process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "test-project";
 process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "test.appspot.com";
 process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "123456789";
 process.env.NEXT_PUBLIC_FIREBASE_APP_ID = "1:123456789:web:test";
+process.env.ENABLE_DEV_VOLCANIC_ATTRIBUTION = "true"; // Enable test evaluation of mathematical trajectory logic in test runner
+process.env.ENABLE_DEV_OPEN_METEO = "false"; // Keep production gate default (calls blocked without commercial key)
 
 import {
   evaluateVolcanicContext,
@@ -45,6 +47,7 @@ import {
   writeEnv2Cache,
   readEnv2Cache,
 } from "../../lib/environment/env2Service";
+import { isOpenMeteoCallPermitted, isOpenMeteoCommercialConfigured } from "../../lib/environment/openMeteoGate";
 import type { EnvironmentalConditionPayload } from "../../lib/environment/env2Types";
 import { KNOWN_ACTIVE_VOLCANOES } from "../../lib/environment/knownVolcanoes";
 
@@ -273,13 +276,19 @@ ok(typeof readEnv2Cache === "function", "readEnv2Cache function exported");
 // 7. Schumann Isolation & Invariant Retention (CDI-108-03 D1)
 // ---------------------------------------------------------------------------
 
-console.log("\n--- [7/8] Schumann D1 Invariant Retention ---");
+console.log("\n--- [7/8] Schumann D1 Invariant Retention & Provider Gates ---");
 
 const schumannSourcePath = path.resolve(process.cwd(), "lib/environment/schumann.ts");
 const schumannSource = fs.readFileSync(schumannSourcePath, "utf-8");
 
 ok(schumannSource.includes("schumannresonancelive.com/api/data.php"), "Schumann API URL unchanged (no unauthorized provider swap)");
 ok(!schumannSource.includes("open-meteo") && !schumannSource.includes("noaa"), "Schumann does not infer from weather or NOAA");
+
+// Open-Meteo Production Provider Gate Verification
+delete process.env.NEXT_PUBLIC_OPEN_METEO_API_KEY;
+process.env.NODE_ENV = "production";
+equal(isOpenMeteoCommercialConfigured(), false, "Without commercial key, commercial configuration is false");
+equal(isOpenMeteoCallPermitted(), false, "In production without commercial key, Open-Meteo calls are strictly blocked (fail-closed)");
 
 // ---------------------------------------------------------------------------
 // 8. Surface Code Verification (AtmosphereVolcanicCard & Page)

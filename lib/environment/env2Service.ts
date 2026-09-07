@@ -6,6 +6,7 @@ import type {
   EnvironmentalDatumProvenance,
 } from "./env2Types";
 import { evaluateVolcanicContext, degreesToCardinal } from "./volcanicEngine";
+import { isOpenMeteoCallPermitted } from "./openMeteoGate";
 
 async function fetchWithTimeout(url: string, timeoutMs = 6000, init?: RequestInit): Promise<Response> {
   const controller = new AbortController();
@@ -85,28 +86,33 @@ export async function fetchEnvironmentalConditionPayload(
   let aqData: any = null;
   let weatherData: any = null;
 
-  try {
-    // Open-Meteo Air Quality API: requests surface variables only.
-    // Note: so2_column was rejected by Open-Meteo as an invalid variable. Total-column SO2 is unavailable from this endpoint.
-    const [aqRes, weatherRes] = await Promise.all([
-      fetchWithTimeout(
-        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`,
-        6000
-      ).catch(() => null),
-      fetchWithTimeout(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&elevation=true`,
-        6000
-      ).catch(() => null),
-    ]);
+  // STRICT PROVIDER GATE: Do not call free Open-Meteo in commercial production builds without commercial API key
+  const canCallOpenMeteo = isOpenMeteoCallPermitted();
 
-    if (aqRes && aqRes.ok) {
-      aqData = await aqRes.json().catch(() => null);
+  if (canCallOpenMeteo) {
+    try {
+      // Open-Meteo Air Quality API: requests surface variables only.
+      // Note: so2_column was rejected by Open-Meteo as an invalid variable. Total-column SO2 is unavailable from this endpoint.
+      const [aqRes, weatherRes] = await Promise.all([
+        fetchWithTimeout(
+          `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`,
+          6000
+        ).catch(() => null),
+        fetchWithTimeout(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m&elevation=true`,
+          6000
+        ).catch(() => null),
+      ]);
+
+      if (aqRes && aqRes.ok) {
+        aqData = await aqRes.json().catch(() => null);
+      }
+      if (weatherRes && weatherRes.ok) {
+        weatherData = await weatherRes.json().catch(() => null);
+      }
+    } catch (fetchErr) {
+      console.warn("[ENV2] Network fetch error:", fetchErr);
     }
-    if (weatherRes && weatherRes.ok) {
-      weatherData = await weatherRes.json().catch(() => null);
-    }
-  } catch (fetchErr) {
-    console.warn("[ENV2] Network fetch error:", fetchErr);
   }
 
   const aqCurrent = aqData?.current || {};
@@ -118,15 +124,17 @@ export async function fetchEnvironmentalConditionPayload(
 
   // 1. Surface Air Quality Domain
   const aqProvenance: EnvironmentalDatumProvenance = {
-    source: "copernicus_cams_open_meteo",
-    provider: "Copernicus Atmosphere Monitoring Service & Open-Meteo",
+    source: canCallOpenMeteo ? "copernicus_cams_open_meteo" : "open_meteo_unconfigured",
+    provider: canCallOpenMeteo ? "Copernicus Atmosphere Monitoring Service & Open-Meteo" : "Provider Unconfigured",
     dataset: "CAMS Global Air Quality Ensemble",
-    measurementOrModel: "modelled",
+    measurementOrModel: canCallOpenMeteo ? "modelled" : "unknown",
     observedAt: aqObservedAt,
     fetchedAt: nowIso,
-    freshness: "fresh",
+    freshness: canCallOpenMeteo ? "fresh" : "unknown",
     licensing: "CC BY 4.0",
-    attributionText: "Copernicus Atmosphere Monitoring Service (CAMS) & Open-Meteo",
+    attributionText: canCallOpenMeteo
+      ? "Copernicus Atmosphere Monitoring Service (CAMS) & Open-Meteo"
+      : "Open-Meteo commercial access is unconfigured (fail-closed).",
   };
 
   const surfaceAq: SurfaceAirQualityDomain = {
@@ -175,15 +183,17 @@ export async function fetchEnvironmentalConditionPayload(
   // 3. Wind Domain
   const windDirDeg = typeof weatherCurrent.wind_direction_10m === "number" ? weatherCurrent.wind_direction_10m : undefined;
   const windProvenance: EnvironmentalDatumProvenance = {
-    source: "open_meteo_weather",
-    provider: "National Weather Services (DWD/NOAA/ECMWF) via Open-Meteo",
+    source: canCallOpenMeteo ? "open_meteo_weather" : "open_meteo_unconfigured",
+    provider: canCallOpenMeteo ? "National Weather Services (DWD/NOAA/ECMWF) via Open-Meteo" : "Provider Unconfigured",
     dataset: "High-Resolution Numerical Weather Prediction",
-    measurementOrModel: "forecast",
+    measurementOrModel: canCallOpenMeteo ? "forecast" : "unknown",
     observedAt: weatherObservedAt,
     fetchedAt: nowIso,
-    freshness: "fresh",
+    freshness: canCallOpenMeteo ? "fresh" : "unknown",
     licensing: "ODbL / CC BY 4.0",
-    attributionText: "Open-Meteo Weather Model Assimilation",
+    attributionText: canCallOpenMeteo
+      ? "Open-Meteo Weather Model Assimilation"
+      : "Open-Meteo commercial access is unconfigured (fail-closed).",
   };
 
   const wind: WindDomain = {
@@ -225,7 +235,7 @@ export async function fetchEnvironmentalConditionPayload(
   // Cache only if at least surface air quality or weather returned data
   if (typeof surfaceAq.aqi === "number" || typeof wind.speedKph === "number") {
     writeEnv2Cache(payload);
-  } else if (cached) {
+  } else if (cached && canCallOpenMeteo) {
     // If live call returned nothing, fallback to cached record marked stale
     cached.overallFreshness = "stale";
     return cached;

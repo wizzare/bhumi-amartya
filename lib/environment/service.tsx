@@ -21,6 +21,7 @@ import type {
   SchumannFrequencyPoint,
   SchumannObservation,
 } from "./types";
+import { isOpenMeteoCallPermitted } from "./openMeteoGate";
 
 export type {
   EarthActivityDataState,
@@ -309,6 +310,7 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
 
   tasks.push(
     (async () => {
+      if (!isOpenMeteoCallPermitted()) return;
       const res = await fetchWithTimeout(
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,surface_pressure,wind_speed_10m,precipitation,uv_index,cloud_cover&daily=uv_index_max&timezone=auto`,
         5000,
@@ -342,6 +344,7 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
 
   tasks.push(
     (async () => {
+      if (!isOpenMeteoCallPermitted()) return;
       const res = await fetchWithTimeout(
         `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`,
         5000,
