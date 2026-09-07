@@ -6,6 +6,9 @@ import { useAuth } from "@/context/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
+import { AtmosphereVolcanicCard } from "@/components/dashboard/AtmosphereVolcanicCard";
+import { fetchEnvironmentalConditionPayload } from "@/lib/environment/env2Service";
+import type { EnvironmentalConditionPayload } from "@/lib/environment/env2Types";
 import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
@@ -168,6 +171,8 @@ export function DashboardClient() {
   // TEST CHANGE
 
 
+  const [env2Payload, setEnv2Payload] = useState<EnvironmentalConditionPayload | null>(null);
+
   useEffect(() => {
     const interval = window.setInterval(() => setAppNow(new Date()), APP_TIME_REFRESH_MS);
     return () => window.clearInterval(interval);
@@ -257,6 +262,24 @@ export function DashboardClient() {
     let guidanceMemoryContext: Record<string, unknown> | null = null;
 
     try {
+      // Non-blocking fetch of Environmental Intelligence v2 payload
+      if (typeof window !== "undefined" && window.navigator?.geolocation) {
+        window.navigator.geolocation.getCurrentPosition(
+          (pos: GeolocationPosition) => {
+            void fetchEnvironmentalConditionPayload(pos.coords.latitude, pos.coords.longitude)
+              .then((pl) => setEnv2Payload(pl))
+              .catch(() => null);
+          },
+          () => {
+            // Fallback to default coordinates if geolocation is not permitted
+            void fetchEnvironmentalConditionPayload(-6.2088, 106.8456)
+              .then((pl) => setEnv2Payload(pl))
+              .catch(() => null);
+          },
+          { timeout: 5000, maximumAge: 300000 }
+        );
+      }
+
       const existingDailyState = await dailyStateRepository.getDailyState(uid, today).catch(() => null);
       setDailyState(existingDailyState);
       await journeyRepository.ensureDailyRecord(uid, today, {
@@ -903,6 +926,12 @@ export function DashboardClient() {
       />
 
       <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
+
+      {env2Payload && (
+        <div className="mt-4">
+          <AtmosphereVolcanicCard payload={env2Payload} />
+        </div>
+      )}
 
       <WeeklyGuidanceCard guidance={weeklyGuidance} />
 

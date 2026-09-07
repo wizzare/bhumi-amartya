@@ -2,7 +2,7 @@
 **Bhumi Amartya — Dedicated English-Language Edition & Architecture**
 
 ```text
-STATUS                          = IN_PROGRESS (SPRINT 7 COMPLETE; SPRINT 8 PENDING FOUNDER REVIEW)
+STATUS                          = IN_PROGRESS (SPRINT 7 & ENV2 COMPLETE; SPRINT 8 PENDING FOUNDER REVIEW)
 CURRENT_BASELINE                = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 NEXT_PRIMARY_AGENT              = CODEX
@@ -17,7 +17,7 @@ CDI_BLOCKERS_OPEN              = 0
 SPRINT_108_05                  = COMPLETE
 SPRINT_108_06                  = COMPLETE
 SPRINT_108_07                  = COMPLETE
-SPRINT_108_ENV2                 = PLANNED
+SPRINT_108_ENV2                 = COMPLETE
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
 NEXT_SAFE_ACTION                = STOP_FOR_FOUNDER_REVIEW

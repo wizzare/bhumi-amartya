@@ -28,6 +28,9 @@ import { SchumannGraph } from "@/components/dashboard/SchumannGraph";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
+import { AtmosphereVolcanicCard } from "@/components/dashboard/AtmosphereVolcanicCard";
+import { fetchEnvironmentalConditionPayload } from "@/lib/environment/env2Service";
+import type { EnvironmentalConditionPayload } from "@/lib/environment/env2Types";
 import {
   getEnvironmentLocationPermission,
   requestCurrentEnvironmentLocation,
@@ -103,6 +106,7 @@ export default function EnvironmentDetailPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
+  const [env2Payload, setEnv2Payload] = useState<EnvironmentalConditionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
   const isEn = isEnlEdition() || language === "en";
@@ -167,8 +171,12 @@ export default function EnvironmentDetailPage() {
       }
 
       // Fetch fresh data (each provider is bounded by its own timeout).
-      const fresh = await getNormalizedEnvironment(location);
+      const [fresh, env2] = await Promise.all([
+        getNormalizedEnvironment(location),
+        fetchEnvironmentalConditionPayload(location.coordinates.latitude, location.coordinates.longitude).catch(() => null),
+      ]);
       setContext(fresh);
+      if (env2) setEnv2Payload(env2);
       setPermission("granted");
     } catch (err: any) {
       // If we already showed cache, keep showing it but flag the error.
@@ -270,6 +278,12 @@ export default function EnvironmentDetailPage() {
                   subValue={context.moon?.illuminationPercent !== undefined && context.moon?.illuminationPercent !== null ? `${context.moon.illuminationPercent}% ${t.environment.illumination || "cahaya"}` : (t.environment.awaitingNight || "Awaiting night phase")}
                 />
               </div>
+
+              {env2Payload && (
+                <div className="my-2">
+                  <AtmosphereVolcanicCard payload={env2Payload} />
+                </div>
+              )}
 
               <DetailItem
                 icon={<Leaf size={24} />}
