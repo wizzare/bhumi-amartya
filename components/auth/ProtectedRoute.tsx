@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { isEnlEdition } from '@/lib/config/edition';
 
 /**
  * Minimalist Protected Route.
@@ -58,7 +59,9 @@ export function ProtectedRoute({
       <div className="min-h-screen bg-[#FCFAF5] flex items-center justify-center">
         <div className="flex flex-col items-center gap-6">
           <div className="w-12 h-12 border-4 border-[#4F5E52]/10 border-t-[#4F5E52] rounded-full animate-spin"></div>
-          <p className="text-[#4F5E52]/60 font-serif">Menyelaraskan ruang...</p>
+          <p className="text-[#4F5E52]/60 font-serif">
+            {isEnlEdition() ? "Harmonizing space..." : "Menyelaraskan ruang..."}
+          </p>
         </div>
       </div>
     );

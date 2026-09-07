@@ -281,7 +281,7 @@ async function test5_postSetupAuthRefreshPresent(): Promise<void> {
   const { readFile } = await import("node:fs/promises");
   const src = await readFile(new URL("../../app/setup/page.tsx", import.meta.url), "utf8");
   const refreshIdx = src.indexOf("auth?.refreshUserProfile");
-  const redirectIdx = src.indexOf('router.replace("/dashboard');
+  const redirectIdx = src.lastIndexOf('router.replace("/dashboard');
   ok(refreshIdx !== -1, "TEST_5: finalizeSetup awaits auth.refreshUserProfile()");
   ok(redirectIdx !== -1, "TEST_5: finalizeSetup still routes to /dashboard");
   ok(refreshIdx < redirectIdx, "TEST_5: the refresh happens before the dashboard redirect");

@@ -25,6 +25,7 @@ import {
 } from '@/lib/auth/profileLoadOutcome';
 import { enforceFounderQaAllowlist } from '@/lib/auth/founderQaGuard';
 import { logSafeAuthError, warnSafeAuthError } from '@/lib/auth/safeDiagnostics';
+import { isEnlEdition } from '@/lib/config/edition';
 
 interface AuthContextType {
   user: User | null;
@@ -105,7 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
         if (!isCurrentRefresh()) return null;
-        setProfileError("Profil masih disiapkan. Silakan coba lagi.");
+        setProfileError(isEnlEdition() ? "Profile is still being prepared. Please try again." : "Profil masih disiapkan. Silakan coba lagi.");
         return null;
       } else {
         if (outcome.error instanceof ServerIssuedProfilePendingError) throw outcome.error;
@@ -113,18 +114,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
         if (!isCurrentRefresh()) return null;
-        setProfileError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
+        setProfileError(isEnlEdition() ? "Profile could not be loaded. Please check your connection and try again." : "Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
         throw outcome.error;
       }
     } catch (error) {
       if (!isCurrentRefresh()) return null;
       setUserProfile(null);
       if (error instanceof ServerIssuedProfilePendingError) {
-        setProfileError("Profil sedang disiapkan. Mohon tunggu.");
+        setProfileError(isEnlEdition() ? "Profile is being prepared. Please wait." : "Profil sedang disiapkan. Mohon tunggu.");
         return null;
       }
       if (!isCurrentRefresh()) return null;
-      setProfileError("Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
+      setProfileError(isEnlEdition() ? "Profile could not be loaded. Please check your connection and try again." : "Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
       throw error;
     } finally {
       if (isCurrentRefresh()) setProfileLoading(false);
@@ -303,7 +304,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               if (!isActive()) return;
               setUserProfile(null);
               if (!isActive()) return;
-              setProfileError("Terjadi kesalahan sinkronisasi akun.");
+              setProfileError(isEnlEdition() ? "Account synchronization error." : "Terjadi kesalahan sinkronisasi akun.");
             } else if (profile) {
               console.log("[USER DATA LOAD]", {
                 ownerMatched: true,
@@ -374,7 +375,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 firebaseUser.uid,
               );
               setUserProfile(null);
-              setProfileError("Profil sedang disiapkan. Mohon tunggu.");
+              setProfileError(isEnlEdition() ? "Profile is being prepared. Please wait." : "Profil sedang disiapkan. Mohon tunggu.");
               return;
             }
             logSafeAuthError("[AUTH PROFILE LOADING ERROR]", error);
