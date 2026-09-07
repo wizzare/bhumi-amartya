@@ -86,9 +86,11 @@ export async function fetchEnvironmentalConditionPayload(
   let weatherData: any = null;
 
   try {
+    // Open-Meteo Air Quality API: requests surface variables only.
+    // Note: so2_column was rejected by Open-Meteo as an invalid variable. Total-column SO2 is unavailable from this endpoint.
     const [aqRes, weatherRes] = await Promise.all([
       fetchWithTimeout(
-        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide,so2_column`,
+        `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&current=us_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,carbon_monoxide`,
         6000
       ).catch(() => null),
       fetchWithTimeout(
@@ -143,27 +145,30 @@ export async function fetchEnvironmentalConditionPayload(
     provenance: aqProvenance,
   };
 
-  // 2. Atmospheric Column SO2 Domain
-  const columnSo2UgM2 = typeof aqCurrent.so2_column === "number" ? Math.round(aqCurrent.so2_column) : undefined;
-  const dobsonUnits = typeof columnSo2UgM2 === "number" ? Math.round((columnSo2UgM2 / 28500) * 1000) / 1000 : undefined;
+  // 2. Atmospheric Column SO2 Domain — FAIL CLOSED
+  // Open-Meteo Air Quality API does not provide so2_column.
+  // CAMS ADS requires asynchronous batch queueing (Python ECMWF API), not accessible via direct client.
+  // Therefore, totalColumnSo2UgM2 is FAIL-CLOSED (undefined) to prevent synthetic fabrication.
+  const columnSo2UgM2: number | undefined = undefined;
+  const dobsonUnits: number | undefined = undefined;
 
   const atmosphereProvenance: EnvironmentalDatumProvenance = {
-    source: "copernicus_cams_tropomi",
-    provider: "European Space Agency Sentinel-5P TROPOMI & Copernicus ECMWF",
-    dataset: "CAMS Global Atmospheric Composition - SO2 Total Column",
-    measurementOrModel: "modelled",
+    source: "copernicus_cams_ads",
+    provider: "Copernicus Atmosphere Data Store (ADS)",
+    dataset: "CAMS Global Atmospheric Composition Forecasts",
+    measurementOrModel: "unknown",
     observedAt: aqObservedAt,
     fetchedAt: nowIso,
-    freshness: "fresh",
-    licensing: "Copernicus Open Access / CC BY 4.0",
-    attributionText: "ESA Sentinel-5P TROPOMI / Copernicus ECMWF CAMS",
+    freshness: "unknown",
+    licensing: "Copernicus Open Access",
+    attributionText: "Atmospheric total-column SO2 is currently unavailable from qualifying direct client source (fail-closed).",
   };
 
   const atmosphere: AtmosphericColumnDomain = {
-    totalColumnSo2UgM2: columnSo2UgM2,
-    totalColumnSo2DobsonUnits: dobsonUnits,
+    totalColumnSo2UgM2: undefined,
+    totalColumnSo2DobsonUnits: undefined,
     scientificUnit: "ug/m2",
-    anomalyDetected: typeof columnSo2UgM2 === "number" ? columnSo2UgM2 >= 25000 : null,
+    anomalyDetected: null,
     provenance: atmosphereProvenance,
   };
 

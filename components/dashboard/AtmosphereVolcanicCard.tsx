@@ -86,10 +86,12 @@ export function AtmosphereVolcanicCard({ payload, loading }: AtmosphereVolcanicC
             <span className="text-xl font-bold text-[#4F5E52]">
               {typeof atmosphere.totalColumnSo2DobsonUnits === "number"
                 ? `${atmosphere.totalColumnSo2DobsonUnits} DU`
-                : "—"}
+                : "Unavailable"}
             </span>
             <p className="text-[10px] font-medium text-[#7B8776] mt-0.5">
-              {atmosphere.anomalyDetected ? "Elevated Column" : "Nominal Column"}
+              {atmosphere.totalColumnSo2UgM2 !== undefined
+                ? (atmosphere.anomalyDetected ? "Elevated Column" : "Nominal Column")
+                : "Source Pending"}
             </p>
           </div>
           <p className="text-[9px] text-[#9AA394] mt-2">

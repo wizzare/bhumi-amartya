@@ -2,18 +2,18 @@
 **Data-Driven Page & Surface Implementation Roadmap**
 
 ```text
-STATUS                          = GATE_108_CDI CLOSED — SPRINTS 1–7 & ENV2 COMPLETE · SPRINT 8 PENDING FOUNDER REVIEW
+STATUS                          = SPRINT_108_ENV2 ON HOLD_FOR_SOURCE_CONTRACT_CORRECTION · SPRINT 8 PENDING FOUNDER REVIEW
 PRODUCTION_BASELINE             = BUILD 107 (versionCode 107, versionName 5.0.7)
 BASELINE_COMMIT                 = d2ecb5ed73b7bb5e95415be314305f3512533752
 DERIVED_SPRINT_COUNT            = 8 NUMBERED SPRINTS + ENV2 (+ 1 pre-Sprint-5 data-integrity gate)
-SPRINTS_COMPLETE               = 1, 2, 3, 4, 5, 6, 7, ENV2
+SPRINTS_COMPLETE               = 1, 2, 3, 4, 5, 6, 7
 BUILD_108_ENL_IMPLEMENTATION_STATUS = IN_PROGRESS
 GATE_108_CDI                    = CLOSED
 CDI_BLOCKERS_OPEN              = 0
 SPRINT_108_05                  = COMPLETE
 SPRINT_108_06                  = COMPLETE
 SPRINT_108_07                  = COMPLETE
-SPRINT_108_ENV2                 = COMPLETE
+SPRINT_108_ENV2                 = HOLD_FOR_SOURCE_CONTRACT_CORRECTION
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
 NEXT_SAFE_ACTION                = STOP_FOR_FOUNDER_REVIEW
