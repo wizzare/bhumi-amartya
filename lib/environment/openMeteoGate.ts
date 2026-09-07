@@ -1,25 +1,26 @@
 /**
  * Open-Meteo Provider Gate for Bhumi Production Compliance
  *
- * Invariant: Bhumi Amartya is a commercial mobile application offering subscription billing.
- * Open-Meteo terms of use strictly prohibit commercial/subscription apps from using the free tier:
- *   "Operating websites or apps that have subscriptions or display advertisements... are considered commercial use."
- *
- * Without an authorized commercial API key configured in the environment, all production calls
- * to Open-Meteo MUST fail closed to prevent unlicensed service use.
+ * Invariants:
+ * 1. Bhumi Amartya is a commercial mobile application offering subscription billing.
+ * 2. OPEN_METEO_FREE_PRODUCTION = FORBIDDEN
+ * 3. OPEN_METEO_COMMERCIAL_ACCESS = NOT_CONFIGURED
+ * 4. OPEN_METEO_CLIENT_KEY_ACTIVATION = FORBIDDEN_PENDING_ARCHITECTURE_AND_SECURITY_REVIEW
+ *    (NEXT_PUBLIC_OPEN_METEO_API_KEY is NOT an approved production activation mechanism,
+ *    as bundling secret or commercial API keys into public static web/Capacitor bundles exposes them).
+ * 5. In production builds, all calls to Open-Meteo are strictly FORBIDDEN (fail-closed).
  */
 
 export function isOpenMeteoCommercialConfigured(): boolean {
-  // Only permit Open-Meteo calls if an explicit commercial API key is supplied
-  const apiKey = process.env.NEXT_PUBLIC_OPEN_METEO_API_KEY;
-  return typeof apiKey === "string" && apiKey.trim().length > 0;
+  // Client-side key activation is forbidden pending separate architecture & security review
+  return false;
 }
 
 export function isOpenMeteoCallPermitted(): boolean {
-  // In production builds (NODE_ENV === "production" or production export), strict commercial gate applies
+  // In production builds (NODE_ENV === "production" or production export), Open-Meteo calls are strictly forbidden
   if (process.env.NODE_ENV === "production") {
-    return isOpenMeteoCommercialConfigured();
+    return false;
   }
-  // In local development / test mock runs, non-commercial calls are only permitted if explicitly enabled
-  return isOpenMeteoCommercialConfigured() || process.env.ENABLE_DEV_OPEN_METEO === "true";
+  // In local development / test mock runs only, calls are permitted ONLY if explicitly flagged for dev tests
+  return process.env.ENABLE_DEV_OPEN_METEO === "true";
 }

@@ -2,17 +2,19 @@
  * Known Volcano Catalog
  *
  * PROVENANCE & LEGAL AUDIT RECORD:
- * - Dataset: Volcanoes of the World (VOTW) Holocene Volcano List
- * - Source: Global Volcanism Program, Smithsonian Institution & USGS Volcano Hazards Program
- * - Current Official Database: VOTW v. 5.2.6 (released 2024; replaces v5.1.0)
+ * - Bundled Repository Dataset: Volcanoes of the World (VOTW) v5.1.0 Holocene Volcano List
+ * - Bundled Acquired Date: 2024
+ * - Current Official Database: VOTW v5.4.0 (Version Date: 2026-08-07, Smithsonian Institution / USGS)
+ * - Bundled vs Current: Preserved separately. Bundled catalog is VOTW v5.1.0 and is NOT claimed as current.
  * - Fields: Pure factual geographic coordinates (Name, Country, Region, Latitude, Longitude, Elevation, Morphology)
  * - Commercial Status: UNRESOLVED (Smithsonian Terms of Use reserve commercial licensing rights for database compilations;
  *   official commercial use requires prior written agreement).
  *
  * PRODUCTION POLICY (BUILD 108):
- * - In commercial production builds without explicit written agreement, named volcanic source attribution
- *   is FAIL-CLOSED (probableSource = null, volcanicOrigin = null).
- * - This catalog is retained as an informational reference / dev fixture only.
+ * - GVP_PRODUCTION_USE = UNRESOLVED
+ * - VOLCANIC_ATTRIBUTION_BUILD108 = ACCEPTED_UNAVAILABLE / FAIL-CLOSED
+ * - In production builds, named volcanic source attribution is strictly FAIL-CLOSED (probableSource = null, volcanicOrigin = null).
+ * - This catalog is retained as an offline geographical reference / dev fixture only.
  */
 
 export interface KnownVolcano {

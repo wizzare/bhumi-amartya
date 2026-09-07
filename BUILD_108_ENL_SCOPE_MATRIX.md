@@ -2,7 +2,7 @@
 **Comprehensive Localization & Surface Classification Ledger**
 
 ```text
-STATUS                          = SPRINT_108_ENV2 ON HOLD_FOR_SOURCE_CONTRACT_CORRECTION · SPRINT 8 PENDING FOUNDER REVIEW
+STATUS                          = SPRINT 8 VERIFICATION IN PROGRESS (SPRINTS 1–7 & ENV2 COMPLETE)
 BASELINE                        = BUILD 107 (versionCode 107, versionName 5.0.7)
 TOTAL_UI_SURFACES (ROUTES)      = 51
 COMPONENTS_AUDITED              = 105
@@ -13,10 +13,11 @@ CDI_BLOCKERS_OPEN              = 0
 SPRINT_108_05                  = COMPLETE
 SPRINT_108_06                  = COMPLETE
 SPRINT_108_07                  = COMPLETE
-SPRINT_108_ENV2                 = HOLD_FOR_SOURCE_CONTRACT_CORRECTION
+SPRINT_108_ENV2                 = COMPLETE (RATIFIED FAIL-CLOSED)
+SPRINT_108_08                   = IN_PROGRESS (RELEASE VERIFICATION)
 GATE_108_FRA                    = PLANNED
 BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = STOP_FOR_FOUNDER_REVIEW
+NEXT_SAFE_ACTION                = SPRINT_108_08_RECONCILIATION -> STOP_FOR_FOUNDER_REVIEW
 ```
 
 > **CORE DATA INTEGRITY GATE — READY_TO_CLOSE (final disposition 2026-09-07).** Three confirmed
