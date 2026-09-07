@@ -441,8 +441,8 @@ console.log("\n--- SECTION 11: Invariant & Guard Checks ---");
   const appBuildPath = path.join(ROOT, "android/app/build.gradle");
   if (fs.existsSync(appBuildPath)) {
     const gradle = fs.readFileSync(appBuildPath, "utf-8");
-    ok(gradle.includes("versionCode 107"), "versionCode 107 remains unchanged");
-    ok(gradle.includes('versionName "5.0.7"'), 'versionName "5.0.7" remains unchanged');
+    ok(gradle.includes("versionCode 108"), "versionCode 108 is configured");
+    ok(gradle.includes('versionName "5.0.8"'), 'versionName "5.0.8" is configured');
   }
 }
 
