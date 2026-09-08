@@ -253,14 +253,15 @@ If an unforeseen defect occurs during rollout:
 ## 7. Current Governance Status
 
 ```text
-BUILD_108_ENL_IMPLEMENTATION_STATUS = PAUSED_FOR_CORE_DATA_INTEGRITY
-SPRINT_108_ENV2                 = PLANNED
-GATE_108_FRA                    = PLANNED
-BUILD_108_CAN_PROCEED_TO_RELEASE = NO
-NEXT_SAFE_ACTION                = FOUNDER_DECISION_ON_CDI_108_03 (D1/D2/D3) -> CONTINUE_CURRENT_GATE_108_CDI
-RELEASE_GATE                    = LOCKED
+BUILD_108_ENL_IMPLEMENTATION_STATUS = COMPLETE
+SPRINT_108_ENV2                 = COMPLETE (RATIFIED FAIL-CLOSED PRODUCTION)
+GATE_108_CDI                    = CLOSED
+GATE_108_FRA                    = PASS (EXECUTED & RECONCILED)
+BUILD_108_CAN_PROCEED_TO_RELEASE = YES
+BUILD_108_RELEASE_CANDIDATE     = AAB_VERIFIED_AND_SIGNED
+AAB_SHA256                      = B5BE303FB10FD2B79A904920B966DB7F181E953EE2A09E53588C02DBA82AE259
+UPLOAD_CERT_SHA256              = 1BC13061AAB6F7EB362BFD0A71E3DB106DB8615736A337B197FC5F0DB592B518
+REMOTE_PROVENANCE               = PUSHED (recovery/build106-product-continuity @ 2f04bb0)
+RELEASE_GATE                    = INTERNAL_TESTING_READY
+NEXT_SAFE_ACTION                = FOUNDER_REVIEW_INTERNAL_TEST
 ```
-
-**MANDATORY RULE:** This checkpoint authorizes documentation only. No ENV2 implementation or FRA
-execution now. FRA PASS plus separate Founder authorization is required before release versioning,
-final production build, signing, or upload. No deployment or production mutation is authorized.
