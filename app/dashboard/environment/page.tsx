@@ -109,7 +109,7 @@ export default function EnvironmentDetailPage() {
   const [env2Payload, setEnv2Payload] = useState<EnvironmentalConditionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = language === "en";
   const t = translations[isEn ? "en" : language];
   const locale = isEn ? "en-US" : language === "ms" ? "ms-MY" : "id-ID";
   const schumannSeries = getSchumannSeries();

@@ -200,11 +200,9 @@ function testLanguageContextSource(): void {
   const contextPath = path.join(ROOT, "app", "context", "LanguageContext.tsx");
   const source = fs.readFileSync(contextPath, "utf-8");
 
-  ok(source.includes("isEnlEdition()"), "LanguageContext checks isEnlEdition()");
-  // Must return "en" when isEnlEdition() is true
-  ok(source.includes('if (isEnlEdition()) {\n        return "en";\n      }'), "Initializes to 'en' in ENL edition");
-  // Must not persist profile rewrite in ENL edition
-  ok(source.includes('if (isEnlEdition()) {\n        setLanguage("en");\n        return;\n      }'), "ENL edition prevents destructive profile rewrite on changeLanguage");
+  ok(!source.includes("isEnlEdition"), "LanguageContext does not use edition as locale authority");
+  ok(source.includes("resolveEffectiveLocale("), "LanguageContext resolves runtime locale precedence");
+  ok(source.includes('upsertUserProfile(uid, { language: normalizeLocale(lang) })'), "Explicit selection persists only the canonical language patch");
 
   console.log("  6. LanguageContext safety & continuity invariants .. PASS");
 }

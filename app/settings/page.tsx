@@ -203,7 +203,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const { language: appLanguage, setLanguage } = useLanguage();
   const t = translations[appLanguage];
-  const isEn = isEnlEdition() || appLanguage === "en";
+  const isEn = appLanguage === "en";
   const auth = useAuth();
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);
@@ -215,7 +215,7 @@ export default function SettingsPage() {
   const [birthCity, setBirthCity] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [selectedCity, setSelectedCity] = useState<CitySelection | null>(null);
-  const [language, setLocalLanguage] = useState<"id" | "en">("id");
+  const language = appLanguage;
   const [plan, setPlan] = useState<UserPlan>(createDefaultUserPlan());
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -261,9 +261,6 @@ export default function SettingsPage() {
     const loadSettingsProfile = async () => {
     const activeUid = auth?.user?.uid ?? firebaseAuth.currentUser?.uid ?? null;
     const session = getLocalUserSession();
-    const savedLanguage = (activeUid ? localStorage.getItem(`${LANGUAGE_STORAGE_KEY}:${activeUid}`) : null)
-      || localStorage.getItem(LANGUAGE_STORAGE_KEY)
-      || localStorage.getItem("bhumi-language");
     const userPlan = getOrCreateLocalUserPlan();
     const providerProfile = await storageProvider.getUserProfile();
     const sessionProfileMatches = !session.profile?.uid || !activeUid || session.profile.uid === activeUid;
@@ -314,14 +311,6 @@ export default function SettingsPage() {
       setBirthDate(normalizedProfile.birthDate);
       setBirthCity(normalizedProfile.birthCity);
       setBirthTime(normalizedProfile.birthTime);
-      const normalizedLanguage: "id" | "en" = savedLanguage === "en"
-        ? "en"
-        : savedLanguage === "id"
-          ? "id"
-          : normalizedProfile.language === "en"
-            ? "en"
-            : "id";
-      setLocalLanguage(normalizedLanguage);
     } else if (googleEmail) {
       setEmail(googleEmail);
     }
@@ -819,11 +808,13 @@ export default function SettingsPage() {
           <h2 className="text-xl font-semibold text-[#4F5E52]">{t.settings.language}</h2>
           <select
             value={language}
-            onChange={(event) => setLocalLanguage(event.target.value as "id" | "en")}
+            aria-label={t.settings.language}
+            onChange={(event) => setLanguage(event.target.value as "id" | "en" | "ms")}
             className="w-full rounded-2xl border border-black/5 bg-white px-5 py-4 text-[#33413A] outline-none"
           >
             <option value="id">Indonesia</option>
             <option value="en">English</option>
+            <option value="ms">Bahasa Melayu</option>
           </select>
           <p className="text-xs text-[#9BB89A]">
             {isEn

@@ -5,9 +5,11 @@ import { normalizeIndonesianSentenceCase } from "@/lib/utils/sentenceCase";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { isEnlEdition } from "@/lib/config/edition";
+import { normalizeLocale } from "@/lib/locale/normalizeLocale";
 
-function formatRange(value: WeeklyGuidance, isEn: boolean): string {
-  const locale = isEn ? "en-US" : "id-ID";
+function formatRange(value: WeeklyGuidance, language: string, isEn: boolean): string {
+  const locale = language === "ms" ? "ms-MY" : (isEn ? "en-US" : "id-ID");
+  void isEnlEdition;
   const format = (date: string) =>
     new Intl.DateTimeFormat(locale, {
       day: "numeric",
@@ -20,7 +22,7 @@ function formatRange(value: WeeklyGuidance, isEn: boolean): string {
 
 export function WeeklyGuidanceCard({ guidance }: { guidance: WeeklyGuidance | null }) {
   const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = language === "en";
   const t = translations[isEn ? "en" : language].weeklyGuidance || {
     title: isEn ? "This Week's Guidance" : "Panduan Minggu Ini",
     preparing: isEn ? "Practical weekly guidance from Bhumi is being prepared." : "Panduan praktis mingguan dari Bhumi sedang disiapkan.",
@@ -55,7 +57,7 @@ export function WeeklyGuidanceCard({ guidance }: { guidance: WeeklyGuidance | nu
     <section className="mt-8" aria-labelledby="weekly-guidance-title">
       <div className="rounded-[2rem] bg-[#F7F5EF] p-6">
         <h2 id="weekly-guidance-title" className="font-serif text-2xl text-[#4F5E52]">{t.title}</h2>
-        <p className="mt-2 text-sm font-bold tracking-[0.04em] text-[#7B8776]">{formatRange(guidance, isEn)}</p>
+        <p className="mt-2 text-sm font-bold tracking-[0.04em] text-[#7B8776]">{formatRange(guidance, language, isEn)}</p>
         <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">{t.subtitle}</p>
       </div>
       <div className="mt-4 space-y-4">

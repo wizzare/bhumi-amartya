@@ -131,7 +131,8 @@ export default function LandingPage() {
         </button>
       </div>
 
-      {!isEnlEdition() && (
+      {/* BUILD 109: selector visibility preserved across editions */}
+      {(!isEnlEdition() || true) && (
         <div className="mt-12 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center">
           {/* Build 106 R-34: functional locale switcher (id / en / ms, D-V5-35).
               Recovered from CP-036 app/page.tsx switcher hunk. */}

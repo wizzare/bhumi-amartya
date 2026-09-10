@@ -2,6 +2,15 @@ export type CanonicalLocale = "id-ID" | "en-US" | "ms-MY";
 
 export const DEFAULT_LOCALE: CanonicalLocale = "id-ID";
 
+export function resolveEffectiveLocale(...sources: unknown[]): CanonicalLocale {
+  for (const source of sources) {
+    if (typeof source === "string" && /^(id|en|ms)(?:[-_][a-z0-9]+)*$/i.test(source.trim())) {
+      return normalizeLocale(source);
+    }
+  }
+  return DEFAULT_LOCALE;
+}
+
 export function normalizeLocale(input: unknown): CanonicalLocale {
   if (typeof input !== "string" || !input.trim()) {
     return DEFAULT_LOCALE;

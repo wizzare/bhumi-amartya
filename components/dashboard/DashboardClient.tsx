@@ -22,6 +22,7 @@ import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRep
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
 import { isEnlEdition } from "@/lib/config/edition";
+import { useLanguage } from "@/app/context/LanguageContext";
 import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { userRepository } from "@/lib/repositories/userRepository";
@@ -151,10 +152,10 @@ export function DashboardClient() {
   // switcher persists a normalized locale; `translations` is keyed by the short
   // code, so resolve it here or `translations[tag]` is undefined and the render
   // crashes (BUILD_106_REGRESSION, RC-2 rendered verification, Step 12).
-  const language = getDictionaryKey(profile?.language ?? "id");
-  const isEnl = isEnlEdition();
+  const { language } = useLanguage();
+  const isEnl = false && isEnlEdition();
   const legacyUiLanguage: "id" | "en" = isEnl || language === "en" ? "en" : "id";
-  const t = translations[isEnl ? "en" : language];
+  const t = translations[language];
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
   const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
@@ -241,15 +242,11 @@ export function DashboardClient() {
 
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    const profileLanguage = String(p?.language || p?.profile?.language || "id").toLowerCase();
-    const guidanceLanguage: "id" | "en" | "ms" = profileLanguage.startsWith("en")
-      ? "en"
-      : profileLanguage.startsWith("ms")
-        ? "ms"
-        : "id";
+    const profileLanguage = String(language).toLowerCase();
+    const guidanceLanguage: "id" | "en" | "ms" = language;
     const today = getLocalDateKey(appNow, timezone);
     const envWindowKey = getEnvironmentWindowKey(appNow, today);
-    const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}`;
+    const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}:${guidanceLanguage}`;
     const invalidCacheKeys = ["dailyGuidance", `dailyGuidance:${today}`, "dailyGuidance:today", "globalDailyGuidance", "sharedReflection", "staticReflection"];
 
     setDgLoading(true);
@@ -906,12 +903,12 @@ export function DashboardClient() {
           lifePath: t.dashboard.lifePath,
           arcanaCenter: t.dashboard.arcanaCenter,
           sunSign: t.dashboard.sunSign,
-          humanDesign: isEnl || language === "en" ? "Human Design Type" : t.dashboard.humanDesign,
+          humanDesign: language === "en" ? "Human Design Type" : t.dashboard.humanDesign,
           humanDesignPending: t.dashboard.humanDesignPending,
           humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
-          unavailable: t.dashboard.unavailable || (isEnl || language === "en" ? "Not available" : "Belum tersedia"),
-          calculatingInProgress: t.dashboard.calculatingInProgress || (isEnl || language === "en" ? "Calculation in progress" : "Perhitungan sedang berlangsung"),
-          cannotCalculate: t.dashboard.cannotCalculate || (isEnl || language === "en" ? "Human Design data cannot be calculated." : "Data Human Design belum dapat dihitung."),
+          unavailable: t.dashboard.unavailable || (language === "en" ? "Not available" : "Belum tersedia"),
+          calculatingInProgress: t.dashboard.calculatingInProgress || (language === "en" ? "Calculation in progress" : "Perhitungan sedang berlangsung"),
+          cannotCalculate: t.dashboard.cannotCalculate || (language === "en" ? "Human Design data cannot be calculated." : "Data Human Design belum dapat dihitung."),
         }}
       />
 
@@ -941,7 +938,7 @@ export function DashboardClient() {
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">
-          {(isEnl || language === "en") ? (t.dashboard.footerQuote || "This space remains here whenever you return.") : (t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali.")}
+          {          language === "en" ? (t.dashboard.footerQuote || "This space remains here whenever you return.") : (t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali.")}
         </p>
       </footer>
 

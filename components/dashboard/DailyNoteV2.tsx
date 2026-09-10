@@ -16,7 +16,7 @@ import { IntelligenceCard } from "./IntelligenceCard";
 interface DailyNoteV2Props {
   dailyGuidance: DailyGuidance | null;
   focus?: string;
-  language: "id" | "en";
+  language: "id" | "en" | "ms";
   userName: string;
   dailyState: DailyState | null;
   yesterdayState: DailyState | null;
@@ -47,7 +47,8 @@ export function DailyNoteV2({
   appNow = new Date(),
 }: DailyNoteV2Props) {
   const auth = useAuth();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = language === "en";
+  void isEnlEdition;
 
   React.useEffect(() => {
     if (dailyGuidance) trackEvent("open_daily_note", auth?.user?.uid);

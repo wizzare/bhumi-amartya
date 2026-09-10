@@ -21,7 +21,8 @@ export default function PremiumBhumiPage() {
   const auth = useAuth();
   const { language } = useLanguage();
   const t = translations[language];
-  const isEn = isEnlEdition();
+  const isEn = language === "en";
+  void isEnlEdition;
   const [profile, setProfile] = useState<any>(null);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [loading, setLoading] = useState(true);

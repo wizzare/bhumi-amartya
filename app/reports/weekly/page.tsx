@@ -15,11 +15,12 @@ import {
   type WeeklySoulReportOutput,
 } from "@/lib/reports/createWeeklySoulReport";
 import { syncDerivedCacheFromStorageProvider } from "@/lib/storage/syncDerivedCache";
-import { isEnlEdition } from "@/lib/config/edition";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 export default function WeeklyReportPage() {
   const auth = useAuth();
-  const isEn = isEnlEdition();
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const [report, setReport] = useState<WeeklySoulReportOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [locked, setLocked] = useState(false);

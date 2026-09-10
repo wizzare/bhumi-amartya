@@ -31,16 +31,16 @@ import { applyArsipAkashiContentToV3Section, buildSoulLettersV3Section } from "@
 import { classifyProfileReadiness, type ProfileReadiness } from "@/lib/arsipAkashi/profile/readiness";
 import { isCurrentProfilePageLoad, resolveProfilePageLoadState, type ProfileDailyGuidanceSource } from "@/lib/profile/profilePageLoadState";
 
-import { isEnlEdition } from "@/lib/config/edition";
+import { useLanguage } from "@/app/context/LanguageContext";
 
 type LocalRecord = Record<string, unknown>;
 
-function profileName(profile: LocalRecord): string {
+function profileName(profile: LocalRecord, language: string = "id"): string {
   for (const key of ["fullName", "displayName", "name"]) {
     const value = profile[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return isEnlEdition() ? "Bhumi Resident" : "Penghuni Bhumi";
+  return language === "en" ? "Bhumi Resident" : "Penghuni Bhumi";
 }
 
 function slugify(title: string) {
@@ -61,7 +61,8 @@ type BlueprintCard = {
 
 function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
   void bazi;
-  const isEn = isEnlEdition();
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const cards: BlueprintCard[] = [
     {
       title: "Life Path",
@@ -165,6 +166,8 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
 
 export default function ProfilePage() {
   const auth = useAuth();
+  const { language } = useLanguage();
+  const isEn = language === "en";
   const trackedRef = useRef(false);
   const activeProfileLoadRef = useRef(0);
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
@@ -176,7 +179,7 @@ export default function ProfilePage() {
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dailyNoteState, setDailyNoteState] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [dailyNoteError, setDailyNoteError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<"id" | "en">("id");
+  const [profileLanguage, setProfileLanguage] = useState<"id" | "en">("id");
   const [loading, setLoading] = useState(true);
   const [readiness, setReadiness] = useState<ProfileReadiness>({ status: "loading" });
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
@@ -236,9 +239,9 @@ export default function ProfilePage() {
           if (!isCurrent()) return;
           setReadiness(classifyProfileReadiness(profile as unknown as Record<string, unknown>));
           if (!isCurrent()) return;
-          setName(profileName(profile as unknown as LocalRecord));
+          setName(profileName(profile as unknown as LocalRecord, language));
           if (!isCurrent()) return;
-          setLanguage((profile as any).language === "en" ? "en" : "id");
+          setProfileLanguage((profile as any).language === "en" ? "en" : "id");
         }
         if (blueprint) {
           const canonicalBlueprint = blueprint as unknown as Blueprint;
@@ -335,7 +338,6 @@ export default function ProfilePage() {
     };
   }, [auditUser]);
 
-  const isEn = isEnlEdition();
   if (loading) return <main className="flex min-h-screen items-center justify-center bg-[#FCFAF5] text-[#4F5E52]">{isEn ? "Opening your profile..." : "Membuka profilmu..."}</main>;
   if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">{isEn ? "Your profile is not ready yet. Please complete your birth data first." : "Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu."}</p></main>;
 
