@@ -28,8 +28,8 @@ BILLING_REGRESSION                  = PASS (61 contract + 18 presentation + 22 a
 ENV2_REGRESSION                     = PASS (54 assertions)
 PRODUCTION_SURFACE_REGRESSION       = PASS (131 assertions)
 BUILD109_TESTS                      = PASS (52 assertions, exit 0)
-DEVICE_RUNTIME                      = PENDING_ENVIRONMENT (SDK_AND_AVD_AVAILABLE; NO_ATTACHED_DEVICE)
-RELEASE_CRITICAL_GAPS               = 0_IN_SOURCE; PHYSICAL_DEVICE_QA_PENDING_FOUNDER_ENVIRONMENT
+DEVICE_RUNTIME                      = PASS_ON_PIXEL_8_EMULATOR (API 36, sdk_gphone16k_x86_64)
+RELEASE_CRITICAL_GAPS               = 0_IN_SOURCE; EMULATOR_ACCEPTANCE_PASS; PHYSICAL_DEVICE_QA_PENDING_FOUNDER_ENVIRONMENT
 BUILD109_CAN_PROCEED_TO_RELEASE     = NO (FOUNDER_SIGN_OFF_REQUIRED)
 ```
 
@@ -90,12 +90,48 @@ All 20 test suites were executed with Node.js v24.19.0 against synthetic release
 | **Typecheck (`npx tsc --noEmit`)** | Repository-wide | 0 errors | 0 | **PASS** |
 | **Linter (`npm run lint`)** | `eslint app components lib src` | 0 errors (323 pre-existing warnings) | 0 | **PASS** |
 
-## 4. Device Runtime Verification & Hardware Limitations
+## 4. Device Runtime Verification (Pixel_8 AVD Acceptance)
 
-- **Android SDK & Tools:** `adb.exe` and `emulator.exe` verified present in `C:\Users\shein\AppData\Local\Android\Sdk`.
-- **Available AVDs:** `Pixel_8` (API 34/35) available on local system.
-- **Connection Status:** `adb devices` reports no currently running emulator or attached physical device.
-- **Limitation Statement:** Per release safety policy, no production Google Play or physical device credentials were used, and device acceptance is marked `PENDING_ENVIRONMENT`. Local headless emulator testing was not executed to prevent untracked state corruption or unauthorized builds. Full multi-language switching (`id-ID -> en-US -> id-ID`) was thoroughly verified via the `build109-locale-authority` automated lifecycle test suite.
+- **Target Device:** Pixel_8 AVD (`emulator-5554`, `ro.product.model: sdk_gphone16k_x86_64`, API 36).
+- **Build & Packaging:**
+  - `npm run build`: 76/76 static routes exported, 110 Next static RSC aliases created (Exit 0).
+  - `npx cap sync android`: Web assets synced to `android/app/src/main/assets/public` (Exit 0).
+  - Gradle debug build: `android/app/build/outputs/apk/debug/app-debug.apk` (12,771,625 bytes, `versionCode 108`, `versionName "5.0.8"`, `applicationId "com.bhumiamartya.app"`).
+  - Clean installation via `adb install` to Pixel_8 AVD.
+- **Chrome DevTools Remote Protocol (CDP) & UI Automator Evidence:**
+  1. **id-ID Cold Launch (`01_cold_launch_id_device.png`, `01_landing_cold_id.png`):**
+     - Device locale: `id-ID` (`cmd locale set-device-locale id-ID`).
+     - Fresh launch with clean storage (`pm clear`).
+     - Evaluated state: `htmlLang = "id-ID"`, `navLang = "id-ID"`, `storageBhumiLang = null`.
+     - Rendered text: *"Ruang untuk pulang, mengenali diri, dan bertumbuh perlahan."*
+     - Buttons: *"Aku Baru di Sini"*, *"Aku Sudah Pernah Daftar"*, *"Indonesia"*, *"English"*, *"Melayu"*.
+  2. **en-US Cold Launch (`02_landing_cold_en.png`):**
+     - Device locale: `en-US` (`cmd locale set-device-locale en-US`).
+     - Fresh launch with clean storage (`pm clear`).
+     - Evaluated state: `htmlLang = "en-US"`, `navLang = "en-US"`, `storageBhumiLang = null`.
+     - Rendered text: *"A space to return home, understand yourself, and grow gently."*
+     - Buttons: *"I Am New Here"*, *"I Already Have an Account"*, *"Indonesia"*, *"English"*, *"Melayu"*.
+  3. **Interactive In-App Locale Switching (`03_switched_to_id.png`):**
+     - Clicked "Indonesia" -> immediate reactive DOM update to `htmlLang = "id-ID"`, `storageBhumiLang = "id"`, Indonesian copy and buttons.
+     - Clicked "English" -> immediate reactive DOM update to `htmlLang = "en-US"`, `storageBhumiLang = "en"`, English copy and buttons.
+  4. **Persistence Across App Restart (`04_persisted_id_after_restart.png`, `05_persisted_en_with_id_device.png`):**
+     - Test A: User selected `id`, app force-stopped (`am force-stop`), device kept at `en-US`. On relaunch, app loaded in Indonesian (`htmlLang = "id-ID"`, `storageBhumiLang = "id"`, *"Ruang untuk pulang..."*). Confirmed user preference supersedes device locale.
+     - Test B: User selected `en`, app force-stopped, device set to `id-ID`. On relaunch, app loaded in English (`htmlLang = "en-US"`, `storageBhumiLang = "en"`, *"A space to return home..."*). Confirmed persistence across conflicting device locale.
+  5. **Malay (ms-MY) Verification (`08_melayu_login.png`):**
+     - Clicked "Melayu" -> `htmlLang = "ms-MY"`, `storageBhumiLang = "ms"`.
+     - Rendered text: *"Ruang untuk pulang, mengenali diri, dan membesar dengan lembut."*
+     - Buttons: *"Saya Baru di Sini"*, *"Saya Sudah Mendaftar"*.
+  6. **Multi-Route Navigation (`06_login_id.png`, `07_login_en.png`):**
+     - Navigated from Landing to `/login/?next=/dashboard`.
+     - In Indonesian: *"Masuk untuk melanjutkan perjalanan pengenalan dirimu"*, button *"Lanjutkan dengan Google"*.
+     - In English: *"Sign in to continue your journey of self-discovery"*, button *"Continue with Google"*.
+     - Zero navigation loops or routing errors.
+  7. **Stability & Crash Checks:**
+     - Fatal crashes: 0.
+     - ANR events: 0.
+     - Firebase initialization errors: 0.
+     - Logcat inspection: clean runtime execution (`[AUTH INIT READY]`, `[LANDING RENDER]`).
+  8. **Visual Artifacts:** 9 high-resolution PNG captures archived in `screenshots/build109-emulator/`.
 
 ## 5. File Diff Summary
 
