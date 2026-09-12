@@ -32,6 +32,7 @@ export class AIGateway {
   public static async generateStructuredJson<T>(
     request: AIRequest
   ): Promise<AIResponse<T>> {
+    request = { ...request, language: "id" };
     const startTime = Date.now();
     const promptKey = request.promptKey;
     const language = request.language;

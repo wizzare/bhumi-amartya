@@ -297,7 +297,7 @@ export default function PremiumBhumiPage() {
           <p className="text-xs text-[#9BB89A] text-center">
             {isEn
               ? `Monthly subscription ${priceLabel}. Cancel anytime via Google Play.`
-              : (t.premiumBhumi?.subscriptionNote || `Langganan bulanan ${priceLabel}. Dapat dibatalkan kapan saja melalui Google Play.` || "Langganan bulanan Rp25.000/bulan")}
+              : `Langganan bulanan ${priceLabel}. Dapat dibatalkan kapan saja melalui Google Play.`}
           </p>
         </section>
 

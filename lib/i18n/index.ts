@@ -81,11 +81,5 @@ export function changeI18nLanguage(_short: SupportedShortCode): void {
  * Reads FROM the canonical resources — not a second store.
  */
 export function getCompatDictionaries(): Record<SupportedShortCode, Record<string, any>> {
-  const merged = deepMerge(RAW_BUNDLES["id-ID"], RAW_BUNDLES["en-US"], RAW_BUNDLES["ms-MY"]);
-  return {
-    // priority: active > en > id
-    id: deepMerge(merged, RAW_BUNDLES["id-ID"]) as Record<string, any>,
-    en: deepMerge(merged, RAW_BUNDLES["en-US"]) as Record<string, any>,
-    ms: deepMerge(merged, RAW_BUNDLES["ms-MY"]) as Record<string, any>,
-  };
+  return { id: RAW_BUNDLES["id-ID"], en: RAW_BUNDLES["id-ID"], ms: RAW_BUNDLES["id-ID"] };
 }

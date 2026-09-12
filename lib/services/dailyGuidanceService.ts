@@ -479,8 +479,6 @@ async function executeGetOrGenerateDailyGuidance(params: {
         arcanaCenter: blueprint.destinyMatrix?.center || 0,
         rawBlueprint: blueprint,
         unifiedBlueprint: buildUnifiedBlueprintSynthesis({
-    // R-PRD-31: carry the user's true locale (id/en/ms); accepts short or BCP47 tags.
-    // Build 110 Indonesian-only runtime ignores profile.language.startsWith("ms") or "en".
     language: "id",
           profile,
           blueprint,

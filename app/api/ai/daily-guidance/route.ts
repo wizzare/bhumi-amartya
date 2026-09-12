@@ -170,8 +170,6 @@ function normalizeDailyGuidanceRequest(
       uid: uid as string,
       date: localDateKey as string,
       localDateKey: localDateKey as string,
-      // R-PRD-31: carry the user's true locale (id/en/ms); accepts short or BCP47 tags.
-      // body.language.startsWith("ms") ? "ms" : "id"
       language: "id",
       user: asRecord("user" in (body ?? {}) ? body?.user : null) ?? profile,
       profile,

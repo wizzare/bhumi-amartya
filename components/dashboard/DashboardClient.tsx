@@ -148,7 +148,7 @@ export function DashboardClient() {
   // switcher persists a normalized locale; `translations` is keyed by the short
   // code, so resolve it here or `translations[tag]` is undefined and the render
   // crashes (BUILD_106_REGRESSION, RC-2 rendered verification, Step 12).
-  const language = getDictionaryKey(profile?.language ?? "id");
+  const language = getDictionaryKey("id-ID");
   const isEnl = isEnlEdition();
   const legacyUiLanguage: "id" | "en" = isEnl || language === "en" ? "en" : "id";
   const t = translations[isEnl ? "en" : language];
