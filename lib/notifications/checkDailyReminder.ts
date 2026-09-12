@@ -81,9 +81,6 @@ export function pickUnifiedDailyReminderMessage(input: {
   adaptiveContext?: DailyGuidanceAdaptiveContext;
   seed?: number;
 }): string {
-  if (input.language === "en") {
-    return "Your Bhumi space is here whenever you are ready.";
-  }
 
   return "Ruang Bhumi ada di sini kapan pun kamu siap.";
 }
@@ -98,7 +95,7 @@ export function pickAdaptiveRetentionNotification(input: {
   dailyPractices?: Record<string, unknown>[];
   astrologyToday?: string | null;
 }): { state: RetentionNotificationState; message: string } {
-  const retention = createAdaptiveRetention(input);
+  const retention = createAdaptiveRetention({ ...input, language: "id" });
   return {
     state: retention.notificationState,
     message: retention.notificationMessage,

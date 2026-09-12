@@ -267,7 +267,7 @@ function AudioHealingExperience() {
         </section>
 
         <section className="bhumi-card p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Save</h2>
+          <h2 className="text-xl font-semibold text-[#4F5E52]">Bagian C · Simpan</h2>
           <button
             type="button"
             onClick={handleSave}

@@ -222,7 +222,7 @@ export async function loadWellnessDailyIntelligence(input: {
   }
 
   const unifiedBlueprint = input.unifiedBlueprint ?? buildUnifiedBlueprintSynthesis({
-    language: input.profile?.language === "en" ? "en" : "id",
+    language: "id",
     profile: input.profile,
     blueprint: input.blueprint,
   });

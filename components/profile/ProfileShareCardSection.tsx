@@ -86,7 +86,7 @@ function buildLocalShareGuidance(params: {
       previousProgressSummary: "Share card local fallback",
       previousGuidanceSummaries: [],
     },
-    language: params.profile?.language === "en" ? "en" : "id",
+    language: "id",
     generatedAt: new Date().toISOString(),
   } satisfies DailyGuidanceInput);
 

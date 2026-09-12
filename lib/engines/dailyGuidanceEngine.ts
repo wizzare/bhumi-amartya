@@ -1,3 +1,4 @@
+import { isEnlEdition } from "@/lib/config/edition";
 import { AIGateway } from "@/lib/ai/gateway";
 import { buildIdentitySnapshot } from "@/lib/ai/identitySnapshot";
 import { MemoryCompiler } from "@/lib/livingIntelligence/memoryCompiler";
@@ -680,7 +681,7 @@ function buildInfluence(context: any): {
   tags: string[];
   sources: Array<{ sentence: string; source: string }>;
 } {
-  const isEn = context?.language === "en";
+  const isEn = isEnlEdition();
   const dailyState = context?.dailyState ?? context?.wellnessState ?? null;
   const previousDailyState = context?.previousDailyState ?? context?.previousDayState ?? null;
   const healingMemory = context?.healingMemory ?? context?.journeyMemory ?? null;

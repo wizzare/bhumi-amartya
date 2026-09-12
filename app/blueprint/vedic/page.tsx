@@ -137,7 +137,7 @@ export default function VedicPage() {
           ) : loadFailed ? (
             <EmptyState message={isEn ? "Vedic Astrology calculation could not be loaded. Please check your birth time and location details." : "Perhitungan Vedic Astrology belum dapat dibuka. Periksa kembali data waktu dan lokasi kelahiranmu."} />
           ) : presentation.status === "unavailable" ? (
-            <EmptyState message={isEn ? "Vedic Astrology data is not yet available. Complete birth time and location are required to verify Lagna and Houses." : "Data Vedic Astrology belum tersedia. Waktu dan lokasi kelahiran lengkap diperlukan untuk memverifikasi Lagna dan Houses."} />
+            <EmptyState message={isEn ? "Vedic Astrology data is not yet available. Complete birth time and location are required to verify Lagna and Houses." : "Data Vedic Astrology belum tersedia. Waktu dan lokasi kelahiran lengkap diperlukan untuk memverifikasi Lagna dan Rumah."} />
           ) : (
             <VedicContent presentation={presentation} isEn={isEn} />
           )}
@@ -158,7 +158,7 @@ function VedicContent({ presentation, isEn }: { presentation: VedicPresentation;
         <p className="rounded-2xl border border-[#E8E1D3] bg-white p-5 text-sm leading-7 text-[#7B8776]">
           {isEn
             ? "This reading only displays verified data points. Lagna, Houses, or cycles that cannot be confirmed without exact birth time are safely omitted."
-            : "Pembacaan ini hanya menampilkan data yang dapat diverifikasi. Lagna, Houses, atau siklus yang tidak didukung oleh data kelahiran aktif disembunyikan."}
+            : "Pembacaan ini hanya menampilkan data yang dapat diverifikasi. Lagna, Rumah, atau siklus yang tidak didukung oleh data kelahiran aktif disembunyikan."}
         </p>
       )}
 

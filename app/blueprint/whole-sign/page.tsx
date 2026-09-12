@@ -110,18 +110,18 @@ export default function WholeSignPage() {
               {presentation.moon && <NarrativeCard card={presentation.moon} isEn={isEn} />}
             </div>
 
-            {presentation.planets.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">Planetary Placements</h2><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{presentation.planets.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
-            {presentation.houses.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">Twelve Whole Sign Houses</h2><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{presentation.houses.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
-            {presentation.houseEmphasis.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">House Emphasis</h2><div className="grid gap-4 md:grid-cols-3">{presentation.houseEmphasis.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
+            {presentation.planets.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">{isEn ? "Planetary Placements" : "Posisi Planet"}</h2><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{presentation.planets.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
+            {presentation.houses.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">{isEn ? "Twelve Whole Sign Houses" : "Dua Belas Rumah Whole Sign"}</h2><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{presentation.houses.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
+            {presentation.houseEmphasis.length > 0 && <section><h2 className="mb-5 font-serif text-2xl text-[#4F5E52]">{isEn ? "House Emphasis" : "Penekanan Rumah"}</h2><div className="grid gap-4 md:grid-cols-3">{presentation.houseEmphasis.map((card) => <NarrativeCard key={card.id} card={card} isEn={isEn} />)}</div></section>}
             {presentation.angularPlanets && <NarrativeCard card={presentation.angularPlanets} isEn={isEn} />}
             {presentation.midheaven && <NarrativeCard card={presentation.midheaven} isEn={isEn} />}
 
-            <NarrativeSection title={isEn ? "Relationship Patterns" : "Relationship Pattern"} text={presentation.relationshipThemes} />
-            <NarrativeSection title={isEn ? "Home and Inner Foundation" : "Home and Inner Foundation"} text={presentation.homeThemes} />
-            <NarrativeSection title={isEn ? "Work and Contribution" : "Work and Contribution"} text={presentation.workThemes} />
+            <NarrativeSection title={isEn ? "Relationship Patterns" : "Pola Hubungan"} text={presentation.relationshipThemes} />
+            <NarrativeSection title={isEn ? "Home and Inner Foundation" : "Rumah dan Fondasi Batin"} text={presentation.homeThemes} />
+            <NarrativeSection title={isEn ? "Work and Contribution" : "Karya dan Kontribusi"} text={presentation.workThemes} />
             <NarrativeSection title={isEn ? "Spiritual Direction" : "Arah Spiritual"} text={presentation.spiritualThemes} />
             <NarrativeSection title={isEn ? "Soul Purpose" : "Misi Jiwa"} text={presentation.soulMissionThemes} />
-            <NarrativeSection title={isEn ? "Growth Direction" : "Growth Direction"} text={presentation.growthThemes} />
+            <NarrativeSection title={isEn ? "Growth Direction" : "Arah Pertumbuhan"} text={presentation.growthThemes} />
             <section className="rounded-3xl bg-[#4F5E52] p-6 text-white shadow-md sm:p-8">
               <div className="mb-5 flex items-center gap-2"><Sparkles size={18} className="text-[#D4AF37]" /><h2 className="text-lg font-bold">{isEn ? "Your Core Synthesis" : "Kesimpulan Dirimu"}</h2></div>
               <div className="space-y-4 text-sm leading-7 text-[#D8E0D7]">{presentation.summary.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>

@@ -7,7 +7,7 @@ import i18next, { type i18n as I18nInstance } from "i18next";
 import idID from "../../src/locales/id-ID/translation.json";
 import enUS from "../../src/locales/en-US/translation.json";
 import msMY from "../../src/locales/ms-MY/translation.json";
-import { isEnlEdition } from "@/lib/config/edition";
+
 
 export type SupportedLocaleTag = "id-ID" | "en-US" | "ms-MY";
 export type SupportedShortCode = "id" | "en" | "ms";
@@ -18,7 +18,7 @@ export const SUPPORTED_LOCALES: Array<{ tag: SupportedLocaleTag; short: Supporte
   { tag: "ms-MY", short: "ms", label: "Bahasa Melayu" },
 ];
 
-export const DEFAULT_SHORT: SupportedShortCode = isEnlEdition() ? "en" : "id";
+export const DEFAULT_SHORT: SupportedShortCode = "id";
 
 const RAW_BUNDLES: Record<SupportedLocaleTag, Record<string, unknown>> = {
   "id-ID": idID as Record<string, unknown>,
@@ -52,8 +52,10 @@ let instance: I18nInstance | null = null;
 export function getI18n(): I18nInstance {
   if (!instance) {
     void i18next.init({
-      lng: DEFAULT_SHORT,
-      fallbackLng: { ms: ["en", "id"], en: ["id"], default: ["en"] },
+      lng: "id-ID",
+      supportedLngs: ["id-ID"],
+      load: "currentOnly",
+      fallbackLng: "id-ID",
       resources: {
         "id-ID": { translation: RAW_BUNDLES["id-ID"] },
         "en-US": { translation: RAW_BUNDLES["en-US"] },
@@ -68,8 +70,8 @@ export function getI18n(): I18nInstance {
 }
 
 /** React state sync entry — called by LanguageContext. */
-export function changeI18nLanguage(short: SupportedShortCode): void {
-  void getI18n().changeLanguage(short);
+export function changeI18nLanguage(_short: SupportedShortCode): void {
+  void getI18n().changeLanguage("id-ID");
 }
 
 /**

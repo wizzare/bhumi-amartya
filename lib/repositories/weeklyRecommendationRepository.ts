@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, runTransaction } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { WeeklyRecommendation } from "../types/communication";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
@@ -21,7 +21,8 @@ export class WeeklyRecommendationRepository {
     );
 
     if (snapshot.exists()) {
-      return snapshot.data() as WeeklyRecommendation;
+      const data = snapshot.data();
+      return data.generatedLocale === "build110-id-ID" ? data as WeeklyRecommendation : null;
     }
     return null;
   }
@@ -32,7 +33,12 @@ export class WeeklyRecommendationRepository {
 
     await debugFirestoreOperation(
       { operation: "setDoc", path, uid: recommendation.uid },
-      () => setDoc(docRef, sanitizeForFirestore(recommendation), { merge: true })
+      () => runTransaction(db, async (transaction) => {
+        const existing = await transaction.get(docRef);
+        if (!existing.exists()) {
+          transaction.set(docRef, sanitizeForFirestore({ ...recommendation, generatedLocale: "build110-id-ID" }));
+        }
+      })
     );
   }
 }

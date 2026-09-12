@@ -698,7 +698,7 @@ export default function SettingsPage() {
       longitude: nextLongitude,
       timezone: nextTimezone,
       timezoneSource, // BUILD 31
-      language,
+      language: currentProfile.language,
       authProvider: googleEmail ? "google" : currentProfile.authProvider || "local",
       updatedAt: now,
     };
@@ -741,13 +741,10 @@ export default function SettingsPage() {
       }
 
       if (activeUid && activeUid !== "local-user") {
-        localStorage.setItem(`${LANGUAGE_STORAGE_KEY}:${activeUid}`, language);
         localStorage.setItem(`${USER_PLAN_STORAGE_KEY}:${activeUid}`, JSON.stringify(nextPlan));
       }
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
       localStorage.setItem(USER_PLAN_STORAGE_KEY, JSON.stringify(nextPlan));
 
-      setLanguage(language);
       setOriginalProfile(nextProfile);
       setPlan(nextPlan);
       setMessage(isEn ? "Data updated successfully. Your Blueprint has been refreshed." : "Data berhasil diperbarui. Blueprint-mu sudah diperbarui.");
@@ -815,22 +812,6 @@ export default function SettingsPage() {
           <Field label={t.settings.birthTime} value={birthTime} type="time" onChange={setBirthTime} />
         </section>
 
-        <section className="bhumi-card space-y-4 p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52]">{t.settings.language}</h2>
-          <select
-            value={language}
-            onChange={(event) => setLocalLanguage(event.target.value as "id" | "en")}
-            className="w-full rounded-2xl border border-black/5 bg-white px-5 py-4 text-[#33413A] outline-none"
-          >
-            <option value="id">Indonesia</option>
-            <option value="en">English</option>
-          </select>
-          <p className="text-xs text-[#9BB89A]">
-            {isEn
-              ? "Your language preference will be saved for the translation system already available."
-              : "Preferensi bahasa akan disimpan untuk sistem terjemahan yang sudah tersedia."}
-          </p>
-        </section>
 
         <section className="bhumi-card space-y-4 p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">{isEn ? "Bhumi Support" : "Dukungan Bhumi"}</h2>

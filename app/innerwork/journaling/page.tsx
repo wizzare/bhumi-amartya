@@ -589,7 +589,7 @@ export default function JournalPage() {
 
           <section className="bhumi-card p-6">
             <h2 className="text-xl font-semibold text-[#4F5E52]">
-              {isEn ? "Section C · Body Awareness" : "Section C · Body Awareness"}
+              {isEn ? "Section C · Body Awareness" : "Bagian C · Kesadaran Tubuh"}
             </h2>
             <p className="mt-5 text-sm font-medium text-[#7B8776]">
               {isEn ? "How do you feel after writing?" : "Bagaimana perasaanmu setelah menulis?"}
@@ -634,7 +634,7 @@ export default function JournalPage() {
 
           <section className="bhumi-card p-6">
             <h2 className="text-xl font-semibold text-[#4F5E52]">
-              {isEn ? "Section D · Save" : "Section D · Save"}
+              {isEn ? "Section D · Save" : "Bagian D · Simpan"}
             </h2>
             <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
               {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}

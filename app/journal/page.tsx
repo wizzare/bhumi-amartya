@@ -437,7 +437,7 @@ export default function JournalPage() {
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section C · Body Awareness</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">Bagian C · Kesadaran Tubuh</h2>
             <p className="mt-5 text-sm font-medium text-[#7B8776]">
               {isEnlEdition() ? "How do you feel after writing?" : "Bagaimana perasaanmu setelah menulis?"}
             </p>
@@ -480,7 +480,7 @@ export default function JournalPage() {
           </section>
 
           <section className="bhumi-card p-6">
-            <h2 className="text-xl font-semibold text-[#4F5E52]">Section D · Save</h2>
+            <h2 className="text-xl font-semibold text-[#4F5E52]">Bagian D · Simpan</h2>
             <button
               type="button"
               onClick={handleLocalSave}

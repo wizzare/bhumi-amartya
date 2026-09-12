@@ -169,14 +169,14 @@ export class WeeklyRecommendationService {
       let potential = null;
       let circadian = null;
       try { memory = await MemoryCompiler.compile(uid, dateKey, identity); } catch (e) {}
-      try { circadian = buildCircadianContext(new Date(), (profile as any)?.profile?.language || profile.language || "id"); } catch (e) {}
+      try { circadian = buildCircadianContext(new Date(), "id"); } catch (e) {}
       const safeMemory = memory || { dominantThemes: [], recurringWounds: [], healingEdges: [], journalHistory: [] };
       const safeCircadian = circadian || { greeting: "Selamat datang", isNight: false, timeOfDay: "morning" };
       try { reflection = ReflectionEngine.calculate(safeMemory as any, identity, safeCircadian as any); } catch (e) {}
       const safeReflection = reflection || { greetingStyle: { text: "Halo", format: "salutation-first" }, narrativeDirection: "steady", previousReflectionSummary: "" };
       try { journey = JourneyEngine.calculate(safeMemory as any, safeReflection as any, identity, safeCircadian as any); } catch (e) {}
       const safeJourney = journey || { currentStage: "Attunement" };
-      try { wellness = WellnessEngine.calculate(safeMemory as any, safeReflection as any, safeJourney as any, identity, safeCircadian as any, { language: (profile as any)?.profile?.language || profile.language || "id" }); } catch (e) {}
+      try { wellness = WellnessEngine.calculate(safeMemory as any, safeReflection as any, safeJourney as any, identity, safeCircadian as any, { language: "id" }); } catch (e) {}
       const safeWellness = wellness || {};
       try { potential = PotentialEngine.calculate(identity, safeMemory as any, safeReflection as any, safeJourney as any, safeWellness as any, safeCircadian as any); } catch (e) {}
       const safePotential = potential || {};
@@ -204,7 +204,7 @@ export class WeeklyRecommendationService {
 
       const response = await AIGateway.generateStructuredJson<any>({
         promptKey: "daily-guidance",
-        language: (profile as any)?.profile?.language || profile.language || "id",
+        language: "id",
         identity,
         memory: safeMemory as any,
         reflection: safeReflection as any,

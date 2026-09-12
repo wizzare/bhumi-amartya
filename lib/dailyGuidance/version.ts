@@ -4,7 +4,12 @@ import { generateBlueprintHash, generateMemoryHash, calculateSimilarity } from "
 
 export const DAILY_GUIDANCE_SCHEMA_VERSION = "dailyGuidance.v11";
 export const DAILY_GUIDANCE_PROMPT_VERSION = "BHUMI_DAILY_COMPANION_ENGINE_V12_GROUNDED_CONTEXT";
-export const DAILY_GUIDANCE_CONTENT_VERSION = "fanta-v4-grounded";
+export const DAILY_GUIDANCE_CONTENT_VERSION = "build110-id-ID-grounded";
+
+export function isCurrentGeneratedGuidance(value: unknown): boolean {
+  return !!value && typeof value === "object"
+    && (value as Partial<DailyGuidance>).guidanceVersion === DAILY_GUIDANCE_CONTENT_VERSION;
+}
 
 export function getDailyGuidanceStaleReason(
   guidance: DailyGuidance | null,

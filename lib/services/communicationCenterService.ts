@@ -96,7 +96,7 @@ export class CommunicationCenterService {
       priority: 'normal',
       source: 'system',
       title: message.title,
-      summary: (profile.language === "en" || isEnlEdition()) ? "Birthday message from Bhumi Amartya." : "Pesan ulang tahun dari Bhumi Amartya.",
+      summary: "Pesan ulang tahun dari Bhumi Amartya.",
       content: message.content,
       ownerUserId: profile.uid,
       senderRole: 'system',

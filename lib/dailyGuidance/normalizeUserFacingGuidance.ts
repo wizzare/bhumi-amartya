@@ -451,7 +451,7 @@ export function standardizeSoulReflection(
   }
 
   const profileData = profile || guidance.profileSnapshot;
-  const language = (isEnlEdition() || profileData?.language === "en" || (guidance as any)?.language === "en" || profileData?.preferredLanguage === "en") ? "en" : "id";
+  const language: "id" | "en" = isEnlEdition() ? "en" : "id";
   const firstName = getFirstName(profileData, language);
   const dateKey = guidance.localDateKey || guidance.date || new Date().toISOString().slice(0, 10);
   const dayName = getDayName(dateKey, language);
@@ -509,12 +509,7 @@ export function standardizeSoulReflection(
 
 export function normalizeUserFacingGuidance(guidance: DailyGuidance, profile?: any): DailyGuidance {
   const profileData = profile || guidance.profileSnapshot;
-  const isEn = Boolean(
-    isEnlEdition() ||
-    profileData?.language === "en" ||
-    (guidance as any)?.language === "en" ||
-    profileData?.preferredLanguage === "en"
-  );
+  const isEn = isEnlEdition();
 
   const seenCounts: Record<string, number> = {
     tidak_menyelesaikan: 1, // Pre-seeded to avoid matching hardcoded header in DailyNoteV2

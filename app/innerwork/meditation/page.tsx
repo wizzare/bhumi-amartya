@@ -508,7 +508,7 @@ export default function MeditationPage() {
 
         <section className="bhumi-card p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">
-            {isEn ? "Section C · Save" : "Section C · Save"}
+            {isEn ? "Section C · Save" : "Bagian C · Simpan"}
           </h2>
           <p className="mt-4 text-[10px] text-[#7B8776] font-bold uppercase tracking-wider text-center">
             {isEn ? "Only click save once you have completed the practice." : "Klik save hanya jika kamu sudah melakukan."}

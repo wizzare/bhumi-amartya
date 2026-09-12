@@ -5,13 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { decideLandingCtaRoute } from "@/lib/auth/landingCtaRoute";
 import { translations } from "@/lib/data/translations";
-import { isEnlEdition } from "@/lib/config/edition";
 import { useEffect, useState } from "react";
 
 export default function LandingPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const t = translations[language] || translations["en"];
   const [showFallback, setShowFallback] = useState(false);
 
@@ -131,24 +130,7 @@ export default function LandingPage() {
         </button>
       </div>
 
-      {!isEnlEdition() && (
-        <div className="mt-12 pb-[calc(1rem+env(safe-area-inset-bottom))] text-center">
-          {/* Build 106 R-34: functional locale switcher (id / en / ms, D-V5-35).
-              Recovered from CP-036 app/page.tsx switcher hunk. */}
-          <div className="flex items-center justify-center gap-3 text-xs">
-            {(["id", "en", "ms"] as const).map((code) => (
-              <button
-                key={code}
-                type="button"
-                onClick={() => setLanguage(code)}
-                className={language === code ? "font-bold text-[#4F5E52] underline" : "text-[#7B8776]"}
-              >
-                {code === "id" ? "Indonesia" : code === "en" ? "English" : "Melayu"}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+
     </main>
   );
 }

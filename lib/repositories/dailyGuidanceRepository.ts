@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   setDoc,
+  runTransaction,
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase/config";
@@ -52,10 +53,26 @@ export const dailyGuidanceRepository = {
     });
     await debugFirestoreOperation(
       { operation: "setDoc", path: dailyGuidancePath(guidance.uid, guidance.date), uid: guidance.uid },
-      () => setDoc(
-        dailyGuidanceDoc(guidance.uid, guidance.date),
-        sanitizeForFirestore(guidance),
-      ),
+      () => runTransaction(db, async (transaction) => {
+        const reference = dailyGuidanceDoc(guidance.uid, guidance.date);
+        const existing = await transaction.get(reference);
+        if (!existing.exists()) {
+          transaction.set(reference, sanitizeForFirestore(guidance));
+        } else {
+          const existingData = existing.data() as Partial<DailyGuidance>;
+          const existingPractices = existingData.dailyPractices || [];
+          const hasCompletedProgress = existingPractices.some((p) => p.completed);
+          const practices = hasCompletedProgress ? existingPractices : guidance.dailyPractices;
+          transaction.set(
+            reference,
+            sanitizeForFirestore({
+              ...guidance,
+              dailyPractices: practices,
+            }),
+            { merge: true },
+          );
+        }
+      }),
     );
   },
 

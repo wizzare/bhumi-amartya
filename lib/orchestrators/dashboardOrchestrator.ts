@@ -81,7 +81,7 @@ export class DashboardOrchestrator {
       emotionalMemory,
       healingProgress: this.config.userProfile.healingProgress,
       astrologyTransits,
-      language: this.config.userProfile.profile.language,
+      language: "id",
       generatedAt: new Date().toISOString(),
     };
   }

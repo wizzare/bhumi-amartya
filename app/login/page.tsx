@@ -236,7 +236,7 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6 py-10">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<div>Memuat...</div>}>
         <LoginContent />
       </Suspense>
     </main>

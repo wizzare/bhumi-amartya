@@ -3,6 +3,7 @@ import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { normalizeUserFacingGuidance } from "@/lib/dailyGuidance/normalizeUserFacingGuidance";
 import {
   getDailyGuidanceStaleReason,
+  isCurrentGeneratedGuidance,
   DAILY_GUIDANCE_SCHEMA_VERSION,
   DAILY_GUIDANCE_PROMPT_VERSION,
   DAILY_GUIDANCE_CONTENT_VERSION,
@@ -92,7 +93,7 @@ export async function getExistingDailyGuidance(params: {
       const key = window.localStorage.key(index);
       if (!key?.startsWith(prefix)) continue;
       const parsed = safeJsonParse<DailyGuidance | null>(window.localStorage.getItem(key), null);
-      if (parsed && isCanonicalDailyGuidanceRecord(parsed, uid, date)) {
+      if (parsed && isCurrentGeneratedGuidance(parsed) && isCanonicalDailyGuidanceRecord(parsed, uid, date)) {
         return {
           guidance: normalizeUserFacingGuidance(parsed, profile),
           source: parsed.source || "cache",
@@ -104,7 +105,7 @@ export async function getExistingDailyGuidance(params: {
   }
 
   const existing = await dailyGuidanceRepository.getDailyGuidance(uid, date).catch(() => null);
-  if (!existing || !isCanonicalDailyGuidanceRecord(existing, uid, date)) {
+  if (!existing || !isCurrentGeneratedGuidance(existing) || !isCanonicalDailyGuidanceRecord(existing, uid, date)) {
     return { guidance: null, source: "none", status: "success", error: null };
   }
 
@@ -331,12 +332,7 @@ async function executeGetOrGenerateDailyGuidance(params: {
     uid,
     date,
     localDateKey: date,
-    // R-PRD-31: carry the user's true locale (id/en/ms); accepts short or BCP47 tags.
-    language: typeof profile.language === "string" && profile.language.startsWith("en")
-      ? "en"
-      : typeof profile.language === "string" && profile.language.startsWith("ms")
-        ? "ms"
-        : "id",
+    language: "id",
     profile,
     blueprint,
     currentSky: sky,
@@ -445,11 +441,7 @@ async function executeGetOrGenerateDailyGuidance(params: {
         previousProgressSummary: "Local fallback",
         previousGuidanceSummaries: [],
       },
-      language: (typeof profile.language === "string" && profile.language.startsWith("en")
-        ? "en" as const
-        : typeof profile.language === "string" && profile.language.startsWith("ms")
-          ? "ms" as const
-          : "id" as const),
+      language: "id" as const,
       generatedAt: new Date().toISOString(),
     };
 
@@ -487,7 +479,9 @@ async function executeGetOrGenerateDailyGuidance(params: {
         arcanaCenter: blueprint.destinyMatrix?.center || 0,
         rawBlueprint: blueprint,
         unifiedBlueprint: buildUnifiedBlueprintSynthesis({
-          language: profile.language || "id",
+    // R-PRD-31: carry the user's true locale (id/en/ms); accepts short or BCP47 tags.
+    // Build 110 Indonesian-only runtime ignores profile.language.startsWith("ms") or "en".
+    language: "id",
           profile,
           blueprint,
         }),

@@ -41,7 +41,7 @@ function getOrdinal(n: number): string {
 }
 
 export function buildBirthdayMessage(profile: BirthdayProfile, year: string, languageOverride?: "id" | "en") {
-  const isEn = languageOverride === "en" || (!languageOverride && (profile.language === "en" || isEnlEdition()));
+  const isEn = isEnlEdition();
   const defaultName = isEn ? "Friend" : "Sahabat Bhumi";
   const firstName = String(profile.displayName || profile.fullName || defaultName).trim().split(/\s+/)[0];
   const birthYear = Number(profile.birthDate?.slice(0, 4));

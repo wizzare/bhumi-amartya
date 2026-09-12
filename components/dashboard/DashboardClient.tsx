@@ -109,10 +109,7 @@ function withCanonicalDailyConclusion(
     timezone,
     referenceDate: new Date(`${localDateKey}T12:00:00.000Z`),
   });
-  const locale = String(profile.language ?? "id").toLowerCase().split("-")[0];
-  const localizedSoulReflection = locale === "en" || locale === "ms"
-    ? guidance.soulReflectionText?.trim() || catatanGuidance.dailyConclusion?.text
-    : catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText;
+  const localizedSoulReflection = catatanGuidance.dailyConclusion?.text ?? guidance.soulReflectionText;
 
   return {
     ...guidance,
@@ -242,11 +239,7 @@ export function DashboardClient() {
   async function fetchBackgroundData(uid: string, p: any, b: any) {
     const timezone = p?.timezone || p?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const profileLanguage = String(p?.language || p?.profile?.language || "id").toLowerCase();
-    const guidanceLanguage: "id" | "en" | "ms" = profileLanguage.startsWith("en")
-      ? "en"
-      : profileLanguage.startsWith("ms")
-        ? "ms"
-        : "id";
+    const guidanceLanguage: "id" | "en" | "ms" = "id";
     const today = getLocalDateKey(appNow, timezone);
     const envWindowKey = getEnvironmentWindowKey(appNow, today);
     const localCacheKey = `dailyGuidance:${uid}:${envWindowKey}`;

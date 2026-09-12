@@ -745,7 +745,7 @@ export function generateLocalDailyGuidance(input: DailyGuidanceInput): DailyGuid
         practiceCompletedCountYesterday: Number(adaptive?.practiceCompletedCountYesterday) || 0,
         astrologyToday: safeInput.astrologyTransits?.summary,
         wellnessMapping: safeInput.wellnessMapping,
-        unifiedBlueprint: synthesis,
+        unifiedBlueprint: synthesis as any,
       }) as DailyGuidanceOutput["categories"],
 
       soulReflection: {

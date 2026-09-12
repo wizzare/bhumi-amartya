@@ -1,3 +1,5 @@
+import { isEnlEdition } from "@/lib/config/edition";
+
 export type GreetingLanguage = "id" | "en";
 export type TimeWindow = "afterMidnight" | "morning" | "afternoon" | "evening" | "night";
 export const APP_TIME_REFRESH_MS = 30_000;
@@ -20,7 +22,7 @@ export function getEnvironmentWindowKey(date: Date = new Date(), localDateKey?: 
 export function getTimeOfDayGreeting(date: Date = new Date(), language: GreetingLanguage = "id"): string {
   const window = getTimeWindow(date);
 
-  if (language === "en") {
+  if (isEnlEdition()) {
     if (window === "afterMidnight") return "Hi...";
     if (window === "morning") return "Good morning";
     if (window === "afternoon") return "Good afternoon";
@@ -43,7 +45,7 @@ export function getTimeAwareGreeting(
 ): string {
   const window = getTimeWindow(date);
 
-  if (language === "en") {
+  if (isEnlEdition()) {
     if (window === "afterMidnight") {
       return `Hi ${firstName}... you're still up. I hope everything is okay.`;
     }
@@ -68,7 +70,7 @@ export function getTimeAwareClosing(
 ): string {
   const window = getTimeWindow(date);
 
-  if (language === "en") {
+  if (isEnlEdition()) {
     if (window === "afterMidnight") return "You don't have to do anything right now. Just breathe slowly, that's enough.";
     if (window === "morning") return "Take it slow. Start with one small step you can do this morning.";
     if (window === "afternoon") return "Pace yourself. Not everything needs to be finished all at once today.";

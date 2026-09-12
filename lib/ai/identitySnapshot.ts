@@ -7,7 +7,7 @@ export function buildIdentitySnapshot(
   blueprint: any
 ): IdentitySnapshot {
   const synthesis = buildUnifiedBlueprintSynthesis({
-    language: userProfile.language === "en" ? "en" : "id",
+    language: "id",
     profile: userProfile,
     blueprint: blueprint,
   });

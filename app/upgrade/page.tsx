@@ -143,7 +143,7 @@ export default function UpgradePage() {
           <div className="grid gap-3 py-5 text-sm text-[#4F5E52]">
             <Row label="Product ID" value={GOOGLE_PLAY_PRODUCT_ID} />
             <Row label="Base Plan" value="monthly" />
-            <Row label={isEn ? "Price" : "Harga"} value={price} />
+            <Row label="Harga" value={price} />
           </div>
 
           {!billingAvailable ? (
