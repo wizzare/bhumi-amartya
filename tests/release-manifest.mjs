@@ -49,6 +49,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT + STATIC_GUARD",
   },
   {
+    name: "Build 110 Indonesian-only production runtime remediation",
+    file: "tests/unit/build110-indonesian-only-production.test.ts",
+    kind: "env",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",
