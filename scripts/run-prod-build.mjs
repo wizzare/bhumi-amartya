@@ -21,7 +21,7 @@ const env = {
   NEXT_PUBLIC_ENABLE_ADMIN_UI: 'false',
   NEXT_PUBLIC_WEB_APP_URL: 'https://bhumi-amartya-clean.vercel.app',
   NEXT_PUBLIC_BILLING_VERIFIER_URL: process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL || 'https://bhumi-billing-verifier.vercel.app',
-  NEXT_PUBLIC_APP_EDITION: process.env.NEXT_PUBLIC_APP_EDITION || 'ENL',
+  NEXT_PUBLIC_APP_EDITION: process.env.NEXT_PUBLIC_APP_EDITION || 'standard',
   NODE_ENV: 'production'
 };
 
