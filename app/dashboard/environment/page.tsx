@@ -133,7 +133,7 @@ export default function EnvironmentDetailPage() {
 
   // Weather/AQI are rendered ONLY when their fields are actually populated.
   // In production today those fields stay hidden (Open-Meteo fail-closed and the
-  // Google Weather/AQI proxy is NOT yet activated); in local QA the deterministic
+  // WeatherAPI.com proxy is NOT yet activated); in local QA the deterministic
   // preview fixture populates them so the Founder can review the target layout.
   const weatherLive = context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null;
   const aqiLive = context?.airQuality?.aqi !== undefined && context?.airQuality?.aqi !== null;
@@ -241,7 +241,7 @@ export default function EnvironmentDetailPage() {
                       value={context.weather?.uvCurrent !== undefined ? `${Math.round(context.weather.uvCurrent)} — ${getUvLabel(Math.round(context.weather.uvCurrent))}` : t.environment.unavailable}
                     />
                   </div>
-                  <p className="px-1 text-[10px] text-[#9AA394]">Includes weather data from Google</p>
+                  <p className="px-1 text-[10px] text-[#9AA394]">Powered by WeatherAPI.com</p>
                 </section>
               )}
 
@@ -252,9 +252,26 @@ export default function EnvironmentDetailPage() {
                     icon={<Activity size={20} />}
                     label={t.environment.fAirQuality}
                     value={`${context.airQuality!.aqi} — ${context.airQuality!.label ?? "Sedang"}`}
-                    subValue="Indeks lokal Indonesia (idn_menlhk)"
+                    subValue="Indeks US-EPA (standar provider)"
                   />
-                  <p className="px-1 text-[10px] text-[#9AA394]">Includes data from Google Maps</p>
+                  <p className="px-1 text-[10px] text-[#9AA394]">Powered by WeatherAPI.com</p>
+                </section>
+              )}
+
+              {isQaPreview && (
+                <section className="space-y-4">
+                  <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA394]">Resonansi Schumann</h2>
+                  <DetailItem
+                    icon={<Activity size={20} />}
+                    label="SR1 Terukur"
+                    value="7,83 Hz"
+                    subValue="Status: Tenang · Sumber: Tomsk SOS-70 via SchumannResonanceLive (simulasi pratinjau — BUKAN pengukuran live)"
+                  />
+                  <p className="px-1 text-[10px] leading-relaxed text-[#9AA394]">
+                    Frekuensi fundamental nominal: sekitar 7,83 Hz. Kartu live hanya tampil bila
+                    pengukuran SR1 terverifikasi segar; SR2–SR5 nominal tidak pernah ditampilkan
+                    sebagai data live.
+                  </p>
                 </section>
               )}
 

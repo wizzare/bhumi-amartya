@@ -16,17 +16,24 @@
     "uvLabel": "Tinggi",
     "cloudCoverPercent": 35,
     "source": "local-qa-fixture",
-    "providerName": "Google Weather API (planned production provider — NOT yet active; this fixture is synthetic)",
-    "attribution": "Includes weather data from Google"
+    "providerName": "WeatherAPI.com (planned production provider — NOT yet active; this fixture is synthetic)",
+    "attribution": "Powered by WeatherAPI.com"
   },
   "airQuality": {
-    "aqi": 68,
-    "aqiStandard": "idn_menlhk",
+    "aqi": 2,
+    "aqiStandard": "us-epa-index",
     "aqiCategory": "Sedang",
     "dominantPollutant": "PM2.5",
     "source": "local-qa-fixture",
-    "providerName": "Google Air Quality API (planned production provider — NOT yet active; this fixture is synthetic)",
-    "attribution": "Includes data from Google Maps"
+    "providerName": "WeatherAPI.com (planned production provider — NOT yet active; this fixture is synthetic)",
+    "attribution": "Powered by WeatherAPI.com"
+  },
+  "schumannSr1": {
+    "valueHz": 7.83,
+    "measured": true,
+    "status": "Tenang",
+    "updatedAtIsoNote": "set at seed time; live gate requires fresh timestamp",
+    "source": "Tomsk SOS-70 via SchumannResonanceLive (preview simulasi — BUKAN pengukuran live)"
   },
   "location": {
     "cityOrRegency": "Jakarta",

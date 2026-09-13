@@ -591,8 +591,9 @@ test("7.6b Target model: CUACA and KUALITAS UDARA sections render only when live
   assert.ok(/const aqiLive =/.test(src), "aqiLive gate must exist");
   assert.ok(/weatherLive &&/.test(src), "CUACA section must be conditional on weatherLive");
   assert.ok(/aqiLive &&/.test(src), "KUALITAS UDARA section must be conditional on aqiLive");
-  assert.ok(/Includes weather data from Google/.test(src), "Google Weather attribution must be present in CUACA section");
-  assert.ok(/Includes data from Google Maps/.test(src), "Google Maps attribution must be present in KUALITAS UDARA section");
+  assert.ok(/Powered by WeatherAPI\.com/.test(src), "WeatherAPI.com attribution must be present (required for Free plan)");
+  assert.ok(!/idn_menlhk/.test(src), "Provider AQI must NOT be mislabelled as Indonesian MENLHK index");
+  assert.ok(!/Includes weather data from Google/.test(src), "Google attribution must not remain (Google providers deactivated)");
 });
 
 test("7.6c Local QA environment preview can never activate in production", async () => {

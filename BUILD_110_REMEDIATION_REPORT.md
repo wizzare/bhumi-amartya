@@ -1,6 +1,42 @@
 # Build110 remediation — detailed progress report
 
-## FOUNDER ENVIRONMENT PROVIDER RECOVERY — 2026-09-13 (latest; RESEARCH + ARCHITECTURE + UI PREVIEW only)
+## FOUNDER FREE-PROVIDER DECISION — 2026-09-13 (latest; RESEARCH + ARCHITECTURE + UI PREVIEW only)
+
+Founder decision: do NOT activate Google Weather/Air Quality. Free providers preferred.
+Primary = WeatherAPI.com (verified); fallback candidate = OpenWeather (NOT verified —
+docs pages JS-rendered, no figures claimed); SunGeo banned from production (non-commercial);
+Schumann SR1 restored ONLY if live verification passes (currently unreachable → hidden).
+
+Canonical record: `BUILD_110_ENVIRONMENT_PROVIDER_PLAN.md` (rewritten for the free-provider pivot).
+
+```text
+WEATHER_PROVIDER = WeatherAPI.com (Free 100k/mo, commercial YES, attribution link-back implemented)
+WEATHER_FREE_COMMERCIAL = YES
+WEATHER_MONTHLY_LIMIT = 100,000 calls (resets midnight 1st UTC; over-quota stops serving = fail-closed)
+WEATHER_ATTRIBUTION = "Powered by WeatherAPI.com" (implemented verbatim)
+
+AQI_PROVIDER = WeatherAPI.com ?aqi=yes (same call — simplest architecture, no dual-provider doubling)
+AQI_FIELDS = co, o3, no2, so2, pm2_5, pm10 + us-epa-index(1-6) + gb-defra-index(1-10)
+AQI_INDEX_TYPE = us-epa-index (NEVER labelled MENLHK — provider does not supply it; test-guarded)
+
+SCHUMANN_PROVIDER = SchumannResonanceLive (stated JSON/no-key/CC0/90-s cache/Tomsk SR1)
+SCHUMANN_API_LIVE = NO (endpoint unreachable from this network on 2026-09-13 — transport failure; card stays hidden fail-closed)
+SCHUMANN_LICENSE = CC0 per provider statement (NOT independently verified — no response received)
+SCHUMANN_SR1 = hidden until live gate passes (measured SR1 + fresh timestamp required simultaneously)
+SCHUMANN_SR2_5_POLICY = nominal/reference values NEVER displayed as live measurements
+
+OPEN_METEO_PRODUCTION_CALLS = 0 (unchanged)
+GOOGLE_WEATHER_CALLS = 0 (not activated)
+GOOGLE_AQI_CALLS = 0 (not activated)
+SUNGEO_PRODUCTION_CALLS = 0
+
+ENVIRONMENT_LOCALHOST = full target UI preview (Lokasi/Suhu/Kelembapan/Angin/Tekanan/UV/Kualitas Udara/Sun-Moon/Bumi/Geomagnetik/Schumann-SR1-simulation) with QA banner
+FOUNDER_ENVIRONMENT_ACCEPTANCE = PENDING
+
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+```
+
+## FOUNDER ENVIRONMENT PROVIDER RECOVERY — 2026-09-13 (superseded by free-provider decision above; retained for audit trail)
 
 Founder corrected the previous "permanently hide" approach: Schumann and Volcanic stay
 permanently removed, but Temperature/Humidity/Wind/Pressure/UV/AQI are RESTORED via

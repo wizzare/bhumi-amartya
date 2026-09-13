@@ -23,12 +23,21 @@ export interface LocalQaEnvironmentFixture {
     attribution: string;
   };
   airQuality: {
+    // Provider AQI (us-epa-index). NEVER labelled as Indonesian MENLHK —
+    // WeatherAPI.com does not supply the MENLHK index.
     aqi: number;
     aqiStandard: string;
     aqiCategory: string;
     dominantPollutant: string;
     providerName: string;
     attribution: string;
+  };
+  schumannSr1: {
+    valueHz: number | null;
+    measured: boolean;
+    status: string;
+    updatedAtIso: string;
+    source: string;
   };
   earthActivity: {
     status: string;
@@ -45,11 +54,11 @@ export interface LocalQaEnvironmentFixture {
 }
 
 // Deterministic representative Jakarta values for the Founder to preview the
-// target grouping UI (CUACA / KUALITAS UDARA / BUMI & ANTARIKSA). This fixture
-// is LOCAL-QA ONLY: it can never activate in production (throws when
+// target grouping UI (CUACA / KUALITAS UDARA / BUMI & ANTARIKSA / SCHUMANN SR1).
+// This fixture is LOCAL-QA ONLY: it can never activate in production (throws when
 // isBuild110LocalQa() is false) and is NOT evidence of production provider
-// connectivity. The planned production sources are Google Weather API and
-// Google Air Quality API behind a server-side proxy — not yet activated.
+// connectivity. The planned production source for weather + AQI is
+// WeatherAPI.com behind a server-side proxy — not yet activated, no key present.
 const DETERMINISTIC_PREVIEW: LocalQaEnvironmentFixture = {
   mode: "synthetic-local-environment-preview",
   externalCalls: 0,
@@ -66,16 +75,23 @@ const DETERMINISTIC_PREVIEW: LocalQaEnvironmentFixture = {
     uvIndex: 7,
     uvLabel: "Tinggi",
     cloudCoverPercent: 35,
-    providerName: "Google Weather API (planned — NOT active)",
-    attribution: "Includes weather data from Google",
+    providerName: "WeatherAPI.com (planned — NOT active)",
+    attribution: "Powered by WeatherAPI.com",
   },
   airQuality: {
-    aqi: 68,
-    aqiStandard: "idn_menlhk",
+    aqi: 2,
+    aqiStandard: "us-epa-index",
     aqiCategory: "Sedang",
     dominantPollutant: "PM2.5",
-    providerName: "Google Air Quality API (planned — NOT active)",
-    attribution: "Includes data from Google Maps",
+    providerName: "WeatherAPI.com (planned — NOT active)",
+    attribution: "Powered by WeatherAPI.com",
+  },
+  schumannSr1: {
+    valueHz: 7.83,
+    measured: true,
+    status: "Tenang",
+    updatedAtIso: new Date().toISOString(),
+    source: "Tomsk SOS-70 via SchumannResonanceLive (preview simulasi — BUKAN pengukuran live)",
   },
   earthActivity: {
     status: "Stabil",
