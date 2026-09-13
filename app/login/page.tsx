@@ -18,12 +18,13 @@ import { userRepository } from "@/lib/repositories/userRepository";
 import { trackEvent } from "@/lib/analytics/usageAnalytics";
 import { participationEngine } from "@/lib/engines/participationEngine";
 import { EmulatorQaLogin } from "@/components/dev/EmulatorQaLogin";
+import { Build110LocalLogin } from "@/components/dev/Build110LocalLogin";
+import { isBuild110LocalQa } from "@/lib/config/localQa";
 import { logSafeAuthError } from "@/lib/auth/safeDiagnostics";
 
 function LoginContent() {
   const router = useRouter();
-  const { language } = useLanguage();
-  const t = translations[language] || translations["en"];
+  const t = translations["id"];
 
   const auth = useAuth();
   const authUser = auth?.user;
@@ -38,21 +39,21 @@ function LoginContent() {
   const getGoogleLoginErrorMessage = (err: unknown): string => {
     const code = (err as { code?: string })?.code;
     if (err instanceof GooglePopupTimeoutError || code === "auth/popup-timeout") {
-      return t.login?.popupTimeout || "Google did not respond. Check if pop-ups are blocked, then try again or use the Google sign-in page.";
+      return t.login?.popupTimeout || "Google tidak merespons. Periksa apakah pop-up diblokir, lalu coba lagi atau gunakan halaman login Google.";
     }
     if (code === "auth/popup-blocked") {
-      return t.login?.popupBlocked || "Google pop-up was blocked by browser. Use the Google sign-in page or allow pop-ups for this app.";
+      return t.login?.popupBlocked || "Pop-up Google diblokir peramban. Gunakan halaman login Google atau izinkan pop-up untuk aplikasi ini.";
     }
     if (code === "auth/popup-closed-by-user") {
-      return t.login?.popupClosed || "Google sign-in window was closed before completion. Please try again.";
+      return t.login?.popupClosed || "Jendela login Google ditutup sebelum selesai. Silakan coba lagi.";
     }
-    return t.login?.genericError || "Google sign-in was not successful. Check your connection and try again.";
+    return t.login?.genericError || "Login Google belum berhasil. Periksa koneksimu dan coba lagi.";
   };
 
   useEffect(() => {
     let active = true;
 
-    if (!Capacitor.isNativePlatform()) {
+    if (!isBuild110LocalQa() && !Capacitor.isNativePlatform()) {
       void handleGoogleRedirectResult().catch((err) => {
         logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", err);
         if (!active) return;
@@ -127,6 +128,7 @@ function LoginContent() {
   }, [authStateResolved, authUser, profileLoading, router]);
 
   const handleGoogleLogin = async () => {
+    if (isBuild110LocalQa()) return;
     try {
       setLoginLoading(true);
       setError(null);
@@ -177,14 +179,14 @@ function LoginContent() {
         </div>
         <h1 className="text-3xl font-serif text-[#4F5E52]">{t.welcome?.title || "Bhumi Amartya"}</h1>
         <p className="mt-4 text-[#7B8776] leading-relaxed">
-          {t.login?.subtitle || "Sign in to continue your journey of self-discovery."}
+          {t.login?.subtitle || "Masuk untuk melanjutkan perjalanan pengenalan dirimu."}
         </p>
       </div>
 
       <div className="space-y-4 pt-4">
         {error && (
           <div className="text-red-600 text-sm text-left bg-red-50 p-4 rounded-2xl border border-red-100">
-            <p className="font-bold mb-1">{t.login?.errorTitle || "Google sign-in incomplete"}</p>
+            <p className="font-bold mb-1">{t.login?.errorTitle || "Login Google belum selesai"}</p>
             {error}
           </div>
         )}
@@ -196,18 +198,18 @@ function LoginContent() {
             disabled={loginLoading}
             className="w-full rounded-full border border-[#4F5E52] px-6 py-3 text-[#4F5E52] font-medium transition hover:bg-[#F3F5F1] disabled:opacity-60"
           >
-            {t.login?.useRedirect || "Use Google sign-in page"}
+            {t.login?.useRedirect || "Gunakan halaman login Google"}
           </button>
         )}
 
-        <button
+        {!isBuild110LocalQa() && <button
           type="button"
           onClick={handleGoogleLogin}
           disabled={loginLoading}
           className="w-full rounded-full bg-[#4F5E52] px-6 py-4 text-white font-medium shadow-lg transition hover:bg-[#3e4b42] disabled:opacity-60 flex items-center justify-center gap-3"
         >
           {loginLoading ? (
-            t.login?.connecting || "Connecting..."
+            t.login?.connecting || "Menghubungkan..."
           ) : (
             <>
               <div className="w-5 h-5 bg-white rounded-full p-0.5 flex items-center justify-center">
@@ -218,17 +220,17 @@ function LoginContent() {
                   <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                 </svg>
               </div>
-              {t.login?.continueWithGoogle || "Continue with Google"}
+              {t.login?.continueWithGoogle || "Lanjutkan dengan Google"}
             </>
           )}
-        </button>
+        </button>}
       </div>
 
       <p className="text-center text-xs text-[#7B8776] leading-relaxed px-4">
-        {t.login?.termsNotice || "By continuing, you agree to Bhumi Amartya's Terms of Service and Privacy Policy."}
+        {t.login?.termsNotice || "Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya."}
       </p>
 
-      <EmulatorQaLogin />
+      {isBuild110LocalQa() ? <Build110LocalLogin /> : <EmulatorQaLogin />}
     </div>
   );
 }

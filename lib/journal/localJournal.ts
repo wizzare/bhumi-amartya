@@ -304,8 +304,20 @@ export function getTodayJournalPrompt(
   const theme = THEMES[themeIndex];
   const bank = isEn ? THEME_BANK_EN : THEME_BANK;
 
+  const labels: Record<JournalTheme, string> = {
+    "Inner Child": "Diri Masa Kecil",
+    "Love Block": "Hambatan Cinta",
+    "Money Block": "Hambatan Finansial",
+    "Repeating Patterns": "Pola Berulang",
+    "Self Worth": "Harga Diri",
+    "Family Dynamics": "Dinamika Keluarga",
+    "Karmic Lessons": "Pelajaran Karma",
+    "Ancestral Patterns": "Pola Leluhur",
+    Forgiveness: "Pengampunan",
+    "Purpose & Calling": "Tujuan dan Panggilan",
+  };
   return {
-    theme,
+    theme: labels[theme],
     ...bank[theme],
   };
 }

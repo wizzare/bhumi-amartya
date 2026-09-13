@@ -78,9 +78,9 @@ const QUESTIONS = [
 ];
 
 export function WellnessAssessmentFlow({ uid, language, startFresh = false, initialStage = "intro", onResultsLoaded, onStageChange }: WellnessAssessmentFlowProps) {
-  const isEn = isEnlEdition() || language === "en";
-  const effectiveLang: "id" | "en" = isEn ? "en" : "id";
-  const t = translations[effectiveLang];
+  const isEn = false;
+  const effectiveLang: "id" | "en" = "id";
+  const t = translations["id"];
   const auth = useAuth();
   const userProfile = auth?.userProfile;
   const refreshUserProfile = auth?.refreshUserProfile;

@@ -8,7 +8,7 @@ type MomentumCardProps = {
 
 export function MomentumCard({ momentum, language = "id" }: MomentumCardProps) {
   if (!momentum) return null;
-  const t = translations[language].dashboard.momentum;
+  const t = translations["id"].dashboard.momentum;
 
   const MOMENTUM_LABEL: Record<MomentumOutput["momentumLevel"], string> = {
     restarting: t.restarting,

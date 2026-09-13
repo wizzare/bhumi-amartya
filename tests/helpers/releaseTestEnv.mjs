@@ -2,7 +2,8 @@
 // NEXT_PUBLIC_FIREBASE_* env some suites assume is already present. Emulator
 // hosts (FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST) are injected by
 // `firebase emulators:exec`; this only fills the client config. Test-infra only.
-const PROJECT_ID = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-release-suite";
+
+const PROJECT_ID = "demo-release-suite";
 const defaults = {
   NEXT_PUBLIC_FIREBASE_API_KEY: "synthetic-release-key",
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: `${PROJECT_ID}.firebaseapp.com`,
@@ -15,7 +16,10 @@ const defaults = {
   NEXT_PUBLIC_USE_AUTH_EMULATOR: "true",
   NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: "true",
   NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: "false",
+  BHUMI_QA_HARNESS: "true",
+  NEXT_PUBLIC_HUMAN_DESIGN_API_URL: "http://127.0.0.1:18765/api/humandesign/calculate",
 };
 for (const [k, v] of Object.entries(defaults)) {
-  if (!process.env[k]) process.env[k] = v;
+  process.env[k] = v;
 }
+await import("./blockOutboundNetwork.mjs");

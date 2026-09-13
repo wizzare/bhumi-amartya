@@ -47,7 +47,7 @@ export function DailyNoteV2({
   appNow = new Date(),
 }: DailyNoteV2Props) {
   const auth = useAuth();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
 
   React.useEffect(() => {
     if (dailyGuidance) trackEvent("open_daily_note", auth?.user?.uid);

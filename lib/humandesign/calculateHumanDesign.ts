@@ -15,7 +15,7 @@ export async function calculateHumanDesign(
 ): Promise<HumanDesignChart> {
   if (!hasRequiredBirthData(profile)) {
     const pending = createPendingHumanDesignChart(
-      "Human Design requires birth date, birth time, and birth location.",
+      "Human Design memerlukan tanggal, waktu, dan lokasi kelahiran.",
     );
     logHumanDesignAudit(profile, pending, "missing-input");
     return pending;
@@ -27,7 +27,7 @@ export async function calculateHumanDesign(
       ...createPendingHumanDesignChart("Human Design sedang diproses."),
       status: "needs_verified_timezone",
       calculationStatus: "needs_verified_timezone",
-      note: "Human Design requires a verified timezone offset for accuracy.",
+      note: "Human Design memerlukan zona waktu terverifikasi agar perhitungannya akurat.",
     };
     logHumanDesignAudit(profile, pending, "missing-timezone");
     return pending;

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 export default function TentangPage() {
-  const isEn = isEnlEdition();
+  const isEn = false;
   return (
     <main className="min-h-screen bg-[#FCFAF5] text-[#4F5E52] pb-24 selection:bg-[#9BB89A]/20">
       <AppNav />

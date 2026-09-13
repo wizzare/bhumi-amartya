@@ -37,7 +37,7 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
         <div className="mb-8">
           <div className="flex justify-between items-end mb-3">
             <label className="text-[#4F5E52] font-medium">
-              How are you feeling?
+              Bagaimana perasaanmu saat ini?
             </label>
             <span className="text-2xl text-[#A08963] font-light">{moodLevel}</span>
           </div>
@@ -55,8 +55,8 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
             }}
           />
           <div className="flex justify-between text-[#8B9488] text-xs mt-2">
-            <span>Overwhelmed</span>
-            <span>Calm</span>
+            <span>Kewalahan</span>
+            <span>Tenang</span>
           </div>
         </div>
 
@@ -64,7 +64,7 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
         <div className="mb-8">
           <div className="flex justify-between items-end mb-3">
             <label className="text-[#4F5E52] font-medium">
-              Physical energy level?
+              Tingkat energi fisikmu?
             </label>
             <span className="text-2xl text-[#A08963] font-light">{energyLevel}</span>
           </div>
@@ -82,23 +82,23 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
             }}
           />
           <div className="flex justify-between text-[#8B9488] text-xs mt-2">
-            <span>Drained</span>
-            <span>Energized</span>
+            <span>Lelah</span>
+            <span>Berenergi</span>
           </div>
         </div>
 
         {/* Nervous System */}
         <div className="mb-8">
           <label className="text-[#4F5E52] font-medium mb-3 block">
-            How is your nervous system?
+            Bagaimana kondisi sistem sarafmu?
           </label>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {[
-              { value: "dysregulated", label: "Dysregulated 😵" },
-              { value: "activated", label: "Activated 🚨" },
-              { value: "calm", label: "Calm 😌" },
-              { value: "grounded", label: "Grounded 🌍" },
-              { value: "floaty", label: "Floaty ☁️" },
+              { value: "dysregulated", label: "Tidak Teratur 😵" },
+              { value: "activated", label: "Terpicu 🚨" },
+              { value: "calm", label: "Tenang 😌" },
+              { value: "grounded", label: "Membumi 🌍" },
+              { value: "floaty", label: "Melayang ☁️" },
             ].map((option) => (
               <button
                 key={option.value}
@@ -122,13 +122,13 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
         {/* Body Location */}
         <div className="mb-8">
           <label className="text-[#4F5E52] font-medium mb-2 block">
-            Where do you feel it in your body?
+            Di bagian tubuh mana kamu merasakannya?
           </label>
           <input
             type="text"
             value={bodyLocation}
             onChange={(e) => setBodyLocation(e.target.value)}
-            placeholder="e.g., chest, stomach, shoulders..."
+            placeholder="mis. dada, perut, bahu..."
             className="w-full px-4 py-3 rounded-xl border border-[#E8E9E5] bg-[#FCFAF5] text-[#4F5E52] placeholder-[#C4B5A8] focus:outline-none focus:border-[#A08963]"
           />
         </div>
@@ -136,13 +136,13 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
         {/* Emotional Word */}
         <div className="mb-8">
           <label className="text-[#4F5E52] font-medium mb-2 block">
-            In one word, how would you describe what you&apos;re feeling?
+            Dalam satu kata, apa yang sedang kamu rasakan?
           </label>
           <input
             type="text"
             value={emotionalWord}
             onChange={(e) => setEmotionalWord(e.target.value)}
-            placeholder="e.g., tender, heavy, uncertain..."
+            placeholder="mis. peka, berat, ragu..."
             className="w-full px-4 py-3 rounded-xl border border-[#E8E9E5] bg-[#FCFAF5] text-[#4F5E52] placeholder-[#C4B5A8] focus:outline-none focus:border-[#A08963]"
           />
         </div>
@@ -152,6 +152,7 @@ export function EmotionalCheckin({ onCheckInComplete }: EmotionalCheckinProps) {
           onClick={handleComplete}
           className="w-full py-3 px-4 rounded-xl bg-[#4F5E52] text-white font-medium hover:bg-[#3D4A3F] transition-colors"
         >
+          Lanjut Menulis Jurnal
           Continue to Journaling
         </button>
       </div>

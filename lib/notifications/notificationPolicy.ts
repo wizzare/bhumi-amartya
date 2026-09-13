@@ -59,7 +59,7 @@ const COPY: Record<NotificationLocale, Record<NotificationCategory, { title: str
   },
 };
 
-export function notificationCopy(category: NotificationCategory, locale: NotificationLocale) {
+export function notificationCopy(category: NotificationCategory, _locale: NotificationLocale = "id-ID") {
   return COPY["id-ID"][category];
 }
 

@@ -49,8 +49,7 @@ const SECTION_STYLES: Record<
 };
 
 export default function WetonPage() {
-  const { language } = useLanguage();
-  const isEn = language === "en" || isEnlEdition();
+  const isEn = false;
   const [weton, setWeton] = useState<WetonPresentationInput | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);

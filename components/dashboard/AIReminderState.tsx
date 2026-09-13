@@ -16,9 +16,7 @@ export function AIReminderState({
   moodLevel,
   language: propLanguage,
 }: AIReminderStateProps) {
-  const { language: contextLanguage } = useLanguage();
-  const language = propLanguage || contextLanguage;
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
 
   // Determine reminder message based on state
   let reminderMessage = "";

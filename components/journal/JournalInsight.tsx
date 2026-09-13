@@ -25,16 +25,16 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {/* Header */}
         <div className="mb-8 pb-6 border-b border-[#E8E9E5]">
           <p className="text-[#8B9488] text-xs mb-2 uppercase tracking-wide">
-            What We&apos;re Witnessing
+            Yang Sedang Disimak
           </p>
           <h2 className="text-3xl md:text-4xl text-[#4F5E52] font-light">
-            Your Emotional Landscape
+            Lanskap Emosimu
           </h2>
         </div>
 
         {/* Primary Emotion */}
         <div className="mb-8 p-6 bg-white rounded-2xl">
-          <p className="text-[#8B9488] text-sm mb-2">Primary Emotion</p>
+          <p className="text-[#8B9488] text-sm mb-2">Emosi Utama</p>
           <div className="flex items-center gap-3">
             <div
               className="w-12 h-12 rounded-full"
@@ -57,7 +57,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
               </p>
               {analysis.secondaryEmotions && analysis.secondaryEmotions.length > 0 && (
                 <p className="text-[#8B9488] text-sm mt-1">
-                  Also present: {analysis.secondaryEmotions.join(", ")}
+                  Juga hadir: {analysis.secondaryEmotions.join(", ")}
                 </p>
               )}
             </div>
@@ -66,7 +66,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
 
         {/* Nervous System State */}
         <div className="mb-8 p-6 bg-white rounded-2xl">
-          <p className="text-[#8B9488] text-sm mb-3">Nervous System State</p>
+          <p className="text-[#8B9488] text-sm mb-3">Kondisi Sistem Saraf</p>
           <p className="text-lg text-[#4F5E52] font-medium">
             {analysis.nervousSystemDetection
               .split("-")
@@ -74,7 +74,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
               .join(" ")}
           </p>
           <p className="text-[#8B9488] text-sm mt-2">
-            This tells us how your body is responding to what&apos;s happening internally.
+            Ini menunjukkan bagaimana tubuhmu merespons apa yang terjadi di dalam batin.
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {analysis.recurringThemes && analysis.recurringThemes.length > 0 && (
           <div className="mb-8 p-6 bg-white rounded-2xl">
             <p className="text-[#8B9488] text-sm mb-4 uppercase tracking-wide">
-              Themes we noticed
+              Tema yang teramati
             </p>
             <div className="space-y-2">
               {analysis.recurringThemes.map((theme, idx) => (
@@ -101,10 +101,10 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {analysis.recurringWounds && analysis.recurringWounds.length > 0 && (
           <div className="mb-8 p-6 bg-white rounded-2xl border-l-4 border-[#C4A88A]">
             <p className="text-[#8B9488] text-sm mb-4 uppercase tracking-wide">
-              Wounds we&apos;re holding
+              Luka yang sedang dipeluk
             </p>
             <p className="text-[#4F5E52] leading-relaxed mb-3">
-              These are tender places asking for compassion:
+              Ini adalah ruang peka yang membutuhkan welas asih:
             </p>
             <ul className="space-y-2">
               {analysis.recurringWounds.map((wound, idx) => (
@@ -120,7 +120,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {/* Gentle Insight */}
         <div className="mb-8 p-6 bg-[#FBF9F4] rounded-2xl border border-[#E8E9E5]">
           <p className="text-[#A08963] font-medium mb-3 uppercase text-xs tracking-wide">
-            💫 A Gentle Reflection
+            💫 Refleksi Lembut
           </p>
           <p className="text-[#4F5E52] leading-relaxed text-lg italic">
             {analysis.gentleInsight}
@@ -130,7 +130,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {/* Healing Direction */}
         <div className="mb-8 p-6 bg-[#FBF9F4] rounded-2xl border border-[#E8E9E5]">
           <p className="text-[#A08963] font-medium mb-3 uppercase text-xs tracking-wide">
-            🌱 Where Healing Points
+            🌱 Arah Pemulihan
           </p>
           <p className="text-[#4F5E52] leading-relaxed">
             {analysis.healingDirection}
@@ -140,7 +140,7 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {/* Suggested Next Innerwork */}
         <div className="mb-8 p-6 bg-white rounded-2xl">
           <p className="text-[#8B9488] text-sm mb-4 uppercase tracking-wide">
-            Suggested Practice
+            Praktik yang Disarankan
           </p>
           <p className="text-[#4F5E52] leading-relaxed">
             {analysis.suggestedNextInnerwork}
@@ -150,19 +150,19 @@ export function JournalInsight({ analysis, wordCount }: JournalInsightProps) {
         {/* Grounding Suggestion */}
         <div className="mb-8 p-6 bg-gradient-to-r from-[#F7F4ED] to-[#FCFAF5] rounded-2xl border border-[#E8E9E5]">
           <p className="text-[#A08963] font-medium mb-2 uppercase text-xs tracking-wide">
-            🌍 Grounding for Today
+            🌍 Grounding Hari Ini
           </p>
           <p className="text-[#4F5E52] leading-relaxed">
-            What would help right now: <span className="font-semibold">{analysis.groundingNeed}</span>
+            Yang dapat membantu saat ini: <span className="font-semibold">{analysis.groundingNeed}</span>
           </p>
         </div>
 
         {/* Footer message */}
         <div className="text-center pt-6 border-t border-[#E8E9E5]">
           <p className="text-[#8B9488] text-sm leading-relaxed">
-            You wrote {wordCount} words today. That took courage. 
+            Kamu menulis {wordCount} kata hari ini. Itu butuh keberanian. 
             <br />
-            Your words matter. You matter.
+            Kata-katamu bermakna. Dirimu bermakna.
           </p>
         </div>
       </div>

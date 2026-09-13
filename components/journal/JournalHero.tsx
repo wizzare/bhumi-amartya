@@ -11,12 +11,12 @@ export function JournalHero({ userName, date }: JournalHeroProps) {
       <div className="max-w-2xl">
         <p className="text-[#A08963] text-sm mb-3 tracking-wide">📖 Journaling</p>
         <h1 className="text-4xl md:text-5xl text-[#4F5E52] font-light mb-2">
-          A Safe Space to Hear Yourself
+          Ruang Aman untuk Mendengar Dirimu
         </h1>
         <p className="text-[#8B9488] text-lg leading-relaxed">
-          Dear {userName}, today is {date}. 
+          Untuk {userName}, hari ini adalah {date}. 
           <br />
-          This is your space to feel everything.
+          Ini adalah ruang untuk merasakan segalanya dengan jujur.
         </p>
       </div>
 

@@ -40,8 +40,7 @@ const GROUP_ICONS: Record<string, typeof Sparkles> = {
 };
 
 export default function TzolkinPage() {
-  const { language } = useLanguage();
-  const isEn = language === "en" || isEnlEdition();
+  const isEn = false;
   const [tzolkin, setTzolkin] = useState<TzolkinPresentationInput | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);

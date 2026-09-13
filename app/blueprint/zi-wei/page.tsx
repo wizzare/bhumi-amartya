@@ -23,8 +23,7 @@ function canonicalGender(value: unknown): ZiWeiGender | null {
 }
 
 export default function ZiWeiPage() {
-  const { language } = useLanguage();
-  const isEn = language === "en" || isEnlEdition();
+  const isEn = false;
   const [result, setResult] = useState<ZiWeiResult | null>(null);
   const [loading, setLoading] = useState(true);
 

@@ -15,10 +15,10 @@ export function DailyPromptCard({ prompt }: DailyPromptCardProps) {
         {/* Header */}
         <div className="mb-6 pb-6 border-b border-[#E8E9E5]">
           <p className="text-[#8B9488] text-sm mb-2 tracking-wide">
-            Today&apos;s Reflection
+            Refleksi Hari Ini
           </p>
           <p className="text-[#7B8776] text-xs mb-3">
-            Theme: {prompt.theme} • {prompt.emotionalDepth} depth
+            Tema: {prompt.theme} • kedalaman {prompt.emotionalDepth}
           </p>
         </div>
 
@@ -36,7 +36,7 @@ export function DailyPromptCard({ prompt }: DailyPromptCardProps) {
         {prompt.subPrompts && prompt.subPrompts.length > 0 && (
           <div className="bg-white/50 rounded-2xl p-6 mb-6">
             <p className="text-[#7B8776] font-medium mb-4 text-sm">
-              If you want to go deeper:
+              Bila ingin menyelam lebih dalam:
             </p>
             <ul className="space-y-3">
               {prompt.subPrompts.map((subPrompt, idx) => (

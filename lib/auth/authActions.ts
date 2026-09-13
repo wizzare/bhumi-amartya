@@ -162,6 +162,12 @@ function buildMinimalUserProfile(user: User, now: Timestamp): UserProfile {
     baselineWellnessCompleted: false,
     setupCompleted: false,
     blueprintStatus: "missing",
+    trialStartedAt: now,
+    trialEndsAt: Timestamp.fromMillis(now.toMillis() + 7 * 24 * 60 * 60 * 1000),
+    membershipType: "TRIAL",
+    plan: "free_trial",
+    entitlementSource: "firebase_auth_creation_time",
+    subscriptionStatus: "trialing",
     healingProgress: {
       healingStreak: 0,
       totalJournalEntries: 0,

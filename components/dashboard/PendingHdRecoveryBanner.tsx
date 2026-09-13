@@ -26,8 +26,7 @@ function hasBirthData(profile: any): boolean {
 
 export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRecoveryBannerProps) {
   const router = useRouter();
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [localDismissed, setLocalDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
 

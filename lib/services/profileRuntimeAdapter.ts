@@ -3,8 +3,8 @@ import type { ProfileSection } from "@/lib/types/profileRuntime";
 import { isEnlEdition } from "@/lib/config/edition";
 
 export class ProfileRuntimeAdapter {
-  private static t(id: string, en: string): string {
-    return isEnlEdition() ? en : id;
+  private static t(id: string, _en: string): string {
+    return id;
   }
   public static buildProfile(
     meaning: HumanMeaning,

@@ -19,9 +19,8 @@ import { isEnlEdition } from "@/lib/config/edition";
 export default function PremiumBhumiPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { language } = useLanguage();
-  const t = translations[language];
-  const isEn = isEnlEdition();
+  const t = translations["id"];
+  const isEn = false;
   const [profile, setProfile] = useState<any>(null);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +28,7 @@ export default function PremiumBhumiPage() {
   const [restoring, setRestoring] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [priceLabel, setPriceLabel] = useState(isEn ? "per month" : "per bulan");
+  const [priceLabel, setPriceLabel] = useState("per bulan");
 
   useEffect(() => {
     let cancelled = false;

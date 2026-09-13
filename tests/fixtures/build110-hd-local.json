@@ -1,0 +1,27 @@
+{
+  "status": "ready",
+  "type": "Manifesting Generator",
+  "strategy": "To Respond",
+  "authority": "Sacral",
+  "profile": "6/3",
+  "definition": "Single Definition",
+  "inc_cross": "Left Angle Cross of Incarnation",
+  "definedCenters": ["Sacral", "G Center", "Throat", "Ajna", "Heart", "Spleen"],
+  "openCenters": ["Head", "Solar Plexus", "Root"],
+  "channels": ["2-14", "10-20", "17-62", "23-43", "25-51", "26-44"],
+  "gatesPersonality": [24, 44, 50, 2, 1, 51, 17, 20, 13, 14, 26, 10, 28],
+  "gatesDesign": [13, 7, 62, 23, 43, 41, 25, 60, 14, 26, 10, 28],
+  "digestion": "Active",
+  "environment": "Observer",
+  "motivation": "Receptive",
+  "cognition": "Outer Vision",
+  "variables": {
+    "top_left": {"name": "Digestion", "def_type": "Active"},
+    "bottom_left": {"name": "Environment", "def_type": "Observer"},
+    "top_right": {"name": "Motivation", "def_type": "Receptive"},
+    "bottom_right": {"name": "Perspective", "def_type": "Peripheral"},
+    "short_code": "PRR DLR"
+  },
+  "personalityActivations": [{"planet": "Sun", "gate": 24, "line": 6}, {"planet": "Earth", "gate": 44, "line": 6}],
+  "designActivations": [{"planet": "Sun", "gate": 13, "line": 3}, {"planet": "Earth", "gate": 7, "line": 3}]
+}

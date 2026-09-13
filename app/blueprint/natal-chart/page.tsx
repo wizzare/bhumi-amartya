@@ -83,8 +83,7 @@ export default function NatalChartPage() {
     void load();
   }, []);
 
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
 
   const nc = (blueprint?.astrology as any) || (blueprint?.natalChart as any) || {};
   const natalPresentation = buildNatalPresentation(nc, { isEn });

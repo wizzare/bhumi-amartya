@@ -24,7 +24,7 @@ interface CoreIdentityProps {
   };
 }
 
-const Stat = ({ label, value, subValue, fallback = "Not available" }: { label: string; value?: string | number; subValue?: string; fallback?: string }) => (
+const Stat = ({ label, value, subValue, fallback = "Belum tersedia" }: { label: string; value?: string | number; subValue?: string; fallback?: string }) => (
   <div className="flex flex-col items-center justify-center p-3 min-h-[110px] border border-[#E8E9E5]/60 rounded-3xl bg-white overflow-hidden shadow-sm hover:shadow-md transition-shadow">
     <p className="text-base sm:text-lg font-bold text-[#4F6658] leading-tight text-center w-full break-words">
       {value || fallback}
@@ -65,16 +65,16 @@ export function CoreIdentity({
         value: hdState.reason === "needs_verified_timezone"
           ? labels.humanDesignNeedsTimezone || labels.humanDesignPending
           : labels.humanDesignPending,
-        subValue: labels.calculatingInProgress || "Calculation in progress",
+        subValue: labels.calculatingInProgress || "Perhitungan sedang berlangsung",
       };
     }
     return {
-      value: labels.unavailable || "Not available",
-      subValue: labels.cannotCalculate || "Human Design data cannot be calculated.",
+      value: labels.unavailable || "Belum tersedia",
+      subValue: labels.cannotCalculate || "Data Human Design belum dapat dihitung.",
     };
   })();
 
-  const unavailableFallback = labels.unavailable || "Not available";
+  const unavailableFallback = labels.unavailable || "Belum tersedia";
 
   return (
     <div className="mt-8 bhumi-card p-6 bg-[#FCFAF5]/50 shadow-none border-dashed">

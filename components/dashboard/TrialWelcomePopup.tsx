@@ -13,8 +13,7 @@ import { isEnlEdition } from "@/lib/config/edition";
 import type { UserProfile } from "@/lib/repositories/userRepository";
 
 export function TrialWelcomePopup({ profile }: { profile: UserProfile }) {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [visible, setVisible] = useState(false);
   const entitlement = useMemo(() => getEntitlementStatus(profile), [profile]);
   const preferenceKey = getTrialWelcomePreferenceKey(profile);

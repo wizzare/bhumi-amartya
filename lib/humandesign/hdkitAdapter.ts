@@ -233,7 +233,7 @@ export const normalizeHdkitBodygraph = (bodygraph: HdkitBodygraphLike): HumanDes
   };
 };
 
-const HD_REQUEST_TIMEOUT_MS = 15_000;
+const HD_REQUEST_TIMEOUT_MS = 4_000;
 
 async function fetchWithAuthAndTimeout(
   url: string,

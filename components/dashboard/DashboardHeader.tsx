@@ -12,8 +12,8 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
   const [now, setNow] = useState(() => new Date());
-  const isEn = isEnlEdition() || language === "en";
-  const locale = isEn ? "en-US" : "id-ID";
+  const isEn = false;
+  const locale = "id-ID";
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
     year: "numeric",

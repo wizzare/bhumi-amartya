@@ -78,8 +78,8 @@ function checkInFingerprint(input: Pick<WellnessSnapshot, "metrics" | "needs" | 
 }
 
 export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted, isEn: isEnProp }: WellnessCheckInCardProps) {
-  const isEn = isEnProp ?? isEnlEdition();
-  const langKey = isEn ? "en" : "id";
+  const isEn = false;
+  const langKey = "id";
   const [step, setStep] = useState<"pending" | "active" | "completed">(
     initialSnapshot?.checkInCompleted ? "completed" : "pending"
   );
@@ -155,7 +155,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted, isEn: i
         <header className="mb-6">
           <h3 className="text-[#4F6658] font-bold text-xl italic flex items-center gap-2">
             <Zap size={20} className="text-yellow-500 fill-yellow-500" />
-            {isEn ? "Pause for a Moment" : "Berhenti Sejenak"}
+            {isEn ? "Pause for a Moment" : "Jeda Sejenak"}
           </h3>
           <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mt-1">
             {isEn ? "Help Bhumi understand how you feel today in 1 minute." : "Bantu Bhumi memahami kondisimu hari ini dalam 1 menit."}
@@ -166,7 +166,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted, isEn: i
           onClick={() => setStep("active")}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl bg-[#4F5E52] text-white text-sm font-bold hover:bg-[#3D4A3F] transition-all shadow-md active:scale-[0.98]"
         >
-          {isEn ? "Start Self Check-In" : "Mulai Cek Diri"}
+          {isEn ? "Start Self Check-In" : "Mulai Check-in Diri"}
           <ArrowRight size={18} />
         </button>
       </div>

@@ -22,8 +22,7 @@ type StoredBlueprint = {
 };
 
 export default function AstrocartographyPage() {
-  const { language } = useLanguage();
-  const isEn = language === "en" || isEnlEdition();
+  const isEn = false;
   const [result, setResult] = useState<AstrocartographyResult | null>(null);
   const [presentation, setPresentation] = useState<AstrocartographyPresentation | null>(null);
   const [automatic, setAutomatic] = useState<AstrocartographyAutomaticPresentation | null>(null);

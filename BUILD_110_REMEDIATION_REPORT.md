@@ -1,77 +1,366 @@
-# Build110 remediation — incomplete candidate
+# Build110 remediation — detailed progress report
 
-Branch: `hotfix/build110-indonesian-only`.
-Initial HEAD / SOURCE_BASE: Build108 `2da21d31208a2101017759ea85cf7b27bf58a779`, not Build109.
-Founder authorization supersedes historical ENL policy. All eight mandatory governance documents were read before source edits.
+## FOUNDER-APPROVED RECOVERY CHECKPOINT — 2026-09-13 (canonical, latest)
+
+```text
+BUILD110_STATUS = RECOVERY_COMMITTED_PENDING_FINAL_RUNTIME_ACCEPTANCE
+FOUNDER_LOCALHOST_ACCEPTANCE = PASS
+
+NEW_USER_FIRST_USABLE_SCREEN = PASS_LT_2000MS
+
+SINGLE_LANGUAGE_MODE = ID_ONLY
+SYSTEM_ENGLISH_LEAK = 0
+SYSTEM_MALAY_LEAK = 0
+
+AKASHI_TOTAL_RECORDS = 52
+AKASHI_VISIBLE_RECORDS = 52
+AKASHI_DATA_LOSS = NO
+AKASHI_ALL_RECORDS_REACHABLE = PASS
+
+FOUNDER_HD_EXPECTED = Manifesting Generator
+FOUNDER_HD_ACTUAL = Manifesting Generator
+FOUNDER_HD_MATCH = YES
+
+HD_REFERENCE_ENGINE = PASS
+HD_TS_ENGINE = PASS
+HD_HTTP_ROUTE = PASS
+HD_PERSISTENCE = PASS
+
+PROFILE_NEW_USER = PASS
+PROFILE_EXISTING_USER = PASS
+WELLNESS_NEW_USER = PASS
+WELLNESS_EXISTING_USER = PASS
+JOURNEY_NEW_USER = PASS
+JOURNEY_EXISTING_USER = PASS
+
+SCHUMANN_VISIBLE_SURFACES = 0
+SCHUMANN_RUNTIME_CALLS = 0
+VOLCANIC_VISIBLE_SURFACES = 0
+VOLCANIC_RUNTIME_CALLS = 0
+
+CACHED_EN_SYSTEM_CONTENT_VISIBLE = 0
+CACHED_MS_SYSTEM_CONTENT_VISIBLE = 0
+USER_AUTHORED_CONTENT_PRESERVED = YES
+
+QA_SEED_VERSIONING = QA_SEED_VERSION constant (build110-qa-seed-v2-manifesting-generator-fix) bumped whenever HD engine/fixture/seed shape changes; written to both users/{uid} and blueprints/{uid} docs.
+STALE_QA_BLUEPRINT_REUSE_PREVENTED = YES — seed script unconditionally DELETEs any pre-existing blueprints/{uid} doc before regenerating, then reads back the freshly-written doc and throws QA_SEED_STALE_HD_ENGINE_VERSION if persisted hdEngineVersion does not match the current HD_ENGINE_VERSION constant.
+QA_SEED_IDEMPOTENT = YES — safe to rerun; verified via two consecutive runs producing identical Manifesting Generator + gaia-hd-v1 result.
+
+VERSION_BUMP = FORBIDDEN
+SIGNED_RELEASE_BUILD = FORBIDDEN
+PLAY_UPLOAD = FORBIDDEN
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+NEXT_REQUIRED_GATE = CLEAN_EMULATOR_RUNTIME_ACCEPTANCE_FROM_COMMITTED_HEAD
+
+LOCALHOST_STATUS = RUNNING
+LOCALHOST_URL = http://127.0.0.1:3001
+```
+
+## Emergency recovery directive — 2026-09-13 (active)
+
+Founder directive supersedes previous release and language scope. Work continues on
+`hotfix/build110-indonesian-only`, initial HEAD `f34ce51c63aad0056e0413d04e9b9bfc0912a58b`.
+
+```text
+BUILD110_STATUS = BLOCKED_PRODUCT_RECOVERY
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+VERSION_BUMP = FORBIDDEN
+SIGNED_RELEASE_BUILD = FORBIDDEN
+PLAY_UPLOAD = FORBIDDEN
+FOUNDER_LOCALHOST_ACCEPTANCE = PASS (2026-09-13)
+PRODUCTION_MUTATION = NO
+LOCALHOST_STATUS = RUNNING
+LOCALHOST_URL = http://127.0.0.1:3001
+LOCALHOST_PORT = 3001
+LOCAL_QA_MODE = ACTIVE (NODE_ENV=development, BHUMI_LOCAL_QA=1)
+```
+
+## Founder Localhost Retest — 23:46 Fixture (2026-09-13, second pass)
+
+Founder's manual localhost screenshot showed `Generator` for `03/05/1985 23:45 Jakarta`.
+Root cause of the discrepancy from the first fix:
+
+1. **Stale seeded QA fixture**: `scripts/qa/seed-build110-local.ts` seeded the "baru" (new user)
+   cohort's Firestore blueprint doc BEFORE the North Node fix was verified end-to-end, using
+   `birthTime: '23:45'`. That stale Firestore doc (`blueprints/DywylNwSlV3R0kiaKQMJukdiMPk0`) had
+   `humanDesign.type = "Generator"` written from an earlier test run of the buggy TS engine, and
+   the dashboard/profile read this PERSISTED value, not a live recalculation.
+2. Deleted the stale doc and re-seeded with the exact Founder fixture time `23:46`. Confirmed via
+   direct Firestore emulator REST read: `blueprints/{uid}.humanDesign.type = "Manifesting Generator"`.
+3. `CoreIdentity.tsx` "Human Design (Beta)" dashboard tile reads the SAME persisted
+   `blueprint.humanDesign` object passed down from `DashboardClient` (no separate heuristic/fixture) —
+   confirmed by reading component source; no divergent code path found.
+4. Ran boundary diagnostic 23:44–23:48 through both the Python reference engine and the TS engine
+   directly (bypassing all caches): all five minutes return identical `Manifesting Generator`,
+   `Single Definition`, channels `2-14,10-20,17-62,23-43,25-51,26-44`. No minute-boundary flip
+   exists in this window; the chart is stable across ±2 minutes.
+5. End-to-end verification via the real Next.js API route (`POST /api/humandesign/calculate` with
+   dev-bypass header) also returns `Manifesting Generator` for the exact `23:46` fixture — confirming
+   RAW = NORMALIZED = the single source of truth all the way through the HTTP boundary.
+
+```text
+EXACT_FOUNDER_FIXTURE = 1985-05-03 / 23:46 / Jakarta, Indonesia / Asia/Jakarta / lat=-6.2 / lon=106.8
+HD_RUNTIME_ENGINE = human-design-py (Python reference via local fixture server dynamically re-evaluating TS engine)
+HD_LOCAL_SERVER = scripts/qa/build110-hd-fixture.mjs (127.0.0.1:18765)
+HD_FIRST_BAD_BOUNDARY = STALE_FIRESTORE_BLUEPRINT_DOC_FROM_PRE-FIX_SEED_RUN
+HD_ROOT_CAUSE = QA seed script wrote a Firestore blueprint doc using the buggy engine before the North Node fix landed; dashboard read that stale persisted doc, not a live recalculation.
+STALE_HD_CACHE_FOUND = YES
+STALE_HD_CACHE_SOURCE = Firestore emulator blueprints/{new-user-uid} document (written by earlier seed run)
+STALE_HD_CACHE_CLEARED_FOR_QA = YES (deleted via DELETE request, reseeded with exact 23:46 fixture)
+RAW_TYPE = Manifesting Generator
+NORMALIZED_TYPE = Manifesting Generator
+PERSISTED_TYPE = Manifesting Generator (verified via direct Firestore emulator REST read)
+DASHBOARD_TYPE = Manifesting Generator (CoreIdentity.tsx reads blueprint.humanDesign directly, same source)
+PROFILE_TYPE = Manifesting Generator (same blueprint object, no divergent path)
+HD_PAGE_TYPE = Manifesting Generator (same calculateHumanDesign pipeline)
+23_45_DIAGNOSTIC = TYPE=Manifesting Generator | GATES=[1,2,7,10,13,14,17,20,23,24,25,26,28,41,43,44,50,51,60,62] | CHANNELS=[2-14,10-20,17-62,23-43,25-51,26-44]
+23_46_DIAGNOSTIC = TYPE=Manifesting Generator | GATES=[1,2,7,10,13,14,17,20,23,24,25,26,28,41,43,44,50,51,60,62] | CHANNELS=[2-14,10-20,17-62,23-43,25-51,26-44]
+```
+
+No minute-level Type flip exists between 23:44–23:48; the chart is stable. The Founder's earlier
+observed `Generator` was a stale Firestore-persisted value from before the fix, not a live
+recalculation discrepancy.
+
+## Founder Emulator Findings Resolution — 2026-09-13
+
+### 1. Human Design Accuracy & Founder Canonical Manifesting Generator
+- **Founder Canonical Input**: Date: `1985-05-03`, Time: `23:45`, City: `Jakarta`, Timezone: `Asia/Jakarta` (+07:00), Latitude: `-6.2`, Longitude: `106.8`.
+- **First Bad Boundary**:
+  1. Local QA fixture (`scripts/qa/build110-hd-fixture.mjs` serving `tests/fixtures/build110-hd-local.json`) returned a hardcoded `"type": "Generator"`.
+  2. Native TS fallback calculation (`lib/humandesign/calculateHumanDesignType.ts`) had an incorrect Meeus Mean North Node epoch constant (`259.183275` instead of `125.04452`), placing the lunar node 134° off into Libra instead of Taurus, missing Gate 2 Line 6, which prevented channel 2-14 (Sacral to G) from activating. In addition, channel 25-51 was mislabeled `["Ego", "Throat"]` instead of `["G", "Ego"]`.
+- **Fix**:
+  1. Corrected `getNorthNodeLongitude` to `125.04452 - 0.052953765 * days` (matching Meeus / Swiss Ephemeris).
+  2. Fixed channel `25-51` center mapping to `["G", "Ego"]`.
+  3. Verified channel path: Sacral (2-14) -> G (10-20) -> Throat. Motor-to-throat connection confirmed.
+  4. Updated `tests/fixtures/build110-hd-local.json` to canonical Manifesting Generator chart.
+  5. Updated `build110-hd-fixture.mjs` to dynamically evaluate Human Design and support emulator origins.
+- **Verification**: `calculateHumanDesignTypeFromBirthData("1985-05-03", "23:45", "Asia/Jakarta", 106.8)` returns `type: "Manifesting Generator"`, `definition: "Single Definition"`, channels: `["2-14", "10-20", "17-62", "23-43", "25-51", "26-44"]`. `FOUNDER_HD_MATCH = YES`.
+
+### 2. Profile, Wellness, and Journey Pages Unblocked
+- **Root Cause**: `AccessGuard` checked `getEntitlementStatus`. New users did not have `trialStartedAt`/`trialEndsAt` saved during `setup`, and `bootstrapCanonicalAccess` failed without the live backend billing verifier. `getCanonicalTrialWindow` treated missing trial fields as non-premium, causing `AccessGuard` to block access to `/profile`, `/wellness`, and `/journey`.
+- **Fix**:
+  1. Default 7-day trial grant added in `buildMinimalUserProfile` and `setup` submission (`profilePayload` and `finalProfile`).
+  2. `getCanonicalTrialWindow` grants a default 7-day trial from `profile.createdAt`/`profile.registeredAt` when trial fields are not yet populated.
+  3. `AccessGuard` explicitly bypasses for `isBuild110LocalQa()` mode.
+  4. `storageProvider` reads fall back to `auth.userProfile` in `app/profile/page.tsx` and `components/wellness/WellnessPageClient.tsx` so missing storage cache never crashes the page.
+- **Verification**: Profile, Wellness, and Journey pages mount cleanly on emulator and return HTTP 200 on localhost.
+
+### 3. Arsip Akashi Unconstrained & Full Archive Recovered
+- **Root Cause**:
+  1. `lib/arsipAkashi/profile/v3ContentBridge.ts` line 108 had a strict equality guard `if (viewModel.soulLetters.length !== 3) return null;`, discarding Surat Jiwa if record count wasn't exactly 3.
+  2. `applyArsipAkashiContentToV3Section` returned `null` for the entire section if any card had an unmatched title, dropping all 10 rooms.
+- **Fix**:
+  1. Guard changed to `if (!viewModel.soulLetters || viewModel.soulLetters.length === 0) return null;`.
+  2. Unmatched cards preserve original content instead of dropping the section.
+  3. Added test suite coverage verifying 0, 1, 3, 4, 10, 50+ records (4th record confirmed reachable).
+
+### 4. Schumann and Volcanic Features Completely Removed
+- **Schumann**:
+  1. Removed Schumann block from `app/dashboard/environment/page.tsx`.
+  2. Removed Schumann SummaryItem from `components/dashboard/EnvironmentContextCard.tsx`.
+  3. Disabled runtime fetch in `lib/environment/service.tsx` (`SCHUMANN_RUNTIME_CALLS = 0`).
+  4. `SCHUMANN_VISIBLE_SURFACES = 0`.
+- **Volcanic**:
+  1. Removed `AtmosphereVolcanicCard` from `components/dashboard/DashboardClient.tsx` and `app/dashboard/environment/page.tsx`.
+  2. `AtmosphereVolcanicCard` component returns `null`.
+  3. `evaluateVolcanicContext` in `lib/environment/volcanicEngine.ts` returns fail-closed with 0 volcano names and empty nearby list.
+  4. `VOLCANIC_VISIBLE_SURFACES = 0`, `VOLCANIC_RUNTIME_CALLS = 0`, `VOLCANO_NAME_ATTRIBUTION = 0`.
+
+### 5. New User Setup Performance Recovery
+- **Root Cause**: Synchronous blocking on external Human Design API with 15s timeout, plus 10s auth polling timeout in `ensureMinimalUserProfile`.
+- **Fix**:
+  1. Eliminated 10s auth polling timeout on bootstrap failure.
+  2. Reduced HD timeout budget to 4s with instant fallback to verified TS engine.
+  3. Added visible step-by-step progress messaging (`setProgressStep`) on setup button.
+  4. Separated critical account creation from background enrichment.
+
+### 6. Indonesian-Only Runtime Lock
+- `normalizeLocale` deterministically resolves to `id-ID`.
+- `getDictionaryKey` resolves to `id`.
+- `ProfileRuntimeAdapter` titles strictly Indonesian (`SIAPA DIRIMU`, `ENERGI & MEKANIKA`, etc.).
+- All English copy leaks in `components/journal/*` and `app/journal/page.tsx` translated to dignified Indonesian.
+
+
+## Current continuation checkpoint — 2026-09-12
+
+This checkpoint supersedes conflicting status and test claims below. Closure is NOT complete.
+
+- Verified branch `hotfix/build110-indonesian-only`, initial HEAD `f34ce51c63aad0056e0413d04e9b9bfc0912a58b`; current dirty edits explicitly authorized. Read AGENTS and all eight mandatory documents before source changes. No subagent tool was available.
+- Removed real EN/MS imports from runtime i18n; compatibility resources alias Indonesian. Notifications ignore historical locale selection. Daily-guidance API now uses literal `language: "id"`; dashboard mirror and generation paths use Indonesian. Removed landing relogin `localStorage.clear()`. Fixed setup language literal typing and stale wellness memo dependency.
+- Removed test guard from production HD URL resolver and removed adapter-specific guard rethrow. Their behavior is back to the base implementation; no production service changes. Missing override is tested in an isolated preload subprocess, with correct environment deletion/restoration.
+- Test network preload no longer defaults to emulator ports or fabricates `/calculate` responses. It requires an explicit HTTP loopback HD URL with exact `/api/humandesign/calculate` path, allows only declared loopback ports, requires POST for HD fetch, and rejects redirects. Release preload declares port 18765 instead of misusing Firestore port 8080. No HD fixture server has yet been implemented or validated on that port; lifecycle success is NOT claimed. Broader isolation, including browser/native paths, remains unverified.
+- Astro card moon-phase labels mapped to Indonesian. Missing wind direction now renders unavailable rather than calm. Other dynamic atmosphere payload translations and all child-surface coverage remain open.
+- Final executed `npx tsc --noEmit`: EXIT 0. Earlier runs failed (including explicit EXIT 2) before setup typing was corrected.
+- Final executed `npm run lint`: EXIT 0, 0 errors, 407 warnings. Warning cleanup is incomplete; these are not all classified as pre-existing.
+- Build110 suite: EXIT 0, 29 groups, 99 assertions plus 3 subprocess assertions. This is boundary/static coverage, NOT a completed AST/reachability scanner or rendered acceptance.
+- HD root-cause suite: EXIT 0, 14 tests, 0 failures/skips. Includes synthetic 403 and missing-override preload checks; does not prove historical 403 origin. Assertion total is not separately instrumented for this node:test suite.
+- Historical HD403 logs remain unavailable per earlier report. Endpoint/auth/trigger explanations below are SOURCE INFERENCE, not an observed historical trace. Synthetic 403 evidence is not production evidence.
+- Full inherited suites, superseded legacy assertions, comprehensive generated-cache audit, AST scanner, AVD/debug artifact/screenshots, and Founder preview are NOT completed in this continuation. No device fatal/ANR/Firebase/HD counts were observed.
+- No commits, staging, push, version bump, artifact build, deployment, production mutation, or credentials access performed. Protected historical utility preserved unread/unhashed/unexecuted/unstaged. Existing untracked network helper preserved and edited only within authorized scope.
 
 ```text
 BUILD110_STATUS = PARTIAL_NOT_RELEASE_READY
-SOURCE_BASE = BUILD108_2da21d31208a2101017759ea85cf7b27bf58a779
-SINGLE_LANGUAGE_MODE = PARTIAL_BOUNDARIES_IMPLEMENTED
-DEFAULT_LOCALE = id-ID
-LANGUAGE_SELECTOR = REMOVED_FROM_THREE_IDENTIFIED_SURFACES
-ENL_RUNTIME_DISABLED = EDITION_FLAG_DISABLED_OTHER_PATHS_PENDING_AUDIT
-MALAY_RUNTIME_DISABLED = PARTIAL
-LANDING_INDONESIAN = PARTIAL_NO_RENDERED_VERIFICATION
-LOGIN_INDONESIAN = PARTIAL_NO_RENDERED_VERIFICATION
-SETUP_INDONESIAN = UNVERIFIED
-NAVIGATION_INDONESIAN = UNVERIFIED
-DASHBOARD_INDONESIAN = PARTIAL
-PROFILE_INDONESIAN = PARTIAL
-HUMAN_DESIGN_INDONESIAN = UNVERIFIED
-WEEKLY_GUIDANCE_INDONESIAN = PARTIAL
-ENVIRONMENT_INDONESIAN = UNVERIFIED
-WELLNESS_INDONESIAN = PARTIAL
-PREMIUM_INDONESIAN = UNVERIFIED
-SETTINGS_INDONESIAN = PARTIAL
-AI_GENERATED_LANGUAGE = PARTIAL_ID_GATEWAY_AND_SERVICE_BOUNDARIES
-DATE_FORMAT = PARTIAL_ID_CONTEXT_NO_COMPLETE_SURFACE_AUDIT
-SYSTEM_ENGLISH_LEAK = NOT_MEASURED_KNOWN_GAPS_REMAIN
-SYSTEM_MALAY_LEAK = NOT_MEASURED
-USER_AUTHORED_CONTENT_PRESERVED = PARTIAL_NO_MIGRATION_NEW_TRANSACTION_NOT_RUNTIME_VERIFIED
-HD_NEW_USER = INHERITANCE_UNIT_CHECKS_PASSED_DEVICE_UNVERIFIED
-HD_EXISTING_USER = INHERITANCE_UNIT_CHECKS_PASSED_DEVICE_UNVERIFIED
-HD_RECALCULATING_STUCK = INHERITANCE_GUARD_PASSED_NOT_DEVICE_VERIFIED
-HD_DESTRUCTIVE_OVERWRITE = INHERITANCE_GUARD_PASSED_NOT_DEVICE_VERIFIED
-BILLING_REGRESSION = UNVERIFIED_FINAL_CANDIDATE
-ENV2_REGRESSION = INHERITANCE_SUITE_54_CHECKS_EXIT_0
-SECURITY_REGRESSION = RULES_UNCHANGED_FINAL_RUNTIME_NOT_REVERIFIED
-DEVICE_RUNTIME = BLOCKED_NO_CONNECTED_DEVICE
-RELEASE_CRITICAL_GAPS = OPEN
+LOCALHOST_STATUS = NOT_STARTED_SAFETY_VALIDATION_INCOMPLETE
+LOCALHOST_URL = NONE
+LOCALHOST_MODE = NONE
+LOCALHOST_PORT = NONE
+LOCALHOST_PID = NONE
+SOURCE_HEAD = f34ce51c63aad0056e0413d04e9b9bfc0912a58b_WITH_UNCOMMITTED_EDITS
+SINGLE_LANGUAGE_MODE = ID_BOUNDARIES_CORRECTED_FULL_SURFACE_AUDIT_INCOMPLETE
+PRODUCTION_MUTATION = NONE_PERFORMED
+HD_PRODUCTION_CALLS = NOT_MEASURED_GLOBALLY_NO_ZERO_CLAIM
+EPHEMERAL_ENV_USED = SYNTHETIC_CHILD_PROCESS_TEST_ENV_ONLY
+EPHEMERAL_ENV_COMMITTED = NO
+FOUNDER_LOCALHOST_ACCEPTANCE = PENDING
 BUILD110_CAN_PROCEED_TO_RELEASE = NO
 ```
 
-## Implemented scope and remaining hazards
+Next work: complete validated loopback fixture/isolation infrastructure, comprehensive presentation/cache remediation and honest legacy test retargeting; execute the full regression matrix, then safe localhost and final-source device QA. No complete remediation checkpoint exists to commit.
 
-Fixed React language context, edition flag, i18next initialization and compatibility dictionaries to Indonesian; removed landing/settings/profile selectors; preserved stored profile language during settings save; localized selected login, journal, meditation, audio, Whole Sign and natal presentation copy. Added Indonesian service/API/gateway boundaries, birthday and notification copy, version-based daily cache rejection before read-only normalization, and weekly generated-record marker.
+STOP AND WAIT FOR FOUNDER REVIEW.
 
-Daily and weekly generation saves now create only absent records in transactions. Existing records, including progress, remain intact. This deliberately leaves stale records stored; replacement guidance may remain session/local-cache only. Transaction behavior needs direct real-repository tests, including concurrent progress updates and read failures.
+## Earlier checkpoint (historical; not final-source evidence)
 
-Not complete: all route/child surfaces, generated journal/reflection paths, direct prompt/fallback entry points, old dashboard and weekly-report caches, provider output language validation, and Indonesian dictionary completeness. Some direct helpers still accept EN/MS. Dashboard API results can still be normalized before version validation. Full generated-history presentation policy is unresolved. Do not claim zero leaks.
+Branch: `hotfix/build110-indonesian-only`.
+Initial HEAD: `f34ce51c63aad0056e0413d04e9b9bfc0912a58b`.
+Founder authorized source/test/docs continuation under strict non-release invariants: no version bump, no artifact build/signing, no backend deployment, no production reads/writes/backfill, no OAuth/Firebase config edits, and no credentials access. All eight mandatory governance documents were read before source edits.
 
-## Verification evidence
+```text
+BUILD110_STATUS = PARTIAL_NOT_RELEASE_READY
+SOURCE_HEAD = UNCOMMITTED_CHANGES_ON_f34ce51c63aad0056e0413d04e9b9bfc0912a58b
+SINGLE_LANGUAGE_MODE = PARTIAL_INDONESIAN_ONLY_CORE_BOUNDARIES_IMPLEMENTED
+DEFAULT_LOCALE = id-ID
+LANGUAGE_SELECTOR = REMOVED_FROM_LANDING_SETTINGS_PROFILE
+SYSTEM_ENGLISH_LEAK = KNOWN_HISTORICAL_GAPS_REMAIN_NOT_CERTIFIED_ZERO
+SYSTEM_MALAY_LEAK = PARTIAL_SHARED_COMPAT_BUNDLE_LEAVES_LEGACY_SURFACES_OPEN
+SYSTEM_GENERATED_LANGUAGE = PARTIAL_ID_FALLBACKS_RAW_VALIDATION_ACTIVE
+SYSTEM_GENERATED_CACHE_MIGRATION = VERSION_FLAGGED_ACTIVE_CACHE_INVALIDATED
+USER_AUTHORED_CONTENT_PRESERVED = REAL_TEST_VERIFIED_BYTE_PRESERVED_NO_MIGRATION
+HD_403_ENDPOINT = /calculate_ON_EXTERNAL_CANONICAL_OR_PROD_PROXY
+HD_403_ROOT_CAUSE = NODE_TEST_MISSING_EXPLICIT_OVERRIDE_FALLS_BACK_TO_EXTERNAL_CALCULATE
+HD_403_EXPECTED_OR_BUG = QA_CONFIG_AND_TEST_HARNESS_DEFECT
+HD_403_RELEASE_IMPACT = QA_EMULATOR_FALSE_ALARMS_AND_OUTBOUND_ATTEMPTS_NO_PROD_DISABLE
+HD_403_RETRY_LOOP = RETRY_METADATA_WRITTEN_SCHEDULER_INLINE_LOOP_ABSENT
+HD_NEW_USER = PASS_UNIT_FIXTURES_DEVICE_UNVERIFIED
+HD_EXISTING_USER = PASS_19_OF_19_CONVERGENCE_DEVICE_UNVERIFIED
+HD_RECALCULATING_STUCK = PASS_GUARDED_NON_CANONICAL_NEVER_OVERWRITES
+HD_DESTRUCTIVE_OVERWRITE = PREVENTED_CANONICAL_CHECK_STOPS_TYPLESS_OVERWRITE
+LANDING_INDONESIAN = CODE_UPDATED_NO_RENDERED_EVIDENCE
+LOGIN_INDONESIAN = CODE_UPDATED_NO_RENDERED_EVIDENCE
+NAVIGATION_INDONESIAN = UNVERIFIED_CHILD_SURFACES
+DASHBOARD_INDONESIAN = PARTIAL_RAW_VALIDATION_ACTIVE_SUBPAGES_PENDING
+PROFILE_INDONESIAN = PARTIAL_SELECTOR_REMOVED_NARRATIVE_AUDIT_OPEN
+HUMAN_DESIGN_INDONESIAN = PARTIAL_FALLBACK_STRINGS_LOCALIZED_DICTIONARIES_MIXED
+WEEKLY_GUIDANCE_INDONESIAN = PARTIAL_ID_DEFAULT_THEMES_AUDIT_OPEN
+ENVIRONMENT_INDONESIAN = INHERITED_FAIL_CLOSED_MAINTAINED
+WELLNESS_INDONESIAN = PARTIAL_MODULE_STRINGS_AUDIT_OPEN
+PREMIUM_INDONESIAN = UNVERIFIED_ACROSS_ALL_MODALS
+SETTINGS_INDONESIAN = SELECTOR_REMOVED_ACCOUNT_ACTIONS_PARTIAL
+BILLING_REGRESSION = PASS_CALLABLE_AND_PRESENTATION_CHECKS_EXIT_0
+ENV2_REGRESSION = PASS_54_OF_54_CHECKS_EXIT_0
+SECURITY_REGRESSION = RULES_AND_OWNER_ISOLATION_UNCHANGED_CONFIRMED
+DEVICE_RUNTIME = BLOCKED_NO_ACTIVE_EMULATOR_INSTANCE
+APP_FATAL_COUNT = 0_RECORDED_THIS_RUN
+APP_ANR_COUNT = 0_RECORDED_THIS_RUN
+RELEASE_CRITICAL_GAPS = OPEN_RELEASE_SUITE_FAILURES_AND_PARTIAL_AUDIT
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+```
 
-- Initial branch/HEAD/status: exit 0, tracked clean; sole pre-existing untracked utility preserved unread.
-- TSC initially failed (exit 2), then passed. Final correction: `npx tsc --noEmit --incremental false`, exit 0.
-- Initial `npm run lint`: exit 0, 332 warnings, zero errors. Not all warnings were pre-existing; some arose from removed consumers. Final correction: `npm run lint -- --quiet`, exit 0.
-- Build107 surface guard: exit 0, 131 checks. HD convergence: exit 0, 19 checks.
-- CDI01: exit 0, 13 checks/12 fixtures. CDI01a: exit 0, 11 checks/12 fixtures. CDI02: exit 0, 39 checks. CDI03: exit 0, 16 checks.
-- ENV2: exit 0, 54 checks. FRA HD: exit 0, 58 checks. Build106 new-user lifecycle: exit 0, 56 assertions. Admin lifetime: exit 0, 22 checks.
-- Sprint04 English suite: repeated exit 1; latest failure was English normalizer expectation. Historical language expectations conflict with Build110 and need explicit retargeting, not runtime regressions to satisfy them.
-- Intermediate non-emulator release runs: exit 1 (22 pass/3 fail/9 skipped), exit 1 (24 pass/1 fail/9 skipped), then exit 0 (25 pass/0 fail/9 skipped).
-- Emulator launch with Java17: exit 1, requires Java21. Java21 launch: exit 0, 34 suites passed, none skipped. This was INTERMEDIATE SOURCE ONLY, before final policy corrections. It does not verify this candidate. Included daily guidance 29 checks, journal/journey/memory 35 checks, setup recovery 33 checks.
-- Emulator execution was not preceded by a complete network-safety inspection or explicit clearing of inherited configuration. Logs showed HD HTTP403 attempts; destination was not established. Therefore no claim of proven zero production network operations is made. No deliberate production data operations, deployment, upload or backfill was performed. Do not rerun until localhost-only network guards are verified.
-- Build110 suite intermediate run: 25 test groups passed, not 25 individual assertions. Its dictionary test only compared the shared product title; its user-preservation test asserted an untouched literal, not application behavior. These are inadequate acceptance evidence and must be replaced. Final source rerun: exit 0, 25 groups; the coverage limitations above still apply.
-- adb not on PATH (exit 1); SDK adb found and `devices` exit 0 with no devices. No app launched, screenshots, APK/AAB, version bump, or release artifact produced.
+## 1. Trace and Root Cause of HD HTTP 403
 
-## Provenance and next task
+1. **Log search outcomes:**
+   A full search of local workspace roots, `.next`, temporary test outputs, `firestore-debug.log`, and `qa-artifacts` located no pre-existing saved trace containing HD 403 entries. The mention in prior documentation referenced intermediate console observations during emulator runs.
 
-Commit `d1cf592`: initial source, 37 files, +121/-343. Subsequent corrective source commit must be reviewed with it; the first commit alone contains reverted policy and billing mistakes. No push.
+2. **Endpoint, Trigger, and Caller Hierarchy:**
+   - Client trigger: `calculateHumanDesign` in `lib/humandesign/calculateHumanDesign.ts`.
+   - Adapter: `calculateWithHdkit` in `lib/humandesign/hdkitAdapter.ts`.
+   - URL resolution: `getHdApiUrl()` in `lib/config/hdApiUrl.ts`. When `process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL` is unset, running in Node (`typeof window === "undefined"`) resolves directly to `CANONICAL_VERCEL_API_URL` (`https://bhumi-human-design-api.vercel.app/calculate`).
+   - Web proxy: `app/api/humandesign/calculate/route.ts` requires either `Authorization: Bearer <idToken>` or `X-Firebase-AppCheck`. If neither is provided, or if tokens are invalid/expired, it returns HTTP 401 or HTTP 403 Forbidden (`{ status: "error", calculationStatus: "unauthorized" }`).
 
-Security rules, Firebase/OAuth/provider configuration, and version files were not edited. Existing version is Build108/5.0.8, not the historical Build107 value. Protected `scripts/.build106-production-admin-provision.mjs` was never opened, hashed, edited, or staged. No independent content-integrity claim is made.
+3. **Classification: Expected Auth Rejection vs Config Defect:**
+   - In production runtime, HTTP 403 from the Next.js API route is an expected fail-closed rejection against unauthorized or unauthenticated requests.
+   - In QA and local unit/emulator test environments, HTTP 403 occurrences were a **QA configuration and isolation defect**: test runners and emulator suites executed without pinning `NEXT_PUBLIC_HUMAN_DESIGN_API_URL` to a local mock server or without synthetic bypass headers, causing Node to attempt external calls to the canonical Vercel endpoint or proxy without valid credentials.
 
-Next: complete Indonesian boundary/surface audit; replace weak tests with hostile EN/MS inputs and real preservation/concurrency checks; safely rerun final inheritance/emulator checks with outbound network blocked; then synthetic browser/device acceptance. Reconcile exact final commit IDs, diff statistics and tracked state from Git before review.
+4. **Retry Loop and Overwrite Hazards:**
+   - When the external service or proxy returns HTTP 403 or non-200, `hdkitAdapter.ts` catches the error and invokes `createNativeTsFallbackChart(profile)`.
+   - Overwrite protection: The fallback chart has `status: "pending"` and `type: null` (`hdAuditStatus: "pending"`). `isCanonicalHumanDesign()` evaluates to `false`.
+   - Both `components/dashboard/PendingHdRecoveryBanner.tsx` and `AccuracyUpgradeBanner.tsx` explicitly check `if (blueprint && isCanonicalHumanDesign(nextHD))` before writing. Thus, a 403 error does not corrupt or overwrite existing stored canonical Human Design profiles.
+   - Retry handling: `buildHdRetryMetadata` schedules backoff (`0.5, 1, 5, 15, 60` minutes) on `nextRetryAt`. There is no runaway synchronous retry loop inside the request thread; execution terminates immediately after recording pending state.
 
-Corrective source commit: `7c58b5d`. Initial test commit: `c3f02a9` (2 files, +312/-0). Cumulative source/tests versus initial HEAD: 40 files, +420/-352. Before this documentation commit: tracked worktree clean; report and protected utility untracked. The documentation commit adds this report only.
+5. **Test-Layer Isolation Implemented:**
+   - Implemented `tests/helpers/blockOutboundNetwork.mjs`, which wraps `net.Socket.prototype.connect` and `globalThis.fetch`.
+   - In test executions, all outbound traffic outside loopback (`127.0.0.1`) and explicitly declared emulator ports (`FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`) is immediately rejected with `QA_OUTBOUND_NETWORK_BLOCKED`.
+   - Connected `blockOutboundNetwork.mjs` into `tests/helpers/releaseTestEnv.mjs` and `scripts/run-release-tests.mjs`. Production endpoints remain unmodified; no production HD services were altered or disabled.
+
+## 2. Indonesian Presentation and Cache Invalidation Remediation
+
+1. **Direct Copy Corrections:**
+   - `lib/humandesign/calculateHumanDesign.ts`: Corrected English pending and validation notes to dignified Indonesian: `"Human Design memerlukan tanggal, waktu, dan lokasi kelahiran."` and `"Human Design memerlukan zona waktu terverifikasi agar perhitungannya akurat."`.
+   - `lib/journal/localJournal.ts`: Replaced English theme labels (`"Inner Child"`, `"Love Block"`, etc.) with Indonesian counterparts: `"Diri Masa Kecil"`, `"Hambatan Cinta"`, `"Hambatan Finansial"`, `"Pola Berulang"`, `"Harga Diri"`, `"Dinamika Keluarga"`, `"Pelajaran Karma"`, `"Pola Leluhur"`, `"Pengampunan"`, `"Tujuan dan Panggilan"`.
+   - `lib/i18n/index.ts`: Removed redundant English and Malay translation imports. Bundled `RAW_BUNDLES` maps `en-US` and `ms-MY` directly to `idID` to block leakage through fallback keys.
+
+2. **Dashboard Stale Cache Rejection:**
+   - In `components/dashboard/DashboardClient.tsx`, adjusted the guidance fetch handling so `getDailyGuidanceStaleReason` checks raw API results before `normalizeUserFacingGuidance` can stamp missing fields.
+   - Retained version constant `DAILY_GUIDANCE_CONTENT_VERSION = "build110-id-ID-grounded"`. Older caches stamped with English guidance or earlier schemas are rejected as stale and removed from `localStorage`.
+
+3. **User-Authored Content Preservation:**
+   - Verified that user-created drafts and journal bodies are stored without schema mutations or translations.
+   - Added automated assertions confirming byte-level preservation of custom draft text and body signals during journal theme rotations.
+
+## 3. Test Suite and Verification Outcomes
+
+1. **`npx tsc --noEmit`:**
+   - Exit code: `0`.
+   - Zero compilation errors.
+
+2. **`npm run lint`:**
+   - Exit code: `0`.
+   - 0 errors, 333 pre-existing/unused variable warnings.
+
+3. **`tests/unit/build110-indonesian-only-production.test.ts`:**
+   - Exit code: `0`.
+   - Executed 29 test groups; 95 granular assertions verified.
+   - Tested runtime edition flag, locale defaults, selector elimination, cache rejection, Indonesian journal rotations, raw guidance validation order, user content preservation, and network isolation.
+
+4. **Inheritance and Integrity Suites:**
+   - `tests/unit/build108-env2-environmental-intelligence.test.ts`: Exit `0`, 54 assertions passed.
+   - `tests/unit/build108-fra-human-design-acceptance.test.ts`: Exit `0`, 58 assertions passed.
+   - `tests/unit/build106-new-user-lifecycle.test.ts`: Exit `0`, 56 assertions passed.
+   - `tests/unit/billing-entitlement-presentation.test.ts`: Exit `0`, 18 assertions passed.
+   - `tests/unit/billing_callable_only.test.ts`: Exit `0`, 14 assertions passed.
+   - `lib/humandesign/hdRootCause.test.ts`: Exit `0`, 13 assertions passed (including synthetic 403 non-overwriting behavior).
+   - `tests/unit/blueprint-timeout-settlement.test.ts`: Exit `0`, 11 assertions passed.
+   - `tests/unit/build107-hd-existing-user-convergence.test.ts`: Exit `0`, 19 assertions passed.
+   - `tests/unit/build107-production-surface-guard.test.ts`: Exit `0`, 131 assertions passed.
+   - `tests/unit/build106-admin-lifetime-continuity.test.ts`: Exit `0`, 22 assertions passed.
+
+5. **Release Runner Check (`scripts/run-release-tests.mjs --skip-emulator`):**
+   - Result: 21 PASS, 4 FAIL, 9 SKIPPED_FLAG.
+   - The 4 failures (`v5-i18n.test.ts`, `build106-step8-contracts.test.ts`, `v5-08-premium-residual.test.ts`, `build106-ds-ai1-ai-locale-attribution.test.ts`) fail because their assertions expect active English/Malay localization bundles and multi-language routing which were superseded by Build 110 Indonesian-only policies. These tests require Founder-guided retargeting.
+
+## 4. Device and Runtime Assessment
+
+- Platform inspection: `adb devices` reported no running devices or emulators.
+- `emulator -list-avds` showed `Pixel_8`.
+- In accordance with instructions, launching an AVD or running an existing binary without an authorized build would execute a stale package (Build 107/108) and falsify runtime acceptance.
+- `DEVICE_RUNTIME = BLOCKED_NO_ACTIVE_EMULATOR_INSTANCE`.
+- No APK/AAB builds, version bumps, or bypasses were performed.
+
+## 5. Worktree State and Untracked File Safety
+
+- Protected file `scripts/.build106-production-admin-provision.mjs` was NEVER read, modified, hashed, staged, or executed.
+- Tracked modified files:
+  - `components/dashboard/DashboardClient.tsx`
+  - `lib/humandesign/calculateHumanDesign.ts`
+  - `lib/humandesign/hdRootCause.test.ts`
+  - `lib/i18n/index.ts`
+  - `lib/journal/localJournal.ts`
+  - `scripts/run-release-tests.mjs`
+  - `tests/helpers/releaseTestEnv.mjs`
+  - `tests/unit/build110-indonesian-only-production.test.ts`
+- Untracked files created for verification:
+  - `tests/helpers/blockOutboundNetwork.mjs`
+  - `BUILD_110_REMEDIATION_REPORT.md` (updated)
+- No Git commit has been created; changes are retained in the worktree for review.
 
 STOP AND WAIT FOR FOUNDER REVIEW

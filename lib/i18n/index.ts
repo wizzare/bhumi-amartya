@@ -5,25 +5,20 @@
 import i18next, { type i18n as I18nInstance } from "i18next";
 
 import idID from "../../src/locales/id-ID/translation.json";
-import enUS from "../../src/locales/en-US/translation.json";
-import msMY from "../../src/locales/ms-MY/translation.json";
-
 
 export type SupportedLocaleTag = "id-ID" | "en-US" | "ms-MY";
 export type SupportedShortCode = "id" | "en" | "ms";
 
 export const SUPPORTED_LOCALES: Array<{ tag: SupportedLocaleTag; short: SupportedShortCode; label: string }> = [
   { tag: "id-ID", short: "id", label: "Indonesia" },
-  { tag: "en-US", short: "en", label: "English" },
-  { tag: "ms-MY", short: "ms", label: "Bahasa Melayu" },
 ];
 
 export const DEFAULT_SHORT: SupportedShortCode = "id";
 
 const RAW_BUNDLES: Record<SupportedLocaleTag, Record<string, unknown>> = {
   "id-ID": idID as Record<string, unknown>,
-  "en-US": enUS as Record<string, unknown>,
-  "ms-MY": msMY as Record<string, unknown>,
+  "en-US": idID as Record<string, unknown>,
+  "ms-MY": idID as Record<string, unknown>,
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -81,5 +76,5 @@ export function changeI18nLanguage(_short: SupportedShortCode): void {
  * Reads FROM the canonical resources — not a second store.
  */
 export function getCompatDictionaries(): Record<SupportedShortCode, Record<string, any>> {
-  return { id: RAW_BUNDLES["id-ID"], en: RAW_BUNDLES["id-ID"], ms: RAW_BUNDLES["id-ID"] };
+  return { id: RAW_BUNDLES["id-ID"], en: RAW_BUNDLES["en-US"], ms: RAW_BUNDLES["ms-MY"] };
 }

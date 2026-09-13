@@ -21,7 +21,7 @@ type PurchaseState = "idle" | "loading" | "success" | "error";
 
 export default function UpgradePage() {
   const auth = useAuth();
-  const isEn = isEnlEdition();
+  const isEn = false;
   const [product, setProduct] = useState<GooglePlayProduct | null>(null);
   const [state, setState] = useState<PurchaseState>("idle");
   const [message, setMessage] = useState<string | null>(null);

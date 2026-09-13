@@ -12,7 +12,7 @@ interface SoulReflectionCardProps {
 }
 
 export function SoulReflectionCard({ language, reflection, loading }: SoulReflectionCardProps) {
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [isExpanded, setIsExpanded] = React.useState(false);
   const cleanedReflection = React.useMemo(
     () => cleanMarkdown(reflection),

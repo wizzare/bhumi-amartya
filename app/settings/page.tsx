@@ -65,7 +65,7 @@ const HUMAN_DESIGN_PENDING: LocalHumanDesign = {
 
 function toDisplayDate(value: unknown, language?: "id" | "en"): string | null {
   if (!value) return null;
-  const locale = isEnlEdition() || language === "en" ? "en-US" : "id-ID";
+  const locale = "id-ID";
   if (typeof value === "string") {
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString(locale, { day: "numeric", month: "long", year: "numeric" });
@@ -201,9 +201,8 @@ function normalizeProfileDisplay(profile: LocalUserProfile | StorageUserProfile 
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { language: appLanguage, setLanguage } = useLanguage();
-  const t = translations[appLanguage];
-  const isEn = isEnlEdition() || appLanguage === "en";
+  const t = translations["id"];
+  const isEn = false;
   const auth = useAuth();
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);

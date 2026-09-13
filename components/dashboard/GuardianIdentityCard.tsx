@@ -17,7 +17,7 @@ interface GuardianIdentityCardProps {
 }
 
 export function GuardianIdentityCard({ role, badge, tier, recognitionDate, language }: GuardianIdentityCardProps) {
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
 
   const getGreeting = () => {
     if (tier === "FOUNDER") {

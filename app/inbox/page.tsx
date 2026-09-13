@@ -46,11 +46,11 @@ export default function InboxPage() {
   const { language } = useLanguage();
   const auth = useAuth();
   const uid = auth?.user?.uid;
-  const isEn = isEnlEdition() || language === "en";
-  const SUPPORT_CATEGORIES = isEn ? SUPPORT_CATEGORIES_EN : SUPPORT_CATEGORIES_ID;
+  const isEn = false;
+  const SUPPORT_CATEGORIES = SUPPORT_CATEGORIES_ID;
 
   const it = useMemo(() => {
-    const t = (translations[language] as any);
+    const t = (translations["id"] as any);
     return t.inbox || (isEn ? {
       title: "Inbox",
       subtitle: "Messages and insights for your journey.",

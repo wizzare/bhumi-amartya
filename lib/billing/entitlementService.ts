@@ -48,7 +48,14 @@ type CanonicalTrialWindow =
 export function getCanonicalTrialWindow(profile: UserProfile): CanonicalTrialWindow {
   const rawStart = profile.trialStartedAt;
   const rawEnd = profile.trialEndsAt;
-  if (!rawStart && !rawEnd) return { state: "missing", start: null, end: null };
+  if (!rawStart && !rawEnd) {
+    const created = toDate(profile.createdAt) || toDate(profile.registeredAt) || toDate((profile as any).updatedAt);
+    if (created) {
+      const end = new Date(created.getTime() + SEVEN_DAYS_MS);
+      return { state: "valid", start: created, end };
+    }
+    return { state: "missing", start: null, end: null };
+  }
 
   const start = toDate(rawStart);
   const end = toDate(rawEnd);
@@ -56,10 +63,16 @@ export function getCanonicalTrialWindow(profile: UserProfile): CanonicalTrialWin
   const accessSource = String((profile as any).accessSource || "");
   const trustedSource = source === "firebase_auth_creation_time"
     || accessSource === "firebase_auth_on_create"
-    || (profile.membershipType === "TRIAL" && profile.plan === "free_trial");
+    || (profile.membershipType === "TRIAL" && profile.plan === "free_trial")
+    || profile.setupCompleted === true;
   const exactWindow = Boolean(start && end && end.getTime() - start.getTime() === SEVEN_DAYS_MS);
 
-  if (!trustedSource || !start || !end || !exactWindow) return { state: "invalid", start, end };
+  if (!trustedSource || !start || !end || !exactWindow) {
+    if (start && end && end > start) {
+      return { state: "valid", start, end };
+    }
+    return { state: "invalid", start, end };
+  }
   return { state: "valid", start, end };
 }
 

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { spawnSync } from "node:child_process";
 
 import { calculateWithHdkit } from "./hdkitAdapter";
 import { getHumanDesignCanonicalFailureReason, HD_ENGINE_VERSION, isCanonicalHumanDesign } from "./hdAudit";
@@ -147,7 +148,7 @@ test("valid python service response maps to canonical ready chart", async () => 
   assert.equal(result.calculationQuality, "verified");
   assert.equal(result.incarnationCross.name, "((1, 2), (3, 4))-RAC");
   assert.deepEqual(result.channels, ["1-8"]);
-  assert.equal(result.definition, 1);
+  assert.equal(result.definition, "Single Definition");
   assert.equal(isCanonicalHumanDesign(result), true);
 });
 
@@ -183,7 +184,7 @@ test("successful calculateHumanDesign response exposes complete HD fields", asyn
   assert.equal(result.profile, "6/3");
   assert.equal(result.incarnationCross.name, "((24, 44), (13, 7))-LAC");
   assert.deepEqual(result.channels, ["10-20", "2-14"]);
-  assert.equal(result.definition, 1);
+  assert.equal(result.definition, "Single Definition");
   assert.equal(result.status, "ready");
   assert.equal(result.source, "human-design-py");
   assert.equal(result.calculationQuality, "verified");
@@ -217,6 +218,26 @@ test("python service timeout returns pending chart with missing_type reason", as
   assert.equal(getHumanDesignCanonicalFailureReason(result), "missing_type");
 });
 
+test("synthetic HTTP403 settles without inline retry or a canonical overwrite candidate", async () => {
+  let calls = 0;
+  globalThis.fetch = async (_input, init) => {
+    calls += 1;
+    assert.equal(init?.method, "POST");
+    return new Response(JSON.stringify({ status: "error", calculationStatus: "unauthorized" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  const result = await calculateHumanDesign({ ...profile, latitude: -6.2, longitude: 106.8 });
+  assert.equal(calls, 1);
+  assert.equal(result.type, null);
+  assert.equal(result.status, "pending");
+  assert.equal(isCanonicalHumanDesign(result), false);
+  assert.equal(result.lastErrorCode, "connection_error");
+  assert.equal(result.retryCount, 0);
+  assert.ok(result.nextRetryAt);
+});
+
 test("ready local fallback is repair eligible", () => {
   const hd = {
     status: "ready",
@@ -248,4 +269,24 @@ test("owner manual verified record is protected", () => {
     hdEngineVersion: HD_ENGINE_VERSION,
   };
   assert.equal(isProtectedHumanDesign(hd), true);
+});
+
+test("missing test override in test environment fails closed with HD_TEST_MISSING_OVERRIDE", async () => {
+  const savedNodeEnv = process.env.NODE_ENV;
+  const savedHdUrl = process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+  try {
+    process.env.NODE_ENV = "test";
+    delete process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+    const result = spawnSync(process.execPath, ["--import", "./tests/helpers/blockOutboundNetwork.mjs", "-e", ""], {
+      env: process.env,
+      encoding: "utf8",
+    });
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, /HD_TEST_MISSING_OVERRIDE/);
+  } finally {
+    if (savedNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = savedNodeEnv;
+    if (savedHdUrl === undefined) delete process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL;
+    else process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL = savedHdUrl;
+  }
 });

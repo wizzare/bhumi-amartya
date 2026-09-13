@@ -31,8 +31,7 @@ function Card({ title, subtitle, items }: { title: string, subtitle?: string, it
 }
 
 export default function DestinyMatrixPage() {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [matrix, setMatrix] = useState<DestinyMatrixVisualModel | null>(null);
   const [presentation, setPresentation] = useState<DestinyMatrixPresentation | null>(null);
   const [birthDate, setBirthDate] = useState<string | null>(null);

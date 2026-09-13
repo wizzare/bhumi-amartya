@@ -21,7 +21,7 @@ export function MeditationCard({
   lastEntry,
 }: MeditationCardProps) {
   const displayTheme = theme || title || "Meditasi Hari Ini";
-  const displaySummary = summary || (duration && type ? `${duration} Minutes / ${type}` : "Praktik singkat untuk kembali mendengar ritme tubuhmu.");
+  const displaySummary = summary || (duration && type ? `${duration} Menit / ${type}` : "Praktik singkat untuk kembali mendengar ritme tubuhmu.");
 
   return (
     <Link href="/meditation" className="block mt-6">

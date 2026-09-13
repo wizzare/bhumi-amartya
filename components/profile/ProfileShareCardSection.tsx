@@ -26,7 +26,7 @@ function profileName(profile: LocalRecord): string {
     const value = profile[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return isEnlEdition() ? "Bhumi Resident" : "Penghuni Bhumi";
+  return "Penghuni Bhumi";
 }
 
 function readLocalManifestation(uid: string, dateKey: string): DailyGuidance["manifestation"] | undefined {

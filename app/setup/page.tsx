@@ -48,8 +48,7 @@ function deepClean<T>(obj: T): T {
 
 export default function SetupPage() {
   const router = useRouter();
-  const { language } = useLanguage();
-  const t = translations[language] || translations["en"];
+  const t = translations["id"];
   const auth = useAuth();
   const user = auth?.user;
   const authRef = useRef(auth);
@@ -99,9 +98,10 @@ export default function SetupPage() {
   const [birthTime, setBirthTime] = useState("");
   const [birthPlace, setBirthPlace] = useState("");
   const [selectedCity, setSelectedCity] = useState<CitySelection | null>(null);
-  const [preferredLanguage, setPreferredLanguage] = useState<"id" | "en" | "ms">(language);
+  const preferredLanguage = "id" as const;
   const [formError, setFormError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progressStep, setProgressStep] = useState("Menyimpan...");
   const [mountGuard, setMountGuard] = useState<"checking" | "ready" | "redirecting" | "unavailable">("checking");
   const [mountGuardAttempt, setMountGuardAttempt] = useState(0);
 
@@ -204,10 +204,12 @@ export default function SetupPage() {
     }
 
     setLoading(true);
+    setProgressStep("Menyimpan data kelahiran...");
     setFormError(null);
     setDebug(prev => ({ ...prev, errorMessage: null }));
 
     try {
+      const setupStartTime = performance.now();
       const trimmedBirthCity = birthPlace.trim();
 
       // BUILD 31: Improved location resolution
@@ -224,7 +226,7 @@ export default function SetupPage() {
 
       if (!nextTimezone) {
         setLoading(false);
-        setFormError(t.setup?.cityRequired || "Select a birth city from the list so location coordinates are detected.");
+        setFormError(t.setup?.cityRequired || "Pilih kota kelahiran dari daftar agar koordinat lokasi terdeteksi.");
         return;
       }
 
@@ -232,7 +234,9 @@ export default function SetupPage() {
 
       console.log("[SETUP TIMEZONE RESOLVED]", { timezone: nextTimezone, source: timezoneSource });
 
-      // 1. Profile Draft
+      // 1. Profile Draft with 7-Day Trial Entitlement
+      const nowTs = Timestamp.now();
+      const trialEndsTs = Timestamp.fromMillis(nowTs.toMillis() + 7 * 24 * 60 * 60 * 1000);
       const profilePayload = deepClean({
         uid,
         fullName,
@@ -246,17 +250,23 @@ export default function SetupPage() {
         latitude: nextLatitude,
         longitude: nextLongitude,
         timezone: nextTimezone,
-        timezoneSource, // BUILD 31 Metadata
+        timezoneSource,
         language: preferredLanguage,
         setupCompleted: false,
         blueprintStatus: "generating" as any,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
+        membershipType: "TRIAL" as const,
+        plan: "free_trial" as const,
+        trialStartedAt: nowTs,
+        trialEndsAt: trialEndsTs,
+        entitlementSource: "firebase_auth_creation_time",
+        subscriptionStatus: "trialing",
+        createdAt: nowTs,
+        updatedAt: nowTs,
       });
 
       console.log("[PROFILE WRITE ATTEMPT]");
       try {
-        await userRepository.upsertUserProfile(uid, profilePayload);
+        await userRepository.upsertUserProfile(uid, profilePayload as any);
         await userRepository.updatePresence(uid, {
           email: effectiveUser.email || "",
           displayName: fullName,
@@ -275,15 +285,18 @@ export default function SetupPage() {
       }
 
       // 2. Generate Blueprint
+      setProgressStep("Menyiapkan cetak biru jiwa...");
       console.log("[BLUEPRINT GEN START]");
+      const bpStart = performance.now();
       const blueprint = await generateBlueprint({
         uid, fullName, birthDate, birthTime, birthCity: trimmedBirthCity,
         birthCountry, latitude: nextLatitude, longitude: nextLongitude, timezone: nextTimezone,
         email: effectiveUser.email
       });
-      console.log("[BLUEPRINT GEN SUCCESS]");
+      console.log("[BLUEPRINT GEN SUCCESS]", { elapsedMs: Math.round(performance.now() - bpStart) });
 
       // 3. Save Blueprint
+      setProgressStep("Menyimpan cetak biru...");
       console.log("[BLUEPRINT WRITE ATTEMPT]");
       let bpSaved = false;
       try {
@@ -298,15 +311,13 @@ export default function SetupPage() {
           bpSaved = true;
         } else {
           console.error("[SETUP] Blueprint save failed:", err);
-          // Move to recovery_required — but never downgrade an already-finalized
-          // profile (DEFECT-8D-2): a stale / cross-tab / delayed failure here must
-          // not undo a concurrent successful finalize.
-          await userRepository.markBlueprintRecoveryRequired(uid, profilePayload).catch(() => {});
-          throw new Error(t.setup?.blueprintSaveFailed || "Failed to save blueprint. Your birth data has been saved, please try again.");
+          await userRepository.markBlueprintRecoveryRequired(uid, profilePayload as any).catch(() => {});
+          throw new Error(t.setup?.blueprintSaveFailed || "Gagal menyimpan cetak biru. Data kelahiranmu telah tersimpan, silakan coba lagi.");
         }
       }
 
-      // 4. Final Profile (ONLY if blueprint saved)
+      // 4. Final Profile
+      setProgressStep("Membuka ruang...");
       console.log("[FINAL PROFILE WRITE ATTEMPT]");
       const finalProfile = {
         ...profilePayload,
@@ -315,7 +326,7 @@ export default function SetupPage() {
         updatedAt: Timestamp.now(),
       };
       try {
-        await userRepository.upsertUserProfile(uid, finalProfile);
+        await userRepository.upsertUserProfile(uid, finalProfile as any);
         await userRepository.updatePresence(uid, {
           email: effectiveUser.email || "",
           displayName: fullName,
@@ -461,7 +472,7 @@ export default function SetupPage() {
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder={t.setup?.fullName || (isEnlEdition() ? "Full Name" : "Nama Lengkap")}
+            placeholder={t.setup?.fullName || "Nama Lengkap"}
             className="bhumi-input w-full"
             required
           />
@@ -487,7 +498,7 @@ export default function SetupPage() {
           />
           <CityAutocomplete
             value={birthPlace}
-            placeholder={t.setup?.birthPlace || (isEnlEdition() ? "Birth Place" : "Kota Kelahiran")}
+            placeholder={t.setup?.birthPlace || "Kota Kelahiran"}
             onInputChange={(val) => {
               setBirthPlace(val);
               setSelectedCity(null);
@@ -505,8 +516,8 @@ export default function SetupPage() {
             className="bhumi-button w-full pt-4 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading
-              ? (t.setup?.saving || (isEnlEdition() ? "Saving..." : "Menyimpan..."))
-              : (t.setup?.goToDashboard || (isEnlEdition() ? "Continue to Dashboard" : "Lanjut ke Dashboard"))}
+              ? progressStep
+              : (t.setup?.goToDashboard || "Lanjut ke Dashboard")}
           </button>
         </form>
 

@@ -24,8 +24,7 @@ import { useLanguage } from "@/app/context/LanguageContext";
 import { isEnlEdition } from "@/lib/config/edition";
 
 export default function BaziPage() {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [loading, setLoading] = useState(true);
 

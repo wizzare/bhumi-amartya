@@ -5,7 +5,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { isEnlEdition } from "@/lib/config/edition";
 
 export default function BantuanPage() {
-  const isEn = isEnlEdition();
+  const isEn = false;
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-6 py-16 text-[#4F5E52] pb-32">
       <AppNav />

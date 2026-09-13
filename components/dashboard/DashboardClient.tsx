@@ -21,8 +21,6 @@ import { safetyRepository, TrustedContact } from "@/lib/repositories/safetyRepos
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
-import { isEnlEdition } from "@/lib/config/edition";
-import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { reconcileCachedProfileWithServer } from "@/lib/auth/authoritativeProfileGate";
@@ -144,14 +142,10 @@ export function DashboardClient() {
   const [weeklyGuidance, setWeeklyGuidance] = useState<WeeklyGuidance | null>(null);
     const [appNow, setAppNow] = useState(() => new Date());
 
-  // `profile.language` may be a BCP47 tag ("en-US" / "ms-MY") after the Step-3
-  // switcher persists a normalized locale; `translations` is keyed by the short
-  // code, so resolve it here or `translations[tag]` is undefined and the render
-  // crashes (BUILD_106_REGRESSION, RC-2 rendered verification, Step 12).
-  const language = getDictionaryKey("id-ID");
-  const isEnl = isEnlEdition();
-  const legacyUiLanguage: "id" | "en" = isEnl || language === "en" ? "en" : "id";
-  const t = translations[isEnl ? "en" : language];
+  const language = "id";
+  const isEnl = false;
+  const legacyUiLanguage: "id" | "en" = "id";
+  const t = translations["id"];
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
   const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
@@ -478,8 +472,7 @@ export function DashboardClient() {
 
       const result = await response.json() as { ok: true; guidance: DailyGuidance } | { ok: false; reason: string };
       if (!result.ok) throw new Error(result.reason);
-      const dg = withCanonicalDailyConclusion(normalizeUserFacingGuidance(result.guidance, p), uid, p, b, today, timezone);
-      const staleReason = getDailyGuidanceStaleReason(dg, {
+      const staleReason = getDailyGuidanceStaleReason(result.guidance, {
         uid,
         localDateKey: today,
         blueprint: b,
@@ -487,6 +480,7 @@ export function DashboardClient() {
         previousGuidance,
       });
       if (staleReason) throw new Error(`Daily guidance returned stale output: ${staleReason}`);
+      const dg = withCanonicalDailyConclusion(normalizeUserFacingGuidance(result.guidance, p), uid, p, b, today, timezone);
 
       setDailyGuidance(dg);
       window.localStorage.setItem(localCacheKey, JSON.stringify(dg));
@@ -580,7 +574,7 @@ export function DashboardClient() {
             arcanaCenter: b?.destinyMatrix?.center || 0,
             rawBlueprint: b as Record<string, unknown> | null,
             unifiedBlueprint: buildUnifiedBlueprintSynthesis({
-              language: p?.language || p?.profile?.language || "id",
+              language: "id",
               profile: p,
               blueprint: b,
             }),
@@ -899,12 +893,12 @@ export function DashboardClient() {
           lifePath: t.dashboard.lifePath,
           arcanaCenter: t.dashboard.arcanaCenter,
           sunSign: t.dashboard.sunSign,
-          humanDesign: isEnl || language === "en" ? "Human Design Type" : t.dashboard.humanDesign,
+          humanDesign: t.dashboard.humanDesign,
           humanDesignPending: t.dashboard.humanDesignPending,
           humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
-          unavailable: t.dashboard.unavailable || (isEnl || language === "en" ? "Not available" : "Belum tersedia"),
-          calculatingInProgress: t.dashboard.calculatingInProgress || (isEnl || language === "en" ? "Calculation in progress" : "Perhitungan sedang berlangsung"),
-          cannotCalculate: t.dashboard.cannotCalculate || (isEnl || language === "en" ? "Human Design data cannot be calculated." : "Data Human Design belum dapat dihitung."),
+          unavailable: t.dashboard.unavailable || "Belum tersedia",
+          calculatingInProgress: t.dashboard.calculatingInProgress || "Perhitungan sedang berlangsung",
+          cannotCalculate: t.dashboard.cannotCalculate || "Data Human Design belum dapat dihitung.",
         }}
       />
 
@@ -920,12 +914,6 @@ export function DashboardClient() {
 
       <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
 
-      {env2Payload && (
-        <div className="mt-4">
-          <AtmosphereVolcanicCard payload={env2Payload} />
-        </div>
-      )}
-
       <WeeklyGuidanceCard guidance={weeklyGuidance} />
 
       <DailyUserFlowGuide language={legacyUiLanguage} />
@@ -934,7 +922,7 @@ export function DashboardClient() {
 
       <footer className="mt-20 mb-10 text-center">
         <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">
-          {(isEnl || language === "en") ? (t.dashboard.footerQuote || "This space remains here whenever you return.") : (t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali.")}
+          {t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali."}
         </p>
       </footer>
 

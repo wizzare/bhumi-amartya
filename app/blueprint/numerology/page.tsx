@@ -17,8 +17,7 @@ import { isEnlEdition } from "@/lib/config/edition";
 
 export default function NumerologyPage() {
   const auth = useAuth();
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [loading, setLoading] = useState(true);
 

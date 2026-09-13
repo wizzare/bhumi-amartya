@@ -40,7 +40,7 @@ function profileName(profile: LocalRecord): string {
     const value = profile[key];
     if (typeof value === "string" && value.trim()) return value.trim();
   }
-  return isEnlEdition() ? "Bhumi Resident" : "Penghuni Bhumi";
+  return "Penghuni Bhumi";
 }
 
 function slugify(title: string) {
@@ -61,7 +61,7 @@ type BlueprintCard = {
 
 function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
   void bazi;
-  const isEn = isEnlEdition();
+  const isEn = false;
   const cards: BlueprintCard[] = [
     {
       title: "Life Path",
@@ -223,6 +223,9 @@ export default function ProfilePage() {
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
         ]);
+        if (!profile && auth?.userProfile) {
+          profile = auth.userProfile as any;
+        }
         if (!isCurrent()) return;
         if (auditUser && (!profile || !blueprint)) {
           const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");

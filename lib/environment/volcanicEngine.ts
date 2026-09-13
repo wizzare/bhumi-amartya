@@ -98,124 +98,15 @@ export function evaluateVolcanicContext(params: {
     attributionText: "Smithsonian Institution Global Volcanism Program & Copernicus ECMWF CAMS",
   };
 
-  // FAIL-CLOSED INVARIANT (BUILD 108):
-  // 1. Column SO2 is currently unavailable (no qualifying direct client source).
-  // 2. GVP commercial database licensing is UNRESOLVED.
-  // In production builds without explicit override, named source attribution fails closed.
-  const isProductionCommercialBuild = process.env.NODE_ENV === "production" && process.env.ENABLE_DEV_VOLCANIC_ATTRIBUTION !== "true";
-
-  if (isProductionCommercialBuild || totalColumnSo2UgM2 === undefined) {
-    return {
-      plumeDetected: null,
-      probableVolcanicOrigin: null,
-      probableSource: null,
-      attributionConfidence: "unknown",
-      attributionRationale: "Atmospheric column SO2 observation and volcanic attribution are currently unavailable (fail-closed).",
-      evidenceRefs: ["build108_volcanic_fail_closed"],
-      nearbyKnownVolcanoes: [],
-      provenance,
-    };
-  }
-
-  if (nearby.length === 0) {
-    return {
-      plumeDetected: null,
-      probableVolcanicOrigin: null,
-      probableSource: null,
-      attributionConfidence: "unknown",
-      attributionRationale: "No known active volcanoes located within 250 km radius of current coordinates.",
-      evidenceRefs: ["gvp_proximity_scan_null"],
-      nearbyKnownVolcanoes: [],
-      provenance,
-    };
-  }
-
-  // If atmospheric column SO2 is not elevated, there is no evidence of a volcanic plume
-  if (!isColumnElevated) {
-    return {
-      plumeDetected: false,
-      probableVolcanicOrigin: null,
-      probableSource: null,
-      attributionConfidence: "insufficient",
-      attributionRationale: `Atmospheric total-column SO2 (${totalColumnSo2UgM2 ?? "unavailable"} μg/m²) does not show an anomaly above regional baseline.`,
-      evidenceRefs: ["cams_column_so2_nominal"],
-      nearbyKnownVolcanoes: nearby,
-      provenance,
-    };
-  }
-
-  // SO2 is elevated, now check if wind trajectory matches any nearby volcano
-  let bestCandidate: VolcanicSourceReference | null = null;
-  let candidateConfidence: AttributionConfidence = "insufficient";
-  let rationale = "";
-
-  if (typeof windDirectionDegrees === "number") {
-    for (const v of nearby) {
-      // Bearing from volcano to user
-      const volcanoToUserBearing = initialBearingDegrees(v.latitude, v.longitude, userLat, userLon);
-      // Wind direction is the direction wind blows FROM.
-      // Plume travels TOWARDS (windDirectionDegrees + 180) % 360.
-      const plumeTrajectoryDegrees = (windDirectionDegrees + 180) % 360;
-
-      const angleDifference = Math.abs((plumeTrajectoryDegrees - volcanoToUserBearing + 180) % 360 - 180);
-
-      // If plume trajectory from volcano is aligned within 35 degrees towards user
-      if (angleDifference <= 35 && v.distanceKm <= 150) {
-        bestCandidate = v;
-        candidateConfidence = "supported";
-        rationale = `Elevated atmospheric SO2 column (${totalColumnSo2UgM2} μg/m²) correlates with transport trajectory from ${v.name} (${v.distanceKm} km ${degreesToCardinal(initialBearingDegrees(userLat, userLon, v.latitude, v.longitude))}) under prevailing wind direction (${Math.round(windDirectionDegrees)}°).`;
-        break;
-      } else if (angleDifference <= 55 && v.distanceKm <= 75) {
-        bestCandidate = v;
-        candidateConfidence = "weak";
-        rationale = `Elevated atmospheric SO2 column observed in close proximity (${v.distanceKm} km) to ${v.name}, though wind vector alignment is loose (Δ${Math.round(angleDifference)}°).`;
-        break;
-      }
-    }
-  }
-
-  if (bestCandidate && candidateConfidence === "supported") {
-    return {
-      plumeDetected: true,
-      probableVolcanicOrigin: true,
-      probableSource: bestCandidate,
-      attributionConfidence: "supported",
-      attributionRationale: rationale,
-      evidenceRefs: [
-        `cams_so2_column_elevated:${totalColumnSo2UgM2}`,
-        `gvp_volcano:${bestCandidate.id}`,
-        `wind_trajectory_aligned:${Math.round(windDirectionDegrees || 0)}`,
-      ],
-      nearbyKnownVolcanoes: nearby,
-      provenance,
-    };
-  }
-
-  if (bestCandidate && candidateConfidence === "weak") {
-    return {
-      plumeDetected: true,
-      probableVolcanicOrigin: null,
-      probableSource: bestCandidate,
-      attributionConfidence: "weak",
-      attributionRationale: rationale,
-      evidenceRefs: [
-        `cams_so2_column_elevated:${totalColumnSo2UgM2}`,
-        `gvp_volcano_proximity:${bestCandidate.id}`,
-      ],
-      nearbyKnownVolcanoes: nearby,
-      provenance,
-    };
-  }
-
-  // SO2 elevated without trajectory support: DO NOT attribute to a volcano.
+  // Build 110: Volcanic feature completely removed from runtime and UI
   return {
     plumeDetected: null,
     probableVolcanicOrigin: null,
     probableSource: null,
-    attributionConfidence: "insufficient",
-    attributionRationale: `Atmospheric column SO2 is elevated (${totalColumnSo2UgM2} μg/m²), but wind trajectory does not support transport from nearby known volcanoes (${nearby.map(n => n.name).slice(0, 3).join(", ")}). Origin remains unverified.`,
-    evidenceRefs: ["cams_so2_elevated_unattributed"],
-    nearbyKnownVolcanoes: nearby,
+    attributionConfidence: "unknown",
+    attributionRationale: "Konteks vulkanik dinonaktifkan.",
+    evidenceRefs: [],
+    nearbyKnownVolcanoes: [],
     provenance,
   };
 }

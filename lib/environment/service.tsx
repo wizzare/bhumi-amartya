@@ -436,9 +436,11 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
       const buffer = readSchumannBuffer();
       const last = buffer.at(-1);
       const lastFetch = readSchumannLastFetch();
-      let working = buffer;
       const cacheWindowActive = Boolean(last) && lastFetch !== null && Date.now() - lastFetch < SCHUMANN_POLL_MIN_INTERVAL_MS;
-      if (!cacheWindowActive) {
+      let working = buffer;
+      // Build 110: Schumann feature removed — runtime fetch disabled (SCHUMANN_RUNTIME_CALLS = 0)
+      const fetchEnabled = false;
+      if (fetchEnabled && !cacheWindowActive) {
         try {
           const response = await fetchWithTimeout(SCHUMANN_API_URL, 5000, { cache: "no-store" }).catch(() => null);
           if (response?.ok) {

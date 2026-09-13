@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { useLanguage } from "@/app/context/LanguageContext";
 import { decideLandingCtaRoute } from "@/lib/auth/landingCtaRoute";
 import { translations } from "@/lib/data/translations";
 import { useEffect, useState } from "react";
@@ -10,8 +9,7 @@ import { useEffect, useState } from "react";
 export default function LandingPage() {
   const router = useRouter();
   const auth = useAuth();
-  const { language } = useLanguage();
-  const t = translations[language] || translations["en"];
+  const t = translations["id"];
   const [showFallback, setShowFallback] = useState(false);
 
   useEffect(() => {
@@ -86,14 +84,14 @@ export default function LandingPage() {
            {!showFallback ? (
              <div className="animate-pulse flex flex-col items-center">
                 <div className="w-16 h-16 bg-[#4F5E52]/10 rounded-full mb-4"></div>
-                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connecting || "Connecting your journey..."}</p>
+                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connecting || "Menghubungkan perjalanan..."}</p>
              </div>
            ) : (
              <div className="flex flex-col items-center gap-4 text-center px-6 max-w-xs">
-                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connectionSlow || "Connection seems slow or session was interrupted."}</p>
+                <p className="text-[#4F5E52] text-sm font-medium">{t.welcome?.connectionSlow || "Sepertinya koneksi melambat atau sesi terganggu."}</p>
                 <div className="flex gap-2 w-full">
-                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.reload || "Try Again"}</button>
-                  <button onClick={() => { localStorage.clear(); window.location.href = '/login'; }} className="flex-1 py-3 border border-[#4F5E52] text-[#4F5E52] rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.relogin || "Sign In Again"}</button>
+                  <button onClick={() => window.location.reload()} className="flex-1 py-3 bg-[#4F5E52] text-white rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.reload || "Coba Lagi"}</button>
+                  <button onClick={() => { window.location.href = '/login'; }} className="flex-1 py-3 border border-[#4F5E52] text-[#4F5E52] rounded-xl text-xs font-bold uppercase tracking-wider">{t.welcome?.relogin || "Masuk Ulang"}</button>
                 </div>
              </div>
            )}
@@ -111,7 +109,7 @@ export default function LandingPage() {
       <h1 className="text-4xl font-serif text-[#4F5E52] mb-4">{t.welcome?.title || "Bhumi Amartya"}</h1>
 
       <p className="max-w-xs text-[#7B8776] leading-relaxed mb-12">
-        {t.welcome?.subtitle || "A space to return home, understand yourself, and grow gently."}
+        {t.welcome?.subtitle || "Ruang untuk pulang, mengenali diri, dan bertumbuh perlahan."}
       </p>
 
       <div className="flex flex-col gap-4 w-full max-w-xs">
@@ -119,14 +117,14 @@ export default function LandingPage() {
           onClick={handleMulai}
           className="bhumi-button w-full"
         >
-          {t.welcome?.newUser || "I Am New Here"}
+          {t.welcome?.newUser || "Aku Baru di Sini"}
         </button>
 
         <button
           onClick={handlePunyaAkun}
           className="w-full rounded-2xl border border-[#4F5E52] bg-white px-5 py-4 font-semibold text-[#4F5E52] transition hover:bg-[#F5F1E8]"
         >
-          {t.welcome?.returningUser || "I Already Have an Account"}
+          {t.welcome?.returningUser || "Aku Sudah Pernah Daftar"}
         </button>
       </div>
 

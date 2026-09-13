@@ -20,7 +20,7 @@ import { normalizeJourneyRecord } from "@/lib/services/journeyReadAdapter";
 
 export default function JourneyPage() {
   const auth = useAuth();
-  const isEn = isEnlEdition();
+  const isEn = false;
   const [todaySummary, setTodaySummary] = useState<CompletionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [readError, setReadError] = useState<string | null>(null);

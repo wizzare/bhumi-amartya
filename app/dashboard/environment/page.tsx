@@ -108,10 +108,9 @@ export default function EnvironmentDetailPage() {
   const [context, setContext] = useState<EnvironmentContext | null>(null);
   const [env2Payload, setEnv2Payload] = useState<EnvironmentalConditionPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
-  const t = translations[isEn ? "en" : language];
-  const locale = isEn ? "en-US" : language === "ms" ? "ms-MY" : "id-ID";
+  const isEn = false;
+  const t = translations["id"];
+  const locale = "id-ID";
   const schumannSeries = getSchumannSeries();
   const schumann = context?.schumann;
   const hasSchumannObservation = Boolean(schumann?.updatedAtIso || schumann?.frequencies.some((item) => typeof item.valueHz === "number"));
@@ -279,12 +278,6 @@ export default function EnvironmentDetailPage() {
                 />
               </div>
 
-              {env2Payload && (
-                <div className="my-2">
-                  <AtmosphereVolcanicCard payload={env2Payload} />
-                </div>
-              )}
-
               <DetailItem
                 icon={<Leaf size={24} />}
                 label={t.environment.fAirQuality}
@@ -337,73 +330,6 @@ export default function EnvironmentDetailPage() {
               />
             </div>
           ) : null}
-
-          {!loading && <section className="mt-10 space-y-4">
-            <h3 className="font-serif text-xl font-bold text-[#4F6658]">{t.environment.fSchumann}</h3>
-            {context && schumann && hasSchumannObservation && spiritual ? (
-              <>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <DetailItem
-                    icon={<Radio size={24} />}
-                    label={t.environment.schumannStatus}
-                    value={statusPrimary}
-                    subValue={`SR1 ${schumann.frequencies[0]?.valueHz ?? "—"} Hz · ${schumann.amplitudePicoTesla ?? "—"} pT`}
-                  />
-                  <DetailItem
-                    icon={<Waves size={24} />}
-                    label={t.environment.layerObservation}
-                    value={t.environment.disclosureModel}
-                    subValue={t.environment.disclosureModelNote}
-                  />
-                </div>
-
-                {schumannUi.kind === "snapshot" ? (
-                  <div className="rounded-2xl border border-[#E8E9E5] bg-[#FCFAF5] p-6 text-center">
-                    <p className="text-sm font-semibold text-[#4F6658]">{t.environment.insufficient}</p>
-                    <p className="mt-1 text-xs text-[#7B8776]">{snapshotMetaLine}</p>
-                    <p className="mt-4 text-3xl font-light text-[#A08963]">SR1 {schumann.frequencies[0]?.valueHz ?? "—"} Hz</p>
-                    <p className="text-xs text-[#7B8776]">{schumann.amplitudePicoTesla ?? "—"} pT</p>
-                    <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-[#9AA394]">{t.environment.targetWindow}</p>
-                  </div>
-                ) : schumannUi.kind === "none" ? (
-                  <DetailItem icon={<Radio size={24} />} label={t.environment.fSchumann} value={t.environment.noneAvailable} />
-                ) : (
-                  <>
-                    <SchumannGraph
-                      series={schumannSeries}
-                      amplitudeLabel={t.environment.schumannAmplitude}
-                      powerLabel={t.environment.schumannPower}
-                      windowLabel={windowLabel}
-                    />
-                    {schumannUi.kind === "partial" && <p className="text-[11px] text-[#7B8776]">{t.environment.targetWindow}</p>}
-                  </>
-                )}
-
-                <div className="space-y-1 rounded-2xl border border-[#E8E9E5] bg-white p-4">
-                  <p className="text-[11px] text-[#667064]">
-                    {t.environment.updatedLabel}: <span className="font-semibold">{localUpdated || "—"}</span>
-                    {schumannUi.kind === "stale" || schumann.source.status !== "available" ? ` · ${t.environment.lastKnownLabel} (${t.environment.notLive})` : ""}
-                  </p>
-                  <p className="text-[11px] text-[#667064]">
-                    {t.environment.srcDataLabel}: <span className="font-semibold">Schumann Resonance Live</span> ({t.environment.srcSchumannRole}) · <span className="font-semibold">NOAA SWPC</span> ({t.environment.srcNoaaRole})
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-indigo-50 bg-indigo-50/30 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#7C86B4]">{t.environment.layerInterpretation}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-[#4A5568]">{spiritual.observationNote}</p>
-                </div>
-                <div className="rounded-2xl border border-emerald-50 bg-emerald-50/30 p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-500">{t.environment.layerSpiritual}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-[#4A5568]">{spiritual.reading}</p>
-                  <p className="mt-3 text-sm font-medium text-[#4F6658]">{t.environment.groundingLabel}: {spiritual.practice}</p>
-                  <p className="mt-3 text-[11px] italic text-[#8B93B8]">{spiritual.note}</p>
-                </div>
-              </>
-            ) : (
-              <DetailItem icon={<Radio size={24} />} label={t.environment.fSchumann} value={t.environment.unavailable} />
-            )}
-          </section>}
 
           <footer className="mt-16 text-center">
             <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-[#9AA394]">

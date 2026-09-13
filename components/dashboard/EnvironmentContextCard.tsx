@@ -65,9 +65,8 @@ function SummaryItem({
 }
 
 export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardProps) {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
-  const t = translations[isEn ? "en" : language].environment;
+  const isEn = false;
+  const t = translations["id"].environment;
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [location, setLocation] = useState<EnvironmentLocation | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
@@ -169,7 +168,6 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
                 <SummaryItem icon={<Droplets size={18} />} label={t.fHumidity} value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : t.unavailable} />
                 <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context?.earthActivity?.dataState === "available" ? (isEn && context.earthActivity.status === "Stabil" ? "Stable" : context.earthActivity.status) : t.unavailable} />
                 <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context?.spaceWeather?.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather.kpIndex, isEn) : (context?.spaceWeather?.geomagneticActivity ?? t.unavailable)} />
-                <SummaryItem icon={<Radio size={18} />} label={t.fSchumann} value={context?.schumann?.frequencies.some((item) => typeof item.valueHz === "number") ? `SR1 ${context.schumann.frequencies[0]?.valueHz ?? "—"} Hz` : t.unavailable} />
               </div>
 
             {onOpenDetail && (

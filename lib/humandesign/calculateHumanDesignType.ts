@@ -39,7 +39,7 @@ export const centersByChannel: Record<string, [string, string]> = {
   "21-45": ["Ego", "Throat"],
   "23-43": ["Ajna", "Throat"],
   "24-61": ["Head", "Ajna"],
-  "25-51": ["Ego", "Throat"],
+  "25-51": ["G", "Ego"],
   "26-44": ["Spleen", "Ego"],
   "27-50": ["Spleen", "Sacral"],
   "28-38": ["Spleen", "Root"],
@@ -188,10 +188,10 @@ function findDesignDate(birthDate: Date): Date {
 }
 
 function getNorthNodeLongitude(date: Date): number {
-  // Approximate Mean North Node (Standard HD Fallback)
+  // Astronomical mean ascending lunar node (Meeus formula: 125.04452 deg at J2000, -0.052953765 deg/day)
   const epoch = Date.UTC(2000, 0, 1, 12, 0, 0);
   const days = (date.getTime() - epoch) / (1000 * 60 * 60 * 24);
-  const lon = 259.183275 - 0.0529539222 * days;
+  const lon = 125.04452 - 0.052953765 * days;
   return normalizeDegrees(lon);
 }
 
@@ -228,7 +228,7 @@ function motorToThroat(channels: string[], definedCenters: Set<string>): boolean
 
   while (queue.length > 0) {
     const curr = queue.shift()!;
-    if (motors.includes(curr)) return true;
+    if (curr !== "Throat" && motors.includes(curr)) return true;
 
     const neighbors = adj.get(curr) || [];
     for (const neighbor of neighbors) {

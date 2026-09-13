@@ -1,4 +1,5 @@
 "use client";
+import { useAuth } from '@/context/AuthContext';
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
@@ -118,13 +119,14 @@ function ExpandableExplanation({ value, dark = false, isEn = false }: { value: s
 }
 
 export default function HumanDesignPage() {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const auth = useAuth();
+  const isEn = false;
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [hdState, setHdState] = useState<HdStateResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!auth?.authStateResolved || !auth.user?.uid) return;
     let active = true;
     void storageProvider.getUserBlueprint().then((value) => {
       if (!active) return;
@@ -137,7 +139,7 @@ export default function HumanDesignPage() {
       setHdState(getHdState({ status: "error", calculationStatus: "error", type: null }));
     });
     return () => { active = false; };
-  }, [isEn]);
+  }, [isEn, auth?.authStateResolved, auth?.user?.uid]);
 
   const hasBirthData = Boolean(blueprint?.input?.birthDate && blueprint?.input?.birthTime && blueprint?.input?.timezone);
   const chart = useMemo(

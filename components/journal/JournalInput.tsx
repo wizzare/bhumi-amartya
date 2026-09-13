@@ -26,10 +26,10 @@ export function JournalInput({ onSubmit, isLoading }: JournalInputProps) {
       <div className="bhumi-card rounded-[28px] p-8 bg-white shadow-soft">
         <div className="mb-4 pb-4 border-b border-[#E8E9E5]">
           <h2 className="text-[#7B8776] font-medium text-sm uppercase tracking-wide">
-            💭 Your Words
+            💭 Kata-katamu
           </h2>
           <p className="text-[#8B9488] text-sm mt-2">
-            There&apos;s no right way to do this. Write however it comes.
+            Tidak ada cara yang benar atau salah. Tulis apa pun yang hadir dalam hatimu.
           </p>
         </div>
 
@@ -42,7 +42,7 @@ export function JournalInput({ onSubmit, isLoading }: JournalInputProps) {
               startTimeRef.current = startTimeRef.current ?? Date.now();
               setIsExpanded(true);
             }}
-            placeholder="Start writing... Let it flow. There is no judgment here."
+            placeholder="Mulai menulis... Biarkan mengalir bebas. Tidak ada penilaian di sini."
             className={`w-full rounded-2xl border-2 border-[#E8E9E5] bg-[#FCFAF5] text-[#4F5E52] placeholder-[#C4B5A8] focus:outline-none focus:border-[#A08963] focus:bg-white p-6 font-[16px] leading-relaxed transition-all ${
               isExpanded ? "min-h-96" : "min-h-48"
             }`}
@@ -56,13 +56,13 @@ export function JournalInput({ onSubmit, isLoading }: JournalInputProps) {
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
                 <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                  Words
+                  Kata
                 </p>
                 <p className="text-2xl text-[#A08963] font-light">{wordCount}</p>
               </div>
               <div>
                 <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                  Characters
+                  Karakter
                 </p>
                 <p className="text-2xl text-[#A08963] font-light">
                   {characterCount}
@@ -73,14 +73,13 @@ export function JournalInput({ onSubmit, isLoading }: JournalInputProps) {
                   Status
                 </p>
                 <p className="text-lg text-[#4F5E52] font-medium">
-                  {content.trim().length > 50 ? "✓ Ready" : "..."}
+                  {content.trim().length > 50 ? "✓ Siap" : "..."}
                 </p>
               </div>
             </div>
 
             <p className="text-[#8B9488] text-sm leading-relaxed">
-              Tips: Don&apos;t worry about grammar or making sense. Let raw emotion come
-              through. Your words don&apos;t need to be polished; they need to be true.
+              Tips: Jangan cemaskan tata bahasa. Biarkan emosi mengalir apa adanya. Kata-katamu tidak perlu sempurna; yang penting jujur.
             </p>
           </div>
         )}
@@ -97,16 +96,16 @@ export function JournalInput({ onSubmit, isLoading }: JournalInputProps) {
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Processing your words...
+              Menyimak kata-katamu...
             </span>
           ) : (
-            "Submit & Receive Insight"
+            "Simpan & Dapatkan Insight"
           )}
         </button>
 
         {/* Privacy note */}
         <p className="text-[#8B9488] text-xs text-center mt-4">
-          🔒 Your journal is private and stays with you. Nothing is shared.
+          🔒 Jurnalmu bersifat privat dan tersimpan aman. Tidak ada yang dibagikan.
         </p>
       </div>
     </section>

@@ -597,13 +597,13 @@ export default function JournalPage() {
                     }}
                     className="flex-1 py-3 px-4 rounded-xl bg-[#4F5E52] text-white font-medium hover:bg-[#3D4A3F] transition-colors"
                   >
-                    Journal Again
+                    Tulis Jurnal Lagi
                   </button>
                   <button
                     onClick={() => router.push("/dashboard")}
                     className="flex-1 py-3 px-4 rounded-xl border-2 border-[#4F5E52] text-[#4F5E52] font-medium hover:bg-[#F0EDEA] transition-colors"
                   >
-                    Back to Dashboard
+                    Kembali ke Dashboard
                   </button>
                 </div>
               </div>

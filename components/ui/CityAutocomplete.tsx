@@ -36,6 +36,29 @@ type PhotonResponse = {
   features?: PhotonFeature[];
 };
 
+// Reliable offline fallback for setup and recovery. Coordinates are deliberately
+// broad city centroids; a selected Photon result still wins whenever the network
+// is available. This keeps registration usable when geocoding is unavailable.
+const LOCAL_CITY_INDEX: Array<[string, number, number, string]> = [
+  ["Jakarta", -6.2088, 106.8456, "Indonesia"],
+  ["Bandung", -6.9175, 107.6191, "Indonesia"],
+  ["Surabaya", -7.2575, 112.7521, "Indonesia"],
+  ["Yogyakarta", -7.7956, 110.3695, "Indonesia"],
+  ["Denpasar", -8.65, 115.2167, "Indonesia"],
+  ["Medan", 3.5952, 98.6722, "Indonesia"],
+  ["Makassar", -5.1477, 119.4327, "Indonesia"],
+  ["Semarang", -6.9667, 110.4167, "Indonesia"],
+  ["Palembang", -2.9761, 104.7754, "Indonesia"],
+  ["Malang", -7.9666, 112.6326, "Indonesia"],
+];
+const LOCAL_CITY_SUGGESTIONS: PhotonSuggestion[] = LOCAL_CITY_INDEX.map(([name, latitude, longitude, country]) => ({
+  id: `local-${name.toLowerCase()}`,
+  formattedCity: `${name}, ${country}`,
+  latitude,
+  longitude,
+  country,
+}));
+
 export interface CityAutocompleteProps {
   value: string;
   placeholder?: string;
@@ -110,10 +133,16 @@ export default function CityAutocomplete({
         setOpen(suggestions.length > 0);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
-        console.error("City autocomplete fetch error", fetchError);
-        setError("Unable to load suggestions.");
-        setSuggestions([]);
-        setOpen(false);
+        // Geocoding is enhancement-only. Keep setup usable offline and in
+        // localhost QA instead of blocking the first-user path on Photon.
+        console.warn("City autocomplete network unavailable; using local city index.", fetchError);
+        const localSuggestions = LOCAL_CITY_SUGGESTIONS.filter((suggestion) =>
+          suggestion.formattedCity.toLocaleLowerCase().includes(trimmedValue.toLocaleLowerCase()),
+        ).slice(0, 6);
+        setError(null);
+        setSuggestions(localSuggestions);
+        setActiveIndex(0);
+        setOpen(localSuggestions.length > 0);
       } finally {
         if (!controller.signal.aborted) {
           setLoading(false);

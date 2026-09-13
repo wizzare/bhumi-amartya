@@ -7,6 +7,7 @@ import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
+import { isBuild110LocalQa } from "@/lib/config/localQa";
 import type { UserProfile } from "@/lib/repositories/userRepository";
 
 type AccessGuardProps = {
@@ -130,9 +131,10 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
   }, [checkingProfile, userProfile, testerRecord]);
 
   if (
-    process.env.NODE_ENV === "development" &&
-    typeof window !== "undefined" &&
-    window.localStorage.getItem("bhumi_audit_user")
+    isBuild110LocalQa() ||
+    (process.env.NODE_ENV === "development" &&
+      typeof window !== "undefined" &&
+      window.localStorage.getItem("bhumi_audit_user"))
   ) {
     return <>{children}</>;
   }

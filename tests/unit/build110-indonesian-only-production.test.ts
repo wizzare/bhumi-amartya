@@ -1,4 +1,5 @@
-import assert from "node:assert/strict";
+import strictAssert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { isEnlEdition, getAppEdition } from "../../lib/config/edition";
@@ -15,15 +16,26 @@ import { buildBirthdayMessage } from "../../lib/birthday/birthdayMessage";
 import { pickUnifiedDailyReminderMessage } from "../../lib/notifications/checkDailyReminder";
 import { notificationCopy } from "../../lib/notifications/notificationPolicy";
 import { createWeeklySoulReport } from "../../lib/reports/createWeeklySoulReport";
-import { getTodayJournalPrompt } from "../../lib/journal/localJournal";
+import { getTodayJournalPrompt, savePerModeDraft, loadPerModeDraft } from "../../lib/journal/localJournal";
 import { getTimeOfDayGreeting, getTimeAwareGreeting, getTimeAwareClosing } from "../../lib/dailyGuidance/timeOfDayGreeting";
 import { dailyGuidanceDocId } from "../../lib/repositories/dailyGuidanceRepository";
 
 let totalAssertions = 0;
+let totalGroups = 0;
+const assert = new Proxy(strictAssert, {
+  get(target, key) {
+    const value = Reflect.get(target, key);
+    return typeof value === "function" ? (...args: unknown[]) => {
+      const result = Reflect.apply(value, target, args);
+      totalAssertions += 1;
+      return result;
+    } : value;
+  },
+});
 function test(name: string, fn: () => void): void {
   try {
     fn();
-    totalAssertions += 1;
+    totalGroups += 1;
     console.log(`PASS: ${name}`);
   } catch (err) {
     console.error(`FAIL: ${name}`);
@@ -187,9 +199,11 @@ test("3.4 Unified daily reminder defaults to Indonesian message", () => {
 });
 
 test("3.5 Notification copy policy enforces Indonesian", () => {
-  const copy = notificationCopy("daily", "id-ID");
-  assert.strictEqual(copy.title, "Catatanmu siap", "Notification title must be Indonesian");
-  assert.strictEqual(copy.body, "Ruangmu ada di sini kapan pun kamu siap.", "Notification body must be Indonesian");
+  for (const locale of ["id-ID", "en-US", "ms-MY"] as const) {
+    const copy = notificationCopy("daily", locale);
+    assert.strictEqual(copy.title, "Catatanmu siap", "Notification title must be Indonesian");
+    assert.strictEqual(copy.body, "Ruangmu ada di sini kapan pun kamu siap.", "Notification body must be Indonesian");
+  }
 });
 
 test("3.6 Weekly soul report defaults to Indonesian headings and themes", () => {
@@ -257,10 +271,33 @@ test("4.3 User-authored journal entry content and metadata are preserved without
     insight: "Ketenangan adalah fondasi kehadiran.",
     tomorrowFocus: "Menjaga ritme napas.",
   };
-  // Assert immutability and preservation of user words
-  assert.strictEqual(userAuthoredEntry.journalText, "Hari ini saya merasa lebih tenang setelah bermeditasi.");
-  assert.deepStrictEqual(userAuthoredEntry.bodySignals, ["Dada lapang", "Napas dalam"]);
-  assert.strictEqual(userAuthoredEntry.emotionalState, "Tenang");
+  const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
+  const storage = new Map<string, string>();
+  Object.defineProperty(globalThis, "window", { configurable: true, value: {
+    localStorage: {
+      setItem: (key: string, value: string) => storage.set(key, value),
+      getItem: (key: string) => storage.get(key) ?? null,
+    },
+  } });
+  try {
+    const draft = {
+      journalType: "FREE" as const,
+      journalText: "  My words\r\nSaya berasa tenang.\t e\u0301  ",
+      emotionalState: userAuthoredEntry.emotionalState,
+      bodySignals: userAuthoredEntry.bodySignals,
+      updatedAt: userAuthoredEntry.createdAt,
+    };
+    savePerModeDraft(draft);
+    const storedBefore = [...storage.entries()];
+    getTodayJournalPrompt({}, [], new Date("2026-09-12T12:00:00Z"));
+    assert.deepStrictEqual(loadPerModeDraft("FREE"), draft);
+    assert.deepStrictEqual([...storage.entries()], storedBefore);
+    assert.deepStrictEqual(Buffer.from(loadPerModeDraft("FREE")!.journalText), Buffer.from(draft.journalText));
+    assert.strictEqual(loadPerModeDraft("CBT"), null);
+  } finally {
+    if (previousWindow) Object.defineProperty(globalThis, "window", previousWindow);
+    else Reflect.deleteProperty(globalThis, "window");
+  }
 });
 
 test("4.4 Production date formatting conforms to Indonesian id-ID standard", () => {
@@ -301,6 +338,198 @@ test("4.6 Admin UI is withdrawn from production and gated behind isAdminUiExpose
   assert.ok(adminPageSrc.includes(": \"/dashboard\""), "Admin page must redirect to /dashboard in production");
 });
 
+test("5.1 Entire compatibility dictionaries share Indonesian content", () => {
+  const dictionaries = getCompatDictionaries();
+  assert.deepStrictEqual(dictionaries.en, dictionaries.id);
+  assert.deepStrictEqual(dictionaries.ms, dictionaries.id);
+  assert.strictEqual(getI18n().t("welcome.title", { lng: "en-US" }), getI18n().t("welcome.title", { lng: "id-ID" }));
+});
+
+test("5.2 Journal rotation supplies Indonesian display labels for every theme", () => {
+  const labels = new Set<string>();
+  for (let day = 1; day <= 10; day += 1) {
+    const prompt = getTodayJournalPrompt({}, [], new Date(`2026-09-${String(day).padStart(2, "0")}T12:00:00Z`));
+    labels.add(prompt.theme);
+    assert.strictEqual(prompt.questions.length, 3);
+  }
+  assert.deepStrictEqual([...labels].sort(), ["Diri Masa Kecil", "Hambatan Cinta", "Hambatan Finansial", "Pola Berulang", "Harga Diri", "Dinamika Keluarga", "Pelajaran Karma", "Pola Leluhur", "Pengampunan", "Tujuan dan Panggilan"].sort());
+});
+
+test("5.3 Raw dashboard response is validated before normalization can stamp provenance", () => {
+  const source = fs.readFileSync(path.resolve("components/dashboard/DashboardClient.tsx"), "utf8");
+  const rawValidation = source.indexOf("getDailyGuidanceStaleReason(result.guidance");
+  const normalization = source.indexOf("normalizeUserFacingGuidance(result.guidance");
+  assert.ok(rawValidation > 0 && rawValidation < normalization);
+});
+
+test("5.4 Outbound fetch and socket connections are prevented without emulator endpoints", () => {
+  const env = { ...process.env };
+  delete env.FIRESTORE_EMULATOR_HOST;
+  delete env.FIREBASE_AUTH_EMULATOR_HOST;
+  delete env.BHUMI_QA_REQUIRE_EMULATORS;
+  env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL = "http://127.0.0.1:18765/api/humandesign/calculate";
+  const result = spawnSync(process.execPath, ["--import", "./tests/helpers/blockOutboundNetwork.mjs", "--input-type=module", "-e", `
+    import assert from 'node:assert/strict';
+    import net from 'node:net';
+    await assert.rejects(fetch('https://example.invalid/calculate'), /QA_OUTBOUND_NETWORK_BLOCKED/);
+    assert.throws(() => net.connect({host:'192.0.2.1',port:443}), /QA_OUTBOUND_NETWORK_BLOCKED/);
+    assert.throws(() => net.connect({host:'127.0.0.1',port:8080}), /QA_OUTBOUND_NETWORK_BLOCKED/);
+  `], { env, encoding: "utf8" });
+  assert.strictEqual(result.status, 0, result.stderr);
+  const required = spawnSync(process.execPath, ["--import", "./tests/helpers/blockOutboundNetwork.mjs", "-e", ""], {
+    env: { ...env, BHUMI_QA_REQUIRE_EMULATORS: "true" }, encoding: "utf8",
+  });
+  assert.notStrictEqual(required.status, 0);
+  assert.ok(required.stderr.includes("QA_NETWORK_EMULATORS_REQUIRED"));
+});
+
+import { buildSoulLettersV3Section, applyArsipAkashiContentToV3Section } from "../../lib/arsipAkashi/profile/v3ContentBridge";
+import { calculateHumanDesignTypeFromBirthData } from "../../lib/humandesign/calculateHumanDesignType";
+import { AtmosphereVolcanicCard } from "../../components/dashboard/AtmosphereVolcanicCard";
+import { evaluateVolcanicContext } from "../../lib/environment/volcanicEngine";
+import { getCanonicalTrialWindow, getEntitlementStatus } from "../../lib/billing/entitlementService";
+import { ProfileRuntimeAdapter } from "../../lib/services/profileRuntimeAdapter";
+
+// ---------------------------------------------------------------------------
+// 6. Build 110 Critical Recovery Checks (Akashi, HD Accuracy, Env, Trial)
+// ---------------------------------------------------------------------------
+test("6.1 Arsip Akashi: soul letters archive handles 0, 1, 3, 4, 10, 50+ records (not limited to 3)", () => {
+  // 0 records
+  assert.strictEqual(buildSoulLettersV3Section({ soulLetters: [] } as any), null, "0 soul letters returns null");
+  
+  // 1 record
+  const s1 = buildSoulLettersV3Section({
+    soulLetters: [{ id: "l1", title: "Surat 1", subtitle: "Sub 1", paragraphs: ["P1"], deepExplanation: "D1", practicalReflection: "R1", order: 1 }]
+  } as any);
+  assert.ok(s1 !== null && s1.cards.length === 1, "1 soul letter produces 1 card");
+  
+  // 3 records
+  const s3 = buildSoulLettersV3Section({
+    soulLetters: [
+      { id: "l1", title: "Surat 1", subtitle: "Sub 1", paragraphs: ["P1"], deepExplanation: "D1", practicalReflection: "R1", order: 1 },
+      { id: "l2", title: "Surat 2", subtitle: "Sub 2", paragraphs: ["P2"], deepExplanation: "D2", practicalReflection: "R2", order: 2 },
+      { id: "l3", title: "Surat 3", subtitle: "Sub 3", paragraphs: ["P3"], deepExplanation: "D3", practicalReflection: "R3", order: 3 },
+    ]
+  } as any);
+  assert.ok(s3 !== null && s3.cards.length === 3, "3 soul letters produce 3 cards");
+  
+  // 4 records - MUST BE REACHABLE (not limited to 3)
+  const s4 = buildSoulLettersV3Section({
+    soulLetters: [
+      { id: "l1", title: "Surat 1", subtitle: "Sub 1", paragraphs: ["P1"], deepExplanation: "D1", practicalReflection: "R1", order: 1 },
+      { id: "l2", title: "Surat 2", subtitle: "Sub 2", paragraphs: ["P2"], deepExplanation: "D2", practicalReflection: "R2", order: 2 },
+      { id: "l3", title: "Surat 3", subtitle: "Sub 3", paragraphs: ["P3"], deepExplanation: "D3", practicalReflection: "R3", order: 3 },
+      { id: "l4", title: "Surat 4", subtitle: "Sub 4", paragraphs: ["P4"], deepExplanation: "D4", practicalReflection: "R4", order: 4 },
+    ]
+  } as any);
+  assert.ok(s4 !== null && s4.cards.length === 4, "4th soul letter record is reachable and preserved in full archive");
+  assert.strictEqual(s4?.cards[3].title, "Surat 4", "4th record title preserved");
+
+  // 10 records
+  const letters10 = Array.from({ length: 10 }, (_, i) => ({
+    id: `l${i + 1}`, title: `Surat ${i + 1}`, subtitle: `Sub ${i + 1}`, paragraphs: [`P${i + 1}`], deepExplanation: `D${i + 1}`, practicalReflection: `R${i + 1}`, order: i + 1,
+  }));
+  const s10 = buildSoulLettersV3Section({ soulLetters: letters10 } as any);
+  assert.strictEqual(s10?.cards.length, 10, "10 soul letters produces 10 cards");
+
+  // 50+ records
+  const letters52 = Array.from({ length: 52 }, (_, i) => ({
+    id: `l${i + 1}`, title: `Surat ${i + 1}`, subtitle: `Sub ${i + 1}`, paragraphs: [`P${i + 1}`], deepExplanation: `D${i + 1}`, practicalReflection: `R${i + 1}`, order: i + 1,
+  }));
+  const s52 = buildSoulLettersV3Section({ soulLetters: letters52 } as any);
+  assert.strictEqual(s52?.cards.length, 52, "50+ soul letters produces 52 cards without truncation");
+});
+
+test("6.2 Arsip Akashi: v3ContentBridge preserves card content on partial match without dropping section", () => {
+  const section = {
+    title: "SIAPA DIRIMU",
+    cards: [
+      { title: "Arketipe Utama", shortMeaning: "legacy-short" },
+      { title: "Unknown Custom Card", shortMeaning: "custom-short" },
+    ],
+  };
+  const viewModel = {
+    readings: [
+      { title: "Arketipe Utama", roomTitle: "SIAPA DIRIMU", deepExplanation: "deep-content", practicalReflection: "reflection-content", order: 1 },
+    ],
+    soulLetters: [],
+    status: "ready",
+    rooms: [],
+  };
+  const bridged = applyArsipAkashiContentToV3Section(section as any, viewModel as any);
+  assert.ok(bridged !== null, "Section must not be dropped when some cards do not match");
+  assert.strictEqual(bridged?.cards.length, 2, "All cards must remain in section");
+  assert.strictEqual(bridged?.cards[0].expandableInsight, "deep-content", "Matched card receives deep explanation");
+  assert.strictEqual(bridged?.cards[1].shortMeaning, "custom-short", "Unmatched card preserves original content");
+});
+
+test("6.3 Human Design: Canonical Founder birth input evaluates to Manifesting Generator", () => {
+  const result = calculateHumanDesignTypeFromBirthData("1985-05-03", "23:45", "Asia/Jakarta", 106.8);
+  assert.ok(result !== null, "HD result must not be null for valid birth data");
+  assert.strictEqual(result?.type, "Manifesting Generator", "Canonical Founder HD type MUST be Manifesting Generator");
+  assert.strictEqual(result?.definition, "Single Definition", "Definition must be Single Definition");
+  assert.ok(result?.channels.includes("2-14"), "Channel 2-14 (Sacral-G) must be active");
+  assert.ok(result?.channels.includes("10-20"), "Channel 10-20 (G-Throat) must be active");
+  assert.ok(result?.channels.includes("25-51"), "Channel 25-51 (G-Ego) must be active");
+  assert.ok(result?.channels.includes("26-44"), "Channel 26-44 (Spleen-Ego) must be active");
+});
+
+test("6.4 Environment: Schumann runtime calls disabled & Volcanic features removed", () => {
+  const cardResult = AtmosphereVolcanicCard({} as any);
+  assert.strictEqual(cardResult, null, "AtmosphereVolcanicCard must render null (0 visible surfaces)");
+
+  const volcanic = evaluateVolcanicContext({
+    userLat: -6.2,
+    userLon: 106.8,
+    totalColumnSo2UgM2: 1500,
+    surfaceSo2UgM3: 10,
+    windSpeedKph: 15,
+    windDirectionDegrees: 180,
+    observedAt: new Date().toISOString(),
+  });
+  assert.strictEqual(volcanic.probableSource, null, "No volcano name attribution allowed");
+  assert.strictEqual(volcanic.nearbyKnownVolcanoes.length, 0, "No nearby known volcanoes list exposed");
+  assert.strictEqual(volcanic.plumeDetected, null, "Plume detection disabled");
+});
+
+test("6.5 New user 7-day trial entitlement is guaranteed without backend blocker", () => {
+  const now = new Date();
+  const profileWithoutTrial = {
+    uid: "new-user-123",
+    email: "new@example.com",
+    fullName: "New User",
+    createdAt: now,
+    setupCompleted: true,
+  };
+  const window = getCanonicalTrialWindow(profileWithoutTrial as any);
+  assert.strictEqual(window.state, "valid", "New user gets valid 7-day trial from createdAt");
+  const entitlement = getEntitlementStatus(profileWithoutTrial as any, now);
+  assert.strictEqual(entitlement.isPremium, true, "New user has premium access during 7-day trial");
+  assert.strictEqual(entitlement.reason, "trial", "Reason is trial");
+});
+
+test("6.6 ProfileRuntimeAdapter titles are Indonesian-only (no English leak)", () => {
+  const dummyMeaning: any = {
+    identity: { archetype: { short: "s", medium: "m", long: "l" }, hiddenCharacter: { short: "s", medium: "m", long: "l" } },
+    purpose: { short: "s", medium: "m", long: "l" },
+    energy: { authority: { short: "s", medium: "m", long: "l" }, strategy: { short: "s", medium: "m", long: "l" }, vitality: { short: "s", medium: "m", long: "l" }, bodyMechanics: { short: "s", medium: "m", long: "l" } },
+    shadow: { emotionalNeeds: { short: "s", medium: "m", long: "l" }, sabotage: { short: "s", medium: "m", long: "l" }, triggers: { short: "s", medium: "m", long: "l" }, ancestralLegacy: { short: "s", medium: "m", long: "l" }, soulLesson: { short: "s", medium: "m", long: "l" }, soulTrace: { short: "s", medium: "m", long: "l" }, moneyBlock: { short: "s", medium: "m", long: "l" }, loveBlock: { short: "s", medium: "m", long: "l" } },
+    talents: { dna: { short: "s", medium: "m", long: "l" }, potential: { short: "s", medium: "m", long: "l" }, workStyle: { short: "s", medium: "m", long: "l" }, wealthFlow: { short: "s", medium: "m", long: "l" } },
+    relationships: { attraction: { short: "s", medium: "m", long: "l" }, pattern: { short: "s", medium: "m", long: "l" }, loveLanguage: { short: "s", medium: "m", long: "l" }, boundaries: { short: "s", medium: "m", long: "l" } },
+    health: { chakra: { short: "s", medium: "m", long: "l" }, digestion: { short: "s", medium: "m", long: "l" }, environment: { short: "s", medium: "m", long: "l" }, rhythm: { short: "s", medium: "m", long: "l" }, element: { short: "s", medium: "m", long: "l" } },
+    spirituality: { path: { short: "s", medium: "m", long: "l" }, evolution: { short: "s", medium: "m", long: "l" }, potential: { short: "s", medium: "m", long: "l" }, talents: { short: "s", medium: "m", long: "l" }, intuition: { short: "s", medium: "m", long: "l" }, channeling: { short: "s", medium: "m", long: "l" } },
+    timing: { season: { short: "s", medium: "m", long: "l" }, semester2: { short: "s", medium: "m", long: "l" }, opportunityWindow: { short: "s", medium: "m", long: "l" }, shadowChallenge: { short: "s", medium: "m", long: "l" } },
+    soulIdentity: { mission: { short: "s", medium: "m", long: "l" }, gifts: { short: "s", medium: "m", long: "l" }, lessons: { short: "s", medium: "m", long: "l" }, shadow: { short: "s", medium: "m", long: "l" } },
+  };
+  const sections = ProfileRuntimeAdapter.buildProfile(dummyMeaning);
+  const titles = sections.map((s) => s.title);
+  assert.ok(titles.includes("SIAPA DIRIMU"), "Section 1 title must be SIAPA DIRIMU");
+  assert.ok(titles.includes("ENERGI & MEKANIKA"), "Section 2 title must be ENERGI & MEKANIKA");
+  assert.ok(titles.includes("LUKA, BAYANGAN & WARISAN"), "Section 3 title must be LUKA, BAYANGAN & WARISAN");
+  assert.ok(!titles.includes("WHO YOU ARE"), "English title WHO YOU ARE must not be present");
+});
+
+console.log(`Groups passed: ${totalGroups}; nested subprocess assertions: 3 (additional)`);
 console.log(`\n========================================================`);
 console.log(`BUILD 110 REMEDIATION SUITE: ${totalAssertions} assertions PASSED`);
 console.log(`========================================================\n`);

@@ -16,8 +16,7 @@ interface AccuracyUpgradeBannerProps {
 }
 
 export function AccuracyUpgradeBanner({ uid, blueprint, profile }: AccuracyUpgradeBannerProps) {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 

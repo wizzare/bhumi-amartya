@@ -30,7 +30,7 @@ function runSuite(suite) {
   if (suite.kind === "emulator" && !emulatorLive) {
     return { ...suite, status: "SKIPPED_NO_EMULATOR", code: null };
   }
-  const preload = suite.kind === "emulator" || suite.kind === "env" ? ["--import", ENV_PRELOAD] : [];
+  const preload = ["--import", ENV_PRELOAD];
   const filePath = path.join(REPO_ROOT, suite.file);
   if (!existsSync(filePath)) {
     return { ...suite, status: "MISSING_FILE", code: 2 };

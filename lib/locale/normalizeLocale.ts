@@ -2,6 +2,9 @@ export type CanonicalLocale = "id-ID" | "en-US" | "ms-MY";
 
 export const DEFAULT_LOCALE: CanonicalLocale = "id-ID";
 
+/**
+ * Historical locale parser.
+ */
 export function normalizeLocale(input: unknown): CanonicalLocale {
   if (typeof input !== "string" || !input.trim()) {
     return DEFAULT_LOCALE;
@@ -9,18 +12,23 @@ export function normalizeLocale(input: unknown): CanonicalLocale {
 
   const clean = input.trim();
 
-  // Direct canonical matches
   if (clean === "id-ID") return "id-ID";
   if (clean === "en-US") return "en-US";
   if (clean === "ms-MY") return "ms-MY";
 
-  // Legacy short codes & variations
   const lower = clean.toLowerCase();
   if (lower === "id" || lower.startsWith("id-") || lower.startsWith("id_")) return "id-ID";
   if (lower === "en" || lower.startsWith("en-") || lower.startsWith("en_")) return "en-US";
   if (lower === "ms" || lower.startsWith("ms-") || lower.startsWith("ms_")) return "ms-MY";
 
   return DEFAULT_LOCALE;
+}
+
+/**
+ * Build 110: System UI runtime locale deterministically resolves to id-ID only.
+ */
+export function getEffectiveLocale(_requested?: unknown): CanonicalLocale {
+  return "id-ID";
 }
 
 /**

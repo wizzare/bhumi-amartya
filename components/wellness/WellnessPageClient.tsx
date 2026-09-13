@@ -523,11 +523,10 @@ function WellnessSummaryMapping({
 
 export function WellnessPageClient() {
   const auth = useAuth();
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [appNow, setAppNow] = React.useState(() => new Date());
-  const effectiveLang: "id" | "en" = isEn ? "en" : (language === "ms" ? "en" : language);
-  const t = translations[effectiveLang];
+  const effectiveLang: "id" | "en" = "id";
+  const t = translations["id"];
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
     : null;
@@ -595,7 +594,7 @@ export function WellnessPageClient() {
       ...practice,
       contextual: hasContext && index < 2,
     }));
-  }, [curation, intelligence, t, language]);
+  }, [curation, intelligence, t]);
 
   // Results & assessment state
   const [assessmentStage, setAssessmentStage] = React.useState<"intro" | "questions" | "results">("intro");
@@ -622,8 +621,10 @@ export function WellnessPageClient() {
         let [profile, blueprint] = await Promise.all([
           storageProvider.getUserProfile(),
           storageProvider.getUserBlueprint(),
-          
         ]);
+        if (!profile && auth?.userProfile) {
+          profile = auth.userProfile as any;
+        }
         if (auditUser && (!profile || !blueprint)) {
           const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
           profile = profile || getMockProfile(auditUser) as any;

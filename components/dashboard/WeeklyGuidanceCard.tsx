@@ -19,18 +19,17 @@ function formatRange(value: WeeklyGuidance, isEn: boolean): string {
 }
 
 export function WeeklyGuidanceCard({ guidance }: { guidance: WeeklyGuidance | null }) {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
-  const t = translations[isEn ? "en" : language].weeklyGuidance || {
-    title: isEn ? "This Week's Guidance" : "Panduan Minggu Ini",
-    preparing: isEn ? "Practical weekly guidance from Bhumi is being prepared." : "Panduan praktis mingguan dari Bhumi sedang disiapkan.",
-    completeProfile: isEn ? "Complete your profile data so this week's potential and development direction can be read." : "Lengkapi data profil agar potensi dan arah pengembangan minggu ini dapat dibaca.",
-    subtitle: isEn ? "Practical weekly guidance from Bhumi." : "Panduan praktis mingguan dari Bhumi.",
-    earlyWeek: isEn ? "Early Week" : "Awal Pekan",
-    midWeek: isEn ? "Mid Week" : "Tengah Pekan",
-    weekend: isEn ? "Weekend" : "Akhir Pekan",
-    bhumiAdvice: isEn ? "Bhumi Advice" : "Saran Bhumi",
-    weeklyDirection: isEn ? "This Week's Direction" : "Arah Minggu Ini",
+  const isEn = false;
+  const t = translations["id"].weeklyGuidance || {
+    title: "Panduan Minggu Ini",
+    preparing: "Panduan praktis mingguan dari Bhumi sedang disiapkan.",
+    completeProfile: "Lengkapi data profil agar potensi dan arah pengembangan minggu ini dapat dibaca.",
+    subtitle: "Panduan praktis mingguan dari Bhumi.",
+    earlyWeek: "Awal Pekan",
+    midWeek: "Tengah Pekan",
+    weekend: "Akhir Pekan",
+    bhumiAdvice: "Saran Bhumi",
+    weeklyDirection: "Arah Minggu Ini",
   };
 
   if (!guidance) {

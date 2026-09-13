@@ -17,7 +17,7 @@ export function EmotionalTimeline({ memory }: EmotionalTimelineProps) {
     <section className="mb-8">
       <div className="bhumi-card rounded-[28px] p-8 bg-gradient-to-br from-[#F7F4ED] to-[#FCFAF5] shadow-soft">
         <h2 className="text-3xl text-[#4F5E52] font-light mb-6">
-          Your Healing Journey
+          Perjalanan Pemulihanmu
         </h2>
 
         {/* Timeline */}
@@ -35,7 +35,7 @@ export function EmotionalTimeline({ memory }: EmotionalTimelineProps) {
                 {/* Content */}
                 <div className="bg-white rounded-xl p-4">
                   <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                    {new Date(milestone.date).toLocaleDateString(isEn ? "en-US" : "id-ID", {
+                    {new Date(milestone.date).toLocaleDateString("id-ID", {
                       weekday: "short",
                       year: "numeric",
                       month: "short",
@@ -54,8 +54,8 @@ export function EmotionalTimeline({ memory }: EmotionalTimelineProps) {
         {/* Summary message */}
         <div className="mt-8 pt-8 border-t border-[#E8E9E5]">
           <p className="text-[#8B9488] leading-relaxed italic">
-            Look at how far you&apos;ve come. Each milestone is a moment you chose to
-            witness yourself. That&apos;s everything.
+            Lihatlah sejauh mana langkahmu telah bertumbuh. Setiap tonggak adalah saat kamu memilih untuk
+            menyimak dirimu sendiri secara utuh.
           </p>
         </div>
       </div>

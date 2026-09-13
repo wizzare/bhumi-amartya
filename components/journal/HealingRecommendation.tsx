@@ -35,11 +35,11 @@ export function HealingRecommendationComponent({
     <section className="mb-8">
       <div className="mb-6">
         <h2 className="text-3xl text-[#4F5E52] font-light mb-2">
-          Practices for Your Healing
+          Praktik untuk Pemulihanmu
         </h2>
         <p className="text-[#8B9488] leading-relaxed">
-          These are suggestions based on what we&apos;re witnessing. Choose what calls to
-          you. Trust your instinct.
+          Ini adalah saran berdasarkan apa yang sedang disimak. Pilih yang paling memanggilmu.
+          Percayai intuisimu.
         </p>
       </div>
 
@@ -74,7 +74,7 @@ export function HealingRecommendationComponent({
               {/* Why this practice */}
               <div className="mb-5 pb-5 border-b border-[#E8E9E5]">
                 <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-2">
-                  Why this practice
+                  Mengapa praktik ini
                 </p>
                 <p className="text-[#4F5E52] text-sm leading-relaxed">
                   {rec.basedOnEmotionalAnalysis}
@@ -84,7 +84,7 @@ export function HealingRecommendationComponent({
               {/* How to do it */}
               <div className="mb-5 pb-5 border-b border-[#E8E9E5]">
                 <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-3">
-                  How to do it
+                  Langkah-langkah
                 </p>
                 <ol className="space-y-2">
                   {rec.instructions.map((instruction, idx) => (
@@ -118,7 +118,7 @@ export function HealingRecommendationComponent({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                      When
+                      Waktu
                     </p>
                     <p className="text-[#4F5E52] font-medium">
                       {rec.bestTiming
@@ -129,7 +129,7 @@ export function HealingRecommendationComponent({
                   </div>
                   <div>
                     <p className="text-[#8B9488] text-xs uppercase tracking-wide mb-1">
-                      Frequency
+                      Frekuensi
                     </p>
                     <p className="text-[#4F5E52] font-medium">{rec.frequency}</p>
                   </div>
@@ -151,8 +151,8 @@ export function HealingRecommendationComponent({
       {recommendations.length === 0 && (
         <div className="text-center py-12 bg-[#FBF9F4] rounded-2xl">
           <p className="text-[#8B9488] leading-relaxed">
-            No recommendations yet. <br />
-            Sometimes the deepest practice is simply resting.
+            Belum ada rekomendasi. <br />
+            Terkadang praktik terdalam adalah sekadar beristirahat.
           </p>
         </div>
       )}

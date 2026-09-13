@@ -24,14 +24,13 @@ const PRIMARY_NAV_ITEMS: NavItem[] = [
 
 const UTILITY_NAV_ITEMS: NavItem[] = [
   { Icon: Settings, labelKey: "settings", href: "/settings" },
-  { Icon: MessageSquare, labelKey: "profile" as any, label: "Inbox", href: "/inbox" },
+  { Icon: MessageSquare, labelKey: "profile" as any, label: "Kotak Masuk", href: "/inbox" },
   { Icon: Crown, labelKey: "profile" as any, label: "Premium Bhumi", href: "/premium-bhumi" },
 ];
 
 export function AppNav() {
   const pathname = usePathname();
-  const { language } = useLanguage();
-  const t = translations[language];
+  const t = translations["id"];
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   // Build 106 hotfix: the "Lainnya" menu carries product surfaces only. The

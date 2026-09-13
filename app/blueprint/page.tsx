@@ -29,8 +29,7 @@ function DataGroup({ title, values }: { title: string; values: Record<string, st
 }
 
 export default function BlueprintPage() {
-  const { language } = useLanguage();
-  const isEn = isEnlEdition() || language === "en";
+  const isEn = false;
   const [detail, setDetail] = useState<BlueprintDetailV1 | null>(null);
   const [matrix, setMatrix] = useState<DestinyMatrixVisualModel | null>(null);
   const [loading, setLoading] = useState(true);

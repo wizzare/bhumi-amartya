@@ -1,7 +1,7 @@
 import { isEnlEdition } from "@/lib/config/edition";
 
 export default function SyaratKetentuanPage() {
-  const isEn = isEnlEdition();
+  const isEn = false;
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-6 py-16 text-[#4F5E52]">
       <section className="mx-auto max-w-3xl">

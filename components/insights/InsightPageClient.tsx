@@ -77,10 +77,10 @@ const PATTERN_REASON_EN: Record<string, string> = {
 };
 
 function toTitleLabel(score: number): string {
-  if (score >= 76) return "Deepening Practice";
-  if (score >= 51) return "Consistent";
-  if (score >= 26) return "Growing";
-  return "Beginner";
+  if (score >= 76) return "Pendalaman Praktik";
+  if (score >= 51) return "Konsisten";
+  if (score >= 26) return "Bertumbuh";
+  return "Memulai";
 }
 
 function trendLabel(trend: ProgressTheme["trend"], isEn = false) {
@@ -153,7 +153,7 @@ function createClosingMessage(progress: ProgressData | null, isEn = false): stri
 export function InsightPageClient() {
   const router = useRouter();
   const auth = useAuth();
-  const isEn = isEnlEdition();
+  const isEn = false;
   const authRef = useRef(auth);
   useEffect(() => {
     authRef.current = auth;

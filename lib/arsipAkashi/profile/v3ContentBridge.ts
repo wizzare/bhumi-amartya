@@ -41,7 +41,7 @@ export function applyArsipAkashiContentToV3Section(
   if (section.title === "ASAL USUL & PERADABAN" || section.title === "ORIGINS & CIVILIZATION") {
     const cards = section.cards.map((card) => {
       const reading = readingsByTitle.get(card.title);
-      if (!reading) return null;
+      if (!reading) return card;
       return {
         ...card,
         shortMeaning: reading.items?.map((item) => item.shortMeaning).join(" · ") ?? "",
@@ -57,7 +57,6 @@ export function applyArsipAkashiContentToV3Section(
       };
     });
 
-    if (cards.some((card) => card === null)) return null;
     return { ...section, cards: cards as ProfileCard[] };
   }
 
@@ -74,7 +73,7 @@ export function applyArsipAkashiContentToV3Section(
 
   const cards = section.cards.map((card) => {
     const reading = readingsByTitle.get(card.title);
-    if (!reading) return null;
+    if (!reading) return card;
 
     return applyReadingContent(
       card,
@@ -83,8 +82,6 @@ export function applyArsipAkashiContentToV3Section(
       reading.detailSections,
     );
   });
-
-  if (cards.some((card) => card === null)) return null;
 
   return {
     ...section,
@@ -105,10 +102,10 @@ function soulLetterToV3Card(letter: ArsipAkashiProfileSoulLetter): ProfileCard {
 export function buildSoulLettersV3Section(
   viewModel: ArsipAkashiProfileViewModel,
 ): ProfileSection | null {
-  if (viewModel.soulLetters.length !== 3) return null;
+  if (!viewModel.soulLetters || viewModel.soulLetters.length === 0) return null;
 
   return {
-    title: isEnlEdition() ? "SOUL LETTERS" : "SURAT JIWA",
+    title: "SURAT JIWA",
     cards: [...viewModel.soulLetters]
       .sort((a, b) => a.order - b.order)
       .map(soulLetterToV3Card),

@@ -7,6 +7,14 @@ if (process.env.STRICT_BUILD_CHECK === "true" && !process.env.NEXT_PUBLIC_BILLIN
 }
 
 const nextConfig: NextConfig = {
+  // Explicitly opt-in development preview; no fixture switch can activate in production.
+  ...(process.env.NODE_ENV !== 'production' && process.env.BHUMI_LOCAL_QA === '1' ? {
+    async headers() {
+      return [{ source: '/:path*', headers: [{ key: 'Content-Security-Policy', value:
+        "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://127.0.0.1:8080 http://127.0.0.1:9099 http://127.0.0.1:5001 http://127.0.0.1:18765 ws://127.0.0.1:3001; form-action 'self'; frame-src 'self'; object-src 'none'"
+      }] }];
+    },
+  } : {}),
   /* config options here */
   output: process.env.VERCEL ? undefined : 'export',
   trailingSlash: process.env.VERCEL ? false : true,
@@ -16,6 +24,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   env: {
+    BHUMI_LOCAL_QA: process.env.NODE_ENV !== 'production' && process.env.BHUMI_LOCAL_QA === '1' ? '1' : '0',
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,

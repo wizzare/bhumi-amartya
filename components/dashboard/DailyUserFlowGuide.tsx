@@ -10,7 +10,7 @@ interface DailyUserFlowGuideProps {
 }
 
 export function DailyUserFlowGuide({ language }: DailyUserFlowGuideProps) {
-  const isId = !isEnlEdition() && language === "id";
+  const isId = true;
 
   const content = {
     title: isId ? "Pilih ruang yang terasa pas" : "Choose what feels right",
