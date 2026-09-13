@@ -51,15 +51,16 @@ The security and entitlement issues identified in the pre-commit audit have been
 2. **Canonical 7-Day Server Trial Contract Enforced**:
    - In `lib/billing/entitlementService.ts`, removed fabrication of trial windows from mutable timestamps (`createdAt`, `registeredAt`, `updatedAt`).
    - Removed the overly permissive `end > start` check.
-   - Strictly enforced the immutable server contract: `end.getTime() - start.getTime() === SEVEN_DAYS_MS` (exactly 7 days) and `trustedSource` from authorized server authorities (`firebase_auth_creation_time`, `server_access_bootstrap`, `admin_provisioned`, `firebase_function_auth_on_create`, `vercel_profile_bootstrap`).
-   - Malformed or non-7-day records fail closed to `state: "invalid"` and Free access (isPremium = false).
+   - Removed `firebase_auth_creation_time` and `firebase_auth_on_create` as trial entitlement authorities. Firebase Auth creationTime may only be used for diagnostics/audit metadata, never entitlement authority.
+   - Strictly enforced the immutable server contract: `end.getTime() - start.getTime() === SEVEN_DAYS_MS` (exactly 7 days) and `trustedSource` from authorized server authorities only (`server_access_bootstrap`, `admin_provisioned`, `vercel_profile_bootstrap`).
+   - Malformed, forged, or non-7-day records fail closed to `state: "invalid"` and Free access (isPremium = false).
 3. **Server-Owned Bootstrap Route Implemented**:
    - Created `app/api/access/bootstrap-trial/route.ts` using the existing server-side architecture pattern.
    - Verifies Firebase Auth Bearer token via `getAuth().verifyIdToken()`.
    - Checks existing user record in a Firestore transaction: higher entitlements (Founder, Lifetime, Google Play) and existing valid server trials are preserved (`ALREADY_PRESENT` / `HIGHER_ENTITLEMENT`). Trial does NOT reset on login, profile update, or setup rerun.
    - For new users, mints an immutable server-stamped 7-day trial starting from server `now` (client timestamps forbidden).
 4. **Automated Trial Security Regression Suite**:
-   - Added `tests/unit/build110-trial-security-entitlement.test.ts` (34 granular assertions, all PASSED). Proves client cannot grant, extend, or restart trial; proves exact 7-day contract; proves fail-closed on expired or malformed records; proves Firestore Rules protection.
+   - Added `tests/unit/build110-trial-security-entitlement.test.ts` (41 granular assertions, all PASSED). Proves client cannot grant, extend, or restart trial; proves exact 7-day contract; proves fail-closed on expired, malformed, or firebase_auth_creation_time records; proves Firestore Rules protection; proves server bootstrap idempotency.
 
 ### 4. Executed Test Evidence & Full Regression Ledger
 All test suites were executed against the actual worktree; zero failures recorded:

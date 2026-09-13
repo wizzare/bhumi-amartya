@@ -60,14 +60,27 @@ export function getCanonicalTrialWindow(profile: UserProfile): CanonicalTrialWin
 
   // Canonical contract: exactly 7 days duration (immutable server window)
   const exactWindow = end.getTime() - start.getTime() === SEVEN_DAYS_MS;
-  const source = String((profile as any).entitlementSource || "");
-  const accessSource = String((profile as any).accessSource || "");
-  const trustedSource =
+  const source = String((profile as any).entitlementSource || "").toLowerCase();
+  const accessSource = String((profile as any).accessSource || "").toLowerCase();
+
+  // Explicitly forbidden: Firebase Auth creation time is NOT an entitlement authority.
+  // It cannot mint, extend, restart, or validate a trial.
+  if (
     source === "firebase_auth_creation_time" ||
+    accessSource === "firebase_auth_on_create"
+  ) {
+    return { state: "invalid", start, end };
+  }
+
+  // Canonical sources approved by Founder:
+  // - SERVER_ACCESS_BOOTSTRAP (minted by trusted server endpoint /api/access/bootstrap-trial)
+  // - ADMIN_PROVISIONED (server/admin provisioned trial)
+  // - An already-existing canonical immutable server trial record (e.g. vercel_profile_bootstrap)
+  const trustedSource =
     source === "server_access_bootstrap" ||
     source === "admin_provisioned" ||
-    accessSource === "firebase_auth_on_create" ||
-    accessSource === "firebase_function_auth_on_create" ||
+    accessSource === "server_access_bootstrap" ||
+    accessSource === "admin_provisioned" ||
     accessSource === "vercel_profile_bootstrap";
 
   if (!exactWindow || !trustedSource) {

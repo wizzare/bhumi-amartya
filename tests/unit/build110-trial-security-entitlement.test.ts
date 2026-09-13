@@ -255,4 +255,81 @@ const NOW = new Date("2026-09-13T12:00:00.000Z");
   );
 }
 
+// ---------------------------------------------------------------------------
+// 8. Firebase Auth Creation Time Rejection (Founder Contract Correction)
+// ---------------------------------------------------------------------------
+{
+  const trialStart = new Date("2026-09-10T10:00:00.000Z");
+  const exactTrialEnd = new Date(trialStart.getTime() + SEVEN_DAYS_MS);
+
+  // Profile with firebase_auth_creation_time as entitlementSource must be REJECTED
+  const authCreationProfile = {
+    uid: "test-auth-creation-source",
+    trialStartedAt: trialStart,
+    trialEndsAt: exactTrialEnd,
+    entitlementSource: "firebase_auth_creation_time",
+  };
+  const authCreationWindow = getCanonicalTrialWindow(authCreationProfile as any);
+  test(
+    "AUTH_CREATION_TIME_DOES_NOT_CREATE_TRIAL (firebase_auth_creation_time is rejected as entitlement authority)",
+    authCreationWindow.state === "invalid",
+  );
+  test(
+    "FIREBASE_AUTH_CREATION_TIME_IS_ENTITLEMENT_AUTHORITY = NO (resolves to isPremium = false)",
+    getEntitlementStatus(authCreationProfile as any, new Date("2026-09-12T00:00:00.000Z")).isPremium === false,
+  );
+
+  // Profile with accessSource firebase_auth_on_create must also be REJECTED
+  const authOnCreateProfile = {
+    uid: "test-auth-on-create",
+    trialStartedAt: trialStart,
+    trialEndsAt: exactTrialEnd,
+    accessSource: "firebase_auth_on_create",
+  };
+  test(
+    "accessSource firebase_auth_on_create fails closed as invalid",
+    getCanonicalTrialWindow(authOnCreateProfile as any).state === "invalid",
+  );
+
+  // Attempting to reset trial via auth creation time must fail
+  const existingValidTrial = {
+    uid: "test-immutable-user",
+    trialStartedAt: trialStart,
+    trialEndsAt: exactTrialEnd,
+    entitlementSource: "server_access_bootstrap",
+  };
+  const resetAttempt = {
+    ...existingValidTrial,
+    entitlementSource: "firebase_auth_creation_time",
+    trialStartedAt: NOW,
+    trialEndsAt: new Date(NOW.getTime() + SEVEN_DAYS_MS),
+  };
+  test(
+    "AUTH_CREATION_TIME_DOES_NOT_RESET_TRIAL (forged reset attempt fails closed)",
+    getCanonicalTrialWindow(resetAttempt as any).state === "invalid",
+  );
+
+  // Attempting to extend trial via auth creation time must fail
+  const extendAttempt = {
+    ...existingValidTrial,
+    entitlementSource: "firebase_auth_creation_time",
+    trialEndsAt: new Date(exactTrialEnd.getTime() + 7 * 86400000),
+  };
+  test(
+    "AUTH_CREATION_TIME_DOES_NOT_EXTEND_TRIAL (extension via auth creation time rejected)",
+    getCanonicalTrialWindow(extendAttempt as any).state === "invalid",
+  );
+
+  // Server bootstrap creates exact 7-day trial and is idempotent
+  const routeSrc = read("app/api/access/bootstrap-trial/route.ts");
+  test(
+    "SERVER_BOOTSTRAP_CREATES_EXACT_7_DAY_TRIAL (route uses SEVEN_DAYS_MS from server now)",
+    routeSrc.includes("SEVEN_DAYS_MS") && routeSrc.includes("trialEndsAt = new Date(now.getTime() + SEVEN_DAYS_MS)"),
+  );
+  test(
+    "SERVER_BOOTSTRAP_IS_IDEMPOTENT (returns ALREADY_PRESENT and preserves existing trial)",
+    routeSrc.includes('outcome: "ALREADY_PRESENT"') && routeSrc.includes("data.trialStartedAt && data.trialEndsAt"),
+  );
+}
+
 console.log(`\nBUILD110_TRIAL_SECURITY_ENTITLEMENT: ${passed} checks passed\n`);
