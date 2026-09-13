@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Droplets, Globe, MapPin, Radio, Thermometer } from "lucide-react";
-import { useLanguage } from "@/app/context/LanguageContext";
+import { Activity, Globe, MapPin } from "lucide-react";
 import { translations } from "@/lib/data/translations";
-import { isEnlEdition } from "@/lib/config/edition";
 import { kpActivityLabel } from "@/lib/environment/schumann";
 import {
   getEnvironmentLocationPermission,
@@ -65,7 +63,6 @@ function SummaryItem({
 }
 
 export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardProps) {
-  const isEn = false;
   const t = translations["id"].environment;
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [location, setLocation] = useState<EnvironmentLocation | null>(null);
@@ -163,11 +160,13 @@ export function EnvironmentContextCard({ onOpenDetail }: EnvironmentContextCardP
         ) : (
           <>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <SummaryItem icon={<MapPin size={18} />} label={t.fLocation} value={formatLocation(location, permission, t, isEn)} />
-                <SummaryItem icon={<Thermometer size={18} />} label={t.fTemperature} value={context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null ? `${context.weather.temperatureCelsius}°C` : t.unavailable} />
-                <SummaryItem icon={<Droplets size={18} />} label={t.fHumidity} value={context?.weather?.humidityPercent !== undefined && context?.weather?.humidityPercent !== null ? `${context.weather.humidityPercent}%` : t.unavailable} />
-                <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context?.earthActivity?.dataState === "available" ? (isEn && context.earthActivity.status === "Stabil" ? "Stable" : context.earthActivity.status) : t.unavailable} />
-                <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context?.spaceWeather?.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather.kpIndex, isEn) : (context?.spaceWeather?.geomagneticActivity ?? t.unavailable)} />
+                <SummaryItem icon={<MapPin size={18} />} label={t.fLocation} value={formatLocation(location, permission, t, false)} />
+                {context?.earthActivity?.dataState === "available" && (
+                  <SummaryItem icon={<Activity size={18} />} label={t.fEarthActivity} value={context.earthActivity.status} />
+                )}
+                {context?.spaceWeather?.source.status === "available" && (
+                  <SummaryItem icon={<Globe size={18} />} label={t.fGeomagnetic} value={context.spaceWeather.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather.kpIndex) : (context.spaceWeather.geomagneticActivity ?? t.unavailable)} />
+                )}
               </div>
 
             {onOpenDetail && (

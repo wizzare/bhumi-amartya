@@ -529,6 +529,77 @@ test("6.6 ProfileRuntimeAdapter titles are Indonesian-only (no English leak)", (
   assert.ok(!titles.includes("WHO YOU ARE"), "English title WHO YOU ARE must not be present");
 });
 
+// ---------------------------------------------------------------------------
+// 7. Founder Environment Audit Remediation — no permanent dead cards,
+//    Schumann/Volcanic fully removed, live-source-only surfaces.
+// ---------------------------------------------------------------------------
+test("7.1 Environment detail page renders only live-source fields (no Weather/Temp/Humidity/Wind/Pressure/UV/AQI dead cards)", () => {
+  const src = fs.readFileSync(path.resolve("app/dashboard/environment/page.tsx"), "utf8");
+  assert.ok(!/fWeather|fTemperature|fHumidity|fWind|fPressure|fUvIndex|fAirQuality/.test(src), "Open-Meteo-only fields must not be rendered");
+  assert.ok(!/AtmosphereVolcanicCard|SchumannGraph/.test(src), "Volcanic/Schumann components must not be imported");
+  assert.ok(src.includes("Data lingkungan sedang tidak tersedia"), "Single Indonesian degraded-state message must exist");
+});
+
+test("7.2 Dashboard EnvironmentContextCard shows only Location/EarthActivity/Geomagnetic, no Temperature/Humidity/Schumann", () => {
+  const src = fs.readFileSync(path.resolve("components/dashboard/EnvironmentContextCard.tsx"), "utf8");
+  assert.ok(!/fTemperature|fHumidity|Thermometer|Droplets/.test(src), "Dashboard card must not render dead Open-Meteo fields");
+  assert.ok(!/Radio|fSchumann/.test(src), "Dashboard card must not render Schumann");
+});
+
+test("7.3 AtmosphereVolcanicCard is fully removed from Dashboard and Environment detail page imports", () => {
+  const dashboardSrc = fs.readFileSync(path.resolve("components/dashboard/DashboardClient.tsx"), "utf8");
+  const envPageSrc = fs.readFileSync(path.resolve("app/dashboard/environment/page.tsx"), "utf8");
+  assert.ok(!dashboardSrc.includes("<AtmosphereVolcanicCard"), "Dashboard must not mount AtmosphereVolcanicCard");
+  assert.ok(!envPageSrc.includes("AtmosphereVolcanicCard"), "Environment detail page must not import AtmosphereVolcanicCard");
+});
+
+test("7.4 Open-Meteo production calls remain fail-closed (OPEN_METEO_PRODUCTION_CALLS = 0)", async () => {
+  const { isOpenMeteoCallPermitted } = await import("../../lib/environment/openMeteoGate.ts");
+  const originalEnv = process.env.NODE_ENV;
+  const originalDevFlag = process.env.ENABLE_DEV_OPEN_METEO;
+  try {
+    process.env.NODE_ENV = "production";
+    delete process.env.ENABLE_DEV_OPEN_METEO;
+    assert.strictEqual(isOpenMeteoCallPermitted(), false, "Open-Meteo must be forbidden in production");
+  } finally {
+    process.env.NODE_ENV = originalEnv;
+    if (originalDevFlag !== undefined) process.env.ENABLE_DEV_OPEN_METEO = originalDevFlag;
+  }
+});
+
+test("7.5 Volcanic engine remains fully fail-closed for Build 110 (no name attribution, no nearby list)", async () => {
+  const { evaluateVolcanicContext } = await import("../../lib/environment/volcanicEngine.ts");
+  const result = evaluateVolcanicContext({
+    userLat: -6.2, userLon: 106.8, totalColumnSo2UgM2: 99999,
+    surfaceSo2UgM3: 50, windSpeedKph: 20, windDirectionDegrees: 90,
+    observedAt: new Date().toISOString(),
+  });
+  assert.strictEqual(result.probableSource, null, "Volcano name attribution must remain 0");
+  assert.strictEqual(result.nearbyKnownVolcanoes.length, 0, "Nearby volcano list must remain empty");
+  assert.strictEqual(result.plumeDetected, null, "Plume detection must remain disabled");
+});
+
+test("7.6 Provider matrix classification — every environment feature has a defined Build 110 action (no UNKNOWN)", () => {
+  const providerMatrix: Record<string, "KEEP_LIVE" | "FIX_LIVE" | "HIDE_UNTIL_PROVIDER" | "REMOVE"> = {
+    Location: "KEEP_LIVE",
+    SunMoon: "KEEP_LIVE",
+    EarthActivity: "KEEP_LIVE",
+    Geomagnetic: "KEEP_LIVE",
+    Temperature: "HIDE_UNTIL_PROVIDER",
+    Humidity: "HIDE_UNTIL_PROVIDER",
+    Wind: "HIDE_UNTIL_PROVIDER",
+    Pressure: "HIDE_UNTIL_PROVIDER",
+    UvIndex: "HIDE_UNTIL_PROVIDER",
+    AirQuality: "HIDE_UNTIL_PROVIDER",
+    Schumann: "REMOVE",
+    Volcanic: "REMOVE",
+  };
+  for (const [feature, action] of Object.entries(providerMatrix)) {
+    assert.ok(["KEEP_LIVE", "FIX_LIVE", "HIDE_UNTIL_PROVIDER", "REMOVE"].includes(action), `${feature} must have a valid classification, got ${action}`);
+  }
+  assert.strictEqual(Object.keys(providerMatrix).length, 12, "All 12 audited environment features must be classified");
+});
+
 console.log(`Groups passed: ${totalGroups}; nested subprocess assertions: 3 (additional)`);
 console.log(`\n========================================================`);
 console.log(`BUILD 110 REMEDIATION SUITE: ${totalAssertions} assertions PASSED`);

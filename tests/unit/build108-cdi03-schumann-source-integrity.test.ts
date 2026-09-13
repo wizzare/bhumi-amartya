@@ -147,20 +147,21 @@ ok(
   bands.schumann === "quiet" && bands.geomagnetic === "quiet",
 );
 
+// Build 110 Founder decision: Schumann is removed entirely from all UI
+// surfaces (SCHUMANN_VISIBLE_SURFACES = 0), superseding the CDI-108-03
+// "honest unavailable" render contract above (which still governs the
+// underlying data-fetch/normalization layer that AI weak-context consumers
+// may reference).
 const envPageSrc = read("app/dashboard/environment/page.tsx");
 ok(
-  "/dashboard/environment computes hasSchumannObservation",
-  /const hasSchumannObservation\s*=/.test(envPageSrc),
-);
-ok(
-  "/dashboard/environment gates the full Schumann block on hasSchumannObservation",
-  /hasSchumannObservation\s*&&\s*spiritual/.test(envPageSrc),
+  "/dashboard/environment no longer imports or renders Schumann UI",
+  !/hasSchumannObservation|SchumannGraph|resolveSchumannUiState/.test(envPageSrc),
 );
 
 const cardSrc = read("components/dashboard/EnvironmentContextCard.tsx");
 ok(
-  "dashboard Environment card shows Schumann only when a numeric SR value exists",
-  /frequencies\.some\(\(item\) => typeof item\.valueHz === "number"\)/.test(cardSrc),
+  "dashboard Environment card no longer renders a Schumann SummaryItem",
+  !/frequencies\.some\(\(item\) => typeof item\.valueHz === "number"\)/.test(cardSrc),
 );
 
 console.log(`\nCDI-108-03 SCHUMANN SOURCE INTEGRITY: ${checks} checks passed`);

@@ -308,6 +308,13 @@ export async function getNormalizedEnvironment(location: EnvironmentLocation): P
     }).catch(() => undefined),
   );
 
+  // Build 110: Weather/Temperature/Humidity/Wind/Pressure/UV are hidden from
+  // all UI surfaces because Open-Meteo is not an approved production source
+  // (see openMeteoGate.ts). The fetch below stays gated to isOpenMeteoCallPermitted()
+  // (false in production) and is kept only for dev/QA parity with ctx shape;
+  // no consumer currently renders ctx.weather.
+  // ponytail: remove this task entirely once Open-Meteo is either approved for
+  // production or permanently dropped. Add when a commercial weather source is chosen.
   tasks.push(
     (async () => {
       if (!isOpenMeteoCallPermitted()) return;
