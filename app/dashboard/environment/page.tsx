@@ -32,6 +32,18 @@ function formatCoord(val: number, isLat: boolean): string {
   return `${Math.abs(val).toFixed(2)}° ${dir}`;
 }
 
+// US-EPA index scale used by WeatherAPI.com (1–6). Distinct from the
+// concentration-based US AQI scale in getAqiLabel — never interchange them,
+// and never label this as the Indonesian MENLHK index.
+function getUsEpaCategoryLabel(index: number): string {
+  if (index <= 1) return "Baik";
+  if (index === 2) return "Sedang";
+  if (index === 3) return "Tidak sehat bagi kelompok sensitif";
+  if (index === 4) return "Tidak sehat";
+  if (index === 5) return "Sangat tidak sehat";
+  return "Berbahaya";
+}
+
 function DetailItem({
   icon,
   label,
@@ -68,6 +80,7 @@ export default function EnvironmentDetailPage() {
   const [permission, setPermission] = useState<EnvironmentPermissionState | null>(null);
   const [context, setContext] = useState<EnvironmentContext | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [providerDegraded, setProviderDegraded] = useState(false);
   const t = translations["id"];
 
   async function load() {
@@ -102,18 +115,58 @@ export default function EnvironmentDetailPage() {
 
       const fresh = await getNormalizedEnvironment(location);
 
-      // LOCAL-QA ONLY UI preview of the target grouped provider model
-      // (CUACA / KUALITAS UDARA / BUMI & ANTARIKSA). Deterministic
-      // representative Jakarta values for Founder layout review — NOT live
-      // provider data and NOT production connectivity evidence. The preview
-      // module throws when isBuild110LocalQa() is false, so this branch can
-      // never execute in production.
-      if (isBuild110LocalQa()) {
-        const { applyLocalQaEnvironmentPreview } = await import("@/lib/environment/localQaPreview");
-        setContext(applyLocalQaEnvironmentPreview(fresh));
-      } else {
-        setContext(fresh);
+      // Approved provider path: WeatherAPI.com via the server-side proxy with
+      // shared geo-bucket cache (Dashboard + detail share one cached result).
+      // USGS/NOAA/Sun-Moon load independently inside getNormalizedEnvironment —
+      // a WeatherAPI outage never blanks those sections.
+      try {
+        const { getCachedWeatherAqi } = await import("@/lib/environment/weatherApiClient");
+        const provider = await getCachedWeatherAqi(
+          location.coordinates.latitude,
+          location.coordinates.longitude,
+        );
+        if (provider.status === "ready") {
+          fresh.weather = {
+            ...(fresh.weather ?? { source: { source: "weather_api", status: "available", observedAt: provider.observedAt ?? new Date().toISOString() } }),
+            condition: provider.weather?.condition,
+            temperatureCelsius: provider.weather?.temperatureCelsius,
+            feelsLikeCelsius: provider.weather?.feelsLikeCelsius,
+            humidityPercent: provider.weather?.humidityPercent,
+            pressureHpa: provider.weather?.pressureHpa,
+            windSpeedKph: provider.weather?.windSpeedKph,
+            uvCurrent: provider.weather?.uvIndex,
+            source: { source: "weather_api", status: "available", observedAt: provider.observedAt ?? new Date().toISOString() },
+          };
+          fresh.airQuality = {
+            ...(fresh.airQuality ?? { source: { source: "air_quality_api", status: "available", observedAt: provider.observedAt ?? new Date().toISOString() } }),
+            aqi: provider.airQuality?.usEpaIndex,
+            pm25: provider.airQuality?.pm25UgM3,
+            pm10: provider.airQuality?.pm10UgM3,
+            no2: provider.airQuality?.no2UgM3,
+            ozone: provider.airQuality?.o3UgM3,
+            so2: provider.airQuality?.so2UgM3,
+            co: provider.airQuality?.coUgM3,
+            source: { source: "air_quality_api", status: "available", observedAt: provider.observedAt ?? new Date().toISOString() },
+          };
+          setProviderDegraded(false);
+        } else if (provider.providerStatus === "not_configured" && isBuild110LocalQa()) {
+          // LOCAL-QA ONLY fallback: deterministic preview fixture so the Founder
+          // can review the target layout before the production key exists.
+          // The preview module throws when isBuild110LocalQa() is false, so this
+          // branch can never execute in production.
+          const { applyLocalQaEnvironmentPreview } = await import("@/lib/environment/localQaPreview");
+          const previewed = applyLocalQaEnvironmentPreview(fresh);
+          setContext(previewed);
+          setPermission("granted");
+          setProviderDegraded(false);
+          return;
+        } else {
+          setProviderDegraded(true);
+        }
+      } catch {
+        setProviderDegraded(true);
       }
+      setContext(fresh);
       setPermission("granted");
     } catch (err: any) {
       setError(err?.message || t.environment.loadError || "Gagal memuat data lingkungan.");
@@ -137,7 +190,7 @@ export default function EnvironmentDetailPage() {
   // preview fixture populates them so the Founder can review the target layout.
   const weatherLive = context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null;
   const aqiLive = context?.airQuality?.aqi !== undefined && context?.airQuality?.aqi !== null;
-  const isQaPreview = isBuild110LocalQa() && (weatherLive || aqiLive);
+  const isQaPreview = isBuild110LocalQa() && context?.weather?.source.message === "Local QA preview values — not live provider data.";
 
   return (
     <ProtectedRoute>
@@ -215,20 +268,26 @@ export default function EnvironmentDetailPage() {
                       icon={<Sun size={20} />}
                       label={t.environment.fTemperature}
                       value={`${context.weather!.temperatureCelsius}°C`}
-                      subValue={context.weather?.feelsLikeCelsius !== undefined ? `Terasa seperti ${context.weather.feelsLikeCelsius}°C` : undefined}
+                      subValue={context.weather?.condition}
                     />
+                    <DetailItem
+                      icon={<Sun size={20} />}
+                      label="Terasa Seperti"
+                      value={context.weather?.feelsLikeCelsius !== undefined ? `${context.weather.feelsLikeCelsius}°C` : t.environment.unavailable}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <DetailItem
                       icon={<MapPin size={20} />}
                       label={t.environment.fHumidity}
                       value={`${context.weather!.humidityPercent}%`}
-                      subValue={context.weather?.condition}
+                    />
+                    <DetailItem
+                      icon={<Activity size={20} />}
+                      label={t.environment.fWind}
+                      value={`${context.weather!.windSpeedKph} km/jam`}
                     />
                   </div>
-                  <DetailItem
-                    icon={<Activity size={20} />}
-                    label={t.environment.fWind}
-                    value={`${context.weather!.windSpeedKph} km/jam`}
-                  />
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <DetailItem
                       icon={<Sun size={20} />}
@@ -241,8 +300,16 @@ export default function EnvironmentDetailPage() {
                       value={context.weather?.uvCurrent !== undefined ? `${Math.round(context.weather.uvCurrent)} — ${getUvLabel(Math.round(context.weather.uvCurrent))}` : t.environment.unavailable}
                     />
                   </div>
-                  <p className="px-1 text-[10px] text-[#9AA394]">Powered by WeatherAPI.com</p>
+                  <a className="block px-1 text-xs text-[#4F6658] underline" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">Powered by WeatherAPI.com</a>
                 </section>
+              )}
+
+              {providerDegraded && !weatherLive && !aqiLive && (
+                <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+                  <p className="text-sm font-medium text-[#7B8776] leading-relaxed">
+                    Data cuaca dan kualitas udara sedang tidak tersedia. Silakan coba lagi nanti.
+                  </p>
+                </div>
               )}
 
               {aqiLive && (
@@ -251,27 +318,38 @@ export default function EnvironmentDetailPage() {
                   <DetailItem
                     icon={<Activity size={20} />}
                     label={t.environment.fAirQuality}
-                    value={`${context.airQuality!.aqi} — ${context.airQuality!.label ?? "Sedang"}`}
+                    value={`${context.airQuality?.aqi ?? "—"} — ${context.airQuality?.aqi !== undefined ? getUsEpaCategoryLabel(context.airQuality.aqi) : t.environment.unavailable}`}
                     subValue="Indeks US-EPA (standar provider)"
                   />
-                  <p className="px-1 text-[10px] text-[#9AA394]">Powered by WeatherAPI.com</p>
-                </section>
-              )}
-
-              {isQaPreview && (
-                <section className="space-y-4">
-                  <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA394]">Resonansi Schumann</h2>
-                  <DetailItem
-                    icon={<Activity size={20} />}
-                    label="SR1 Terukur"
-                    value="7,83 Hz"
-                    subValue="Status: Tenang · Sumber: Tomsk SOS-70 via SchumannResonanceLive (simulasi pratinjau — BUKAN pengukuran live)"
-                  />
-                  <p className="px-1 text-[10px] leading-relaxed text-[#9AA394]">
-                    Frekuensi fundamental nominal: sekitar 7,83 Hz. Kartu live hanya tampil bila
-                    pengukuran SR1 terverifikasi segar; SR2–SR5 nominal tidak pernah ditampilkan
-                    sebagai data live.
-                  </p>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <DetailItem
+                      icon={<Activity size={18} />}
+                      label="PM2.5"
+                      value={context.airQuality?.pm25 !== undefined ? `${context.airQuality.pm25} µg/m³` : t.environment.unavailable}
+                    />
+                    <DetailItem
+                      icon={<Activity size={18} />}
+                      label="PM10"
+                      value={context.airQuality?.pm10 !== undefined ? `${context.airQuality.pm10} µg/m³` : t.environment.unavailable}
+                    />
+                  </div>
+                  {(context.airQuality?.co !== undefined ||
+                    context.airQuality?.no2 !== undefined ||
+                    context.airQuality?.ozone !== undefined ||
+                    context.airQuality?.so2 !== undefined) && (
+                    <details className="rounded-3xl bg-white p-6 shadow-sm">
+                      <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">
+                        Detail polutan
+                      </summary>
+                      <div className="mt-3 space-y-1 text-sm text-[#4F6658]">
+                        {context.airQuality?.co !== undefined && <p>CO: {context.airQuality.co} µg/m³</p>}
+                        {context.airQuality?.no2 !== undefined && <p>NO2: {context.airQuality.no2} µg/m³</p>}
+                        {context.airQuality?.ozone !== undefined && <p>O3: {context.airQuality.ozone} µg/m³</p>}
+                        {context.airQuality?.so2 !== undefined && <p>SO2: {context.airQuality.so2} µg/m³</p>}
+                      </div>
+                    </details>
+                  )}
+                  <a className="block px-1 text-xs text-[#4F6658] underline" href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">Powered by WeatherAPI.com</a>
                 </section>
               )}
 

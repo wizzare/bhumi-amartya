@@ -49,30 +49,31 @@ export function getCanonicalTrialWindow(profile: UserProfile): CanonicalTrialWin
   const rawStart = profile.trialStartedAt;
   const rawEnd = profile.trialEndsAt;
   if (!rawStart && !rawEnd) {
-    const created = toDate(profile.createdAt) || toDate(profile.registeredAt) || toDate((profile as any).updatedAt);
-    if (created) {
-      const end = new Date(created.getTime() + SEVEN_DAYS_MS);
-      return { state: "valid", start: created, end };
-    }
     return { state: "missing", start: null, end: null };
   }
 
   const start = toDate(rawStart);
   const end = toDate(rawEnd);
+  if (!start || !end) {
+    return { state: "invalid", start: null, end: null };
+  }
+
+  // Canonical contract: exactly 7 days duration (immutable server window)
+  const exactWindow = end.getTime() - start.getTime() === SEVEN_DAYS_MS;
   const source = String((profile as any).entitlementSource || "");
   const accessSource = String((profile as any).accessSource || "");
-  const trustedSource = source === "firebase_auth_creation_time"
-    || accessSource === "firebase_auth_on_create"
-    || (profile.membershipType === "TRIAL" && profile.plan === "free_trial")
-    || profile.setupCompleted === true;
-  const exactWindow = Boolean(start && end && end.getTime() - start.getTime() === SEVEN_DAYS_MS);
+  const trustedSource =
+    source === "firebase_auth_creation_time" ||
+    source === "server_access_bootstrap" ||
+    source === "admin_provisioned" ||
+    accessSource === "firebase_auth_on_create" ||
+    accessSource === "firebase_function_auth_on_create" ||
+    accessSource === "vercel_profile_bootstrap";
 
-  if (!trustedSource || !start || !end || !exactWindow) {
-    if (start && end && end > start) {
-      return { state: "valid", start, end };
-    }
+  if (!exactWindow || !trustedSource) {
     return { state: "invalid", start, end };
   }
+
   return { state: "valid", start, end };
 }
 

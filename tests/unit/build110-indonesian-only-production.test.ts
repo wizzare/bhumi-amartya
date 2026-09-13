@@ -492,7 +492,7 @@ test("6.4 Environment: Schumann runtime calls disabled & Volcanic features remov
   assert.strictEqual(volcanic.plumeDetected, null, "Plume detection disabled");
 });
 
-test("6.5 New user 7-day trial entitlement is guaranteed without backend blocker", () => {
+test("6.5 Server-owned 7-day trial entitlement contract is strictly enforced without client fabrication", () => {
   const now = new Date();
   const profileWithoutTrial = {
     uid: "new-user-123",
@@ -501,11 +501,23 @@ test("6.5 New user 7-day trial entitlement is guaranteed without backend blocker
     createdAt: now,
     setupCompleted: true,
   };
-  const window = getCanonicalTrialWindow(profileWithoutTrial as any);
-  assert.strictEqual(window.state, "valid", "New user gets valid 7-day trial from createdAt");
-  const entitlement = getEntitlementStatus(profileWithoutTrial as any, now);
-  assert.strictEqual(entitlement.isPremium, true, "New user has premium access during 7-day trial");
-  assert.strictEqual(entitlement.reason, "trial", "Reason is trial");
+  const missingWindow = getCanonicalTrialWindow(profileWithoutTrial as any);
+  assert.strictEqual(missingWindow.state, "missing", "Profile without server trial timestamps is missing, never fabricated");
+  const missingEntitlement = getEntitlementStatus(profileWithoutTrial as any, now);
+  assert.strictEqual(missingEntitlement.isPremium, false, "Profile without server trial defaults to Free access");
+
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  const profileWithServerTrial = {
+    ...profileWithoutTrial,
+    trialStartedAt: now,
+    trialEndsAt: new Date(now.getTime() + sevenDays),
+    entitlementSource: "server_access_bootstrap",
+  };
+  const validWindow = getCanonicalTrialWindow(profileWithServerTrial as any);
+  assert.strictEqual(validWindow.state, "valid", "Server-provisioned 7-day trial is valid");
+  const validEntitlement = getEntitlementStatus(profileWithServerTrial as any, now);
+  assert.strictEqual(validEntitlement.isPremium, true, "User has premium access during exact 7-day server trial");
+  assert.strictEqual(validEntitlement.reason, "trial", "Reason is trial");
 });
 
 test("6.6 ProfileRuntimeAdapter titles are Indonesian-only (no English leak)", () => {

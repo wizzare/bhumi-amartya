@@ -6,8 +6,9 @@ const completeUids = new Set<string>();
 
 function verifierUrl() {
   const base = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL?.trim().replace(/\/+$/, "");
-  if (!base) throw Object.assign(new Error("BILLING_VERIFIER_URL_MISSING"), { retryable: true });
-  return `${base}/api/access/bootstrap-trial`;
+  if (base) return `${base}/api/access/bootstrap-trial`;
+  if (typeof window !== "undefined") return "/api/access/bootstrap-trial";
+  throw Object.assign(new Error("BILLING_VERIFIER_URL_MISSING"), { retryable: true });
 }
 
 export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRefresh?: boolean) => Promise<string>, refreshUserProfile: () => Promise<unknown>): Promise<TrialBootstrapResponse> {

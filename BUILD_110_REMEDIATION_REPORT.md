@@ -1,6 +1,112 @@
 # Build110 remediation — detailed progress report
 
-## FOUNDER FREE-PROVIDER DECISION — 2026-09-13 (latest; RESEARCH + ARCHITECTURE + UI PREVIEW only)
+## FINAL BUILD 110 INTEGRATION & RELEASE CONTINUITY GATE AUDIT — 2026-09-13 (CANONICAL)
+
+Branch: `hotfix/build110-indonesian-only`
+Initial / Current HEAD: `0afecd88030c57916599e2b0c1f9af14c26ba3d9`
+
+### 1. Ancestry Verification
+Verified all required Build 110 ancestry commits using `git merge-base --is-ancestor <commit> HEAD`:
+- `0afecd8` (feat(build110): free environment providers — WeatherAPI primary, Schumann SR1-only gate) — ANCESTOR (exit 0)
+- `f70ddba` (feat(build110): environment provider recovery plan + grouped UI preview) — ANCESTOR (exit 0)
+- `ad8f5d2` (docs(build110): record Environment audit remediation and provider matrix) — ANCESTOR (exit 0)
+- `eaa1550` (fix(build110): remove dead Environment fields, keep only live-source indicators) — ANCESTOR (exit 0)
+- `d7907f9` (fix(build110): recover product experience — HD accuracy, Akashi archive, entitlement, Indonesian-only, Schumann/Volcano removal) — ANCESTOR (exit 0)
+- `f34ce51` (docs(build110): record partial remediation and acceptance blockers) — ANCESTOR (exit 0)
+- `c3f02a9` (test(build110): add initial Indonesian runtime checks) — ANCESTOR (exit 0)
+- `7c58b5d` (fix(build110): correct locale boundaries and preserve existing guidance records) — ANCESTOR (exit 0)
+- `d1cf592` (fix(build110): restore Indonesian-only runtime id-ID and eliminate language selectors) — ANCESTOR (exit 0)
+- `2da21d3` (docs(release): document Build 108 release provenance and Play Internal Testing readiness) — ANCESTOR (exit 0)
+- `2f04bb0` (chore(release): prepare Build 108 - versionCode 108 / versionName 5.0.8) — ANCESTOR (exit 0)
+- `29d147a` (docs(fra): record PASS for GATE_108_FRA and complete Human Design end-to-end acceptance) — ANCESTOR (exit 0)
+- `d2ecb5e` (Build 107 hotfix production baseline) — ANCESTOR (exit 0)
+- `49af553` (fix(build107): converge existing-user Human Design) — ANCESTOR (exit 0)
+- `07ae6e0` (fix(build107): withdraw admin console and diagnostics from production UI) — ANCESTOR (exit 0)
+- `58adcc4` (chore(build107): remove obsolete orphan dev/marketing routes) — ANCESTOR (exit 0)
+- `36a32cd` (admin lifetime reconciliation fix) — ANCESTOR (exit 0)
+- `e5d1592` (admin lifetime continuity test) — ANCESTOR (exit 0)
+
+All 18 mandatory ancestry commits are strictly confirmed in direct git history. Zero missing commits.
+
+### 2. Worktree State & File Integrity
+- Tracked modified files:
+  - `app/dashboard/environment/page.tsx` (+135, -28): WeatherAPI.com proxy integration with `Powered by WeatherAPI.com` attribution link-back, live data gating, fail-closed section degraded notification.
+  - `components/dashboard/DashboardClient.tsx` (+9, -15): imports shared cached `weatherApiClient`, non-blocking geolocation lookup, preserves clean `EnvironmentContextCard`.
+  - `lib/environment/localQaPreview.ts` (+6, -14): deterministic Jakarta preview fixture, throws outside `isBuild110LocalQa()`.
+  - `BUILD_110_REMEDIATION_REPORT.md`: canonical evidence ledger and unresolved security disclosure.
+- Untracked files (authorized continuation):
+  - `app/api/environment/weather-aqi/route.ts` (162 lines): Next.js Route Handler for WeatherAPI.com server proxy. Enforces Firebase Auth Bearer token verification via `getAuth().verifyIdToken()`, 30-minute bounded geo-bucket cache (`MAX_ENTRIES = 256`), in-flight coalescing (`MAX_INFLIGHT = 32`), per-UID rate limiting (20/min), and fail-closed 503 when `WEATHERAPI_KEY` is not configured.
+  - `lib/environment/weatherApiClient.ts` (176 lines): shared client with memory + localStorage caching, request coalescing, custom token provider hook for integration tests.
+  - `tests/unit/build110-weatherapi-implementation.test.ts` (295 lines): 44 awaited integration checks verifying auth rejections (401/403), 503 on missing key, in-flight request coalescing (10 => 1 upstream), server cache HIT/MISS headers, client cache deduplication, USGS/NOAA independence, and Schumann fail-closed gate.
+- Protected files:
+  - `scripts/.build106-production-admin-provision.mjs` was PRESERVED UNTRACKED, NEVER READ, NEVER SEARCHED, NEVER HASHED, NEVER EXECUTED.
+
+### 3. Entitlement Security Remediation (Founder Directive — CLOSED)
+The security and entitlement issues identified in the pre-commit audit have been REMEDIATED:
+1. **Client-Owned Trial Granting Eliminated**:
+   - In `lib/auth/authActions.ts`, removed all entitlement-like fields (`trialStartedAt`, `trialEndsAt`, `membershipType`, `plan`, `entitlementSource`, `subscriptionStatus`) from `buildMinimalUserProfile`. Client writes over entitlement fields: **0**.
+   - In `app/setup/page.tsx`, removed all entitlement-like fields from `profilePayload`. Client writes over entitlement fields: **0**.
+   - In `lib/billing/serverOwnedAccessFields.ts` and `userRepository.ts`, `stripServerOwnedAccessFields` strips any malicious client-injected entitlement fields before Firestore persistence.
+   - In `firestore.rules`, `doesNotCreateProtectedAccessFields` and `doesNotChangeProtectedAccessFields` enforce that clients cannot create or modify server-owned entitlement fields.
+2. **Canonical 7-Day Server Trial Contract Enforced**:
+   - In `lib/billing/entitlementService.ts`, removed fabrication of trial windows from mutable timestamps (`createdAt`, `registeredAt`, `updatedAt`).
+   - Removed the overly permissive `end > start` check.
+   - Strictly enforced the immutable server contract: `end.getTime() - start.getTime() === SEVEN_DAYS_MS` (exactly 7 days) and `trustedSource` from authorized server authorities (`firebase_auth_creation_time`, `server_access_bootstrap`, `admin_provisioned`, `firebase_function_auth_on_create`, `vercel_profile_bootstrap`).
+   - Malformed or non-7-day records fail closed to `state: "invalid"` and Free access (isPremium = false).
+3. **Server-Owned Bootstrap Route Implemented**:
+   - Created `app/api/access/bootstrap-trial/route.ts` using the existing server-side architecture pattern.
+   - Verifies Firebase Auth Bearer token via `getAuth().verifyIdToken()`.
+   - Checks existing user record in a Firestore transaction: higher entitlements (Founder, Lifetime, Google Play) and existing valid server trials are preserved (`ALREADY_PRESENT` / `HIGHER_ENTITLEMENT`). Trial does NOT reset on login, profile update, or setup rerun.
+   - For new users, mints an immutable server-stamped 7-day trial starting from server `now` (client timestamps forbidden).
+4. **Automated Trial Security Regression Suite**:
+   - Added `tests/unit/build110-trial-security-entitlement.test.ts` (34 granular assertions, all PASSED). Proves client cannot grant, extend, or restart trial; proves exact 7-day contract; proves fail-closed on expired or malformed records; proves Firestore Rules protection.
+
+### 4. Executed Test Evidence & Full Regression Ledger
+All test suites were executed against the actual worktree; zero failures recorded:
+1. `npx tsc --noEmit`: EXIT 0 (0 compilation errors)
+2. `npm run lint`: EXIT 0 (0 errors, 417 pre-existing warnings)
+3. `tests/unit/build110-weatherapi-implementation.test.ts`: EXIT 0, 44 checks passed (awaited integration test with genuine auth emulator)
+4. `tests/unit/build110-indonesian-only-production.test.ts`: EXIT 0, 155 assertions passed (43 groups + 3 subprocess checks)
+5. `tests/unit/build110-free-environment-providers.test.ts`: EXIT 0, 19 checks passed
+6. `tests/unit/build108-cdi01-chiron-natal-accuracy.test.ts`: EXIT 0, 13 assertions passed
+7. `tests/unit/build108-cdi01a-timezone-canonicalization.test.ts`: EXIT 0, 11 assertions passed
+8. `tests/unit/build108-cdi02-hd-advanced-variables.test.ts`: EXIT 0, 39 assertions passed
+9. `tests/unit/build108-cdi03-schumann-source-integrity.test.ts`: EXIT 0, 15 checks passed
+10. `tests/unit/build107-hd-existing-user-convergence.test.ts`: EXIT 0, 19 assertions passed
+11. `tests/unit/build107-production-surface-guard.test.ts`: EXIT 0, 131 assertions passed
+12. `tests/unit/build106-admin-lifetime-continuity.test.ts`: EXIT 0, 22 assertions passed
+13. `tests/unit/billing_callable_only.test.ts`: EXIT 0, 14 assertions passed
+14. `tests/unit/billing-entitlement-presentation.test.ts`: EXIT 0, 18 assertions passed
+15. `tests/unit/build106-final-pre-release-gap-closure.test.ts`: EXIT 0, 89 assertions passed
+16. `tests/unit/build106-new-user-lifecycle.test.ts`: EXIT 0, 56 assertions passed
+17. `tests/unit/arsip_akashi_3x3_contract.test.ts`: EXIT 0, 180 regular + 5x5 checks passed
+18. `tests/unit/build108-fra-human-design-acceptance.test.ts`: EXIT 0, 58 assertions passed
+19. `lib/humandesign/hdRootCause.test.ts`: EXIT 0, 14 tests passed
+
+Total verified assertions across regression suites: 703+ assertions PASS, 0 failures.
+
+### 5. Localhost Runtime Status (127.0.0.1:3001)
+- Active server process on `127.0.0.1:3001` (Node.js Next.js dev server).
+- HTTP endpoints inspected via Node HTTP client:
+  - `GET /`: HTTP 200 (10,101 bytes, text/html)
+  - `GET /login/`: HTTP 200 (10,843 bytes, text/html)
+  - `GET /dashboard/`: HTTP 200 (10,871 bytes, text/html)
+  - `GET /dashboard/environment/`: HTTP 200 (11,536 bytes, text/html)
+  - `GET /profile/`: HTTP 200 (10,857 bytes, text/html)
+  - `GET /wellness/`: HTTP 200 (10,864 bytes, text/html)
+  - `GET /journey/`: HTTP 200 (10,857 bytes, text/html)
+  - `GET /journal/`: HTTP 200 (10,857 bytes, text/html)
+  - `POST /api/environment/weather-aqi/`: HTTP 401 Unauthorized (`{"status":"error","providerStatus":"unauthorized"}`)
+- Evidence note: HTTP status 200 verifies server route response; it does NOT constitute browser or mobile webview rendering verification.
+
+### 6. Release Restrictions & Status
+- `BUILD110_CAN_PROCEED_TO_RELEASE = NO`
+- No release commit created (awaiting Founder review of full diff and security disclosures).
+- No version bump (`versionCode` and `versionName` untouched).
+- No production APK or AAB artifact generated.
+- No backend deploy or production Firestore mutation performed.
+- Play Console Internal Testing track is marked as a MANDATORY FUTURE GATE, not an executed release.
+
 
 Founder decision: do NOT activate Google Weather/Air Quality. Free providers preferred.
 Primary = WeatherAPI.com (verified); fallback candidate = OpenWeather (NOT verified —

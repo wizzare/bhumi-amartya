@@ -234,9 +234,10 @@ export default function SetupPage() {
 
       console.log("[SETUP TIMEZONE RESOLVED]", { timezone: nextTimezone, source: timezoneSource });
 
-      // 1. Profile Draft with 7-Day Trial Entitlement
+      // 1. Profile Draft (client writes birth & profile data only;
+      // server-owned entitlement fields like trialStartedAt, trialEndsAt,
+      // membershipType, and plan must NEVER be written by client).
       const nowTs = Timestamp.now();
-      const trialEndsTs = Timestamp.fromMillis(nowTs.toMillis() + 7 * 24 * 60 * 60 * 1000);
       const profilePayload = deepClean({
         uid,
         fullName,
@@ -254,12 +255,6 @@ export default function SetupPage() {
         language: preferredLanguage,
         setupCompleted: false,
         blueprintStatus: "generating" as any,
-        membershipType: "TRIAL" as const,
-        plan: "free_trial" as const,
-        trialStartedAt: nowTs,
-        trialEndsAt: trialEndsTs,
-        entitlementSource: "firebase_auth_creation_time",
-        subscriptionStatus: "trialing",
         createdAt: nowTs,
         updatedAt: nowTs,
       });

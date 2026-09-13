@@ -32,13 +32,6 @@ export interface LocalQaEnvironmentFixture {
     providerName: string;
     attribution: string;
   };
-  schumannSr1: {
-    valueHz: number | null;
-    measured: boolean;
-    status: string;
-    updatedAtIso: string;
-    source: string;
-  };
   earthActivity: {
     status: string;
     dataState: "available" | "unavailable" | "stale";
@@ -86,13 +79,6 @@ const DETERMINISTIC_PREVIEW: LocalQaEnvironmentFixture = {
     providerName: "WeatherAPI.com (planned — NOT active)",
     attribution: "Powered by WeatherAPI.com",
   },
-  schumannSr1: {
-    valueHz: 7.83,
-    measured: true,
-    status: "Tenang",
-    updatedAtIso: new Date().toISOString(),
-    source: "Tomsk SOS-70 via SchumannResonanceLive (preview simulasi — BUKAN pengukuran live)",
-  },
   earthActivity: {
     status: "Stabil",
     dataState: "available",
@@ -139,6 +125,12 @@ export function applyLocalQaEnvironmentPreview(ctx: EnvironmentContext): Environ
     airQuality: {
       aqi: preview.airQuality.aqi,
       label: preview.airQuality.aqiCategory,
+      pm25: 18.5,
+      pm10: 32.1,
+      co: 240.3,
+      no2: 12.4,
+      ozone: 45.2,
+      so2: 3.6,
       source: { source: "air_quality_api", status: "available", observedAt: new Date().toISOString(), message: "Local QA preview values — not live provider data." },
     },
   };

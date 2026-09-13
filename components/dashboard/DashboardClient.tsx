@@ -7,8 +7,7 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
 import { AstroTodayCard } from "@/components/dashboard/AstroTodayCard";
 import { AtmosphereVolcanicCard } from "@/components/dashboard/AtmosphereVolcanicCard";
-import { fetchEnvironmentalConditionPayload } from "@/lib/environment/env2Service";
-import type { EnvironmentalConditionPayload } from "@/lib/environment/env2Types";
+import { getCachedWeatherAqi, type WeatherApiResult } from "@/lib/environment/weatherApiClient";
 import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
@@ -162,7 +161,7 @@ export function DashboardClient() {
   // TEST CHANGE
 
 
-  const [env2Payload, setEnv2Payload] = useState<EnvironmentalConditionPayload | null>(null);
+  const [weatherAqi, setWeatherAqi] = useState<WeatherApiResult | null>(null);
 
   useEffect(() => {
     const interval = window.setInterval(() => setAppNow(new Date()), APP_TIME_REFRESH_MS);
@@ -249,20 +248,16 @@ export function DashboardClient() {
     let guidanceMemoryContext: Record<string, unknown> | null = null;
 
     try {
-      // Non-blocking fetch of Environmental Intelligence v2 payload
+      // Non-blocking fetch of the shared cached WeatherAPI result (same geo-bucket
+      // cache as the Environment detail page — one upstream call serves both).
       if (typeof window !== "undefined" && window.navigator?.geolocation) {
         window.navigator.geolocation.getCurrentPosition(
           (pos: GeolocationPosition) => {
-            void fetchEnvironmentalConditionPayload(pos.coords.latitude, pos.coords.longitude)
-              .then((pl) => setEnv2Payload(pl))
+            void getCachedWeatherAqi(pos.coords.latitude, pos.coords.longitude)
+              .then((pl) => { if (pl.status === "ready") setWeatherAqi(pl); })
               .catch(() => null);
           },
-          () => {
-            // Fallback to default coordinates if geolocation is not permitted
-            void fetchEnvironmentalConditionPayload(-6.2088, 106.8456)
-              .then((pl) => setEnv2Payload(pl))
-              .catch(() => null);
-          },
+          () => setWeatherAqi(null),
           { timeout: 5000, maximumAge: 300000 }
         );
       }

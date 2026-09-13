@@ -54,7 +54,8 @@ async function main() {
     const { localId: uid } = await response.json();
     const birth = { uid, fullName: 'Profil Contoh Lengkap', birthDate: '1985-05-03', birthTime: '23:46', birthCity: 'Jakarta', birthCountry: 'Indonesia', latitude: -6.2, longitude: 106.8, timezone: 'Asia/Jakarta' };
     const now = new Date();
-    const until = new Date(now.getTime() + 30 * 86400000);
+    const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+    const trialEnds = new Date(now.getTime() + sevenDaysMs);
 
     // QA seed hardening: unconditionally delete any pre-existing blueprint doc
     // BEFORE regenerating. A stale pre-fix persisted result must never survive
@@ -66,8 +67,18 @@ async function main() {
     await write(`users/${uid}`, {
       uid, email, displayName: 'Profil Contoh Lokal', fullName: 'Profil Contoh Lokal', language: 'id',
       ...(cohort === 'lama' ? birth : {}), setupCompleted: cohort === 'lama', blueprintStatus: cohort === 'lama' ? 'ready' : 'missing',
-      role: 'user', guardianRole: 'user', membershipType: 'TRIAL', accessPhase: 'trial_active',
-      trialStartedAt: now, trialEndsAt: until, accessUntil: until, createdAt: now, updatedAt: now,
+      role: 'user', guardianRole: 'user',
+      ...(cohort === 'lama' ? {
+        membershipType: 'TRIAL',
+        plan: 'free_trial',
+        subscriptionStatus: 'trialing',
+        trialStartedAt: now,
+        trialEndsAt: trialEnds,
+        accessStart: now,
+        accessUntil: trialEnds,
+        entitlementSource: 'admin_provisioned',
+      } : {}),
+      createdAt: now, updatedAt: now,
       qaSeedVersion: QA_SEED_VERSION,
     });
     if (cohort === 'lama') {

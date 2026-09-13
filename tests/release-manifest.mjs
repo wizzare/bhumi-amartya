@@ -55,6 +55,12 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT + STATIC_GUARD",
   },
   {
+    name: "Build 110 Trial security & server-owned entitlement contract",
+    file: "tests/unit/build110-trial-security-entitlement.test.ts",
+    kind: "env",
+    evidence: "STRONG_UNIT + STATIC_GUARD",
+  },
+  {
     name: "Root import boundary (no app -> services/ imports)",
     file: "tests/unit/root-import-boundary.test.ts",
     kind: "node",
