@@ -1,21 +1,26 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Project-specific ProGuard / R8 rules for Bhumi Amartya
+# AGP 9.2.1 / R8 optimization configuration
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Preserve line numbers and source file attributes for Play Console de-obfuscation
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Preserve MainActivity entry point
+-keep public class com.bhumiamartya.app.MainActivity {
+    public *;
+}
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Preserve custom native Capacitor plugins registered in MainActivity
+-keep class com.bhumiamartya.app.billing.BhumiBillingPlugin { *; }
+-keep class com.bhumiamartya.app.ReviewPlugin { *; }
+-keep class com.bhumiamartya.app.AppUpdatePlugin { *; }
+
+# Google Play Billing Library IPC interfaces and models
+-keep class com.android.billingclient.api.** { *; }
+
+# Google Play In-App Review and In-App Update
+-keep class com.google.android.play.core.review.** { *; }
+-keep class com.google.android.play.core.appupdate.** { *; }
+
+# Suppress missing-class warnings on unbundled optional Facebook SDK (compileOnly in @capacitor-firebase/authentication)
+-dontwarn com.facebook.**
