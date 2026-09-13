@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { translations } from "@/lib/data/translations";
 import { kpActivityLabel } from "@/lib/environment/schumann";
+import { isBuild110LocalQa } from "@/lib/config/localQa";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
@@ -20,6 +21,7 @@ import {
   requestCurrentEnvironmentLocation,
   getNormalizedEnvironment,
   getCachedEnvironment,
+  getUvLabel,
   normalizeMoonPhaseLabel,
   type EnvironmentContext,
   type EnvironmentPermissionState,
@@ -99,7 +101,19 @@ export default function EnvironmentDetailPage() {
       }
 
       const fresh = await getNormalizedEnvironment(location);
-      setContext(fresh);
+
+      // LOCAL-QA ONLY UI preview of the target grouped provider model
+      // (CUACA / KUALITAS UDARA / BUMI & ANTARIKSA). Deterministic
+      // representative Jakarta values for Founder layout review — NOT live
+      // provider data and NOT production connectivity evidence. The preview
+      // module throws when isBuild110LocalQa() is false, so this branch can
+      // never execute in production.
+      if (isBuild110LocalQa()) {
+        const { applyLocalQaEnvironmentPreview } = await import("@/lib/environment/localQaPreview");
+        setContext(applyLocalQaEnvironmentPreview(fresh));
+      } else {
+        setContext(fresh);
+      }
       setPermission("granted");
     } catch (err: any) {
       setError(err?.message || t.environment.loadError || "Gagal memuat data lingkungan.");
@@ -116,6 +130,14 @@ export default function EnvironmentDetailPage() {
   const earthActivityLive = context?.earthActivity?.dataState === "available";
   const geomagneticLive = context?.spaceWeather?.source.status === "available";
   const hasAnyLiveIndicator = earthActivityLive || geomagneticLive;
+
+  // Weather/AQI are rendered ONLY when their fields are actually populated.
+  // In production today those fields stay hidden (Open-Meteo fail-closed and the
+  // Google Weather/AQI proxy is NOT yet activated); in local QA the deterministic
+  // preview fixture populates them so the Founder can review the target layout.
+  const weatherLive = context?.weather?.temperatureCelsius !== undefined && context?.weather?.temperatureCelsius !== null;
+  const aqiLive = context?.airQuality?.aqi !== undefined && context?.airQuality?.aqi !== null;
+  const isQaPreview = isBuild110LocalQa() && (weatherLive || aqiLive);
 
   return (
     <ProtectedRoute>
@@ -175,47 +197,111 @@ export default function EnvironmentDetailPage() {
                 subValue={`${formatCoord(context.location.coordinates.latitude, true)}, ${formatCoord(context.location.coordinates.longitude, false)}`}
               />
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <DetailItem
-                  icon={<Sun size={20} />}
-                  label={t.environment.fSun}
-                  value={context.astronomy?.sunrise ? `${t.environment.sunrise || "Terbit"} ${context.astronomy.sunrise}` : t.environment.unavailable}
-                  subValue={context.astronomy?.sunset ? `${t.environment.sunset || "Terbenam"} ${context.astronomy.sunset}` : undefined}
-                />
-                <DetailItem
-                  icon={<Moon size={20} />}
-                  label={t.environment.fMoon}
-                  value={normalizeMoonPhaseLabel(context.moon?.phase)}
-                  subValue={context.moon?.illuminationPercent !== undefined && context.moon?.illuminationPercent !== null ? `${context.moon.illuminationPercent}% ${t.environment.illumination || "cahaya"}` : undefined}
-                />
-              </div>
-
-              {!hasAnyLiveIndicator ? (
-                <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
-                  <p className="text-sm font-medium text-[#7B8776] leading-relaxed">
-                    Data lingkungan sedang tidak tersedia. Silakan coba lagi nanti.
+              {isQaPreview && (
+                <div className="rounded-3xl border border-dashed border-[#9AA394] bg-[#F8F6EF] p-4 text-center">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9AA394]">Pratinjau lokal QA</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[#7B8776]">
+                    Nilai Cuaca & Kualitas Udara di bawah adalah data contoh sintetis untuk
+                    meninjau tata letak — BUKAN data provider live dan BUKAN bukti konektivitas produksi.
                   </p>
                 </div>
-              ) : (
-                <>
-                  {earthActivityLive && (
-                    <DetailItem
-                      icon={<Waves size={24} />}
-                      label={t.environment.fEarthActivity}
-                      value={context.earthActivity!.status}
-                      subValue={context.earthActivity?.latestEarthquake?.title || context.earthActivity?.fallbackCopy}
-                    />
-                  )}
-                  {geomagneticLive && (
-                    <DetailItem
-                      icon={<Activity size={24} />}
-                      label={t.environment.fGeomagnetic}
-                      value={context.spaceWeather!.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather!.kpIndex) : (context.spaceWeather!.geomagneticActivity || t.environment.unavailable)}
-                      subValue={context.spaceWeather?.kpIndex !== undefined ? `Kp ${context.spaceWeather.kpIndex}` : undefined}
-                    />
-                  )}
-                </>
               )}
+
+              {weatherLive && (
+                <section className="space-y-4">
+                  <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA394]">Cuaca</h2>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <DetailItem
+                      icon={<Sun size={20} />}
+                      label={t.environment.fTemperature}
+                      value={`${context.weather!.temperatureCelsius}°C`}
+                      subValue={context.weather?.feelsLikeCelsius !== undefined ? `Terasa seperti ${context.weather.feelsLikeCelsius}°C` : undefined}
+                    />
+                    <DetailItem
+                      icon={<MapPin size={20} />}
+                      label={t.environment.fHumidity}
+                      value={`${context.weather!.humidityPercent}%`}
+                      subValue={context.weather?.condition}
+                    />
+                  </div>
+                  <DetailItem
+                    icon={<Activity size={20} />}
+                    label={t.environment.fWind}
+                    value={`${context.weather!.windSpeedKph} km/jam`}
+                  />
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <DetailItem
+                      icon={<Sun size={20} />}
+                      label={t.environment.fPressure}
+                      value={`${context.weather!.pressureHpa} hPa`}
+                    />
+                    <DetailItem
+                      icon={<Sun size={20} />}
+                      label={t.environment.fUvIndex}
+                      value={context.weather?.uvCurrent !== undefined ? `${Math.round(context.weather.uvCurrent)} — ${getUvLabel(Math.round(context.weather.uvCurrent))}` : t.environment.unavailable}
+                    />
+                  </div>
+                  <p className="px-1 text-[10px] text-[#9AA394]">Includes weather data from Google</p>
+                </section>
+              )}
+
+              {aqiLive && (
+                <section className="space-y-4">
+                  <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA394]">Kualitas Udara</h2>
+                  <DetailItem
+                    icon={<Activity size={20} />}
+                    label={t.environment.fAirQuality}
+                    value={`${context.airQuality!.aqi} — ${context.airQuality!.label ?? "Sedang"}`}
+                    subValue="Indeks lokal Indonesia (idn_menlhk)"
+                  />
+                  <p className="px-1 text-[10px] text-[#9AA394]">Includes data from Google Maps</p>
+                </section>
+              )}
+
+              <section className="space-y-4">
+                <h2 className="px-1 text-[11px] font-bold uppercase tracking-[0.24em] text-[#9AA394]">Bumi & Antariksa</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetailItem
+                    icon={<Sun size={20} />}
+                    label={t.environment.fSun}
+                    value={context.astronomy?.sunrise ? `${t.environment.sunrise || "Terbit"} ${context.astronomy.sunrise}` : t.environment.unavailable}
+                    subValue={context.astronomy?.sunset ? `${t.environment.sunset || "Terbenam"} ${context.astronomy.sunset}` : undefined}
+                  />
+                  <DetailItem
+                    icon={<Moon size={20} />}
+                    label={t.environment.fMoon}
+                    value={normalizeMoonPhaseLabel(context.moon?.phase)}
+                    subValue={context.moon?.illuminationPercent !== undefined && context.moon?.illuminationPercent !== null ? `${context.moon.illuminationPercent}% ${t.environment.illumination || "cahaya"}` : undefined}
+                  />
+                </div>
+
+                {!hasAnyLiveIndicator ? (
+                  <div className="rounded-3xl bg-white p-6 text-center shadow-sm">
+                    <p className="text-sm font-medium text-[#7B8776] leading-relaxed">
+                      Data lingkungan sedang tidak tersedia. Silakan coba lagi nanti.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    {earthActivityLive && (
+                      <DetailItem
+                        icon={<Waves size={24} />}
+                        label={t.environment.fEarthActivity}
+                        value={context.earthActivity!.status}
+                        subValue={context.earthActivity?.latestEarthquake?.title || context.earthActivity?.fallbackCopy}
+                      />
+                    )}
+                    {geomagneticLive && (
+                      <DetailItem
+                        icon={<Activity size={24} />}
+                        label={t.environment.fGeomagnetic}
+                        value={context.spaceWeather!.kpIndex !== undefined ? kpActivityLabel(context.spaceWeather!.kpIndex) : (context.spaceWeather!.geomagneticActivity || t.environment.unavailable)}
+                        subValue={context.spaceWeather?.kpIndex !== undefined ? `Kp ${context.spaceWeather.kpIndex}` : undefined}
+                      />
+                    )}
+                  </>
+                )}
+              </section>
             </div>
           ) : null}
 

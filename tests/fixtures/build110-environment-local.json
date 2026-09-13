@@ -1,0 +1,60 @@
+{
+  "mode": "synthetic-local-environment-preview",
+  "externalCalls": 0,
+  "note": "Founder UI preview of the target Build 110 Environment provider model. Deterministic representative Jakarta values. NOT evidence of production provider connectivity.",
+  "weather": {
+    "condition": "Cerah Berawan",
+    "temperatureCelsius": 31,
+    "feelsLikeCelsius": 34,
+    "humidityPercent": 72,
+    "pressureHpa": 1010,
+    "windSpeedKph": 12,
+    "windDirectionDegrees": 110,
+    "windDirectionCardinal": "Tenggara",
+    "windGustKph": 20,
+    "uvIndex": 7,
+    "uvLabel": "Tinggi",
+    "cloudCoverPercent": 35,
+    "source": "local-qa-fixture",
+    "providerName": "Google Weather API (planned production provider — NOT yet active; this fixture is synthetic)",
+    "attribution": "Includes weather data from Google"
+  },
+  "airQuality": {
+    "aqi": 68,
+    "aqiStandard": "idn_menlhk",
+    "aqiCategory": "Sedang",
+    "dominantPollutant": "PM2.5",
+    "source": "local-qa-fixture",
+    "providerName": "Google Air Quality API (planned production provider — NOT yet active; this fixture is synthetic)",
+    "attribution": "Includes data from Google Maps"
+  },
+  "location": {
+    "cityOrRegency": "Jakarta",
+    "province": "DKI Jakarta",
+    "country": "Indonesia",
+    "coordinates": { "latitude": -6.2, "longitude": 106.8 },
+    "source": "local-qa-fixture"
+  },
+  "earthActivity": {
+    "status": "Stabil",
+    "dataState": "available",
+    "eventCount": 0,
+    "fallbackCopy": "Tidak ada aktivitas gempa terdeteksi dalam radius terdekat saat ini.",
+    "source": "local-qa-fixture"
+  },
+  "spaceWeather": {
+    "kpIndex": 1.67,
+    "geomagneticActivity": "Tenang",
+    "source": "local-qa-fixture"
+  },
+  "astronomy": {
+    "sunrise": "05:55",
+    "sunset": "17:50",
+    "source": "local-qa-fixture"
+  },
+  "moon": {
+    "phase": "Cembung Awal",
+    "illuminationPercent": 72,
+    "source": "local-qa-fixture"
+  }
+}

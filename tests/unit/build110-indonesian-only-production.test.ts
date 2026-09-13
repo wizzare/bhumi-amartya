@@ -533,9 +533,15 @@ test("6.6 ProfileRuntimeAdapter titles are Indonesian-only (no English leak)", (
 // 7. Founder Environment Audit Remediation — no permanent dead cards,
 //    Schumann/Volcanic fully removed, live-source-only surfaces.
 // ---------------------------------------------------------------------------
-test("7.1 Environment detail page renders only live-source fields (no Weather/Temp/Humidity/Wind/Pressure/UV/AQI dead cards)", () => {
+test("7.1 Environment detail page renders CUACA/AQI only behind strict live-data gates (never as permanent dead cards)", () => {
   const src = fs.readFileSync(path.resolve("app/dashboard/environment/page.tsx"), "utf8");
-  assert.ok(!/fWeather|fTemperature|fHumidity|fWind|fPressure|fUvIndex|fAirQuality/.test(src), "Open-Meteo-only fields must not be rendered");
+  // No unconditional (always-rendered) Open-Meteo-only fields are allowed on the
+  // page outside the weatherLive/aqiLive-gated sections. Every fTemperature /
+  // fHumidity / fWind / fPressure / fUvIndex / fAirQuality usage must be inside
+  // those sections (which render only when the fields are actually populated).
+  const ungatedLabels = ["fWeather", "fTemperature", "fHumidity", "fWind", "fPressure", "fUvIndex", "fAirQuality"]
+    .filter((key) => new RegExp(`<DetailItem[^>]*label=\\{t\\.environment\\.${key}`).test(src));
+  assert.deepStrictEqual(ungatedLabels, [], `Open-Meteo-only fields must render only inside live-data-gated sections, found: ${ungatedLabels.join(", ")}`);
   assert.ok(!/AtmosphereVolcanicCard|SchumannGraph/.test(src), "Volcanic/Schumann components must not be imported");
   assert.ok(src.includes("Data lingkungan sedang tidak tersedia"), "Single Indonesian degraded-state message must exist");
 });
@@ -579,7 +585,37 @@ test("7.5 Volcanic engine remains fully fail-closed for Build 110 (no name attri
   assert.strictEqual(result.plumeDetected, null, "Plume detection must remain disabled");
 });
 
+test("7.6b Target model: CUACA and KUALITAS UDARA sections render only when live data exists", () => {
+  const src = fs.readFileSync(path.resolve("app/dashboard/environment/page.tsx"), "utf8");
+  assert.ok(/const weatherLive =/.test(src), "weatherLive gate must exist");
+  assert.ok(/const aqiLive =/.test(src), "aqiLive gate must exist");
+  assert.ok(/weatherLive &&/.test(src), "CUACA section must be conditional on weatherLive");
+  assert.ok(/aqiLive &&/.test(src), "KUALITAS UDARA section must be conditional on aqiLive");
+  assert.ok(/Includes weather data from Google/.test(src), "Google Weather attribution must be present in CUACA section");
+  assert.ok(/Includes data from Google Maps/.test(src), "Google Maps attribution must be present in KUALITAS UDARA section");
+});
+
+test("7.6c Local QA environment preview can never activate in production", async () => {
+  const { applyLocalQaEnvironmentPreview, resolveLocalQaEnvironmentPreview } = await import("../../lib/environment/localQaPreview.ts");
+  assert.throws(() => resolveLocalQaEnvironmentPreview(), /BUILD110_LOCAL_QA_DISABLED/, "Preview resolver must throw outside local QA mode");
+  assert.throws(
+    () => applyLocalQaEnvironmentPreview({ dateKey: "x", fetchedAt: new Date().toISOString(), location: {} as any }),
+    /BUILD110_LOCAL_QA_DISABLED/,
+    "Preview patch must throw outside local QA mode",
+  );
+  const previewSrc = fs.readFileSync(path.resolve("lib/environment/localQaPreview.ts"), "utf8");
+  assert.ok(previewSrc.includes("isBuild110LocalQa"), "Preview module must gate on isBuild110LocalQa");
+  assert.ok(previewSrc.includes("synthetic-local-environment-preview"), "Preview must self-identify as synthetic");
+  assert.ok(!previewSrc.includes("weather.googleapis.com"), "Preview fixture must contain NO real Google API calls");
+  assert.ok(!previewSrc.includes("airquality.googleapis.com"), "Preview fixture must contain NO real AQI API calls");
+});
+
 test("7.6 Provider matrix classification — every environment feature has a defined Build 110 action (no UNKNOWN)", () => {
+  // Founder provider-recovery decision: Temperature/Humidity/Wind/Pressure/UV move
+  // from HIDE_UNTIL_PROVIDER to Google Weather API (server-side proxy, NOT yet
+  // activated); AirQuality moves to Google Air Quality API (server-side proxy,
+  // NOT yet activated). Until activation they render only from the QA preview
+  // fixture on localhost, never as permanent dead cards in production.
   const providerMatrix: Record<string, "KEEP_LIVE" | "FIX_LIVE" | "HIDE_UNTIL_PROVIDER" | "REMOVE"> = {
     Location: "KEEP_LIVE",
     SunMoon: "KEEP_LIVE",

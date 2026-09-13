@@ -1,6 +1,59 @@
 # Build110 remediation — detailed progress report
 
-## FOUNDER ENVIRONMENT AUDIT REMEDIATION — 2026-09-13 (latest, supersedes checkpoint below for Environment)
+## FOUNDER ENVIRONMENT PROVIDER RECOVERY — 2026-09-13 (latest; RESEARCH + ARCHITECTURE + UI PREVIEW only)
+
+Founder corrected the previous "permanently hide" approach: Schumann and Volcanic stay
+permanently removed, but Temperature/Humidity/Wind/Pressure/UV/AQI are RESTORED via
+production-capable providers — Google Weather API + Google Air Quality API — behind a
+server-side proxy that is DESIGNED but NOT deployed/activated (no billing, no charges,
+no backend deploy, no credentials anywhere in source/git/logs).
+
+Canonical research + architecture + cost record: `BUILD_110_ENVIRONMENT_PROVIDER_PLAN.md`.
+
+```text
+ENVIRONMENT_PROVIDER_PLAN = GOOGLE_WEATHER_VIA_PROXY + GOOGLE_AQI_VIA_PROXY
+GOOGLE_WEATHER = RESEARCHED_NOT_ACTIVATED
+GOOGLE_AIR_QUALITY = RESEARCHED_NOT_ACTIVATED
+WEATHER_FIELDS_RECOVERABLE = YES (proxy design complete, activation pending Founder billing/backend authorization)
+AQI_RECOVERABLE = YES (proxy design complete, activation pending Founder billing/backend authorization)
+USGS = KEEP_LIVE
+NOAA = KEEP_LIVE
+BIGDATACLOUD = KEEP_LIVE
+SUN_MOON = KEEP_LIVE (local astronomy-engine)
+SCHUMANN = REMOVED
+VOLCANIC = REMOVED
+
+GOOGLE_WEATHER_INDONESIA_COVERAGE = FULL (ID: Current/Daily/Hourly/History all supported; alerts unsupported, not needed)
+GOOGLE_WEATHER_FIELDS_SUPPORTED = temperature, feels-like, humidity, UV, sea-level pressure, wind speed/direction/gust (+ condition, cloud cover, precipitation as bonus)
+GOOGLE_WEATHER_BILLING_REQUIRED = YES (pay-as-you-go; free 10k/mo; $0.15/1k to 100k)
+GOOGLE_WEATHER_ATTRIBUTION_REQUIRED = YES ("Source: Includes weather data from Google" — implemented in UI)
+GOOGLE_WEATHER_CACHE_RESTRICTIONS = standard Maps Platform terms; 15–30 min proxy cache proposed, final TTL validated at activation
+GOOGLE_WEATHER_PRODUCTION_SUITABLE = YES (pending key + proxy + accepted terms)
+
+GOOGLE_AIR_QUALITY_INDONESIA_COVERAGE = YES (100+ countries, 500x500m; Indonesia explicitly listed)
+LOCAL_AQI_AVAILABLE = YES (idn_menlhk — Indonesia Ministry of Environment and Forestry index)
+AQI_INDEX = idn_menlhk (primary) + usa_epa/uaqi fallback
+POLLUTANTS_AVAILABLE = co, no2, o3, pm10, pm25, so2
+BILLING_REQUIRED = YES (pay-as-you-go; free 10k/mo; $5.00/1k to 100k)
+ATTRIBUTION_REQUIRED = YES ("Includes data from Google Maps" — implemented in UI)
+PRODUCTION_SUITABLE = YES (pending key + proxy + accepted terms)
+
+SECURE_PROVIDER_ARCHITECTURE = SERVER_PROXY_VIA_NEXT_API_ROUTES_WITH_FIREBASE_AUTH (mirrors reviewed app/api/humandesign/calculate/route.ts; key in server env only, never NEXT_PUBLIC_*)
+ATTRIBUTION_REQUIREMENTS = implemented verbatim in both provider sections
+CACHE_REQUIREMENTS = Weather 15–30 min / AQI 30–60 min proxy cache (to be validated against accepted service terms at activation)
+ESTIMATED_COST = 100 DAU: $0 (both inside free caps) / 1,000 DAU: ~$7.50 weather + ~$100 AQI / 10,000 DAU: ~$64 weather + ~$1,300 AQI — AQI dominates; hourly (not 15-min) refresh + area-level proxy caching are the controls
+LOCALHOST_ENVIRONMENT_PREVIEW = deterministic Jakarta QA fixture with on-page "Pratinjau lokal QA" banner; module throws outside QA mode; zero real API URLs/keys
+LOCALHOST_URL = http://127.0.0.1:3001/dashboard/environment
+
+OPEN_METEO_PRODUCTION_CALLS = 0 (unchanged)
+SCHUMANN_VISIBLE = 0 / SCHUMANN_RUNTIME_CALLS = 0
+VOLCANIC_VISIBLE = 0 / VOLCANIC_RUNTIME_CALLS = 0
+PERMANENT_UNAVAILABLE_CARDS = 0
+
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+```
+
+## FOUNDER ENVIRONMENT AUDIT REMEDIATION — 2026-09-13 (superseded by provider-recovery plan above; retained for audit trail)
 
 Founder localhost audit found Dashboard → Environment showing too many "Data tidak tersedia"
 cards. Root cause: Temperature/Humidity/Wind/Pressure/UV/Air Quality all depend exclusively
