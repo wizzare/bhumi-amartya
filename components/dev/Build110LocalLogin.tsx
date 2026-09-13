@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
 import { isBuild110LocalQa } from '@/lib/config/localQa';
 
 export function Build110LocalLogin() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextTarget = searchParams.get('next') || '/dashboard';
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (!isBuild110LocalQa()) return null;
@@ -16,6 +20,11 @@ export function Build110LocalLogin() {
     try {
       // Disposable credentials accepted only by the isolated Auth emulator.
       await signInWithEmailAndPassword(auth, `${cohort}@build110.test`, 'Build110-local-only!');
+      if (cohort === 'lama') {
+        router.replace(nextTarget);
+      } else {
+        router.replace('/setup');
+      }
     } catch {
       setError('Akun uji belum siap. Pastikan emulator dan fixture lokal sedang berjalan, lalu coba lagi.');
     } finally { setBusy(false); }
