@@ -1,5 +1,98 @@
 # Build110 remediation — detailed progress report
 
+## FOUNDER ENVIRONMENT AUDIT REMEDIATION — 2026-09-13 (latest, supersedes checkpoint below for Environment)
+
+Founder localhost audit found Dashboard → Environment showing too many "Data tidak tersedia"
+cards. Root cause: Temperature/Humidity/Wind/Pressure/UV/Air Quality all depend exclusively
+on Open-Meteo, which `openMeteoGate.ts` fail-closes in production (unresolved commercial
+licensing — bundling a client key into a public Capacitor/web bundle is not an approved
+activation mechanism). These fields could never load in production and existed only as
+permanent dead cards.
+
+### Environment field-by-field audit
+
+| FIELD | UI_COMPONENT | DATA_SOURCE | ENDPOINT | PROD_STATUS | FETCH_ACTIVE | KEEP_OR_REMOVE |
+|---|---|---|---|---|---|---|
+| Location | EnvironmentContextCard, /dashboard/environment | Device GPS + BigDataCloud reverse geocode | `api.bigdatacloud.net/data/reverse-geocode-client` | Free client API, no key, verified live 200 | YES | KEEP_LIVE |
+| Sun/Moon | /dashboard/environment | astronomy-engine (local, offline) | n/a (client-side computation) | No network dependency | YES | KEEP_LIVE |
+| Earth Activity | EnvironmentContextCard, /dashboard/environment | USGS earthquake feed | `earthquake.usgs.gov/fdsnws/event/1/query` | US Govt, no key, verified live 200 | YES | KEEP_LIVE |
+| Geomagnetic Activity | EnvironmentContextCard, /dashboard/environment | NOAA SWPC Kp index | `services.swpc.noaa.gov/products/noaa-planetary-k-index.json` | US Govt, no key, verified live 200 | YES | KEEP_LIVE |
+| Temperature | (removed) | Open-Meteo forecast API | `api.open-meteo.com/v1/forecast` | Free tier forbidden in prod (`openMeteoGate.ts`) | NO (gated false) | HIDE_UNTIL_PROVIDER |
+| Humidity | (removed) | Open-Meteo forecast API | same as above | same | NO | HIDE_UNTIL_PROVIDER |
+| Wind | (removed) | Open-Meteo forecast API | same as above | same | NO | HIDE_UNTIL_PROVIDER |
+| Pressure | (removed) | Open-Meteo forecast API | same as above | same | NO | HIDE_UNTIL_PROVIDER |
+| UV Index | (removed) | Open-Meteo forecast API | same as above | same | NO | HIDE_UNTIL_PROVIDER |
+| Air Quality (AQI) | (removed) | Open-Meteo Air Quality API | `air-quality-api.open-meteo.com/v1/air-quality` | Free tier forbidden in prod | NO | HIDE_UNTIL_PROVIDER |
+| Schumann Resonance | (removed) | schumannresonancelive.com | `/api/data.php` | Endpoint returns fetch failure (dead/unreachable) | NO | REMOVE |
+| Volcanic Context | (removed) | GVP + CAMS atmospheric column SO2 | n/a | Column SO2 fail-closed (no direct client source); GVP commercial licensing unresolved | NO | REMOVE |
+
+### Fixes applied
+
+1. `app/dashboard/environment/page.tsx` rewritten: removed Weather/Temperature/Humidity/Wind/
+   Pressure/UV/AirQuality DetailItems, removed Schumann graph/status/spiritual-reading block,
+   removed `AtmosphereVolcanicCard` import. Only Location, Sun/Moon, Earth Activity, and
+   Geomagnetic remain, each individually conditional on live status.
+2. `components/dashboard/EnvironmentContextCard.tsx`: removed Temperature/Humidity
+   SummaryItems and the Schumann import; Earth Activity and Geomagnetic SummaryItems are now
+   individually conditional (`context?.earthActivity?.dataState === "available"` /
+   `context?.spaceWeather?.source.status === "available"`) instead of always rendering with
+   an unavailable fallback.
+3. Single Indonesian degraded-state message added: "Data lingkungan sedang tidak tersedia.
+   Silakan coba lagi nanti." — shown only when ALL remaining live providers (Earth Activity +
+   Geomagnetic) are simultaneously down. If some succeed, only the successful indicators
+   render.
+4. `lib/environment/service.tsx`: documented the still-gated (but dead-weight) Open-Meteo
+   weather fetch task with a `ponytail:` comment — kept only for dev/QA parity with the
+   `EnvironmentContext` shape consumed internally by `context_utils.tsx` (AI weak-context),
+   not rendered in any user-facing UI.
+5. Retargeted `tests/unit/build108-cdi03-schumann-source-integrity.test.ts` (previously
+   asserted Schumann UI existed) to assert its absence from both surfaces — 15/15 checks pass.
+6. Added Build 110 Section 7 tests to `build110-indonesian-only-production.test.ts`: no dead
+   Open-Meteo fields rendered, no Volcanic/Schumann components imported, Open-Meteo remains
+   fail-closed in production, Volcanic engine remains fail-closed, and a provider-matrix test
+   asserting all 12 audited features have one of exactly 4 valid classifications (no UNKNOWN).
+
+```text
+ENVIRONMENT_STATUS = REMEDIATED
+ENVIRONMENT_FIELDS_BEFORE = 12 (Location, Weather, Temperature, Sun, Moon, AirQuality, Wind,
+                            Humidity, Pressure, UvIndex, EarthActivity, Geomagnetic) + Schumann
+                            + Volcanic block (14 total surfaces)
+ENVIRONMENT_FIELDS_AFTER = 4 (Location, Sun/Moon, Earth Activity, Geomagnetic — each
+                            conditional on live status)
+
+TEMPERATURE = HIDDEN (Open-Meteo only, fail-closed in production)
+HUMIDITY = HIDDEN (Open-Meteo only, fail-closed in production)
+EARTH_ACTIVITY = KEEP_LIVE (USGS, verified live 200, conditional render)
+GEOMAGNETIC_ACTIVITY = KEEP_LIVE (NOAA SWPC, verified live 200, conditional render)
+LOCATION = KEEP_LIVE (device GPS + BigDataCloud, verified live 200)
+
+OPEN_METEO_PRODUCTION_CALLS = 0
+SCHUMANN_VISIBLE = 0
+SCHUMANN_RUNTIME_CALLS = 0
+VOLCANIC_VISIBLE = 0
+VOLCANIC_RUNTIME_CALLS = 0
+
+PERMANENT_UNAVAILABLE_CARDS = 0 (each remaining card only renders when its own source is live)
+DEGRADED_STATE = single Indonesian message when Earth Activity AND Geomagnetic both fail;
+                 no fabricated values, no fake fallback state.
+
+LOCAL_QA_ENVIRONMENT = uses the same live-source code path as production (no separate fake
+                       fixture layer for Environment); Location/Sun/Moon/EarthActivity/
+                       Geomagnetic behave identically on localhost since USGS/NOAA/
+                       BigDataCloud/astronomy-engine are all reachable from localhost without
+                       any QA-only override.
+PRODUCTION_ENVIRONMENT_PROVIDER_STATUS = Location/EarthActivity/Geomagnetic/SunMoon all
+                       verified live (HTTP 200) from this environment; Open-Meteo fail-closed
+                       by design in production; Schumann endpoint unreachable (dead, pre-
+                       existing, unrelated to Build 110 removal decision).
+
+LOCALHOST_STATUS = RUNNING
+LOCALHOST_URL = http://127.0.0.1:3001
+
+ENVIRONMENT_FOUNDER_ACCEPTANCE = PENDING
+BUILD110_CAN_PROCEED_TO_RELEASE = NO
+```
+
 ## FOUNDER-APPROVED RECOVERY CHECKPOINT — 2026-09-13 (canonical, latest)
 
 ```text
