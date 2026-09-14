@@ -225,98 +225,7 @@ function buildDailyCategories(input: {
   const isEn = isEnlEdition();
   const { seed, state } = input;
   const plan = (key: string, values: string[]) => pick(values, `${seed}:${state}:${key}`, values[0]);
-  const accentLabel: Record<string, string> = isEn ? {
-    general: "for your day's direction",
-    mental: "for your mental clarity",
-    finance: "for work and money matters",
-    love: "for your heart's closeness",
-    relational: "for your closest relationships",
-    spiritual: "for your inner meaning",
-    challenges: "for parts that feel heavy",
-    opportunities: "for new spaces opening up",
-  } : {
-    general: "untuk arah harimu",
-    mental: "untuk kejernihan pikiranmu",
-    finance: "untuk urusan kerja dan uang",
-    love: "untuk kedekatan hatimu",
-    relational: "untuk hubungan terdekatmu",
-    spiritual: "untuk makna batinmu",
-    challenges: "untuk bagian yang terasa berat",
-    opportunities: "untuk ruang baru yang terbuka",
-  };
-  const accent = (key: string) => {
-    const label = accentLabel[key] ?? (isEn ? "for your steps" : "untuk langkahmu");
-    const accentA = isEn ? [
-      "choose calm",
-      "reduce scale",
-      "organize first",
-      "keep rhythm",
-      "wait until mature",
-      "start close",
-    ] : [
-      "pilih tenang",
-      "kecilkan ukuran",
-      "rapikan dulu",
-      "jaga ritme",
-      "tunggu matang",
-      "mulai dekat",
-    ];
-    const accentB = isEn ? [
-      "make real",
-      "check body",
-      "avoid burdens",
-      "give space",
-      "speak clearly",
-      "close clearly",
-    ] : [
-      "buat nyata",
-      "cek tubuh",
-      "hindari beban",
-      "beri jeda",
-      "ucap jernih",
-      "tutup jelas",
-    ];
-    return `${plan(`${key}:accent-a`, accentA)} ${label}, ${isEn ? "then" : "lalu"} ${plan(`${key}:accent-b`, accentB)}`;
-  };
-  const adviceAccent = (key: string) => {
-    const label = accentLabel[key] ?? (isEn ? "for your steps" : "untuk langkahmu");
-    const closing = state === "limited"
-      ? plan(`${key}:advice-closing-limited`, isEn ? ["gently", "slowly", "calmly"] : ["dengan lembut", "secara perlahan", "dengan tenang"])
-      : plan(`${key}:advice-closing-ready`, isEn ? ["fully", "with confidence", "clearly"] : ["secara utuh", "dengan yakin", "dengan jernih"]);
 
-    const adviceA = isEn ? [
-      "choose light",
-      "measure small",
-      "be honest first",
-      "start quietly",
-      "set boundaries",
-      "save energy",
-    ] : [
-      "pilih ringan",
-      "ukur kecil",
-      "jujur dulu",
-      "mulai senyap",
-      "beri batas",
-      "hemat tenaga",
-    ];
-    const adviceB = isEn ? [
-      "finish first",
-      "check body",
-      "just start",
-      "take a breath",
-      "speak clearly",
-      "create proof",
-    ] : [
-      "selesai dulu",
-      "cek tubuh",
-      "cukup mulai",
-      "ambil napas",
-      "bicara jernih",
-      "buat bukti",
-    ];
-
-    return `${plan(`${key}:advice-accent-a`, adviceA)} ${label}, ${isEn ? "then" : "lalu"} ${plan(`${key}:advice-accent-b`, adviceB)} ${closing}`;
-  };
   const context = state === "limited"
     ? (isEn
         ? "Today is healthiest lived with simple steps, as some things still need to be viewed slowly."
@@ -335,14 +244,14 @@ function buildDailyCategories(input: {
         ]),
         context,
         plan("general-advice", [
-          `Choose one most real priority, then ${adviceAccent("general")}.`,
-          `Close one small matter before opening new loads; ${adviceAccent("general")}.`,
-          `Start with what you can hold today, then ${adviceAccent("general")}.`,
+          "Choose one most real priority and give it your full attention today.",
+          "Close one small matter before opening new loads, then continue with the next step.",
+          "Start with what you can hold today and focus until it is finished.",
         ]),
         plan("general-reflection", [
-          `If many choices seem attractive, ${accent("general")}.`,
-          `The right decision today usually feels calmer; ${accent("general")}.`,
-          `You don't need to prove everything in one day; ${accent("general")}.`,
+          "The right decision today usually feels calmer and does not burden your inner peace.",
+          "Mature steps are built from consistency in caring for small things.",
+          "Lasting progress is born from calmness while walking through it.",
         ]),
         {
           sourceReadingIds: ["primary-archetype", "how-you-show-up", "current-life-semester-1", "current-life-semester-2"],
@@ -361,14 +270,14 @@ function buildDailyCategories(input: {
           "The mind easily tires if you keep holding decisions that can actually be made in stages.",
         ]),
         plan("mental-advice", [
-          `Write down one main decision, one honest reason, then ${adviceAccent("mental")}.`,
-          `Before answering something important, ${adviceAccent("mental")}.`,
-          `Separate facts from assumptions, then ${adviceAccent("mental")}.`,
+          "Write down one main decision and one honest reason, then give yourself time before acting.",
+          "Pause before answering something important so your mind does not rush to conclusions.",
+          "Separate facts from assumptions and focus on one thing at a time.",
         ]),
         plan("mental-reflection", [
-          `Clarity today grows from the courage not to react immediately; ${accent("mental")}.`,
-          `The simpler the question, the easier mature answers emerge; ${accent("mental")}.`,
-          `Your mind doesn't have to win fast; ${accent("mental")}.`,
+          "Mental clarity grows when you do not force yourself to answer everything at once.",
+          "The mind becomes calmer when you focus on what you can control.",
+          "Give your headspace a break so mature understanding can emerge naturally.",
         ]),
         {
           sourceReadingIds: ["mindset-meaning", "decision-making", "focus-productivity"],
@@ -387,14 +296,14 @@ function buildDailyCategories(input: {
           "Scarcity feelings can make opportunities look urgent, when some just need to be reviewed more slowly.",
         ]),
         plan("finance-advice", [
-          `Check one income-expense stream or one work commitment, then ${adviceAccent("finance")}.`,
-          `Tidy up one number, one deadline, or one agreement; ${adviceAccent("finance")}.`,
-          `Choose work that yields the clearest result today, then ${adviceAccent("finance")}.`,
+          "Review one work commitment or financial note and handle the most urgent item.",
+          "Tidy up one number, one deadline, or one agreement so matters do not stall.",
+          "Choose the work that yields the clearest result today to keep your energy stable.",
         ]),
         plan("finance-reflection", [
-          `Today's sustenance is closer to orderliness than self-proof; ${accent("finance")}.`,
-          `Your self-worth doesn't need to be proven by taking all opportunities at once; ${accent("finance")}.`,
-          `Mature economic steps often feel simple; ${accent("finance")}.`,
+          "Order in managing small things is the best foundation for financial security.",
+          "Career and work feel lighter when you appreciate your own capacity.",
+          "Economic stability is built from calm and directed decisions.",
         ]),
         {
           sourceReadingIds: ["economy-income", "money-block", "natural-talents", "work-style", "career-direction"],
@@ -413,14 +322,14 @@ function buildDailyCategories(input: {
           "Closeness can feel heavy if personal boundaries are stated too late.",
         ]),
         plan("love-advice", [
-          `State one need in a short sentence, then ${adviceAccent("love")}.`,
-          `Choose conversations that are warm yet clear; ${adviceAccent("love")}.`,
-          `Protect your gentleness with understandable boundaries, then ${adviceAccent("love")}.`,
+          "Express one need in simple words without demanding immediate certainty.",
+          "Prioritize warm and honest conversations to understand each other.",
+          "Balance caring for closeness with respecting your personal boundaries.",
         ]),
         plan("love-reflection", [
-          `Healthy love today doesn't have to be dramatic to feel genuine; ${accent("love")}.`,
-          `Closeness grows when you stop asking others to guess everything; ${accent("love")}.`,
-          `Honest boundaries can be a form of affection; ${accent("love")}.`,
+          "Healthy closeness grows from sincere openness and mutual appreciation.",
+          "Relationships feel calmer when both parties give each other room to breathe.",
+          "Honesty delivered gently is the most real form of care.",
         ]),
         {
           sourceReadingIds: ["emotional-needs-relationship", "love-block-patterns", "attraction-patterns", "conflict-communication"],
@@ -439,14 +348,14 @@ function buildDailyCategories(input: {
           "You can tire easily if you keep holding up the mood without checking your capacity.",
         ]),
         plan("relational-advice", [
-          `Choose one conversation that needs slowing down, then ${adviceAccent("relational")}.`,
-          `State one small boundary before it becomes distance, then ${adviceAccent("relational")}.`,
-          `Reduce automatic responses and ${adviceAccent("relational")}.`,
+          "Listen carefully before responding so the conversation stays comfortable.",
+          "Mention one small boundary calmly before it becomes a larger distance.",
+          "Reduce spontaneous reactions and choose wiser responses during discussions.",
         ]),
         plan("relational-reflection", [
-          `You are allowed to love others without ignoring your own needs; ${accent("relational")}.`,
-          `Healthy relationships provide room to speak clearly; ${accent("relational")}.`,
-          `Closeness today grows from conscious responses; ${accent("relational")}.`,
+          "Good relationships give space for each person to be themselves.",
+          "Healthy boundaries do not push others away; they keep the relationship intact.",
+          "Warm connections are built from a willingness to listen without judging.",
         ]),
         {
           sourceReadingIds: ["social-family-patterns", "conflict-communication", "protection-mechanisms", "core-wounds"],
@@ -465,14 +374,14 @@ function buildDailyCategories(input: {
           "Subtle inner feelings are hard to read if the body is tired and the schedule is full.",
         ]),
         plan("spiritual-advice", [
-          `Create one short practice like silence, prayer, journaling, or a kind act, then ${adviceAccent("spiritual")}.`,
-          `Let intuition give direction, then ${adviceAccent("spiritual")}.`,
-          `Choose one silent moment and ${adviceAccent("spiritual")}.`,
+          "Spend a short moment in silence, prayer, or writing a reflection note.",
+          "Take a calm breath pause and feel your presence in this moment.",
+          "Let your intuition guide small steps that feel aligned today.",
         ]),
         plan("spiritual-reflection", [
-          `True meaning usually makes you more present, not more fearful; ${accent("spiritual")}.`,
-          `Today, what is sacred can exist in how you work and care for your body; ${accent("spiritual")}.`,
-          `Inner depth doesn't need to be proven; ${accent("spiritual")}.`,
+          "Inner peace feels most real when present in simple daily actions.",
+          "Life meaning does not need to be found far away; it exists in how you care for yourself and others.",
+          "A brief quiet space is enough to realign your heart.",
         ]),
         {
           sourceReadingIds: ["spiritual-path", "intuition-traces", "soul-lessons", "evolution-direction", "soul-identity"],
@@ -491,14 +400,14 @@ function buildDailyCategories(input: {
           "The body can signal first before the mind admits that you are full.",
         ]),
         plan("challenges-advice", [
-          `Reduce one exposure, task, or conversation, then ${adviceAccent("challenges")}.`,
-          `Take a short pause before answering defensive triggers, then ${adviceAccent("challenges")}.`,
-          `Choose boundaries achievable today and ${adviceAccent("challenges")}.`,
+          "Reduce one burden or activity that drains your energy the most today.",
+          "Take a short break when you feel tired before continuing your responsibilities.",
+          "Set clear boundaries today to give your body space to restore energy.",
         ]),
         plan("challenges-reflection", [
-          `Boundaries today are not obstacles, but ways to keep your direction alive; ${accent("challenges")}.`,
-          `You don't need to wait for a breakdown to admit something feels heavy; ${accent("challenges")}.`,
-          `When the body feels safer, your decisions are also clearer; ${accent("challenges")}.`,
+          "Recognizing your capacity limits is not weakness; it is a way to maintain resilience.",
+          "It is okay to slow down when your energy genuinely needs recovery.",
+          "When the body feels safe and well-rested, the decisions you make will be much clearer.",
         ]),
         {
           sourceReadingIds: ["core-wounds", "self-sabotage-patterns", "hidden-fears", "chakra-map", "natural-energy-rhythm"],
@@ -517,14 +426,14 @@ function buildDailyCategories(input: {
           "The future can feel distant if you wait for all conditions to feel perfect.",
         ]),
         plan("opportunities-advice", [
-          `Test one small skill, message, or decision, then ${adviceAccent("opportunities")}.`,
-          `Start with practice finished today and ${adviceAccent("opportunities")}.`,
-          `Choose one knot that can be untangled, then ${adviceAccent("opportunities")}.`,
+          "Try one small skill, message, or decision you have been wanting to start.",
+          "Pick one simple thing you can complete today to open up progress.",
+          "Start from what is in front of you without waiting for the situation to feel perfect.",
         ]),
         plan("opportunities-reflection", [
-          `New space often comes after finishing a small thing long left hanging; ${accent("opportunities")}.`,
-          `What grows today doesn't need to be announced immediately; ${accent("opportunities")}.`,
-          `The future feels friendlier when approached through steps that can be maintained; ${accent("opportunities")}.`,
+          "New opportunities often begin with the courage to finish small things that have been delayed.",
+          "Meaningful change does not have to start big; a consistent first step is enough.",
+          "The future feels friendlier when approached through steps that can be maintained.",
         ]),
         {
           sourceReadingIds: ["career-direction", "skills-to-learn", "healing-integration-direction", "current-life-semester-1", "matured-potential"],
@@ -557,14 +466,14 @@ function buildDailyCategories(input: {
       ]),
       context,
       plan("general-advice", [
-        `Pilih satu prioritas yang paling nyata, lalu ${adviceAccent("general")}.`,
-        `Tutup satu urusan kecil sebelum membuka beban baru; ${adviceAccent("general")}.`,
-        `Mulailah dari hal yang bisa kamu pegang hari ini, lalu ${adviceAccent("general")}.`,
+        "Pilih satu prioritas yang paling realistis untuk kamu jalani dengan tenang.",
+        "Tutup satu urusan kecil sebelum membuka beban baru, lalu lanjutkan dengan langkah berikutnya.",
+        "Mulailah dari hal yang bisa kamu pegang hari ini dan fokus sampai tuntas.",
       ]),
       plan("general-reflection", [
-        `Jika banyak pilihan terasa menarik, ${accent("general")}.`,
-        `Keputusan yang tepat hari ini biasanya terasa lebih tenang; ${accent("general")}.`,
-        `Kamu tidak perlu membuktikan semuanya dalam satu hari; ${accent("general")}.`,
+        "Pilihan yang tepat hari ini biasanya terasa tenang dan tidak membebani batin.",
+        "Langkah yang matang dibangun dari konsistensi merawat hal-hal kecil.",
+        "Kemajuan yang bertahan lahir dari ketenangan saat menjalaninya.",
       ]),
       {
         sourceReadingIds: ["arketipe-utama", "cara-hadir-di-dunia", "current-life-semester-1", "current-life-semester-2"],
@@ -583,14 +492,14 @@ function buildDailyCategories(input: {
         "Pikiran akan mudah lelah jika kamu terus memegang keputusan yang sebenarnya bisa dibuat bertahap.",
       ]),
       plan("mental-advice", [
-        `Tulis satu keputusan utama, satu alasan yang jujur, lalu ${adviceAccent("mental")}.`,
-        `Sebelum menjawab sesuatu yang penting, ${adviceAccent("mental")}.`,
-        `Pisahkan fakta dari asumsi, lalu ${adviceAccent("mental")}.`,
+        "Tulis satu keputusan utama dan satu alasan yang jujur, lalu beri dirimu waktu sebelum bertindak.",
+        "Beri jeda sebelum menjawab hal yang penting agar pikiran tidak terburu-buru menyimpulkan.",
+        "Pisahkan fakta dari asumsi dan fokus pada satu hal dalam satu waktu.",
       ]),
       plan("mental-reflection", [
-        `Kejernihan hari ini tumbuh dari keberanian untuk tidak langsung bereaksi; ${accent("mental")}.`,
-        `Semakin sederhana pertanyaannya, semakin mudah jawaban matang muncul; ${accent("mental")}.`,
-        `Pikiranmu tidak harus menang cepat; ${accent("mental")}.`,
+        "Kejernihan pikiran tumbuh ketika kamu tidak memaksakan diri menjawab semua hal sekaligus.",
+        "Pikiran menjadi lebih tenang saat kamu fokus pada hal yang bisa kamu kendalikan.",
+        "Beri jeda bagi kepalamu agar pemahaman yang matang bisa muncul secara alami.",
       ]),
       {
         sourceReadingIds: ["cara-berpikir-memaknai", "cara-mengambil-keputusan", "fokus-produktivitas-konsistensi"],
@@ -609,14 +518,14 @@ function buildDailyCategories(input: {
         "Rasa kurang bisa membuat peluang terlihat mendesak, padahal sebagian hanya perlu ditinjau lebih pelan.",
       ]),
       plan("finance-advice", [
-        `Cek satu arus masuk-keluar atau satu komitmen kerja, lalu ${adviceAccent("finance")}.`,
-        `Rapikan satu angka, satu tenggat, atau satu kesepakatan; ${adviceAccent("finance")}.`,
-        `Pilih pekerjaan yang paling memberi hasil jelas hari ini, lalu ${adviceAccent("finance")}.`,
+        "Tinjau satu komitmen kerja atau catatan keuangan dan selesaikan yang paling mendesak.",
+        "Rapikan satu angka, satu tenggat, atau satu kesepakatan agar urusan tidak tertunda.",
+        "Pilih pekerjaan yang hasil dan prioritasnya paling jelas hari ini.",
       ]),
       plan("finance-reflection", [
-        `Rezeki hari ini lebih dekat dengan ketertiban daripada pembuktian diri; ${accent("finance")}.`,
-        `Nilai dirimu tidak perlu dibuktikan dengan mengambil semua peluang sekaligus; ${accent("finance")}.`,
-        `Langkah ekonomi yang matang sering terasa sederhana; ${accent("finance")}.`,
+        "Ketertiban dalam mengelola hal kecil adalah fondasi terbaik untuk rasa aman finansial.",
+        "Karier dan pekerjaan terasa lebih ringan saat kamu menghargai kapasitas diri.",
+        "Kestabilan ekonomi dibangun dari keputusan yang tenang dan terarah.",
       ]),
       {
         sourceReadingIds: ["ekonomi-pola-penghasilan", "money-block", "talenta-alami", "gaya-kerja", "arah-karya-kontribusi"],
@@ -635,14 +544,14 @@ function buildDailyCategories(input: {
         "Kedekatan dapat terasa berat jika batas pribadi terlambat disebut.",
       ]),
       plan("love-advice", [
-        `Ucapkan satu kebutuhan dengan kalimat pendek, lalu ${adviceAccent("love")}.`,
-        `Pilih percakapan yang hangat tetapi jelas; ${adviceAccent("love")}.`,
-        `Jaga kelembutanmu dengan batas yang bisa dipahami, lalu ${adviceAccent("love")}.`,
+        "Ucapkan satu kebutuhan dengan kalimat sederhana tanpa menuntut kepastian segera.",
+        "Utamakan percakapan yang hangat dan jujur untuk saling memahami.",
+        "Jaga keseimbangan antara merawat kedekatan dan menghormati batas pribadimu.",
       ]),
       plan("love-reflection", [
-        `Cinta yang sehat hari ini tidak harus dramatis untuk terasa sungguh-sungguh; ${accent("love")}.`,
-        `Kedekatan tumbuh saat kamu berhenti meminta orang lain menebak semuanya; ${accent("love")}.`,
-        `Batas yang jujur bisa menjadi bentuk kasih; ${accent("love")}.`,
+        "Kedekatan yang sehat tumbuh dari keterbukaan yang tulus dan rasa saling menghargai.",
+        "Hubungan terasa lebih damai ketika kedua pihak saling memberi ruang untuk bernapas.",
+        "Kejujuran yang disampaikan dengan lembut adalah bentuk kepedulian yang paling nyata.",
       ]),
       {
         sourceReadingIds: ["kebutuhan-emosional-relasi", "love-block-pola-berulang", "pola-ketertarikan-pasangan", "konflik-komunikasi-batas"],
@@ -661,14 +570,14 @@ function buildDailyCategories(input: {
         "Kamu bisa mudah lelah jika terus menjadi penyangga suasana tanpa memeriksa kapasitasmu.",
       ]),
       plan("relational-advice", [
-        `Pilih satu percakapan yang perlu diperlambat, lalu ${adviceAccent("relational")}.`,
-        `Sebutkan satu batas kecil sebelum ia menjadi jarak, lalu ${adviceAccent("relational")}.`,
-        `Kurangi respons otomatis dan ${adviceAccent("relational")}.`,
+        "Dengarkan dengan saksama sebelum merespons agar percakapan tetap terasa nyaman.",
+        "Sebutkan satu batas kecil dengan tenang sebelum ia menjadi jarak yang lebih besar.",
+        "Kurangi reaksi spontan dan pilih respons yang lebih bijak saat berdiskusi.",
       ]),
       plan("relational-reflection", [
-        `Kamu tetap boleh menyayangi orang lain tanpa mengabaikan kebutuhanmu sendiri; ${accent("relational")}.`,
-        `Hubungan yang sehat memberi ruang untuk bicara jelas; ${accent("relational")}.`,
-        `Kedekatan hari ini tumbuh dari respons yang sadar; ${accent("relational")}.`,
+        "Hubungan yang baik memberi ruang bagi setiap orang untuk menjadi dirinya sendiri.",
+        "Batas yang sehat tidak menjauhkanmu dari orang lain, melainkan menjaga hubungan tetap utuh.",
+        "Koneksi yang hangat terbangun dari kesediaan untuk saling mendengarkan tanpa menghakimi.",
       ]),
       {
         sourceReadingIds: ["pola-relasi-sosial-keluarga", "konflik-komunikasi-batas", "mekanisme-perlindungan", "luka-inti"],
@@ -687,14 +596,14 @@ function buildDailyCategories(input: {
         "Rasa batin yang halus akan sulit dibaca jika tubuh terlalu lelah dan agenda terlalu penuh.",
       ]),
       plan("spiritual-advice", [
-        `Buat satu praktik pendek seperti hening, doa, journaling, atau tindakan baik, lalu ${adviceAccent("spiritual")}.`,
-        `Biarkan intuisi memberi arah, lalu ${adviceAccent("spiritual")}.`,
-        `Pilih satu momen sunyi dan ${adviceAccent("spiritual")}.`,
+        "Luangkan waktu sebentar untuk hening, berdoa, atau menulis catatan refleksi.",
+        "Ambil jeda napas yang tenang dan rasakan kehadiranmu di saat ini.",
+        "Biarkan intuisimu membimbing langkah kecil yang terasa selaras hari ini.",
       ]),
       plan("spiritual-reflection", [
-        `Makna yang sejati biasanya membuatmu lebih hadir, bukan lebih takut; ${accent("spiritual")}.`,
-        `Hari ini, yang sakral bisa hadir dalam cara kamu bekerja dan merawat tubuh; ${accent("spiritual")}.`,
-        `Kedalaman batin tidak perlu dibuktikan; ${accent("spiritual")}.`,
+        "Ketenangan batin terasa paling nyata saat hadir dalam tindakan sederhana sehari-hari.",
+        "Makna hidup tidak perlu dicari jauh; ia ada dalam caramu merawat diri dan sekitar.",
+        "Ruang hening yang singkat sudah cukup untuk menyelaraskan kembali hatimu.",
       ]),
       {
         sourceReadingIds: ["jalur-spiritual", "jejak-intuisi", "pelajaran-jiwa", "arah-evolusi", "soul-identity"],
@@ -713,14 +622,14 @@ function buildDailyCategories(input: {
         "Tubuh dapat memberi sinyal lebih dulu sebelum pikiran mengakui bahwa kamu sedang penuh.",
       ]),
       plan("challenges-advice", [
-        `Kurangi satu paparan, tugas, atau percakapan, lalu ${adviceAccent("challenges")}.`,
-        `Ambil jeda pendek sebelum menjawab hal yang memancing defensif, lalu ${adviceAccent("challenges")}.`,
-        `Pilih batas yang bisa dilakukan hari ini dan ${adviceAccent("challenges")}.`,
+        "Kurangi satu beban atau kegiatan yang paling menguras tenagamu hari ini.",
+        "Ambil jeda sejenak ketika merasa lelah sebelum melanjutkan tanggung jawabmu.",
+        "Tetapkan batas yang jelas hari ini agar kamu tidak terus menguras tenaga.",
       ]),
       plan("challenges-reflection", [
-        `Batas hari ini bukan penghalang, melainkan cara menjaga arahmu tetap hidup; ${accent("challenges")}.`,
-        `Kamu tidak perlu menunggu tumbang untuk mengakui bahwa sesuatu terasa berat; ${accent("challenges")}.`,
-        `Saat tubuh lebih aman, keputusanmu juga lebih mudah jernih; ${accent("challenges")}.`,
+        "Menyadari batas kapasitasmu bukanlah kelemahan, melainkan cara menjaga ketahanan diri.",
+        "Tidak apa-apa untuk melambat ketika energimu memang sedang membutuhkan pemulihan.",
+        "Ketika tubuh merasa aman dan cukup istirahat, keputusan yang kamu ambil akan jauh lebih jernih.",
       ]),
       {
         sourceReadingIds: ["luka-inti", "pola-self-sabotage", "ketakutan-tersembunyi", "peta-chakra", "ritme-energi-alami"],
@@ -730,7 +639,7 @@ function buildDailyCategories(input: {
     opportunities: category(
       plan("opportunities-theme", [
         "Ruang baru hari ini terbuka dari keberanian mencoba langkah kecil yang selama ini tertunda.",
-        "Peluang hari ini tidak harus besar; ia bisa muncul sebagai satu simpul yang akhirnya kamu rapikan.",
+        "Peluang hari ini tidak harus besar. Kesempatan baik bisa muncul sebagai satu simpul yang akhirnya kamu rapikan.",
         "Arah baru terasa lebih dekat ketika kamu memberi bentuk pada niat yang sudah lama hidup di dalam diri.",
       ]),
       plan("opportunities-tension", [
@@ -739,14 +648,14 @@ function buildDailyCategories(input: {
         "Masa depan bisa terasa jauh bila kamu menunggu semua syarat terasa sempurna.",
       ]),
       plan("opportunities-advice", [
-        `Uji satu kemampuan kecil, satu pesan, atau satu keputusan, lalu ${adviceAccent("opportunities")}.`,
-        `Mulai dari latihan yang bisa selesai hari ini dan ${adviceAccent("opportunities")}.`,
-        `Pilih satu simpul yang bisa dirapikan, lalu ${adviceAccent("opportunities")}.`,
+        "Uji satu langkah atau rencana kecil yang selama ini ingin kamu mulai.",
+        "Pilih satu hal sederhana yang bisa kamu selesaikan hari ini untuk membuka kemajuan.",
+        "Mulai dari apa yang ada di depanmu tanpa menunggu situasi terasa sempurna.",
       ]),
       plan("opportunities-reflection", [
-        `Ruang baru sering datang setelah kamu menyelesaikan hal kecil yang lama menggantung; ${accent("opportunities")}.`,
-        `Yang bertumbuh hari ini tidak perlu langsung diumumkan; ${accent("opportunities")}.`,
-        `Masa depan terasa lebih ramah saat didekati lewat langkah yang bisa dijaga; ${accent("opportunities")}.`,
+        "Peluang baru sering kali berawal dari keberanian menyelesaikan hal kecil yang tertunda.",
+        "Perubahan yang berarti tidak harus dimulai besar; langkah pertama yang konsisten sudah cukup.",
+        "Masa depan terasa lebih ramah ketika kamu menjalaninya langkah demi langkah.",
       ]),
       {
         sourceReadingIds: ["arah-karya-kontribusi", "kemampuan-perlu-dipelajari", "arah-penyembuhan-integrasi", "current-life-semester-1", "potensi-matang"],

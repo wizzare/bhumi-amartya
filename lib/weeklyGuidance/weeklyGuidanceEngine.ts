@@ -16,7 +16,6 @@ const SECTION_DEFS = [
 function hash(value: string): number { let n = 2166136261; for (const c of value) { n ^= c.charCodeAt(0); n = Math.imul(n, 16777619); } return n >>> 0; }
 function pick<T>(items: T[], seed: string): T { return items[hash(seed) % items.length]; }
 function sentence(value: string): string { const t = value.replace(/\s+/g, " ").replace(/\s+([,.!?])/g, "$1").trim(); return /[.!?]$/.test(t) ? t : `${t}.`; }
-function compact(value: string): string { return value.replace(/[.!?]+$/g, ""); }
 function localParts(date: Date, timezone: string) { const parts = new Intl.DateTimeFormat("en-CA", { timeZone: timezone, year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" }).formatToParts(date); const get = (type: string) => parts.find((p) => p.type === type)?.value || ""; return { year: Number(get("year")), month: Number(get("month")), day: Number(get("day")), weekday: get("weekday") }; }
 function isoDate(y: number, m: number, d: number) { return `${y.toString().padStart(4, "0")}-${m.toString().padStart(2, "0")}-${d.toString().padStart(2, "0")}`; }
 function range(date: Date, timezone: string, mode: "current" | "upcoming") { const p = localParts(date, timezone); const base = new Date(Date.UTC(p.year, p.month - 1, p.day + (mode === "upcoming" ? 7 : 0))); const weekday = base.getUTCDay() || 7; base.setUTCDate(base.getUTCDate() - weekday + 1); const end = new Date(base); end.setUTCDate(end.getUTCDate() + 6); return { start: isoDate(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate()), end: isoDate(end.getUTCFullYear(), end.getUTCMonth() + 1, end.getUTCDate()), key: `${base.getUTCFullYear()}-W${String(Math.ceil((base.getUTCDate() + 6) / 7)).padStart(2, "0")}` }; }
@@ -50,7 +49,24 @@ export function buildWeeklyGuidance(input: { uid: string; profile: Record<string
   const timingEvidence = ["weekly-period", ...(astroAvailable ? ["moon-and-weekly-astrology"] : ["broad-weekly-timing"]), ...(journeyAvailable ? ["journey-stage"] : [])];
   const lifePath = Number((input.blueprint.lifePath as Record<string, unknown> | undefined)?.number || 0);
   const userFocus = lifePath === 9 ? "merawat kontribusi yang berdampak pada orang lain" : lifePath === 7 ? "memperdalam kemampuan melalui riset dan latihan" : timezone !== "Asia/Jakarta" ? "menyesuaikan ritme dengan lingkungan setempat" : "menguji keterampilan melalui langkah yang terukur";
-  const sections: WeeklyGuidanceSection[] = SECTION_DEFS.map(([key, title, focus, domain]) => { const [anchor, shift] = themes[key]; const phases = { awalPekan: [sentence(`${compact(anchor)} Awal pekan digunakan untuk menyiapkan perhatian pada ${focus}.`)], tengahPekan: [sentence(shift)], akhirPekan: [sentence(development[key])] }; return { key, title, phases, paragraphs: [...phases.awalPekan, ...phases.tengahPekan, ...phases.akhirPekan], advice: advice[key].map(sentence), sourceDomains: [domain, "potential-development"], timingEvidence }; });
+  const sections: WeeklyGuidanceSection[] = SECTION_DEFS.map(([key, title, focus, domain]) => {
+    const [anchor, shift] = themes[key];
+    const cleanAnchor = sentence(anchor);
+    const phases = {
+      awalPekan: [sentence(`${cleanAnchor} Awal pekan ini difokuskan untuk ${focus}.`)],
+      tengahPekan: [sentence(shift)],
+      akhirPekan: [sentence(development[key])]
+    };
+    return {
+      key,
+      title,
+      phases,
+      paragraphs: [...phases.awalPekan, ...phases.tengahPekan, ...phases.akhirPekan],
+      advice: advice[key].map(sentence),
+      sourceDomains: [domain, "potential-development"],
+      timingEvidence
+    };
+  });
   const direction = ["Tema utama minggu ini adalah mengenali potensi lalu memberinya bentuk melalui latihan yang dapat dijaga.", `Pengembanganmu minggu ini berpusat pada ${userFocus}.`, "Mulai dengan satu prioritas kerja atau belajar, beri ruang untuk hubungan yang sehat, dan sisakan waktu pemulihan.", pick(["Jadwalkan satu sesi pengembangan dan satu sesi evaluasi sebelum Minggu berakhir.", "Uji satu kemampuan dalam situasi nyata, lalu catat langkah pendalaman berikutnya.", "Pilih satu kebiasaan yang mendukung arahmu dan ulangi dengan ukuran yang realistis.", "Gunakan percakapan atau masukan pertengahan minggu untuk memperbaiki rencana.", "Tutup pekan dengan menilai bukti kecil yang menunjukkan kemampuanmu bertumbuh."], `${seed}:direction`), "Dengan ritme itu, perubahan minggu ini dapat menjadi dasar yang lebih kuat untuk pekan berikutnya."];
   const state = !arsipAvailable ? "unavailable" : (astroAvailable && journeyAvailable ? "ready" : "limited");
   const readingSystems = input.arsipViewModel.readings.flatMap((reading) => reading.deepNarrativeProvenance?.flatMap((item) => item.contributingSystems) || []);

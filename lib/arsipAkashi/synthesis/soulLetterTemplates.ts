@@ -39,11 +39,11 @@ const PAST_SENTENCES: Record<string, string[]> = {
     "Kebaikanmu yang berlebihan adalah caramu bertahan untuk diterima dan itu melelahkan.",
   ],
   "p2_default": [
-    "Ada banyak hal yang kamu pendam tanpa pernah diucapkan dan itu bukan karena kamu tidak ingin berbagi.",
+    "Banyak hal yang pernah kamu pendam dalam diam. Memilih tidak membicarakannya saat itu adalah caramu menjaga diri.",
     "Kamu menyimpan begitu banyak beban yang seharusnya tidak perlu kamu tanggung sendirian.",
   ],
   "p3_self-sabotage": [
-    "Kamu mengatur jarak bukan karena tidak peduli melainkan karena kamu tahu betapa sakitnya ketika kehilangan.",
+    "Menjaga jarak kadang menjadi caramu melindungi diri ketika kehilangan terasa menakutkan.",
     "Cara kamu melindungi diri adalah dengan tidak berharap terlalu banyak dan itu masuk akal mengingat apa yang pernah terjadi.",
   ],
   "p3_recurring-patterns": [
@@ -51,7 +51,7 @@ const PAST_SENTENCES: Record<string, string[]> = {
     "Kebiasaanmu mengendalikan hal-hal kecil adalah usahamu untuk merasa bahwa ada sesuatu yang bisa kamu pegang.",
   ],
   "p3_default": [
-    "Kamu membangun tembok bukan karena kamu tidak ingin dekat dengan orang lain tetapi karena kamu belajar bahwa diam lebih aman.",
+    "Kamu terbiasa menjaga jarak ketika kedekatan terasa tidak aman. Diam mungkin pernah menjadi cara paling sederhana untuk melindungi dirimu.",
     "Cara kamu bertahan mungkin tidak sempurna tetapi ia lahir dari kebutuhan yang nyata pada saat itu.",
   ],
   "p4_healing": [
@@ -76,7 +76,7 @@ const PAST_SENTENCES: Record<string, string[]> = {
   ],
   "p5_default": [
     "Terima kasih karena tidak menyerah meskipun tidak ada yang menjamin bahwa semua akan baik-baik saja.",
-    "Aku bangga padamu bukan karena hasil yang kamu capai tetapi karena kamu terus memilih untuk bangkit setiap kali jatuh.",
+    "Aku bangga melihatmu terus mencoba bangkit setelah hari-hari yang berat.",
   ],
 };
 
