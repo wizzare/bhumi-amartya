@@ -181,7 +181,7 @@ export default function UpgradePage() {
         </div>
 
         <Link href="/dashboard" className="text-sm font-semibold text-[#7B8776] transition-colors hover:text-[#4F5E52]">
-          {isEn ? "Back to Dashboard" : "Kembali ke Dasbor"}
+          {isEn ? "Back to Dashboard" : "Kembali ke Dashboard"}
         </Link>
       </section>
     </main>

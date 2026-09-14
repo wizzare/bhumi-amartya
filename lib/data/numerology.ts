@@ -188,7 +188,7 @@ export const personalityData: Record<number, NumerologyDetail> = {
   2: { summary: "sosok yang ramah dan cinta damai" },
   3: { summary: "pribadi yang menawan dan penuh optimisme" },
   4: { summary: "sosok serius yang rapi dan dapat diandalkan" },
-  5: { summary: "orang yang magnetis and penuh kejutan" },
+  5: { summary: "orang yang magnetis dan penuh kejutan" },
   6: { summary: "pribadi peduli yang protektif dan anggun" },
   7: { summary: "sosok misterius yang intelek dan tenang" },
   8: { summary: "orang kuat yang sukses dan berwibawa" },

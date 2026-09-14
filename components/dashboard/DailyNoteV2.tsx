@@ -76,8 +76,8 @@ export function DailyNoteV2({
         </h3>
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-8 text-center text-sm text-[#7B8776]">
           {isEn
-            ? "Today's Note cannot be compiled yet because minimum profile and Akashi Archive data are not available."
-            : "Catatan Hari Ini belum bisa disusun karena data minimum profil dan Arsip Akashi belum tersedia."}
+            ? "Today's Note is not available yet because some of your profile data is incomplete."
+            : "Catatan Hari Ini belum tersedia karena beberapa data profilmu belum lengkap."}
         </div>
       </section>
     );

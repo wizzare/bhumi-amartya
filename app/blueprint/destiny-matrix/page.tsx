@@ -151,33 +151,33 @@ export default function DestinyMatrixPage() {
 
             {/* SECTION 2: SOUL ARCHITECTURE */}
             <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6 flex items-center gap-2"><Sparkles size={20} className="text-[#D4AF37]" /> Soul Architecture</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6 flex items-center gap-2"><Sparkles size={20} className="text-[#D4AF37]" /> {isEn ? "Soul Architecture" : "Arsitektur Jiwa"}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {presentation.soulSearching && <Card title={presentation.soulSearching.displayLabel} subtitle={presentation.soulSearching.canonicalLabel} items={[
-                  { label: "Result", value: String(presentation.soulSearching.resultValue) },
-                  { label: "Meaning", value: presentation.soulSearching.shortExplanation },
-                  { label: "Interpretation", value: presentation.soulSearching.fullExplanation }
+                  { label: isEn ? "Result" : "Hasil", value: String(presentation.soulSearching.resultValue) },
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.soulSearching.shortExplanation },
+                  { label: isEn ? "Interpretation" : "Interpretasi", value: presentation.soulSearching.fullExplanation }
                 ]} />}
                 {presentation.socialization && <Card title={presentation.socialization.displayLabel} subtitle={presentation.socialization.canonicalLabel} items={[
-                  { label: "Result", value: String(presentation.socialization.resultValue) },
-                  { label: "Meaning", value: presentation.socialization.shortExplanation },
-                  { label: "Interpretation", value: presentation.socialization.fullExplanation }
+                  { label: isEn ? "Result" : "Hasil", value: String(presentation.socialization.resultValue) },
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.socialization.shortExplanation },
+                  { label: isEn ? "Interpretation" : "Interpretasi", value: presentation.socialization.fullExplanation }
                 ]} />}
                 {presentation.spiritualKnowledge && <Card title={presentation.spiritualKnowledge.displayLabel} subtitle={presentation.spiritualKnowledge.canonicalLabel} items={[
-                  { label: "Result", value: String(presentation.spiritualKnowledge.resultValue) },
-                  { label: "Meaning", value: presentation.spiritualKnowledge.shortExplanation },
-                  { label: "Interpretation", value: presentation.spiritualKnowledge.fullExplanation }
+                  { label: isEn ? "Result" : "Hasil", value: String(presentation.spiritualKnowledge.resultValue) },
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.spiritualKnowledge.shortExplanation },
+                  { label: isEn ? "Interpretation" : "Interpretasi", value: presentation.spiritualKnowledge.fullExplanation }
                 ]} />}
               </div>
             </section>
 
             {/* SECTION 3: CORE PATTERNS */}
             <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Core Patterns</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">{isEn ? "Core Patterns" : "Pola Utama"}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card title="Center Arcana" items={[
                   { label: "Arcana", value: presentation.center.displayValue },
-                  { label: "Meaning", value: presentation.center.narrative },
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.center.narrative },
                 ]} />
                 <Card title="Common Energy" items={[
                   { label: "Arcana", value: presentation.commonEnergy.displayValue },
@@ -192,7 +192,7 @@ export default function DestinyMatrixPage() {
 
             {/* SECTION 4: ANCESTRAL PATTERNS */}
             {(presentation.fatherLine || presentation.motherLine) && <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Ancestral Patterns</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">{isEn ? "Ancestral Patterns" : "Pola Leluhur"}</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {presentation.fatherLine && <Card title="Father Line" items={[
                   { label: "Father Karma", value: presentation.fatherLine.karma.displayValue },
@@ -209,26 +209,26 @@ export default function DestinyMatrixPage() {
 
             {/* SECTION 5: TALENTS & GIFTS */}
             <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Talents & Gifts</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">{isEn ? "Talents & Gifts" : "Bakat & Potensi"}</h2>
               <div className="grid grid-cols-1 gap-4">
                 {presentation.fatherTalents && <Card title="Father Talents" items={[
                   { label: "Arcana", value: presentation.fatherTalents.displayValue },
-                  { label: "Meaning", value: presentation.fatherTalents.narrative }
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.fatherTalents.narrative }
                 ]} />}
                 {presentation.motherTalents && <Card title="Mother Talents" items={[
                   { label: "Arcana", value: presentation.motherTalents.displayValue },
-                  { label: "Meaning", value: presentation.motherTalents.narrative }
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.motherTalents.narrative }
                 ]} />}
                 <Card title="Higher Talents" items={[
                   { label: "Arcana", value: presentation.higherTalents.displayValue },
-                  { label: "Meaning", value: presentation.higherTalents.narrative }
+                  { label: isEn ? "Meaning" : "Makna", value: presentation.higherTalents.narrative }
                 ]} />
               </div>
             </section>
 
             {/* SECTION 6: MONEY & LOVE */}
             <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">Money & Love</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-6">{isEn ? "Money & Love" : "Uang & Relasi"}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card title="Money Path" items={[
                   { label: "Money Path", value: presentation.moneyPath.displayValue },
@@ -243,7 +243,7 @@ export default function DestinyMatrixPage() {
 
             {/* SECTION 7: CHAKRA MATRIX */}
             {presentation.energyMatrix && <section>
-              <h2 className="text-2xl font-serif text-[#4F5E52] mb-2">Health Matrix</h2>
+              <h2 className="text-2xl font-serif text-[#4F5E52] mb-2">{isEn ? "Health Matrix" : "Matriks Kesehatan"}</h2>
               <p className="mb-6 text-sm text-[#7B8776]">{isEn ? "Energy Balance Map" : "Peta Keseimbangan Energi"}</p>
               <div className="overflow-x-auto rounded-2xl border border-[#E7E0D4] bg-white mb-6">
                 <table className="w-full min-w-[430px] text-sm">

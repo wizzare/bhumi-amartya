@@ -383,7 +383,7 @@ export function InsightPageClient() {
         <p className="mb-10 text-[#7B8776]">{isEn ? "Patterns, phases, and next steps of your innerwork." : "Pola, fase, dan langkah berikutnya dari innerwork-mu."}</p>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 0 · Your Journey Progress" : "SECTION 0 · Progress Perjalananmu"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Your Journey Progress" : "Progres Perjalananmu"}</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="bhumi-card bg-white/50 p-5">
               <p className="text-sm text-[#7B8776]">📖 Journal</p>
@@ -460,7 +460,7 @@ export function InsightPageClient() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 1 · Your Journey Summary" : "SECTION 1 · Ringkasan Perjalananmu"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Your Journey Summary" : "Ringkasan Perjalananmu"}</h2>
           <div className="bhumi-card space-y-4 bg-white/50 p-6">
             <div>
               <p className="text-sm text-[#7B8776]">{isEn ? "Most Frequent:" : "Yang Paling Sering Muncul:"}</p>
@@ -478,7 +478,7 @@ export function InsightPageClient() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 2 · Patterns Currently Visible" : "SECTION 2 · Pola Yang Sedang Terlihat"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Patterns Currently Visible" : "Pola Yang Sedang Terlihat"}</h2>
           <div className="space-y-3">
             {topPatterns.map((pattern) => (
               <div key={pattern.theme} className="bhumi-card bg-white/50 p-5">
@@ -492,7 +492,7 @@ export function InsightPageClient() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 3 · Body and Emotions" : "SECTION 3 · Tubuh dan Emosi"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Body and Emotions" : "Tubuh dan Emosi"}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="bhumi-card bg-white/50 p-5">
               <p className="text-sm font-medium text-[#4F5E52]">{isEn ? "Most frequent emotions" : "Emosi yang paling sering muncul"}</p>
@@ -517,7 +517,7 @@ export function InsightPageClient() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 4 · Blueprint Connection" : "SECTION 4 · Kaitan Dengan Blueprint"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Blueprint Connection" : "Kaitan Dengan Blueprint"}</h2>
           <div className="bhumi-card space-y-4 bg-white/50 p-6">
             {blueprintParagraphs.map((paragraph) => (
               <p key={paragraph} className="text-sm leading-relaxed text-[#7B8776]">
@@ -528,36 +528,36 @@ export function InsightPageClient() {
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 5 · Next Steps" : "SECTION 5 · Langkah Berikutnya"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Next Steps" : "Langkah Berikutnya"}</h2>
           <div className="space-y-3">
             <div className="bhumi-card bg-white/50 p-5">
-              <p className="text-sm text-[#7B8776]">Recommended Journal</p>
+              <p className="text-sm text-[#7B8776]">{isEn ? "Recommended Journal" : "Jurnal yang Disarankan"}</p>
               <p className="mt-2 text-[#4F5E52]">
                 {localState?.compiledInnerwork?.recommendedNextJournalQuestion ??
                   (isEn ? "Start with the most honest question today." : "Mulai dari pertanyaan yang paling jujur hari ini.")}
               </p>
             </div>
             <div className="bhumi-card bg-white/50 p-5">
-              <p className="text-sm text-[#7B8776]">Recommended Meditation</p>
+              <p className="text-sm text-[#7B8776]">{isEn ? "Recommended Meditation" : "Meditasi yang Disarankan"}</p>
               <p className="mt-2 text-[#4F5E52]">
                 {localState?.compiledInnerwork?.recommendedMeditationFocus ??
                   localState?.healingInsights?.recommendedMeditation ??
-                  "Nervous System Grounding"}
+                  (isEn ? "Nervous System Grounding" : "Grounding Sistem Saraf")}
               </p>
             </div>
             <div className="bhumi-card bg-white/50 p-5">
-              <p className="text-sm text-[#7B8776]">Recommended Audio Healing</p>
+              <p className="text-sm text-[#7B8776]">{isEn ? "Recommended Audio Healing" : "Audio Healing yang Disarankan"}</p>
               <p className="mt-2 text-[#4F5E52]">
                 {localState?.compiledInnerwork?.recommendedAudioHealingFocus ??
                   localState?.healingInsights?.recommendedAudioHealing ??
-                  "Inner Child Healing"}
+                  (isEn ? "Inner Child Healing" : "Healing Inner Child")}
               </p>
             </div>
           </div>
         </section>
 
         <section className="mb-10">
-          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "SECTION 6 · Message for You" : "SECTION 6 · Pesan Untukmu"}</h2>
+          <h2 className="mb-4 text-lg font-semibold text-[#4F5E52]">{isEn ? "Message for You" : "Pesan Untukmu"}</h2>
           <div className="bhumi-card bg-white/50 p-6">
             <p className="text-sm leading-relaxed text-[#7B8776]">{createClosingMessage(progress ?? null, isEn)}</p>
           </div>

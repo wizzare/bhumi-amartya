@@ -22,7 +22,7 @@
     "useRedirect": "Gunakan halaman login Google",
     "connecting": "Menghubungkan...",
     "continueWithGoogle": "Lanjutkan dengan Google",
-    "termsNotice": "Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.",
+    "termsNotice": "Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya.",
     "popupTimeout": "Google belum merespons. Periksa apakah jendela pop-up diblokir, lalu coba lagi atau gunakan halaman login Google.",
     "popupBlocked": "Jendela pop-up Google diblokir oleh browser. Gunakan halaman login Google atau izinkan pop-up.",
     "popupClosed": "Jendela login Google ditutup sebelum proses selesai. Silakan coba lagi.",
@@ -232,10 +232,10 @@
         "description": "Sedang menjalani perjalanan mengenali diri."
       }
     },
-    "account": "Account",
+    "account": "Akun",
     "save": "Simpan Pengaturan",
     "saving": "Menyimpan...",
-    "signOut": "Sign Out",
+    "signOut": "Keluar",
     "signingOut": "Keluar..."
   },
   "astroToday": {

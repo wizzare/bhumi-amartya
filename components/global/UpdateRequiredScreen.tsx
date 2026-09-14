@@ -34,18 +34,18 @@ export function UpdateRequiredScreen({
         </div>
         
         <h2 className="text-2xl font-serif text-[#4F5E52] mb-3">
-          Aplikasi Bhumi telah diperbarui.
+          Bhumi perlu diperbarui
         </h2>
         
         <p className="text-[#7B8776] text-sm leading-relaxed mb-8">
-          {customMessage || "Versi yang Anda gunakan sudah tidak didukung. Silakan update ke versi terbaru melalui Google Play."}
+          {customMessage || "Versi Bhumi yang kamu gunakan sudah tidak didukung. Perbarui ke versi terbaru melalui Google Play."}
         </p>
 
         <button
           onClick={handleUpdate}
-          className="bhumi-button w-full py-4 text-center font-bold tracking-wider uppercase text-xs"
+          className="bhumi-button w-full py-4 text-center font-bold tracking-wider text-xs"
         >
-          UPDATE SEKARANG
+          Perbarui Sekarang
         </button>
 
         <div className="mt-8 pt-6 border-t border-[#F5F1E8] flex justify-between text-[10px] text-[#9AA394] font-mono">

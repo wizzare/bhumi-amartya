@@ -227,7 +227,7 @@ function LoginContent() {
       </div>
 
       <p className="text-center text-xs text-[#7B8776] leading-relaxed px-4">
-        {t.login?.termsNotice || "Dengan melanjutkan, Anda menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya."}
+        {t.login?.termsNotice || "Dengan melanjutkan, kamu menyetujui Ketentuan Layanan dan Kebijakan Privasi Bhumi Amartya."}
       </p>
 
       {isBuild110LocalQa() ? <Build110LocalLogin /> : <EmulatorQaLogin />}
