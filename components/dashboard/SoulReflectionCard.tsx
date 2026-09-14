@@ -51,10 +51,10 @@ export function SoulReflectionCard({ language, reflection, loading }: SoulReflec
               <p className="text-[9px] text-[#7B8776] font-bold uppercase tracking-wider mb-2">
                 {isEn
                   ? "Reading your soul today"
-                  : "Membaca Jiwamu Hari Ini"}
+                  : "Refleksi Hari Ini"}
               </p>
               <h2 className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
-                {cleanedReflection || (isEn ? "Preparing a message for your soul..." : "Menyiapkan pesan untuk jiwamu...")}
+                {cleanedReflection || (isEn ? "Preparing a message for your soul..." : "Menyiapkan refleksimu...")}
               </h2>
 
               {cleanedReflection && cleanedReflection.length > 150 && (

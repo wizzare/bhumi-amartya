@@ -30,7 +30,7 @@ export function EmotionalProgressTimeline({ memory }: EmotionalProgressTimelineP
             ) : (
               <>
                 <p>Belum ada tonggak yang tercatat.</p>
-                <p className="mt-2 text-sm text-[#7B8776]">Praktik pertamamu hari ini akan memulai sejarah transformasi yang lembut.</p>
+                <p className="mt-2 text-sm text-[#7B8776]">Mulai latihan pertamamu hari ini untuk membantu tubuh terasa lebih tenang.</p>
               </>
             )}
           </div>

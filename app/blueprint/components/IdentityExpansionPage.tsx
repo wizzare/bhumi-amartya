@@ -75,7 +75,7 @@ export function IdentityExpansionPage({
                 <h2 className="text-lg font-bold">{isEn ? "Summary" : "Kesimpulan"}</h2>
               </div>
               <p className="text-sm leading-relaxed text-[#D2D8D0]">
-                {isEn ? "Blueprint is being prepared for this edition." : "Blueprint sedang dipersiapkan pada versi Kara."}
+                {isEn ? "Blueprint is being prepared for this edition." : "Blueprint sedang dipersiapkan."}
               </p>
             </section>
           </div>

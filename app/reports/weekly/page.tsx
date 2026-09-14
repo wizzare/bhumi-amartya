@@ -97,7 +97,7 @@ export default function WeeklyReportPage() {
 
         {!hasWeeklySoulReportData(report) ? (
           <div className="bhumi-card p-8 text-center bg-white/70 border border-dashed border-[#4F5E52]/20">
-            <p className="text-[#4F5E52] font-medium mb-2">{isEn ? "No Traces Yet" : "Jejak Belum Terlihat"}</p>
+            <p className="text-[#4F5E52] font-medium mb-2">{isEn ? "No Traces Yet" : "Belum ada aktivitas minggu ini."}</p>
             <p className="text-[#7B8776] text-sm leading-relaxed">
               {isEn ? "Start journaling, meditating, or listening to audio healing so your weekly report can take shape." : "Mulai Journal, Meditasi, atau Audio Healing agar laporan mingguanmu terbentuk."}
             </p>

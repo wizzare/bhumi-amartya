@@ -32,7 +32,7 @@ function sectionIntro(title: string) {
     return "Bagian ini adalah refleksi simbolik dari sintesis peta dirimu. Ini bukan klaim literal tentang asal-usul atau peradaban masa lalu.";
   }
 
-  return `Menyelami lebih dalam lapisan ${title.toLowerCase()}.`;
+  return `Pelajari lebih lanjut tentang ${title.toLowerCase()}.`;
 }
 
 function humanize(text: string): string {

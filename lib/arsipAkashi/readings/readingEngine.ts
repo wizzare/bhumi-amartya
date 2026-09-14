@@ -90,7 +90,7 @@ function buildSymbolicDetailSections(entry: SymbolicCatalogEntry, isStarseed: bo
     { title: backgroundTitle, body: `${entry.context}. Untuk ${entry.title}, ${entry.contextDetail.toLowerCase()} Untuk ${entry.title}, ${entryCertainty.toLowerCase()} Karena itu, latar ${entry.title} dipakai untuk memberi konteks pada arketipe yang kamu rasakan, bukan untuk mengklaim asal-usul yang telah terbukti.` },
     { title: "MAKNA SIMBOLIK", body: `${entry.meaning}. ${entry.why} Pada ${entry.title}, ${entry.currentAppearance.toLowerCase()} Dalam keseharian, simbol ${entry.title} dapat terlihat melalui pilihan kecil, cara berelasi, dan cara kamu memberi makna pada pengalaman.` },
     { title: "KEKUATAN", body: `${entry.light} Kekuatan ${entry.title} dapat menjadi kontribusi dalam hubungan, pekerjaan, dan pertumbuhan spiritual ketika dijalankan dengan sadar. Ia membantu kamu merespons keadaan dengan kapasitas ${entry.title} yang lebih matang dan berguna. Bentuk terbaik ${entry.title} tetap fleksibel, sehingga hadiah simbolik ini tidak berubah menjadi peran yang harus dimainkan terus-menerus.` },
-    { title: "SHADOW", body: `${entry.shadow} Ketika ${entry.title} berlebihan, pola ini dapat membuatmu mengabaikan batas, memaksakan kontrol, atau menjauh dari kebutuhan yang sebenarnya. Pola menghindar dalam ${entry.title} biasanya muncul saat rasa amanmu terganggu. Dampaknya dapat terasa pada relasi, pekerjaan, tubuh, atau cara kamu menilai dirimu sendiri melalui tema ${entry.title}.` },
+    { title: "SISI BAYANGAN", body: `${entry.shadow} Ketika ${entry.title} berlebihan, pola ini dapat membuatmu mengabaikan batas, memaksakan kontrol, atau menjauh dari kebutuhan yang sebenarnya. Pola menghindar dalam ${entry.title} biasanya muncul saat rasa amanmu terganggu. Dampaknya dapat terasa pada relasi, pekerjaan, tubuh, atau cara kamu menilai dirimu sendiri melalui tema ${entry.title}.` },
     { title: "MISI PERTUMBUHAN", body: `Untuk ${entry.title}, ${entry.integration.toLowerCase()} Dalam latihan ${entry.title}, ${entry.growthPractice.toLowerCase()} Yang perlu dilepas dalam ${entry.title} adalah kebutuhan untuk membuktikan tafsir ini sebagai kebenaran mutlak. Arah pertumbuhan ${entry.title} adalah mempraktikkan kualitasnya secara etis dalam kehidupan yang sedang kamu jalani sekarang.` },
   ];
   return sections.map((section) => ({ ...section, body: section.body.replace(/\s+/g, " ").trim() }));
@@ -481,7 +481,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
 const SEMESTER_SECTION_TITLES = [
   "KONDISI UMUM",
   "KARIER & EKONOMI",
-  "ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA",
+  "ASMARA, RELASI & KELUARGA",
   "KESEHATAN FISIK & MENTAL",
   "KONDISI SPIRITUAL",
   "TANTANGAN",
@@ -510,7 +510,7 @@ type SemesterBundle = {
 const SEMESTER_DOMAIN_MAP: Record<SemesterSectionTitle, string[]> = {
   "KONDISI UMUM": ["timing", "growth", "identity", "mechanics"],
   "KARIER & EKONOMI": ["talents", "resources", "growth", "shadow"],
-  "ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA": ["relationships", "shadow", "identity", "karma"],
+  "ASMARA, RELASI & KELUARGA": ["relationships", "shadow", "identity", "karma"],
   "KESEHATAN FISIK & MENTAL": ["health", "mechanics", "relationships", "location"],
   "KONDISI SPIRITUAL": ["spirituality", "karma", "growth", "identity"],
   "TANTANGAN": ["shadow", "karma", "resources", "relationships", "timing"],
@@ -693,10 +693,10 @@ function renderSemesterReadings(model: ArsipAkashiInsightModel): ArsipAkashiRend
           : `Di pekerjaan atau usaha, semester kedua lebih kuat untuk mengeksekusi hasil, memperluas dampak, dan menegosiasikan nilai dengan lebih dewasa. Bundle karier membaca ${themeText(bundle("KARIER & EKONOMI"), 0)} bersama ${themeText(bundle("KARIER & EKONOMI"), 2)}, sehingga peluang terbaik datang dari karya yang sudah punya bukti awal dan siap diperlihatkan. Money block cenderung muncul ketika kamu mempertahankan komitmen yang tidak lagi bernilai, menunda percakapan harga, atau membiarkan energi habis di pekerjaan yang tidak seimbang.\n\nSkill yang sudah bisa digunakan adalah kemampuan menyelesaikan, memperjelas pesan, dan membawa hasil ke orang yang membutuhkan. Skill yang perlu dipelajari adalah negosiasi, prioritisasi, dan keberanian melepas pekerjaan yang membuat pertumbuhan berhenti. Aksi ekonominya adalah meninjau sumber penghasilan paling sehat, menaikkan standar kesepakatan, dan menutup kebocoran tenaga yang tidak lagi memberi imbal balik pantas.`,
       },
       {
-        title: "ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA" as const,
+        title: "ASMARA, RELASI & KELUARGA" as const,
         body: first
-          ? `${relationshipText} Bundle relasi membaca ${themeText(bundle("ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA"), 0)} dan ${themeText(bundle("ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA"), 1)}, sehingga percakapan kecil bisa menunjukkan pola besar. Love block dapat terasa sebagai kebutuhan dipahami tanpa selalu menyebut kebutuhan, atau sebagai kecenderungan menjaga damai sampai batas pribadi terlambat terlihat.\n\nDalam keluarga dan lingkar sosial, pilih satu pola yang ingin dikenali sebelum diulang. Jangan memaksa kedekatan yang belum siap, tetapi jangan juga membuat orang menebak semua isi hatimu. Semester pertama paling membantu jika kamu menjadikan relasi sebagai ruang kejujuran yang lembut, bukan tempat menguji siapa yang paling mampu bertahan.`
-          : `${relationshipText} Bundle relasi membaca ${themeText(bundle("ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA"), 0)} dan ${themeText(bundle("ASMARA, PERCINTAAN, RELASI SOSIAL & KELUARGA"), 2)}, sehingga semester ini meminta bukti lewat konsistensi. Love block dapat terasa sebagai penundaan memilih, takut mengecewakan, atau kecenderungan menerima bentuk hubungan yang tidak benar-benar mendukung rasa amanmu.\n\nDalam keluarga dan lingkar sosial, satu hubungan perlu diperjelas melalui tindakan nyata. Kedekatan yang sehat akan terasa lebih ringan ketika batas, peran, dan harapan dibicarakan sebelum menjadi letih. Semester kedua paling membantu jika kamu berani melihat siapa yang tumbuh bersamamu dan siapa yang perlu diberi jarak dengan hormat.`,
+          ? `${relationshipText} Bundle relasi membaca ${themeText(bundle("ASMARA, RELASI & KELUARGA"), 0)} dan ${themeText(bundle("ASMARA, RELASI & KELUARGA"), 1)}, sehingga percakapan kecil bisa menunjukkan pola besar. Love block dapat terasa sebagai kebutuhan dipahami tanpa selalu menyebut kebutuhan, atau sebagai kecenderungan menjaga damai sampai batas pribadi terlambat terlihat.\n\nDalam keluarga dan lingkar sosial, pilih satu pola yang ingin dikenali sebelum diulang. Jangan memaksa kedekatan yang belum siap, tetapi jangan juga membuat orang menebak semua isi hatimu. Semester pertama paling membantu jika kamu menjadikan relasi sebagai ruang kejujuran yang lembut, bukan tempat menguji siapa yang paling mampu bertahan.`
+          : `${relationshipText} Bundle relasi membaca ${themeText(bundle("ASMARA, RELASI & KELUARGA"), 0)} dan ${themeText(bundle("ASMARA, RELASI & KELUARGA"), 2)}, sehingga semester ini meminta bukti lewat konsistensi. Love block dapat terasa sebagai penundaan memilih, takut mengecewakan, atau kecenderungan menerima bentuk hubungan yang tidak benar-benar mendukung rasa amanmu.\n\nDalam keluarga dan lingkar sosial, satu hubungan perlu diperjelas melalui tindakan nyata. Kedekatan yang sehat akan terasa lebih ringan ketika batas, peran, dan harapan dibicarakan sebelum menjadi letih. Semester kedua paling membantu jika kamu berani melihat siapa yang tumbuh bersamamu dan siapa yang perlu diberi jarak dengan hormat.`,
       },
       {
         title: "KESEHATAN FISIK & MENTAL" as const,

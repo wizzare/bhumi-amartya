@@ -216,7 +216,7 @@ export default function NatalChartPage() {
             <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#4F5E52] text-white"><Compass size={25} /></div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">Natal Chart</p>
             <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{isEn ? "Your Sky Map" : "Peta Langitmu"}</h1>
-            <p className="mt-3 leading-7 text-[#7B8776]">{isEn ? "A snapshot of the heavens at the precise moment of your birth. Exploring planetary positions illuminates your subconscious predispositions and natural rhythm." : "Sebuah potret spesifik langit pada detik kelahiranmu. Memahami posisi planet adalah awal untuk memahami ritme bawaan alam bawah sadarmu."}</p>
+            <p className="mt-3 leading-7 text-[#7B8776]">{isEn ? "A snapshot of the heavens at the precise moment of your birth. Exploring planetary positions illuminates your subconscious predispositions and natural rhythm." : "Potret posisi langit saat kelahiranmu. Posisi planet membantu memahami kecenderungan dan ritme alamimu."}</p>
           </header>
 
           {loading ? <p className="text-center text-[#7B8776]">{isEn ? "Reading stellar positions..." : "Membaca rasi bintang..."}</p> : blueprint ? (

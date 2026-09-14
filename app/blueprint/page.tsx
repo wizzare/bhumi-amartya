@@ -81,7 +81,7 @@ export default function BlueprintPage() {
             <p className="mt-3 leading-7 text-[#7B8776]">
               {isEn
                 ? "This page displays the foundational system data synthesized into Profile Echo."
-                : "Halaman ini menampilkan data sistem yang menjadi bahan sintesis Profile Echo."}
+                : "Halaman ini menampilkan data dasar dari berbagai sistem yang melengkapi profilmu."}
             </p>
           </header>
 

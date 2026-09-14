@@ -223,7 +223,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted, isEn: i
 
         <div className="mb-10">
           <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
-            {isEn ? "What does your soul need most right now?" : "Apa yang paling jiwamu butuhkan saat ini?"}
+            {isEn ? "What does your soul need most right now?" : "Apa yang paling kamu butuhkan saat ini?"}
           </p>
           <div className="grid grid-cols-2 gap-3">
             {STANDARDIZED_NEEDS.map((need) => (
@@ -259,7 +259,7 @@ export function WellnessCheckInCard({ uid, initialSnapshot, onCompleted, isEn: i
           </div>
           <div>
             <p className="text-[#7B8776] text-[10px] font-bold uppercase tracking-[0.2em] mb-3">
-              {isEn ? "What's taking up your space? (optional)" : "Hal yang sedang memenuhi ruangmu (opsional)"}
+              {isEn ? "What's taking up your space? (optional)" : "Hal yang sedang banyak kamu pikirkan (opsional)"}
             </p>
             <div className="space-y-3">
               {LIFE_SITUATION_GROUPS.map((group) => (

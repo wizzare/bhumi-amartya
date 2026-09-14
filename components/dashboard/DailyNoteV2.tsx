@@ -203,7 +203,7 @@ export function DailyNoteV2({
         <div className="bhumi-card border border-[#E8E9E5]/50 bg-[#FCFAF5] p-4 text-xs leading-5 text-[#7B8776]">
           {isEn
             ? "Some supporting sources are not yet available, so this note is compiled only from valid data without invented context."
-            : "Beberapa sumber pendukung belum tersedia, jadi catatan ini disusun dari data yang sudah valid tanpa mengarang konteks tambahan."}
+            : "Beberapa data pendukung belum lengkap. Catatan ini disusun dari informasi yang tersedia."}
         </div>
       )}
 
@@ -215,7 +215,7 @@ export function DailyNoteV2({
           const sectionTitle = isEn
             ? (TITLE_MAP_EN[section.key || ""] || section.title)
             : (section.key === "finance" ? "Ekonomi & Rezeki" :
-               section.key === "love" ? "Asmara & Percintaan" :
+               section.key === "love" ? "Asmara & Hubungan" :
                section.title);
 
           const sectionColor = section.key === "challenges" ? "orange" :

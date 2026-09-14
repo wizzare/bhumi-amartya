@@ -10,7 +10,7 @@ const SECTION_DEFS = [
   ["orangTerdekat", "Orang Terdekat", "batas dan koneksi sosial", "social"],
   ["maknaBatin", "Makna Batin", "arah spiritual yang membumi", "spirituality"],
   ["yangMungkinTerasaBerat", "Yang Mungkin Terasa Berat", "tekanan dan pemulihan", "shadow"],
-  ["ruangYangSedangTerbuka", "Ruang yang Sedang Terbuka", "peluang dan pembelajaran", "growth"],
+  ["ruangYangSedangTerbuka", "Peluang yang Terbuka", "peluang dan pembelajaran", "growth"],
 ] as const;
 
 function hash(value: string): number { let n = 2166136261; for (const c of value) { n ^= c.charCodeAt(0); n = Math.imul(n, 16777619); } return n >>> 0; }

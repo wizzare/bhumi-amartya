@@ -173,7 +173,7 @@
   },
   "wellness": {
     "title": "Wellness",
-    "headerTitle": "Ruang untuk Merawat Hari Ini",
+    "headerTitle": "Ruang Pemulihan & Latihan Hari Ini",
     "subtitle": "Periksa keadaanmu, pahami polanya, lalu pilih satu tindakan yang mendukung.",
     "checkIn": "Check-in Hari Ini",
     "recommended": "Rekomendasi Hari Ini",
@@ -240,7 +240,7 @@
   },
   "astroToday": {
     "title": "Astro Hari Ini",
-    "subtitle": "Membangun kesadaran terhadap ritme semesta.",
+    "subtitle": "Melihat pengaruh transit langit dan siklus hari ini.",
     "seeMore": "Lihat Selengkapnya",
     "close": "Tutup",
     "moonPhaseGroup": "Fase Bulan",
@@ -249,7 +249,7 @@
     "eclipseGroup": "Gerhana & Siklus Besar",
     "relevantEventsCount": "{n} peristiwa relevan hari ini",
     "collectiveTheme": "Tema Kolektif",
-    "personalTouch": "Menyentuh Dirimu",
+    "personalTouch": "Pengaruh untukmu",
     "actionLabel": "Yang Bisa Dilakukan",
     "todayTiming": "Hari ini",
     "activeToday": "Aktif hari ini",

@@ -453,7 +453,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
                   <p className="text-xs text-[#7B8776] leading-relaxed italic">
                     {isEn
                       ? "Not enough data yet to measure your practice effectiveness. Continue your journey and Bhumi will recognize which practices help you most."
-                      : "Belum cukup data untuk mengukur efektivitas praktikmu. Teruskan perjalananmu dan Bhumi akan mulai mengenali praktik yang paling membantu untukmu."}
+                      : "Belum cukup data untuk mengukur efektivitas praktikmu. Lanjutkan praktikmu dan Bhumi akan mengenali praktik yang paling membantu untukmu."}
                   </p>
                 )}
             </div>

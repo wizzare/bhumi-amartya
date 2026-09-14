@@ -68,7 +68,7 @@ export default function AstrocartographyPage() {
       <ProtectedRoute>
         <main className="min-h-screen bg-[#FCFAF5] px-5 py-8">
           <AppNav />
-          <p className="mt-24 text-center text-[#7B8776]">{isEn ? "Connecting sky and earth..." : "Menghubungkan langit dan bumi..."}</p>
+          <p className="mt-24 text-center text-[#7B8776]">{isEn ? "Connecting sky and earth..." : "Memuat peta Astrocartography..."}</p>
         </main>
       </ProtectedRoute>
     );

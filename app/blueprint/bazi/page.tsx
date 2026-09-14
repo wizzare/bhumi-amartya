@@ -70,7 +70,7 @@ export default function BaziPage() {
               <CircleDot size={25} />
             </div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9AA394]">BaZi</p>
-            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{isEn ? "Your Four Pillars of Destiny" : "Empat Pilar Takdirmu"}</h1>
+            <h1 className="mt-2 text-4xl font-serif text-[#4F5E52]">{isEn ? "Your Four Pillars of Destiny" : "Empat Pilar BaZi"}</h1>
             <p className="mt-3 leading-7 text-[#7B8776]">
               {isEn
                 ? "A natal map illuminating core nature, elemental balance, and the unfolding seasons of your life journey."
