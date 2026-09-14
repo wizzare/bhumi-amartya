@@ -64,7 +64,7 @@ const WORKOUT_DATABASE_ID: Record<string, InnerworkContent> = {
     title: "Restorative Recovery",
     description: "Gerakan minimalis untuk pemulihan total saat energi sedang sangat rendah.",
     instruction: ["Lie down on your back", "Place hands on belly", "Deep slow breathing for 5 minutes", "Gentle limb shaking"],
-    benefits: ["Nervous system reset", "Deep recovery", "Energy preservation"],
+    benefits: ["Pelepasan ketegangan fisik", "Pemulihan tenaga", "Menjaga ritme tubuh"],
     durationMinutes: 8,
   },
   "endurance-build": {

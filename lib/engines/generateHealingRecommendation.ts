@@ -82,7 +82,7 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       description:
         "Teknik sensorik cepat untuk kembali ke tubuh ketika merasa overwhelmed atau dissociated.",
       duration: 5,
-      basedOnEmotionalAnalysis: "Dysregulated nervous system",
+      basedOnEmotionalAnalysis: "Tubuh sedang merasa tegang atau kewalahan",
       addressesWound: "anxiety, dissociation, panic",
       supportedBy: "somatic psychology, trauma-informed care",
       instructions: [
@@ -108,9 +108,9 @@ const healingLibrary: Record<string, HealingRecommendation[]> = {
       type: "somatic",
       title: "Earthing - Bare Feet on Soil",
       description:
-        "Koneksi fisik langsung dengan bumi untuk reset sistem saraf. Sederhana, tapi powerful.",
+        "Berjalan tanpa alas kaki di atas tanah untuk membantu tubuh terasa lebih rileks dan tenang.",
       duration: 10,
-      basedOnEmotionalAnalysis: "Need for nervous system reset",
+      basedOnEmotionalAnalysis: "Kebutuhan untuk jeda dan membumikan diri",
       addressesWound: "disconnection, floating, overwhelm",
       supportedBy: "grounding science, earthing research",
       instructions: [

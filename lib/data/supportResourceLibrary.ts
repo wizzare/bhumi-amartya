@@ -12,7 +12,7 @@ export const INTERNAL_RESOURCES: SupportResource[] = [
   { id: "daily_checkin", name: "Daily Check-In", level: 1, type: "internal", purpose: { id: "Monitor kondisi harian", en: "Monitor daily condition" } },
   { id: "wellness_assessment", name: "Wellness Assessment", level: 1, type: "internal", purpose: { id: "Evaluasi kesejahteraan mendalam", en: "Deep wellness evaluation" } },
   { id: "journaling", name: "Journaling", level: 1, type: "internal", purpose: { id: "Refleksi pikiran dan emosi", en: "Reflection of thoughts and emotions" } },
-  { id: "audio_healing", name: "Audio Healing", level: 1, type: "internal", purpose: { id: "Relaksasi dan regulasi saraf", en: "Relaxation and nervous system regulation" } },
+  { id: "audio_healing", name: "Audio Healing", level: 1, type: "internal", purpose: { id: "Relaksasi dan ketenangan tubuh", en: "Relaxation and body calm" } },
   { id: "meditation", name: "Meditasi", level: 1, type: "internal", purpose: { id: "Ketenangan batin dan kehadiran", en: "Inner peace and presence" } },
 ];
 

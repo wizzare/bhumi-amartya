@@ -27,15 +27,15 @@ const PAST_SENTENCES: Record<string, string[]> = {
     "Kamu telah melalui banyak hal yang tidak selalu terlihat oleh orang di sekitarmu.",
   ],
   "p2_emotional-wounds": [
-    "Luka yang kamu bawa bukan karena kamu lemah melainkan karena kamu terlalu terbuka pada dunia yang belum siap menerimamu.",
+    "Jika ada pengalaman yang terasa berat, kamu tetap layak menerima kebaikan tanpa harus menyalahkan caramu bersikap di masa lalu.",
     "Kamu terbiasa menahan air mata bukan karena tidak ingin menangis tetapi karena tidak yakin ada yang akan menampungnya.",
   ],
   "p2_self-sabotage": [
-    "Kamu belajar menarik diri sebelum ditolak dan itu adalah caramu melindungi hati yang terlalu peka.",
+    "Jika kamu mengenali kebiasaan menarik diri, pandanglah itu dengan lembut tanpa perlu menghakimi dirimu sendiri.",
     "Kebiasaanmu meragukan diri sendiri bukanlah kegagalan melainkan bentuk kewaspadaan yang dulu pernah menyelamatkanmu.",
   ],
   "p2_recurring-patterns": [
-    "Pola yang sama terus muncul bukan karena kamu tidak belajar melainkan karena ada bagian dirimu yang masih mencari penyelesaian.",
+    "Jika situasi serupa terasa kembali berulang, gunakan momen ini untuk menyadari responsmu secara lebih tenang.",
     "Kebaikanmu yang berlebihan adalah caramu bertahan untuk diterima dan itu melelahkan.",
   ],
   "p2_default": [
