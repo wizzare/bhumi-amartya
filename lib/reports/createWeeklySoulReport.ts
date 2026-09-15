@@ -109,12 +109,38 @@ function countBodySignals(entries: UnknownRecord[]): Array<{ value: string; coun
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
-function topOrFallback(items: Array<{ value: string; count: number }>, fallback: string): string {
+function hash(value: string): number {
+  let result = 2166136261;
+  for (let i = 0; i < value.length; i += 1) {
+    result ^= value.charCodeAt(i);
+    result = Math.imul(result, 16777619);
+  }
+  return result >>> 0;
+}
+
+function pickVariant(variants: string[], seed: string): string {
+  if (variants.length === 0) return "";
+  return variants[hash(seed) % variants.length];
+}
+
+export function formatHumanList(items: string[], conjunction: "dan" | "atau" = "dan", isEn = false): string {
+  if (!items || items.length === 0) return "";
+  const cleaned = items
+    .map((s) => s.replace(/^[^\p{L}\p{N}]+/gu, "").trim())
+    .filter(Boolean)
+    .map((s) => (/^[A-Z0-9]{2,}$/.test(s) ? s : s.toLowerCase()));
+  if (cleaned.length === 0) return "";
+  if (cleaned.length === 1) return cleaned[0];
+  if (cleaned.length === 2) return isEn ? `${cleaned[0]} and ${cleaned[1]}` : `${cleaned[0]} ${conjunction} ${cleaned[1]}`;
+  const last = cleaned[cleaned.length - 1];
+  const rest = cleaned.slice(0, -1).join(", ");
+  return isEn ? `${rest}, and ${last}` : `${rest}, ${conjunction} ${last}`;
+}
+
+function topOrFallback(items: Array<{ value: string; count: number }>, fallback: string, isEn = false): string {
   if (items.length === 0) return fallback;
-  return items
-    .slice(0, 3)
-    .map((item) => item.value)
-    .join(", ");
+  const topValues = items.slice(0, 3).map((item) => item.value);
+  return formatHumanList(topValues, "dan", isEn);
 }
 
 function filterLastSevenDays(entries: UnknownRecord[], weekStart: string, weekEnd: string): UnknownRecord[] {
@@ -164,35 +190,51 @@ function buildGrowthSummary(input: {
   dominantTheme: string;
   streakDays: number;
   consistencyScore: number;
+  weekStart?: string;
 }): string {
-  const { totalActivities, dominantTheme, streakDays, consistencyScore } = input;
+  const { totalActivities, dominantTheme, streakDays, consistencyScore, weekStart = "default" } = input;
   const isEn = isEnlEdition();
 
   if (totalActivities === 0) {
-    return isEn
-      ? "There has been no innerwork activity in the past 7 days, so the report is waiting for your first trace this week."
-      : "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.";
+    const zeroVariants = isEn ? [
+      "There have been no innerwork activities recorded this week. You can begin anytime from one small practice that feels achievable.",
+      "This week has unfolded quietly without daily practice logs. A short pause or brief reflection is enough to start.",
+      "No innerwork entries have been saved this week. Take your time to set a fresh rhythm that fits your capacity."
+    ] : [
+      "Belum ada aktivitas yang tercatat minggu ini. Kamu bisa mulai kapan pun dari satu latihan singkat yang terasa memungkinkan.",
+      "Laporan minggu ini belum menemukan catatan latihan harian. Satu jeda singkat atau satu refleksi kecil sudah cukup untuk memulai.",
+      "Minggu ini belum ada catatan innerwork yang tersimpan. Luangkan waktu sejenak untuk memulai ritme baru yang sesuai kapasitasmu."
+    ];
+    return pickVariant(zeroVariants, weekStart);
   }
 
   if (isEn) {
     return `In the past 7 days, you completed ${totalActivities} innerwork activities. The theme appearing most frequently was ${dominantTheme}, with a rhythm of ${streakDays} consecutive days and a consistency score of ${consistencyScore}. This shows your journey is moving slowly but genuinely, especially when you choose to show up for yourself.`;
   }
 
-  return `Dalam 7 hari terakhir kamu menyelesaikan ${totalActivities} aktivitas innerwork. Hal yang paling sering muncul adalah ${dominantTheme}, dengan ritme ${streakDays} hari berturut-turut dan consistency score ${consistencyScore}. Ini menunjukkan perjalananmu sedang bergerak pelan tapi nyata, terutama saat kamu memilih hadir untuk dirimu sendiri.`;
+  return `Dalam 7 hari terakhir kamu menyelesaikan ${totalActivities} aktivitas innerwork. Hal yang paling sering muncul adalah ${dominantTheme}, dengan ritme ${streakDays} hari berturut-turut dan skor konsistensi ${consistencyScore}. Ini menunjukkan perjalananmu sedang bergerak pelan tapi nyata, terutama saat kamu memilih hadir untuk dirimu sendiri.`;
 }
 
 function buildWeeklyReflection(input: {
   totalActivities: number;
   previousWeekActivities: number;
   streakDays: number;
+  weekStart?: string;
 }): string {
-  const { totalActivities, previousWeekActivities, streakDays } = input;
+  const { totalActivities, previousWeekActivities, streakDays, weekStart = "default" } = input;
   const isEn = isEnlEdition();
 
   if (totalActivities === 0) {
-    return isEn
-      ? "This week is still waiting for its first trace. You can start from one small practice that feels most achievable."
-      : "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.";
+    const zeroVariants = isEn ? [
+      "This week has unfolded quietly without practice records. You can start from one light practice or a brief note.",
+      "No daily entries were logged this week. Returning can begin with a single pause whenever you are ready.",
+      "This week's page has remained open. Take a few minutes today to check in with what you need."
+    ] : [
+      "Belum ada aktivitas yang tercatat minggu ini. Kamu bisa mulai dari satu latihan singkat atau satu catatan refleksi.",
+      "Belum ada catatan latihan yang masuk minggu ini. Kamu bisa kembali memulai lewat satu jeda sederhana saat sudah siap.",
+      "Catatan minggu ini masih kosong. Luangkan beberapa menit hari ini untuk memeriksa kebutuhanmu secara jujur."
+    ];
+    return pickVariant(zeroVariants, weekStart);
   }
 
   if (totalActivities > previousWeekActivities) {
@@ -207,28 +249,83 @@ function buildWeeklyReflection(input: {
       : "Minggu ini memperlihatkan ritme yang mulai bisa kamu percaya. Tidak perlu dibuat besar; cukup dijaga agar tetap manusiawi.";
   }
 
-  return isEn
-    ? "This week still has movement. Even when not full, a part of you still chooses to return."
-    : "Minggu ini tetap punya gerak. Bahkan ketika belum penuh, ada bagian dari dirimu yang masih memilih kembali.";
+  const defaultVariants = isEn ? [
+    "This week still shows real movement. Even if the rhythm was not daily, your willingness to return provides a solid base.",
+    "This week's rhythm moved at a quieter pace. Maintain consistency in small sizes that you can comfortably care for.",
+    "There are steps you completed this week. You can build upon this gradual process in the days ahead."
+  ] : [
+    "Minggu ini tetap memiliki gerak nyata. Meskipun ritmenya belum penuh, kesediaanmu untuk kembali adalah fondasi yang baik.",
+    "Ritme minggu ini bergerak dengan tempo yang lebih santai. Jaga konsistensi pada ukuran kecil yang sanggup kamu rawat.",
+    "Ada langkah-langkah yang berhasil kamu selesaikan minggu ini. Kamu bisa melanjutkan proses bertahap ini ke minggu berikutnya."
+  ];
+
+  return pickVariant(defaultVariants, weekStart);
 }
 
 function buildClosingMessage(input: {
   dominantTheme: string;
   emotionalPattern: string;
   bodyPattern: string;
+  hasEmotions?: boolean;
+  hasBodySignals?: boolean;
 }): string {
-  const { dominantTheme, emotionalPattern, bodyPattern } = input;
+  const { dominantTheme, emotionalPattern, bodyPattern, hasEmotions, hasBodySignals } = input;
   const isEn = isEnlEdition();
 
+  const openingClause = isEn
+    ? "This week shows that your journey is not always linear, but still carries a gentle direction."
+    : "Minggu ini memperlihatkan bahwa perjalananmu tidak selalu lurus, tetapi tetap punya arah yang lembut.";
+
+  const themeClause = isEn
+    ? `${dominantTheme} has appeared repeatedly as an invitation to notice what you are learning about yourself, rather than pressure to finish quickly.`
+    : `${dominantTheme} tampak berulang sebagai ajakan untuk mengenali apa yang sedang kamu pelajari tentang dirimu, bukan sebagai tekanan untuk cepat selesai.`;
+
+  let middleClause = "";
   if (isEn) {
-    return `This week shows that your journey is not always linear, but still has a gentle direction. ${dominantTheme} appears repeatedly as an invitation to recognize what you are learning about yourself, not as pressure to finish quickly. When emotions like ${emotionalPattern} arise, your body also speaks through signals like ${bodyPattern}. That is a sign that you are processing, not failing. Next week, you can continue with a more humane rhythm: one conscious step, one breath pause, then returning to choose what makes you feel more whole. You don't need to be perfect to grow. Simply keep showing up, because your presence itself is a real form of healing.`;
+    if (hasEmotions && hasBodySignals) {
+      middleClause = `This week you noted feelings or states like ${emotionalPattern}, alongside body signals like ${bodyPattern}. Notice whether these patterns recur and what usually happens beforehand.`;
+    } else if (hasEmotions) {
+      middleClause = `This week you noted recurring states such as ${emotionalPattern}. You can look back at what situations most frequently accompanied them.`;
+    } else if (hasBodySignals) {
+      middleClause = `This week you recorded body signals such as ${bodyPattern}. Use this record to observe when these sensations most often appear.`;
+    } else {
+      middleClause = "This journey does not always demand acceleration; noticing your daily rhythm honestly is already meaningful progress.";
+    }
+  } else {
+    if (hasEmotions && hasBodySignals) {
+      middleClause = `Minggu ini kamu mencatat kondisi seperti ${emotionalPattern}, bersama sinyal tubuh seperti ${bodyPattern}. Perhatikan apakah pola ini muncul kembali dan apa yang biasanya terjadi sebelumnya.`;
+    } else if (hasEmotions) {
+      middleClause = `Minggu ini kamu beberapa kali mencatat kondisi seperti ${emotionalPattern}. Kamu bisa melihat kembali situasi apa yang paling sering menyertainya.`;
+    } else if (hasBodySignals) {
+      middleClause = `Minggu ini kamu mencatat sinyal tubuh seperti ${bodyPattern}. Gunakan catatan ini untuk memperhatikan kapan keluhan tersebut paling sering muncul.`;
+    } else {
+      middleClause = "Perjalanan ini tidak selalu menuntut percepatan; mengenali ritme harianmu secara jujur sudah merupakan langkah yang nyata.";
+    }
   }
 
-  return `Minggu ini memperlihatkan bahwa perjalananmu tidak selalu lurus, tetapi tetap punya arah yang lembut. ${dominantTheme} tampak berulang sebagai undangan untuk mengenali apa yang sedang kamu pelajari tentang dirimu, bukan sebagai tekanan untuk cepat selesai. Saat emosi seperti ${emotionalPattern} muncul, tubuhmu juga berbicara lewat sinyal seperti ${bodyPattern}. Itu tanda bahwa dirimu sedang memproses, bukan gagal. Minggu depan, kamu bisa melanjutkan dengan ritme yang lebih manusiawi: satu langkah sadar, satu jeda napas, lalu kembali memilih hal yang membuatmu merasa lebih utuh. Tidak perlu memperbaiki semuanya sekaligus. Pilih satu hal kecil yang ingin kamu jaga atau perbaiki minggu depan.`;
+  const closingClause = isEn
+    ? "Next week, you can continue with a more humane rhythm: one conscious step, one breath pause, then choosing what makes you feel settled. Pick one small matter you want to tend to next week."
+    : "Minggu depan, kamu bisa melanjutkan dengan ritme yang lebih manusiawi: satu langkah sadar, satu jeda napas, lalu kembali memilih hal yang membuatmu merasa tenang. Pilih satu hal kecil yang ingin kamu rawat minggu depan.";
+
+  return `${openingClause} ${themeClause} ${middleClause} ${closingClause}`;
 }
 
 function defaultReport(weekStart: string, weekEnd: string, blueprint: UnknownRecord | null | undefined): WeeklySoulReportOutput {
   const isEn = isEnlEdition();
+  const growthSummary = buildGrowthSummary({
+    totalActivities: 0,
+    dominantTheme: isEn ? "No dominant pattern yet" : "Belum ada pola dominan",
+    streakDays: 0,
+    consistencyScore: 0,
+    weekStart,
+  });
+  const weeklyReflection = buildWeeklyReflection({
+    totalActivities: 0,
+    previousWeekActivities: 0,
+    streakDays: 0,
+    weekStart,
+  });
+
   return {
     weekStart,
     weekEnd,
@@ -238,12 +335,8 @@ function defaultReport(weekStart: string, weekEnd: string, blueprint: UnknownRec
     dominantTheme: isEn ? "No dominant pattern yet" : "Belum ada pola dominan",
     emotionalPattern: isEn ? "No emotional pattern yet" : "Belum ada pola emosi",
     bodyPattern: isEn ? "No body pattern yet" : "Belum ada pola tubuh",
-    growthSummary: isEn
-      ? "There has been no innerwork activity in the past 7 days, so the report is waiting for your first trace this week."
-      : "Belum ada aktivitas innerwork dalam 7 hari terakhir, jadi laporan masih menunggu jejak pertamamu minggu ini.",
-    weeklyReflection: isEn
-      ? "This week is still waiting for its first trace. You can start from one small practice that feels most achievable."
-      : "Minggu ini masih menunggu jejak pertamanya. Kamu bisa mulai dari satu praktik kecil yang terasa paling mungkin.",
+    growthSummary,
+    weeklyReflection,
     blueprintReflection: buildBlueprintReflection(blueprint),
     recommendedFocusNextWeek: isEn
       ? "Start from one small practice every day so your innerwork rhythm takes shape."
@@ -258,8 +351,8 @@ function defaultReport(weekStart: string, weekEnd: string, blueprint: UnknownRec
       ? "Choose the audio that calms your body most, then listen without excessive targets."
       : "Pilih audio yang paling menenangkan tubuhmu, lalu dengarkan tanpa target berlebihan.",
     closingMessage: isEn
-      ? "You are allowed to start slowly. Your journey is not defined by how fast you change, but by how honestly you show up for yourself day by day."
-      : "Kamu boleh mulai pelan. Perjalananmu tidak ditentukan oleh seberapa cepat kamu berubah, tetapi oleh seberapa jujur kamu hadir untuk dirimu dari hari ke hari.",
+      ? "You can start at your own pace. Progress is nurtured by showing up honestly for yourself day by day."
+      : "Kamu boleh mulai dengan tempo yang tenang. Kemajuan dibangun lewat kesediaan untuk hadir secara jujur dari hari ke hari.",
   };
 }
 
@@ -302,12 +395,19 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
 
   const emotionalCounts = countByString(allEntries, "emotionalState");
   const bodySignalCounts = countBodySignals(allEntries);
+  const rawEmotions = emotionalCounts.slice(0, 3).map((e) => e.value);
+  const rawBodySignals = bodySignalCounts.slice(0, 3).map((b) => b.value);
+  const hasEmotions = rawEmotions.length > 0;
+  const hasBodySignals = rawBodySignals.length > 0;
+  const formattedEmotions = formatHumanList(rawEmotions, "dan", isEn);
+  const formattedBodySignals = formatHumanList(rawBodySignals, "dan", isEn);
+
   const emotionalPattern =
     getString(input.compiledInnerwork, ["emotionalPattern"])
-    ?? topOrFallback(emotionalCounts, isEn ? "emotions are fluctuating" : "emosi sedang bergerak naik-turun");
+    ?? (hasEmotions ? formattedEmotions : (isEn ? "emotions are fluctuating" : "emosi bergerak dinamis"));
   const bodyPattern =
     getString(input.compiledInnerwork, ["bodyPattern"])
-    ?? topOrFallback(bodySignalCounts, isEn ? "your body is asking for a gentler pause" : "tubuhmu meminta jeda yang lebih lembut");
+    ?? (hasBodySignals ? formattedBodySignals : (isEn ? "your body is asking for a pause" : "tubuh meminta jeda istirahat"));
 
   const streakDays = getNumber(input.progressData, ["streakDays"]) ?? 0;
   const consistencyScore = getNumber(input.progressData, ["consistencyScore"]) ?? 0;
@@ -316,6 +416,7 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
     dominantTheme,
     streakDays,
     consistencyScore,
+    weekStart,
   });
 
   const report: WeeklySoulReportOutput = {
@@ -332,6 +433,7 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
       totalActivities: allEntries.length,
       previousWeekActivities,
       streakDays,
+      weekStart,
     }),
     blueprintReflection: buildBlueprintReflection(input.blueprint),
     recommendedFocusNextWeek:
@@ -355,8 +457,10 @@ export function createWeeklySoulReport(input: WeeklySoulReportInput): WeeklySoul
       ?? (isEn ? "Gentle audio grounding while observing your body signals." : "Audio grounding lembut sambil mengamati sinyal tubuhmu."),
     closingMessage: buildClosingMessage({
       dominantTheme,
-      emotionalPattern,
-      bodyPattern,
+      emotionalPattern: hasEmotions ? formattedEmotions : emotionalPattern,
+      bodyPattern: hasBodySignals ? formattedBodySignals : bodyPattern,
+      hasEmotions,
+      hasBodySignals,
     }),
   };
 

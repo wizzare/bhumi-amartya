@@ -33,54 +33,54 @@ function selectOption(options: string[], seed: number): string {
 
 const DAY_MASTER_P1_SENTENCE1: Record<string, string[]> = {
   Jia: [
-    "Jiwamu bergerak dengan dorongan alami untuk merintis, tumbuh tegak, dan mengarah langsung pada pencapaian masa depan.",
-    "Kamu membawa energi batin yang tegak lurus, selalu berusaha memimpin langkah dan membuka jalan bagi pertumbuhan sekitar.",
-    "Ada dorongan alami di dalam jiwamu untuk terus berkembang secara vertikal, bagaikan tunas yang menembus batas tanah."
+    "Karakter Kayu Yang berakar kuat dan bertumbuh lurus ke atas, membawa dorongan alami untuk merintis serta membuka arah bagi lingkungan sekitarmu.",
+    "Sebagai struktur pohon besar, orientasi utamamu adalah pertumbuhan vertikal yang mandiri, teguh memegang prinsip, dan siap menaungi proses bersama.",
+    "Arah gerak alamimu berfokus pada pembangunan jangka panjang, melangkah maju dengan inisiatif yang jelas tanpa menunggu dorongan pihak luar."
   ],
   Yi: [
-    "Jiwamu mengalir dalam ritme yang luwes, tangguh, dan pandai menemukan jalan di sela-sela hambatan kehidupan.",
-    "Kamu memiliki kelenturan batin yang mengagumkan, tumbuh perlahan namun pasti melintasi rintangan keras kehidupan.",
-    "Irama jiwamu bergerak secara adaptif, mengutamakan kebersamaan dan kerja sama dalam proses perkembangan."
+    "Kayu Yin membawa kelenturan dan daya tahan ulet, pandai menyesuaikan arah di tengah rintangan tanpa mematahkan batang utamanya.",
+    "Karakter tanaman merambat ini bertumbuh lewat jejaring kerja sama, membaca dinamika sekitar secara taktis, dan menemukan jalur tengah yang harmonis.",
+    "Kapasitas utamamu adalah keluwesan beradaptasi, mengandalkan diplomasi dan hubungan suportif untuk terus berkembang melintasi musim yang berganti."
   ],
   Bing: [
-    "Kehadiranmu membawa energi hangat yang ekspresif, terbuka, dan mampu menghidupkan suasana di sekitarmu secara natural.",
-    "Kamu memancarkan daya hidup yang cerah bagaikan matahari, menghadirkan antusiasme dan kejelasan bagi sekeliling.",
-    "Jiwamu digerakkan oleh kehangatan sosial yang jujur, berani memimpin di garis depan secara vokal."
+    "Api Yang memancar terang dan langsung bagaikan matahari siang, menghidupkan ruang sosial dengan antusiasme yang jujur dan terbuka.",
+    "Karakter energimu bersifat ekspansif dan mudah terlihat, membawa kejelasan visi serta keberanian menggerakkan banyak orang di garis depan.",
+    "Kecenderungan alamimu adalah menyinari keadaan dengan optimisme nyata, mengutamakan keterbukaan dan kecepatan eksekusi tanpa menyembunyikan maksud."
   ],
   Ding: [
-    "Jiwamu menyinari dunia secara personal, fokus, dan mendalam, bagaikan lentera yang memberikan rasa aman.",
-    "Kamu membawa kehangatan batin yang sunyi namun mendalam, menyinari detail-detail yang terabaikan oleh sekitar.",
-    "Irama jiwamu bergerak secara privat, mengutamakan fokus personal dan kedekatan emosional yang tulus."
+    "Api Yin bekerja dengan intensitas yang terpusat dan mendalam, menyinari detail penting yang kerap terlewat oleh pandangan umum.",
+    "Karakter kehangatanmu bersifat personal dan terkontrol, tekun menjaga fokus serta membimbing orang lain melalui pendekatan yang tenang.",
+    "Arah energimu bergerak secara terarah ke dalam, mengutamakan dedikasi batin, ketelitian rasa, dan kesetiaan pada nilai yang kamu yakini."
   ],
   Wu: [
-    "Jiwamu membawa ritme yang stabil, tenang, dan kokoh, memberikan rasa aman bagi kehidupan di sekelilingmu.",
-    "Kamu memancarkan ketenangan batin yang membumi, menjadi pelindung yang konsisten di kala ketidakpastian.",
-    "Ada keteguhan yang sangat kuat di dalam dirimu, tegak berdiri bagaikan bukit penopang kehidupan."
+    "Tanah Yang memiliki bobot stabil dan daya tumpu kokoh, menjadi landasan yang memberi rasa aman di tengah perubahan keadaan.",
+    "Karakter gunung ini membawa keteguhan yang matang, sanggup memikul tanggung jawab besar serta menolak spekulasi yang tergesa-gesa.",
+    "Kapasitas utamamu terletak pada konsistensi dan daya tahan, menjaga keteraturan hidup dengan komitmen yang tidak mudah goyah."
   ],
   Ji: [
-    "Jiwamu memiliki bakat alami untuk merawat, menyemai, dan menumbuhkan potensi batin di sekitarmu dengan penuh kesabaran.",
-    "Kamu membawa energi keibuan yang memelihara kehidupan, sabar mendampingi proses perkembangan sesama secara nyata.",
-    "Irama jiwamu bergerak dengan kelembutan yang membumi, mengutamakan kenyamanan dan kesuburan batin sekitar."
+    "Tanah Yin adalah tanah ladang yang subur, berdaya guna tinggi dalam menyerap masukan dan merawat potensi bertumbuh dengan sabar.",
+    "Karakter pengolahanmu teliti dan membumi, mengutamakan hasil nyata serta kepedulian praktis terhadap kebutuhan orang-orang di sekitarmu.",
+    "Kecenderungan alamimu adalah mendampingi proses perkembangan secara bertahap, piawai mengelola rincian harian demi kesejahteraan bersama."
   ],
   Geng: [
-    "Jiwamu digerakkan oleh kejujuran yang tegas, keberanian membela keadilan, dan dorongan kuat untuk melakukan pembenahan.",
-    "Kamu membawa kekuatan mental yang tangguh dan logis, siap menertibkan kekacauan demi tegaknya aturan yang jernih.",
-    "Ada ketegasan baja di dalam dirimu, langsung mengarah pada penyelesaian masalah tanpa ragu atau berbelit-belit."
+    "Logam Yang memiliki ketegasan tajam dan struktur yang kuat, siap ditempa oleh tantangan untuk menegakkan aturan yang jelas.",
+    "Arah gerakmu lugas dan objektif, piawai memilah masalah, memotong keraguan, serta membenahi kekacauan menjadi sistem yang efisien.",
+    "Karakter dasarmu menuntut keadilan dan hasil yang nyata, bertindak disiplin tanpa kompromi berbelit demi mempertahankan integritas."
   ],
   Xin: [
-    "Jiwamu peka terhadap kualitas, keindahan, dan presisi tinggi, selalu berusaha memberikan sentuhan terbaik.",
-    "Kamu memancarkan keanggunan batin yang tajam, sangat menghargai nilai keaslian dan presisi dalam bertindak.",
-    "Irama jiwamu bergerak secara terukur dan elegan, menolak kompromi murahan demi menjaga kualitas terbaik."
+    "Logam Yin mencerminkan kualitas yang telah terasah halus, menuntut standar tinggi, presisi, dan keaslian dalam setiap hasil karya.",
+    "Kapasitas utamamu terletak pada ketajaman menyaring detail, menghargai keanggunan bentuk, serta menjaga martabat diri secara mandiri.",
+    "Kecenderunganmu adalah menyempurnakan hal-hal yang bernilai, selektif terhadap lingkungan pergaulan, dan menolak hasil kerja yang asal jadi."
   ],
   Ren: [
-    "Jiwamu bergerak dengan kedinamisan yang luas, mengalir bebas untuk menghubungkan berbagai ide dan manusia.",
-    "Kamu membawa energi batin yang luas bagaikan samudra, didorong oleh rasa ingin tahu yang tak bertepi.",
-    "Ada kebebasan mengalir di dalam dirimu, selalu mencari jalan-jalan baru untuk menghubungkan berbagai wawasan."
+    "Air Yang membawa volume besar dan daya alir dinamis, memiliki kapasitas alami untuk memetakan peluang dalam skala luas.",
+    "Karakter aliranmu bebas dan fleksibel, pandai menghubungkan gagasan dengan manusia serta mencari jalan baru ketika menghadapi kebuntuan.",
+    "Orientasi utamamu adalah eksplorasi dan pergerakan strategis, melihat gambaran besar dengan rasa ingin tahu yang tidak mudah terhalang."
   ],
   Gui: [
-    "Jiwamu mengalir dengan kelembutan yang tenang namun memiliki daya tembus yang luar biasa melalui ketekunan yang sunyi.",
-    "Kamu membawa kesunyian batin yang intuitif, perlahan namun pasti mengikis rintangan keras kehidupan secara tekun.",
-    "Irama jiwamu bergerak secara emosional dan cair, peka menangkap kebenaran intuitif di balik permukaan."
+    "Air Yin meresap perlahan dan sejuk, memiliki daya tembus yang tekun melalui kesabaran mengamati nuansa di balik permukaan.",
+    "Karakter embun ini membawa kepekaan intuitif yang tenang, mencerna keadaan secara mendalam sebelum menentukan respons yang tepat.",
+    "Kapasitas alamimu terletak pada adaptabilitas yang halus, memulihkan suasana yang tegang lewat ketenangan dan empati yang tulus."
   ]
 };
 
@@ -149,7 +149,7 @@ const DAY_MASTER_P1_SENTENCE3: Record<string, string[]> = {
     "Kamu memutuskan langkah secara luwes, mengutamakan keseimbangan hubungan sosial dan kelancaran proses harian."
   ],
   Bing: [
-    "Dalam mengambil keputusan, kamu mengandalkan antusiasme alami dan visi yang terang, bertindak sebagai mercusuar penunjuk arah.",
+    "Dalam mengambil keputusan, kamu mengandalkan antusiasme alami dan visi yang terang, bertindak sebagai penunjuk arah yang jelas.",
     "Keputusanmu diambil secara berani dan cepat, membagikan semangat perubahan kepada kelompok sekitar.",
     "Kamu memutuskan langkah hidup secara transparan, didorong oleh panggilan untuk memimpin perubahan secara nyata."
   ],
@@ -416,36 +416,36 @@ const DAY_MASTER_P3_SENTENCE2: Record<string, string[]> = {
   Bing: [
     "Kematangan sejati dicapai saat kamu mampu memancarkan kehangatan secara teduh, menyadari bahwa sinar yang tenang lebih menopang.",
     "Dengan mengintegrasikan jeda kontemplatif, api semangatmu dapat terus menyala secara stabil menyatukan sesama.",
-    "Integrasi batin terwujud ketika mercusuar jiwamu bersinar memimpin kelompok tanpa melelahkan tenagamu sendiri."
+    "Integrasi batin terwujud ketika kepemimpinanmu menginspirasi kelompok tanpa menguras habis tenagamu sendiri."
   ],
   Ding: [
-    "Integrasi batin dicapai saat kamu mampu menyinari jalan orang lain tanpa harus mengorbankan kedamaian jiwamu sendiri.",
-    "Dengan menyeimbangkan dedikasi luar dan perlindungan batin, lentera jiwamu dapat menyala stabil menyejukkan sekitar.",
+    "Integrasi batin dicapai saat kamu mampu menyinari jalan orang lain tanpa harus mengorbankan kedamaian batinmu sendiri.",
+    "Dengan menyeimbangkan dedikasi luar dan perlindungan batin, fokusmu dapat terjaga stabil menopang orang-orang di sekitarmu.",
     "Integrasi sejati terbentuk saat kamu berbagi wawasan mendalam dengan sekeliling tanpa rasa takut diabaikan."
   ],
   Wu: [
     "Kematangan sejati dicapai ketika kamu bersedia melunakkan kekakuan batin, melepaskan kebutuhan mengendali, dan membiarkan perubahan mengalir.",
-    "Dengan melatih keluwesan menerima perbedaan cara kerja sekitar, bukit jiwamu berdiri kokoh menaungi harmoni kehidupan.",
+    "Dengan melatih keluwesan menerima perbedaan cara kerja sekitar, kapasitas kepemimpinanmu berdiri kokoh menaungi stabilitas bersama.",
     "Integrasi batin terwujud ketika kestabilan prinsipmu berpadu luwes dengan dinamika perubahan eksternal harian."
   ],
   Ji: [
     "Integrasi sejati terjadi saat kamu mampu memberi dukungan secara tulus tanpa melupakan batasan sehat untuk menjaga energi tetap lestari.",
-    "Dengan memelihara keseimbangan merawat luar dan dalam, tanah jiwamu tetap subur melahirkan kebaikan jangka panjang.",
+    "Dengan memelihara keseimbangan merawat luar dan dalam, kapasitasmu tetap subur melahirkan kebaikan jangka panjang.",
     "Integrasi batin tercapai ketika kamu mengizinkan dirimu menerima cinta kasih yang setara dari sekitarmu secara terbuka."
   ],
   Geng: [
     "Integrasi sejati dicapai saat kamu mampu mengarahkan kekuatan pembenahanmu dengan kelembutan, memimpin tanpa memaksakan aturan kaku.",
-    "Dengan memadukan logika tajam dan kepekaan empati, jiwamu tampil sebagai pembawa keadilan yang disegani sekaligus dicintai.",
+    "Dengan memadukan logika tajam dan kepekaan empati, karaktermu tampil sebagai pembawa keadilan yang disegani sekaligus dihormati.",
     "Integrasi batin terwujud ketika tindakan tegasmu didasari oleh niat tulus melindungi kerapuhan rasa sesama."
   ],
   Xin: [
-    "Integrasi batin terjadi ketika permata jiwamu memancarkan sinarnya secara membumi, merasa bernilai secara utuh tanpa terus menuntut validasi.",
-    "Dengan menerima proses belajar sebagai perjalanan bertahap, perhiasan jiwamu memancarkan keindahan yang memulihkan sekeliling.",
+    "Integrasi batin terjadi ketika karya dan keahlianmu dihargai secara wajar tanpa terus menuntut pengakuan sempurna dari luar.",
+    "Dengan menerima proses belajar sebagai perjalanan bertahap, kualitas yang kamu hadirkan membawa dampak nyata yang menenangkan sekeliling.",
     "Integrasi sejati terbentuk ketika standar tinggimu berjalan selaras dengan toleransi hangat terhadap keterbatasan diri."
   ],
   Ren: [
-    "Kematangan jiwamu matang saat kamu mampu membangun wadah batin yang sehat, sehingga kekuatan aliranmu terpusat menjadi karya nyata.",
-    "Dengan menyelaraskan kedinamisan arah hidup bersama kedisiplinan harian, arus air jiwamu mengalir subur memakmurkan sekitar.",
+    "Kematangan sejati terbentuk saat kamu mampu membangun wadah disiplin yang sehat, sehingga aliran energimu terpusat menjadi karya nyata.",
+    "Dengan menyelaraskan kedinamisan arah hidup bersama kedisiplinan harian, energimu terarah nyata memberi manfaat luas bagi lingkunganmu.",
     "Integrasi batin tercapai saat kebebasan melangkah berjalan beriringan dengan tanggung jawab mengawal komitmen erat."
   ],
   Gui: [
@@ -456,16 +456,16 @@ const DAY_MASTER_P3_SENTENCE2: Record<string, string[]> = {
 };
 
 export const TEN_GODS_LOOKUP: Record<string, string> = {
-  Friend: "Memiliki kecenderungan alami untuk hidup mandiri dan memegang teguh prinsip diri. Karunia tersembunyinya adalah keteguhan hati dan ketahanan batin yang kuat. Sisi bayangannya adalah kecenderungan bersikap keras kepala serta enggan menerima masukan orang lain di saat lelah.",
-  "Rob Wealth": "Digerakkan oleh keluwesan berinteraksi sosial dan karisma alami yang memikat sekitar. Karunia tersembunyinya adalah kejelian membaca motivasi orang lain dan memimpin kelompok secara dinamis. Sisi bayangannya adalah dorongan bersaing yang melelahkan serta kesulitan menetapkan batas energi diri.",
-  "Eating God": "Memiliki kecenderungan alami untuk menikmati harmoni batin dan berekspresi secara tulus tanpa paksaan. Karunia tersembunyinya adalah aliran kreativitas yang murni serta pembawaan tenang yang menyembuhkan sekitar. Sisi bayangannya adalah kecenderungan menunda tindakan atau tenggelam dalam kenyamanan pasif.",
-  "Hurting Officer": "Digerakkan oleh dorongan kuat untuk mengekspresikan pemikiran orisinal secara vokal dan menantang kemapanan. Karunia tersembunyinya adalah kecerdasan komunikatif yang tajam dan persuasif. Sisi bayangannya adalah kecenderungan bersikap kritis secara berlebihan yang rentan melukai rasa sesama.",
-  "Indirect Wealth": "Memiliki ketertarikan alami pada peluang bisnis yang dinamis dan berani mengambil risiko finansial yang tak terduga. Karunia tersembunyinya adalah ketangkasan merancang perputaran nilai konseptual. Sisi bayangannya adalah ketidaksabaran mengelola detail kecil serta kejenuhan jika ritme berjalan lambat.",
-  "Direct Wealth": "Menyukai kestabilan hasil kerja nyata dan ketekunan mengelola sumber daya harian. Karunia tersembunyinya adalah keandalan yang luar biasa serta kedisiplinan menjaga keberlanjutan hidup. Sisi bayangannya adalah kecemasan berlebih akan ketidakpastian atau keengganan berinvestasi pada hal baru.",
-  "Seven Killings": "Digerakkan oleh ketahanan batin yang tangguh menghadapi tekanan krisis dan melindungi sekeliling. Karunia tersembunyinya adalah keberanian memimpin di situasi sulit dengan integritas baja. Sisi bayangannya adalah ketegangan internal yang konstan serta dorongan untuk mengontrol keadaan secara berlebihan.",
-  "Direct Officer": "Memiliki kepedulian tinggi terhadap keteraturan hukum, keharmonisan sosial, dan tanggung jawab moral. Karunia tersembunyinya adalah kepemimpinan yang etis dan tepercaya. Sisi bayangannya adalah ketakutan berbuat salah serta kekakuan dalam menyikapi pelanggaran aturan kecil.",
-  "Indirect Resource": "Tertarik secara mendalam pada pengetahuan khusus, filsafat sunyi, intuisi gaib, dan pola tersembunyi kehidupan. Karunia tersembunyinya adalah pemikiran orisinal dan kepekaan menangkap nuansa batin. Sisi bayangannya adalah kecenderungan bersikap sinis atau kesulitan mempercayai ketulusan relasi.",
-  "Direct Resource": "Memiliki dorongan alami untuk belajar secara mendalam, memelihara tradisi pengetahuan, serta mencari kedamaian moral. Karunia tersembunyinya adalah kearifan mengayomi bagaikan pembimbing moral. Sisi bayangannya adalah kebiasaan berpikir terlalu teoritis tanpa tindakan nyata."
+  Friend: "Pola Friend memperkuat kemandirian prinsip dan ketahanan berdiri di atas kaki sendiri. Karunia tersembunyinya adalah keteguhan hati dan ketahanan batin yang kuat. Sisi bayangannya adalah kecenderungan bersikap keras kepala serta enggan menerima masukan orang lain di saat lelah.",
+  "Rob Wealth": "Pola Rob Wealth menghadirkan keluwesan sosial, karisma, dan daya dorong kompetitif yang tinggi. Karunia tersembunyinya adalah kejelian membaca motivasi orang lain dan memimpin kelompok secara dinamis. Sisi bayangannya adalah dorongan bersaing yang melelahkan serta kesulitan menetapkan batas energi diri.",
+  "Eating God": "Pola Eating God membawa dorongan alami untuk mencipta, menikmati ketenangan batin, dan mengekspresikan gagasan secara orisinal. Karunia tersembunyinya adalah aliran kreativitas yang murni serta pembawaan tenang yang menyembuhkan sekitar. Sisi bayangannya adalah kecenderungan menunda tindakan atau tenggelam dalam kenyamanan pasif.",
+  "Hurting Officer": "Pola Hurting Officer didorong oleh kecerdasan berekspresi yang tajam, keberanian berinovasi, dan dorongan mendobrak batasan lama. Karunia tersembunyinya adalah kecerdasan komunikatif yang tajam dan persuasif. Sisi bayangannya adalah kecenderungan bersikap kritis secara berlebihan yang rentan melukai rasa sesama.",
+  "Indirect Wealth": "Pola Indirect Wealth membawa kejelian membaca peluang bernilai dan keberanian mengelola perputaran sumber daya secara dinamis. Karunia tersembunyinya adalah ketangkasan merancang perputaran nilai konseptual. Sisi bayangannya adalah ketidaksabaran mengelola detail kecil serta kejenuhan jika ritme berjalan lambat.",
+  "Direct Wealth": "Pola Direct Wealth menekankan ketekunan mengelola hasil kerja nyata, keteraturan aset, dan tanggung jawab praktis harian. Karunia tersembunyinya adalah keandalan yang luar biasa serta kedisiplinan menjaga keberlanjutan hidup. Sisi bayangannya adalah kecemasan berlebih akan ketidakpastian atau keengganan berinvestasi pada hal baru.",
+  "Seven Killings": "Pola Seven Killings berakar pada ketangguhan menghadapi tekanan nyata dan ketegasan mengambil keputusan di saat kritis. Karunia tersembunyinya adalah keberanian memimpin di situasi sulit dengan integritas baja. Sisi bayangannya adalah ketegangan internal yang konstan serta dorongan untuk mengontrol keadaan secara berlebihan.",
+  "Direct Officer": "Pola Direct Officer mencerminkan kepemimpinan yang berlandaskan etika, ketertiban sistem, dan penghormatan pada keharmonisan bersama. Karunia tersembunyinya adalah kepemimpinan yang etis dan tepercaya. Sisi bayangannya adalah ketakutan berbuat salah serta kekakuan dalam menyikapi pelanggaran aturan kecil.",
+  "Indirect Resource": "Pola Indirect Resource memiliki kepekaan membaca pola tersembunyi, minat pada pengetahuan mendalam, dan cara berpikir nonkonvensional. Karunia tersembunyinya adalah pemikiran orisinal dan kepekaan menangkap nuansa batin. Sisi bayangannya adalah kecenderungan bersikap sinis atau kesulitan mempercayai ketulusan relasi.",
+  "Direct Resource": "Pola Direct Resource membawa kapasitas menyerap ilmu, memelihara integritas pengetahuan, dan memberikan bimbingan yang menenangkan. Karunia tersembunyinya adalah kearifan mengayomi bagaikan pembimbing moral. Sisi bayangannya adalah kebiasaan berpikir terlalu teoritis tanpa tindakan nyata."
 };
 
 export const TEN_GODS_LOOKUP_EN: Record<string, string> = {
@@ -617,13 +617,13 @@ export class BaziMeaningService {
       });
 
       const optionsDominant = [
-        `Terdapat penekanan energi pada ${dominantDesc.join(" serta ")}, yang memberikan dorongan batin yang nyata dalam tindakanmu. `,
-        `Irama jiwamu didukung kuat oleh perpaduan ${dominantDesc.join(" dan ")}, mewarnai kecenderungan respons harianmu secara jernih. `,
-        `Fokus tenagamu berpusat secara alami pada ${dominantDesc.join(" serta ")}, memberikan fondasi karakter batin yang nyata. `
+        `Terdapat penekanan energi pada ${dominantDesc.join(" serta ")}, yang memberikan dorongan nyata dalam tindakanmu. `,
+        `Kecenderungan energimu didukung kuat oleh perpaduan ${dominantDesc.join(" dan ")}, mewarnai respons harianmu secara jernih. `,
+        `Fokus tenagamu berpusat secara alami pada ${dominantDesc.join(" serta ")}, memberikan fondasi karakter yang nyata. `
       ];
       fiveElementsDescription += selectOption(optionsDominant, sElements);
     } else {
-      fiveElementsDescription += "Distribusi unsur-unsur dalam jiwamu mengalir secara berimbang, memberikan keluwesan karakter batin yang dinamis dan adaptif menghadapi berbagai keadaan harian. ";
+      fiveElementsDescription += "Distribusi lima elemen dalam susunan kelahiranmu mengalir secara berimbang, memberikan keluwesan karakter yang dinamis dan adaptif menghadapi berbagai keadaan harian. ";
     }
 
     if (weakElements.length > 0) {
@@ -664,8 +664,8 @@ export class BaziMeaningService {
         ], sWeak);
       });
       const optionsWeak = [
-        `Di sisi lain, ${weakDesc.join(" dan ")} hadir sebagai daya dukung yang sunyi dan perlu diundang masuk dengan perhatian sadar.`,
-        `Sementara itu, ${weakDesc.join(" serta ")} melengkapi jiwamu sebagai kualitas tersembunyi yang perlu dibangun perlahan.`,
+        `Di sisi lain, ${weakDesc.join(" dan ")} hadir sebagai daya dukung yang tenang dan perlu diundang masuk dengan perhatian sadar.`,
+        `Sementara itu, ${weakDesc.join(" serta ")} melengkapi susunan elemenmu sebagai kualitas pendukung yang perlu dibangun perlahan.`,
         `Sebagai penyeimbang alami, ${weakDesc.join(" dan ")} mengalir secara halus, mengundangmu melatih kualitas tersebut secara membumi.`
       ];
       fiveElementsDescription += selectOption(optionsWeak, sElements + 1);
@@ -799,20 +799,20 @@ export class BaziMeaningService {
         "Kedisiplinanmu mengelola aset harian memastikan keberlanjutan hidup jangka panjang secara teratur."
       ],
       "Seven Killings": [
-        "Ketahanan mentalmu di bawah tekanan krisis melahirkan integritas kepemimpinan yang teguh melindunginya yang lemah.",
-        "Kekuatan kepemimpinan krismu berdiri kokoh mengawal kemajuan di situasi tersulit."
+        "Ketahanan mentalmu di bawah tekanan melahirkan kepemimpinan yang teguh melindungi orang-orang di sekitarmu.",
+        "Kekuatan kepemimpinanmu teruji saat mengawal keputusan penting dalam situasi yang menantang."
       ],
       "Direct Officer": [
-        "Keteladanan moralmu yang tinggi membantu menertibkan sistem kerja agar adil dan harmonis bagi semua.",
-        "Kedewasaan moralmu memelihara keadilan organisasi agar selaras dengan etika bersama."
+        "Keteladanan etis dan tanggung jawabmu membantu menjaga sistem kerja tetap adil dan tertib.",
+        "Kedewasaan sikapmu memelihara keadilan organisasi agar selaras dengan integritas bersama."
       ],
       "Indirect Resource": [
-        "Intuisi tajam dan pemikiran orisinalmu membantumu menyingkap pola-pola kehidupan tersembunyi yang terlewatkan.",
-        "Kepekaan analisismu mendeteksi nuansa tersirat, membawa terobosan berpikir yang orisinal."
+        "Kepekaan intuitif dan cara berpikir nonkonvensional membantumu menyingkap pola penting yang terlewatkan.",
+        "Ketajaman analisismu mendeteksi nuansa tersirat, menghasilkan terobosan berpikir yang orisinal."
       ],
       "Direct Resource": [
-        "Wisata batin dan kebijaksanaan merawat tradisi pengetahuan menjadikannya pembimbing moral yang tepercaya.",
-        "Kearifan merawat nilai kearifan membantumu menjadi penasihat batin yang menenangkan tim."
+        "Keluasan wawasan dan komitmenmu merawat pengetahuan menjadikannya rujukan yang tepercaya bagi rekan kerja.",
+        "Kearifan sikapmu menenangkan tim dan membantu mereka mengambil keputusan dengan pertimbangan matang."
       ]
     };
     const primaryTenGod = tenGods[0]?.tenGod || "Friend";
@@ -995,14 +995,14 @@ export class BaziMeaningService {
 
     const polarityCareers = {
       Yang: [
-        "Dalam kolaborasi, kamu cenderung mengambil peran penunjuk arah yang vokal dan langsung. Gaya kepemimpinanmu lugas, mengutamakan eksekusi cepat, namun perlu berhati-hati agar tidak mendominasi ruang diskusi kelompok.",
-        "Saat berkolaborasi, kamu tampil sebagai inisiator yang berani mengambil tanggung jawab dan mengarahkan kelompok. Kamu memimpin dengan kejujuran yang langsung dan berfokus pada hasil eksekusi nyata.",
-        "Dalam tim, gaya kerjamu asertif dan proaktif; kamu senang membawa kejelasan arah bagi kelompok. Sebagai pemimpin, kamu mendorong kemajuan cepat namun perlu melatih kesabaran mendengarkan masukan."
+        "Dalam kerja tim, kamu cenderung mengambil inisiatif secara langsung dan berorientasi pada hasil nyata. Gaya memimpinmu lugas dan proaktif membawa kejelasan arah, dengan catatan tetap meluangkan ruang mendengarkan masukan rekan.",
+        "Saat berkolaborasi, kamu tampil sebagai penggerak yang berani memikul tanggung jawab di depan. Kamu memimpin dengan komunikasi terbuka dan mengutamakan ketepatan eksekusi.",
+        "Gaya kerjamu asertif dan menyukai ritme yang jelas; kamu mendorong kemajuan proyek secara aktif sambil menjaga agar beban kerja terdistribusi secara seimbang."
       ],
       Yin: [
-        "Dalam kolaborasi, kamu bergerak di balik layar sebagai perekat hubungan dan pendengar yang peka. Gaya kepemimpinanmu persuasif, mengayomi, serta ahli dalam mengarahkan potensi anggota tim secara halus tanpa paksaan.",
-        "Saat bekerja kelompok, kamu berperan sebagai pembawa keharmonisan yang peka menangkap kebutuhan sekitar. Gaya memimpinmu bersifat mengayomi, membimbing secara tenang, dan mengutamakan kenyamanan bersama.",
-        "Dalam tim, kamu menonjol sebagai fasilitator yang luwes dan pendengar yang baik. Kamu memimpin dengan cara merawat hubungan baik serta mengarahkan potensi rekan kerja lewat pendekatan personal."
+        "Dalam kerja tim, kamu berperan sebagai perekat hubungan yang peka terhadap keselarasan proses. Gaya memimpinmu mengayomi dan persuasif, mampu mengarahkan potensi rekan kerja tanpa perlu memaksakan kehendak.",
+        "Saat berkolaborasi, kekuatanmu ada pada ketelatenan mendengarkan dan merawat iklim kerja yang kondusif. Kamu memimpin lewat keteladanan tenang dan pendekatan personal yang suportif.",
+        "Gaya kerjamu diplomatis dan adaptif; kamu menonjol sebagai fasilitator yang menjembatani perbedaan gagasan menjadi kesepakatan bersama yang solid."
       ]
     };
     const polarityCareer = selectOption(polarityCareers[dayMasterPolarity] || [""], sCareer + 1);
@@ -1087,14 +1087,14 @@ export class BaziMeaningService {
 
     const polarityRels = {
       Yang: [
-        "Komunikasimu jujur dan langsung pada sasaran. Saat terjadi konflik, kamu cenderung memilih untuk menyelesaikannya secara terbuka seketika, namun perlu berhati-hati agar ketegasanmu tidak melukai kepekaan rasa pasangan.",
-        "Kamu menyampaikan pikiran secara transparan dan lugas. Menghadapi konflik, kamu lebih suka menuntaskannya saat itu juga demi kejelasan hubungan, meski perlu menjaga agar nadamu tidak terlalu mendominasi.",
-        "Gaya komunikasimu asertif dan tidak menyembunyikan kebenaran rasa. Ketika selisih pendapat, kamu langsung mengarah pada inti masalah, namun pastikan meluangkan ruang bagi pasangan untuk memproses emosi."
+        "Gaya komunikasimu terbuka dan langsung pada pokok persoalan. Ketika terjadi perbedaan pandangan, kamu memilih membicarakannya tanpa menunda demi kejernihan hubungan, sambil tetap menjaga agar penyampaianmu ramah bagi pasangan.",
+        "Kamu menyampaikan pikiran secara transparan dan lugas. Menghadapi dinamika relasi, kamu fokus mencari solusi nyata agar rasa saling percaya tetap terjaga utuh.",
+        "Dalam percakapan dekat, kamu mengutamakan kejujuran yang sehat dan kejelasan komitmen, seraya memberi ruang bagi pasangan untuk mencerna perasaannya."
       ],
       Yin: [
-        "Komunikasimu cenderung persuasif dan berputar secara halus. Menghadapi konflik, kamu lebih memilih meredakan suasana terlebih dahulu atau menarik diri sejenak untuk menata emosi sebelum membicarakannya secara lembut.",
-        "Kamu berkomunikasi dengan kelembutan kata dan pendekatan personal. Saat terjadi selisih paham, kamu memilih untuk hening sejenak demi menjaga perasaan pasangan, lalu membicarakannya saat situasi sudah tenang.",
-        "Gaya komunikasimu diplomatis dan menghindari benturan langsung. Ketika ada gesekan, kamu lebih suka meredam ketegangan dengan mendengarkan empati sebelum menawarkan jalan tengah yang damai."
+        "Gaya komunikasimu halus dan penuh pertimbangan. Ketika menghadapi ketegangan, kamu cenderung meredakan suasana terlebih dahulu sebelum mendiskusikan inti masalah secara tenang dan penuh empati.",
+        "Kamu berkomunikasi dengan kepekaan rasa dan sentuhan personal. Saat ada selisih paham, kamu mendengarkan dengan saksama demi memahami sudut pandang pasangan secara utuh.",
+        "Dalam relasi dekat, kamu mengutamakan kenyamanan emosional dan pendekatan yang tidak menghakimi, merawat keharmonisan lewat kesediaan untuk saling memahami."
       ]
     };
     const polarityRel = selectOption(polarityRels[dayMasterPolarity] || [""], sRel + 1);
@@ -1135,44 +1135,44 @@ export class BaziMeaningService {
     const sMoney = getSeed(blueprint, "MONEY");
     const dmMoneyStyles: Record<string, string[]> = {
       Jia: [
-        "Bagimu, kemakmuran adalah sarana untuk memperluas dampak perkembangan dan membangun fondasi kokoh bagi masa depan; nilai sejati uang terletak pada kapasitasnya untuk menopang pertumbuhan jangka panjang.",
-        "Kamu memaknai nilai kemakmuran sebagai instrumen perkembangan batin, menyalurkan dana untuk menopang inisiatif jangka panjang."
+        "Kemakmuran bagimu berfungsi sebagai sarana memperluas dampak dan membangun landasan masa depan; nilai finansial diarahkan untuk menopang pertumbuhan jangka panjang.",
+        "Kamu memaknai pengelolaan sumber daya sebagai instrumen perkembangan nyata, menyalurkan dana untuk menopang inisiatif jangka panjang."
       ],
       Yi: [
-        "Kamu memandang nilai sebagai jejaring peluang yang dinamis; kemakmuran bagimu mengalir melalui kolaborasi sosial, keluwesan beradaptasi dengan pasar, serta kejelian memanfaatkan momentum hubungan.",
-        "Kemakmuran bagimu terkait erat dengan keluwesan membaca tren pasar sosial, memutar nilai lewat jejaring kerja."
+        "Pengelolaan nilai bergerak melalui kejelian membaca momentum pasar dan merajut kolaborasi; rezeki mengalir subur lewat keluwesan beradaptasi serta jejaring yang sehat.",
+        "Arah finansialmu terkait erat dengan keluwesan membaca kebutuhan sosial, memutar nilai lewat kemitraan kerja yang saling menguntungkan."
       ],
       Bing: [
-        "Kemakmuran bagimu adalah energi ekspresi yang mengalir bebas; kamu melihat nilai dalam proyek visioner yang mampu menerangi banyak arah dan membawa antusiasme baru bagi sekeliling.",
-        "Kamu memandang rezeki sebagai energi dinamis, menemukan nilai terbaik pada proyek luas yang membawa kebaikan umum."
+        "Finansial bagimu adalah energi yang mengalir untuk menggerakkan proyek visioner; nilai terbaik diraih saat dana dipakai memperluas manfaat nyata bagi banyak orang.",
+        "Kamu memandang perputaran materi sebagai sarana berbagi manfaat luas, menemukan kepuasan saat proyek yang kamu jalankan membawa dampak sosial yang terang."
       ],
       Ding: [
-        "Bagimu, kemakmuran berhubungan erat dengan keahlian khusus dan sentuhan personal; kamu menemukan nilai dalam detail yang presisi, dedikasi yang tekun, serta peluang yang dikelola secara sunyi dan terarah.",
-        "Kemakmuran bagimu mengalir lewat penguasaan keahlian khusus, merawat rezeki melalui ketekunan sunyi terarah."
+        "Pengelolaan rezeki berkaitan erat dengan penguasaan keahlian khusus dan ketekunan terarah; nilai bertumbuh melalui dedikasi pada detail berkualitas tinggi.",
+        "Kemakmuran bagimu mengalir lewat penguasaan keahlian mendalam, merawat kelangsungan finansial melalui ketelitian yang konsisten."
       ],
       Wu: [
-        "Kamu memandang kemakmuran sebagai bentuk kestabilan dan perlindungan jangka panjang; nilai bagimu diwujudkan dalam kepemilikan aset nyata yang aman serta pengelolaan keuangan yang konservatif dan kokoh.",
-        "Kemakmuran bagimu diukur dari kepemilikan aset fisik aman, mengelola keuangan secara teratur dan konservatif."
+        "Dasar kemakmuranmu bertumpu pada kestabilan aset fisik dan kehati-hatian mengelola sumber daya; nilai finansial diwujudkan dalam keamanan jangka panjang yang terukur.",
+        "Kepemilikan aset yang aman dan pengelolaan anggaran yang tertib menjadi fondasi utama ketahanan finansialmu."
       ],
       Ji: [
-        "Kemakmuran bagimu adalah kapasitas untuk menumbuhkan kesejahteraan bersama; kamu melihat nilai dalam investasi yang bersifat memelihara, merawat tim kerja, serta hasil nyata yang diperoleh secara sabar.",
-        "Kemakmuran bagimu terkait dengan usaha yang memelihara kehidupan, menyemai kemakmuran bersama secara sabar."
+        "Kapasitas finansialmu bertumbuh lewat usaha yang bersifat merawat dan memelihara; nilai diwujudkan melalui ketelatenan mengelola modal secara bertahap hingga membuahkan hasil stabil.",
+        "Rezeki bagimu berakar pada kegiatan yang memupuk kesejahteraan tim dan keluarga, menyemai kemakmuran secara tekun dan sabar."
       ],
       Geng: [
-        "Bagimu, kemakmuran diraih lewat kerja keras yang disiplin dan ketegasan mengelola sistem; nilai sejati uang terletak pada efisiensi tinggi serta kemampuan membenahi struktur keuangan menjadi lebih bersih.",
-        "Kemakmuran bagimu dicapai lewat kedisiplinan mengelola sistem keuangan, menuntut efisiensi tinggi tanpa pemborosan."
+        "Kekuatan finansialmu dibangun lewat kedisiplinan kerja dan efisiensi sistem; nilai uang dioptimalkan melalui pengelolaan yang bersih, transparan, dan terstruktur ketat.",
+        "Kemakmuran bagimu dicapai lewat ketegasan menertibkan pos pengeluaran, menuntut efisiensi tinggi tanpa pemborosan yang tidak perlu."
       ],
       Xin: [
-        "Kamu memandang kemakmuran sebagai apresiasi terhadap kualitas tinggi dan kelangkaan nilai; uang bagimu adalah sarana untuk mempertahankan standar hidup yang bernilai estetika tinggi dan presisi.",
-        "Rezeki bagimu melambangkan keahlian bernilai tinggi, memanfaatkan dana untuk mendukung standar kualitas hidup terbaik."
+        "Kemakmuran bagimu mencerminkan apresiasi atas keahlian terasah dan karya bernilai tinggi; sumber daya dikelola untuk mempertahankan standar mutu dan integritas profesional.",
+        "Rezeki bagimu melambangkan hasil karya yang bernilai tinggi, mengalokasikan dana secara selektif demi menjaga mutu hidup terbaik."
       ],
       Ren: [
-        "Bagimu, kemakmuran mengalir seperti arus samudra—luas dan dinamis; kamu melihat nilai dalam perputaran modal yang cepat, penjelajahan bisnis baru, serta strategi keuangan berskala besar.",
-        "Kemakmuran bagimu bergerak dinamis bagai pasang surut modal, menyukai investasi strategis berjangkauan luas."
+        "Perputaran rezekimu bergerak dinamis dalam skala luas; nilai finansial dioptimalkan melalui keberanian menjelajahi jalur baru, perputaran modal strategis, dan keluwesan melihat arah peluang.",
+        "Arah finansialmu bergerak lincah mengikuti arus peluang, menyukai alokasi modal strategis yang berjangkauan luas."
       ],
       Gui: [
-        "Kamu melihat kemakmuran sebagai energi pemulihan yang menyejukkan; nilai bagimu terpelihara lewat usaha yang selaras dengan intuisi batin, ketekunan yang tenang, serta kontribusi sosial yang tulus.",
-        "Kemakmuran bagimu terpelihara melalui usaha yang selaras nurani, mengalirkan rezeki menopang pemulihan sosial."
+        "Aliran finansialmu terjaga saat selaras dengan nurani dan ketekunan yang tenang; nilai rezeki terpelihara melalui usaha yang memberikan manfaat pemulihan nyata bagi sekeliling.",
+        "Kemakmuran bagimu terpelihara melalui karya yang membawa ketenangan batin, mengalirkan hasil kerja untuk menopang keberlanjutan hidup yang sehat."
       ]
     };
     const moneyValue = selectOption(dmMoneyStyles[dayMasterPinyin] || ["Kemakmuran bagimu diukur dari kebebasan yang diberikan oleh pengelolaan sumber daya secara bijaksana."], sMoney);
