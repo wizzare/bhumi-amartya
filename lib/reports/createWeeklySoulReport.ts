@@ -351,8 +351,8 @@ function defaultReport(weekStart: string, weekEnd: string, blueprint: UnknownRec
       ? "Choose the audio that calms your body most, then listen without excessive targets."
       : "Pilih audio yang paling menenangkan tubuhmu, lalu dengarkan tanpa target berlebihan.",
     closingMessage: isEn
-      ? "You can start at your own pace. Progress is nurtured by showing up honestly for yourself day by day."
-      : "Kamu boleh mulai dengan tempo yang tenang. Kemajuan dibangun lewat kesediaan untuk hadir secara jujur dari hari ke hari.",
+      ? "You are allowed to start slowly. Your journey is not defined by how fast you change, but by how honestly you show up for yourself day by day."
+      : "Kamu boleh mulai pelan dengan tempo yang tenang. Kemajuan dibangun lewat kesediaan untuk hadir secara jujur dari hari ke hari.",
   };
 }
 
