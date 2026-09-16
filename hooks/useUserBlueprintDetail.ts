@@ -1,21 +1,36 @@
 'use client';
 
 import { doc, getDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/lib/firebase';
+import { BlueprintStatus, evaluateBlueprint } from '@/lib/blueprintVersion';
+import { BLUEPRINT_CACHE_TTL_MS, shouldRefetch } from '@/lib/blueprintCachePolicy';
 
 type BlueprintRecord = Record<string, any>;
 type CacheEntry = { data: BlueprintRecord | null; fetchedAt: number };
 
+export { BLUEPRINT_CACHE_TTL_MS };
+
 const blueprintCache = new Map<string, CacheEntry>();
 const inflight = new Map<string, Promise<CacheEntry>>();
 
-async function loadBlueprint(uid: string): Promise<CacheEntry> {
-  const cached = blueprintCache.get(uid);
-  if (cached) return cached;
+export function clearBlueprintCache() {
+  blueprintCache.clear();
+  inflight.clear();
+}
 
-  const pending = inflight.get(uid);
-  if (pending) return pending;
+function isFresh(entry: CacheEntry | undefined, now: number): boolean {
+  return !shouldRefetch(entry, now, false);
+}
+
+async function loadBlueprint(uid: string, force: boolean): Promise<CacheEntry> {
+  const now = Date.now();
+  if (!force) {
+    const cached = blueprintCache.get(uid);
+    if (cached && isFresh(cached, now)) return cached;
+    const pending = inflight.get(uid);
+    if (pending) return pending;
+  }
 
   const request = (async () => {
     const snap = await getDoc(doc(db, 'blueprints', uid));
@@ -36,12 +51,30 @@ async function loadBlueprint(uid: string): Promise<CacheEntry> {
 }
 
 export function useUserBlueprintDetail(uid: string | null) {
-  const cached = uid ? blueprintCache.get(uid) : undefined;
-  const [data, setData] = useState<BlueprintRecord | null>(cached?.data || null);
-  const [loading, setLoading] = useState(Boolean(uid && !cached));
+  const [data, setData] = useState<BlueprintRecord | null>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [fromCache, setFromCache] = useState(Boolean(cached));
-  const [fetchedAt, setFetchedAt] = useState(cached?.fetchedAt || 0);
+  const [fromCache, setFromCache] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState(0);
+  const [status, setStatus] = useState<BlueprintStatus | null>(null);
+
+  const run = useCallback(async (targetUid: string, force: boolean) => {
+    const cached = blueprintCache.get(targetUid);
+    const servedFromCache = !force && isFresh(cached, Date.now());
+    setLoading(!servedFromCache);
+    setError('');
+    setFromCache(servedFromCache);
+    try {
+      const entry = await loadBlueprint(targetUid, force);
+      setData(entry.data);
+      setFetchedAt(entry.fetchedAt);
+      setStatus(evaluateBlueprint(entry.data));
+    } catch (e: any) {
+      setError(e?.message || 'Gagal membaca blueprint user.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!uid) {
@@ -50,40 +83,20 @@ export function useUserBlueprintDetail(uid: string | null) {
       setError('');
       setFromCache(false);
       setFetchedAt(0);
+      setStatus(null);
       return;
     }
-
-    const existing = blueprintCache.get(uid);
-    if (existing) {
-      setData(existing.data);
-      setLoading(false);
-      setError('');
-      setFromCache(true);
-      setFetchedAt(existing.fetchedAt);
-      return;
-    }
-
     let active = true;
-    setLoading(true);
-    setError('');
-    setFromCache(false);
-
-    void loadBlueprint(uid)
-      .then((entry) => {
-        if (!active) return;
-        setData(entry.data);
-        setFetchedAt(entry.fetchedAt);
-      })
-      .catch((e: any) => {
-        if (!active) return;
-        setError(e?.message || 'Gagal membaca blueprint user.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
+    void (async () => {
+      if (!active) return;
+      await run(uid, false);
+    })();
     return () => { active = false; };
-  }, [uid]);
+  }, [uid, run]);
 
-  return { data, loading, error, fromCache, fetchedAt, reads: uid && !cached && !fromCache ? 1 : 0 };
+  const refresh = useCallback(() => {
+    if (uid) void run(uid, true);
+  }, [uid, run]);
+
+  return { data, loading, error, fromCache, fetchedAt, status, refresh };
 }

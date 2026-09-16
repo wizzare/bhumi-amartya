@@ -3,6 +3,8 @@
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 import { auth, FOUNDER_EMAIL } from '@/lib/firebase';
+import { clearBlueprintCache } from '@/hooks/useUserBlueprintDetail';
+import { clearEntitlementIndex } from '@/hooks/useEntitlementSources';
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null | undefined>(undefined);
@@ -52,5 +54,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 }
 
 export async function founderLogout() {
+  clearBlueprintCache();
+  clearEntitlementIndex();
   await signOut(auth);
 }

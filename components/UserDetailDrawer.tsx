@@ -126,6 +126,7 @@ function BlueprintLine({label,value}:{label:string;value:string}){
 
 export function UserDetailDrawer({user,onClose}:Props) {
   const blueprint = useUserBlueprintDetail(user?.uid || null);
+  const blueprintStale = blueprint.status?.stale === true;
   const [messageOpen,setMessageOpen]=useState(false);
   const [messageTitle,setMessageTitle]=useState('');
   const [messageContent,setMessageContent]=useState('');
@@ -199,11 +200,21 @@ export function UserDetailDrawer({user,onClose}:Props) {
         </section>
 
         <section className="panel">
-          <div className="panel-head"><div><div className="panel-title">Blueprint Ringkas</div><span className="panel-subtitle">4 sistem utama untuk membaca profil user dengan cepat.</span></div><span className="source-badge">{blueprint.fromCache?'CACHE':'LAZY'}</span></div>
+          <div className="panel-head">
+            <div><div className="panel-title">Blueprint Ringkas</div><span className="panel-subtitle">4 sistem utama untuk membaca profil user dengan cepat.</span></div>
+            <div className="toolbar" style={{marginBottom:0}}>
+              <span className={`source-badge${blueprintStale?' warn':''}`}>{blueprintStale?'STORED LEGACY RESULT':blueprint.fromCache?'CACHE':'LAZY'}</span>
+              <button className="btn" onClick={()=>blueprint.refresh()} disabled={blueprint.loading}>Refresh</button>
+            </div>
+          </div>
           <div className="panel-body">
-            {blueprint.loading&&<div className="empty">Memuat blueprint user…</div>}
+            {blueprint.loading&&<div className="empty">Memuat blueprint user.</div>}
             {blueprint.error&&<div className="error-box">{blueprint.error}</div>}
             {!blueprint.loading&&!blueprint.error&&!blueprint.data&&<div className="empty">Blueprint belum tersimpan untuk user ini.</div>}
+            {blueprintStale&&<div className="error-box" style={{marginBottom:10}}>
+              <b>Human Design tersimpan menggunakan versi kalkulasi lama. Perlu kalkulasi ulang.</b>
+              <div style={{marginTop:4,fontWeight:400}}>{blueprint.status?.reason}. Nilai di bawah ditampilkan sebagai <i>stored legacy result</i>, bukan hasil kalkulasi terkini.</div>
+            </div>}
             {blueprint.data&&<div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(230px,1fr))',gap:10}}>
               <BlueprintCard title="Life Path">
                 <BlueprintLine label="Life Path" value={lifePath}/>
@@ -212,10 +223,11 @@ export function UserDetailDrawer({user,onClose}:Props) {
                 <BlueprintLine label="Arcana Center" value={destiny.center}/>
                 <BlueprintLine label="Karmic Tile" value={destiny.karmic}/>
               </BlueprintCard>
-              <BlueprintCard title="Human Design">
+              <BlueprintCard title={blueprintStale?'Human Design (stored legacy result)':'Human Design'}>
                 <BlueprintLine label="Type" value={hd.type}/>
                 <BlueprintLine label="Cross" value={hd.cross}/>
                 <BlueprintLine label="Profile" value={hd.profile}/>
+                {blueprint.status&&<BlueprintLine label="Engine" value={blueprint.status.storedVersion||'tidak tercatat'}/>}
               </BlueprintCard>
               <BlueprintCard title="Natal Chart">
                 <BlueprintLine label="Sun" value={natal.sun}/>

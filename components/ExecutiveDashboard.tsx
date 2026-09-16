@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Activity, CircleDollarSign, Clock3, LogIn, Smartphone, Store, Users } from 'lucide-react';
 import { useFounderData } from '@/hooks/useFounderData';
 import { pct, startOfToday } from '@/lib/analytics';
+import { useEntitlementSources } from '@/hooks/useEntitlementSources';
 import { playSnapshot } from '@/lib/playSnapshot';
 
 type Insight = { title:string; detail:string; tone:'good'|'warn'|'risk'|'info' };
@@ -35,6 +36,8 @@ function InsightList({items}:{items:Insight[]}) {
 
 export function ExecutiveDashboard(){
   const {users,activities,loading,error,lastRefresh,refresh}=useFounderData();
+  const entitlementSources=useEntitlementSources();
+  const entitlementVerified=Boolean(entitlementSources.index&&!entitlementSources.loading&&!entitlementSources.error);
   const now=Date.now();
   const today=startOfToday();
 
@@ -89,7 +92,9 @@ export function ExecutiveDashboard(){
     const opportunities:Insight[]=[];
     const threats:Insight[]=[];
 
-    if(access.paidConversion<2){
+    if(!entitlementVerified){
+      attention.push({title:'Monetization data belum terverifikasi',detail:'Sumber entitlement kanonik (billing_purchase_tokens, testerBadgeRegistry, trialEntitlementLedger) belum termuat. Angka paid tidak dapat disimpulkan.',tone:'info'});
+    } else if(access.paidConversion<2){
       attention.push({title:'Monetization funnel',detail:`Google Play Paid ${access.paid} user atau ${access.paidConversion}% dari basis non-Founder.`,tone:'risk'});
       actions.push({title:'Periksa Trial → Paid',detail:'Fokus pada value discovery, paywall, Restore Purchase, dan titik user berhenti sebelum upgrade.',tone:'warn'});
       weaknesses.push({title:'Paid conversion rendah',detail:`Paid conversion internal ${access.paidConversion}%.`,tone:'risk'});
@@ -128,7 +133,7 @@ export function ExecutiveDashboard(){
     }
 
     return {attention:attention.slice(0,4),actions:actions.slice(0,4),strengths:strengths.slice(0,3),weaknesses:weaknesses.slice(0,3),opportunities:opportunities.slice(0,3),threats:threats.slice(0,3),conclusion};
-  },[access,internalDauMau,metrics.mau,playDauMau,weeklyChange]);
+  },[access,internalDauMau,metrics.mau,playDauMau,weeklyChange,entitlementVerified]);
 
   return <div className="page">
     <div className="page-heading">
@@ -142,7 +147,7 @@ export function ExecutiveDashboard(){
       <Kpi label="Real Users" value={loading?'—':users.length} foot="internal included users" icon={Users}/>
       <Kpi label="Internal DAU / MAU" value={loading?'—':`${metrics.dau} / ${metrics.mau}`} foot={`${internalDauMau}% ratio`} icon={Activity}/>
       <Kpi label="First Login Hari Ini" value={loading?'—':metrics.firstLoginToday} foot={`${metrics.active30m} active ≤30m`} icon={LogIn}/>
-      <Kpi label="Google Play Paid" value={loading?'—':access.paid} foot={`${access.paidConversion}% non-Founder base`} icon={CircleDollarSign}/>
+      <Kpi label="Google Play Paid" value={loading||!entitlementVerified?'—':access.paid} foot={entitlementVerified?`${access.paidConversion}% non-Founder base`:'menunggu verifikasi entitlement'} icon={CircleDollarSign}/>
       <Kpi label="Play Installs" value={playSnapshot.installs} foot={`${playSnapshot.activeDevices} active devices`} icon={Smartphone}/>
       <Kpi label="Store Conversion" value={`${playSnapshot.storeConversion}%`} foot="Play snapshot" icon={Store}/>
     </div>

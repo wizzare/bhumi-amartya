@@ -5,18 +5,9 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { useFounderUsers } from '@/hooks/useFounderData';
 import { pct } from '@/lib/analytics';
 
-const order = [
-  'Google Play Paid',
-  'Trial',
-  'Penjaga Inti',
-  'Penjaga Alfa',
-  'Founder',
-  'Expired Grant',
-  'Expired Paid',
-  'Pending Verification',
-  'Data Incomplete',
-  'Free',
-];
+import { ENTITLEMENT_DISPLAY_ORDER, entitlementLabel } from '@/lib/entitlement';
+
+const order = ENTITLEMENT_DISPLAY_ORDER.map(entitlementLabel);
 const colors=['#2f7555','#5f6fd3','#c4a15d','#7e62b3','#78938a','#bd5b5b','#9f7f72','#7b879f','#a1a69f','#cfd7d2'];
 
 type Props = { embedded?: boolean };

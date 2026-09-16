@@ -4,6 +4,7 @@ import { collection, getDocs, query, where } from 'firebase/firestore';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { db } from '@/lib/firebase';
 import { asTime, isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
+import { ensureEntitlementIndex, entitlementInputsFor, peekEntitlementIndex } from '@/hooks/useEntitlementSources';
 
 export type ActivityDoc = {
   uid: string;
@@ -70,7 +71,7 @@ function userFreshness(user: NormalizedUser) {
   return Math.max(user.lastSeenAt, user.lastLoginAt, user.registeredAt);
 }
 
-async function fetchFounderUsers(): Promise<UsersCache> {
+async function fetchFounderUsers(entitlementIndex: ReturnType<typeof peekEntitlementIndex>): Promise<UsersCache> {
   const usersSnap = await getDocs(collection(db, 'users'));
   const uniqueUsers = new Map<string, NormalizedUser>();
 
@@ -79,7 +80,7 @@ async function fetchFounderUsers(): Promise<UsersCache> {
     if (!isIncludedRealUser(raw)) return;
 
     const uid = canonicalUid(doc.id, raw);
-    const normalized = normalizeUser(uid, raw);
+    const normalized = normalizeUser(uid, raw, entitlementInputsFor(entitlementIndex, uid));
     const identity = userIdentity(uid, raw);
     const existing = uniqueUsers.get(identity);
 
@@ -95,7 +96,10 @@ async function getFounderUsers(force = false) {
   if (!force && sharedUsersCache) return sharedUsersCache;
   if (!force && sharedUsersRequest) return sharedUsersRequest;
 
-  sharedUsersRequest = fetchFounderUsers();
+  sharedUsersRequest = (async () => {
+    const entitlementIndex = await ensureEntitlementIndex(force).catch(() => peekEntitlementIndex());
+    return fetchFounderUsers(entitlementIndex);
+  })();
   try {
     sharedUsersCache = await sharedUsersRequest;
     return sharedUsersCache;

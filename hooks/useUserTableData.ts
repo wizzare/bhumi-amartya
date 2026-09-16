@@ -1,287 +1,95 @@
 'use client';
 
-import { collection, endAt, getDocs, limit, orderBy, query, startAfter, startAt, where } from 'firebase/firestore';
-import { useCallback, useEffect, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { isIncludedRealUser, normalizeUser, NormalizedUser } from '@/lib/analytics';
-import { peekFounderDataCache } from '@/hooks/useFounderData';
-
-const PAGE_SIZE = 10;
-
-type CachedPage = { rows: NormalizedUser[]; lastDoc: any | null; hasMore: boolean };
-type CachedSearch = { rows: NormalizedUser[]; source: 'founder-cache' | 'firestore'; reads: number };
-
-let pageCache: CachedPage[] = [];
-const searchCache = new Map<string, CachedSearch>();
-const searchRequests = new Map<string, Promise<CachedSearch>>();
-
-function canonicalUid(docId: string, raw: Record<string, any>) {
-  return String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || docId).trim() || docId;
-}
-
-function identityFor(docId: string, raw: Record<string, any>) {
-  const authId = String(raw.authUid || raw.uid || raw.userId || raw.ownerUserId || '').trim();
-  if (authId) return `uid:${authId}`;
-  const email = String(raw.email || '').trim().toLowerCase();
-  if (email) return `email:${email}`;
-  return `doc:${docId}`;
-}
-
-function priorIdentities(pageIndex: number) {
-  const seen = new Set<string>();
-  for (let i = 0; i < pageIndex; i += 1) {
-    pageCache[i]?.rows.forEach((user) => seen.add(identityFor(user.uid, user.raw || {})));
-  }
-  return seen;
-}
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { PAGE_SIZE, dedupeAll, sortForTable } from '@/lib/userTableOrdering';
+import { useFounderUsers } from '@/hooks/useFounderData';
 
 function normalizeSearchTerm(value: string) {
   return value.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-function titleCase(value: string) {
-  return value.toLowerCase().replace(/(^|\s)\S/g, (char) => char.toUpperCase());
-}
-
-function dedupeRows(rows: NormalizedUser[]) {
-  const unique = new Map<string, NormalizedUser>();
-  rows.forEach((user) => {
-    const identity = identityFor(user.uid, user.raw || {});
-    const current = unique.get(identity);
-    if (!current || Math.max(user.lastLoginAt, user.lastSeenAt) > Math.max(current.lastLoginAt, current.lastSeenAt)) {
-      unique.set(identity, user);
-    }
-  });
-  return [...unique.values()].sort((a, b) => b.lastLoginAt - a.lastLoginAt).slice(0, PAGE_SIZE);
-}
-
-function docsToRows(docs: any[]) {
-  return docs
-    .map((doc) => ({ id: doc.id, raw: doc.data() as Record<string, any> }))
-    .filter(({ raw }) => isIncludedRealUser(raw))
-    .map(({ id, raw }) => normalizeUser(canonicalUid(id, raw), raw));
-}
-
-async function exactQuery(field: string, value: string) {
-  const snap = await getDocs(query(collection(db, 'users'), where(field, '==', value), limit(PAGE_SIZE)));
-  return { rows: docsToRows(snap.docs), reads: Math.max(1, snap.docs.length) };
-}
-
-async function prefixQuery(field: string, prefix: string) {
-  const snap = await getDocs(query(
-    collection(db, 'users'),
-    orderBy(field),
-    startAt(prefix),
-    endAt(`${prefix}\uf8ff`),
-    limit(PAGE_SIZE),
-  ));
-  return { rows: docsToRows(snap.docs), reads: Math.max(1, snap.docs.length) };
-}
-
-async function fetchSearch(term: string): Promise<CachedSearch> {
-  const key = normalizeSearchTerm(term);
-  const founderCache = peekFounderDataCache();
-
-  if (founderCache) {
-    const rows = founderCache.users
-      .filter((user) => user.email.toLowerCase() === key || `${user.name} ${user.email}`.toLowerCase().includes(key))
-      .sort((a, b) => b.lastLoginAt - a.lastLoginAt)
-      .slice(0, PAGE_SIZE);
-    return { rows, source: 'founder-cache', reads: 0 };
-  }
-
-  const collected: NormalizedUser[] = [];
-  let reads = 0;
-  const original = term.trim().replace(/\s+/g, ' ');
-  const variants = Array.from(new Set([original, titleCase(original), original.toLowerCase()].filter(Boolean)));
-
-  const appendExact = async (field: string, value: string) => {
-    const result = await exactQuery(field, value);
-    reads += result.reads;
-    collected.push(...result.rows);
-  };
-
-  const appendPrefix = async (field: string, prefix: string) => {
-    const result = await prefixQuery(field, prefix);
-    reads += result.reads;
-    collected.push(...result.rows);
-  };
-
-  if (key.includes('@')) {
-    for (const candidate of Array.from(new Set([original, key]))) {
-      await appendExact('email', candidate);
-      if (dedupeRows(collected).length) break;
-    }
-    if (!dedupeRows(collected).length) await appendPrefix('email', key);
-  } else {
-    for (const variant of variants.slice(0, 2)) {
-      await appendPrefix('fullName', variant);
-      if (dedupeRows(collected).length >= PAGE_SIZE) break;
-    }
-    if (dedupeRows(collected).length < PAGE_SIZE) {
-      for (const variant of variants.slice(0, 2)) {
-        await appendPrefix('displayName', variant);
-        if (dedupeRows(collected).length >= PAGE_SIZE) break;
-      }
-    }
-    if (dedupeRows(collected).length < PAGE_SIZE) await appendPrefix('email', key);
-  }
-
-  const rows = dedupeRows(collected).filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(key));
-  return { rows, source: 'firestore', reads };
-}
-
-async function getSearch(term: string) {
-  const key = normalizeSearchTerm(term);
-  const cached = searchCache.get(key);
-  if (cached) return { ...cached, cached: true };
-  const inflight = searchRequests.get(key);
-  if (inflight) return { ...(await inflight), cached: true };
-
-  const request = fetchSearch(term);
-  searchRequests.set(key, request);
-  try {
-    const result = await request;
-    searchCache.set(key, result);
-    return { ...result, cached: false };
-  } finally {
-    searchRequests.delete(key);
-  }
-}
-
 export function useUserTableData() {
+  const { users, loading, error, lastRefresh, refresh: refreshUsers } = useFounderUsers();
   const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<NormalizedUser[]>(pageCache[0]?.rows || []);
-  const [hasMore, setHasMore] = useState(pageCache[0]?.hasMore || false);
-  const [loading, setLoading] = useState(!pageCache[0]);
-  const [error, setError] = useState('');
-  const [readsThisPage, setReadsThisPage] = useState(0);
   const [searchMode, setSearchMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchSource, setSearchSource] = useState<'founder-cache' | 'firestore' | ''>('');
+  const [searchError, setSearchError] = useState('');
 
-  const loadPage = useCallback(async (targetPage: number, force = false) => {
-    setLoading(true);
-    setError('');
-    try {
-      if (force) pageCache = [];
-      const pageIndex = Math.max(0, targetPage - 1);
-      const cached = pageCache[pageIndex];
-      if (cached && !force) {
-        setRows(cached.rows);
-        setHasMore(cached.hasMore);
-        setPage(targetPage);
-        setReadsThisPage(0);
-        setSearchMode(false);
-        setSearchTerm('');
-        setSearchSource('');
-        return;
-      }
+  // Single canonical, deduped, deterministically ordered population.
+  // Identical to the set useFounderData() exposes to Overview, so the Users
+  // table and the Executive Overview can no longer disagree.
+  const population = useMemo(() => sortForTable(dedupeAll(users)), [users]);
 
-      const previous = pageIndex > 0 ? pageCache[pageIndex - 1] : null;
-      if (pageIndex > 0 && !previous?.lastDoc) {
-        setRows([]);
-        setHasMore(false);
-        setPage(targetPage);
-        setReadsThisPage(0);
-        setSearchMode(false);
-        return;
-      }
+  const matches = useMemo(() => {
+    if (!searchMode) return population;
+    const key = normalizeSearchTerm(searchTerm);
+    if (!key) return population;
+    return population.filter((user) => `${user.name} ${user.email} ${user.uid}`.toLowerCase().includes(key));
+  }, [population, searchMode, searchTerm]);
 
-      const base = collection(db, 'users');
-      const q = previous?.lastDoc
-        ? query(base, orderBy('participationMetrics.lastLoginAt', 'desc'), startAfter(previous.lastDoc), limit(PAGE_SIZE))
-        : query(base, orderBy('participationMetrics.lastLoginAt', 'desc'), limit(PAGE_SIZE));
-      const snap = await getDocs(q);
-      const seen = priorIdentities(pageIndex);
-      const unique = new Map<string, NormalizedUser>();
+  const totalPages = Math.max(1, Math.ceil(matches.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(1, page), totalPages);
 
-      snap.docs.forEach((doc) => {
-        const raw = doc.data() as Record<string, any>;
-        if (!isIncludedRealUser(raw)) return;
-        const identity = identityFor(doc.id, raw);
-        if (seen.has(identity) || unique.has(identity)) return;
-        unique.set(identity, normalizeUser(canonicalUid(doc.id, raw), raw));
-      });
+  // Slicing happens after filtering and dedupe, so a page is short only when
+  // the dataset is genuinely exhausted.
+  const rows = useMemo(
+    () => matches.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE),
+    [matches, safePage],
+  );
 
-      const nextPage: CachedPage = {
-        rows: Array.from(unique.values()).slice(0, PAGE_SIZE),
-        lastDoc: snap.docs[snap.docs.length - 1] || null,
-        hasMore: snap.docs.length === PAGE_SIZE,
-      };
-      pageCache[pageIndex] = nextPage;
-      setRows(nextPage.rows);
-      setHasMore(nextPage.hasMore);
-      setPage(targetPage);
-      setReadsThisPage(snap.docs.length);
-      setSearchMode(false);
-      setSearchTerm('');
-      setSearchSource('firestore');
-    } catch (e: any) {
-      setError(e?.message || 'Gagal membaca halaman user.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const hasMore = safePage < totalPages;
 
-  const search = useCallback(async (term: string) => {
+  useEffect(() => { setPage(1); }, [searchTerm, searchMode]);
+
+  const search = useCallback((term: string) => {
     const normalized = normalizeSearchTerm(term);
     if (normalized.length < 2) {
-      setError('Masukkan minimal 2 karakter untuk mencari nama/email.');
+      setSearchError('Masukkan minimal 2 karakter untuk mencari nama/email/UID.');
       return;
     }
-    setLoading(true);
-    setError('');
-    try {
-      const result = await getSearch(term);
-      setRows(result.rows);
-      setSearchMode(true);
-      setSearchTerm(term.trim());
-      setSearchSource(result.source);
-      setReadsThisPage(result.cached ? 0 : result.reads);
-      setHasMore(false);
-    } catch (e: any) {
-      setError(e?.message || 'Gagal mencari user.');
-    } finally {
-      setLoading(false);
-    }
+    setSearchError('');
+    setSearchTerm(term.trim());
+    setSearchMode(true);
+    setPage(1);
   }, []);
 
   const clearSearch = useCallback(() => {
-    const cached = pageCache[Math.max(0, page - 1)] || pageCache[0];
-    setSearchMode(false);
+    setSearchError('');
     setSearchTerm('');
-    setSearchSource('');
-    setError('');
-    if (cached) {
-      setRows(cached.rows);
-      setHasMore(cached.hasMore);
-      setReadsThisPage(0);
-      return;
-    }
-    void loadPage(1);
-  }, [loadPage, page]);
+    setSearchMode(false);
+    setPage(1);
+  }, []);
 
-  useEffect(() => { if (!pageCache[0]) void loadPage(1); }, [loadPage]);
-
-  const next = useCallback(() => {
-    if (!loading && !searchMode && hasMore) void loadPage(page + 1);
-  }, [hasMore, loadPage, loading, page, searchMode]);
-
-  const previous = useCallback(() => {
-    if (!loading && !searchMode && page > 1) void loadPage(page - 1);
-  }, [loadPage, loading, page, searchMode]);
+  const next = useCallback(() => { if (hasMore) setPage((value) => value + 1); }, [hasMore]);
+  const previous = useCallback(() => { setPage((value) => Math.max(1, value - 1)); }, []);
 
   const refresh = useCallback(() => {
     setSearchMode(false);
     setSearchTerm('');
-    setSearchSource('');
-    void loadPage(1, true);
-  }, [loadPage]);
+    setSearchError('');
+    setPage(1);
+    void refreshUsers(true);
+  }, [refreshUsers]);
 
   return {
-    rows, page, hasMore, loading, error, readsThisPage,
-    next, previous, refresh, pageSize: PAGE_SIZE,
-    search, clearSearch, searchMode, searchTerm, searchSource,
+    rows,
+    page: safePage,
+    totalPages,
+    hasMore,
+    loading,
+    error: error || searchError,
+    readsThisPage: 0,
+    next,
+    previous,
+    refresh,
+    pageSize: PAGE_SIZE,
+    search,
+    clearSearch,
+    searchMode,
+    searchTerm,
+    searchSource: 'founder-cache' as const,
+    totalMatches: matches.length,
+    totalPopulation: population.length,
+    lastRefresh,
   };
 }

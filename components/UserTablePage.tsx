@@ -37,6 +37,7 @@ function accessDisplay(user: NormalizedUser) {
   if (user.plan === 'Penjaga Alfa') return { primary: 'Penjaga Alfa', secondary: 'Akses aktif', cls: 'green' };
   if (user.plan === 'Expired Grant') return { primary: 'Free', secondary: guardian ? `${guardian} selesai` : 'Grant selesai', cls: 'gray' };
   if (user.plan === 'Expired Paid') return { primary: 'Free', secondary: 'Premium selesai', cls: 'gray' };
+  if (user.plan === 'Expired Trial') return { primary: 'Free', secondary: 'Trial selesai', cls: 'gray' };
   if (user.plan === 'Pending Verification') return { primary: 'Pending', secondary: 'Verifikasi billing', cls: 'gold' };
   if (user.plan === 'Data Incomplete') return { primary: 'Perlu cek', secondary: 'Data entitlement', cls: 'red' };
   return { primary: 'Free', secondary: 'Trial selesai', cls: 'gray' };
