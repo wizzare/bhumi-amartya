@@ -19,6 +19,12 @@ export const releaseSuites = [
     evidence: "STRONG_REAL_SDK",
   },
   {
+    name: "P0 Auth skipNativeAuth + Credential Manager fallback",
+    file: "tests/unit/p0-auth-skip-native-auth.test.ts",
+    kind: "node",
+    evidence: "MOCK_UNIT",
+  },
+  {
     name: "Daily Guidance API URL contract",
     file: "tests/unit/daily-guidance-api-url.test.ts",
     kind: "node",

@@ -38,6 +38,7 @@ type NativeGoogleAuthWithLegacyOptions = typeof FirebaseAuthentication & {
   signInWithGoogle(options: {
     webClientId: string;
     useCredentialManager: boolean;
+    skipNativeAuth: boolean;
   }): Promise<NativeGoogleSignInResult>;
 };
 
@@ -323,7 +324,7 @@ export const signInWithGoogle = async (options?: {
   if (isNative) {
     try {
       const WEB_CLIENT_ID = "59259824153-vldlev9s91l6sss3ulqbh8mnaah4n4c9.apps.googleusercontent.com";
-      const useCredentialManager = true;
+      let useCredentialManager = true;
       console.info("[NATIVE GOOGLE AUTH START]", {
         platform,
         forceCodeForRefreshToken: true
@@ -332,29 +333,50 @@ export const signInWithGoogle = async (options?: {
       const nativeAuth = FirebaseAuthentication as NativeGoogleAuthWithLegacyOptions;
 
       let result: NativeGoogleSignInResult;
+      let providerPath = "credential_manager";
       try {
         result = await nativeAuth.signInWithGoogle({
           webClientId: WEB_CLIENT_ID,
           useCredentialManager,
+          skipNativeAuth: true,
         });
       } catch (nativeError) {
-        void recordGoogleSignInDiagnostic(
-          classifyGoogleSignInError(nativeError, "NATIVE_GOOGLE_SIGN_IN", useCredentialManager)
-        );
-        throw nativeError;
+        const classified = classifyGoogleSignInError(nativeError, "NATIVE_GOOGLE_SIGN_IN", useCredentialManager);
+        void recordGoogleSignInDiagnostic(classified);
+
+        if (classified.category === "CREDENTIAL_MANAGER_ERROR" || classified.category === "NO_CREDENTIAL") {
+          console.info("[NATIVE GOOGLE AUTH] Credential Manager unavailable, retrying with legacy fallback");
+          providerPath = "legacy_fallback";
+          try {
+            useCredentialManager = false;
+            result = await nativeAuth.signInWithGoogle({
+              webClientId: WEB_CLIENT_ID,
+              useCredentialManager,
+              skipNativeAuth: true,
+            });
+          } catch (legacyError) {
+            void recordGoogleSignInDiagnostic(
+              classifyGoogleSignInError(legacyError, "NATIVE_GOOGLE_SIGN_IN", false)
+            );
+            throw legacyError;
+          }
+        } else {
+          throw nativeError;
+        }
       }
 
       console.info("[NATIVE GOOGLE AUTH RESULT SUCCESS]", {
         hasCredential: !!result?.credential,
         hasIdToken: !!result?.credential?.idToken,
         hasAccessToken: !!result?.credential?.accessToken,
+        providerPath,
       });
 
       const idToken = result?.credential?.idToken ?? null;
       const accessToken = result?.credential?.accessToken ?? null;
 
       if (!idToken && !accessToken) {
-        console.error("[NATIVE GOOGLE AUTH ERROR]", { reason: "missing_tokens" });
+        console.error("[NATIVE GOOGLE AUTH ERROR]", { reason: "missing_tokens", providerPath });
         const tokenError = new Error("Native Google sign-in did not return idToken/accessToken.");
         void recordGoogleSignInDiagnostic(
           classifyGoogleSignInError(tokenError, "ID_TOKEN_RETRIEVAL", useCredentialManager)
@@ -366,6 +388,7 @@ export const signInWithGoogle = async (options?: {
       console.log("[NATIVE GOOGLE AUTH CREDENTIAL]", {
         hasIdToken: !!idToken,
         hasAccessToken: !!accessToken,
+        providerPath,
       });
 
       try {
@@ -385,8 +408,8 @@ export const signInWithGoogle = async (options?: {
         throw firebaseError;
       }
 
-      console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native" });
-      void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange" });
+      console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native", providerPath });
+      void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange", providerPath } as any);
       return;
     } catch (error) {
       logSafeAuthError("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
