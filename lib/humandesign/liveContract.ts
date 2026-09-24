@@ -1,4 +1,5 @@
 import { HD_ENGINE_VERSION, isCanonicalHumanDesign, isRecognizedHumanDesignType } from "./hdAudit";
+import { getHumanDesignCompleteness } from "./completeness";
 import {
   emptyHumanDesignCenters,
   type HumanDesignActivation,
@@ -125,9 +126,43 @@ export const normalizeLiveHumanDesignResponse = (data: LivePayload, now = new Da
   };
 };
 
-export const mergeVerifiedHumanDesignChart = (existing: unknown, candidate: HumanDesignChart): HumanDesignChart | null => {
+export type MergeVerifiedHumanDesignOptions = {
+  /**
+   * Default false — every existing caller keeps today's behavior (a
+   * metadata-CANONICAL existing chart is never replaced).
+   *
+   * Opt-in for scripts/mass-recover-hd.ts ONLY, after it has independently
+   * confirmed `getHumanDesignCompleteness(existing).coreState ===
+   * "CANONICAL_INCOMPLETE"` (the CDI-108 case: `getHdState()` reports
+   * CANONICAL from metadata alone even though gates/channels/centers are
+   * structurally empty). When true, this function re-verifies that same
+   * condition itself — it does not trust the caller's opt-in blindly — and
+   * additionally requires the candidate to structurally improve on the
+   * existing record before allowing the merge. A structurally COMPLETE
+   * canonical chart is still never replaced, opt-in or not.
+   *
+   * This function does not re-check identity-field (type/strategy/
+   * authority/profile) stability — that guard lives in the caller
+   * (mass-recover-hd.ts's compareSnapshots), which must run before opting
+   * in here, per the same reasoning as the coreState check above.
+   */
+  allowCanonicalIncompleteRepair?: boolean;
+};
+
+export const mergeVerifiedHumanDesignChart = (
+  existing: unknown,
+  candidate: HumanDesignChart,
+  options: MergeVerifiedHumanDesignOptions = {},
+): HumanDesignChart | null => {
   if (!isCanonicalHumanDesign(candidate)) return null;
-  if (isCanonicalHumanDesign(existing)) return null;
+  if (isCanonicalHumanDesign(existing)) {
+    if (!options.allowCanonicalIncompleteRepair) return null;
+    const existingCompleteness = getHumanDesignCompleteness(existing);
+    if (existingCompleteness.coreState !== "CANONICAL_INCOMPLETE") return null;
+    const candidateCompleteness = getHumanDesignCompleteness(candidate);
+    const improves = candidateCompleteness.missingCoreFields.length < existingCompleteness.missingCoreFields.length;
+    if (!improves) return null;
+  }
   const prior = existing && typeof existing === "object" ? existing as Partial<HumanDesignChart> : {};
   const pickArray = <T>(fresh: T[] | undefined, saved: T[] | undefined) => fresh?.length ? fresh : (saved || []);
   return {
