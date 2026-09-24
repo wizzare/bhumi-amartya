@@ -12,7 +12,7 @@ import {
 import { Capacitor } from "@capacitor/core";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { Timestamp } from "firebase/firestore";
-import { classifyGoogleSignInError } from "./classifyGoogleSignInError";
+import { classifyGoogleSignInError, GoogleSignInFailure } from "./classifyGoogleSignInError";
 import { recordGoogleSignInDiagnostic, recordAuthEvent } from "./authTelemetry";
 import { logSafeAuthError, warnSafeAuthError } from "./safeDiagnostics";
 import { bootstrapCanonicalAccess } from "../billing/canonicalAccessBootstrap";
@@ -355,13 +355,12 @@ export const signInWithGoogle = async (options?: {
               skipNativeAuth: true,
             });
           } catch (legacyError) {
-            void recordGoogleSignInDiagnostic(
-              classifyGoogleSignInError(legacyError, "NATIVE_GOOGLE_SIGN_IN", false)
-            );
-            throw legacyError;
+            const classified = classifyGoogleSignInError(legacyError, "NATIVE_GOOGLE_SIGN_IN", false);
+            void recordGoogleSignInDiagnostic(classified);
+            throw new GoogleSignInFailure(classified);
           }
         } else {
-          throw nativeError;
+          throw new GoogleSignInFailure(classified);
         }
       }
 
@@ -378,41 +377,39 @@ export const signInWithGoogle = async (options?: {
       if (!idToken && !accessToken) {
         console.error("[NATIVE GOOGLE AUTH ERROR]", { reason: "missing_tokens", providerPath });
         const tokenError = new Error("Native Google sign-in did not return idToken/accessToken.");
-        void recordGoogleSignInDiagnostic(
-          classifyGoogleSignInError(tokenError, "ID_TOKEN_RETRIEVAL", useCredentialManager)
-        );
-        throw tokenError;
+        const classified = classifyGoogleSignInError(tokenError, "ID_TOKEN_RETRIEVAL", useCredentialManager);
+        void recordGoogleSignInDiagnostic(classified);
+        throw new GoogleSignInFailure(classified);
       }
 
-      const credential = GoogleAuthProvider.credential(idToken, accessToken);
-      console.log("[NATIVE GOOGLE AUTH CREDENTIAL]", {
-        hasIdToken: !!idToken,
-        hasAccessToken: !!accessToken,
-        providerPath,
-      });
-
       try {
+        const credential = GoogleAuthProvider.credential(idToken, accessToken);
+        console.log("[NATIVE GOOGLE AUTH CREDENTIAL]", {
+          hasIdToken: !!idToken,
+          hasAccessToken: !!accessToken,
+          providerPath,
+        });
+
         await signInWithCredential(auth, credential);
       } catch (firebaseError) {
-        void recordGoogleSignInDiagnostic(
-          classifyGoogleSignInError(firebaseError, "FIREBASE_CREDENTIAL_EXCHANGE", useCredentialManager)
-        );
+        const classified = classifyGoogleSignInError(firebaseError, "FIREBASE_CREDENTIAL_EXCHANGE", useCredentialManager);
+        void recordGoogleSignInDiagnostic(classified);
         void recordAuthEvent(
           "AUTH_SIGNUP_FAILED",
           {
             stage: "FIREBASE_CREDENTIAL_EXCHANGE",
-            errorClass: (firebaseError as any)?.name || "Error",
-            errorCode: (firebaseError as any)?.code || null,
+            errorClass: classified.category,
+            errorCode: classified.code === null ? undefined : String(classified.code),
           },
         );
-        throw firebaseError;
+        throw new GoogleSignInFailure(classified);
       }
 
       console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native", providerPath });
       void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange", providerPath } as any);
       return;
     } catch (error) {
-      logSafeAuthError("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", error);
+      logSafeAuthError("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", new GoogleSignInFailure(classifyGoogleSignInError(error)));
       throw error;
     }
   }
@@ -425,15 +422,17 @@ export const signInWithGoogle = async (options?: {
   console.log("[GOOGLE AUTH RESULT]", { status: "success" });
   void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "web_popup" });
   } catch (error) {
+    const classified = classifyGoogleSignInError(error, "UNKNOWN", undefined, isNative ? "unknown" : "web_popup");
+    if (!(error instanceof GoogleSignInFailure)) void recordGoogleSignInDiagnostic(classified);
     void recordAuthEvent(
       alreadyAuthenticated ? "AUTH_LOGIN_FAILED" : "AUTH_SIGNUP_FAILED",
       {
-        stage: isNative ? "native_google_auth" : "web_popup",
-        errorClass: (error as any)?.name || "Error",
-        errorCode: (error as any)?.code || null,
+        stage: classified.stage,
+        errorClass: classified.category,
+        errorCode: classified.code === null ? undefined : String(classified.code),
       },
     );
-    throw error;
+    throw new GoogleSignInFailure(classified);
   }
 };
 

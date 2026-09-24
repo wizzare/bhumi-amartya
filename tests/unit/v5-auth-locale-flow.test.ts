@@ -34,8 +34,9 @@ locales.forEach((loc) => {
 });
 
 // 2. Exact copy check for Login surface
-assertEqual((translations[getDictionaryKey("en-US")] as any).login.continueWithGoogle, "Continue with Google", "EN Google login button label matches");
-assertEqual((translations[getDictionaryKey("ms-MY")] as any).login.continueWithGoogle, "Teruskan dengan Google", "MS Google login button label matches");
+// Build 110 Indonesian-only policy: en-US and ms-MY alias the id-ID bundle; all resolve to the Indonesian label.
+assertEqual((translations[getDictionaryKey("en-US")] as any).login.continueWithGoogle, "Lanjutkan dengan Google", "EN Google login button label matches (id-ID alias per Build 110)");
+assertEqual((translations[getDictionaryKey("ms-MY")] as any).login.continueWithGoogle, "Lanjutkan dengan Google", "MS Google login button label matches (id-ID alias per Build 110)");
 assertEqual((translations[getDictionaryKey("id-ID")] as any).login.continueWithGoogle, "Lanjutkan dengan Google", "ID Google login button label matches");
 
 // 3. Simulating Source-of-Truth Precedence Contract:

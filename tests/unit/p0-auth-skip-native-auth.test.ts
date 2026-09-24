@@ -107,7 +107,7 @@ async function testCUserCancelNoFallback() {
     await signInWithGoogle();
     assert.fail("Should have thrown on user cancel");
   } catch (e: any) {
-    assert.ok(e.message.includes("cancelled"), "Error should propagate as cancellation");
+    assert.strictEqual(e.diagnostic?.category, "SIGN_IN_CANCELLED", "Error should propagate as cancellation");
   }
 
   assert.strictEqual(callCount, 1, "Should have exactly 1 call — no fallback on user cancel");
@@ -176,7 +176,7 @@ async function run(): Promise<void> {
   assertionCount += 2;
 
   await testBCredentialManagerFallback();
-  assertionCount += 5;
+  assertionCount += 4;
 
   await testCUserCancelNoFallback();
   assertionCount += 2;
@@ -186,6 +186,30 @@ async function run(): Promise<void> {
 
   await testESuccessfulLoginNoError();
   assertionCount += 1;
+
+  const { signInWithGoogle } = await import("@/lib/auth/authActions");
+  const { classifyGoogleSignInError } = await import("@/lib/auth/classifyGoogleSignInError");
+  for (const [legacy, missingTokens] of [[false, false], [true, false], [false, true]] as const) {
+    resetMocks();
+    let calls = 0;
+    setSignInWithGoogleImpl(async () => {
+      calls++;
+      if (legacy && calls === 1) throw new Error("No credentials available");
+      if (missingTokens) return {};
+      throw new Error("ApiException: 10: token=synthetic-secret test@example.invalid");
+    });
+    await assert.rejects(signInWithGoogle(), (error: unknown) => {
+      const diagnostic = classifyGoogleSignInError(error);
+      assert.strictEqual(diagnostic.stage, missingTokens ? "ID_TOKEN_RETRIEVAL" : "NATIVE_GOOGLE_SIGN_IN");
+      assert.strictEqual(diagnostic.credentialManagerEnabled, !legacy);
+      assert.strictEqual(diagnostic.category, missingTokens ? "UNKNOWN" : "DEVELOPER_ERROR");
+      assert.ok(!JSON.stringify(error).includes("synthetic-secret"));
+      assertionCount += 4;
+      return true;
+    });
+    assert.strictEqual(calls, legacy ? 2 : 1);
+    assertionCount += 2;
+  }
 
   console.log(`\nPASS p0-auth-skip-native-auth (${assertionCount} assertions)`);
 }

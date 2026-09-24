@@ -83,32 +83,31 @@ export async function recordAuthEvent(
 
 export async function recordGoogleSignInDiagnostic(
   classifiedError: ClassifiedGoogleSignInError,
-  androidVersion?: string,
-  deviceModel?: string
 ): Promise<void> {
+  const diagnostic = {
+    provider: classifiedError.provider,
+    category: classifiedError.category,
+    code: classifiedError.code,
+    stage: classifiedError.stage,
+    nativeFlow: classifiedError.nativeFlow,
+    credentialManagerEnabled: classifiedError.credentialManagerEnabled ?? null,
+  };
+  console.error("[GOOGLE SIGN-IN DIAGNOSTIC]", diagnostic);
   try {
     const buildInfo = await getRuntimeBuildInfo();
     const event = {
       eventType: "google_signin_failed",
-      category: classifiedError.category,
-      code: classifiedError.code,
-      stage: classifiedError.stage,
-      message: classifiedError.message,
+      ...diagnostic,
       appVersion: buildInfo.versionName,
       versionCode: buildInfo.versionCode,
       platform: buildInfo.platform,
-      androidVersion: androidVersion || null,
-      deviceModel: deviceModel || null,
-      locale: typeof navigator !== "undefined" ? navigator.language : "unknown",
-      credentialManagerEnabled: classifiedError.credentialManagerEnabled || null,
       timestamp: serverTimestamp(),
-      uid: auth.currentUser?.uid || null,
     };
 
     // Use analytics collection (best-effort)
     await addDoc(collection(db, "analytics"), event);
-  } catch (error) {
+  } catch {
     // Telemetry failure must never break the login flow
-    console.error("[Auth Telemetry] Failed to record diagnostic:", error);
+    console.warn("[Auth Telemetry] Diagnostic persistence unavailable");
   }
 }

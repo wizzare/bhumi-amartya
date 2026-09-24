@@ -21,6 +21,7 @@ import { EmulatorQaLogin } from "@/components/dev/EmulatorQaLogin";
 import { Build110LocalLogin } from "@/components/dev/Build110LocalLogin";
 import { isBuild110LocalQa } from "@/lib/config/localQa";
 import { logSafeAuthError } from "@/lib/auth/safeDiagnostics";
+import { classifyGoogleSignInError, GoogleSignInFailure, googleSignInCategoryMessage } from "@/lib/auth/classifyGoogleSignInError";
 
 function LoginContent() {
   const router = useRouter();
@@ -37,7 +38,7 @@ function LoginContent() {
   const [showRedirectFallback, setShowRedirectFallback] = useState(false);
 
   const getGoogleLoginErrorMessage = (err: unknown): string => {
-    const code = (err as { code?: string })?.code;
+    const { code } = classifyGoogleSignInError(err);
     if (err instanceof GooglePopupTimeoutError || code === "auth/popup-timeout") {
       return t.login?.popupTimeout || "Google tidak merespons. Periksa apakah pop-up diblokir, lalu coba lagi atau gunakan halaman login Google.";
     }
@@ -47,7 +48,7 @@ function LoginContent() {
     if (code === "auth/popup-closed-by-user") {
       return t.login?.popupClosed || "Jendela login Google ditutup sebelum selesai. Silakan coba lagi.";
     }
-    return t.login?.genericError || "Login Google belum berhasil. Periksa koneksimu dan coba lagi.";
+    return googleSignInCategoryMessage(classifyGoogleSignInError(err).category);
   };
 
   useEffect(() => {
@@ -55,7 +56,7 @@ function LoginContent() {
 
     if (!isBuild110LocalQa() && !Capacitor.isNativePlatform()) {
       void handleGoogleRedirectResult().catch((err) => {
-        logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", err);
+        logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", new GoogleSignInFailure(classifyGoogleSignInError(err)));
         if (!active) return;
         setError(getGoogleLoginErrorMessage(err));
       });
@@ -136,8 +137,8 @@ function LoginContent() {
       console.log("[LOGIN FLOW] Starting Google Auth");
       await signInWithGoogle({ promptSelectAccount: true });
     } catch (err: unknown) {
-      logSafeAuthError("[CRITICAL AUTH ERROR]", err);
-      const code = (err as { code?: string })?.code;
+      logSafeAuthError("[CRITICAL AUTH ERROR]", new GoogleSignInFailure(classifyGoogleSignInError(err)));
+      const { code } = classifyGoogleSignInError(err);
       setError(getGoogleLoginErrorMessage(err));
       if (!Capacitor.isNativePlatform()) {
         setShowRedirectFallback(code === "auth/popup-timeout" || code === "auth/popup-blocked");
@@ -153,7 +154,7 @@ function LoginContent() {
       setError(null);
       await signInWithGoogleRedirect({ promptSelectAccount: true });
     } catch (err) {
-      logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", err);
+      logSafeAuthError("[GOOGLE REDIRECT AUTH ERROR]", new GoogleSignInFailure(classifyGoogleSignInError(err)));
       setError(getGoogleLoginErrorMessage(err));
     } finally {
       setLoginLoading(false);
