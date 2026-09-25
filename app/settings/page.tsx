@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { HD_API_URL } from "@/lib/config/hdApiUrl";
+import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
+import { saveHumanDesignSettings, validateHumanDesignBirthData } from "@/lib/humandesign/normalizedAudit";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Shield, ShieldCheck, ShieldAlert, User as UserIcon, Info } from "lucide-react";
@@ -97,60 +99,6 @@ function daysUntil(value: unknown): number | null {
 
   if (!date) return null;
   return Math.max(0, Math.ceil((date.getTime() - Date.now()) / 86_400_000));
-}
-
-async function fetchHumanDesign(input: {
-  fullName: string;
-  birthDate: string;
-  birthTime: string;
-  timezone?: string | null;
-}): Promise<LocalHumanDesign> {
-  try {
-    const response = await fetch(HD_API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        fullName: input.fullName,
-        birthDate: input.birthDate,
-        birthTime: input.birthTime,
-        timezone: input.timezone,
-      }),
-    });
-
-    if (!response.ok) return HUMAN_DESIGN_PENDING;
-    const result = await response.json();
-
-    return {
-      type: typeof result.type === "string" ? result.type : null,
-      profile: typeof result.profile === "string" ? result.profile : null,
-      authority: typeof result.authority === "string" ? result.authority : null,
-      strategy: typeof result.strategy === "string" ? result.strategy : null,
-      notSelfTheme: typeof result.notSelfTheme === "string" ? result.notSelfTheme : null,
-      signature: typeof result.signature === "string" ? result.signature : null,
-      definedCenters: Array.isArray(result.definedCenters)
-        ? result.definedCenters.filter((item: unknown): item is string => typeof item === "string")
-        : [],
-      openCenters: Array.isArray(result.openCenters)
-        ? result.openCenters.filter((item: unknown): item is string => typeof item === "string")
-        : [],
-      gatesPersonality: Array.isArray(result.gatesPersonality)
-        ? result.gatesPersonality.filter((item: unknown): item is string => typeof item === "string")
-        : [],
-      gatesDesign: Array.isArray(result.gatesDesign)
-        ? result.gatesDesign.filter((item: unknown): item is string => typeof item === "string")
-        : [],
-      status: result.status === "ready" || result.status === "error" || result.status === "pending"
-        ? result.status
-        : "pending",
-      source: "human-design-py",
-      note: typeof result.note === "string" ? result.note : undefined,
-    };
-  } catch (error) {
-    console.error("[Settings] Human Design refresh failed", error);
-    return HUMAN_DESIGN_PENDING;
-  }
 }
 
 function Field({
@@ -271,32 +219,10 @@ export default function SettingsPage() {
     const activeProfile = providerProfile ?? safeSessionProfile;
     const normalizedProfile = normalizeProfileDisplay(activeProfile);
 
-    console.log("[SETTINGS PROFILE SOURCE]", {
-      activeUid,
-      source: profileSource,
-      uid: activeProfile?.uid ?? null,
-      email: activeProfile?.email ?? null,
-      fullName: activeProfile?.fullName ?? activeProfile?.displayName ?? null,
-      birthDate: activeProfile?.birthDate ?? null,
-      birthCity: activeProfile?.birthCity ?? activeProfile?.birthPlace ?? null,
-      birthTime: activeProfile?.birthTime ?? null,
-      setupCompleted: activeProfile?.setupCompleted ?? null,
-    });
-    console.log("[SETTINGS DATA SOURCE]", {
-      activeUid,
-      profileSource,
+    console.log("[SETTINGS PROFILE]", {
+      present: Boolean(activeProfile),
       cacheUidMatches: !activeProfile?.uid || !activeUid || activeProfile.uid === activeUid,
     });
-    console.log("[SETTINGS PROFILE NORMALIZED]", normalizedProfile);
-
-    if (session.profile && !sessionProfileMatches) {
-      console.log("[USER ISOLATION CHECK]", {
-        key: "bhumiUserProfile",
-        activeUid,
-        cachedUid: session.profile.uid ?? null,
-        valid: false,
-      });
-    }
 
     if (activeProfile) {
       if (activeUid && activeProfile.uid !== activeUid) {
@@ -492,7 +418,7 @@ export default function SettingsPage() {
 
       router.replace("/setup");
     } catch (error) {
-      console.error("[Settings] Cleanup failed", error);
+      console.error("[Settings] Cleanup failed", { failed: true });
       setMessage(isEn ? "Failed to clean up data. Please try again." : "Gagal membersihkan data. Silakan coba lagi.");
     } finally {
       setSaving(false);
@@ -517,7 +443,7 @@ export default function SettingsPage() {
       }
       router.replace("/");
     } catch (error) {
-      console.error("[Settings] Sign out failed", error);
+      console.error("[Settings] Sign out failed", { failed: true });
       setMessage(isEn ? "Failed to sign out. Please try again." : "Gagal keluar akun. Silakan coba lagi.");
       setSigningOut(false);
     }
@@ -583,7 +509,7 @@ export default function SettingsPage() {
         router.replace("/");
       }, 2000);
     } catch (error) {
-      console.error("[Settings] Delete account failed", error);
+      console.error("[Settings] Delete account failed", { failed: true });
       setMessage(
         isEn
           ? "Failed to delete account. Please contact support if the problem persists."
@@ -702,6 +628,15 @@ export default function SettingsPage() {
       updatedAt: now,
     };
 
+    if (validateHumanDesignBirthData(nextProfile).length > 0) {
+      setMessage("Periksa tanggal dan jam kelahiran, lalu pilih kota dari daftar agar lokasi dan zona waktu valid.");
+      return;
+    }
+    nextProfile.dateOfBirth = birthDate;
+    nextProfile.timeOfBirth = birthTime;
+    nextProfile.placeOfBirth = birthCity;
+    nextProfile.hdDismissedAt = null;
+
     setSaving(true);
     setMessage(null);
 
@@ -716,26 +651,24 @@ export default function SettingsPage() {
       const nextBlueprint = generateLocalBlueprint(nextProfile);
       const existingBlueprint = await storageProvider.getUserBlueprint();
 
-      if (birthDataChanged || !existingBlueprint?.humanDesign) {
-        nextBlueprint.humanDesign = await fetchHumanDesign({
-          fullName,
-          birthDate,
-          birthTime,
-          timezone: nextProfile.timezone,
-        });
+      if (birthDataChanged || !isCanonicalHumanDesign(existingBlueprint?.humanDesign)) {
+        nextBlueprint.humanDesign = await calculateHumanDesign(nextProfile) as unknown as LocalHumanDesign;
       } else {
         nextBlueprint.humanDesign = (existingBlueprint as any).humanDesign as LocalHumanDesign;
       }
 
-      await storageProvider.saveUserProfile(nextProfile as unknown as StorageUserProfile);
-      await storageProvider.saveUserBlueprint(nextBlueprint as unknown as StorageUserBlueprint);
+      await saveHumanDesignSettings(activeUid, nextProfile,
+        { ...existingBlueprint, ...nextBlueprint, uid: existingBlueprint?.uid || activeUid, input: { ...(existingBlueprint as unknown as { input?: Record<string, unknown> } | null)?.input, birthDate, birthTime, birthCity, latitude: nextLatitude, longitude: nextLongitude, timezone: nextTimezone } },
+        value => storageProvider.saveUserProfile(value as unknown as StorageUserProfile),
+        value => storageProvider.saveUserBlueprint(value as unknown as StorageUserBlueprint),
+      );
       if (activeUid !== "local-user") {
         await userRepository.updatePresence(activeUid, {
           email: effectiveEmail || null,
           displayName: fullName,
           role: nextProfile.guardianRole || nextProfile.role || "user",
         }).catch((error) => {
-          console.warn("[Settings] Presence update failed", error);
+          console.warn("[Settings] Presence update failed", { failed: true });
         });
       }
 
@@ -748,7 +681,7 @@ export default function SettingsPage() {
       setPlan(nextPlan);
       setMessage(isEn ? "Data updated successfully. Your Blueprint has been refreshed." : "Data berhasil diperbarui. Blueprint-mu sudah diperbarui.");
     } catch (error) {
-      console.error("[Settings] Save failed", error);
+      console.error("[Settings] Save failed", { failed: true });
       setMessage(isEn ? "Failed to save settings. Please try again." : "Gagal menyimpan pengaturan. Silakan coba lagi.");
     } finally {
       setSaving(false);

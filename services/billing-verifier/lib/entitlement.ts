@@ -53,6 +53,8 @@ export async function markEntitlementAcknowledged(uid: string, purchaseToken: st
   await db.runTransaction(async (transaction) => {
     const tokenRef = db.doc(`billing_purchase_tokens/${tokenHash(purchaseToken)}`);
     const userRef = db.doc(`users/${uid}`);
+    const tokenSnap = await transaction.get(tokenRef);
+    if (!tokenSnap.exists || tokenSnap.data()?.uid !== uid) throw new Error("TOKEN_OWNERSHIP_CONFLICT");
     transaction.set(tokenRef, { ackStatus: "ACKNOWLEDGED", acknowledgedAt }, { merge: true });
     transaction.set(userRef, { "purchase.acknowledgedByServer": true, "purchase.ackStatus": "ACKNOWLEDGED", "purchases.googlePlay.ackStatus": "ACKNOWLEDGED" }, { merge: true });
   });

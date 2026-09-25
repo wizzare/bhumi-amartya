@@ -93,7 +93,10 @@ export async function googleFetchWithRetry(
 export async function fetchSubscription(purchaseToken: string, context: GooglePlayRequestContext): Promise<Subscription> {
   return withTimeout("FETCH_SUBSCRIPTION", FETCH_SUBSCRIPTION_MAX_MS, (async () => {
     const response = await googleFetchWithRetry(context, "FETCH_SUBSCRIPTION", `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${PACKAGE_NAME}/purchases/subscriptionsv2/tokens/${encodeURIComponent(purchaseToken)}`, { headers: { Authorization: `Bearer ${await accessToken(context)}` } });
-    if (!response.ok) throw new Error(response.status === 404 ? "TOKEN_INVALID" : "GOOGLE_API_FAILURE");
+    if (!response.ok) {
+      if (response.status === 404 || response.status === 400) throw new Error("TOKEN_INVALID");
+      throw new Error("GOOGLE_API_FAILURE");
+    }
     return response.json() as Promise<Subscription>;
   })());
 }
@@ -123,5 +126,5 @@ export async function checkVoidedPurchase(purchaseToken: string, context: Google
 export function validateProduct(item?: LineItem) {
   if (!item || item.productId !== PRODUCT_ID) return false;
   const basePlanId = item.offerDetails?.basePlanId || item.autoRenewingPlan?.basePlanId;
-  return !basePlanId || basePlanId === BASE_PLAN_ID;
+  return basePlanId === BASE_PLAN_ID;
 }

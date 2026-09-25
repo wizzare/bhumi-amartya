@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from "react";
 import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { getHdState } from "@/lib/humandesign/hdState";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
@@ -18,11 +17,7 @@ interface PendingHdRecoveryBannerProps {
   profile: any;
 }
 
-function hasBirthData(profile: any): boolean {
-  const time = profile?.birthTime || profile?.timeOfBirth;
-  const place = profile?.birthCity || profile?.birthPlace || profile?.cityOfBirth || profile?.placeOfBirth;
-  return Boolean(time) && Boolean(place);
-}
+import { getPendingHumanDesignPresentation } from "@/lib/humandesign/normalizedAudit";
 
 export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRecoveryBannerProps) {
   const router = useRouter();
@@ -31,13 +26,10 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   const [loading, setLoading] = useState(false);
 
   const hd = blueprint?.humanDesign || profile?.humanDesign;
-  const hdState = getHdState(hd);
-  const shouldDisplay = hdState.state === "PENDING" || hdState.state === "RETRIABLE_ERROR";
+  const { shouldDisplay, isRetriableError, birth } = getPendingHumanDesignPresentation(hd, profile, blueprint?.input);
 
   const isFirestoreDismissed = Boolean(profile?.hdDismissedAt);
-
-  const isRetriableError = hdState.state === "RETRIABLE_ERROR";
-  const isMissingBirthData = !hasBirthData(profile);
+  const isMissingBirthData = !birth.complete;
 
   const { title, message, buttonLabel, buttonAction } = useMemo(() => {
     if (isMissingBirthData) {
@@ -45,7 +37,7 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         title: isEn ? "Incomplete Birth Data" : "Data Kelahiran Belum Lengkap",
         message: isEn
           ? "Complete your birth time and city so your soul blueprint can be read accurately."
-          : "Lengkapi jam dan kota lahirmu agar peta jiwamu bisa terbaca dengan presisi.",
+          : "Periksa tanggal, jam, kota, dan zona waktu kelahiran di Pengaturan. Pilih kota dari daftar, lalu simpan untuk mencoba perhitungan kembali.",
         buttonLabel: isEn ? "Complete Now" : "Lengkapi Sekarang",
         buttonAction: "settings" as const,
       };
@@ -83,8 +75,8 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         hdDismissedAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       } as any);
-    } catch (err) {
-      console.warn("[PendingHdBanner] Failed to persist dismiss flag to Firestore:", err);
+    } catch {
+      console.warn("[PendingHdBanner]", { dismissFailed: true });
     } finally {
       setLoading(false);
     }
@@ -99,14 +91,7 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
     setLoading(true);
     try {
       if (profile) {
-        const nextHD = await calculateHumanDesign({
-          birthDate: profile.birthDate || profile.dateOfBirth,
-          birthTime: profile.birthTime || profile.timeOfBirth,
-          birthCity: profile.birthCity || profile.birthPlace || profile.cityOfBirth || profile.placeOfBirth,
-          timezone: profile.timezone || "+07:00",
-          latitude: profile.latitude,
-          longitude: profile.longitude,
-        });
+        const nextHD = await calculateHumanDesign(birth.profile);
 
         // Build 106 hotfix: only persist a canonical recalculation. A failed
         // engine call returns a typeless local-fallback/pending chart; writing
@@ -122,8 +107,8 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         }
       }
       window.location.reload();
-    } catch (err) {
-      console.error("[PendingHdBanner] Recalculation failed:", err);
+    } catch {
+      console.error("[PendingHdBanner]", { calculationFailed: true });
       window.location.reload();
     } finally {
       setLoading(false);

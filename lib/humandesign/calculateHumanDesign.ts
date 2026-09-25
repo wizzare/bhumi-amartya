@@ -6,14 +6,12 @@ import {
 } from "./types";
 import { HD_ENGINE_VERSION, logHumanDesignAudit } from "./hdAudit";
 
-const hasRequiredBirthData = (profile: HumanDesignBirthProfile) => {
-  return Boolean(profile.birthDate && profile.birthTime && profile.birthCity);
-};
+import { validateHumanDesignBirthData } from "./normalizedAudit";
 
 export async function calculateHumanDesign(
   profile: HumanDesignBirthProfile,
 ): Promise<HumanDesignChart> {
-  if (!hasRequiredBirthData(profile)) {
+  if (validateHumanDesignBirthData(profile).length > 0) {
     const pending = createPendingHumanDesignChart(
       "Human Design memerlukan tanggal, waktu, dan lokasi kelahiran.",
     );
@@ -51,11 +49,6 @@ export async function calculateHumanDesign(
     });
 
     if (result.status === "ready") {
-       console.log("[HD CALCULATION QUALITY]", {
-         source: result.source,
-         quality: result.calculationQuality || "verified",
-         type: result.type
-       });
        const validated: HumanDesignChart = {
          ...result,
          timezone: profile.timezone,

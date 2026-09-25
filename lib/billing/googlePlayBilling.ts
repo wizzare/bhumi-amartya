@@ -85,7 +85,9 @@ export function isGooglePlayBillingAvailable() {
   return currentPlatform() === "android" && Capacitor.isNativePlatform();
 }
 
-let isAutoRecoveryInitialized = false;
+let initialization: ReturnType<BillingPlugin["initialize"]> | null = null;
+let listenerGeneration = 0;
+const recoveryListeners: Array<{ remove: () => void }> = [];
 let onPostVerification: (() => Promise<void>) | null = null;
 
 export function setOnPostVerification(cb: () => Promise<void>) {
@@ -94,6 +96,11 @@ export function setOnPostVerification(cb: () => Promise<void>) {
 
 export function clearOnPostVerification() {
   onPostVerification = null;
+  listenerGeneration++;
+  for (const listener of recoveryListeners.splice(0)) listener.remove();
+  initialization = null;
+  lastRecoveryTime = 0;
+  activeRecoveryPromise = null;
 }
 
 function billingVerifierUrl() {
@@ -114,59 +121,44 @@ function isRetryableVerifierTransportError(error: unknown) {
 
 export async function initializeGooglePlayBilling() {
   assertAndroidBilling();
-  const initResult = await BhumiBilling.initialize();
-
-  if (!isAutoRecoveryInitialized) {
-    isAutoRecoveryInitialized = true;
-    setupAutoRecoveryListeners();
-    autoRecoverActiveSubscriptions().catch(err => {
-      console.warn("[BILLING AUTO-RECOVERY] Background query on connect failed:", err?.message);
+  if (!initialization) {
+    const generation = listenerGeneration;
+    initialization = (async () => {
+      const result = await BhumiBilling.initialize();
+      if (generation !== listenerGeneration) return result;
+      await setupAutoRecoveryListeners(generation);
+      await autoRecoverActiveSubscriptions();
+      return result;
+    })().catch(() => {
+      if (generation === listenerGeneration) initialization = null;
+      throw new Error("BILLING_INITIALIZATION_UNAVAILABLE");
     });
   }
-
-  return initResult;
+  return initialization;
 }
 
-function setupAutoRecoveryListeners() {
+async function setupAutoRecoveryListeners(generation: number) {
   if (!isGooglePlayBillingAvailable()) return;
-
-  try {
-    AppPlugin.addListener("appStateChange", (state: any) => {
-      if (state?.isActive) {
-        autoRecoverActiveSubscriptions().catch(err => {
-          console.warn("[BILLING AUTO-RECOVERY] Foreground recovery failed:", err?.message);
-        });
-      }
-    });
-  } catch (err) {
-    console.warn("[BILLING AUTO-RECOVERY] Could not attach appStateChange listener:", err);
-  }
-
-  try {
-    BhumiBilling.addListener("purchaseUpdated", async (data: any) => {
-      const purchases: GooglePlayPurchase[] = data?.purchases || [];
-      let verified = false;
-      for (const p of purchases) {
-        if (p.purchaseToken) {
-          try {
-            const result = await processAndVerifyPurchaseToken(p);
-            if (result?.ok && result?.active) verified = true;
-          } catch (err: any) {
-            console.error("[BILLING EVENT RECOVERY FAILED]:", err?.message);
-          }
-        }
-      }
-      if (verified && onPostVerification) {
-        try {
-          await onPostVerification();
-        } catch (refreshErr) {
-          console.error("[BILLING EVENT] Gagal refresh profil setelah purchase event:", refreshErr);
-        }
-      }
-    });
-  } catch (err) {
-    console.warn("[BILLING AUTO-RECOVERY] Could not attach purchaseUpdated listener:", err);
-  }
+  const registrations = [
+    AppPlugin.addListener("appStateChange", (state: { isActive?: boolean }) => {
+      if (state?.isActive && generation === listenerGeneration) void autoRecoverActiveSubscriptions();
+    }),
+    BhumiBilling.addListener("purchaseUpdated", async (data: { purchases?: GooglePlayPurchase[] }) => {
+      if (generation !== listenerGeneration) return;
+      const result = await recoverAndRefreshGooglePlayPurchases(Array.isArray(data?.purchases) ? data.purchases : []);
+      if (!result.verifiedAny) lastRecoveryTime = 0;
+      console.info("[BILLING_RECOVERY]", { category: result.state, attempted: result.attempted, verified: result.verified });
+    }),
+  ];
+  await Promise.all(registrations.map(async registration => {
+    try {
+      const listener = await registration;
+      if (generation !== listenerGeneration) listener.remove();
+      else recoveryListeners.push(listener);
+    } catch {
+      console.warn("[BILLING_RECOVERY]", { category: "listener_unavailable" });
+    }
+  }));
 }
 
 export async function queryPremiumSubscription() {
@@ -180,11 +172,13 @@ export async function purchasePremiumSubscription() {
 }
 
 export async function recoverAndRefreshGooglePlayPurchases(purchases: GooglePlayPurchase[], refresh?: () => Promise<void>): Promise<PremiumRecoveryResult> {
+  const uid = auth.currentUser?.uid;
   return recoverAndRefreshPremiumPurchases(
     purchases,
     GOOGLE_PLAY_PRODUCT_ID,
     (purchase) => processAndVerifyPurchaseToken(purchase as GooglePlayPurchase),
     async () => {
+      if (!uid || auth.currentUser?.uid !== uid) throw new Error("AUTH_CHANGED");
       if (refresh) await refresh();
       else if (onPostVerification) await onPostVerification();
     },
@@ -216,6 +210,8 @@ export async function restoreAndRecoverPremium(refresh: () => Promise<void>, exi
 }
 
 export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase) {
+  assertAndroidBilling();
+  if (!purchase.products?.includes(GOOGLE_PLAY_PRODUCT_ID)) throw new Error("PRODUCT_MISMATCH");
   if (!purchase.purchaseToken) {
     throw new Error("Purchase token tidak tersedia.");
   }
@@ -276,11 +272,12 @@ export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase
       });
     }
 
+    if (auth.currentUser?.uid !== currentUser.uid) throw new Error("AUTH_CHANGED");
     if (data?.signedEntitlement) {
       await SecureStoragePlugin.set({
         key: `signed_entitlement_${currentUser.uid}`,
         value: data.signedEntitlement,
-      }).catch(err => console.warn("[SECURE_STORAGE] Write failed:", err));
+      }).catch(() => console.warn("[BILLING_RECOVERY]", { category: "secure_storage_unavailable" }));
       // Store non-sensitive metadata in Preferences
       await Preferences.set({ key: `last_entitlement_sync_${currentUser.uid}`, value: new Date().toISOString() });
     } else if (data && !data.active) {
@@ -318,10 +315,11 @@ export async function verifyGooglePlayPurchase(purchase: GooglePlayPurchase) {
 
 export async function restorePremiumPurchases() {
   assertAndroidBilling();
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
       BhumiBilling.restorePurchases(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(Object.assign(new Error("Restore timed out."), { code: "TIMEOUT" })), RESTORE_TIMEOUT_MS)),
+      new Promise<never>((_, reject) => { timer = setTimeout(() => reject(Object.assign(new Error("Restore timed out."), { code: "TIMEOUT" })), RESTORE_TIMEOUT_MS); }),
     ]);
   } catch (error: any) {
     const code = String(error?.code || "").toUpperCase();
@@ -331,20 +329,31 @@ export async function restorePremiumPurchases() {
     if (code === "ITEM_NOT_FOUND" || code === "NO_ACTIVE_PURCHASE") throw Object.assign(new Error("Tidak ada pembelian aktif."), { code: "NO_ACTIVE_PURCHASE" });
     if (code === "NETWORK_ERROR" || message.includes("network")) throw Object.assign(new Error("Koneksi Google Play tidak tersedia."), { code: "NETWORK_ERROR" });
     throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
 let activeRecoveryPromise: Promise<{ recoveredCount: number }> | null = null;
 let lastRecoveryTime = 0;
+let recoveryUid: string | null = null;
 const RECOVERY_COOLDOWN_MS = 5 * 60 * 1000;
 
 export async function autoRecoverActiveSubscriptions(): Promise<{ recoveredCount: number }> {
   if (!isGooglePlayBillingAvailable()) return { recoveredCount: 0 };
 
-  if (typeof navigator !== "undefined" && !navigator.onLine) {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return { recoveredCount: 0 };
   }
 
+  const uid = auth.currentUser?.uid;
+  if (!uid) return { recoveredCount: 0 };
+  if (uid !== recoveryUid) {
+    recoveryUid = uid;
+    lastRecoveryTime = 0;
+    activeRecoveryPromise = null;
+  }
+  const generation = listenerGeneration;
   const now = Date.now();
   if (now - lastRecoveryTime < RECOVERY_COOLDOWN_MS) {
     return { recoveredCount: 0 };
@@ -358,13 +367,15 @@ export async function autoRecoverActiveSubscriptions(): Promise<{ recoveredCount
     let recoveredCount = 0;
     try {
       const result = await restorePremiumPurchases();
+      if (auth.currentUser?.uid !== uid || generation !== listenerGeneration) return { recoveredCount: 0 };
       const recovery = await recoverAndRefreshGooglePlayPurchases(result?.purchases || []);
       recoveredCount = recovery.verified;
-      lastRecoveryTime = Date.now();
-    } catch (err: any) {
-      console.warn("[BILLING AUTO-RECOVERY] Purchase query failed:", err?.message);
+      if (auth.currentUser?.uid === uid && generation === listenerGeneration && recovery.verifiedAny) lastRecoveryTime = Date.now();
+      console.info("[BILLING_RECOVERY]", { category: recovery.state, attempted: recovery.attempted, verified: recovery.verified });
+    } catch {
+      console.warn("[BILLING_RECOVERY]", { category: "query_unavailable" });
     } finally {
-      activeRecoveryPromise = null;
+      if (recoveryUid === uid && generation === listenerGeneration) activeRecoveryPromise = null;
     }
     return { recoveredCount };
   })();

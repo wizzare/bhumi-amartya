@@ -2,7 +2,8 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomUUID } from "node:crypto";
 import { getDbPool } from "../../lib/neon";
 import { decryptToken, type EncryptedData } from "../../lib/encryption";
-import { createGooglePlayRequestContext, fetchSubscription, acknowledgeSubscription } from "../../lib/googlePlay";
+import { createGooglePlayRequestContext, fetchSubscription, acknowledgeSubscription, validateProduct, checkVoidedPurchase } from "../../lib/googlePlay";
+import { PRODUCT_ID } from "../../lib/security";
 import { decision, markEntitlementAcknowledged, persistEntitlement } from "../../lib/entitlement";
 import { sendJson } from "../../lib/response";
 import { correlationId } from "../../lib/timeout";
@@ -99,12 +100,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         provider: row.provider,
       });
 
-      if (job.job_type === "FIRESTORE_SYNC") {
+      if (row.provider !== "google_play" || row.product_id !== PRODUCT_ID) throw new Error("PRODUCT_MISMATCH");
+      if (job.job_type === "FIRESTORE_SYNC" || job.job_type === "ACKNOWLEDGEMENT") {
         // Re-verify against Google Play
         const subscription = await fetchSubscription(rawToken, googleContext);
         const item = subscription.lineItems?.[0];
+        if (!validateProduct(item)) throw new Error("PRODUCT_MISMATCH");
         const state = subscription.subscriptionState || "SUBSCRIPTION_STATE_UNSPECIFIED";
-        const entitlement = decision(state, item?.expiryTime);
+        if (state === "SUBSCRIPTION_STATE_UNSPECIFIED") throw new Error("SUBSCRIPTION_UNAVAILABLE");
+        const voidedCheck = await checkVoidedPurchase(rawToken, googleContext);
+        const entitlement = decision(state, item?.expiryTime, { voided: voidedCheck.voided });
         const acknowledgementPending = entitlement.active && subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING";
 
         // Persist to Firestore
@@ -114,40 +119,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           state,
           entitlement,
           acknowledgementPending ? "ACK_PENDING" : subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ? "ACKNOWLEDGED" : "NOT_REQUIRED",
-          { checked: true, voided: false, reason: "reconcile_reverify" }
+          voidedCheck
         );
 
-        // Update ledger and job
-        await pool.query(
-          `UPDATE purchase_ledger SET firestore_sync_status = 'SYNCED', entitlement_status = 'ACTIVE_SYNCED', updated_at = NOW() WHERE token_hash = $1`,
-          [job.ledger_id]
-        );
-        await pool.query(
-          "UPDATE entitlement_sync_jobs SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() WHERE id = $1",
-          [job.id]
-        );
-
-        // Acknowledge if pending
-        if (acknowledgementPending && !row.acknowledged) {
-          try {
-            await acknowledgeSubscription(rawToken, googleContext);
-            await pool.query("UPDATE purchase_ledger SET acknowledged = true, updated_at = NOW() WHERE token_hash = $1", [job.ledger_id]);
-            await markEntitlementAcknowledged(row.firebase_uid, rawToken);
-          } catch {
-            // Deferred; will retry next cycle
-          }
+        if (acknowledgementPending) {
+          await acknowledgeSubscription(rawToken, googleContext);
+          await markEntitlementAcknowledged(row.firebase_uid, rawToken);
+          await pool.query("UPDATE purchase_ledger SET acknowledged = true, updated_at = NOW() WHERE token_hash = $1", [job.ledger_id]);
         }
-
-        succeeded++;
-      } else if (job.job_type === "ACKNOWLEDGEMENT") {
-        await acknowledgeSubscription(rawToken, googleContext);
-        await pool.query("UPDATE purchase_ledger SET acknowledged = true, updated_at = NOW() WHERE token_hash = $1", [job.ledger_id]);
-        await markEntitlementAcknowledged(row.firebase_uid, rawToken);
+        await pool.query(
+          `UPDATE purchase_ledger SET firestore_sync_status = 'SYNCED', entitlement_status = $2, updated_at = NOW() WHERE token_hash = $1`,
+          [job.ledger_id, entitlement.active ? "ACTIVE_SYNCED" : entitlement.status]
+        );
         await pool.query("UPDATE entitlement_sync_jobs SET status = 'COMPLETED', completed_at = NOW(), updated_at = NOW() WHERE id = $1", [job.id]);
         succeeded++;
+      } else {
+        throw new Error("JOB_TYPE_INVALID");
       }
-    } catch (err: any) {
-      const errorCode = err?.message || "RECONCILE_FAILED";
+    } catch (err: unknown) {
+      const code = err instanceof Error ? err.message : "";
+      const errorCode = ["PRODUCT_MISMATCH", "SUBSCRIPTION_UNAVAILABLE", "TOKEN_OWNERSHIP_CONFLICT", "TOKEN_INVALID", "GOOGLE_API_FAILURE", "ACKNOWLEDGMENT_FAILURE", "JOB_TYPE_INVALID"].includes(code) ? code : "RECONCILE_FAILED";
 
       if (job.attempt_count >= MAX_ATTEMPTS) {
         // Dead-letter after max attempts

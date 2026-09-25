@@ -1,8 +1,112 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { mergeVerifiedHumanDesignChart } from "./liveContract";
+import { mergeVerifiedHumanDesignChart, normalizeHumanDesignAdvancedFields, normalizeLiveHumanDesignResponse, presentHumanDesignAdvancedFields } from "./liveContract";
 import type { HumanDesignChart } from "./types";
+
+const advancedFields = ["digestion", "environment", "motivation", "perspective", "cognition"] as const;
+const engineArrows = {
+  top_left: { name: "Digestion", def_type: "Passive", tone: 4 },
+  bottom_left: { name: "Environment", def_type: "Observer" },
+  top_right: { name: "Motivation", def_type: "Receptive" },
+  bottom_right: { name: "Perspective", def_type: "Focused" },
+  short_code: "PRL DRR",
+};
+let advancedAssertions = 0;
+const checkAdvanced = (actual: unknown, expected: unknown) => { assert.deepEqual(actual, expected); advancedAssertions++; };
+test.after(() => console.log(`BUILD115_ADVANCED_ASSERTIONS=${advancedAssertions}`));
+
+test("A top-level values and provenance win over all arrows", () => {
+  const top = Object.fromEntries(advancedFields.map(field => [field, ` top-${field} `]));
+  const result = normalizeHumanDesignAdvancedFields({ ...top, variables: { ...engineArrows, advanced: engineArrows } });
+  for (const field of advancedFields) {
+    checkAdvanced(result[field], `top-${field}`);
+    checkAdvanced(result.advancedFieldSources[field], "live-top-level");
+  }
+});
+
+test("B five semantics from variables alone is unsupported: engine supplies four, not cognition", () => {
+  const result = normalizeHumanDesignAdvancedFields({ variables: engineArrows });
+  checkAdvanced(advancedFields.map(field => result[field]), ["Passive", "Observer", "Receptive", "Focused", null]);
+  checkAdvanced(result.advancedFieldSources, { digestion: "variables.top_left.def_type", environment: "variables.bottom_left.def_type", motivation: "variables.top_right.def_type", perspective: "variables.bottom_right.def_type", cognition: "unavailable" });
+});
+
+test("C mixed values use the same shared main runtime normalizer deterministically", () => {
+  const data = { status: "ready", type: "Generator", channels: ["1-8"], digestion: " Active ", motivation: " ", variables: engineArrows };
+  const chart = normalizeLiveHumanDesignResponse(data, "synthetic-time")!;
+  const advanced = normalizeHumanDesignAdvancedFields(data);
+  for (const field of advancedFields) checkAdvanced(chart[field], advanced[field]);
+  checkAdvanced(chart.advancedFieldSources, advanced.advancedFieldSources);
+  checkAdvanced(chart, normalizeLiveHumanDesignResponse(data, "synthetic-time"));
+  checkAdvanced(chart.digestion, "Active");
+  checkAdvanced(chart.motivation, "Receptive");
+});
+
+test("D perspective-only does not invent other semantics", () => {
+  const result = normalizeHumanDesignAdvancedFields({ variables: { bottom_right: engineArrows.bottom_right } });
+  checkAdvanced(advancedFields.map(field => result[field]), [null, null, null, "Focused", null]);
+  checkAdvanced(result.advancedFieldSources.perspective, "variables.bottom_right.def_type");
+});
+
+test("E cognition remains unavailable despite tone, activations and unsupported aliases", () => {
+  const result = normalizeHumanDesignAdvancedFields({ variables: { ...engineArrows, cognition: "unsupported", advanced: { cognition: "unsupported" } }, designActivations: [{ planet: "Sun", tone: 4 }], cognation: "unsupported", cognitive: "unsupported", cognision: "unsupported", cognitionType: "unsupported" });
+  checkAdvanced(result.cognition, null);
+  checkAdvanced(result.advancedFieldSources.cognition, "unavailable");
+});
+
+test("F variables presence, directions, wrong labels and malformed values are not semantics", () => {
+  for (const variables of [null, [], {}, { shortCode: "PRL DRR" }, { top_left: { value: "left", tone: 1 } }, { top_left: { name: "Environment", def_type: "Active" } }, { top_left: { name: "Digestion", def_type: {} }, advanced: [] }]) {
+    const result = normalizeHumanDesignAdvancedFields({ variables, cognition: 4 });
+    checkAdvanced(advancedFields.map(field => result[field]), [null, null, null, null, null]);
+    checkAdvanced(advancedFields.map(field => result.advancedFieldSources[field]), advancedFields.map(() => "unavailable"));
+  }
+  checkAdvanced(normalizeHumanDesignAdvancedFields({ variables: { shortCode: "PRL DRR" } }).variables?.short_code, "PRL DRR");
+});
+
+test("G legacy advanced arrow envelope is lossless with explicit path provenance and direct-arrow precedence", () => {
+  const variables = { shortCode: "outer-code", retained: { synthetic: true }, advanced: { ...engineArrows, extra: "retained" } };
+  const before = JSON.stringify(variables);
+  const result = normalizeHumanDesignAdvancedFields({ variables });
+  checkAdvanced(advancedFields.map(field => result[field]), ["Passive", "Observer", "Receptive", "Focused", null]);
+  for (const [field, arrow] of [["digestion", "top_left"], ["environment", "bottom_left"], ["motivation", "top_right"], ["perspective", "bottom_right"]] as const) checkAdvanced(result.advancedFieldSources[field], `variables.advanced.${arrow}.def_type`);
+  checkAdvanced(result.variables, { ...variables, ...engineArrows });
+  checkAdvanced(JSON.stringify(variables), before);
+  const mixed = normalizeHumanDesignAdvancedFields({ variables: { ...variables, top_left: { name: "Digestion", def_type: "Active" } } });
+  checkAdvanced(mixed.digestion, "Active");
+  checkAdvanced(mixed.advancedFieldSources.digestion, "variables.top_left.def_type");
+  checkAdvanced(mixed.variables?.advanced, variables.advanced);
+});
+
+test("merged structure and semantic precedence are independent for every arrow", () => {
+  for (const [field, key] of [["digestion", "top_left"], ["environment", "bottom_left"], ["motivation", "top_right"], ["perspective", "bottom_right"]] as const) {
+    const outer = { name: field, def_type: "outer" };
+    const nested = { name: field, def_type: "nested" };
+    for (const invalid of [undefined, null, [], "invalid", {}]) {
+      const result = normalizeHumanDesignAdvancedFields({ variables: { [key]: outer, advanced: { [key]: invalid } } });
+      checkAdvanced(result[field], "outer");
+      checkAdvanced(result.variables?.[key], outer);
+      checkAdvanced(result.advancedFieldSources[field], `variables.${key}.def_type`);
+    }
+    const result = normalizeHumanDesignAdvancedFields({ variables: { ...engineArrows, [key]: outer, short_code: "outer-code", advanced: { [key]: nested } } });
+    checkAdvanced(result[field], "outer");
+    checkAdvanced(result.variables?.[key], nested);
+    checkAdvanced(result.variables?.short_code, "outer-code");
+    checkAdvanced(normalizeHumanDesignAdvancedFields({ variables: { [key]: outer, advanced: { shortCode: "nested-code" } } }).variables, { [key]: outer, advanced: { shortCode: "nested-code" }, short_code: "nested-code" });
+    checkAdvanced(normalizeHumanDesignAdvancedFields({ variables: { advanced: { [key]: nested } } }).advancedFieldSources[field], `variables.advanced.${key}.def_type`);
+    checkAdvanced(normalizeHumanDesignAdvancedFields({ [field]: "top", variables: { [key]: outer, advanced: { [key]: nested } } })[field], "top");
+    checkAdvanced(normalizeHumanDesignAdvancedFields({ variables: { [key]: { name: "unsupported", def_type: "unsupported" } } })[field], null);
+  }
+});
+
+test("Bodygraph runtime presenter renders authoritative, mixed and unavailable semantics without placeholders", () => {
+  const unavailable = "Tidak tersedia pada blueprint tersimpan ini";
+  for (const cognition of [undefined, null, "", " ", "undefined", "null", "-"]) {
+    const result = presentHumanDesignAdvancedFields({ digestion: "authoritative", cognition, variables: engineArrows }, unavailable);
+    checkAdvanced(result.fields.map(row => row.value), ["authoritative", "Observer", "Receptive", "Focused", unavailable]);
+  }
+  checkAdvanced(presentHumanDesignAdvancedFields({}, unavailable).fields.map(row => row.value), advancedFields.map(() => unavailable));
+  checkAdvanced(presentHumanDesignAdvancedFields({ cognition: "explicit" }, unavailable).fields[4].value, "explicit");
+});
 
 const baseCenters = {
   head: false, ajna: false, throat: true, g: true, ego: true,

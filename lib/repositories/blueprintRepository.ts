@@ -1,4 +1,5 @@
 import { db } from "../firebase/firebase";
+import { safeDiagnostic } from "../humandesign/safeDiagnostic";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { Blueprint } from "@/lib/types/blueprint";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
@@ -236,18 +237,18 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
       }
     }
   } catch (err) {
-    console.warn("[BLUEPRINT REPO] Transition check for hdDismissedAt failed:", err);
+    safeDiagnostic("blueprint", "recover", { failed: true });
   }
 
   // HOTFIX: last-write safety guard — canonical must never be overwritten.
   try {
     const latestSnap = await getDoc(blueprintRef);
     if (latestSnap.exists() && isCanonicalHumanDesign((latestSnap.data() as Partial<Blueprint>)?.humanDesign)) {
-      console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.", { uid });
+      console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.");
       return;
     }
   } catch (err) {
-    console.warn("[HD WRITE GUARD] Latest read check failed; continuing with guarded save path.", { uid, err });
+    safeDiagnostic("blueprint", "recover", { failed: true });
   }
 
   const normalizedPayload = normalizeBlueprint(uid, {
@@ -262,13 +263,9 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     generatedAt: Timestamp.now(),
   });
 
-  console.log("[BLUEPRINT REPO SAVE]", {
-    uid,
-    hasHumanDesign: !!(payload as any).humanDesign,
-    humanDesignType: (payload as any).humanDesign?.type ?? null,
-    humanDesignProfile: (payload as any).humanDesign?.profile ?? null,
-    humanDesignStatus: (payload as any).humanDesign?.status ?? null,
-    inputHash: (payload as any).humanDesign?.inputHash ?? null,
+  safeDiagnostic("blueprint", "save", {
+    valid: !!(payload as any).humanDesign,
+    complete: !!(payload as any).humanDesign?.type,
   });
 
   await debugFirestoreOperation(

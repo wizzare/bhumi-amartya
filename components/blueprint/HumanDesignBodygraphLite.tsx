@@ -2,6 +2,7 @@
 
 import type { HumanDesignActivation } from "@/lib/humandesign/types";
 import { isEnlEdition } from "@/lib/config/edition";
+import { presentHumanDesignAdvancedFields } from "@/lib/humandesign/liveContract";
 
 type Props = { humanDesign: Record<string, any>; isEn?: boolean };
 type CenterKey = "head" | "ajna" | "throat" | "g" | "ego" | "spleen" | "sacral" | "solarPlexus" | "root";
@@ -127,9 +128,9 @@ export function HumanDesignBodygraphLite({ humanDesign, isEn = isEnlEdition() }:
   const channelGates = activeChannels.flatMap((channel) => CHANNELS[channel].gates);
   const activeGates = new Set<number>([...aggregateGates, ...designGates, ...personalityGates, ...channelGates]);
   const channelCenters = new Set(activeChannels.flatMap((channel) => CHANNELS[channel].centers));
-  const variables = humanDesign.variables?.advanced || humanDesign.variables || {};
-  const variableCode = variables.short_code || variables.shortCode || variables.variable || variables.value;
   const storedUnavailable = isEn ? "Unavailable in this stored blueprint" : "Tidak tersedia pada blueprint tersimpan ini";
+  const advanced = presentHumanDesignAdvancedFields(humanDesign, storedUnavailable);
+  const variableCode = advanced.variableCode;
   const sourceUnavailable = isEn ? "Unavailable from current calculation source" : "Tidak tersedia dari sumber kalkulasi saat ini";
 
   return (
@@ -200,7 +201,7 @@ export function HumanDesignBodygraphLite({ humanDesign, isEn = isEnlEdition() }:
       <div className="mt-3 rounded-2xl bg-white p-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-[#7B8776]">Advanced Variables</h3>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {["digestion", "environment", "motivation", "perspective", "cognition"].map((key) => <div key={key} className="rounded-xl bg-[#F7F3EC] p-3"><p className="text-[9px] font-bold uppercase text-[#9A9388]">{key}</p><p className="mt-1 text-xs font-semibold text-[#4F5E52]">{humanDesign[key] || storedUnavailable}</p></div>)}
+          {advanced.fields.map(({ key, value }) => <div key={key} className="rounded-xl bg-[#F7F3EC] p-3"><p className="text-[9px] font-bold uppercase text-[#9A9388]">{key}</p><p className="mt-1 text-xs font-semibold text-[#4F5E52]">{value}</p></div>)}
         </div>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <div className="rounded-xl border border-[#E7E0D4] p-3 text-xs"><span className="font-bold text-[#4F5E52]">Variables Arrows:</span> {variableCode || storedUnavailable}</div>

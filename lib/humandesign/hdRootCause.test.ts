@@ -38,7 +38,20 @@ test("pending response with null type stays pending", async () => {
 });
 
 test("ready response with a valid type becomes ready", async () => {
-  mockResponse({ status: "ready", type: "Generator" });
+  mockResponse({
+    status: "ready",
+    type: "Generator",
+    strategy: "Wait to Respond",
+    authority: "Sacral Authority",
+    profile: "1/3",
+    definition: "1",
+    channels: ["5-15"],
+    definedCenters: ["Sacral", "G"],
+    openCenters: ["Head", "Ajna", "Throat", "Heart", "Spleen", "Solar Plexus", "Root"],
+    gatesPersonality: [5],
+    gatesDesign: [15],
+    incarnationCross: "((1, 2), (3, 4))-RAC",
+  });
   const result = await calculateWithHdkit(profile);
   assert.equal(result.status, "ready");
   assert.equal(result.type, "Generator");

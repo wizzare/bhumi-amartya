@@ -5,7 +5,7 @@ import { acknowledgeSubscription, checkVoidedPurchase, createGooglePlayRequestCo
 import { decision, markEntitlementAcknowledged, persistEntitlement } from "../../../lib/entitlement";
 import { BASE_PLAN_ID, MAX_BODY_BYTES, PACKAGE_NAME, PRODUCT_ID, originAllowed, previewDryRunEnabled, tokenHash } from "../../../lib/security";
 import { sendJson } from "../../../lib/response";
-import { executeLedgerVerificationTx, markLedgerSyncFailure, markLedgerSyncSuccess, updateLedgerAck } from "../../../lib/purchaseLedger";
+import { executeLedgerVerificationTx, markLedgerSyncSuccess, updateLedgerAck } from "../../../lib/purchaseLedger";
 import { generateSignedEntitlement } from "../../../lib/signedEntitlement";
 import {
   ACK_MARK_TIMEOUT_MS,
@@ -65,21 +65,22 @@ async function processVerifiedRequest(req: VercelRequest, context: StageLogConte
     const ledgerStatus = entitlement.active ? "ACTIVE_PENDING_SYNC" : entitlement.status;
     const hash = tokenHash(purchaseToken);
 
-    // Steps 4-8: Atomic Postgres transaction (upsert ledger + insert event + insert sync job)
-    await executeLedgerVerificationTx({
-      uid: decoded.uid,
-      purchaseToken,
-      productId: PRODUCT_ID,
-      packageName: PACKAGE_NAME,
-      provider: "google_play",
-      purchaseState: state,
-      entitlementStatus: ledgerStatus,
-      acknowledged: subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED",
-      acknowledgementRequired: acknowledgementPending,
-      expiresAt: entitlement.date,
-    });
+    // Step 4: Canonical Firestore sync (mandatory before issuing signed entitlement)
+    // If Firestore persistence fails, the operation must FAIL closed with retryable error.
+    let firestoreSynced = false;
+    try {
+      await withTimeout("PERSIST_ENTITLEMENT", PERSIST_ENTITLEMENT_TIMEOUT_MS,
+        persistEntitlement(decoded.uid, purchaseToken, state, entitlement, acknowledgementPending ? "ACK_PENDING" : subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ? "ACKNOWLEDGED" : "NOT_REQUIRED", voidedCheck));
+      firestoreSynced = true;
+    } catch (fsErr) {
+      if (fsErr instanceof Error && fsErr.message === "TOKEN_OWNERSHIP_CONFLICT") {
+        throw fsErr;
+      }
+      console.error("[FIRESTORE_PERSIST_FAILED]", { correlationId: context.correlationId, category: "entitlement_write_failure" });
+      return result(500, { ok: false, error: "ENTITLEMENT_WRITE_FAILURE", retryable: true });
+    }
 
-    // Step 9: Issue asymmetric signed entitlement (24h TTL)
+    // Step 5: Issue asymmetric signed entitlement (ONLY after successful Firestore persistence)
     const tokenTtlSeconds = 24 * 60 * 60;
     const subscriptionExpirySec = entitlement.date ? Math.floor(entitlement.date.getTime() / 1000) : Math.floor(Date.now() / 1000) + tokenTtlSeconds;
     const signedEntitlement = generateSignedEntitlement({
@@ -91,29 +92,50 @@ async function processVerifiedRequest(req: VercelRequest, context: StageLogConte
       syncStatus: ledgerStatus,
     });
 
-    // Resilient Firestore sync: attempt synchronously, swallow failures
-    let firestoreSynced = false;
-    try {
-      await withTimeout("PERSIST_ENTITLEMENT", PERSIST_ENTITLEMENT_TIMEOUT_MS,
-        persistEntitlement(decoded.uid, purchaseToken, state, entitlement, acknowledgementPending ? "ACK_PENDING" : subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" ? "ACKNOWLEDGED" : "NOT_REQUIRED", voidedCheck));
-      firestoreSynced = true;
-      await markLedgerSyncSuccess(hash);
-    } catch (fsErr: any) {
-      console.warn("[FIRESTORE_SYNC_FAILED_GRACEFUL_DEGRADE]", { correlationId: context.correlationId, error: fsErr?.message });
-      await markLedgerSyncFailure(hash, fsErr?.message || "FIRESTORE_WRITE_ERROR").catch(() => {});
-    }
-
-    // Step 10: Acknowledge purchase if required
+    // Step 6: Google Play Acknowledgement & Firestore ack marking (independent of Neon)
     let acknowledgementDeferred = false;
     if (acknowledgementPending) {
       try {
         await acknowledgeSubscription(purchaseToken, googleContext);
-        await updateLedgerAck(hash, true);
-        if (firestoreSynced) {
-          await withTimeout("ACKNOWLEDGE", ACK_MARK_TIMEOUT_MS, markEntitlementAcknowledged(decoded.uid, purchaseToken));
-        }
+        await withTimeout("ACKNOWLEDGE", ACK_MARK_TIMEOUT_MS, markEntitlementAcknowledged(decoded.uid, purchaseToken));
       } catch {
+        console.warn("[ACKNOWLEDGEMENT_DEFERRED]", { correlationId: context.correlationId, category: "acknowledgement_unavailable" });
         acknowledgementDeferred = true;
+      }
+    }
+
+    let auxiliaryLedgerStatus: "healthy" | "degraded" = "degraded";
+    if (process.env.BILLING_NEON_ENABLED === "true") {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const deadline = Date.now() + Math.max(0, Math.min(750, TOTAL_REQUEST_BUDGET_MS - (Date.now() - context.totalStartedAt) - 250));
+      const checkDeadline = () => { if (Date.now() >= deadline) throw new Error("LEDGER_TIMEOUT"); };
+      try {
+        await Promise.race([(async () => {
+          checkDeadline();
+          await executeLedgerVerificationTx({
+        uid: decoded.uid,
+        purchaseToken,
+        productId: PRODUCT_ID,
+        packageName: PACKAGE_NAME,
+        provider: "google_play",
+        purchaseState: state,
+        entitlementStatus: ledgerStatus,
+        acknowledged: subscription.acknowledgementState === "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED" || !acknowledgementDeferred,
+        acknowledgementRequired: acknowledgementPending,
+        expiresAt: entitlement.date,
+      });
+          checkDeadline();
+          await markLedgerSyncSuccess(hash);
+          checkDeadline();
+          if (acknowledgementPending && !acknowledgementDeferred) await updateLedgerAck(hash, true);
+        })(), new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("LEDGER_TIMEOUT")), Math.max(0, deadline - Date.now()));
+        })]);
+        auxiliaryLedgerStatus = "healthy";
+      } catch {
+        console.warn("[LEDGER_TX_DEGRADED]", { correlationId: context.correlationId, category: "ledger_unavailable" });
+      } finally {
+        if (timer) clearTimeout(timer);
       }
     }
 
@@ -127,6 +149,7 @@ async function processVerifiedRequest(req: VercelRequest, context: StageLogConte
       badge: entitlement.active ? "Penghuni Bhumi" : undefined,
       refreshRequired: true,
       acknowledgementDeferred,
+      ledgerStatus: auxiliaryLedgerStatus,
       signedEntitlement,
       productId: PRODUCT_ID,
       basePlanId: BASE_PLAN_ID,

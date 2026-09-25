@@ -57,37 +57,66 @@ export const normalizeHumanDesignCenters = (definedCenters: unknown, openCenters
 export const normalizeHumanDesignVariables = (value: unknown): HumanDesignVariables | null => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const raw = value as HumanDesignVariables;
-  const nested = raw.advanced && typeof raw.advanced === "object" && !Array.isArray(raw.advanced)
-    ? raw.advanced as HumanDesignVariables
-    : null;
-  const canonical = nested && (nested.short_code || nested.top_right || nested.bottom_right || nested.top_left || nested.bottom_left)
-    ? { ...nested }
-    : { ...raw };
-  if (!asText(canonical.short_code) && asText(canonical.shortCode)) canonical.short_code = canonical.shortCode;
+  const canonical = { ...raw };
+  const nested = raw.advanced;
+  for (const key of ["top_left", "bottom_left", "top_right", "bottom_right"] as const) {
+    const arrow = nested?.[key];
+    if (arrow && typeof arrow === "object" && !Array.isArray(arrow) && Object.keys(arrow).length) {
+      canonical[key] = arrow as Record<string, unknown>;
+    }
+  }
+  const code = asText(nested?.short_code) || asText(nested?.shortCode) || asText(raw.short_code) || asText(raw.shortCode);
+  if (code) canonical.short_code = code;
   return canonical;
 };
 
-const derivePerspective = (variables: HumanDesignVariables | null): string | null => {
-  const arrow = variables?.bottom_right;
-  if (!arrow || typeof arrow !== "object") return null;
-  const value = arrow as Record<string, unknown>;
-  return asText(value.name)?.toLowerCase() === "perspective" ? asText(value.def_type) : null;
+export const normalizeHumanDesignAdvancedFields = (data: LivePayload) => {
+  const variables = data.variables && typeof data.variables === "object" && !Array.isArray(data.variables)
+    ? data.variables as HumanDesignVariables : null;
+  const nested = variables?.advanced;
+  const advanced = nested && typeof nested === "object" && !Array.isArray(nested) ? nested : null;
+  const fields = ["digestion", "environment", "motivation", "perspective", "cognition"] as const;
+  const arrows = { digestion: "top_left", environment: "bottom_left", motivation: "top_right", perspective: "bottom_right" } as const;
+  const values = {} as Record<typeof fields[number], string | null>;
+  const advancedFieldSources: HumanDesignAdvancedFieldSources = {};
+  for (const field of fields) {
+    values[field] = asText(data[field]);
+    advancedFieldSources[field] = values[field] ? "live-top-level" : "unavailable";
+    if (values[field] || field === "cognition") continue;
+    const key = arrows[field];
+    for (const [container, prefix] of [[variables, "variables"], [advanced, "variables.advanced"]] as const) {
+      const arrow = container?.[key];
+      if (!arrow || typeof arrow !== "object" || Array.isArray(arrow)) continue;
+      const item = arrow as Record<string, unknown>;
+      const value = asText(item.name)?.toLowerCase() === field ? asText(item.def_type) : null;
+      if (!value) continue;
+      values[field] = value;
+      advancedFieldSources[field] = `${prefix}.${key}.def_type`;
+      break;
+    }
+  }
+  return { variables: normalizeHumanDesignVariables(variables), ...values, advancedFieldSources };
+};
+
+export const presentHumanDesignAdvancedFields = (data: LivePayload, unavailable: string) => {
+  const normalized = normalizeHumanDesignAdvancedFields(data);
+  const display = (value: unknown) => {
+    const text = asText(value);
+    return text && !["undefined", "null", "-"].includes(text.toLowerCase()) ? text : unavailable;
+  };
+  return {
+    variables: normalized.variables,
+    variableCode: display(normalized.variables?.short_code),
+    fields: (["digestion", "environment", "motivation", "perspective", "cognition"] as const).map(key => ({ key, value: display(normalized[key]) })),
+  };
 };
 
 export const normalizeLiveHumanDesignResponse = (data: LivePayload, now = new Date().toISOString()): HumanDesignChart | null => {
   const type = asText(data.type);
   if (data.status !== "ready" || !type || !isRecognizedHumanDesignType(type)) return null;
+  if (!Array.isArray(data.channels) || !data.channels.every((channel) => typeof channel === "string" && /^\d{1,2}-\d{1,2}$/.test(channel))) return null;
 
-  const variables = normalizeHumanDesignVariables(data.variables);
-  const topLevelPerspective = asText(data.perspective);
-  const derivedPerspective = topLevelPerspective || derivePerspective(variables);
-  const sources: HumanDesignAdvancedFieldSources = {
-    digestion: asText(data.digestion) ? "live-top-level" : "unavailable",
-    environment: asText(data.environment) ? "live-top-level" : "unavailable",
-    motivation: asText(data.motivation) ? "live-top-level" : "unavailable",
-    cognition: asText(data.cognition) ? "live-top-level" : "unavailable",
-    perspective: topLevelPerspective ? "live-top-level" : derivedPerspective ? "variables.bottom_right.def_type" : "unavailable",
-  };
+  const advanced = normalizeHumanDesignAdvancedFields(data);
   const personality = asActivations(data.personalityActivations || (data.diagnostic as Record<string, unknown> | undefined)?.raw_personality_gates);
   const design = asActivations(data.designActivations || (data.diagnostic as Record<string, unknown> | undefined)?.raw_design_gates);
 
@@ -107,13 +136,7 @@ export const normalizeLiveHumanDesignResponse = (data: LivePayload, now = new Da
     designActivations: design,
     raw_personality_gates: personality,
     raw_design_gates: design,
-    variables,
-    digestion: asText(data.digestion),
-    cognition: asText(data.cognition),
-    motivation: asText(data.motivation),
-    environment: asText(data.environment),
-    perspective: derivedPerspective,
-    advancedFieldSources: sources,
+    ...advanced,
     status: "ready",
     source: "human-design-py",
     accuracy: "verified",

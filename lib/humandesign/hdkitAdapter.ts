@@ -13,6 +13,7 @@ import {
 import type { HumanDesignActivation } from "./types";
 import { buildHdRetryMetadata } from "./hdRetry";
 import { normalizeLiveHumanDesignResponse } from "./liveContract";
+import { safeDiagnostic } from "./safeDiagnostic";
 
 export type HumanDesignTypeResult = {
   type: string | null;
@@ -308,19 +309,19 @@ export async function calculateWithHdkit(
     }
 
     if (data.status === "error") {
-      throw new Error(data.note || "Unknown calculation error");
+      throw new Error("calculation_error");
     }
 
     const type = toStringOrNull(data.type);
     if (data.status !== "ready" || !type) {
-      return createPendingHumanDesignChart(data.note || "Human Design sedang diproses.");
+      return createPendingHumanDesignChart("Human Design sedang diproses.");
     }
 
     return normalizeLiveHumanDesignResponse(data as Record<string, unknown>)
       ?? createPendingHumanDesignChart("Human Design returned an incomplete verified contract.");
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn("[HD KIT ADAPTER] Failed to call Python engine:", message);
+    const message = error instanceof Error && error.name === "AbortError" ? "timeout" : "connection_error";
+    safeDiagnostic("human-design", "calculate", { failed: true, retries: 0 });
     const fallback = createNativeTsFallbackChart(profile);
     if (fallback) {
       // HOTFIX: approximation is diagnostic only (PENDING); never final.

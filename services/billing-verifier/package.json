@@ -2,7 +2,7 @@
   "name": "bhumi-billing-verifier",
   "private": true,
   "engines": {
-    "node": "20.x"
+    "node": "24.x"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

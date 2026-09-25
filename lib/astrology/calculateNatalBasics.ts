@@ -779,7 +779,8 @@ export async function calculateNatalBasicsAsync(input: NatalBasicsInput): Promis
       }
     }
   } catch (error) {
-    console.warn("[Natal Basics] Remote Swiss Ephemeris unavailable; keeping local chart (table Chiron + Whole Sign houses).", error);
+    const { safeDiagnostic } = await import("../humandesign/safeDiagnostic");
+    safeDiagnostic("natal", "calculate", { failed: true, preserved: true });
   }
 
   return localResult;

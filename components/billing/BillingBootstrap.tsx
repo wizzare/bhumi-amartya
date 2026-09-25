@@ -22,12 +22,12 @@ export function BillingBootstrap() {
       billing.setOnPostVerification(async () => {
         const fresh = await auth?.refreshUserProfile?.();
         if (!fresh?.isPremium) {
-          console.warn("[BILLING BOOTSTRAP] Post-verification refresh completed but entitlement not yet premium.");
+          throw new Error("PROFILE_ENTITLEMENT_NOT_READY");
         }
       });
 
-      billing.initializeGooglePlayBilling().catch((err) => {
-        console.error("[BILLING BOOTSTRAP] initializeGooglePlayBilling failed:", err);
+      billing.initializeGooglePlayBilling().catch(() => {
+        console.warn("[BILLING_RECOVERY]", { category: "initialization_unavailable" });
       });
 
       cleanup = () => billing.clearOnPostVerification();

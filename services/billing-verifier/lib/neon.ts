@@ -18,7 +18,8 @@ export function getDbPool(): BillingDbPool {
     if (!connectionString) {
       throw new Error("DATABASE_URL_MISSING");
     }
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString, connectionTimeoutMillis: 500, query_timeout: 500, statement_timeout: 500 });
+    pool.on("error", () => console.warn("[BILLING_LEDGER]", { category: "pool_unavailable" }));
   }
   return pool;
 }

@@ -69,7 +69,7 @@ export type HumanDesignVariables = Record<string, unknown> & {
 
 export type HumanDesignAdvancedFieldSources = Partial<Record<
   "digestion" | "environment" | "motivation" | "perspective" | "cognition",
-  "live-top-level" | "variables.bottom_right.def_type" | "unavailable"
+  "live-top-level" | `variables.${"" | "advanced."}${"top_left" | "bottom_left" | "top_right" | "bottom_right"}.def_type` | "unavailable"
 >>;
 
 export type HumanDesignChart = {

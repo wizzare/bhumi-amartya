@@ -1,11 +1,11 @@
 /**
- * Node-20 Neon transport proof. Connection-free.
+ * Neon transport proof for the Vercel Node 24 runtime. Connection-free.
  *
  * @neondatabase/serverless's Pool uses a WebSocket transport for the interactive
- * pooled connection used by executeLedgerVerificationTx (BEGIN/COMMIT). Node 20
- * ships no global `WebSocket`, so neonConfig.webSocketConstructor must be set
- * explicitly. This test proves the isolated fix does that, without opening any
- * database connection.
+ * pooled connection used by executeLedgerVerificationTx (BEGIN/COMMIT). The
+ * runtime may or may not expose a global WebSocket, so neonConfig.webSocketConstructor
+ * must be set explicitly either way. This test proves the isolated fix does that,
+ * without opening any database connection.
  *
  * Hard-fail: node:assert/strict (throws -> exit 1).
  */
@@ -21,9 +21,9 @@ function check(name: string, fn: () => void) {
 }
 
 async function main() {
-  // Premise: Node 20 has no global WebSocket.
-  check("Node 20 provides no global WebSocket", () => {
-    assert.equal(typeof (globalThis as { WebSocket?: unknown }).WebSocket, "undefined");
+  check("runtime WebSocket precondition recorded", () => {
+    const kind = typeof (globalThis as { WebSocket?: unknown }).WebSocket;
+    assert.ok(kind === "undefined" || kind === "function");
   });
 
   // Importing lib/neon.ts must configure the transport as a side effect.
@@ -63,7 +63,7 @@ async function main() {
     }
   });
 
-  console.log(`\nNEON_TRANSPORT_FIX_PASS assertions=${passed} node=${process.version} globalWebSocket=absent webSocketConstructor=ws`);
+  console.log(`\nNEON_TRANSPORT_FIX_PASS assertions=${passed} node=${process.version} webSocketConstructor=ws`);
 }
 
 main().catch((err) => {

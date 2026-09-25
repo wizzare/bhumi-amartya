@@ -10,6 +10,8 @@ import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
+import { resolveHumanDesignBirthSources } from "@/lib/humandesign/normalizedAudit";
+import { safeDiagnostic } from "@/lib/humandesign/safeDiagnostic";
 import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { doc, runTransaction } from "firebase/firestore";
@@ -36,10 +38,10 @@ export interface UserProfileInput {
  * Fast basic blueprint generator that does NOT block on Human Design API call.
  */
 export async function generateBasicBlueprintFast(input: UserProfileInput): Promise<any> {
-  const birthDate = input.birthDate || "1995-01-01";
-  const birthTime = input.birthTime || "12:00";
-  const birthCity = input.birthCity || "";
-  const birthCountry = input.birthCountry || null;
+    const birthDate = input.birthDate ?? null;
+    const birthTime = input.birthTime ?? null;
+    const birthCity = input.birthCity || "";
+    const birthCountry = input.birthCountry || null;
   const latitude = input.latitude ?? null;
   const longitude = input.longitude ?? null;
   // CDI-108-01A: recover a missing timezone through a deterministic IANA lookup
@@ -52,13 +54,13 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
   const calculationTimezone = timezone || "UTC";
   const fullName = input.fullName || input.displayName || "User";
 
-  const lifePathBlueprint = calculateLifePath(birthDate);
-  const nameNumerology = calculateNumerology(fullName, birthDate);
-  const destinyMatrix = calculateDestinyMatrixForBlueprint(birthDate);
-  const weton = calculateWeton({ birthDate, birthTime });
-  const bazi = calculateBazi({ birthDate, birthTime, timezone: calculationTimezone });
-  const vedic = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone: calculationTimezone });
-  const tzolkin = calculateTzolkin({ birthDate });
+  const lifePathBlueprint = calculateLifePath(birthDate ?? "");
+  const nameNumerology = calculateNumerology(fullName, birthDate ?? "");
+  const destinyMatrix = calculateDestinyMatrixForBlueprint(birthDate ?? "");
+  const weton = calculateWeton({ birthDate: birthDate ?? "", birthTime });
+  const bazi = calculateBazi({ birthDate: birthDate ?? "", birthTime: birthTime ?? "", timezone: calculationTimezone });
+  const vedic = calculateVedic({ birthDate: birthDate ?? "", birthTime, birthCity, latitude, longitude, timezone: calculationTimezone });
+  const tzolkin = calculateTzolkin({ birthDate: birthDate ?? "" });
 
   const natalBasics: any = await calculateNatalBasicsAsync({
     birthDate,
@@ -107,8 +109,8 @@ export async function generateBasicBlueprintFast(input: UserProfileInput): Promi
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     input: {
-      birthDate,
-      birthTime,
+      birthDate: input.birthDate ?? null,
+      birthTime: input.birthTime ?? null,
       birthCity,
       birthCountry,
       latitude,
@@ -143,13 +145,13 @@ export async function recoverUserBlueprint(
 
   // Check in-flight promise to prevent concurrent duplicate recoveries on the same runtime instance
   if (inFlightRecoveries.has(uid)) {
-    console.log(`[BLUEPRINT RECOVERY] In-flight recovery detected for UID ${uid}, re-using promise.`);
+    safeDiagnostic("blueprint", "recover", { started: true, preserved: true });
     return inFlightRecoveries.get(uid)!;
   }
 
   const recoveryPromise = (async () => {
     try {
-      console.log(`[BLUEPRINT RECOVERY] Starting atomic transaction recovery for UID ${uid}`);
+      safeDiagnostic("blueprint", "recover", { started: true });
       
       let finalBp: any = null;
 
@@ -159,7 +161,7 @@ export async function recoverUserBlueprint(
           await runTransaction(db, async (transaction) => {
             const sfDoc = await transaction.get(docRef);
             if (sfDoc.exists() && ((sfDoc.data() as any)?.type || (sfDoc.data() as any)?.lifePath)) {
-              console.log(`[ATOMIC RECOVERY TRANSACTION] Document already exists for UID ${uid}. Preserving.`);
+              safeDiagnostic("blueprint", "recover", { preserved: true });
               const existing = sfDoc.data() as any;
               // DEFECT-8D-1 backfill: non-destructively add the owner uid to a
               // blueprint an earlier recovery persisted without one. Only the
@@ -182,7 +184,7 @@ export async function recoverUserBlueprint(
           });
         }
       } catch (txError) {
-        console.warn(`[ATOMIC TRANSACTION WARNING] Firestore transaction fallback triggered:`, txError);
+        safeDiagnostic("blueprint", "recover", { failed: true });
       }
 
       if (!finalBp) {
@@ -227,36 +229,16 @@ export async function triggerBackgroundHdCalculation(
 
   // RULE: Existing canonical valid HD for historical users must NOT be re-opened or modified!
   if (isCanonicalHumanDesign(currentBlueprint.humanDesign)) {
-    console.log(`[BACKGROUND HD] HD already valid and canonical for UID ${uid}. Skipping.`);
+    safeDiagnostic("human-design", "recover", { preserved: true });
     return;
   }
 
-  const birthDate = profile.birthDate || currentBlueprint.input?.birthDate;
-  const birthTime = profile.birthTime || currentBlueprint.input?.birthTime || "12:00";
-  const birthCity = profile.birthCity || currentBlueprint.input?.birthCity || "";
-  const birthCountry = profile.birthCountry || currentBlueprint.input?.birthCountry || null;
-  const latitude = profile.latitude ?? currentBlueprint.input?.latitude ?? null;
-  const longitude = profile.longitude ?? currentBlueprint.input?.longitude ?? null;
-  const canonicalTz = canonicalizeNatalTimezone({
-    storedTimezone: profile.timezone ?? currentBlueprint.input?.timezone ?? null,
-    latitude,
-    longitude,
-  });
-  const timezone = canonicalTz.timezone;
-
-  if (!birthDate) return;
+  const birth = resolveHumanDesignBirthSources(profile, currentBlueprint.input);
+  if (!birth.complete) return;
 
   try {
-    console.log(`[BACKGROUND HD] Starting non-blocking HD calculation for UID ${uid}`);
-    let hdCalculated = await calculateHumanDesign({
-      birthDate,
-      birthTime,
-      birthCity,
-      birthCountry,
-      latitude,
-      longitude,
-      timezone,
-    });
+    safeDiagnostic("human-design", "calculate", { started: true });
+    let hdCalculated = await calculateHumanDesign(birth.profile);
 
     const userEmail = profile.email || null;
     hdCalculated = applyOwnerOverrideIfApplicable(userEmail, hdCalculated);
@@ -269,9 +251,9 @@ export async function triggerBackgroundHdCalculation(
       };
       await blueprintRepository.saveUserBlueprint(uid, updatedBlueprint).catch(() => {});
       await storageProvider.saveUserBlueprint(updatedBlueprint).catch(() => {});
-      console.log(`[BACKGROUND HD] HD calculation completed & updated for UID ${uid}`);
+      safeDiagnostic("human-design", "calculate", { complete: true });
     }
-  } catch (err) {
-    console.warn(`[BACKGROUND HD FAILED] Non-blocking HD calculation failed for UID ${uid}:`, err);
+  } catch {
+    safeDiagnostic("human-design", "calculate", { failed: true });
   }
 }

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { isCanonicalHumanDesign } from "../../lib/humandesign/hdAudit";
 import { buildHumanDesignHumanMeaning } from "../../lib/humandesign/presentation";
-import { mergeVerifiedHumanDesignChart, normalizeLiveHumanDesignResponse } from "../../lib/humandesign/liveContract";
+import { mergeVerifiedHumanDesignChart, normalizeLiveHumanDesignResponse, presentHumanDesignAdvancedFields } from "../../lib/humandesign/liveContract";
 
 Object.assign(process.env, {
   NEXT_PUBLIC_FIREBASE_API_KEY: "synthetic-cdi10802-key",
@@ -104,7 +104,8 @@ ok(repository.includes("perspective: savedHumanDesign?.perspective ?? null"), "n
 ok(repository.includes("advancedFieldSources: savedHumanDesign?.advancedFieldSources ?? {}"), "normalizeBlueprint preserves field provenance");
 ok(repository.includes("openCenters: savedHumanDesign?.openCenters ?? []"), "normalizeBlueprint preserves openCenters separately");
 ok(repository.includes("personalityActivations: savedHumanDesign?.personalityActivations"), "normalizeBlueprint preserves activation detail");
-ok(ui.includes("variables.short_code"), "UI reads the canonical short_code before legacy formats");
+ok(ui.includes("presentHumanDesignAdvancedFields"), "UI uses the shared runtime presenter");
+equal(presentHumanDesignAdvancedFields({ variables: { short_code: "canonical", shortCode: "legacy" } }, "unavailable").variableCode, "canonical", "UI presenter reads canonical short_code before legacy formats");
 ok(ui.includes("Unavailable from current calculation source"), "UI distinguishes unavailable source data from persistence loss in ENL");
 ok(recovery.includes("normalizeLiveHumanDesignResponse") && recovery.includes("mergeVerifiedHumanDesignChart"), "recovery shares the canonical verified mapping");
 ok(!recovery.includes("centers: data.definedCenters || []"), "recovery no longer writes raw center arrays");

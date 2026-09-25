@@ -1,4 +1,5 @@
 import { getHdState } from "./hdState";
+import { normalizeHumanDesignAdvancedFields } from "./liveContract";
 import type { HumanDesignChart } from "./types";
 
 /**
@@ -93,6 +94,8 @@ export type HumanDesignCompletenessResult = {
   /** Core chart completeness — never gated by enrichment field availability. */
   coreState: HumanDesignCoreState;
   missingCoreFields: string[];
+  semanticFields: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+  variableStructure: "AVAILABLE" | "UNAVAILABLE";
   advancedVariables: {
     status: AdvancedVariableStatus;
     missing: string[];
@@ -214,11 +217,21 @@ export function getHumanDesignCompleteness(value: unknown): HumanDesignCompleten
   const hdState = getHdState(value);
   const hd = (value && typeof value === "object" ? value : {}) as Partial<HumanDesignChart>;
 
+  const normalized = normalizeHumanDesignAdvancedFields(hd as Record<string, unknown>);
+  const semanticCount = [normalized.digestion, normalized.environment, normalized.motivation, normalized.perspective, normalized.cognition].filter(nonEmptyString).length;
+  const observation = {
+    semanticFields: (semanticCount === 5 ? "COMPLETE" : semanticCount ? "PARTIAL" : "UNAVAILABLE") as HumanDesignCompletenessResult["semanticFields"],
+    variableStructure: (normalized.variables && (nonEmptyString(normalized.variables.short_code) || ["top_left", "bottom_left", "top_right", "bottom_right"].some(key => {
+      const arrow = normalized.variables?.[key];
+      return arrow && typeof arrow === "object" && !Array.isArray(arrow) && Object.keys(arrow).length > 0;
+    })) ? "AVAILABLE" : "UNAVAILABLE") as HumanDesignCompletenessResult["variableStructure"],
+  };
   const emptyEnrichment: HumanDesignEnrichmentResult = { status: "ENGINE_UNSUPPORTED", missing: [...ENGINE_UNSUPPORTED_ENRICHMENT_FIELDS] };
   const emptyAdvanced = { status: "UNAVAILABLE_FROM_ENGINE" as AdvancedVariableStatus, missing: [...ADVANCED_VARIABLE_FIELDS] };
 
   const nonCanonical = (coreState: HumanDesignCoreState): HumanDesignCompletenessResult => ({
     coreState,
+    ...observation,
     missingCoreFields: [],
     advancedVariables: emptyAdvanced,
     enrichment: emptyEnrichment,
@@ -240,5 +253,5 @@ export function getHumanDesignCompleteness(value: unknown): HumanDesignCompleten
     coreState = "CANONICAL_INCOMPLETE";
   }
 
-  return { coreState, missingCoreFields, advancedVariables, enrichment };
+  return { coreState, missingCoreFields, advancedVariables, enrichment, ...observation };
 }

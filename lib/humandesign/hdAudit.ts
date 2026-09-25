@@ -1,4 +1,5 @@
 import type { HumanDesignBirthProfile, HumanDesignChart } from "./types";
+import { safeDiagnostic } from "./safeDiagnostic";
 import { getHdState, HD_ENGINE_VERSION as HD_STATE_ENGINE_VERSION } from "./hdState";
 
 export const HD_ENGINE_VERSION = HD_STATE_ENGINE_VERSION;
@@ -14,28 +15,6 @@ export type HumanDesignCanonicalFailureReason =
   | "connection_error"
   | "missing_engine_version"
   | "unknown";
-
-function normalizeBirthDate(value?: string | null): string | null {
-  if (!value) return null;
-  const parsed = new Date(`${value}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString().slice(0, 10);
-}
-
-function utcDateTime(profile: HumanDesignBirthProfile): string | null {
-  if (!profile.birthDate || !profile.birthTime || !profile.timezone) return null;
-  try {
-    const timezone = profile.timezone.trim();
-    const offset = /^[+-]\d{2}:\d{2}$/.test(timezone) ? timezone : "";
-    if (!offset) return null;
-    const time = /^\d{2}:\d{2}:\d{2}$/.test(profile.birthTime)
-      ? profile.birthTime
-      : `${profile.birthTime}:00`;
-    const date = new Date(`${profile.birthDate}T${time}${offset}`);
-    return Number.isNaN(date.getTime()) ? null : date.toISOString();
-  } catch {
-    return null;
-  }
-}
 
 export function isCanonicalHumanDesign(value: unknown): boolean {
   return getHdState(value).state === "CANONICAL";
@@ -120,21 +99,9 @@ export function preserveCalculatedHumanDesign(existing?: unknown, candidate?: un
 }
 
 export function logHumanDesignAudit(profile: HumanDesignBirthProfile, result: Partial<HumanDesignChart>, source: string) {
-  console.info("[GAIA HD AUDIT]", {
-    rawBirthDate: profile.birthDate ?? null,
-    normalizedBirthDate: normalizeBirthDate(profile.birthDate),
-    birthTime: profile.birthTime ?? null,
-    timezone: profile.timezone ?? null,
-    city: profile.birthCity ?? null,
-    country: profile.birthCountry ?? null,
-    latitude: profile.latitude ?? null,
-    longitude: profile.longitude ?? null,
-    utcDateTime: utcDateTime(profile),
-    hdSource: source,
-    cacheKey: createHdCacheKey(profile),
-    returnedType: result.type ?? null,
-    hdEngineVersion: HD_ENGINE_VERSION,
-    hdAuditStatus: result.hdAuditStatus ?? (isCanonicalHumanDesign(result) ? "validated" : "pending"),
-    status: result.status ?? "pending",
+  safeDiagnostic("human-design", "calculate", {
+    valid: Boolean(profile.birthDate && profile.birthTime && profile.timezone && profile.latitude != null && profile.longitude != null),
+    complete: isCanonicalHumanDesign(result),
+    started: Boolean(source),
   });
 }

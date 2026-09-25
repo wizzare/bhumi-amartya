@@ -6,12 +6,13 @@ import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride";
 import { calculateNatalBasicsAsync } from "@/lib/astrology/calculateNatalBasics";
 import { calculateAstrocartography } from "@/lib/astrocartography/calculateAstrocartography";
-import { Blueprint } from "../types/blueprint";
+import { safeDiagnostic } from "@/lib/humandesign/safeDiagnostic";
 import { auth } from "@/lib/firebase/firebase";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
+import { Blueprint } from "../types/blueprint";
 
 type BlueprintInput = {
   uid: string;
@@ -35,7 +36,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
   const weton = calculateWeton({ birthDate, birthTime });
   const bazi = calculateBazi({
     birthDate,
-    birthTime: birthTime || "12:00",
+    birthTime: birthTime ?? "",
     timezone,
   });
   const vedic = calculateVedic({
@@ -82,17 +83,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     timezone,
   }, natalBasics);
 
-  console.log("[ASTROLOGY INPUT]", {
-    birthDate,
-    birthTime,
-    birthCity,
-    birthCountry,
-    latitude,
-    longitude,
-    timezone,
-    natalBasics,
-    astrocartography,
-  });
+  safeDiagnostic("blueprint", "calculate", { complete: Boolean(natalBasics && astrocartography) });
 
   // CDI-108-01: persist `chiron` ONLY when it came from a real ephemeris. When it
   // did not, leave the field undefined — sanitizeForFirestore drops undefined and
@@ -167,7 +158,7 @@ export const generateBlueprint = async (input: BlueprintInput): Promise<Blueprin
     status: "ready",
     input: {
       birthDate,
-      birthTime: birthTime || "12:00",
+      birthTime: birthTime ?? null,
       birthCity,
       birthCountry: birthCountry ?? null,
       latitude: latitude ?? null,
