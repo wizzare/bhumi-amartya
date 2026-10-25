@@ -1,4 +1,35 @@
+# BUILD 110 SPRINT BILL-05A: ANDROID BILLING READINESS, CAPACITOR NATIVE CONTRACT & SAFE LOCAL BUILD
+- Branch: `hotfix/build110-indonesian-only`
+- Task: Safe mobile build, toolchain audit, native Capacitor & Google Play Billing contract audit, and emulator validation gate.
+- Status: **AUDITED & CONTRACT PASS / LOCAL BUILD & EMULATOR GATES OPEN**.
+- Toolchain: Next.js 16.2.6, React 19.2.4, Capacitor 8.3.4, Play Billing 9.1.0, AGP 9.2.1, Gradle 9.4.1, JDK 17.
+- Static Export: Blocked on `/api/humandesign/bodygraph` (HTTP 410) due to dual-mode build (CROSS-WORKSTREAM APPROVAL REQUIRED).
+- Android Build: Blocked on `:app:processDebugGoogleServices` due to `.qa` suffix mismatch in `google-services.json`.
+- Native Contract: Validated (UID binding, in-flight owned recovery, zero premature ack, zero token log).
+- 20 Native Scenarios: 10 static contract PASS, 10 build/emulator gates open (NO FALSE CLAIMS).
+- Next Action: Stand by for Founder review. DO NOT proceed to BILL-05B or BILL-06.
+
+---
+
+# BUILD 110 SPRINT BILL-04A: PREMIUM UI REAL-BROWSER ACCEPTANCE
+- Branch: `hotfix/build110-indonesian-only`
+- Task: Real-browser acceptance validation for all 25 scenarios (UI-01 to UI-25) in Playwright Chromium.
+- Status: **PASS LOCAL BROWSER (25/25 SCENARIOS PASS, 0 FAILED)**.
+- Full regression suite verified (133 billing verifier unit tests PASS, 85 client billing unit tests PASS, 25 browser scenarios PASS).
+- Zero horizontal overflow verified across mobile and desktop.
+- Live Google Play & Android physical device boundaries remain strictly NOT VERIFIED.
+- Next Action: Stand by for Founder review. DO NOT automatically proceed to BILL-05.
+
+---
+
 # Bhumi Amartya Build 80 TODO
+
+---
+
+# BUILD 110 HD05D.1 FLOW D RUNNER VERIFICATION
+- Branch: hotfix/build110-indonesian-only
+- Task: HD05D.1 real browser Flow D (D01-D07) safe execution and evidence capture
+- Status: Flow D fully passing (7/7) in headless Chromium sandbox with explicit deferred read/engine markers, unmount assertions, and mutation observation. Obsolete hd-hotfix test contract brought into alignment with authenticated live gateway. Zero production network/database access.
 
 ---
 

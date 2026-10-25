@@ -1,0 +1,552 @@
+{
+  "product_hd": [
+    {
+      "file": "app/api/humandesign/astrology/route.ts",
+      "status": "M",
+      "sha256": "f33e708eddc05e08d6902c8f8607a038ffdccbfaddf2827bf27b86988a30ae9e"
+    },
+    {
+      "file": "app/api/humandesign/bodygraph/route.ts",
+      "status": "M",
+      "sha256": "c9a3bbca5f1b0e9f85838830ab1734ae61dc1724627038434de97bd5e1c28a9f"
+    },
+    {
+      "file": "app/api/humandesign/calculate/route.ts",
+      "status": "M",
+      "sha256": "cfb7cd903937a0b2db5e965cf43d86eddc093514ca37d74f20b55dc10af2270d"
+    },
+    {
+      "file": "app/blueprint/human-design/page.tsx",
+      "status": "M",
+      "sha256": "6ad3ee6085fa6dba6197cf5c526d0883222e9a41f878b401cfe7e71ee7240ec9"
+    },
+    {
+      "file": "app/login/page.tsx",
+      "status": "M",
+      "sha256": "8ddfb0e9c30f46ba0e771ac63576d3e3f592e5300cf6c00b54db5ba40841ddd4"
+    },
+    {
+      "file": "app/page.tsx",
+      "status": "M",
+      "sha256": "48f3fbe9316093fbba005c62b34319c00b3b6fb985ff0aeede57bbb1b04177ed"
+    },
+    {
+      "file": "app/settings/page.tsx",
+      "status": "M",
+      "sha256": "155eed161a016a95a8295f6b413b3bc2d40cf52f0cfdf77525f022c279ba662a"
+    },
+    {
+      "file": "app/setup/page.tsx",
+      "status": "M",
+      "sha256": "6fc750dc61a5a2f1c0691e49aa214b5b0a9f3889f67db572dfc2ab042eea60cb"
+    },
+    {
+      "file": "components/dashboard/CoreIdentity.tsx",
+      "status": "M",
+      "sha256": "b5ad69877b13c19d5866a6a8dbab4f96e9b5b584d4109321cca6f295510b858c"
+    },
+    {
+      "file": "components/dashboard/DashboardClient.tsx",
+      "status": "M",
+      "sha256": "86ff4b2113f72b9679b0b44fc323c8644c15b95d3e5d55231ab7f0a1d4948e16"
+    },
+    {
+      "file": "components/dashboard/PendingHdRecoveryBanner.tsx",
+      "status": "M",
+      "sha256": "c7e9b3a75f288c3d3591ea660aa4f7177f55d362026a72b2a2470d52ea6fbfcb"
+    },
+    {
+      "file": "components/ui/CityAutocomplete.tsx",
+      "status": "M",
+      "sha256": "daf0ed477e41ef80b44a1e53e40684b80964ff823e73173a4edfa9c601cd6ac4"
+    },
+    {
+      "file": "lib/engines/blueprintRecoveryEngine.ts",
+      "status": "M",
+      "sha256": "050a079df56fa5c6c67cddf3e1ed3a01cda2e7187831d5bd23f3f5fdcb9d683e"
+    },
+    {
+      "file": "lib/firebase/service.ts",
+      "status": "M",
+      "sha256": "88d846a965187a540bd92a4676286d12b8fb5932de0dcf9187205a0a6f7ec158"
+    },
+    {
+      "file": "lib/humandesign/calculateHumanDesign.ts",
+      "status": "M",
+      "sha256": "8564ec8e7a3d20a25a1e9eea90ce938906aee3dd087dd6486dcbf42a5ac4990e"
+    },
+    {
+      "file": "lib/humandesign/completeness.ts",
+      "status": "M",
+      "sha256": "5c552b71fa172e172a767f6d3e9a77c89eb0a060eef37ebac8948d9ad79dbb69"
+    },
+    {
+      "file": "lib/humandesign/hdState.ts",
+      "status": "M",
+      "sha256": "0c5d83ed3b173e285731ea24fcc6d2bdc07d1c67edd101f9a667a710bad63ab1"
+    },
+    {
+      "file": "lib/humandesign/hdkitAdapter.ts",
+      "status": "M",
+      "sha256": "e5e35e7a7ef850cba2a4413ebcff432f4f9ba2ecff43a59de5863df3c671aff5"
+    },
+    {
+      "file": "lib/humandesign/liveContract.ts",
+      "status": "M",
+      "sha256": "0ffbcd6acbfdeb6476906d87904551e61a5f31e5bf8f866133202474149b371a"
+    },
+    {
+      "file": "lib/repositories/blueprintRepository.ts",
+      "status": "M",
+      "sha256": "a357e5bc6c59ecca8d6a868c903e70f021627a9e9ac0a534e38ba0197d252b97"
+    },
+    {
+      "file": "src/locales/en-US/translation.json",
+      "status": "M",
+      "sha256": "0a381aee150ff0cd394f913d7d849613e112199427970df989f2aee82bd4d913"
+    },
+    {
+      "file": "src/locales/id-ID/translation.json",
+      "status": "M",
+      "sha256": "aa30ae24389234ad6ee8f8cf868a2a592650b1564d86bd4faa4c5f6ce60f88bf"
+    },
+    {
+      "file": "src/locales/ms-MY/translation.json",
+      "status": "M",
+      "sha256": "57c90b2bd406c82dd9179e85e243e7ead03833a37a65f9c1424268a6f472a1f4"
+    },
+    {
+      "file": "components/blueprint/HdStatus.tsx",
+      "status": "??",
+      "sha256": "dd1b6d1ac2d3c23377c73a136b30c0fe1622d849820976a6d5ce928fe4755f38"
+    },
+    {
+      "file": "components/blueprint/HdStoredStatus.tsx",
+      "status": "??",
+      "sha256": "8afe0606000720d1f6539a4c96c380abd35b3dfc7da0f6b043b488091d40aa32"
+    },
+    {
+      "file": "components/dashboard/DashboardClient.module.css",
+      "status": "??",
+      "sha256": "eb5d17827d04eaf8454b0bb231debbdf0759213cbcc7597c8269f58f7d3e990d"
+    },
+    {
+      "file": "lib/auth/hdEndpointAuth.ts",
+      "status": "??",
+      "sha256": "f0fb00c622f594980c1f309e0bb91c999b3f95ef7c6dd26ea84ebfc9b6e28be1"
+    },
+    {
+      "file": "lib/humandesign/birthFingerprint.ts",
+      "status": "??",
+      "sha256": "461a958772120b8e509ad4c6e7f1c193e763e615b70e993e30eae8939b2bef27"
+    },
+    {
+      "file": "lib/humandesign/hdCommunication.ts",
+      "status": "??",
+      "sha256": "d5b2bd2b4eedda8ebe8c73eb2d26430536285cea82fbfc564d9ce5de6a684922"
+    },
+    {
+      "file": "lib/humandesign/hdLoad.ts",
+      "status": "??",
+      "sha256": "d8ccc0470ca3773f0b3dac3856429f98a675ab06be35f5da56da79db81436cec"
+    },
+    {
+      "file": "lib/humandesign/hdRead.ts",
+      "status": "??",
+      "sha256": "bdfb21aa4777809a4d8b19f3b20da3c676a1414b542f142a69a9f7c9c2ca10a9"
+    },
+    {
+      "file": "lib/humandesign/hdRecovery.ts",
+      "status": "??",
+      "sha256": "713930c2ef9cf3cb3b7561db6d6bb897029b6880e07aedd25f48e0802aa4be90"
+    },
+    {
+      "file": "lib/humandesign/hdView.ts",
+      "status": "??",
+      "sha256": "d2d94fde299a34e121dffd8e6e7d039de9e74d2f7622e6b9679f46c162b8851d"
+    }
+  ],
+  "product_historical_outofscope": [
+    {
+      "file": "components/dashboard/AstroTodayCard.tsx",
+      "status": "M",
+      "sha256": "b6af3a023722ae66d0bedba37d840720f031906d431bd58023b119acbf97f048"
+    },
+    {
+      "file": "components/dashboard/SoulReflectionCard.tsx",
+      "status": "M",
+      "sha256": "2e5615ac82e5225782dfe9084e47631eb77c44b0246e6b281a7abd0781a3f53d"
+    },
+    {
+      "file": "lib/astrology/personalizedTransitNarrative.ts",
+      "status": "M",
+      "sha256": "a7a7d840831da0162b523b100206fd77648fe51d0f972aa0355947db09dbaa23"
+    },
+    {
+      "file": "services/billing-verifier/lib/entitlement.ts",
+      "status": "M",
+      "sha256": "2ab353cc96a4d128a3d0efedc21d885e86f09ff8e0573cae1b849b70afe92694"
+    },
+    {
+      "file": "components/celestial/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "services/billing-verifier/api/access/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    }
+  ],
+  "config": [
+    {
+      "file": "TODO.md",
+      "status": "M",
+      "sha256": "78b7f185f7c914feadeda10c5d1dad3b159a08501d9be540e614615949673d0f"
+    },
+    {
+      "file": "app/api/access/bootstrap-trial/route.ts",
+      "status": "M",
+      "sha256": "a32ad6c8bf9326a893f0511a2b3246a03ec7e055e37a1693c42d1107894b0418"
+    },
+    {
+      "file": "components/dashboard/DashboardHeader.tsx",
+      "status": "M",
+      "sha256": "d58cc70efd086f5adca47f95008945de1931d921c300fc6440e4bc621c4c7a73"
+    },
+    {
+      "file": "lib/auth/safeDiagnostics.ts",
+      "status": "M",
+      "sha256": "3b180314903c9c401986a4561459f720726ea1e816280e23ed5486a68b2933ce"
+    },
+    {
+      "file": "lib/billing/canonicalAccessBootstrap.ts",
+      "status": "M",
+      "sha256": "a9b0b422a805490d89ef2e5b77e8f47b238a0aced57077babf747a3cd41f3698"
+    },
+    {
+      "file": "next.config.ts",
+      "status": "M",
+      "sha256": "5aae8b344e20ae6d08b91b383ac693b4a2d0404108e524880eb4a23865bab068"
+    },
+    {
+      "file": "package-lock.json",
+      "status": "M",
+      "sha256": "c767ca7117cebd3c1ea40d2ee3af009359bd31cd8eb6079aaa040c6f3080e615"
+    },
+    {
+      "file": "package.json",
+      "status": "M",
+      "sha256": "ea34b633e9cd82caee7afb3263339dc2cd050528147e8017ad8acd6b063b55fa"
+    },
+    {
+      "file": "services/humandesign-api/main.py",
+      "status": "M",
+      "sha256": "0b18c8380c59ba87241e3e2456fa6dbcadeebb36f98176c17fe8045689ad6643"
+    },
+    {
+      "file": "audit_working_tree.py",
+      "status": "??",
+      "sha256": "07b3e969dd63b7ddf3f52cc4003b1b6f210ae90816e8e2f16f0d8db421daabd1"
+    },
+    {
+      "file": "components/environment/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "components/onboarding/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "lib/storage/onboardingStorage.ts",
+      "status": "??",
+      "sha256": "9d01210e32cdb529f7bf5dc2c183a07aa3694add5865262395adbab82c01e578"
+    },
+    {
+      "file": "scripts/.build106-production-admin-provision.mjs",
+      "status": "??",
+      "sha256": "7063c2157e5cd3a3c875a8a22705662f61bfb9bf7e377f3c9c4f22745d81e072"
+    },
+    {
+      "file": "scripts/capture-design1-revised-screenshots.mjs",
+      "status": "??",
+      "sha256": "2b38019a3c80d048c43a68d780860af74f05dddc8f4d405fbf36dcfa4f226b56"
+    },
+    {
+      "file": "scripts/capture-design1-screenshots.mjs",
+      "status": "??",
+      "sha256": "5c3efb8b9038a9cbba41f206a8597a8dfd263ccf52e40b7119ccf39f1815d11d"
+    },
+    {
+      "file": "scripts/capture-loading.mjs",
+      "status": "??",
+      "sha256": "74d70efa4bb1a65bdf5754a089a97185fc838d3641df4bc67af39a46ad9db489"
+    },
+    {
+      "file": "scripts/run-realtime-dev.mjs",
+      "status": "??",
+      "sha256": "fcbb9a9a1c3264976696a32410c6dd66d825a3ed00b2b400a9f83ea0f79e35fc"
+    }
+  ],
+  "test_harness": [
+    {
+      "file": "scripts/run-release-tests.mjs",
+      "status": "M",
+      "sha256": "fc6614f3d07ebbc84304b1c16e52bba0a71e2453933e8f3b54271ba2545bc2f6"
+    },
+    {
+      "file": "services/billing-verifier/tests/unit/resilient-pipeline.test.ts",
+      "status": "M",
+      "sha256": "958f7a616ba55c46084ca951e1c733b7ff859e7cc00368d5a0c921fdf377e154"
+    },
+    {
+      "file": "tests/helpers/dailyGuidanceEmulatorHelper.ts",
+      "status": "M",
+      "sha256": "217d8f0a88f13cf4622378efa18277044be5c35cb19f8797b75a7e9afc501608"
+    },
+    {
+      "file": "tests/helpers/releaseTestEnv.mjs",
+      "status": "M",
+      "sha256": "e17bfec8c67f830c5ce8f026ff2b4882e650b56959290a6855243b15e62faec0"
+    },
+    {
+      "file": "tests/integration/build106-admin-lifetime-continuity-emulator.test.ts",
+      "status": "M",
+      "sha256": "74b4a479374f4a6d24fff659e823618b7a963fc601921944ba8e8a9ebcad8324"
+    },
+    {
+      "file": "tests/release-manifest.mjs",
+      "status": "M",
+      "sha256": "2b8049e896c61b6da3452da79abff86e7bd9370a691a4f2d7e8e2fc7a75a9b45"
+    },
+    {
+      "file": "tests/unit/blueprint-persistence-firestore-emulator.test.ts",
+      "status": "M",
+      "sha256": "0113b1700b6c1bd83165fc293a782197e3db245a071676d0e9c061e2d5365411"
+    },
+    {
+      "file": "tests/unit/build106-astro-regressions.test.ts",
+      "status": "M",
+      "sha256": "602168a7525cd88bd5534d5975b81c59d5999e4e8aba0cba66fc391fa8077841"
+    },
+    {
+      "file": "tests/unit/build106-ds-ai1-ai-locale-attribution.test.ts",
+      "status": "M",
+      "sha256": "692c4b95bfc042930005d69bea4a0a9da8501dfaf6c488fb20d312736147a780"
+    },
+    {
+      "file": "tests/unit/build106-step8-contracts.test.ts",
+      "status": "M",
+      "sha256": "fcd5084c35738919ce87403e1561e3859200c0af6888ce65d83c45ca6aa39274"
+    },
+    {
+      "file": "tests/unit/build107-hd-existing-user-convergence.test.ts",
+      "status": "M",
+      "sha256": "639d4a31dab290211cca6990a37cf27332fb6538e3c863ea4a657c6a0601c29f"
+    },
+    {
+      "file": "tests/unit/build107-production-surface-guard.test.ts",
+      "status": "M",
+      "sha256": "9dd848e756653d6d78b700cac45205264515479ae2b948e55a351437bd10dc55"
+    },
+    {
+      "file": "tests/unit/build110-indonesian-only-production.test.ts",
+      "status": "M",
+      "sha256": "2df19cf4708f53f415d011a8035477eb85597b28c68a04e7969cdf2bea73f454"
+    },
+    {
+      "file": "tests/unit/hd-hotfix.test.ts",
+      "status": "M",
+      "sha256": "01d9100cab9c8b5f4d9b8a68826f7b3b65773bf50e5d58b522aa520a9c2cf66d"
+    },
+    {
+      "file": "tests/unit/hd-route-security.test.ts",
+      "status": "M",
+      "sha256": "ac11221703aab82f37d626ac3ebc082bc29f1a7f1aae8174e1ce80270b03dd2d"
+    },
+    {
+      "file": "tests/unit/v5-08-premium-residual.test.ts",
+      "status": "M",
+      "sha256": "85ec6e96accee5d32f1e3c37b4910293ec082f7c0fb4f84a8e4e1fc63866feb5"
+    },
+    {
+      "file": "tests/unit/v5-i18n.test.ts",
+      "status": "M",
+      "sha256": "7406356570d35929d082816edef3d77711185c765aff91502a7d301c82033f31"
+    },
+    {
+      "file": "app/test-3d-poc/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "services/billing-verifier/tests/unit/bootstrap-trial.test.ts",
+      "status": "??",
+      "sha256": "f0187fde8da6ba9608e420b4d7d44c10226417f7397cb76e578e3350e7d5e77c"
+    },
+    {
+      "file": "services/humandesign-api/tests/test_timezone_dst_standalone.py",
+      "status": "??",
+      "sha256": "527d61d9c42790e897e7f468d2b7fdee44065e75cfeeef94f82838654db05762"
+    },
+    {
+      "file": "tests/fixtures/build110-hd-flowa.json",
+      "status": "??",
+      "sha256": "d4c75eebd0ecb3b24d3ee76ca75b2763a6620d2f63ab96aa2ea4e684c494b670"
+    },
+    {
+      "file": "tests/fixtures/build110-hd-flowb.json",
+      "status": "??",
+      "sha256": "c5e34727bee9d99abff7a47c4cfd8048f05e3388e5acab77dce8585dbab7b929"
+    },
+    {
+      "file": "tests/fixtures/build110-hd-flowc.json",
+      "status": "??",
+      "sha256": "718f750818bf0fe45f9e8a2701aaf4b45f737e42e3e1f444322ddf5cf57115e5"
+    },
+    {
+      "file": "tests/helpers/hd05cHarnessNetworkGuard.mjs",
+      "status": "??",
+      "sha256": "96402cc1b43273730413dece8f1be64782d2207ae53d98c29aa5e584d4e33fd8"
+    },
+    {
+      "file": "tests/helpers/hd05cLocalPlaywrightHarness.mjs",
+      "status": "??",
+      "sha256": "58aa88ebf7593f8a91588d91673f4e90d75a6fc4c5b7c737a5cab9e347478dbe"
+    },
+    {
+      "file": "tests/helpers/hd05cMockHdEngine.mjs",
+      "status": "??",
+      "sha256": "951a4e2c9dc1883100cf6f7f4b7faae96bd8789f4b2fa481ba0d7fd4a4bc2719"
+    },
+    {
+      "file": "tests/helpers/hd05cRecoveryRetries.mjs",
+      "status": "??",
+      "sha256": "9d6a203d256a222b53f5afe403bd72748b68ae60f267384ebe8a9e34e936cf2b"
+    },
+    {
+      "file": "tests/helpers/hd05dBirthRevision.mjs",
+      "status": "??",
+      "sha256": "82ae8ee0054c507ec961ac455a213eb52bd261d020cdb39a1b1284ce09e94931"
+    },
+    {
+      "file": "tests/helpers/hd05dClosureAcceptance.mjs",
+      "status": "??",
+      "sha256": "b37c42a72218d4ea2488d3030f213b4f832ba9c9b2ab706d24a49071903bde99"
+    },
+    {
+      "file": "tests/helpers/hd05dFlowD.mjs",
+      "status": "??",
+      "sha256": "996b3f16022cd0ecc1b9352089b6ef618f2be33a47d61eb10f0cf772f6d121f2"
+    },
+    {
+      "file": "tests/helpers/hd05daFlowA.mjs",
+      "status": "??",
+      "sha256": "89704fb8bd6189e66392ca3c2e022d5e149a47c5e1374a918c288730fe2fc8c8"
+    },
+    {
+      "file": "tests/helpers/hdLocalOnly.mjs",
+      "status": "??",
+      "sha256": "d34f91bfff94d13e7dfc2bbb89458aa87684417ab75bfaefd9d1ccdfc64229b4"
+    },
+    {
+      "file": "tests/helpers/mockFirebaseApp.ts",
+      "status": "??",
+      "sha256": "d4f303f43c038dce0dfe8598865d18e735634f2b5323ef34c1bd245e18ff3327"
+    },
+    {
+      "file": "tests/helpers/mockFirebaseAuth.ts",
+      "status": "??",
+      "sha256": "88daf74b166f2ee247fab9e04953f4e702f004bd64a3439ef4970838fbb44530"
+    },
+    {
+      "file": "tests/helpers/mockFirebaseFirestore.ts",
+      "status": "??",
+      "sha256": "35df5fa12af4fdb7ffb713076e511931cc42761a6455c33005788d856f25a4c8"
+    },
+    {
+      "file": "tests/helpers/mockFirebaseFunctions.ts",
+      "status": "??",
+      "sha256": "782e7563c4daaf3181ee5d2863a27574eab1dc2f16b47f4965ed667a4b9d0202"
+    },
+    {
+      "file": "tests/unit/dashboard-design1-invariants.test.ts",
+      "status": "??",
+      "sha256": "88f078ef770985be60beaf2d7ae8311aa9419998d3162b446d48b756cc22096d"
+    },
+    {
+      "file": "tests/unit/hd-birth-binding.test.ts",
+      "status": "??",
+      "sha256": "bae23e31a216c1886e437dc835a40624e7a80b5d6a1b7fb4005e93ffc704ad8d"
+    },
+    {
+      "file": "tests/unit/hd-canonical-integrity.test.ts",
+      "status": "??",
+      "sha256": "7524837f2647df13c0d69442dcf33f5d0e195f2d24e1ac8ea96c45807bbf88c7"
+    },
+    {
+      "file": "tests/unit/hd-endpoint-auth.test.ts",
+      "status": "??",
+      "sha256": "4d623e8d79ad7550a48d2deba1efab34ac984b571283667e92561866414d5adf"
+    },
+    {
+      "file": "tests/unit/hd-p0-recovery.test.ts",
+      "status": "??",
+      "sha256": "274dd4818535085483ffba6cd0477051f9ae73a1b27c5c9e53fb81b7b9a6fb2b"
+    },
+    {
+      "file": "tests/unit/hd-p0-write-guard-emulator.test.ts",
+      "status": "??",
+      "sha256": "8249518fdeb222dd620cfb6fdc129b8d5fa4cc44d61a6c6472948194771b69c9"
+    },
+    {
+      "file": "tests/unit/hd04-communication.test.ts",
+      "status": "??",
+      "sha256": "fb75a2570e4546b440eeb8da8ed9f38997e6482f7a22ef91116ef5038a714619"
+    },
+    {
+      "file": "tests/unit/hd04-scenarios.test.ts",
+      "status": "??",
+      "sha256": "27d92f364b953732d0ed8bfdf17dc3f3228df9075a3b9ca43f4b7edc17a42ae4"
+    },
+    {
+      "file": "tests/unit/hd05-render-cache.test.ts",
+      "status": "??",
+      "sha256": "cac9c1699b1fb414d08e1451a4018dc131f566cf683ec69a136fea060957848b"
+    },
+    {
+      "file": "tests/unit/hd05-view.test.ts",
+      "status": "??",
+      "sha256": "43a6e6a0287bf54f3f53163911d131b24495a6ca999255267934f19839bc9e25"
+    },
+    {
+      "file": "tests/unit/template-dedup.test.ts",
+      "status": "??",
+      "sha256": "41b1d8890eb4b7f04a38cd5e3884fb619fb66c4e7633ab3b46a99454903ef0e1"
+    },
+    {
+      "file": "tests/unit/threed-lifecycle-fallback.test.ts",
+      "status": "??",
+      "sha256": "99c28192aedf3ef39abbcd21b61ff1a5e94253cf630c382c0ddee8da9aa5c672"
+    }
+  ],
+  "docs": [
+    {
+      "file": "docs/requirements/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "docs/sot/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    },
+    {
+      "file": "docs/tracking/",
+      "status": "??",
+      "sha256": "DIRECTORY"
+    }
+  ]
+}
