@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "type": "Manifestor",
+  "strategy": "To Inform",
+  "authority": "Emotional - Solar Plexus",
+  "profile": "5/1",
+  "definition": "Single Definition",
+  "inc_cross": "Left Angle Cross of Demands",
+  "definedCenters": ["Throat", "Solar Plexus", "Root"],
+  "openCenters": ["Head", "Ajna", "G Center", "Heart", "Spleen", "Sacral"],
+  "channels": ["35-36", "19-49"],
+  "gatesPersonality": [35, 36, 19, 49, 12, 22, 6, 37, 55, 30, 41],
+  "gatesDesign": [35, 36, 19, 49, 12, 22, 6, 37, 55, 30, 41],
+  "digestion": "Passive",
+  "environment": "Landscape",
+  "motivation": "Fear",
+  "cognition": "Feeling",
+  "variables": {
+    "top_left": { "name": "Digestion", "def_type": "Passive" },
+    "bottom_left": { "name": "Environment", "def_type": "Landscape" },
+    "top_right": { "name": "Motivation", "def_type": "Fear" },
+    "bottom_right": { "name": "Perspective", "def_type": "Focused" },
+    "short_code": "PLL DRR"
+  },
+  "personalityActivations": [
+    { "planet": "Sun", "gate": 35, "line": 5 },
+    { "planet": "Earth", "gate": 36, "line": 5 }
+  ],
+  "designActivations": [
+    { "planet": "Sun", "gate": 19, "line": 1 },
+    { "planet": "Earth", "gate": 49, "line": 1 }
+  ]
+}

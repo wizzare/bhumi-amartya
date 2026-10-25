@@ -28,6 +28,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import ThreeDPocTestPage from "../../app/test-3d-poc/page";
 
 let passed = 0;
 let failed = 0;
@@ -105,6 +108,7 @@ function stripComments(src: string): string {
 // ---------------------------------------------------------------------------
 type SurfaceClass = "PRODUCT" | "ADMIN_BACKEND_ONLY" | "DEV_ONLY" | "DEPRECATED";
 const ROUTE_CLASSIFICATION: Record<string, SurfaceClass> = {
+  "app/test-3d-poc/page.tsx": "DEV_ONLY",
   "app/page.tsx": "PRODUCT",
   "app/login/page.tsx": "PRODUCT",
   "app/setup/page.tsx": "PRODUCT",
@@ -197,6 +201,17 @@ for (const [route, cls] of Object.entries(ROUTE_CLASSIFICATION)) {
   if (route.startsWith("app/admin/")) {
     ok(`${route} is not classified PRODUCT`, cls !== "PRODUCT");
   }
+}
+
+const previousEnvironment = process.env.NODE_ENV;
+try {
+  for (const environment of ["production", "test", ""]) {
+    Object.assign(process.env, { NODE_ENV: environment });
+    ok(`POC renders nothing in ${environment || "unset"}`, renderToStaticMarkup(React.createElement(ThreeDPocTestPage)) === "");
+  }
+} finally {
+  if (previousEnvironment === undefined) delete process.env.NODE_ENV;
+  else Object.assign(process.env, { NODE_ENV: previousEnvironment });
 }
 
 console.log(

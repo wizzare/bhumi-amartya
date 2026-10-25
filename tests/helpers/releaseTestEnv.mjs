@@ -3,7 +3,8 @@
 // hosts (FIRESTORE_EMULATOR_HOST / FIREBASE_AUTH_EMULATOR_HOST) are injected by
 // `firebase emulators:exec`; this only fills the client config. Test-infra only.
 
-const PROJECT_ID = "demo-release-suite";
+const PROJECT_ID = process.env.BHUMI_TEST_PROJECT_ID || "demo-release-suite";
+if (!/^demo-[a-z0-9-]+$/.test(PROJECT_ID)) throw new Error("SYNTHETIC_TEST_PROJECT_REQUIRED");
 const defaults = {
   NEXT_PUBLIC_FIREBASE_API_KEY: "synthetic-release-key",
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: `${PROJECT_ID}.firebaseapp.com`,

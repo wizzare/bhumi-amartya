@@ -2,7 +2,8 @@ import { initializeApp, getApps, deleteApp, FirebaseApp } from "firebase/app";
 import { getAuth, connectAuthEmulator, signInAnonymously, Auth } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator, Firestore } from "firebase/firestore";
 
-export const TEST_PROJECT_ID = "bhumi-build80-emulator-test";
+export const TEST_PROJECT_ID = process.env.BHUMI_TEST_PROJECT_ID || "demo-daily-guidance";
+if (!/^demo-[a-z0-9-]+$/.test(TEST_PROJECT_ID)) throw new Error("SYNTHETIC_TEST_PROJECT_REQUIRED");
 export const SYNTHETIC_USER_A = "test-daily-user-a";
 export const SYNTHETIC_USER_B = "test-daily-user-b";
 export const EXPECTED_FIRESTORE_PORT = 8080;

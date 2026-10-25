@@ -96,12 +96,12 @@ ok(
     /generateStructuredJson<[\s\S]{0,120}language:\s*uiLanguage/.test(engineSrc),
 );
 ok(
-  "route: request locale normalized to id/en/ms (ms preserved, not -> id)",
-  /body\.language\.startsWith\("ms"\)\s*\n?\s*\?\s*"ms"/.test(routeSrc),
+  "route: Indonesian-only policy overrides request locale",
+  /language:\s*"id"/.test(routeSrc) && !/body\.language\.startsWith/.test(routeSrc),
 );
 ok(
-  "service: profile locale normalized to id/en/ms (ms preserved)",
-  /profile\.language\.startsWith\("ms"\)/.test(serviceSrc),
+  "service: Indonesian-only policy overrides legacy profile locale",
+  /language:\s*"id"/.test(serviceSrc) && !/profile\.language\.startsWith/.test(serviceSrc),
 );
 ok(
   "types: DailyGuidanceInput.language and DailyGuidanceContext.language include ms",
@@ -114,8 +114,8 @@ ok(
     /language: guidanceLanguage, profile: p/.test(dashboardSrc),
 );
 ok(
-  "dashboard locale precedence keeps the canonical top-level profile locale",
-  /language: p\?\.language \|\| p\?\.profile\?\.language \|\| "id"/.test(dashboardSrc),
+  "dashboard generation pins Indonesian regardless of legacy profile locale",
+  /const guidanceLanguage: "id" \| "en" \| "ms" = "id"/.test(dashboardSrc) && /language: guidanceLanguage/.test(dashboardSrc),
 );
 
 // ---------------------------------------------------------------------------

@@ -117,7 +117,7 @@ test("2.4 app/layout.tsx html tag is set to id-ID", () => {
 
 test("2.5 app/login/page.tsx Suspense fallback uses Indonesian", () => {
   const src = fs.readFileSync(path.resolve("app/login/page.tsx"), "utf8");
-  assert.ok(src.includes("<div>Memuat...</div>"), "Login Suspense fallback must be 'Memuat...'");
+  assert.match(src, /<Suspense\s+fallback=\{<div\b[^\n]*>Memuat\.\.\.<\/div>\}/, "Login Suspense fallback must be 'Memuat...' with optional styling");
   assert.ok(!src.includes("<div>Loading...</div>"), "Login Suspense fallback must not be 'Loading...'");
 });
 
@@ -201,8 +201,8 @@ test("3.4 Unified daily reminder defaults to Indonesian message", () => {
 test("3.5 Notification copy policy enforces Indonesian", () => {
   for (const locale of ["id-ID", "en-US", "ms-MY"] as const) {
     const copy = notificationCopy("daily", locale);
-    assert.strictEqual(copy.title, "Catatanmu siap", "Notification title must be Indonesian");
-    assert.strictEqual(copy.body, "Ruangmu ada di sini kapan pun kamu siap.", "Notification body must be Indonesian");
+    assert.strictEqual(copy.title, "Catatan hari ini siap", "Notification title must be Indonesian");
+    assert.strictEqual(copy.body, "Catatanmu sudah tersimpan. Buka kapan pun kamu mau.", "Notification body must be Indonesian");
   }
 });
 

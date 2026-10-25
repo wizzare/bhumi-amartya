@@ -43,7 +43,7 @@ const basePolicy = { locale: "id-ID", now: daytime, timezone: "Asia/Jakarta", ca
 
 check("notifications default to explicit opt-in", Object.values(DEFAULT_NOTIFICATION_CATEGORIES).every((value) => value === false));
 check("notification copy exists in id", notificationCopy("daily", "id-ID").body.length > 0);
-check("notification copy exists in en", notificationCopy("return", "en-US").title === "Thinking of you");
+check("legacy English preference cannot override Indonesian notification policy", notificationCopy("return", "en-US").title === "Sudah lama tidak melihat");
 check("notification copy exists in ms", notificationCopy("weekly", "ms-MY").body.length > 0);
 check("opt-out suppresses", evaluateNotificationPolicy({ ...basePolicy, category: "daily", categories: DEFAULT_NOTIFICATION_CATEGORIES }).status === "suppressed_opt_out");
 check("quiet hours suppress", evaluateNotificationPolicy({ ...basePolicy, category: "daily", now: new Date("2026-09-02T23:00:00+07:00") }).status === "suppressed_quiet_hours");

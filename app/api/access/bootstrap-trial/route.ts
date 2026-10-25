@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertQaOperationAllowed } from '@/lib/config/qaRuntime';
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
@@ -43,8 +44,12 @@ export async function OPTIONS(request: Request) {
 
 function initAdminForRoute() {
   if (!getApps().length) {
+    const isEmulator = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true";
+    const projId = isEmulator
+      ? (process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_PROJECT_ID || "demo-build110-local")
+      : (process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "bhumiamartya-fe85c");
     initializeApp({
-      projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "demo-build110-local",
+      projectId: projId,
     });
   }
 }
@@ -80,6 +85,7 @@ async function verifyRequestAuthentication(request: Request): Promise<{ authenti
 
 export async function POST(request: Request) {
   try {
+    assertQaOperationAllowed();
     const authResult = await verifyRequestAuthentication(request);
     if (!authResult.authenticated || !authResult.uid) {
       return corsJson(
@@ -150,10 +156,10 @@ export async function POST(request: Request) {
     });
 
     return corsJson(request, result, { status: 200, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });
-  } catch (err: any) {
+  } catch {
     return corsJson(
       request,
-      { ok: false, outcome: "RETRYABLE_ERROR", error: err?.message || "Internal server error" },
+      { ok: false, outcome: "RETRYABLE_ERROR", error: "Internal server error" },
       { status: 500, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
     );
   }

@@ -1,6 +1,7 @@
 import { initializeApp, deleteApp } from "firebase/app";
 import {
   connectAuthEmulator,
+  createUserWithEmailAndPassword,
   getAuth,
   signInWithEmailAndPassword,
   signOut,
@@ -18,7 +19,6 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { initializeApp as initializeAdminApp, deleteApp as deleteAdminApp } from "firebase-admin/app";
-import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { getFirestore as getAdminFirestore } from "firebase-admin/firestore";
 import { buildAdminLifetimeProfilePatch } from "../../lib/auth/adminContinuity";
 
@@ -74,28 +74,24 @@ function pass(label: string) {
 
 async function main() {
   const adminApp = initializeAdminApp({ projectId }, `admin-continuity-${runId}`);
-  const adminAuth = getAdminAuth(adminApp);
   const adminDb = getAdminFirestore(adminApp);
   const clients: ReturnType<typeof createClient>[] = [];
 
   try {
-  const targetUid = `synthetic-target-${runId}`;
   const targetEmail = `target-${runId}@example.test`;
-  await adminAuth.createUser({ uid: targetUid, email: targetEmail, password });
-  await adminDb.collection("users").doc(targetUid).set({ uid: targetUid, role: "user", membershipType: "FREE" });
   const targetClient = createClient("target");
   clients.push(targetClient);
+  const targetUid = (await createUserWithEmailAndPassword(targetClient.auth, targetEmail, password)).user.uid;
+  await adminDb.collection("users").doc(targetUid).set({ uid: targetUid, role: "user", membershipType: "FREE" });
   await signInWithEmailAndPassword(targetClient.auth, targetEmail, password);
 
   const adminPatch = buildAdminLifetimeProfilePatch();
   for (let index = 1; index <= 4; index += 1) {
-    const uid = `synthetic-admin-${index}-${runId}`;
     const email = `admin-${index}-${runId}@example.test`;
-    await adminAuth.createUser({ uid, email, password });
-    await adminDb.collection("users").doc(uid).set({ uid, ...adminPatch });
-
     const client = createClient(`admin-${index}`);
     clients.push(client);
+    const uid = (await createUserWithEmailAndPassword(client.auth, email, password)).user.uid;
+    await adminDb.collection("users").doc(uid).set({ uid, ...adminPatch });
     await signInWithEmailAndPassword(client.auth, email, password);
 
     await getDocs(query(collection(client.firestore, "users"), limit(2)));
@@ -139,9 +135,10 @@ async function main() {
     pass(`ADMIN_${index} authorization survives logout/login`);
   }
 
-  const premiumUid = `synthetic-premium-${runId}`;
   const premiumEmail = `premium-${runId}@example.test`;
-  await adminAuth.createUser({ uid: premiumUid, email: premiumEmail, password });
+  const premiumClient = createClient("premium");
+  clients.push(premiumClient);
+  const premiumUid = (await createUserWithEmailAndPassword(premiumClient.auth, premiumEmail, password)).user.uid;
   await adminDb.collection("users").doc(premiumUid).set({
     uid: premiumUid,
     role: "user",
@@ -149,8 +146,6 @@ async function main() {
     entitlementSource: "google_play",
     membershipExpiryDate: new Date("2099-01-01T00:00:00Z"),
   });
-  const premiumClient = createClient("premium");
-  clients.push(premiumClient);
   await signInWithEmailAndPassword(premiumClient.auth, premiumEmail, password);
   await expectDenied(() => getDocs(query(collection(premiumClient.firestore, "users"), limit(1))), "Premium list users");
   await expectDenied(() => setDoc(doc(premiumClient.firestore, "broadcasts", `premium-${runId}`), {
@@ -160,22 +155,20 @@ async function main() {
   }), "Premium broadcast");
   pass("normal Premium user receives no admin Firestore authorization");
 
-  const freeUid = `synthetic-free-${runId}`;
   const freeEmail = `free-${runId}@example.test`;
-  await adminAuth.createUser({ uid: freeUid, email: freeEmail, password });
-  await adminDb.collection("users").doc(freeUid).set({ uid: freeUid, role: "user", membershipType: "FREE" });
   const freeClient = createClient("free");
   clients.push(freeClient);
+  const freeUid = (await createUserWithEmailAndPassword(freeClient.auth, freeEmail, password)).user.uid;
+  await adminDb.collection("users").doc(freeUid).set({ uid: freeUid, role: "user", membershipType: "FREE" });
   await signInWithEmailAndPassword(freeClient.auth, freeEmail, password);
   await expectDenied(() => updateDoc(doc(freeClient.firestore, "users", freeUid), { role: "admin" }), "Free self-elevation role");
   await expectDenied(() => updateDoc(doc(freeClient.firestore, "users", freeUid), { membershipType: "LIFETIME" }), "Free self-elevation lifetime");
   pass("normal free user cannot self-elevate role or lifetime entitlement");
 
-  const noProfileUid = `synthetic-no-profile-${runId}`;
   const noProfileEmail = `no-profile-${runId}@example.test`;
-  await adminAuth.createUser({ uid: noProfileUid, email: noProfileEmail, password });
   const noProfileClient = createClient("no-profile");
   clients.push(noProfileClient);
+  await createUserWithEmailAndPassword(noProfileClient.auth, noProfileEmail, password);
   await signInWithEmailAndPassword(noProfileClient.auth, noProfileEmail, password);
   await expectDenied(() => getDocs(query(collection(noProfileClient.firestore, "users"), limit(1))), "Missing-profile admin list");
   pass("missing/read-unavailable canonical role fails closed");

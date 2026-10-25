@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "type": "Projector",
+  "strategy": "Wait for the Invitation",
+  "authority": "Splenic",
+  "profile": "2/4",
+  "definition": "Single Definition",
+  "inc_cross": "Right Angle Cross of the Sphinx",
+  "definedCenters": ["Spleen", "G Center"],
+  "openCenters": ["Head", "Ajna", "Throat", "Heart", "Sacral", "Solar Plexus", "Root"],
+  "channels": ["10-57"],
+  "gatesPersonality": [10, 57, 1, 2, 7, 13, 25, 46, 15, 43, 20],
+  "gatesDesign": [10, 57, 1, 2, 7, 13, 25, 46, 15, 43, 20],
+  "digestion": "Active",
+  "environment": "Observer",
+  "motivation": "Receptive",
+  "cognition": "Outer Vision",
+  "variables": {
+    "top_left": { "name": "Digestion", "def_type": "Active" },
+    "bottom_left": { "name": "Environment", "def_type": "Observer" },
+    "top_right": { "name": "Motivation", "def_type": "Receptive" },
+    "bottom_right": { "name": "Perspective", "def_type": "Peripheral" },
+    "short_code": "PRR DLR"
+  },
+  "personalityActivations": [
+    { "planet": "Sun", "gate": 10, "line": 2 },
+    { "planet": "Earth", "gate": 57, "line": 2 }
+  ],
+  "designActivations": [
+    { "planet": "Sun", "gate": 57, "line": 4 },
+    { "planet": "Earth", "gate": 10, "line": 4 }
+  ]
+}

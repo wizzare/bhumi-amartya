@@ -205,6 +205,18 @@ export const releaseSuites = [
     evidence: "STRONG_UNIT",
   },
   {
+    name: "P0 Human Design recovery (URL contract, canonical normalization, bounded retry, preservation, upgrade, last-write race, reload, render predicate, enrichment separation)",
+    file: "tests/unit/hd-p0-recovery.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
+    name: "P0 Human Design last-write race (stale pending writer cannot downgrade stored canonical; other fields still merge)",
+    file: "tests/unit/hd-p0-write-guard-emulator.test.ts",
+    kind: "emulator",
+    evidence: "STRONG_REAL_SDK",
+  },
+  {
     name: "Concurrent recovery dedup (dual runtime)",
     file: "tests/unit/concurrent_recovery_emulator.test.ts",
     kind: "emulator",

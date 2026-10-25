@@ -1,8 +1,5 @@
 import { NextResponse } from "next/server";
-import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getAppCheck } from "firebase-admin/app-check";
-import { readFileSync, existsSync } from "fs";
+import { verifyHdRequestAuthentication } from "@/lib/auth/hdEndpointAuth";
 
 /**
  * CDI-108-01 — canonical natal-chart / Swiss Ephemeris proxy.
@@ -80,65 +77,6 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-function initAdminForRoute() {
-  if (getApps().length) return;
-  const saPaths = [
-    "C:/Users/shein/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json",
-    "C:/Users/shein/Downloads/bhumiamartya-fe85c-f49e4c95baf3.json",
-  ];
-  for (const p of saPaths) {
-    if (existsSync(p)) {
-      try {
-        const sa = JSON.parse(readFileSync(p, "utf8"));
-        initializeApp({ credential: cert(sa), projectId: sa.project_id });
-        return;
-      } catch (e) {}
-    }
-  }
-  try {
-    initializeApp({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "bhumiamartya-fe85c" });
-  } catch (e) {}
-}
-
-async function verifyRequestAuthentication(
-  request: Request,
-): Promise<{ authenticated: boolean; status?: number; errorNote?: string }> {
-  const devBypass = request.headers.get("x-dev-secret");
-  if (devBypass === "bhumi-dev-bypass" || process.env.NODE_ENV === "development") {
-    return { authenticated: true };
-  }
-
-  const authHeader = request.headers.get("authorization");
-  const appCheckHeader = request.headers.get("x-firebase-appcheck");
-  if (!authHeader && !appCheckHeader) {
-    return { authenticated: false, status: 401, errorNote: "Authentication token or AppCheck token is required." };
-  }
-
-  initAdminForRoute();
-
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const idToken = authHeader.split("Bearer ")[1]?.trim();
-    if (!idToken) return { authenticated: false, status: 401, errorNote: "Malformed Authorization header." };
-    try {
-      if (getApps().length) await getAuth().verifyIdToken(idToken);
-      return { authenticated: true };
-    } catch {
-      return { authenticated: false, status: 403, errorNote: "Invalid or expired Firebase Auth ID token." };
-    }
-  }
-
-  if (appCheckHeader) {
-    try {
-      if (getApps().length) await getAppCheck().verifyToken(appCheckHeader);
-      return { authenticated: true };
-    } catch {
-      return { authenticated: false, status: 403, errorNote: "Invalid Firebase AppCheck token." };
-    }
-  }
-
-  return { authenticated: false, status: 401, errorNote: "Authentication required." };
-}
-
 function isValidDateStr(val: unknown): boolean {
   return typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val.trim());
 }
@@ -159,7 +97,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const authResult = await verifyRequestAuthentication(request);
+    const authResult = await verifyHdRequestAuthentication(request);
     if (!authResult.authenticated) {
       return corsJson(
         request,

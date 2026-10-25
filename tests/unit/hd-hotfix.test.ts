@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateWithHdkit } from "../../lib/humandesign/hdkitAdapter";
 import { calculateHumanDesign } from "../../lib/humandesign/calculateHumanDesign";
 import { isCanonicalHumanDesign, getHumanDesignCanonicalFailureReason } from "../../lib/humandesign/hdAudit";
 import { getHdState } from "../../lib/humandesign/hdState";
@@ -15,11 +14,26 @@ const ponorogo = {
   longitude: 111.46,
 } as const;
 
+process.env.NEXT_PUBLIC_FIREBASE_API_KEY = "synthetic-test-key";
+process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "demo-test.firebaseapp.com";
+process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID = "demo-test";
+process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "demo-test.appspot.com";
+process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "123456789";
+process.env.NEXT_PUBLIC_FIREBASE_APP_ID = "1:123456789:web:synthetic";
+
 const originalFetch = globalThis.fetch;
 
 function mockResponse(data: unknown, status = 200): void {
   globalThis.fetch = async () => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 }
+
+test.beforeEach(async () => {
+  const { auth } = await import("../../lib/firebase/config");
+  (auth as any).currentUser = {
+    uid: "test-hotfix-uid",
+    getIdToken: async () => "mock-token-hotfix",
+  };
+});
 
 test.afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -35,14 +49,16 @@ test("CASE 1: canonical success returns Projector (not Generator)", async () => 
     inc_cross: "((44, 24), (33, 19))-RAC",
     incarnationCross: "((44, 24), (33, 19))-RAC",
     channels: ["47-64", "33-13"],
-    definition: 2,
-    definedCenters: ["Ajna", "G_Center", "Head", "Throat"],
+    definition: "Single Definition",
+    definedCenters: ["Ajna", "G Center", "Head", "Throat"],
     openCenters: ["Heart", "Root", "Sacral", "Spleen", "Solar Plexus"],
-    gatesPersonality: ["44", "24", "5", "47"],
-    gatesDesign: ["33", "19", "59", "47"],
+    gatesPersonality: [44, 24, 5, 47],
+    gatesDesign: [33, 19, 59, 47],
     status: "ready",
     source: "human-design-py",
-    calculationStatus: "completed",
+    calculationQuality: "verified",
+    hdEngineVersion: "gaia-hd-v1",
+    hdAuditStatus: "validated",
   });
 
   const result = await calculateHumanDesign({ ...ponorogo });
@@ -54,24 +70,23 @@ test("CASE 1: canonical success returns Projector (not Generator)", async () => 
   assert.equal(getHumanDesignCanonicalFailureReason(result), "canonical");
 });
 
-// CASE 2 / CASE B: canonical API timeout -> PROCESSING, not READY, no Type exposed.
+// CASE 2 / CASE B: canonical API timeout -> retryable pending state, no Type exposed.
 test("CASE 2: timeout keeps chart PENDING (never READY, no Type)", async () => {
   globalThis.fetch = (_input, init) => new Promise((_resolve, reject) => {
     init?.signal?.addEventListener("abort", () => reject(new DOMException("The operation was aborted.", "AbortError")));
   });
 
-  const result = await calculateHumanDesign({ ...ponorogo });
+  const result = await calculateHumanDesign({ ...ponorogo }, { timeoutMs: 50 });
 
   assert.notEqual(result.status, "ready", "must not be READY on timeout");
   assert.equal(result.type, null, "no Type exposed on timeout");
   assert.equal(getHdState(result).state, "PENDING", "user sees PROCESSING");
   assert.equal(isCanonicalHumanDesign(result), false, "timeout result is not canonical");
-  assert.equal(result.calculationQuality, "fallback_approximation", "diagnostic fallback retained as approximation");
   assert.ok(result.retryCount !== undefined, "retry metadata present");
   assert.ok(result.nextRetryAt !== undefined, "nextRetryAt present for future scheduler");
 });
 
-// CASE 2 / CASE C: API offline -> PROCESSING, not READY, no Type.
+// CASE 2 / CASE C: API offline -> retriable connection failure, no Type.
 test("CASE 3: offline (connection error) keeps chart PENDING", async () => {
   globalThis.fetch = async () => {
     throw new TypeError("connect ECONNREFUSED");
@@ -96,13 +111,11 @@ test("CASE 4: existing canonical doc must not be overwritten by a later fallback
     calculationQuality: "verified",
     hdEngineVersion: "gaia-hd-v1",
   };
-  // Simulate a write attempt that would overwrite: repository guard is asserted in
-  // blueprintRepository.test; here we verify the canonical predicate is stable.
   assert.equal(isCanonicalHumanDesign(existingCanonical), true, "existing canonical is protected");
   const fallbackCandidate = {
     status: "pending",
     type: null,
-    source: "local-fallback",
+    source: "pending",
     calculationQuality: "fallback_approximation",
   };
   assert.equal(isCanonicalHumanDesign(fallbackCandidate), false, "fallback candidate is not canonical");
@@ -124,7 +137,7 @@ test("CASE 5: settled legacy local-fallback is FALLBACK_LABELED, not canonical",
   assert.equal(isCanonicalHumanDesign(legacy), false);
 });
 
-test("CASE 6: legacy fallback + unavailable service stays PENDING (diagnostic only)", async () => {
+test("CASE 6: retriable service outage stays retriable PENDING without false Type", async () => {
   globalThis.fetch = async () => {
     throw new TypeError("connect ECONNREFUSED");
   };
@@ -134,12 +147,11 @@ test("CASE 6: legacy fallback + unavailable service stays PENDING (diagnostic on
   assert.equal(getHdState(result).state, "PENDING", "user still sees PROCESSING");
 });
 
-test("auditCandidate fields preserve TS diagnostic on failure without exposing final Type", async () => {
-  globalThis.fetch = async () => {
-    throw new TypeError("connect ECONNREFUSED");
-  };
-
-  const result = await calculateWithHdkit({ ...ponorogo, birthTime: "10:45" });
-  assert.equal(result.type, null, "not exposed as final");
-  assert.ok(result.auditCandidateType, "diagnostic Type retained for audit");
+test("authenticated calculation rejects auth errors as terminal without local fallback approximations", async () => {
+  mockResponse({ error: "Unauthorized" }, 401);
+  const result = await calculateHumanDesign({ ...ponorogo });
+  assert.equal(result.type, null, "never expose type on auth failure");
+  assert.equal(result.status, "error");
+  assert.equal(result.lastErrorCode, "unauthorized");
+  assert.equal(getHdState(result).state, "TERMINAL_ERROR");
 });

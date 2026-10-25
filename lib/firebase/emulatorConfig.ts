@@ -123,7 +123,7 @@ export function connectFunctionsEmulatorOnce(functions: object): void {
 }
 
 export function assertFirestoreEmulatorWired(db: object): void {
-  if (!shouldUseFirebaseEmulators()) return;
+  if (!shouldUseFirestoreEmulator()) return;
   if (!getConnectionRegistry().firestore.has(db)) {
     const endpoint = getFirebaseEmulatorEndpoints().firestore;
     throw new Error(

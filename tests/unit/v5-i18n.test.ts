@@ -23,8 +23,8 @@ for (const tag of ["id-ID", "en-US", "ms-MY"] as const) {
 }
 
 test("id welcome title", translations.id.welcome.title === "Bhumi Amartya");
-test("en premium localized", translations.en.premiumBhumi.subscriptionNote.includes("Rp25.000/month"));
-test("ms environment localized", translations.ms.environment.title === "Keadaan Persekitaran");
+test("legacy English key resolves to Indonesian runtime dictionary", translations.en === translations.id);
+test("legacy Malay key resolves to Indonesian runtime dictionary", translations.ms === translations.id);
 test("ms fallback chain materializes a welcome title", typeof translations.ms.welcome?.title === "string" && translations.ms.welcome.title.length > 0);
 test("compat store exposes all supported codes", Boolean(translations.id && translations.en && translations.ms));
 
@@ -53,7 +53,7 @@ for (const short of SHORTS) {
 }
 test("Premium price copy exists in all locales",
   translations.id.premiumBhumi.subscriptionNote.includes("Rp25.000/bulan")
-  && translations.en.premiumBhumi.subscriptionNote.includes("Rp25.000/month")
+  && translations.en.premiumBhumi.subscriptionNote.includes("Rp25.000/bulan")
   && translations.ms.premiumBhumi.subscriptionNote.includes("Rp25.000/bulan"));
 
 const now = Date.parse("2026-08-24T10:00:00Z");

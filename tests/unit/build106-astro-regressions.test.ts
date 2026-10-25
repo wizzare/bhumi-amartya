@@ -26,7 +26,7 @@ async function run(): Promise<void> {
   /* ---------------- R-37: no fixed western-body slice ---------------- */
   ok(!/sky\.bodies[\s\S]{0,120}\.slice\(0,\s*5\)/.test(cardSrc), "R-37: AstroTodayCard no longer slices sky.bodies to 5");
   ok(cardSrc.includes("synthesis.westernEvents"), "R-37: AstroTodayCard renders synthesis.westernEvents (variable count)");
-  ok(cardSrc.includes("relevantEventsCount"), "R-37: western group summary is a variable count label");
+  ok(cardSrc.includes("{synthesis.westernEvents.length} peristiwa aktif") && cardSrc.includes("synthesis.westernEvents.length === 0") && cardSrc.includes("synthesis.westernEvents.map("), "R-37: western group renders the actual variable count, empty state, and event list");
 
   // Behavioural variable-count proof lives in v5-astro-core.test.ts
   // ("quiet day yields ZERO events (no slice(0,5) padding)"). Here we pin the

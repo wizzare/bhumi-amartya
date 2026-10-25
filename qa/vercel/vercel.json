@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "regions": ["sin1"],
+  "functions": {
+    "api/**/*.mjs": {
+      "maxDuration": 30,
+      "memory": 512
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "name": "@bhumi/qa-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "files": [
+    "lib/"
+  ],
+  "exports": {
+    "./server": "./lib/server.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.0.0"
+  }
+}

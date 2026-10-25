@@ -31,6 +31,9 @@ function runSuite(suite) {
     return { ...suite, status: "SKIPPED_NO_EMULATOR", code: null };
   }
   const preload = ["--import", ENV_PRELOAD];
+  if (suite.file === "tests/unit/p0-auth-skip-native-auth.test.ts") {
+    preload.push("--import", "./tests/helpers/p0AuthMocks.mjs");
+  }
   const filePath = path.join(REPO_ROOT, suite.file);
   if (!existsSync(filePath)) {
     return { ...suite, status: "MISSING_FILE", code: 2 };

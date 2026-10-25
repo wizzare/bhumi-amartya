@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
-import { getApps, initializeApp, cert } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
-import { getAppCheck } from "firebase-admin/app-check";
-import { readFileSync, existsSync } from "fs";
+import { verifyHdRequestAuthentication } from "@/lib/auth/hdEndpointAuth";
 
 const CANONICAL_HD_API_URL = "https://bhumi-human-design-api.vercel.app/calculate";
-const HD_REQUEST_TIMEOUT_MS = 15_000;
+import { requestHdJson, HD_UPSTREAM_TIMEOUT_MS, HdCommunicationError } from "@/lib/humandesign/hdCommunication";
+import { normalizeLiveHumanDesignResponse } from "@/lib/humandesign/liveContract";
 const CORS_ALLOWED_METHODS = "POST, OPTIONS";
 const CORS_ALLOWED_HEADERS = "Authorization, Content-Type, X-Firebase-AppCheck";
 
@@ -62,73 +60,6 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-function initAdminForRoute() {
-  if (getApps().length) return;
-  const saPaths = [
-    "C:/Users/shein/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json",
-    "C:/Users/shein/Downloads/bhumiamartya-fe85c-f49e4c95baf3.json",
-  ];
-  for (const p of saPaths) {
-    if (existsSync(p)) {
-      try {
-        const sa = JSON.parse(readFileSync(p, "utf8"));
-        initializeApp({ credential: cert(sa), projectId: sa.project_id });
-        return;
-      } catch (e) {}
-    }
-  }
-  try {
-    initializeApp({ projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "bhumiamartya-fe85c" });
-  } catch (e) {}
-}
-
-async function verifyRequestAuthentication(request: Request): Promise<{ authenticated: boolean; status?: number; errorNote?: string }> {
-  // Allow explicit Dev / Test Bypass for local integration testing
-  const devBypass = request.headers.get("x-dev-secret");
-  if (devBypass === "bhumi-dev-bypass" || process.env.NODE_ENV === "development") {
-    return { authenticated: true };
-  }
-
-  const authHeader = request.headers.get("authorization");
-  const appCheckHeader = request.headers.get("x-firebase-appcheck");
-
-  if (!authHeader && !appCheckHeader) {
-    return { authenticated: false, status: 401, errorNote: "Authentication token or AppCheck token is required." };
-  }
-
-  initAdminForRoute();
-
-  // Verify Firebase Auth ID Token
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const idToken = authHeader.split("Bearer ")[1]?.trim();
-    if (!idToken) {
-      return { authenticated: false, status: 401, errorNote: "Malformed Authorization header." };
-    }
-    try {
-      if (getApps().length) {
-        await getAuth().verifyIdToken(idToken);
-      }
-      return { authenticated: true };
-    } catch (authErr) {
-      return { authenticated: false, status: 403, errorNote: "Invalid or expired Firebase Auth ID token." };
-    }
-  }
-
-  // Verify Firebase AppCheck Token
-  if (appCheckHeader) {
-    try {
-      if (getApps().length) {
-        await getAppCheck().verifyToken(appCheckHeader);
-      }
-      return { authenticated: true };
-    } catch (appCheckErr) {
-      return { authenticated: false, status: 403, errorNote: "Invalid Firebase AppCheck token." };
-    }
-  }
-
-  return { authenticated: false, status: 401, errorNote: "Authentication required." };
-}
-
 function isValidDateStr(val: unknown): boolean {
   if (typeof val !== "string") return false;
   return /^\d{4}-\d{2}-\d{2}$/.test(val.trim());
@@ -157,7 +88,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Route Authentication & Authorization Verification
-    const authResult = await verifyRequestAuthentication(request);
+    const authResult = await verifyHdRequestAuthentication(request);
     if (!authResult.authenticated) {
       return corsJson(
         request,
@@ -231,66 +162,26 @@ export async function POST(request: Request) {
       longitude,
     };
 
-    // 6. External API request with AbortController timeout & no-store headers
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), HD_REQUEST_TIMEOUT_MS);
     const targetUrl = process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL || CANONICAL_HD_API_URL;
-
-    let response: Response;
+    let data: Record<string, unknown>;
     try {
-      response = await fetch(targetUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(sanitizedPayload),
-        signal: controller.signal,
-        cache: "no-store",
+      data = await requestHdJson(targetUrl, sanitizedPayload, {
+        timeoutMs: HD_UPSTREAM_TIMEOUT_MS,
+        signal: request.signal,
       });
-    } catch (fetchErr: any) {
-      const isTimeout = fetchErr?.name === "AbortError";
-      console.warn(`[HD API ROUTE] External call failed: ${isTimeout ? "TIMEOUT" : "CONNECTION_ERROR"}`);
-      return corsJson(
-        request,
-        {
-          status: "error",
-          calculationStatus: isTimeout ? "timeout" : "connection_error",
-          calculationQuality: isTimeout ? "timeout" : "connection_error",
-          note: isTimeout ? "Human Design service timed out." : "Human Design service unreachable.",
-        },
-        {
-          status: 503,
-          headers: {
-            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          },
-        }
-      );
-    } finally {
-      clearTimeout(timer);
+      if (!normalizeLiveHumanDesignResponse(data)) throw new HdCommunicationError("invalid_response");
+    } catch (error) {
+      const code = error instanceof HdCommunicationError ? error.code : "connection_error";
+      const status = code === "endpoint_not_found" ? 404 : code === "unauthorized" ? 403
+        : code === "rate_limited" ? 429 : code === "invalid_input" ? 400
+          : code === "cancelled" ? 499 : code === "invalid_response" ? 502 : 503;
+      return corsJson(request, { status: "error", calculationStatus: code, code }, {
+        status, headers: { "Cache-Control": "no-store", "X-HD-Failure-Code": code },
+      });
     }
 
-    if (!response.ok) {
-      console.warn(`[HD API ROUTE] External API returned HTTP status ${response.status}`);
-      return corsJson(
-        request,
-        {
-          status: "error",
-          calculationStatus: "service_unavailable",
-          calculationQuality: "service_unavailable",
-          note: `Human Design service returned HTTP ${response.status}.`,
-        },
-        {
-          status: response.status,
-          headers: {
-            "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-          },
-        }
-      );
-    }
-
-    const data = await response.json();
     const canonicalData = {
-      ...(typeof data === "object" ? data : {}),
+      ...data,
       hdEngineVersion: "gaia-hd-v1",
       calculationQuality: "verified",
       source: "human-design-py",
@@ -302,7 +193,7 @@ export async function POST(request: Request) {
         "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
     });
-  } catch (error) {
+  } catch {
     console.error("[HD API ROUTE] Unexpected server error in HD calculation route");
     return corsJson(
       request,

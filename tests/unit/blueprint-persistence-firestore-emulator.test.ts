@@ -7,7 +7,8 @@ import { deleteApp, type FirebaseApp } from "firebase/app";
 import { signInAnonymously, signOut, type Auth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-const PROJECT_ID = "demo-blueprint-persistence";
+const PROJECT_ID = process.env.BHUMI_TEST_PROJECT_ID || "demo-blueprint-persistence";
+assert.match(PROJECT_ID, /^demo-[a-z0-9-]+$/, "synthetic test project required");
 
 type JsonRecord = Record<string, unknown>;
 
@@ -77,7 +78,10 @@ async function main(): Promise<void> {
     });
   });
 
-  humanDesignServer.listen(0, "127.0.0.1");
+  const hdEndpoint = new URL(process.env.NEXT_PUBLIC_HUMAN_DESIGN_API_URL || "");
+  assert.equal(hdEndpoint.hostname, "127.0.0.1");
+  assert.equal(hdEndpoint.pathname, "/api/humandesign/calculate");
+  humanDesignServer.listen(Number(hdEndpoint.port), "127.0.0.1");
   await once(humanDesignServer, "listening");
   const address = humanDesignServer.address();
   assert.ok(address && typeof address !== "string", "Human Design fixture server did not start");
@@ -94,7 +98,7 @@ async function main(): Promise<void> {
     NEXT_PUBLIC_USE_AUTH_EMULATOR: "true",
     NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: "true",
     NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: "false",
-    NEXT_PUBLIC_HUMAN_DESIGN_API_URL: `http://127.0.0.1:${address.port}/calculate`,
+    NEXT_PUBLIC_HUMAN_DESIGN_API_URL: hdEndpoint.href,
   });
 
   let firebaseApp: FirebaseApp | undefined;

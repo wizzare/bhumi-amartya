@@ -36,7 +36,7 @@ const msLocale = JSON.parse(fs.readFileSync("src/locales/ms-MY/translation.json"
 ok("id display price is Rp25.000", idLocale.premiumBhumi.subscriptionNote.includes("Rp25.000/bulan"));
 ok("en display price is Rp25.000", enLocale.premiumBhumi.subscriptionNote.includes("Rp25.000/month"));
 ok("ms display price is Rp25.000", msLocale.premiumBhumi.subscriptionNote.includes("Rp25.000/bulan"));
-ok("Premium page fallback is Rp25.000", premiumPage.includes("Langganan bulanan Rp25.000/bulan"));
+ok("Premium page uses live Google Play pricing with a neutral fallback", premiumPage.includes('queryPremiumSubscription()') && premiumPage.includes('setPriceLabel(isEn ? `${formattedPrice}/month` : `${formattedPrice}/bulan`)') && premiumPage.includes('useState("per bulan")') && premiumPage.includes('"melalui Google Play"') && !/Rp\s?\d/.test(premiumPage));
 
 // The stale Build-105 display price must not remain in current user-facing sources.
 const currentPremiumSurfaces = [premiumPage, upgradePage, premiumLock, accessGuard, entitlementSrc];

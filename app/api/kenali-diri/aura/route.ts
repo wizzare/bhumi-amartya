@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { assertQaOperationAllowed } from '@/lib/config/qaRuntime';
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
 import { AuraService } from "@/lib/services/auraService";
 import { generateAuraResult } from "@/lib/services/auraResultGenerator";
@@ -6,6 +7,7 @@ import { isEnlEdition } from "@/lib/config/edition";
 
 export async function POST(request: Request) {
   try {
+    assertQaOperationAllowed();
     const body = await request.json().catch(() => null);
     if (!body) {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });

@@ -12,15 +12,24 @@ import {
   shouldUseFunctionsEmulator,
 } from './emulatorConfig';
 
+import { assertQaOperationAllowed } from '../config/qaRuntime';
+
+assertQaOperationAllowed();
+
 const useFirebaseEmulators = shouldUseFirebaseEmulators();
 const useFirestoreEmulator = shouldUseFirestoreEmulator();
 const useFunctionsEmulator = shouldUseFunctionsEmulator();
 const emulatorProjectId = process.env.NEXT_PUBLIC_FIREBASE_EMULATOR_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+const qaFirestoreProjectId = process.env.NEXT_PUBLIC_QA_MODE === 'realQA'
+  ? process.env.NEXT_PUBLIC_QA_FIRESTORE_PROJECT_ID
+  : undefined;
+const firestoreProjectId = qaFirestoreProjectId
+  || (useFirebaseEmulators ? emulatorProjectId : process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: useFirebaseEmulators ? emulatorProjectId : process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  projectId: firestoreProjectId,
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
@@ -68,6 +77,7 @@ if (useFirestoreEmulator || useFunctionsEmulator || shouldUseFirebaseEmulators()
 }
 
 function getClientFunctions(region?: string) {
+  assertQaOperationAllowed();
   const regionalFunctions = getFunctions(app, region);
   if (useFunctionsEmulator || useFirebaseEmulators) {
     connectFunctionsEmulatorOnce(regionalFunctions);

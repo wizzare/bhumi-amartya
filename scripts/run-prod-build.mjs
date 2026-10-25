@@ -43,12 +43,11 @@ console.log(`USE_FUNCTIONS_EMULATOR: ${env.NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR}`)
 console.log(`ENABLE_QA_LOGIN: ${env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN}`);
 console.log(`-----------------------------------------------\n`);
 
-const nextBin = resolve(rootDir, 'node_modules', '.bin', process.platform === 'win32' ? 'next.cmd' : 'next');
+const nextBin = resolve(rootDir, 'node_modules', 'next', 'dist', 'bin', 'next');
 
-const nextBuild = spawn(nextBin, ['build'], {
+const nextBuild = spawn(process.execPath, [nextBin, 'build', '--webpack'], {
   stdio: 'inherit',
   env,
-  shell: true,
   cwd: rootDir
 });
 

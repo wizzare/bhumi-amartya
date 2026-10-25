@@ -1,7 +1,9 @@
-import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, limit, getDocs, updateDoc, deleteDoc, serverTimestamp, documentId } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, query, where, orderBy, limit, getDocs, updateDoc, deleteDoc, serverTimestamp, documentId, runTransaction } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { Timestamp } from 'firebase/firestore';
 import { isCanonicalHumanDesign } from '@/lib/humandesign/hdAudit';
+import { isCanonicalCoreComplete } from '@/lib/humandesign/completeness';
+import { compareBirthInputMatch, computeBirthInputFingerprint } from '@/lib/humandesign/birthFingerprint';
 
 /**
  * P0 HOTFIX: Safely converts various date formats to Firestore Timestamp.
@@ -99,6 +101,7 @@ export interface UserPlan {
 export interface UserBlueprint {
   uid: string;
   status: "pending" | "ready" | "error";
+  input?: any;
   humanDesign?: {
     type: string | null;
     profile: string | null;
@@ -113,6 +116,8 @@ export interface UserBlueprint {
     status: "pending" | "ready" | "error" | "needs_verified_engine" | "verified";
     source: "human-design-py" | "local-fallback" | "pending" | "error" | "verified-override" | "manual_verified";
     note?: string;
+    inputHash?: string;
+    [key: string]: any;
   };
   numerology?: {
     number: number;
@@ -325,9 +330,9 @@ export class FirebaseService {
       uid: userDoc.id,
       createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
       updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
-      trialStartedAt: data.trialStartedAt?.toDate?.()?.toISOString(),
-      trialEndsAt: data.trialEndsAt?.toDate?.()?.toISOString(),
-      lastActiveAt: data.lastActiveAt?.toDate?.()?.toISOString()
+      trialStartedAt: data.trialStartedAt?.toDate?.()?.toISOString() || (typeof data.trialStartedAt === "string" ? data.trialStartedAt : undefined),
+      trialEndsAt: data.trialEndsAt?.toDate?.()?.toISOString() || (typeof data.trialEndsAt === "string" ? data.trialEndsAt : undefined),
+      lastActiveAt: data.lastActiveAt?.toDate?.()?.toISOString() || (typeof data.lastActiveAt === "string" ? data.lastActiveAt : undefined)
     } as UserProfile;
   }
 
@@ -379,29 +384,46 @@ export class FirebaseService {
       this.logFirestore("setDoc", "blueprints", blueprint.uid);
       const blueprintRef = doc(db, 'blueprints', blueprint.uid);
 
-      // HOTFIX: last-write safety guard — canonical must never be overwritten.
-      // Re-read the latest document and abort if a canonical chart already exists.
-      try {
-        const latestSnap = await getDoc(blueprintRef);
-        const latestHd = latestSnap.exists() ? (latestSnap.data() as { humanDesign?: unknown })?.humanDesign : undefined;
-        if (isCanonicalHumanDesign(latestHd)) {
-          console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.", { uid: blueprint.uid });
-          return false;
+      await runTransaction(db, async (transaction) => {
+        const latestSnap = await transaction.get(blueprintRef);
+        const existingData = latestSnap.data();
+        const latestHd = existingData?.humanDesign;
+        const oldCanonical = isCanonicalHumanDesign(latestHd);
+        const incomingCanonical = isCanonicalCoreComplete(blueprint.humanDesign);
+
+        const inputMatch = compareBirthInputMatch(blueprint.uid, latestHd, blueprint.input || existingData?.input);
+
+        let preserveCanonical = false;
+        if (oldCanonical) {
+          if (inputMatch === "CHANGED" && incomingCanonical) {
+            preserveCanonical = false;
+          } else {
+            preserveCanonical = true;
+          }
         }
-      } catch (readErr) {
-        console.warn("[HD WRITE GUARD] Latest read check failed; continuing with guarded save path.", { uid: blueprint.uid, readErr });
-      }
 
-      const blueprintData = {
-        ...blueprint,
-        createdAt: toValidTimestamp(blueprint.createdAt, serverTimestamp()),
-        updatedAt: serverTimestamp()
-      };
+        let finalHd: any = blueprint.humanDesign;
+        if (incomingCanonical && !preserveCanonical) {
+          const fp = computeBirthInputFingerprint(blueprint.uid, blueprint.input || existingData?.input);
+          if (fp) {
+            finalHd = { ...(blueprint.humanDesign || {}), inputHash: fp.revisionHash };
+          }
+        }
 
-      await setDoc(blueprintRef, sanitizeForFirestore(blueprintData));
+        const blueprintData = {
+          ...blueprint,
+          humanDesign: finalHd,
+          createdAt: toValidTimestamp(blueprint.createdAt, serverTimestamp()),
+          updatedAt: serverTimestamp()
+        };
+        if (preserveCanonical) {
+          delete blueprintData.humanDesign;
+        }
+        transaction.set(blueprintRef, sanitizeForFirestore(blueprintData), { merge: true });
+      });
       return true;
-    } catch (error) {
-      console.error('Error saving user blueprint:', error);
+    } catch {
+      console.error('Error saving user blueprint: guarded write failed');
       return false;
     }
   }

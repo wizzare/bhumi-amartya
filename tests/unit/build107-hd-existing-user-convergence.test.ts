@@ -128,7 +128,6 @@ const isStuck = (value: string) => value === "Menghitung..." || value === "Perlu
 
   for (const file of [
     "components/dashboard/AccuracyUpgradeBanner.tsx",
-    "components/dashboard/PendingHdRecoveryBanner.tsx",
   ]) {
     const src = fs.readFileSync(file, "utf8");
     ok(`${file} imports isCanonicalHumanDesign`, /isCanonicalHumanDesign/.test(src) && /from\s*"@\/lib\/humandesign\/hdAudit"/.test(src));
@@ -136,6 +135,14 @@ const isStuck = (value: string) => value === "Menghitung..." || value === "Perlu
     // Every saveUserBlueprint in these banners must be downstream of the canonical gate.
     const beforeFirstSave = src.slice(0, src.indexOf("saveUserBlueprint"));
     ok(`${file} evaluates the canonical gate before persisting`, beforeFirstSave.includes("isCanonicalHumanDesign(nextHD)"));
+  }
+
+  // PendingHdRecoveryBanner delegates safe persistence exclusively to recoverHumanDesignIfNeeded
+  {
+    const file = "components/dashboard/PendingHdRecoveryBanner.tsx";
+    const src = fs.readFileSync(file, "utf8");
+    ok(`${file} delegates recovery to recoverHumanDesignIfNeeded`, src.includes("recoverHumanDesignIfNeeded"));
+    ok(`${file} never directly calls saveUserBlueprint`, !src.includes("saveUserBlueprint"));
   }
 }
 
