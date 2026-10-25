@@ -35,7 +35,7 @@ export function ActivityTracker() {
         uid: auth.user.uid,
         displayName: auth.userProfile?.displayName || auth.userProfile?.fullName || auth.user.displayName || "Jiwa",
         email: auth.userProfile?.email || auth.user.email || "",
-        lastLogin: auth.user.metadata.lastSignInTime || auth.userProfile?.participationMetrics?.lastLoginAt || undefined,
+        lastLogin: auth.user.metadata?.lastSignInTime || auth.userProfile?.participationMetrics?.lastLoginAt || undefined,
       };
       console.log("[ActivityTracker] auth user uid", auth.user.uid);
     } else {

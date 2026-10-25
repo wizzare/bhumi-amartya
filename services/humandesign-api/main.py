@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["Content-Type"],
 )
 
-def parse_timezone_to_offset(timezone) -> float:
+def parse_timezone_to_offset(timezone, year=None, month=None, day=None, hour=12, minute=0) -> float:
     if isinstance(timezone, (int, float)):
         if abs(timezone) > 14:
             return float(timezone) / 60.0
@@ -38,7 +38,7 @@ def parse_timezone_to_offset(timezone) -> float:
     if isinstance(timezone, str):
         val = timezone.strip()
         if not val:
-            return 7.0
+            raise ValueError("Timezone cannot be empty")
             
         try:
             num = float(val)
@@ -54,25 +54,44 @@ def parse_timezone_to_offset(timezone) -> float:
             hours = float(match.group(2))
             minutes = float(match.group(3) or "0")
             return sign * (hours + minutes / 60.0)
+
+        # Target birth datetime for historical DST / accurate offset calculation
+        from datetime import datetime
+        y = year if year is not None else 2000
+        m = month if month is not None else 1
+        d = day if day is not None else 1
+        h = hour if hour is not None else 12
+        mi = minute if minute is not None else 0
             
         try:
             from zoneinfo import ZoneInfo
-            from datetime import datetime
-            dt = datetime.now(ZoneInfo(val))
-            return dt.utcoffset().total_seconds() / 3600.0
+            target_tz = ZoneInfo(val)
+            dt = datetime(y, m, d, h, mi, tzinfo=target_tz)
+            offset = dt.utcoffset()
+            if offset is not None:
+                return offset.total_seconds() / 3600.0
         except Exception:
             pass
             
         try:
             import pytz
-            from datetime import datetime
             tz = pytz.timezone(val)
-            dt = datetime.now(tz)
-            return dt.utcoffset().total_seconds() / 3600.0
+            # Use normalize/localize with fold handling
+            dt_naive = datetime(y, m, d, h, mi)
+            try:
+                dt_loc = tz.localize(dt_naive, is_dst=None)
+            except Exception:
+                # Ambiguous or nonexistent time: default to is_dst=False for safe deterministic resolution
+                dt_loc = tz.localize(dt_naive, is_dst=False)
+            offset = dt_loc.utcoffset()
+            if offset is not None:
+                return offset.total_seconds() / 3600.0
         except Exception:
             pass
             
-    return 7.0
+        raise ValueError(f"Unable to resolve valid offset for timezone '{val}'")
+            
+    raise ValueError(f"Invalid timezone specification: {type(timezone)}")
 
 class HumanDesignInput(BaseModel):
     name: Optional[str] = Field(default=None, max_length=120)
@@ -208,13 +227,23 @@ async def calculate_human_design(hd_input: HumanDesignInput):
         if None in (year_val, month_val, day_val, hour_val, minute_val):
             raise HTTPException(status_code=400, detail="Missing birth date/time values (either birthDate/birthTime or year/month/day/hour/minute are required).")
             
-        # Resolve offset
+        # Resolve offset based on specific birth datetime (not current date)
         utc_offset_val = hd_input.utc_offset
         if utc_offset_val is None:
             if hd_input.timezone is not None:
-                utc_offset_val = parse_timezone_to_offset(hd_input.timezone)
+                try:
+                    utc_offset_val = parse_timezone_to_offset(
+                        hd_input.timezone,
+                        year=year_val,
+                        month=month_val,
+                        day=day_val,
+                        hour=hour_val,
+                        minute=minute_val,
+                    )
+                except Exception as e:
+                    raise HTTPException(status_code=400, detail=f"Invalid or unresolvable timezone: {str(e)}")
             else:
-                utc_offset_val = 7.0
+                raise HTTPException(status_code=400, detail="Missing timezone or utc_offset.")
                 
         result = hd.calc_single_hd_features(
             (
@@ -356,8 +385,18 @@ async def calculate_astrology(astro_input: AstrologyInput):
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid birthTime format. Expected HH:MM.")
 
-        # Resolve offset
-        utc_offset_val = parse_timezone_to_offset(astro_input.timezone)
+        # Resolve offset based on specific birth datetime
+        try:
+            utc_offset_val = parse_timezone_to_offset(
+                astro_input.timezone,
+                year=year_val,
+                month=month_val,
+                day=day_val,
+                hour=hour_val,
+                minute=minute_val,
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid or unresolvable timezone: {str(e)}")
 
         # 2. Get Julian Day UT
         time_stamp = (year_val, month_val, day_val, hour_val, minute_val, 0, float(utc_offset_val))

@@ -62,7 +62,7 @@ const PLANET_HOUSE_MOVEMENTS: Record<string, Record<number, string>> = {
   Sun: {
     1: "kesadaran sadarmu sedang dituntun untuk mengenali bagaimana kamu menampilkan diri dan merawat energi vitalitas fisikmu.",
     2: "perhatian sadarmu diarahkan penuh pada pengelolaan keuangan, kepemilikan, dan memperkuat rasa berharga dalam dirimu.",
-    3: "fokus utamamu hari ini berada pada percakapan penting, penyusunan rencana, dan bagaimana kamu bertukar ide dengan lingkungan terdekat.",
+    3: "fokus utamamu berada pada percakapan penting, penyusunan rencana, dan bagaimana kamu bertukar ide dengan lingkungan terdekat.",
     4: "kamu diajak untuk mengarahkan energimu ke dalam rumah, memperhatikan kenyamanan batin, dan memperkuat akar emosionalmu.",
     5: "dorongan kreatif, ekspresi diri yang jujur, serta kegembiraan inner child-mu sedang menjadi pusat perhatian.",
     6: "fokus sadarmu sedang diarahkan pada perbaikan rutinitas harian, kebiasaan hidup sehat, serta pengelolaan tugas-tugas teknis.",
@@ -75,17 +75,17 @@ const PLANET_HOUSE_MOVEMENTS: Record<string, Record<number, string>> = {
   },
   Moon: {
     1: "suasana hatimu sangat dipengaruhi oleh kenyamanan fisik dan bagaimana tubuhmu merespons lingkungan secara langsung.",
-    2: "kebutuhan emosionalmu hari ini sangat erat kaitannya dengan rasa aman materi, stabilitas, dan keinginan untuk merasa berharga.",
+    2: "kebutuhan emosionalmu sangat erat kaitannya dengan rasa aman materi, stabilitas, dan keinginan untuk merasa berharga.",
     3: "pikiranmu terasa lebih peka dan emosional, membuatmu ingin mengekspresikan perasaan lewat tulisan atau obrolan santai.",
     4: "kamu merasakan tarikan kuat untuk mencari perlindungan di rumah, beristirahat di ruang privat, dan memulihkan energi emosionalmu.",
-    5: "keadaan emosionalmu hari ini dipicu oleh keinginan untuk bermain, berekspresi secara bebas, atau bersenang-senang dengan hal yang kamu sukai.",
-    6: "kenyamanan emosionalmu hari ini sangat dipengaruhi oleh keteraturan rutinitas harian dan seberapa baik kamu merawat kesehatan tubuhmu.",
+    5: "keadaan emosionalmu dipicu oleh keinginan untuk bermain, berekspresi secara bebas, atau bersenang-senang dengan hal yang kamu sukai.",
+    6: "kenyamanan emosionalmu sangat dipengaruhi oleh keteraturan rutinitas harian dan seberapa baik kamu merawat kesehatan tubuhmu.",
     7: "kepekaan emosionalmu terhubung erat dengan hubungan terdekat, membuatmu lebih peka terhadap dinamika memberi dan menerima rasa aman.",
     8: "kamu merasakan gelombang emosi yang mendalam, memicu kebutuhan untuk jujur pada kerentanan batin dan melepaskan keterikatan lama.",
-    9: "kebutuhan emosionalmu hari ini dipenuhi lewat perenungan mendalam, mencari makna spiritual, atau mendengarkan perspektif baru.",
+    9: "kebutuhan emosionalmu dipenuhi lewat perenungan mendalam, mencari makna spiritual, atau mendengarkan perspektif baru.",
     10: "suasana hatimu terpengaruh oleh tanggung jawab profesional atau bagaimana kontribusimu dinilai oleh orang lain.",
     11: "kamu mencari kenyamanan emosional di tengah persahabatan, kelompok pendukung, atau berbagi harapan masa depan dengan orang yang sefrekuensi.",
-    12: "kepekaan emosionalmu hari ini mengarah ke dalam batin, memanggilmu untuk hening, melepas beban pikiran, dan memulihkan diri secara spiritual.",
+    12: "kepekaan emosionalmu mengarah ke dalam batin, memanggilmu untuk hening, melepas beban pikiran, dan memulihkan diri secara spiritual.",
   },
   Mercury: {
     1: "pikiranmu bergerak cepat untuk menganalisis identitas diri, cara berkomunikasi, dan menyusun gagasan tentang masa depanmu.",
@@ -355,7 +355,7 @@ const PLANET_HOUSE_ACTIONS: Record<string, Record<number, string>> = {
     9: "Tantang satu dogma atau keyakinan usang yang selama ini membatasi cara pandangmu terhadap dunia.",
     10: "Lepaskan ambisi karier yang lahir hanya dari keinginan membuktikan diri kepada orang tua atau dunia luar.",
     11: "Sering kembali pertemananmu; beranikan diri menetapkan jarak dari lingkungan sosial yang beracun.",
-    12: "Lakukan ritual pelepasan batin: ikhlaskan penyesalan masa lalu dan serahkan semuanya pada semesta.",
+    12: "Lakukan ritual pelepasan batin: ikhlaskan penyesalan masa lalu dan biarkan semuanya lepas tanpa beban.",
   },
   Chiron: {
     1: "Berdirilah di depan cermin, tatap matamu, dan katakan kalimat penerimaan penuh welas asih pada dirimu.",
@@ -419,7 +419,7 @@ function getActionTheme(planet: string, house: number | undefined): string {
       Mars: "Arahkan energimu pada satu langkah nyata yang bisa diselesaikan hari ini, hindari memecah fokus pada banyak hal sekaligus.",
       Jupiter: "Ambil satu kesempatan untuk membaca, belajar, atau mendengarkan sudut pandang yang memperluas wawasanmu.",
       Saturn: "Rapikan satu komitmen, jadwal, atau tanggung jawab kecil yang selama ini terasa berserakan.",
-      Uranus: "Cobalah satu cara atau pendekatan baru yang memberikan lebih banyak ruang bagi kebebasan batinmu.",
+      Uranus: "Cobalah satu cara atau pendekatan baru yang bikin kebebasan batinmu lebih lega.",
       Neptune: "Saring kembali asumsi pikiranmu dan bedakan mana intuisi yang hening dari ketakutan yang bising.",
       Pluto: "Tuliskan satu kebiasaan atau kontrol lama yang mulai terasa sempit dan ingin kamu lepaskan secara bertahap.",
       Chiron: "Berikan ucapan atau respons yang ramah pada bagian diri yang biasanya paling keras kamu kritik.",
@@ -457,22 +457,22 @@ function getSingleBlueprintAccent(planet: string, context: RecordValue): string 
 
   if (planet === "Sun" || planet === "Moon") {
     if (hdTypeCanonical === "Generator") {
-      return "Ini beresonansi dengan pola energimu yang berjalan paling selaras saat bergerak berdasarkan respons jujur tubuhmu, bukan dari desakan pikiran.";
+      return "Ini cocok dengan pola tenagamu yang berjalan paling selaras saat bergerak berdasarkan respons jujur tubuhmu, bukan dari desakan pikiran.";
     } else if (hdTypeCanonical === "Manifesting Generator") {
-      return "Ini sangat selaras dengan ritme alamimu yang cepat namun tetap membutuhkan respons jujur dari tubuh sebelum meluncur ke berbagai arah.";
+      return "Ini sangat selaras dengan ritme alamimu yang cepat namun tetap butuh respons jujur dari tubuh sebelum meluncur ke berbagai arah.";
     } else if (hdTypeCanonical === "Projector") {
-      return "Ini mengingatkan kembali pada kebutuhan alamimu untuk menjaga energi dan mengutamakan jeda sebelum membagikan perhatianmu kepada orang lain.";
+      return "Ini mengingatkan kebutuhan alamimu untuk menjaga tenaga dan mengutamakan jeda sebelum membagikan perhatianmu ke orang lain.";
     } else if (hdTypeCanonical === "Manifestor") {
       return "Ini memanggil dorongan perintis di dalam dirimu untuk memulai inisiatif baru secara mandiri sambil tetap menjaga ruang gerak yang bebas.";
     } else if (hdTypeCanonical === "Reflector") {
-      return "Ini memperkuat kepekaan alamimu yang membutuhkan waktu untuk menyerap keadaan sekitar sebelum mengambil keputusan penting.";
+      return "Ini memperkuat kepekaan alamimu yang butuh waktu menyerap keadaan sekitar sebelum ambil keputusan penting.";
     }
   }
 
   if (planet === "Mercury" || planet === "Uranus") {
     const lpThemes: Record<string, string> = {
       "1": "kapasitasmu untuk merintis keputusan secara mandiri dan mempercayai langkah pertamamu",
-      "2": "kepekaan alamimu dalam menjembatani keselarasan dan harmoni di sekitarmu",
+      "2": "kepekaan alamimu dalam menjembatani kecocokan dan harmoni di sekitarmu",
       "3": "kemampuanmu untuk mengomunikasikan kebenaran batin secara kreatif dan jujur",
       "4": "keinginan mendasarmu untuk menyusun rencana harian secara teratur dan berfondasi kokoh",
       "5": "dorongan alamimu untuk bereksperimen dengan kebebasan tanpa harus kehilangan arah",

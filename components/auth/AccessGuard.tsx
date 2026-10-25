@@ -131,7 +131,6 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
   }, [checkingProfile, userProfile, testerRecord]);
 
   if (
-    isBuild110LocalQa() ||
     (process.env.NODE_ENV === "development" &&
       typeof window !== "undefined" &&
       window.localStorage.getItem("bhumi_audit_user"))

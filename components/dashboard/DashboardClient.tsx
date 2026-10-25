@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { BHUMI_TOKENS } from "@/components/onboarding/onboardingTokens";
+import styles from "./DashboardClient.module.css";
 import { useAuth } from "@/context/AuthContext";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { CoreIdentity } from "@/components/dashboard/CoreIdentity";
@@ -20,6 +23,8 @@ import { safetyRepository, TrustedContact } from "@/lib/repositories/safetyRepos
 import { wellnessMappingRepository } from "@/lib/repositories/wellnessMappingRepository";
 import { AppNav } from "@/components/navigation/AppNav";
 import { translations } from "@/lib/data/translations";
+import { isEnlEdition } from "@/lib/config/edition";
+import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { userRepository } from "@/lib/repositories/userRepository";
 import { reconcileCachedProfileWithServer } from "@/lib/auth/authoritativeProfileGate";
@@ -129,7 +134,7 @@ export function DashboardClient() {
   const [blueprint, setBlueprint] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
-  const [, setDailyState] = useState<DailyState | null>(null);
+  const [dailyState, setDailyState] = useState<DailyState | null>(null);
   const [, setYesterdayState] = useState<DailyState | null>(null);
   const [, setRecentDailyStates] = useState<DailyState[]>([]);
   const [navigatorState, setNavigatorState] = useState<NavigatorState | null>(null);
@@ -141,10 +146,10 @@ export function DashboardClient() {
   const [weeklyGuidance, setWeeklyGuidance] = useState<WeeklyGuidance | null>(null);
     const [appNow, setAppNow] = useState(() => new Date());
 
-  const language = "id";
-  const isEnl = false;
-  const legacyUiLanguage: "id" | "en" = "id";
-  const t = translations["id"];
+  const language = getDictionaryKey(profile?.language ?? "id");
+  const isEnl = isEnlEdition();
+  const legacyUiLanguage: "id" | "en" = isEnl || language === "en" ? "en" : "id";
+  const t = translations[isEnl ? "en" : language];
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
   const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
@@ -636,6 +641,15 @@ export function DashboardClient() {
         let p = await storageProvider.getUserProfile();
         let b = await storageProvider.getUserBlueprint() as any;
 
+        // Reconcile cached blueprint if missing or non-canonical
+        if (!b || !isCanonicalHumanDesign(b.humanDesign)) {
+          const serverBp = await blueprintRepository.getUserBlueprint(auth.user.uid).catch(() => null);
+          if (serverBp && (isCanonicalHumanDesign(serverBp.humanDesign) || !b)) {
+            b = serverBp;
+            void storageProvider.saveUserBlueprint(serverBp as any).catch(() => {});
+          }
+        }
+
         // Build 106 Invariant G: if the *cached* profile looks missing/incomplete
         // for this authenticated user, reconcile against authoritative server
         // state before routing toward /setup. A stale local mirror must not
@@ -764,7 +778,17 @@ export function DashboardClient() {
         if (!isHdCanonical && birthDate) {
           console.log("[BACKGROUND HD] Triggering non-blocking HD calculation for new/partial user...");
           const { triggerBackgroundHdCalculation } = await import("@/lib/engines/blueprintRecoveryEngine");
-          void triggerBackgroundHdCalculation(auth.user.uid, p, updatedBlueprint);
+          // P0 H4: refresh local state after the background attempt settles so
+          // a recovered canonical chart appears without requiring a remount.
+          const bootUid = auth.user.uid;
+          void triggerBackgroundHdCalculation(bootUid, p, updatedBlueprint)
+            .then(() => storageProvider.getUserBlueprint().catch(() => null))
+            .then((reread) => {
+              if (reread && (reread as { uid?: string }).uid === bootUid) {
+                setBlueprint(reread as typeof updatedBlueprint);
+              }
+            })
+            .catch(() => {});
         }
 
         // Fetch background daily guidance and intelligence
@@ -832,7 +856,7 @@ export function DashboardClient() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-10 pb-32 bg-white max-w-lg mx-auto">
+    <main className={styles.dashboard} style={{ background: BHUMI_TOKENS.canvas, color: BHUMI_TOKENS.textPrimary }}>
       <AppNav />
       {auth?.userProfile ? <TrialWelcomePopup profile={auth.userProfile} /> : null}
 
@@ -842,9 +866,7 @@ export function DashboardClient() {
         blockedByModal={Boolean(safetyState?.isSafetyMode)}
       />
 
-      {/* ...existing code... */}
-
-      <DashboardHeader userName={profile.fullName} language={legacyUiLanguage} />
+      <DashboardHeader userName={profile.fullName} language={legacyUiLanguage} compact />
 
       <PendingHdRecoveryBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 
@@ -863,40 +885,52 @@ export function DashboardClient() {
         />
       )}
 
-      <GuardianIdentityCard
-        role={profile.guardianRole === "founder" || profile.guardianRole === "admin" ? profile.guardianRole : "user"}
-        badge={profile.guardianBadge === "core_guardian" ? "core_guardian" : "guardian"}
-        tier={profile.recognitionTier === "FOUNDER" || profile.recognitionTier === "CORE_GUARDIAN" ? profile.recognitionTier : "GUARDIAN"}
-        recognitionDate={profile.recognitionDate}
-        language={legacyUiLanguage}
-      />
+      <div className={styles.recognition}>
+        <GuardianIdentityCard
+          role={profile.guardianRole === "founder" || profile.guardianRole === "admin" ? profile.guardianRole : "user"}
+          badge={profile.guardianBadge === "core_guardian" ? "core_guardian" : "guardian"}
+          tier={profile.recognitionTier === "FOUNDER" || profile.recognitionTier === "CORE_GUARDIAN" ? profile.recognitionTier : "GUARDIAN"}
+          recognitionDate={profile.recognitionDate}
+          language={legacyUiLanguage}
+        />
+      </div>
+
+      <div className={styles.identity}>
+        <CoreIdentity
+          lifePath={blueprint.lifePath?.display || blueprint.lifePath?.number || 0}
+          lifePathRole={blueprint.lifePath?.role || ""}
+          arcanaCenter={blueprint.destinyMatrix?.center || 0}
+          sunSign={blueprint.astrology?.sunSign || ""}
+          humanDesign={blueprint.humanDesign}
+          labels={{
+            title: t.dashboard.coreIdentity,
+            lifePath: t.dashboard.lifePath,
+            arcanaCenter: t.dashboard.arcanaCenter,
+            sunSign: t.dashboard.sunSign,
+            humanDesign: t.dashboard.humanDesign,
+            humanDesignPending: t.dashboard.humanDesignPending,
+            humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
+            unavailable: t.dashboard.unavailable || "Belum tersedia",
+            calculatingInProgress: t.dashboard.calculatingInProgress || "Perhitungan sedang berlangsung",
+            cannotCalculate: t.dashboard.cannotCalculate || "Data Human Design belum dapat dihitung.",
+          }}
+        />
+      </div>
 
       <SoulReflectionCard
         language={legacyUiLanguage}
         reflection={visibleSoulReflection}
-        loading={!visibleSoulReflection}
+        loading={!visibleSoulReflection && dgLoading}
+        compact
       />
 
-      <CoreIdentity
-        lifePath={blueprint.lifePath?.display || blueprint.lifePath?.number || 0}
-        lifePathRole={blueprint.lifePath?.role || ""}
-        arcanaCenter={blueprint.destinyMatrix?.center || 0}
-        sunSign={blueprint.astrology?.sunSign || ""}
-        humanDesign={blueprint.humanDesign}
-        labels={{
-          title: t.dashboard.coreIdentity,
-          lifePath: t.dashboard.lifePath,
-          arcanaCenter: t.dashboard.arcanaCenter,
-          sunSign: t.dashboard.sunSign,
-          humanDesign: t.dashboard.humanDesign,
-          humanDesignPending: t.dashboard.humanDesignPending,
-          humanDesignNeedsTimezone: t.dashboard.humanDesignNeedsTimezone,
-          unavailable: t.dashboard.unavailable || "Belum tersedia",
-          calculatingInProgress: t.dashboard.calculatingInProgress || "Perhitungan sedang berlangsung",
-          cannotCalculate: t.dashboard.cannotCalculate || "Data Human Design belum dapat dihitung.",
-        }}
-      />
+      <section className={styles.action} aria-labelledby="action-title">
+        <h2 id="action-title">SATU TINDAKAN</h2>
+        <p>{dailyGuidance?.categories?.advice?.advice || dailyGuidance?.groundedAction || (dgLoading ? 'Menyiapkan arahan hari ini…' : 'Arahan hari ini belum tersedia.')}</p>
+        <Link href="/wellness">Buka Wellness</Link>
+      </section>
 
+      <div className={styles.supporting}>
       <AstroTodayCard
         context={{
           profile, blueprint, birthDate: profile.birthDate,
@@ -909,9 +943,21 @@ export function DashboardClient() {
 
       <EnvironmentContextCard onOpenDetail={() => router.push("/dashboard/environment")} />
 
-      <WeeklyGuidanceCard guidance={weeklyGuidance} />
+      </div>
 
-      <DailyUserFlowGuide language={legacyUiLanguage} />
+      <section className={styles.weekly} aria-labelledby="recent-title">
+        <h2 id="recent-title">MINGGU INI</h2>
+        <p>{weeklyGuidance?.weeklyDirection.paragraphs[0] || 'Konteks mingguan belum tersedia.'}</p>
+        <details>
+          <summary>Baca panduan mingguan lengkap</summary>
+          <WeeklyGuidanceCard guidance={weeklyGuidance} />
+        </details>
+      </section>
+
+      <details className={styles.identity}>
+        <summary>Ruang pendukung lainnya</summary>
+        <DailyUserFlowGuide language={legacyUiLanguage} />
+      </details>
 
       <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 

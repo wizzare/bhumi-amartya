@@ -253,7 +253,7 @@ export default function CityAutocomplete({
       ) : null}
 
       {loading && !error ? (
-        <div className="mt-2 text-sm text-slate-500">Searching cities...</div>
+        <div className="mt-2 text-sm text-slate-500">Mencari kota...</div>
       ) : null}
     </div>
   );

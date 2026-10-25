@@ -10,7 +10,7 @@ import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
-import { resolveHumanDesignBirthSources } from "@/lib/humandesign/normalizedAudit";
+import { recoverHumanDesignIfNeeded } from "@/lib/humandesign/hdRecovery";
 import { safeDiagnostic } from "@/lib/humandesign/safeDiagnostic";
 import { applyOwnerOverrideIfApplicable } from "@/lib/humandesign/ownerOverride";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
@@ -18,6 +18,11 @@ import { doc, runTransaction } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 
 const inFlightRecoveries = new Map<string, Promise<any>>();
+
+// P0 H3: explicit Human Design recovery entrypoint. Canonical home is
+// lib/humandesign/hdRecovery.ts (bounded, idempotent, no full blueprint
+// regeneration); re-exported here so engine consumers have one surface.
+export { recoverHumanDesignIfNeeded } from "@/lib/humandesign/hdRecovery";
 
 export interface UserProfileInput {
   uid: string;
@@ -233,26 +238,13 @@ export async function triggerBackgroundHdCalculation(
     return;
   }
 
-  const birth = resolveHumanDesignBirthSources(profile, currentBlueprint.input);
-  if (!birth.complete) return;
-
   try {
-    safeDiagnostic("human-design", "calculate", { started: true });
-    let hdCalculated = await calculateHumanDesign(birth.profile);
-
-    const userEmail = profile.email || null;
-    hdCalculated = applyOwnerOverrideIfApplicable(userEmail, hdCalculated);
-
-    if (hdCalculated && isCanonicalHumanDesign(hdCalculated)) {
-      const updatedBlueprint = {
-        ...currentBlueprint,
-        humanDesign: hdCalculated,
-        updatedAt: new Date().toISOString(),
-      };
-      await blueprintRepository.saveUserBlueprint(uid, updatedBlueprint).catch(() => {});
-      await storageProvider.saveUserBlueprint(updatedBlueprint).catch(() => {});
-      safeDiagnostic("human-design", "calculate", { complete: true });
-    }
+    return await recoverHumanDesignIfNeeded({
+      uid,
+      profile,
+      blueprint: currentBlueprint,
+      calculate: async birth => applyOwnerOverrideIfApplicable(profile.email || null, await calculateHumanDesign(birth)),
+    });
   } catch {
     safeDiagnostic("human-design", "calculate", { failed: true });
   }

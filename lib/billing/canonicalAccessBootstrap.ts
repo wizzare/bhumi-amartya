@@ -1,17 +1,33 @@
+import { Capacitor } from "@capacitor/core";
+import { assertQaOperationAllowed } from '../config/qaRuntime';
+
 export type TrialBootstrapOutcome = "PROVISIONED" | "ALREADY_PRESENT" | "HIGHER_ENTITLEMENT" | "EXPIRED_BY_ACCOUNT_AGE" | "DATA_CONFLICT" | "AUTH_CREATION_TIME_UNAVAILABLE" | "RETRYABLE_ERROR";
 export type TrialBootstrapResponse = { ok: boolean; outcome: TrialBootstrapOutcome };
 
 const inFlight = new Map<string, Promise<TrialBootstrapResponse>>();
 const completeUids = new Set<string>();
 
-function verifierUrl() {
+export function verifierUrl(): string {
+  assertQaOperationAllowed();
+  if (process.env.NEXT_PUBLIC_QA_MODE === 'realQA') {
+    return `${process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL!.replace(/\/+$/, '')}/api/access/bootstrap-trial`;
+  }
+  // 1. Browser Web runtime: always prefer the same-origin Next.js route handler.
+  // This eliminates cross-origin preflight/CORS dependencies in local and web environments.
+  if (typeof window !== "undefined" && !Capacitor.isNativePlatform()) {
+    return "/api/access/bootstrap-trial";
+  }
+
+  // 2. Native runtime (Capacitor/Android) or server execution: use canonical remote backend.
   const base = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL?.trim().replace(/\/+$/, "");
   if (base) return `${base}/api/access/bootstrap-trial`;
+
   if (typeof window !== "undefined") return "/api/access/bootstrap-trial";
   throw Object.assign(new Error("BILLING_VERIFIER_URL_MISSING"), { retryable: true });
 }
 
 export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRefresh?: boolean) => Promise<string>, refreshUserProfile: () => Promise<unknown>): Promise<TrialBootstrapResponse> {
+  assertQaOperationAllowed();
   if (completeUids.has(uid)) return { ok: true, outcome: "ALREADY_PRESENT" };
   const existing = inFlight.get(uid);
   if (existing) return existing;

@@ -140,6 +140,19 @@ test("actual handler, Google transport, Firestore transactions and signing", asy
   assert.equal(logs.join().includes("synthetic-owner"), false);
 });
 
+test("actual persistence preserves lifetime and founder access for every subscription outcome", async () => {
+  for (const protectedAccess of [{ membershipType: "LIFETIME" }, { badge: "Founder" }, { testerBadge: "Founder" }]) {
+    const owner = `synthetic-protected-${Object.keys(protectedAccess)[0]}`;
+    const original = { ...protectedAccess, accessUntil: null, isPremium: true, entitlementSource: "admin_grant" };
+    records.set(`users/${owner}`, original);
+    for (const state of ["SUBSCRIPTION_STATE_ACTIVE", "SUBSCRIPTION_STATE_EXPIRED"]) {
+      await persistEntitlement(owner, owner, state, decision(state, "2099-01-01T00:00:00.000Z"), "NOT_REQUIRED", { checked: true, voided: false, reason: "test" });
+      assert.deepEqual(records.get(`users/${owner}`), original);
+      assert.ok([...records.values()].some(value => value.uid === owner && value.subscriptionState === state));
+    }
+  }
+});
+
 test("actual reconcile validates provider state before persistence and retries acknowledgement", async () => {
   const reconcile = require("../../api/billing/reconcile").default;
   process.env.CRON_SECRET = "synthetic-cron";

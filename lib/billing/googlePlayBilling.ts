@@ -1,4 +1,5 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
+import { assertQaOperationAllowed } from '../config/qaRuntime';
 import { auth } from "@/lib/firebase/firebase";
 import { Preferences } from "@capacitor/preferences";
 import {
@@ -7,6 +8,11 @@ import {
   recoverAndRefreshPremiumPurchases,
   type PremiumRecoveryResult,
 } from "./premiumRecovery";
+
+function assertQaBillingAllowed() {
+  assertQaOperationAllowed();
+  if (process.env.NEXT_PUBLIC_QA_MODE === 'realQA') throw new Error('QA_BILLING_DISABLED');
+}
 
 export const GOOGLE_PLAY_PRODUCT_ID = "bhumi_premium_monthly";
 export const GOOGLE_PLAY_BASE_PLAN_ID = "monthly";
@@ -67,7 +73,14 @@ interface SecureStorage {
   remove(options: { key: string }): Promise<{ value: boolean }>;
 }
 
-const BhumiBilling = registerPlugin<BillingPlugin>("BhumiBilling");
+const nativeBilling = registerPlugin<BillingPlugin>("BhumiBilling");
+const BhumiBilling: BillingPlugin = {
+  initialize: (...args) => { assertQaBillingAllowed(); return nativeBilling.initialize(...args); },
+  queryPremiumSubscription: (...args) => { assertQaBillingAllowed(); return nativeBilling.queryPremiumSubscription(...args); },
+  purchasePremium: (...args) => { assertQaBillingAllowed(); return nativeBilling.purchasePremium(...args); },
+  restorePurchases: (...args) => { assertQaBillingAllowed(); return nativeBilling.restorePurchases(...args); },
+  addListener: (...args) => { assertQaBillingAllowed(); return nativeBilling.addListener(...args); },
+};
 const AppPlugin = registerPlugin<any>("App");
 const SecureStoragePlugin = registerPlugin<SecureStorage>("SecureStorage");
 
@@ -172,6 +185,7 @@ export async function purchasePremiumSubscription() {
 }
 
 export async function recoverAndRefreshGooglePlayPurchases(purchases: GooglePlayPurchase[], refresh?: () => Promise<void>): Promise<PremiumRecoveryResult> {
+  assertQaBillingAllowed();
   const uid = auth.currentUser?.uid;
   return recoverAndRefreshPremiumPurchases(
     purchases,
@@ -194,19 +208,36 @@ function recoveryDependencies(refresh: () => Promise<void>, existingAccessActive
   };
 }
 
+let activeCheckoutPromise: Promise<PremiumRecoveryResult> | null = null;
+let activeRestoreCheckoutPromise: Promise<PremiumRecoveryResult> | null = null;
+
 export async function purchaseAndRecoverPremium(refresh: () => Promise<void>, existingAccessActive = false) {
-  return orchestratePremiumCheckout(
+  assertQaBillingAllowed();
+  if (activeCheckoutPromise) {
+    return activeCheckoutPromise;
+  }
+  activeCheckoutPromise = orchestratePremiumCheckout(
     purchasePremiumSubscription,
     restorePremiumPurchases,
     recoveryDependencies(refresh, existingAccessActive),
-  );
+  ).finally(() => {
+    activeCheckoutPromise = null;
+  });
+  return activeCheckoutPromise;
 }
 
 export async function restoreAndRecoverPremium(refresh: () => Promise<void>, existingAccessActive = false) {
-  return orchestratePremiumRestore(
+  assertQaBillingAllowed();
+  if (activeRestoreCheckoutPromise) {
+    return activeRestoreCheckoutPromise;
+  }
+  activeRestoreCheckoutPromise = orchestratePremiumRestore(
     restorePremiumPurchases,
     recoveryDependencies(refresh, existingAccessActive),
-  );
+  ).finally(() => {
+    activeRestoreCheckoutPromise = null;
+  });
+  return activeRestoreCheckoutPromise;
 }
 
 export async function processAndVerifyPurchaseToken(purchase: GooglePlayPurchase) {
@@ -340,6 +371,7 @@ let recoveryUid: string | null = null;
 const RECOVERY_COOLDOWN_MS = 5 * 60 * 1000;
 
 export async function autoRecoverActiveSubscriptions(): Promise<{ recoveredCount: number }> {
+  assertQaBillingAllowed();
   if (!isGooglePlayBillingAvailable()) return { recoveredCount: 0 };
 
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
@@ -390,6 +422,7 @@ export async function initiateGooglePlaySubscription(): Promise<boolean> {
 }
 
 function assertAndroidBilling() {
+  assertQaBillingAllowed();
   if (!isGooglePlayBillingAvailable()) {
     throw new Error("Google Play Billing hanya tersedia di aplikasi Android.");
   }

@@ -11,11 +11,20 @@ function boundedIdentifier(value: unknown, fallback: string): string {
 
 export function safeErrorMetadata(error: unknown): SafeErrorMetadata {
   if (!error || typeof error !== "object") return { errorClass: "Error", errorCode: null };
-  const candidate = error as { name?: unknown; code?: unknown };
-  return {
-    errorClass: boundedIdentifier(candidate.name, "Error"),
-    errorCode: typeof candidate.code === "string" ? boundedIdentifier(candidate.code, "unknown") : null,
+  const candidate = error as {
+    name?: unknown;
+    code?: unknown;
+    message?: unknown;
+    diagnostic?: { category?: unknown; code?: unknown; message?: unknown };
   };
+
+  const errorClass = boundedIdentifier(candidate.name, "Error");
+  const rawCode = candidate.code ?? candidate.diagnostic?.code;
+  const errorCode = typeof rawCode === "string" || typeof rawCode === "number"
+    ? boundedIdentifier(String(rawCode), "unknown")
+    : null;
+
+  return { errorClass, errorCode };
 }
 
 export function logSafeAuthError(event: string, error: unknown): void {

@@ -2,6 +2,8 @@ import { cert, getApps, initializeApp, type App, type AppOptions, type Credentia
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
+import { assertQaOperationAllowed } from '../../../lib/config/qaRuntime';
+
 export const EXPECTED_FIREBASE_PROJECT_ID = "bhumiamartya-fe85c";
 export const BHUMI_ADMIN_APP_NAME = "bhumi-billing-verifier-admin";
 
@@ -26,6 +28,7 @@ function configurationError() {
 }
 
 function reviewedServiceAccount(env: FirebaseAdminEnvironment) {
+  assertQaOperationAllowed();
   const projectId = env.FIREBASE_PROJECT_ID || "";
   const clientEmail = env.FIREBASE_CLIENT_EMAIL || "";
   const privateKey = (env.FIREBASE_PRIVATE_KEY || "").replace(/\\n/g, "\n");

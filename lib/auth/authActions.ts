@@ -4,8 +4,10 @@ import {
   signInWithRedirect,
   signInWithCredential,
   getRedirectResult,
+  getAdditionalUserInfo,
   signOut as firebaseSignOut,
   User,
+  UserCredential,
   setPersistence,
   browserLocalPersistence,
 } from "firebase/auth";
@@ -18,6 +20,7 @@ import { logSafeAuthError, warnSafeAuthError } from "./safeDiagnostics";
 import { bootstrapCanonicalAccess } from "../billing/canonicalAccessBootstrap";
 import { auth } from "../firebase/firebase";
 import { userRepository, UserProfile } from "../repositories/userRepository";
+import { resolveGoogleWebClientId } from "./googleWebClientId";
 
 type GoogleRedirectProcessingResult = {
   user: User | null;
@@ -84,6 +87,28 @@ export function isServerIssuedProfilePending(
   if (!firstLogin || nowMs < creationMs) return false;
   if (hasHigherServerEntitlement(profile)) return false;
   return !profile?.trialStartedAt || !profile?.trialEndsAt;
+}
+
+export function resolveIsNewUserFromCredential(
+  userCredential: UserCredential,
+): boolean | undefined {
+  try {
+    const additionalInfo = getAdditionalUserInfo(userCredential);
+    if (additionalInfo && typeof additionalInfo.isNewUser === "boolean") {
+      return additionalInfo.isNewUser;
+    }
+  } catch {
+    // getAdditionalUserInfo may fail if the provider is unsupported or synthetic
+  }
+
+  const creationMs = Date.parse(userCredential.user?.metadata?.creationTime || "");
+  const lastSignInMs = Date.parse(userCredential.user?.metadata?.lastSignInTime || "");
+  if (Number.isFinite(creationMs) && Number.isFinite(lastSignInMs)) {
+    // Fallback: only if within skew threshold, but flag as fallback
+    return Math.abs(lastSignInMs - creationMs) <= 5000;
+  }
+
+  return undefined;
 }
 
 async function waitForServerIssuedProfile(
@@ -296,9 +321,12 @@ export const ensureMinimalUserProfile = async (user: User) => {
   return waitForServerIssuedProfile(user, createdProfile, true);
 };
 
+import { assertQaOperationAllowed } from '../config/qaRuntime';
+
 export const signInWithGoogle = async (options?: {
   promptSelectAccount?: boolean;
 }): Promise<void> => {
+  assertQaOperationAllowed();
   const isNative = Capacitor.isNativePlatform();
   const platform = Capacitor.getPlatform();
   console.log("[AUTH PLATFORM]", { platform, isNative });
@@ -312,18 +340,13 @@ export const signInWithGoogle = async (options?: {
     { stage: isNative ? "native" : "web_popup" },
   );
   try {
-
-  // Telemetry: signup or login started (the API does not distinguish, but
-  // we label based on whether Firebase already has a current user).
-  const alreadyAuthenticated = !!auth.currentUser;
-  void recordAuthEvent(
-    alreadyAuthenticated ? "AUTH_LOGIN_STARTED" : "AUTH_SIGNUP_STARTED",
-    { stage: isNative ? "native" : "web_popup" },
-  );
-
   if (isNative) {
     try {
-      const WEB_CLIENT_ID = "59259824153-vldlev9s91l6sss3ulqbh8mnaah4n4c9.apps.googleusercontent.com";
+      const WEB_CLIENT_ID = resolveGoogleWebClientId({
+        NEXT_PUBLIC_QA_MODE: process.env.NEXT_PUBLIC_QA_MODE,
+        NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+        NEXT_PUBLIC_QA_GOOGLE_WEB_CLIENT_ID: process.env.NEXT_PUBLIC_QA_GOOGLE_WEB_CLIENT_ID,
+      });
       let useCredentialManager = true;
       console.info("[NATIVE GOOGLE AUTH START]", {
         platform,
@@ -390,7 +413,14 @@ export const signInWithGoogle = async (options?: {
           providerPath,
         });
 
-        await signInWithCredential(auth, credential);
+        const userCredential = await signInWithCredential(auth, credential);
+        const isNewUser = resolveIsNewUserFromCredential(userCredential);
+
+        console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native", providerPath, isNewUser });
+        if (isNewUser === true) {
+          void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange", providerPath, isNewUser: true } as any);
+        }
+        return;
       } catch (firebaseError) {
         const classified = classifyGoogleSignInError(firebaseError, "FIREBASE_CREDENTIAL_EXCHANGE", useCredentialManager);
         void recordGoogleSignInDiagnostic(classified);
@@ -404,10 +434,6 @@ export const signInWithGoogle = async (options?: {
         );
         throw new GoogleSignInFailure(classified);
       }
-
-      console.log("[GOOGLE AUTH RESULT]", { status: "success", mode: "native", providerPath });
-      void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "native_credential_exchange", providerPath } as any);
-      return;
     } catch (error) {
       logSafeAuthError("[NATIVE GOOGLE AUTH CRITICAL FAILURE]", new GoogleSignInFailure(classifyGoogleSignInError(error)));
       throw error;
@@ -418,9 +444,13 @@ export const signInWithGoogle = async (options?: {
 
   await setPersistence(auth, browserLocalPersistence);
   console.log("[GOOGLE AUTH START]", { method: "signInWithPopup" });
-  await waitForGooglePopupResult(signInWithPopup(auth, googleProvider));
-  console.log("[GOOGLE AUTH RESULT]", { status: "success" });
-  void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "web_popup" });
+  const userCredential = await waitForGooglePopupResult(signInWithPopup(auth, googleProvider));
+  const isNewUser = resolveIsNewUserFromCredential(userCredential);
+
+  console.log("[GOOGLE AUTH RESULT]", { status: "success", isNewUser });
+  if (isNewUser === true) {
+    void recordAuthEvent("AUTH_ACCOUNT_CREATED", { stage: "web_popup", isNewUser: true } as any);
+  }
   } catch (error) {
     const classified = classifyGoogleSignInError(error, "UNKNOWN", undefined, isNative ? "unknown" : "web_popup");
     if (!(error instanceof GoogleSignInFailure)) void recordGoogleSignInDiagnostic(classified);

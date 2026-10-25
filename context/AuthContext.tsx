@@ -16,7 +16,7 @@ import { storageProvider } from '@/lib/storage/storageProvider';
 import { processMembershipGrant } from '@/lib/billing/membershipLogic';
 import { participationEngine } from '@/lib/engines/participationEngine';
 import { migrateUserToGaia } from '@/lib/profile/gaia/migration';
-import { CommunicationCenterService } from '@/lib/services/communicationCenterService';
+import { UserCommunicationService } from '@/lib/services/userCommunicationService';
 import {
   isCurrentAuthInvocation,
   resolveCurrentAuthOperation,
@@ -184,9 +184,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           );
           // Telemetry: auth state established (success or unauthenticated).
           if (firebaseUser) {
+            const creationMs = Date.parse(firebaseUser.metadata?.creationTime || "");
+            const lastSignInMs = Date.parse(firebaseUser.metadata?.lastSignInTime || "");
+            const isNewUser = Number.isFinite(creationMs) && Number.isFinite(lastSignInMs)
+              ? Math.abs(lastSignInMs - creationMs) <= 5000
+              : undefined;
+
             void recordAuthEvent(
               "AUTH_LOGIN_COMPLETED",
-              { hasProfile: false, isNewUser: false },
+              { hasProfile: false, ...(isNewUser !== undefined && { isNewUser }) },
               firebaseUser.uid,
             );
           }
@@ -332,7 +338,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               const migratedProfile = migrationResult.value;
 
               const birthdayResult = await resolveCurrentAuthOperation(
-                () => CommunicationCenterService.ensureBirthdayMessage({
+                () => UserCommunicationService.ensureBirthdayMessage({
                   uid: firebaseUser.uid,
                   birthDate: (migratedProfile as any).birthDate || (migratedProfile as any).dateOfBirth,
                   timezone: (migratedProfile as any).timezone,

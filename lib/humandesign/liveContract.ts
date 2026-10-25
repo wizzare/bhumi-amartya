@@ -114,7 +114,32 @@ export const presentHumanDesignAdvancedFields = (data: LivePayload, unavailable:
 export const normalizeLiveHumanDesignResponse = (data: LivePayload, now = new Date().toISOString()): HumanDesignChart | null => {
   const type = asText(data.type);
   if (data.status !== "ready" || !type || !isRecognizedHumanDesignType(type)) return null;
-  if (!Array.isArray(data.channels) || !data.channels.every((channel) => typeof channel === "string" && /^\d{1,2}-\d{1,2}$/.test(channel))) return null;
+
+  const normalizedType = type.trim().toLowerCase();
+  const isReflector = normalizedType === "reflector";
+
+  if (!Array.isArray(data.channels)) return null;
+  if (!isReflector && data.channels.length === 0) return null;
+  if (!data.channels.every((channel) => typeof channel === "string" && /^\d{1,2}-\d{1,2}$/.test(channel))) return null;
+
+  const strategy = asText(data.strategy);
+  const authority = asText(data.authority);
+  const profile = asText(data.profile);
+  const definition = asText(data.definition) || (isReflector ? "No Definition" : null);
+  const incCrossName = asText(data.inc_cross) || asText(data.incarnationCross);
+
+  // Core integrity validation: do not label ready if essential core fields are missing
+  if (!strategy || !authority || !profile || !definition || !incCrossName) return null;
+
+  const centers = normalizeHumanDesignCenters(data.definedCenters, data.openCenters);
+  // For Reflector: all 9 centers must be open (false)
+  if (isReflector) {
+    const allOpen = Object.values(centers).every((val) => val === false);
+    if (!allOpen) return null;
+  }
+
+  const gates = [...new Set([...asNumberArray(data.gatesPersonality), ...asNumberArray(data.gatesDesign)])];
+  if (gates.length === 0) return null;
 
   const advanced = normalizeHumanDesignAdvancedFields(data);
   const personality = asActivations(data.personalityActivations || (data.diagnostic as Record<string, unknown> | undefined)?.raw_personality_gates);
@@ -122,14 +147,14 @@ export const normalizeLiveHumanDesignResponse = (data: LivePayload, now = new Da
 
   return {
     type,
-    strategy: asText(data.strategy),
-    authority: asText(data.authority),
-    profile: asText(data.profile),
-    definition: asText(data.definition) || "Single Definition",
-    incarnationCross: { name: asText(data.inc_cross) || asText(data.incarnationCross), gates: [] },
-    centers: normalizeHumanDesignCenters(data.definedCenters, data.openCenters),
+    strategy,
+    authority,
+    profile,
+    definition,
+    incarnationCross: { name: incCrossName, gates: [] },
+    centers,
     openCenters: asStringArray(data.openCenters),
-    gates: [...new Set([...asNumberArray(data.gatesPersonality), ...asNumberArray(data.gatesDesign)])],
+    gates,
     channels: asStringArray(data.channels),
     diagnostic: personality.length || design.length ? { raw_personality_gates: personality, raw_design_gates: design } : null,
     personalityActivations: personality,

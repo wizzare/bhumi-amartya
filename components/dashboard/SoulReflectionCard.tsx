@@ -9,14 +9,28 @@ interface SoulReflectionCardProps {
   language: "id" | "en";
   reflection?: string;
   loading?: boolean;
+  compact?: boolean;
 }
 
-export function SoulReflectionCard({ language, reflection, loading }: SoulReflectionCardProps) {
+export function SoulReflectionCard({ language, reflection, loading, compact = false }: SoulReflectionCardProps) {
   const isEn = false;
   const [isExpanded, setIsExpanded] = React.useState(false);
   const cleanedReflection = React.useMemo(
     () => cleanMarkdown(reflection),
     [reflection],
+  );
+
+  if (compact) return (
+    <section className="my-6 rounded-2xl border border-current/10 bg-white p-5" aria-labelledby="main-insight-title" aria-busy={loading}>
+      <h2 id="main-insight-title" className="font-serif text-xl">INSIGHT UTAMA</h2>
+      <p className="mt-3 text-sm leading-relaxed">{loading ? 'Menyiapkan refleksimu…' : cleanedReflection?.split(/\n\s*\n/)[0] || 'Refleksi hari ini belum tersedia.'}</p>
+      {!loading && cleanedReflection && (
+        <details className="mt-3">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Baca refleksi lengkap</summary>
+          <p className="whitespace-pre-line text-sm leading-relaxed">{cleanedReflection}</p>
+        </details>
+      )}
+    </section>
   );
 
   return (

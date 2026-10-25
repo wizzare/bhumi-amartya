@@ -371,10 +371,10 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
 
   const openings = isId
     ? [
-        `Hai ${firstName}, mari berhenti sejenak dan mendengarkan apa yang sedang bergerak di dalam dirimu.`,
+        `Hai ${firstName}, mari sejenak mendengarkan apa yang bergerak di dalam dirimu.`,
         `${firstName}, mari sejenak menengok ke dalam di hari ${weekdayName(dateKey, "id")} ini.`,
-        `${greeting} ${firstName}, hari ini ada ruang untuk berjalan dengan lebih sadar.`,
-        `Hai ${firstName}, izinkan jiwamu berbicara pelan hari ini.`,
+        `${greeting} ${firstName}, hari ini bisa jadi kesempatan untuk berjalan dengan lebih sadar.`,
+        `Hai ${firstName}, izinkan dirimu bicara pelan hari ini.`,
       ]
     : [
         `Hi ${firstName}, take a moment to listen to what is moving within you.`,
@@ -391,10 +391,10 @@ function generateSoulReflection(synthesis: any, userName: string, seedSource: st
       ? ["Mulailah dari respons sederhana yang kamu rasakan di tubuh sebelum terburu-buru memberikan tenagamu.", "Pastikan baterai energimu digunakan untuk hal yang kamu cintai secara jujur."]
       : ["Start from the simple responses you feel in your body before rushing to give your energy.", "Ensure your energy is used for what you honestly love."],
     "Projector": isId
-      ? ["Kepekaan dirimu akan bekerja dengan lebih tenang ketika kamu tidak memaksa semua hal selesai sekaligus.", "Kelola energimu dengan bijak, luangkan waktu untuk melihat sekeliling dengan jernih."]
+      ? ["Kepekaan dirimu akan bekerja dengan lebih tenang ketika kamu tidak memaksa semua hal selesai sekaligus.", "Kelola tenagamu dengan bijak, luangkan waktu untuk melihat sekeliling dengan jernih."]
       : ["Your inner sensitivity will work more peacefully when you don't force everything to be finished at once.", "Manage your energy wisely, take time to see your surroundings clearly."],
     "Manifestor": isId
-      ? ["Dorongan untuk bergerak dari dalam dirimu adalah arah yang nyata; cukup komunikasikan langkahmu dengan lembut.", "Doronganmu untuk memulai adalah kekuatan besar yang bisa disalurkan pelan-pelan."]
+      ? ["Dorongan untuk bergerak dari dalam dirimu adalah arah yang nyata; cukup komunikasikan langkahmu dengan lembut.", "Doronganmu untuk memulai adalah kekuatan besar yang bisa disalurkan tanpa tergesa."]
       : ["The urge to move from within is a real direction; simply communicate your steps gently.", "Your urge to initiate is a great strength that can be channeled slowly."],
   };
 

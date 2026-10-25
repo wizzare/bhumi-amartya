@@ -22,7 +22,7 @@ import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { useLanguage } from "@/app/context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { useAuth } from "@/context/AuthContext";
-import { CommunicationCenterService } from "@/lib/services/communicationCenterService";
+import { UserCommunicationService } from "@/lib/services/userCommunicationService";
 import { classifyCommunicationError, communicationErrorCode, communicationErrorMessage, type CommunicationErrorKind } from "@/lib/services/communicationError";
 import { CommunicationMessage, CommunicationType } from "@/lib/types/communication";
 import { isEnlEdition } from "@/lib/config/edition";
@@ -108,7 +108,7 @@ export default function InboxPage() {
     setLoadErrorKind(null);
     if (typeof navigator !== "undefined" && !navigator.onLine) { setOffline(true); setLoading(false); return; }
     try {
-      const data = await CommunicationCenterService.getInbox(uid!);
+      const data = await UserCommunicationService.getInbox(uid!);
       setMessages(data);
       setOffline(false);
     } catch (error: any) {
@@ -125,7 +125,7 @@ export default function InboxPage() {
 
   const handleMarkAllAsRead = async () => {
     if (!uid) return;
-    await CommunicationCenterService.markAllAsRead(uid);
+    await UserCommunicationService.markAllAsRead(uid);
     await loadInbox();
   };
 
@@ -144,7 +144,7 @@ export default function InboxPage() {
     setSendState("sending");
     setSendErrorCode(null);
     try {
-      await CommunicationCenterService.submitUserSupportMessage({ authenticatedUid: uid, userName: auth?.user?.displayName || (isEn ? "Bhumi Friend" : "Sahabat Bhumi"), category, subject: subject.trim(), content: body.trim() });
+      await UserCommunicationService.submitUserSupportMessage({ authenticatedUid: uid, userName: auth?.user?.displayName || (isEn ? "Bhumi Friend" : "Sahabat Bhumi"), category, subject: subject.trim(), content: body.trim() });
       setSubject(""); setBody(""); setSendState("sent"); setComposeOpen(false); await loadInbox();
     } catch (error) { setSendState("error"); setSendErrorCode(communicationErrorCode(error)); }
   };
@@ -164,7 +164,7 @@ export default function InboxPage() {
 
     // 1. Mark as Read
     if (!msg.isRead) {
-      await CommunicationCenterService.updateState(uid, msg.id, 'opened').catch(() => null);
+      await UserCommunicationService.updateState(uid, msg.id, 'opened').catch(() => null);
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, isRead: true } : m));
     }
 

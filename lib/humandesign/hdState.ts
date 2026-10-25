@@ -30,8 +30,8 @@ function readString(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function getAttemptMs(record: HdRecord): number | null {
-  for (const key of ["lastCalculationAttempt", "calculatedAt", "updatedAt", "generatedAt"]) {
+export function getHdAttemptMs(record: HdRecord): number | null {
+  for (const key of ["lastAttempt", "lastCalculationAttempt", "calculatedAt", "updatedAt", "generatedAt"]) {
     const value = record[key];
     if (value instanceof Date && Number.isFinite(value.getTime())) return value.getTime();
     if (typeof value === "string" || typeof value === "number") {
@@ -100,7 +100,7 @@ export function getHdState(value: unknown, options: HdStateOptions = {}): HdStat
   // Only settled (ready/verified) non-canonical records are FALLBACK_LABELED.
   const isSettled = ["ready", "verified", "needs_verified_engine"].includes(status);
   if (status === "pending" || calculationStatus === "pending") {
-    const attemptMs = getAttemptMs(hd);
+    const attemptMs = getHdAttemptMs(hd);
     const now = options.now ?? Date.now();
     if (attemptMs !== null && now - attemptMs >= HD_PENDING_TTL_MS) {
       return result("RETRIABLE_ERROR", type, "pending", "pending_ttl_exceeded");
@@ -128,7 +128,7 @@ export function getHdState(value: unknown, options: HdStateOptions = {}): HdStat
     );
   }
 
-  const attemptMs = getAttemptMs(hd);
+  const attemptMs = getHdAttemptMs(hd);
   const now = options.now ?? Date.now();
   if (attemptMs !== null && now - attemptMs >= HD_PENDING_TTL_MS) {
     return result("RETRIABLE_ERROR", type, "pending", "pending_ttl_exceeded");

@@ -10,6 +10,7 @@ import { validateHumanDesignBirthData } from "./normalizedAudit";
 
 export async function calculateHumanDesign(
   profile: HumanDesignBirthProfile,
+  options: { signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<HumanDesignChart> {
   if (validateHumanDesignBirthData(profile).length > 0) {
     const pending = createPendingHumanDesignChart(
@@ -46,7 +47,9 @@ export async function calculateHumanDesign(
       latitude: profile.latitude,
       longitude: profile.longitude,
       timezone: profile.timezone,
-    });
+    }, options);
+
+    if (result.lastErrorCode) return result;
 
     if (result.status === "ready") {
        const validated: HumanDesignChart = {

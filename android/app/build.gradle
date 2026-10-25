@@ -7,8 +7,8 @@ android {
         applicationId "com.bhumiamartya.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 115
-        versionName "5.0.15"
+        versionCode 116
+        versionName "5.0.16"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -35,6 +35,28 @@ android {
 
     def releaseSigningComplete = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
+    def qaStoreFile = System.getenv('BHUMI_QA_STORE_FILE')
+    def qaStorePassword = System.getenv('BHUMI_QA_STORE_PASSWORD')
+    def qaKeyAlias = System.getenv('BHUMI_QA_KEY_ALIAS')
+    def qaKeyPassword = System.getenv('BHUMI_QA_KEY_PASSWORD')
+
+    if (!qaStoreFile || !qaStorePassword || !qaKeyAlias || !qaKeyPassword) {
+        def qaProps = new Properties()
+        def qaPropsPath = System.getenv('BHUMI_QA_KEYSTORE_PROPERTIES')
+        def qaPropFile = qaPropsPath
+            ? new File(qaPropsPath)
+            : new File(System.getProperty('user.home'), '.bhumi-qa/signing/keystore.properties')
+        if (qaPropFile.exists()) {
+            qaPropFile.withInputStream { qaProps.load(it) }
+        }
+        qaStoreFile = qaStoreFile ?: qaProps.getProperty('BHUMI_QA_STORE_FILE')
+        qaStorePassword = qaStorePassword ?: qaProps.getProperty('BHUMI_QA_STORE_PASSWORD')
+        qaKeyAlias = qaKeyAlias ?: qaProps.getProperty('BHUMI_QA_KEY_ALIAS')
+        qaKeyPassword = qaKeyPassword ?: qaProps.getProperty('BHUMI_QA_KEY_PASSWORD')
+    }
+
+    def qaSigningComplete = qaStoreFile && qaStorePassword && qaKeyAlias && qaKeyPassword
+
     signingConfigs {
         release {
             if (releaseSigningComplete) {
@@ -44,17 +66,39 @@ android {
                 keyPassword = releaseKeyPassword
             }
         }
+        qa {
+            if (qaSigningComplete) {
+                storeFile = file(qaStoreFile)
+                storePassword = qaStorePassword
+                keyAlias = qaKeyAlias
+                keyPassword = qaKeyPassword
+            }
+        }
     }
     buildTypes {
         debug {
             applicationIdSuffix ".qa"
             versionNameSuffix "-qa"
+            if (qaSigningComplete) {
+                signingConfig signingConfigs.qa
+            }
         }
         release {
             signingConfig signingConfigs.release
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        if (qaSigningComplete) {
+            qa {
+                applicationIdSuffix ".qa"
+                versionNameSuffix "-qa"
+                signingConfig signingConfigs.qa
+                minifyEnabled true
+                shrinkResources true
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+                matchingFallbacks = ['release']
+            }
         }
     }
     compileOptions {
@@ -88,8 +132,10 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 try {
-    def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    def rootServicesJSON = file('google-services.json')
+    def qaServicesJSON = file('src/qa/google-services.json')
+    def debugServicesJSON = file('src/debug/google-services.json')
+    if (rootServicesJSON.exists() || qaServicesJSON.exists() || debugServicesJSON.exists()) {
         apply plugin: 'com.google.gms.google-services'
     }
 } catch(Exception e) {

@@ -1,0 +1,15 @@
+export const BHUMI_TOKENS = {
+  canvas: "#F7F4EE",
+  primary: "#4A5849",
+  primaryHover: "#3E4B3D",
+  primarySoft: "#E5EBE3",
+  earthAccent: "#8C7A6B",
+  textPrimary: "#2D352E",
+  textSecondary: "#6E7A6D",
+  border: "#E4DFD5",
+  surface: "#FFFFFF",
+  surfaceMuted: "#F2EFE8",
+  shadowSoft: "0 4px 20px -2px rgba(60, 70, 60, 0.04)",
+  radiusControl: "16px",
+  radiusContainer: "26px",
+};

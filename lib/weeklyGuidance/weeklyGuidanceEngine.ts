@@ -24,19 +24,49 @@ function semanticSignal(seed: string, options: string[]) { return pick(options, 
 export function buildWeeklyGuidance(input: { uid: string; profile: Record<string, unknown>; blueprint: Record<string, unknown>; arsipViewModel: ArsipAkashiProfileViewModel; referenceDate?: Date; timezone?: string; mode?: "current" | "upcoming"; journey?: Record<string, unknown> | null; }): WeeklyGuidance {
   const timezone = input.timezone || String(input.profile.timezone || "Asia/Jakarta"); const mode = input.mode || "current"; const dates = range(input.referenceDate || new Date(), timezone, mode); const ownerSignal = String(input.profile.fullName || input.profile.displayName || input.profile.name || input.uid); const seed = `${input.uid}:${ownerSignal}:${dates.key}:${JSON.stringify(input.blueprint).slice(0, 180)}`;
   const arsipAvailable = input.arsipViewModel.status !== "unavailable" && input.arsipViewModel.readings.length > 0; const astro = input.blueprint.astrology as Record<string, unknown> | undefined; const astroAvailable = Boolean(astro?.sunSign || astro?.sun || input.blueprint.vedic); const journeyAvailable = Boolean(input.journey && Object.keys(input.journey).length);
-  const identity = semanticSignal(`${seed}:identity`, ["Minggu ini menguatkan kesadaran tentang arah yang ingin kamu bangun.", "Tujuh hari ke depan memberi ruang untuk menata ulang prioritas yang paling berarti.", "Energi minggu ini mendukung langkah yang lebih terarah dan konsisten."]);
-  const thinking = semanticSignal(`${seed}:thinking`, ["Pikiranmu akan lebih produktif ketika satu keputusan diberi ruang untuk matang.", "Komunikasi minggu ini membutuhkan jeda agar respons tidak lebih cepat dari pemahaman.", "Fokusmu berkembang saat tugas besar dipecah menjadi pilihan yang dapat diuji."]);
-  const economy = semanticSignal(`${seed}:economy`, ["Potensi kerja minggu ini tumbuh melalui keterampilan yang diasah dengan praktik nyata.", "Peluang ekonomi lebih mudah terlihat ketika kamu meninjau nilai dari kemampuanmu.", "Rezeki minggu ini berkaitan dengan keberanian menguji cara kerja yang lebih efektif."]);
-  const relation = semanticSignal(`${seed}:relation`, ["Kedekatan terasa lebih sehat ketika kebutuhan disampaikan dengan tenang.", "Hubungan minggu ini mengajakmu menyeimbangkan kehangatan dengan kejujuran.", "Rasa aman dalam relasi tumbuh dari percakapan yang tidak menguji atau menebak."]);
-  const shadow = semanticSignal(`${seed}:shadow`, ["Tekanan minggu ini perlu dibaca sebagai tanda untuk mengatur ulang kapasitas.", "Tubuh dapat meminta jeda ketika agenda terlalu padat atau tuntutan terlalu tinggi.", "Pemulihan menjadi penting agar keputusan tidak dibuat dari rasa terdesak."]);
-  const spiritual = semanticSignal(`${seed}:spiritual`, ["Makna batin minggu ini menguat melalui praktik sederhana yang dilakukan berulang.", "Ketenangan lebih mudah hadir ketika tubuh dan nilai hidup berjalan searah.", "Arah spiritual terasa nyata saat diterjemahkan menjadi kebiasaan yang membumi."]);
+  const identity = semanticSignal(`${seed}:identity`, [
+    "Minggu ini arahnya jadi lebih jelas: kamu mulai tahu mana yang benar-benar penting dan mana yang bisa menunggu.",
+    "Pekan ini kamu sedang menyortir apa yang layak dijaga dan apa yang perlu dilepas.",
+    "Ada benang yang mulai jelas di minggu ini: arah hidupmu tidak berubah, tapi prioritasnya lebih tegas.",
+    "Minggu ini jalannya lebih ringan karena kamu berhenti menanggung banyak hal sekaligus."
+  ]);
+  const thinking = semanticSignal(`${seed}:thinking`, [
+    "Pikiranmu paling jernih kalau satu keputusan dibiarkan matang dulu, bukan langsung dijawab.",
+    "Komunikasi minggu ini perlu jeda: jawaban cepat sering lebih berantakan daripada pertanyaan yang tepat.",
+    "Fokusmu membaik saat pekerjaan besar dipecah menjadi pilihan kecil yang bisa diuji.",
+    "Kalau pikiranmu mulai berputar, tulis dulu pertanyaannya. Menulis biasanya lebih cepat daripada berpikir berulang."
+  ]);
+  const economy = semanticSignal(`${seed}:economy`, [
+    "Peluang kerja minggu ini tumbuh dari keterampilan yang benar-benar kamu pakai, bukan dari yang baru saja kamu pelajari.",
+    "Yang paling masuk akal untuk ditinjau minggu ini adalah nilai yang bisa kamu tawarkan, bukan sekadar kondisi umum.",
+    "Rezeki minggu ini berkaitan dengan keberanian menguji cara kerja yang lebih efektif, meski hasilnya belum terlihat.",
+    "Buat waktu untuk satu latihan nyata dan catat langkah selanjutnya."
+  ]);
+  const relation = semanticSignal(`${seed}:relation`, [
+    "Kedekatan terasa lebih lapang kalau kebutuhannya disampaikan dengan tenang.",
+    "Hubungan minggu ini mengajak menyeimbangkan kehangatan dengan kejujuran.",
+    "Rasa aman dalam relasi tumbuh dari percakapan yang tidak menguji atau menebak.",
+    "Jadwalkan satu percakapan penting dan sampaikan kebutuhanmu dengan kalimat sederhana."
+  ]);
+  const shadow = semanticSignal(`${seed}:shadow`, [
+    "Tekanan minggu ini perlu dibaca sebagai tanda untuk menata ulang kapasitas, bukan sebagai dosa.",
+    "Tubuh bisa minta jeda ketika agenda terlalu padat. Dengarkan itu lebih awal.",
+    "Pemulihan jadi penting sekarang, supaya keputusan besar tidak diambil dari rasa terdesak.",
+    "Kalau kapasitasmu mulai habis, kurangi satu agenda dan isi waktunya dengan istirahat."
+  ]);
+  const spiritual = semanticSignal(`${seed}:spiritual`, [
+    "Makna batin minggu ini menguat lewat praktik kecil yang kamu ulang, bukan lewat tontonan monumental.",
+    "Ketenangan lebih mudah datang ketika tubuh dan nilai hidup berjalan searah.",
+    "Arah spiritual terasa nyata begitu diterjemahkan menjadi kebiasaan yang membumi.",
+    "Yang kamu cari minggu ini mungkin bukan jawaban, melainkan tempat yang lebih tenang untuk bertanya."
+  ]);
   const themes: Record<string, [string, string]> = {
     kabarMingguIni: [identity, "Awal minggu cocok untuk memilih fokus, lalu menjaganya sampai akhir pekan."],
     pikiran: [thinking, "Gunakan pertengahan minggu untuk meninjau pilihan sebelum menetapkan keputusan."],
     ekonomi: [economy, "Sisihkan satu waktu khusus untuk latihan, portofolio, atau pengujian tawaran kecil."],
-    asmara: [relation, "Jadwalkan percakapan penting ketika kedua pihak punya cukup ruang untuk mendengar."],
-    orangTerdekat: ["Koneksi keluarga dan komunitas membutuhkan batas yang hangat.", "Akhir minggu baik untuk menyambung kembali satu hubungan yang bernilai."],
-    maknaBatin: [spiritual, "Pagi atau malam yang lebih hening dapat menjadi jendela terbaik untuk grounding."],
+    asmara: [relation, "Jadwalkan percakapan penting ketika kedua pihak punya cukup waktu untuk mendengar."],
+    orangTerdekat: ["Koneksi keluarga dan komunitas membutuhkan batas yang hangat.", "Akhir pekan baik untuk menyambung kembali satu hubungan yang berarti."],
+    maknaBatin: [spiritual, "Pagi atau malam yang lebih hening dapat menjadi waktu terbaik untuk menulis."],
     yangMungkinTerasaBerat: [shadow, "Kurangi satu agenda yang menguras tenaga sebelum memasuki pertengahan minggu."],
     ruangYangSedangTerbuka: ["Potensi baru muncul ketika rasa ingin tahu diberi bentuk melalui latihan.", "Akhir minggu cocok untuk memilih satu langkah pengembangan berikutnya."],
   };
@@ -49,11 +79,23 @@ export function buildWeeklyGuidance(input: { uid: string; profile: Record<string
   const timingEvidence = ["weekly-period", ...(astroAvailable ? ["moon-and-weekly-astrology"] : ["broad-weekly-timing"]), ...(journeyAvailable ? ["journey-stage"] : [])];
   const lifePath = Number((input.blueprint.lifePath as Record<string, unknown> | undefined)?.number || 0);
   const userFocus = lifePath === 9 ? "merawat kontribusi yang berdampak pada orang lain" : lifePath === 7 ? "memperdalam kemampuan melalui riset dan latihan" : timezone !== "Asia/Jakarta" ? "menyesuaikan ritme dengan lingkungan setempat" : "menguji keterampilan melalui langkah yang terukur";
+  const awalPekanTemplates: Record<string, string> = {
+    kabarMingguIni: "${anchor} Minggu ini dimulai dengan satu fokus yang jelas: ${focus}.",
+    pikiran: "${anchor} Pikiranmu di awal pekan ini: ${focus}.",
+    ekonomi: "${anchor} Ekonomi minggu ini: ${focus}.",
+    asmara: "${anchor} Hubungan hari ini: ${focus}.",
+    orangTerdekat: "${anchor} Orang terdekat dan komunitas: ${focus}.",
+    maknaBatin: "${anchor} Makna batin pekan ini: ${focus}.",
+    yangMungkinTerasaBerat: "${anchor} Yang mungkin terasa berat: ${focus}.",
+    ruangYangSedangTerbuka: "${anchor} Peluang yang terbuka: ${focus}.",
+  };
   const sections: WeeklyGuidanceSection[] = SECTION_DEFS.map(([key, title, focus, domain]) => {
     const [anchor, shift] = themes[key];
     const cleanAnchor = sentence(anchor);
+    const template = awalPekanTemplates[key] || "${anchor} Awal pekan ini difokuskan untuk ${focus}.";
+    const awalPekanText = template.replace("${anchor}", cleanAnchor).replace("${focus}", focus);
     const phases = {
-      awalPekan: [sentence(`${cleanAnchor} Awal pekan ini difokuskan untuk ${focus}.`)],
+      awalPekan: [sentence(awalPekanText)],
       tengahPekan: [sentence(shift)],
       akhirPekan: [sentence(development[key])]
     };
@@ -67,7 +109,7 @@ export function buildWeeklyGuidance(input: { uid: string; profile: Record<string
       timingEvidence
     };
   });
-  const direction = ["Tema utama minggu ini adalah mengenali potensi lalu memberinya bentuk melalui latihan yang dapat dijaga.", `Pengembanganmu minggu ini berpusat pada ${userFocus}.`, "Mulai dengan satu prioritas kerja atau belajar, beri ruang untuk hubungan yang sehat, dan sisakan waktu pemulihan.", pick(["Jadwalkan satu sesi pengembangan dan satu sesi evaluasi sebelum Minggu berakhir.", "Uji satu kemampuan dalam situasi nyata, lalu catat langkah pendalaman berikutnya.", "Pilih satu kebiasaan yang mendukung arahmu dan ulangi dengan ukuran yang realistis.", "Gunakan percakapan atau masukan pertengahan minggu untuk memperbaiki rencana.", "Tutup pekan dengan menilai bukti kecil yang menunjukkan kemampuanmu bertumbuh."], `${seed}:direction`), "Dengan ritme itu, perubahan minggu ini dapat menjadi dasar yang lebih kuat untuk pekan berikutnya."];
+  const direction = ["Tema utama minggu ini: kamu sedang mengenali potensi yang ada, lalu memberinya bentuk lewat latihan yang bisa dijaga.", `Pengembanganmu minggu ini berpusat pada ${userFocus}.`, "Mulai dari satu prioritas kerja atau belajar yang jelas, sisakan waktu untuk orang terdekat, dan jangan等到 lelah baru beristirahat.", pick(["Jadwalkan satu sesi pengembangan dan satu sesi evaluasi sebelum Minggu berakhir.", "Uji satu kemampuan dalam situasi nyata, lalu catat langkah pendalaman berikutnya.", "Pilih satu kebiasaan yang mendukung arahmu dan ulangi dengan ukuran yang realistis.", "Gunakan percakapan atau masukan pertengahan minggu untuk memperbaiki rencana.", "Tutup pekan dengan menilai bukti kecil yang menunjukkan kemampuanmu bertumbuh."], `${seed}:direction`), "Dengan ritme seperti itu, minggu ini bisa menjadi dasar yang lebih kuat untuk pekan berikutnya."];
   const state = !arsipAvailable ? "unavailable" : (astroAvailable && journeyAvailable ? "ready" : "limited");
   const readingSystems = input.arsipViewModel.readings.flatMap((reading) => reading.deepNarrativeProvenance?.flatMap((item) => item.contributingSystems) || []);
   const contributingSystems = [...new Set([...CANONICAL_SYSTEM_IDS, ...readingSystems, "arsip-akashi", "weekly-astrology", ...(journeyAvailable ? ["journey"] : [])])];

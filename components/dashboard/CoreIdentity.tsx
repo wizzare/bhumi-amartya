@@ -1,5 +1,6 @@
 "use client";
 
+import { HdStoredStatus } from "@/components/blueprint/HdStoredStatus";
 import { getHdState } from "@/lib/humandesign/hdState";
 import { isRecognizedHumanDesignType } from "@/lib/humandesign/hdAudit";
 import type { HumanDesignChart } from "@/lib/humandesign/types";
@@ -86,6 +87,7 @@ export function CoreIdentity({
         <Stat label={labels.sunSign} value={sunSign} fallback={unavailableFallback} />
         <Stat label={labels.arcanaCenter} value={arcanaCenter} fallback={unavailableFallback} />
         <Stat label={labels.humanDesign} {...humanDesignPresentation} fallback={unavailableFallback} />
+        <HdStoredStatus />
       </div>
     </div>
   );

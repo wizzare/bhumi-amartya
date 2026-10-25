@@ -5,12 +5,30 @@ import { useAuth } from "@/context/AuthContext";
 import { decideLandingCtaRoute } from "@/lib/auth/landingCtaRoute";
 import { translations } from "@/lib/data/translations";
 import { useEffect, useState } from "react";
+import { OnboardingWalkthrough } from "@/components/onboarding/OnboardingWalkthrough";
+import {
+  hasSeenOnboardingWalkthrough,
+  setHasSeenOnboardingWalkthrough,
+} from "@/lib/storage/onboardingStorage";
 
 export default function LandingPage() {
   const router = useRouter();
   const auth = useAuth();
   const t = translations["id"];
   const [showFallback, setShowFallback] = useState(false);
+  const [walkthroughSeen, setWalkthroughSeen] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void hasSeenOnboardingWalkthrough().then((seen) => {
+      if (active) {
+        setWalkthroughSeen(seen);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (auth?.loading) {
@@ -77,7 +95,20 @@ export default function LandingPage() {
     routeFromLandingCta("/dashboard");
   };
 
-  if (auth?.loading) {
+  const handleWalkthroughComplete = async () => {
+    console.log("[ONBOARDING] Walkthrough completed -> mark seen and route to /setup");
+    await setHasSeenOnboardingWalkthrough(true);
+    setWalkthroughSeen(true);
+    routeFromLandingCta("/setup");
+  };
+
+  const handleWalkthroughSkip = async () => {
+    console.log("[ONBOARDING] Walkthrough skipped -> mark seen and show landing");
+    await setHasSeenOnboardingWalkthrough(true);
+    setWalkthroughSeen(true);
+  };
+
+  if (auth?.loading || walkthroughSeen === null) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
         <div className="flex flex-col items-center">
@@ -97,6 +128,17 @@ export default function LandingPage() {
            )}
         </div>
       </main>
+    );
+  }
+
+  // If user is not yet logged in and has never seen the walkthrough, show it
+  const isAuditUser = typeof window !== "undefined" && window.localStorage.getItem("bhumi_audit_user") === "true";
+  if (!auth?.user && !isAuditUser && !walkthroughSeen) {
+    return (
+      <OnboardingWalkthrough
+        onComplete={handleWalkthroughComplete}
+        onSkip={handleWalkthroughSkip}
+      />
     );
   }
 

@@ -1,6 +1,5 @@
 import { db } from "../firebase/firebase";
-import { safeDiagnostic } from "../humandesign/safeDiagnostic";
-import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, runTransaction, Timestamp } from "firebase/firestore";
 import { Blueprint } from "@/lib/types/blueprint";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
@@ -9,6 +8,8 @@ import { calculateDestinyMatrix } from "@/lib/calculations/calculateDestinyMatri
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { isCanonicalCoreComplete } from "@/lib/humandesign/completeness";
+import { compareBirthInputMatch, computeBirthInputFingerprint } from "@/lib/humandesign/birthFingerprint";
 import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -220,58 +221,65 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     "Human Design requires precise time zone and birth location.",
   );
 
-  // Transition Guard: Only clear hdDismissedAt if status transitioned FROM non-pending TO pending
-  try {
-    const existingSnap = await getDoc(blueprintRef);
-    if (existingSnap.exists()) {
-      const oldHd = existingSnap.data()?.humanDesign;
-      const oldStatus = String(oldHd?.status || oldHd?.calculationStatus || "").toLowerCase();
-      const newStatus = String(ensuredHumanDesign.status || ensuredHumanDesign.calculationStatus || "").toLowerCase();
+  await runTransaction(db, async (transaction) => {
+    const existingSnap = await transaction.get(blueprintRef);
+    const existingData = existingSnap.data();
+    const oldHd = existingData?.humanDesign;
+    const oldCanonical = isCanonicalHumanDesign(oldHd);
+    const incomingCanonical = isCanonicalCoreComplete(ensuredHumanDesign);
 
-      const isOldPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(oldStatus);
-      const isNewPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(newStatus);
+    // Compute input match status between existing chart and incoming input
+    const inputMatch = compareBirthInputMatch(uid, oldHd, blueprint.input || existingData?.input);
 
-      if (!isOldPending && isNewPending) {
-        const userRef = doc(db, "users", uid);
-        await setDoc(userRef, { hdDismissedAt: null }, { merge: true });
+    let preserveCanonical = false;
+    if (oldCanonical) {
+      if (inputMatch === "CHANGED" && incomingCanonical) {
+        // Legitimate birth data update: incoming chart is a validated complete canonical chart
+        // calculated for the new inputs. Permit replacement.
+        preserveCanonical = false;
+      } else {
+        // Protect stored canonical: do not allow incoming pending/fallback/incomplete to overwrite,
+        // and do not replace matching canonical chart.
+        preserveCanonical = true;
       }
     }
-  } catch (err) {
-    safeDiagnostic("blueprint", "recover", { failed: true });
-  }
 
-  // HOTFIX: last-write safety guard — canonical must never be overwritten.
-  try {
-    const latestSnap = await getDoc(blueprintRef);
-    if (latestSnap.exists() && isCanonicalHumanDesign((latestSnap.data() as Partial<Blueprint>)?.humanDesign)) {
-      console.warn("[HD WRITE GUARD] Canonical chart already exists. Aborting write.");
-      return;
+    // Attach input fingerprint to incoming HD if it's canonical
+    let finalHd = ensuredHumanDesign;
+    if (incomingCanonical && !preserveCanonical) {
+      const fp = computeBirthInputFingerprint(uid, blueprint.input || existingData?.input);
+      if (fp) {
+        finalHd = { ...ensuredHumanDesign, inputHash: fp.revisionHash };
+      }
     }
-  } catch (err) {
-    safeDiagnostic("blueprint", "recover", { failed: true });
-  }
 
-  const normalizedPayload = normalizeBlueprint(uid, {
-    ...blueprint,
-    humanDesign: ensuredHumanDesign,
-  });
-  const persistableBlueprint = omitAstrocartographyForPersistence(normalizedPayload);
-  const payload = sanitizeForFirestore({
-    ...persistableBlueprint,
-    uid,
-    updatedAt: Timestamp.now(),
-    generatedAt: Timestamp.now(),
-  });
+    const normalizedPayload = normalizeBlueprint(uid, {
+      ...blueprint,
+      humanDesign: finalHd,
+    });
+    const persistableBlueprint: Partial<Blueprint> = omitAstrocartographyForPersistence(normalizedPayload);
+    if (preserveCanonical) {
+      delete persistableBlueprint.humanDesign;
+    }
+    const payload = sanitizeForFirestore({
+      ...persistableBlueprint,
+      uid,
+      updatedAt: Timestamp.now(),
+      generatedAt: Timestamp.now(),
+    });
 
-  safeDiagnostic("blueprint", "save", {
-    valid: !!(payload as any).humanDesign,
-    complete: !!(payload as any).humanDesign?.type,
-  });
+    if (existingSnap.exists() && !preserveCanonical) {
+      const oldStatus = String(oldHd?.status || oldHd?.calculationStatus || "").toLowerCase();
+      const newStatus = String(ensuredHumanDesign.status || ensuredHumanDesign.calculationStatus || "").toLowerCase();
+      const isOldPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(oldStatus);
+      const isNewPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(newStatus);
+      if (!isOldPending && isNewPending) {
+        transaction.set(doc(db, "users", uid), { hdDismissedAt: null }, { merge: true });
+      }
+    }
 
-  await debugFirestoreOperation(
-    { operation: "setDoc", path: userBlueprintPath(uid), uid, payloadKeys: Object.keys(payload as object) },
-    () => setDoc(blueprintRef, payload, { merge: true }),
-  );
+    transaction.set(blueprintRef, payload, { merge: true });
+  });
 };
 
 const getUserBlueprint = async (uid: string): Promise<Blueprint | null> => {

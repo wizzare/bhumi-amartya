@@ -8,9 +8,10 @@ import { isEnlEdition } from "@/lib/config/edition";
 interface DashboardHeaderProps {
   userName: string;
   language: "id" | "en";
+  compact?: boolean;
 }
 
-export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
+export function DashboardHeader({ userName, language, compact = false }: DashboardHeaderProps) {
   const [now, setNow] = useState(() => new Date());
   const isEn = false;
   const locale = "id-ID";
@@ -32,6 +33,14 @@ export function DashboardHeader({ userName, language }: DashboardHeaderProps) {
     const interval = window.setInterval(() => setNow(new Date()), APP_TIME_REFRESH_MS);
     return () => window.clearInterval(interval);
   }, []);
+
+  if (compact) return (
+    <header className="py-4">
+      <p className="text-sm">{greeting}</p>
+      <h1 className="font-serif text-2xl">{userName}</h1>
+      <p className="text-sm">{dateString} · {timeString}</p>
+    </header>
+  );
 
   return (
     <header className="flex flex-col items-center pt-10 pb-8 px-6 text-center">

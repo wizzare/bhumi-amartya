@@ -1,7 +1,9 @@
 "use client";
 
+import { HdStoredStatus } from "@/components/blueprint/HdStoredStatus";
 import { FormEvent, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { BHUMI_TOKENS } from "@/components/onboarding/onboardingTokens";
 import { useLanguage } from "../context/LanguageContext";
 import { translations } from "@/lib/data/translations";
 import { isEnlEdition } from "@/lib/config/edition";
@@ -161,7 +163,7 @@ export default function SetupPage() {
     return () => {
       cancelled = true;
     };
-  }, [auth?.authLoading, auth?.authStateResolved, auth?.userProfile, devUser, mountGuardAttempt, router, user]);
+  }, [auth?.authLoading, auth?.authStateResolved, auth?.profileLoading, auth?.userProfile, devUser, mountGuardAttempt, router, user]);
 
   useEffect(() => {
     if (effectiveUser && !initializedRef.current) {
@@ -280,7 +282,7 @@ export default function SetupPage() {
       }
 
       // 2. Generate Blueprint
-      setProgressStep("Menyiapkan cetak biru jiwa...");
+      setProgressStep("Menyiapkan profil pengenalan dirimu...");
       console.log("[BLUEPRINT GEN START]");
       const bpStart = performance.now();
       const blueprint = await generateBlueprint({
@@ -291,7 +293,7 @@ export default function SetupPage() {
       console.log("[BLUEPRINT GEN SUCCESS]", { elapsedMs: Math.round(performance.now() - bpStart) });
 
       // 3. Save Blueprint
-      setProgressStep("Menyimpan cetak biru...");
+      setProgressStep("Menyimpan profil pengenalan dirimu...");
       console.log("[BLUEPRINT WRITE ATTEMPT]");
       let bpSaved = false;
       try {
@@ -445,87 +447,250 @@ export default function SetupPage() {
 
   if (!effectiveUser) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5]">
-        <div className="text-center p-8 bhumi-card max-w-md">
-          <p className="text-[#4F5E52] mb-6">{t.setup?.mustLogin || "You must log in first."}</p>
-          <button onClick={() => router.push("/login")} className="bhumi-button">{t.setup?.goToLogin || "Go to Login Page"}</button>
+      <main
+        className="min-h-screen flex items-center justify-center px-6 py-8"
+        style={{
+          backgroundColor: BHUMI_TOKENS.canvas,
+          paddingTop: "max(2rem, env(safe-area-inset-top))",
+          paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+        }}
+      >
+        <div
+          className="text-center p-8 w-full max-w-sm rounded-[24px]"
+          style={{
+            backgroundColor: BHUMI_TOKENS.surface,
+            border: `1px solid ${BHUMI_TOKENS.border}`,
+            boxShadow: BHUMI_TOKENS.shadowSoft,
+          }}
+        >
+          <p className="mb-6 font-medium" style={{ color: BHUMI_TOKENS.textPrimary }}>
+            {t.setup?.mustLogin || "Kamu harus login terlebih dahulu."}
+          </p>
+          <button
+            onClick={() => router.push("/login")}
+            className="w-full min-h-[48px] rounded-[16px] text-white font-medium transition hover:opacity-90 active:scale-[0.99]"
+            style={{ backgroundColor: BHUMI_TOKENS.primary }}
+          >
+            {t.setup?.goToLogin || "Ke Halaman Login"}
+          </button>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-[#FCFAF5] px-6 py-12">
-      <div className="bhumi-card w-full max-w-md p-10">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-serif text-[#4F5E52] mb-2">{t.setup.title}</h1>
-          <p className="text-[#7B8776]">{t.setup.subtitle}</p>
+    <main
+      className="min-h-screen flex flex-col items-center justify-center px-6 py-8"
+      style={{
+        backgroundColor: BHUMI_TOKENS.canvas,
+        paddingTop: "max(2rem, env(safe-area-inset-top))",
+        paddingBottom: "max(2rem, env(safe-area-inset-bottom))",
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-[26px] p-6 sm:p-8"
+        style={{
+          backgroundColor: BHUMI_TOKENS.surface,
+          border: `1px solid ${BHUMI_TOKENS.border}`,
+          boxShadow: BHUMI_TOKENS.shadowSoft,
+        }}
+      >
+        <div className="text-center mb-6">
+          <h1
+            className="text-2xl sm:text-[26px] font-serif font-medium leading-snug tracking-tight mb-2"
+            style={{ color: BHUMI_TOKENS.textPrimary }}
+          >
+            Langkah Awal Mengenali Dirimu
+          </h1>
+          <p
+            className="text-xs sm:text-sm leading-relaxed"
+            style={{ color: BHUMI_TOKENS.textSecondary }}
+          >
+            Lengkapi data kelahiran agar Bhumi dapat menyusun profil pengenalan dirimu secara lebih personal.
+          </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); finalizeSetup(); }} className="space-y-4">
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder={t.setup?.fullName || "Nama Lengkap"}
-            className="bhumi-input w-full"
-            required
-          />
-          <input
-            type="email"
-            value={email}
-            readOnly
-            className="bhumi-input w-full opacity-60 bg-gray-50"
-          />
-          <input
-            type="date"
-            value={birthDate}
-            onChange={(e) => setBirthDate(e.target.value)}
-            className="bhumi-input w-full"
-            required
-          />
-          <input
-            type="time"
-            value={birthTime}
-            onChange={(e) => setBirthTime(e.target.value)}
-            className="bhumi-input w-full"
-            required
-          />
-          <CityAutocomplete
-            value={birthPlace}
-            placeholder={t.setup?.birthPlace || "Kota Kelahiran"}
-            onInputChange={(val) => {
-              setBirthPlace(val);
-              setSelectedCity(null);
-            }}
-            onCitySelect={(city) => { setBirthPlace(city.formattedCity); setSelectedCity(city); }}
-          />
+          <HdStoredStatus />
+          <form onSubmit={(e) => { e.preventDefault(); finalizeSetup(); }} className="space-y-4">
+          {/* Field 1: Nama */}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="setup-fullName"
+              className="block text-xs font-medium"
+              style={{ color: BHUMI_TOKENS.textPrimary }}
+            >
+              Nama
+            </label>
+            <input
+              id="setup-fullName"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Nama lengkap atau panggilanmu"
+              className="w-full min-h-[48px] px-4 rounded-[16px] border outline-none text-sm transition focus:ring-2 focus:ring-[#4A5849]/20"
+              style={{
+                backgroundColor: BHUMI_TOKENS.canvas,
+                borderColor: BHUMI_TOKENS.border,
+                color: BHUMI_TOKENS.textPrimary,
+              }}
+              required
+            />
+          </div>
+
+          {/* Field 2: Email (Readonly) */}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="setup-email"
+              className="block text-xs font-medium"
+              style={{ color: BHUMI_TOKENS.textSecondary }}
+            >
+              Email (Terhubung)
+            </label>
+            <input
+              id="setup-email"
+              type="email"
+              value={email}
+              readOnly
+              tabIndex={-1}
+              className="w-full min-h-[48px] px-4 rounded-[16px] border outline-none text-sm cursor-not-allowed opacity-75"
+              style={{
+                backgroundColor: "#F3EFE7",
+                borderColor: BHUMI_TOKENS.border,
+                color: BHUMI_TOKENS.textSecondary,
+              }}
+            />
+          </div>
+
+          {/* Field 3: Tanggal Lahir */}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="setup-birthDate"
+              className="block text-xs font-medium"
+              style={{ color: BHUMI_TOKENS.textPrimary }}
+            >
+              Tanggal Lahir
+            </label>
+            <input
+              id="setup-birthDate"
+              type="date"
+              value={birthDate}
+              onChange={(e) => setBirthDate(e.target.value)}
+              className="w-full min-h-[48px] px-4 rounded-[16px] border outline-none text-sm transition focus:ring-2 focus:ring-[#4A5849]/20"
+              style={{
+                backgroundColor: BHUMI_TOKENS.canvas,
+                borderColor: BHUMI_TOKENS.border,
+                color: BHUMI_TOKENS.textPrimary,
+              }}
+              required
+            />
+          </div>
+
+          {/* Field 4: Jam Lahir */}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="setup-birthTime"
+              className="block text-xs font-medium"
+              style={{ color: BHUMI_TOKENS.textPrimary }}
+            >
+              Jam Lahir
+            </label>
+            <input
+              id="setup-birthTime"
+              type="time"
+              value={birthTime}
+              onChange={(e) => setBirthTime(e.target.value)}
+              className="w-full min-h-[48px] px-4 rounded-[16px] border outline-none text-sm transition focus:ring-2 focus:ring-[#4A5849]/20"
+              style={{
+                backgroundColor: BHUMI_TOKENS.canvas,
+                borderColor: BHUMI_TOKENS.border,
+                color: BHUMI_TOKENS.textPrimary,
+              }}
+              required
+            />
+            <p
+              className="text-[11px] leading-relaxed pt-0.5"
+              style={{ color: BHUMI_TOKENS.textSecondary }}
+            >
+              Jam lahir membantu beberapa sistem pengenalan diri menghitung profilmu dengan lebih akurat.
+            </p>
+          </div>
+
+          {/* Field 5: Kota Kelahiran */}
+          <div className="space-y-1.5 text-left">
+            <label
+              htmlFor="setup-birthPlace"
+              className="block text-xs font-medium"
+              style={{ color: BHUMI_TOKENS.textPrimary }}
+            >
+              Kota Kelahiran
+            </label>
+            <CityAutocomplete
+              value={birthPlace}
+              placeholder="Cari nama kota..."
+              onInputChange={(val) => {
+                setBirthPlace(val);
+                setSelectedCity(null);
+              }}
+              onCitySelect={(city) => { setBirthPlace(city.formattedCity); setSelectedCity(city); }}
+            />
+            <p
+              className="text-[11px] leading-relaxed pt-0.5"
+              style={{ color: BHUMI_TOKENS.textSecondary }}
+            >
+              Kota kelahiran digunakan untuk menentukan zona waktu dan posisi kelahiran.
+            </p>
+          </div>
 
           {formError && (
-            <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-2xl">{formError}</p>
+            <div
+              role="alert"
+              className="text-xs text-left p-3.5 rounded-[14px] border border-red-200"
+              style={{ backgroundColor: "#FDF4F4", color: "#B91C1C" }}
+            >
+              {formError}
+            </div>
           )}
+
+          {/* Privacy Note */}
+          <p
+            className="text-center text-[11px] leading-relaxed pt-2 px-1"
+            style={{ color: BHUMI_TOKENS.textSecondary }}
+          >
+            Data kelahiranmu disimpan sebagai bagian dari profil pribadi dan digunakan untuk menghasilkan hasil pengenalan diri di Bhumi.
+          </p>
 
           <button
             type="submit"
             disabled={loading || !birthDate || !birthTime || !birthPlace || !selectedCity}
-            className="bhumi-button w-full pt-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full min-h-[52px] rounded-[16px] font-medium text-white transition-all active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            style={{
+              backgroundColor: BHUMI_TOKENS.primary,
+              boxShadow: "0 2px 10px rgba(74, 88, 73, 0.14)",
+              fontSize: "15px",
+              outlineColor: BHUMI_TOKENS.primary,
+            }}
           >
             {loading
               ? progressStep
-              : (t.setup?.goToDashboard || "Lanjut ke Dashboard")}
+              : "Mulai Kenali Diriku"}
           </button>
         </form>
 
         {process.env.NODE_ENV === "development" && (
-          <div className="mt-10 p-6 bg-slate-900 text-white rounded-3xl text-[10px] font-mono space-y-1">
-            <h3 className="text-xs font-bold text-yellow-400 mb-2">SETUP STATUS</h3>
-            <p>UID: {debug.authUid || "null"}</p>
-            <p>Profile: {debug.profileWrite}</p>
-            <p>Blueprint: {debug.blueprintWrite}</p>
-            <p>Final Write: {debug.finalProfileWrite}</p>
-            <p>Verify: {debug.verifyStatus}</p>
-            {debug.errorMessage && <p className="text-red-400 mt-2">Error: {debug.errorMessage}</p>}
-          </div>
+          <details className="mt-8 text-left">
+            <summary className="text-[11px] font-mono cursor-pointer text-slate-400 hover:text-slate-600">
+              🛠️ Diagnostic Panel (Dev Only)
+            </summary>
+            <div className="mt-2 p-4 bg-slate-900 text-white rounded-2xl text-[10px] font-mono space-y-1">
+              <h3 className="text-xs font-bold text-yellow-400 mb-1">SETUP STATUS</h3>
+              <p>UID: {debug.authUid || "null"}</p>
+              <p>Profile: {debug.profileWrite}</p>
+              <p>Blueprint: {debug.blueprintWrite}</p>
+              <p>Final Write: {debug.finalProfileWrite}</p>
+              <p>Verify: {debug.verifyStatus}</p>
+              {debug.errorMessage && <p className="text-red-400 mt-1">Error: {debug.errorMessage}</p>}
+            </div>
+          </details>
         )}
       </div>
     </main>

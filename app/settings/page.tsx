@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { HdStoredStatus } from "@/components/blueprint/HdStoredStatus";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { saveHumanDesignSettings, validateHumanDesignBirthData } from "@/lib/humandesign/normalizedAudit";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
@@ -20,7 +21,6 @@ import { canonicalizeNatalTimezone, isUsableStoredTimezone } from "@/lib/astrolo
 import {
   createDefaultUserPlan,
   getOrCreateLocalUserPlan,
-  USER_PLAN_STORAGE_KEY,
   type UserPlan,
 } from "@/lib/billing/getUserPlanStatus";
 import { getAdminRoleRecord } from "@/lib/billing/adminRoleRegistry";
@@ -150,7 +150,8 @@ function normalizeProfileDisplay(profile: LocalUserProfile | StorageUserProfile 
 export default function SettingsPage() {
   const router = useRouter();
   const t = translations["id"];
-  const isEn = false;
+  const isEn = isEnlEdition();
+  const dateLocale = isEn ? "en-US" : "id-ID";
   const auth = useAuth();
   const googleEmail = auth?.user?.email || "";
   const [originalProfile, setOriginalProfile] = useState<LocalUserProfile | StorageUserProfile | null>(null);
@@ -276,8 +277,8 @@ export default function SettingsPage() {
   }, [originalProfile, testerRecord]);
 
   const billingPresentation = useMemo(() => {
-    return getBillingPresentation(entitlement);
-  }, [entitlement]);
+    return getBillingPresentation(entitlement, originalProfile, testerRecord);
+  }, [entitlement, originalProfile, testerRecord]);
 
   const statusBadge = useMemo(() => {
     const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
@@ -321,7 +322,7 @@ export default function SettingsPage() {
   }, [billingPresentation.state, isEn, originalProfile, resolvedBadge]);
 
   const membershipDisplay = useMemo(() => {
-    const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder";
+    const isFounder = (originalProfile as any)?.role === "founder" || resolvedBadge === "Founder" || billingPresentation.isLifetime;
 
     if (isFounder) {
       return {
@@ -332,6 +333,10 @@ export default function SettingsPage() {
         remaining: null,
         nextBilling: null,
         pro: true,
+        commercialStatus: billingPresentation.commercialStatus,
+        communityBadge: billingPresentation.communityBadge,
+        formattedExpiry: billingPresentation.formattedExpiry,
+        isDualDisplay: billingPresentation.isDualDisplay,
       };
     }
 
@@ -344,20 +349,15 @@ export default function SettingsPage() {
         remaining: null,
         nextBilling: null,
         pro: true,
+        commercialStatus: billingPresentation.commercialStatus,
+        communityBadge: billingPresentation.communityBadge,
+        formattedExpiry: billingPresentation.formattedExpiry,
+        isDualDisplay: billingPresentation.isDualDisplay,
       };
     }
 
     if (billingPresentation.state === "trial_active") {
-      let daysRemaining = 7;
-      if (originalProfile?.trialEndsAt) {
-        const trialEnd = new Date(
-          typeof originalProfile.trialEndsAt === "object" && originalProfile.trialEndsAt && "seconds" in originalProfile.trialEndsAt
-            ? (originalProfile.trialEndsAt as any).seconds * 1000
-            : (originalProfile.trialEndsAt as string)
-        );
-        const diff = trialEnd.getTime() - Date.now();
-        daysRemaining = Math.max(0, Math.ceil(diff / (24 * 60 * 60 * 1000)));
-      }
+      const daysRemaining = billingPresentation.daysRemaining ?? 7;
       return {
         title: isEn ? "Active Trial" : "Masa Uji Coba Premium",
         subtitle: isEn
@@ -366,6 +366,10 @@ export default function SettingsPage() {
         remaining: isEn ? `${daysRemaining} Days` : `${daysRemaining} Hari`,
         nextBilling: null,
         pro: false,
+        commercialStatus: billingPresentation.commercialStatus,
+        communityBadge: billingPresentation.communityBadge,
+        formattedExpiry: billingPresentation.formattedExpiry,
+        isDualDisplay: billingPresentation.isDualDisplay,
       };
     }
 
@@ -378,6 +382,10 @@ export default function SettingsPage() {
         remaining: isEn ? "0 Days" : "0 Hari",
         nextBilling: null,
         pro: false,
+        commercialStatus: billingPresentation.commercialStatus,
+        communityBadge: billingPresentation.communityBadge,
+        formattedExpiry: billingPresentation.formattedExpiry,
+        isDualDisplay: billingPresentation.isDualDisplay,
       };
     }
 
@@ -389,8 +397,12 @@ export default function SettingsPage() {
       remaining: null,
       nextBilling: null,
       pro: false,
+      commercialStatus: billingPresentation.commercialStatus,
+      communityBadge: billingPresentation.communityBadge,
+      formattedExpiry: billingPresentation.formattedExpiry,
+      isDualDisplay: billingPresentation.isDualDisplay,
     };
-  }, [billingPresentation.state, isEn, originalProfile, resolvedBadge]);
+  }, [billingPresentation, isEn, originalProfile, resolvedBadge]);
 
   const handleManualCleanup = async () => {
     const confirmed = window.confirm(
@@ -672,10 +684,6 @@ export default function SettingsPage() {
         });
       }
 
-      if (activeUid && activeUid !== "local-user") {
-        localStorage.setItem(`${USER_PLAN_STORAGE_KEY}:${activeUid}`, JSON.stringify(nextPlan));
-      }
-      localStorage.setItem(USER_PLAN_STORAGE_KEY, JSON.stringify(nextPlan));
 
       setOriginalProfile(nextProfile);
       setPlan(nextPlan);
@@ -712,6 +720,7 @@ export default function SettingsPage() {
 
         <section className="bhumi-card space-y-5 p-6">
           <h2 className="text-xl font-semibold text-[#4F5E52]">{t.settings.userData}</h2>
+          <HdStoredStatus busy={saving} />
           <Field label={t.settings.name} value={fullName} placeholder={isEn ? "Not filled in yet" : "Belum dilengkapi"} onChange={setFullName} />
           <Field
             label="Email"
@@ -750,7 +759,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between gap-4 rounded-2xl border border-[#E8E9E5] bg-white px-5 py-4">
             <div>
               <p className="text-sm font-semibold text-[#4F5E52]">{isEn ? "Daily Reminder" : "Pengingat Harian"}</p>
-              <p className="mt-1 text-xs text-[#7B8776]">{isEn ? "A gentle nudge around 9 PM device time." : "Sapa ruangmu sekitar pukul 21.00 waktu perangkat."}</p>
+              <p className="mt-1 text-xs text-[#7B8776]">{isEn ? "Every day · 20.00" : "Setiap hari · 20.00"}</p>
               {notificationState === "denied" && <p className="mt-1 text-xs text-amber-700">{isEn ? "Notification permission was denied on this device." : "Izin notifikasi ditolak di perangkat."}</p>}
               {notificationState === "disable-error" && <p className="mt-1 text-xs text-amber-700">{isEn ? "The notification token could not be disabled yet. Try again once your connection is stable." : "Token notifikasi belum dapat dinonaktifkan. Coba lagi saat koneksi stabil."}</p>}
             </div>
@@ -786,6 +795,17 @@ export default function SettingsPage() {
                   <p className="text-xs text-amber-700/70 mt-0.5">
                     {membershipDisplay.subtitle}
                   </p>
+                  {membershipDisplay.formattedExpiry ? (
+                    <p className="text-xs text-amber-800/80 mt-1">
+                      {isEn ? `Active until: ${membershipDisplay.formattedExpiry}` : `Berlaku hingga: ${membershipDisplay.formattedExpiry}`}
+                    </p>
+                  ) : null}
+                  {membershipDisplay.isDualDisplay ? (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                      <span>{isEn ? "Community Badge:" : "Lencana Komunitas:"}</span>
+                      <span>{membershipDisplay.communityBadge}</span>
+                    </div>
+                  ) : null}
                 </div>
                 <ShieldCheck size={24} className="text-amber-600" />
               </div>

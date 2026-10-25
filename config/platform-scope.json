@@ -1,0 +1,710 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "title": "Bhumi Amartya Platform Scope Manifest",
+  "description": "Machine-readable platform classification and boundary scope for routes, APIs, components, and services",
+  "classifications": [
+    "WEB_ONLY",
+    "APP_ONLY",
+    "SHARED",
+    "REMOTE_BACKEND_WEB",
+    "REMOTE_BACKEND_APP",
+    "REMOTE_BACKEND_SHARED",
+    "LEGACY_UNVERIFIED"
+  ],
+  "pages": [
+    {
+      "path": "app/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Core App",
+      "featureOwner": "Onboarding & Entry",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Canonical Root Gateway",
+      "notes": "App root router & auth/setup/dashboard gate; shared by Web and Android"
+    },
+    {
+      "path": "app/admin/page.tsx",
+      "classification": "WEB_ONLY",
+      "platformOwner": "Internal Ops",
+      "featureOwner": "Admin Console",
+      "runtime": "Next.js Web Server / Admin Guard",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Build 107 Hotfix Exclusion"
+    },
+    {
+      "path": "app/admin/activity/page.tsx",
+      "classification": "WEB_ONLY",
+      "platformOwner": "Internal Ops",
+      "featureOwner": "Telemetry / Audit",
+      "runtime": "Next.js Web Server / Admin Guard",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Internal Telemetry"
+    },
+    {
+      "path": "app/admin/diagnostics/page.tsx",
+      "classification": "WEB_ONLY",
+      "platformOwner": "Internal Ops",
+      "featureOwner": "System Diagnostics",
+      "runtime": "Next.js Web Server / Admin Guard",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Build 106 Diagnostic Suite"
+    },
+    {
+      "path": "app/bantuan/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Support Team",
+      "featureOwner": "Helpdesk & FAQ",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "User Assistance Matrix"
+    },
+    {
+      "path": "app/blueprint/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Blueprint Hub",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Core Navigation Hub"
+    },
+    {
+      "path": "app/blueprint/astrocartography/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Astrocartography",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Blueprint Expansion"
+    },
+    {
+      "path": "app/blueprint/bazi/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "BaZi (Four Pillars)",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Blueprint Expansion"
+    },
+    {
+      "path": "app/blueprint/destiny-matrix/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Destiny Matrix",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Blueprint Expansion"
+    },
+    {
+      "path": "app/blueprint/human-design/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Human Design Core",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Build 107/110 Hotfix Anchor"
+    },
+    {
+      "path": "app/blueprint/natal-chart/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Western Natal Chart",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Astrology Engine"
+    },
+    {
+      "path": "app/blueprint/numerology/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Pythagorean Numerology",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Numerology Service"
+    },
+    {
+      "path": "app/blueprint/tzolkin/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Mayan Tzolkin",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Blueprint Expansion"
+    },
+    {
+      "path": "app/blueprint/vedic/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Vedic Astrology (Jyotish)",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Blueprint Expansion"
+    },
+    {
+      "path": "app/blueprint/weton/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Primbon Jawa / Weton",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Nusantara Heritage"
+    },
+    {
+      "path": "app/blueprint/whole-sign/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Whole Sign Houses",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Astrology Engine"
+    },
+    {
+      "path": "app/blueprint/zi-wei/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Zi Wei Dou Shu",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Chinese Metaphysics"
+    },
+    {
+      "path": "app/dashboard/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Core App",
+      "featureOwner": "Main Dashboard",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Daily Operational Dashboard"
+    },
+    {
+      "path": "app/dashboard/environment/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Environment Squad",
+      "featureOwner": "Gaia Schumann & Weather",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Build 108 Schumann Restoration"
+    },
+    {
+      "path": "app/healing/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Healing Sanctuary",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Wellness Directory"
+    },
+    {
+      "path": "app/healing/audio/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Solfeggio Audio Player",
+      "runtime": "Universal Audio Runtime",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Binaural Engine"
+    },
+    {
+      "path": "app/healing/meditation/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Guided Meditation",
+      "runtime": "Universal Audio/Visual",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Mindfulness Hub"
+    },
+    {
+      "path": "app/inbox/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Core App",
+      "featureOwner": "Notification Inbox",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "User Messaging"
+    },
+    {
+      "path": "app/innerwork/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Inner Work Hub",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Personal Practice Hub"
+    },
+    {
+      "path": "app/innerwork/audio-healing/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Innerwork Audio",
+      "runtime": "Universal Audio Runtime",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Frequency Therapy"
+    },
+    {
+      "path": "app/innerwork/herbal/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Herbalism & Adaptogen",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Natural Wellness"
+    },
+    {
+      "path": "app/innerwork/journaling/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Reflective Journaling",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Shadow Work Module"
+    },
+    {
+      "path": "app/innerwork/manifestasi/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Conscious Creation",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Mindset Reprogramming"
+    },
+    {
+      "path": "app/innerwork/meditation/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Innerwork Mindfulness",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Breathwork & Contemplation"
+    },
+    {
+      "path": "app/innerwork/workout/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Somatic Movement",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Body Movement"
+    },
+    {
+      "path": "app/innerwork/yoga/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Innerwork Squad",
+      "featureOwner": "Asana & Prana Yoga",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Yoga Sequences"
+    },
+    {
+      "path": "app/insights/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Insights Squad",
+      "featureOwner": "Daily Cosmic Insights",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Ephemeris Transits"
+    },
+    {
+      "path": "app/journal/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Daily User Journal",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Encrypted Local/Remote Store"
+    },
+    {
+      "path": "app/journey/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Gamification",
+      "featureOwner": "Soul Journey Roadmap",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Pathway Progression"
+    },
+    {
+      "path": "app/journey/[id]/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Gamification",
+      "featureOwner": "Pathway Detail",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Dynamic Routing Node"
+    },
+    {
+      "path": "app/kebijakan-privasi/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Compliance",
+      "featureOwner": "Privacy Policy",
+      "runtime": "Static Universal Content",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Play Store Compliance SOT"
+    },
+    {
+      "path": "app/kenali-diri/aura/page.tsx",
+      "classification": "WEB_ONLY",
+      "platformOwner": "Aura Squad",
+      "featureOwner": "Bio-Field / Aura Scan",
+      "runtime": "Universal WebCam / MediaStream",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Biofield Visualizer"
+    },
+    {
+      "path": "app/kontak/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Support Team",
+      "featureOwner": "Contact Form",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Help & Support Hub"
+    },
+    {
+      "path": "app/login/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Auth Squad",
+      "featureOwner": "Authentication Gateway",
+      "runtime": "Firebase Auth Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Dual Auth Channel"
+    },
+    {
+      "path": "app/meditation/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "General Meditation",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Meditation Quick-start"
+    },
+    {
+      "path": "app/premium-bhumi/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Billing Squad",
+      "featureOwner": "Subscription Paywall",
+      "runtime": "Adaptive Billing Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "BILL-04/05 Multi-platform UI"
+    },
+    {
+      "path": "app/profile/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Profile Squad",
+      "featureOwner": "User Profile Hub",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Identity Dashboard"
+    },
+    {
+      "path": "app/profile/[section]/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Profile Squad",
+      "featureOwner": "Profile Section Editor",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Granular Settings"
+    },
+    {
+      "path": "app/reports/weekly/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Insights Squad",
+      "featureOwner": "Weekly Astro Report",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Synthesis Report"
+    },
+    {
+      "path": "app/settings/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Core App",
+      "featureOwner": "Application Settings",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Config & Subscription Bridge"
+    },
+    {
+      "path": "app/setup/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Onboarding Squad",
+      "featureOwner": "Onboarding Birth Setup",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "P0 Birth Integrity Entry"
+    },
+    {
+      "path": "app/syarat-ketentuan/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Compliance",
+      "featureOwner": "Terms of Service",
+      "runtime": "Static Universal Content",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Play Store Compliance SOT"
+    },
+    {
+      "path": "app/tentang/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Brand Team",
+      "featureOwner": "About Bhumi Amartya",
+      "runtime": "Static Universal Content",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Identity & Mission"
+    },
+    {
+      "path": "app/test-3d-poc/page.tsx",
+      "classification": "LEGACY_UNVERIFIED",
+      "platformOwner": "Graphics Lab",
+      "featureOwner": "Three.js Celestial POC",
+      "runtime": "WebGL 3D Canvas",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "EXCLUDE",
+      "status": "Experimental Sandbox"
+    },
+    {
+      "path": "app/upgrade/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Billing Squad",
+      "featureOwner": "Upgrade Fallback / Alias",
+      "runtime": "Universal Redirect/Render",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Legacy Route Alias"
+    },
+    {
+      "path": "app/wellness/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Holistic Wellness Center",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Integrative Health"
+    },
+    {
+      "path": "app/wellness-assessment/page.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Wellness Squad",
+      "featureOwner": "Holobiont Health Survey",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Psychometric Assessment"
+    }
+  ],
+  "apiRoutes": [
+    {
+      "path": "app/api/access/bootstrap-trial/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Backend Platform",
+      "featureOwner": "Access & Entitlement",
+      "runtime": "Node.js Serverless Edge/Server",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Automated Trial Provisioning"
+    },
+    {
+      "path": "app/api/ai/daily-guidance/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "AI Engine",
+      "featureOwner": "Personalized Guidance",
+      "runtime": "Node.js Serverless Edge/Server",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Ephemeris AI Generator"
+    },
+    {
+      "path": "app/api/environment/weather-aqi/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Data Squad",
+      "featureOwner": "OpenMeteo / WAQI Fetch",
+      "runtime": "Node.js Serverless Edge/Server",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Realtime Geo Cache"
+    },
+    {
+      "path": "app/api/founder/play-metrics/route.ts",
+      "classification": "REMOTE_BACKEND_WEB",
+      "platformOwner": "Founder / Finance",
+      "featureOwner": "Google Play Reporting",
+      "runtime": "Node.js Serverless Edge/Server",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Play Console Financial Telemetry"
+    },
+    {
+      "path": "app/api/humandesign/astrology/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Astrology Engine",
+      "featureOwner": "Ephemeris Transit API",
+      "runtime": "Node.js / Swiss Ephemeris",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "High-precision Transit Matrix"
+    },
+    {
+      "path": "app/api/humandesign/bodygraph/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "SVG Bodygraph Generator",
+      "runtime": "Node.js Serverless / Python Proxy",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Visual Chart Renderer"
+    },
+    {
+      "path": "app/api/humandesign/calculate/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Core HD Computation",
+      "runtime": "Node.js / Python Fast-API Proxy",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "P0 Canonical HD Engine"
+    },
+    {
+      "path": "app/api/kenali-diri/aura/route.ts",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Aura Squad",
+      "featureOwner": "Biofield Neural Classifier",
+      "runtime": "Node.js Serverless Edge/Server",
+      "mobileBuildInclusion": "EXCLUDE",
+      "webBuildInclusion": "INCLUDE",
+      "status": "Computer Vision Proxy"
+    }
+  ],
+  "components": [
+    {
+      "path": "components/billing/CanonicalPremiumScreen.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Billing Squad",
+      "featureOwner": "Paywall Presentation",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE"
+    },
+    {
+      "path": "components/auth/AccessGuard.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Auth Squad",
+      "featureOwner": "Route Access Control",
+      "runtime": "React Context / Client Guard",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE"
+    },
+    {
+      "path": "components/blueprint/HdStatus.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "HD Recovery & Status",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE"
+    },
+    {
+      "path": "components/dashboard/CoreIdentity.tsx",
+      "classification": "SHARED",
+      "platformOwner": "Core App",
+      "featureOwner": "Core Avatar & Blueprint",
+      "runtime": "Universal React Client",
+      "mobileBuildInclusion": "INCLUDE",
+      "webBuildInclusion": "INCLUDE"
+    }
+  ],
+  "libraries": [
+    {
+      "path": "lib/billing/googlePlayBilling.ts",
+      "classification": "APP_ONLY",
+      "platformOwner": "Billing Squad",
+      "featureOwner": "Google Play In-App Purchase",
+      "runtime": "Capacitor Plugin / Android Native Bridge"
+    },
+    {
+      "path": "lib/billing/canonicalAccessBootstrap.ts",
+      "classification": "SHARED",
+      "platformOwner": "Billing Squad",
+      "featureOwner": "Client Entitlement State",
+      "runtime": "Isomorphic Client/Server"
+    },
+    {
+      "path": "lib/humandesign/calculateHumanDesign.ts",
+      "classification": "SHARED",
+      "platformOwner": "Blueprint Squad",
+      "featureOwner": "Offline HD Fallback Calc",
+      "runtime": "Isomorphic JS/TS Engine"
+    },
+    {
+      "path": "lib/firebase/service.ts",
+      "classification": "SHARED",
+      "platformOwner": "Cloud Platform",
+      "featureOwner": "Firebase SDK Wrapper",
+      "runtime": "Isomorphic Web SDK"
+    }
+  ],
+  "services": [
+    {
+      "name": "services/billing-verifier",
+      "classification": "REMOTE_BACKEND_APP",
+      "platformOwner": "Billing Platform",
+      "featureOwner": "Google Play Server-to-Server Verifier",
+      "runtime": "Node.js Fastify/Express Cloud Service"
+    },
+    {
+      "name": "services/humandesign-api",
+      "classification": "REMOTE_BACKEND_SHARED",
+      "platformOwner": "Blueprint Platform",
+      "featureOwner": "Python Swiss-Ephemeris Core",
+      "runtime": "Python FastAPI Container Service"
+    }
+  ],
+  "guardRules": [
+    "PLAT-01", "PLAT-02", "PLAT-03", "PLAT-04", "PLAT-05",
+    "PLAT-06", "PLAT-07", "PLAT-08", "PLAT-09", "PLAT-10",
+    "PLAT-11", "PLAT-12", "PLAT-13", "PLAT-14", "PLAT-15",
+    "PLAT-16", "PLAT-17", "PLAT-18", "PLAT-19", "PLAT-20"
+  ]
+}

@@ -33,7 +33,7 @@ export function getLocalDateKey(date: Date): string {
 
 export function getNextNightReminderAt(now: Date): Date {
   const next = new Date(now);
-  next.setHours(21, 0, 0, 0);
+  next.setHours(20, 0, 0, 0);
   if (now.getTime() >= next.getTime()) {
     next.setDate(next.getDate() + 1);
   }

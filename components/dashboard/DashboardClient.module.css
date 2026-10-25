@@ -1,0 +1,40 @@
+.dashboard {
+  --background: #F7F4EE;
+  --foreground: #2D352E;
+  --sage: #4A5849;
+  --muted: #5F6B5E;
+  --card: #FFFFFF;
+  max-width: 64rem;
+  min-height: 100vh;
+  margin: auto;
+  padding: 1rem 1rem calc(7rem + env(safe-area-inset-bottom));
+  font-family: system-ui, sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.dashboard p { color: var(--muted); }
+.dashboard h2 { font-family: Georgia, serif; font-size: 1.25rem; }
+.dashboard :is(button, a, summary) { min-height: 44px; min-width: 44px; }
+.dashboard summary { cursor: pointer; padding: .75rem 0; }
+.dashboard :is(button, a, summary):focus-visible { outline: 2px solid var(--sage); outline-offset: 4px; }
+.dashboard :is(p, span, dd, dt, a, button, summary) { font-family: system-ui, sans-serif; font-style: normal; }
+
+.action, .weekly {
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  background: var(--card);
+}
+.action p, .weekly p { margin: .75rem 0; font-size: .9375rem; }
+.action a { display: inline-flex; align-items: center; padding: .75rem 1rem; border-radius: 16px; background: var(--sage); color: white; font-size: .875rem; }
+.recognition { margin: 1rem 0; }
+.identity { margin: 1rem 0; }
+.supporting { display: grid; gap: 1rem; }
+.supporting > section { margin-top: 1rem; }
+.supporting h3 { font-size: 1.25rem; }
+
+@media (min-width: 768px) {
+  .dashboard { padding-inline: 2rem; }
+  .supporting { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { translations } from "@/lib/data/translations";
-import { useLanguage } from "@/app/context/LanguageContext";
 import { AppNav } from "@/components/navigation/AppNav";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { Shield, Crown, Sparkles, RefreshCw, ArrowLeft, CreditCard, CheckCircle, AlertCircle, HelpCircle } from "lucide-react";
@@ -13,14 +12,17 @@ import { getCurrentBadge } from "@/lib/billing/billingPreparation";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
-import { purchaseAndRecoverPremium, restoreAndRecoverPremium, queryPremiumSubscription, GOOGLE_PLAY_BASE_PLAN_ID } from "@/lib/billing/googlePlayBilling";
+import { purchaseAndRecoverPremium, restoreAndRecoverPremium, queryPremiumSubscription, isGooglePlayBillingAvailable, GOOGLE_PLAY_BASE_PLAN_ID } from "@/lib/billing/googlePlayBilling";
 import { isEnlEdition } from "@/lib/config/edition";
+
+let isSubscribeInFlight = false;
+let isRestoreInFlight = false;
 
 export default function PremiumBhumiPage() {
   const router = useRouter();
   const auth = useAuth();
   const t = translations["id"];
-  const isEn = false;
+  const isEn = isEnlEdition();
   const [profile, setProfile] = useState<any>(null);
   const [testerRecord, setTesterRecord] = useState<FounderTesterRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,6 +31,8 @@ export default function PremiumBhumiPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [priceLabel, setPriceLabel] = useState("per bulan");
+  const billingAvailable = isGooglePlayBillingAvailable();
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -74,22 +78,34 @@ export default function PremiumBhumiPage() {
 
   const badge = profile ? getCurrentBadge(profile, testerRecord) : null;
   const entitlement = profile ? getEntitlementStatus(profile, new Date(), testerRecord) : null;
-  const presentation = getBillingPresentation(entitlement);
+  const presentation = getBillingPresentation(entitlement, profile, testerRecord);
   const isPremium = presentation.state === "premium_active";
   const isTrial = presentation.state === "trial_active";
   const isExpired = presentation.state === "trial_exhausted" || presentation.state === "premium_expired";
 
-  // Founder = Lifetime, No expiry date. Show "Akses hingga" only for actual trial users.
-  const isFounder = badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa";
-  // Derived from the same entitlement object above (Priority 4 time-based
-  // trial), not recomputed via the badge-based isTrialUser() check — keeps
-  // the "days left" text consistent with the actual access decision.
-  const accessUntil = entitlement?.expiresAt || null;
-  const daysLeft = profile && isTrial ? (entitlement?.daysRemaining ?? 0) : 0;
-  const accountLabel = badge
-    || (isTrial ? "Trial" : isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
+  // Founder = Lifetime, No expiry date. Show "Akses hingga" only for non-lifetime users with a valid date.
+  const isFounder = presentation.isLifetime || badge === "Founder";
+  const accessUntil = presentation.accessExpiry || entitlement?.expiresAt || null;
+  const daysLeft = profile && isTrial ? (entitlement?.daysRemaining ?? presentation.daysRemaining ?? 0) : 0;
+  
+  // Dual display handling: when user has both Paid subscription and Tester badge (e.g. Penjaga Bhumi Inti)
+  const accountLabel = presentation.isDualDisplay
+    ? `${presentation.communityBadge} (Premium)`
+    : badge
+      || (isTrial ? "Trial" : isPremium ? "Premium Bhumi" : (t.premiumBhumi?.freeUser || "Penghuni Bhumi (Gratis)"));
 
   const handleSubscribe = async () => {
+    console.log("[DEBUG UI-24] handleSubscribe invoked", { isSubscribeInFlight, inFlightRef: inFlightRef.current, purchasing, restoring });
+    if (isSubscribeInFlight || inFlightRef.current || purchasing || restoring) {
+      console.log("[DEBUG UI-24] handleSubscribe BLOCKED by inFlight lock");
+      return;
+    }
+    if (!billingAvailable) {
+      setError(isEn ? "Google Play purchases are only available on Android." : "Pembelian Google Play hanya tersedia dari aplikasi Android yang dipasang melalui Google Play.");
+      return;
+    }
+    isSubscribeInFlight = true;
+    inFlightRef.current = true;
     setPurchasing(true);
     setError(null);
     setMessage(null);
@@ -111,11 +127,20 @@ export default function PremiumBhumiPage() {
         setError(err?.message || t.premiumBhumi?.purchaseFailed || (isEn ? "Purchase failed. Please try again." : "Pembelian gagal. Silakan coba lagi."));
       }
     } finally {
+      isSubscribeInFlight = false;
+      inFlightRef.current = false;
       setPurchasing(false);
     }
   };
 
   const handleRestore = async () => {
+    if (isRestoreInFlight || inFlightRef.current || purchasing || restoring) return;
+    if (!billingAvailable) {
+      setError(isEn ? "Google Play restore is only available on Android." : "Pemulihan Google Play hanya tersedia dari aplikasi Android yang dipasang melalui Google Play.");
+      return;
+    }
+    isRestoreInFlight = true;
+    inFlightRef.current = true;
     setRestoring(true);
     setError(null);
     setMessage(null);
@@ -133,6 +158,8 @@ export default function PremiumBhumiPage() {
     } catch (err: any) {
       setError(err?.message || t.premiumBhumi?.restoreFailed || (isEn ? "Restore failed. Please try again." : "Pulihkan gagal. Silakan coba lagi."));
     } finally {
+      isRestoreInFlight = false;
+      inFlightRef.current = false;
       setRestoring(false);
     }
   };
@@ -140,7 +167,7 @@ export default function PremiumBhumiPage() {
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-[#FCFAF5] px-6">
-        <div className="bhumi-card p-12 text-center max-w-md w-full bg-white border-none shadow-xl">
+        <div className="bhumi-card p-12 text-center max-w-md w-full bg-white border-none shadow-xl" role="status">
           <p className="text-[#4F5E52] text-xl font-serif italic">{isEn ? "Loading Premium Bhumi..." : "Memuat Premium Bhumi..."}</p>
         </div>
       </main>
@@ -148,7 +175,7 @@ export default function PremiumBhumiPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-28">
+    <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-28 text-[#24352E]">
       <AppNav />
       <div className="mx-auto max-w-3xl space-y-6">
         <BhumiPageHeader />
@@ -157,7 +184,8 @@ export default function PremiumBhumiPage() {
           <div className="flex items-center gap-3 mb-4">
             <button
               onClick={() => router.back()}
-              className="p-2 rounded-xl bg-white border border-[#E8E9E5] text-[#7B8776] hover:bg-[#F5F1E8] hover:text-[#4F5E52] transition"
+              aria-label="Kembali"
+              className="p-2 rounded-xl bg-white border border-[#E8E9E5] text-[#7B8776] hover:bg-[#F5F1E8] hover:text-[#4F5E52] transition focus:outline-none focus:ring-2 focus:ring-[#7B8776]"
             >
               <ArrowLeft size={20} />
             </button>
@@ -169,8 +197,8 @@ export default function PremiumBhumiPage() {
         </header>
 
         {/* Account Status Card */}
-        <section className="bhumi-card space-y-4 p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
+        <section className="bhumi-card space-y-4 p-6" aria-labelledby="status-card-heading">
+          <h2 id="status-card-heading" className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
             <Shield className="h-5 w-5" />
             {t.premiumBhumi?.accountStatus || "Status Akun"}
           </h2>
@@ -190,21 +218,28 @@ export default function PremiumBhumiPage() {
                 <h3 className="text-lg font-bold text-[#4F5E52]">
                   {accountLabel}
                 </h3>
-                                <p className="text-sm text-[#7B8776]">
-                  {isFounder
-                    ? (t.premiumBhumi?.lifetimeAccess || "Akses selamanya (Lifetime)")
-                    : isTrial
-                      ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
-                      : isPremium
-                        ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
-                        : isExpired
-                          ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
-                          : (t.premiumBhumi?.freeAccess || "Akses gratis")}
+                <p className="text-sm text-[#7B8776]">
+                  {presentation.isDualDisplay
+                    ? `Akses Premium aktif dari Google Play (Lencana: ${presentation.communityBadge})`
+                    : isFounder
+                      ? (t.premiumBhumi?.lifetimeAccess || "Akses selamanya (Lifetime)")
+                      : isTrial
+                        ? `${t.premiumBhumi?.trialActive || "Masa percobaan aktif"} - ${daysLeft} ${t.premiumBhumi?.daysLeft || "hari tersisa"}`
+                        : isPremium
+                          ? (t.premiumBhumi?.activeAccess || "Akses premium aktif")
+                          : isExpired
+                            ? (t.premiumBhumi?.accessExpired || "Akses kedaluwarsa")
+                            : (t.premiumBhumi?.freeAccess || "Akses gratis")}
                 </p>
+                {presentation.isDualDisplay && (
+                  <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+                    Sumber: Google Play • Lencana: {presentation.communityBadge}
+                  </p>
+                )}
               </div>
             </div>
 
-            {accessUntil && (
+            {!isFounder && accessUntil && (
               <div className="text-sm text-[#7B8776] border-t border-[#F5F1E8] pt-3">
                 <p>{t.premiumBhumi?.accessUntil || "Akses hingga"}: {accessUntil.toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
               </div>
@@ -213,8 +248,8 @@ export default function PremiumBhumiPage() {
         </section>
 
         {/* Benefits */}
-        <section className="bhumi-card space-y-4 p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
+        <section className="bhumi-card space-y-4 p-6" aria-labelledby="benefits-heading">
+          <h2 id="benefits-heading" className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
             <Sparkles className="h-5 w-5" />
             {t.premiumBhumi?.benefits || "Manfaat Premium"}
           </h2>
@@ -235,21 +270,27 @@ export default function PremiumBhumiPage() {
         </section>
 
         {/* Action Buttons */}
-        <section className="bhumi-card space-y-4 p-6">
-          <h2 className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
+        <section className="bhumi-card space-y-4 p-6" aria-labelledby="upgrade-heading">
+          <h2 id="upgrade-heading" className="text-xl font-semibold text-[#4F5E52] flex items-center gap-2">
             <CreditCard className="h-5 w-5" />
             {t.premiumBhumi?.upgradeTitle || "Tingkatkan ke Premium"}
           </h2>
 
+          {!billingAvailable && (
+            <div className="p-4 rounded-2xl bg-[#F5F1E8] border border-[#D8D0C3] text-[#657066] text-sm">
+              Pembelian Google Play hanya tersedia dari aplikasi Android yang dipasang melalui Google Play.
+            </div>
+          )}
+
           {error && (
-            <div className="p-4 rounded-2xl bg-red-50/50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
+            <div role="status" aria-live="polite" className="p-4 rounded-2xl bg-red-50/50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {message && !error && (
-            <div className="p-4 rounded-2xl bg-green-50/50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
+            <div role="status" aria-live="polite" className="p-4 rounded-2xl bg-green-50/50 border border-green-200 text-green-700 text-sm flex items-center gap-2">
               <CheckCircle className="h-5 w-5 shrink-0" />
               <span>{message}</span>
             </div>
@@ -257,9 +298,11 @@ export default function PremiumBhumiPage() {
 
           <div className="space-y-3">
             <button
+              data-testid="subscribe-button"
               onClick={handleSubscribe}
-              disabled={purchasing || restoring}
-              className="bhumi-button w-full py-4 flex items-center justify-center gap-3"
+              disabled={purchasing || restoring || !billingAvailable}
+              aria-disabled={purchasing || restoring || !billingAvailable}
+              className="bhumi-button w-full py-4 flex items-center justify-center gap-3 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {purchasing ? (
                 <>
@@ -276,8 +319,9 @@ export default function PremiumBhumiPage() {
 
             <button
               onClick={handleRestore}
-              disabled={purchasing || restoring}
-              className="w-full py-4 rounded-2xl border border-[#E5DCD0] bg-white px-5 text-[#4F5E52] transition hover:bg-[#F5F1E8] flex items-center justify-center gap-3 font-medium"
+              disabled={purchasing || restoring || !billingAvailable}
+              aria-disabled={purchasing || restoring || !billingAvailable}
+              className="w-full py-4 rounded-2xl border border-[#E5DCD0] bg-white px-5 text-[#4F5E52] transition hover:bg-[#F5F1E8] flex items-center justify-center gap-3 font-medium disabled:cursor-not-allowed disabled:opacity-50"
             >
               {restoring ? (
                 <>
@@ -301,8 +345,8 @@ export default function PremiumBhumiPage() {
         </section>
 
         {/* Free Access Info */}
-        <section className="bhumi-card space-y-3 p-6 bg-[#FCFAF5] border border-[#E8E9E5]">
-          <h3 className="text-lg font-semibold text-[#4F5E52] flex items-center gap-2">
+        <section className="bhumi-card space-y-3 p-6 bg-[#FCFAF5] border border-[#E8E9E5]" aria-labelledby="free-access-heading">
+          <h3 id="free-access-heading" className="text-lg font-semibold text-[#4F5E52] flex items-center gap-2">
             <HelpCircle className="h-5 w-5" />
             {t.premiumBhumi?.freeAccessTitle || "Akses Gratis Tetap Tersedia"}
           </h3>

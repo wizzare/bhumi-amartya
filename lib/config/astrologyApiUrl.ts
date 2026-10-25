@@ -1,4 +1,8 @@
 import { Capacitor } from "@capacitor/core";
+import { assertQaEndpoint } from './qaConfig.mjs';
+import { assertQaOperationAllowed } from './qaRuntime';
+
+assertQaOperationAllowed();
 
 /**
  * CDI-108-01 — routing for the canonical Swiss Ephemeris natal-chart service.
@@ -20,8 +24,8 @@ import { Capacitor } from "@capacitor/core";
  * Whole Sign houses, explicitly labelled) — it never synthesises Placidus.
  */
 const ASTROLOGY_API_PATH = "/api/humandesign/astrology";
-const CANONICAL_WEB_APP_URL = "https://bhumi-amartya-clean.vercel.app";
-const CANONICAL_ASTROLOGY_API_URL = `${CANONICAL_WEB_APP_URL}${ASTROLOGY_API_PATH}`;
+const CANONICAL_QA_WEB_APP_URL = process.env.NEXT_PUBLIC_QA_MODE === 'realQA' ? "https://localhost:8443" : "https://bhumi-amartya-clean.vercel.app";
+const CANONICAL_ASTROLOGY_API_URL = `${CANONICAL_QA_WEB_APP_URL}${ASTROLOGY_API_PATH}`;
 
 export function getAstrologyApiUrl(options?: {
   envUrl?: string;
@@ -29,8 +33,9 @@ export function getAstrologyApiUrl(options?: {
   isWindow?: boolean;
   webAppUrl?: string;
 }): string {
+  assertQaOperationAllowed();
   const envUrl = options?.envUrl ?? process.env.NEXT_PUBLIC_ASTROLOGY_API_URL;
-  if (envUrl && envUrl.trim()) return envUrl.trim();
+  if (envUrl && envUrl.trim()) return process.env.NEXT_PUBLIC_QA_MODE === 'realQA' ? assertQaEndpoint(envUrl.trim()) : envUrl.trim();
 
   const isNative = options?.isNative
     ?? (typeof Capacitor !== "undefined"
@@ -40,8 +45,8 @@ export function getAstrologyApiUrl(options?: {
   if (isNative) {
     const webAppUrl = options?.webAppUrl
       ?? process.env.NEXT_PUBLIC_WEB_APP_URL
-      ?? CANONICAL_WEB_APP_URL;
-    return `${webAppUrl.replace(/\/$/, "")}${ASTROLOGY_API_PATH}`;
+      ?? CANONICAL_QA_WEB_APP_URL;
+    return `${(process.env.NEXT_PUBLIC_QA_MODE === 'realQA' ? assertQaEndpoint(webAppUrl) : webAppUrl).replace(/\/$/, "")}${ASTROLOGY_API_PATH}`;
   }
 
   const isWindow = options?.isWindow ?? (typeof window !== "undefined");

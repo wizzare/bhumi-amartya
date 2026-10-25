@@ -40,22 +40,22 @@ export const DEFAULT_NOTIFICATION_CATEGORIES: NotificationCategoryPreferences = 
 
 const COPY: Record<NotificationLocale, Record<NotificationCategory, { title: string; body: string }>> = {
   "id-ID": {
-    daily: { title: "Catatanmu siap", body: "Ruangmu ada di sini kapan pun kamu siap." },
-    return: { title: "Memikirkanmu", body: "Ruang Bhumi tetap ada di sini, tanpa tuntutan." },
-    weekly: { title: "Refleksi mingguanmu", body: "Lihat kembali minggu ini jika terasa berguna." },
-    milestone: { title: "Sebuah penanda lembut", body: "Terima kasih sudah memberi ruang untuk perjalananmu." },
+    daily: { title: "Catatan hari ini siap", body: "Catatanmu sudah tersimpan. Buka kapan pun kamu mau." },
+    return: { title: "Sudah lama tidak melihat", body: "Aplikasi masih di sini. Tidak ada yang perlu buru-buru." },
+    weekly: { title: "Ringkasan mingguanmu", body: "Kalau berguna, boleh lihat lagi minggu ini." },
+    milestone: { title: "Satu langkah selesai", body: "Terima kasih sudah menyelesaikan satu langkah minggu ini." },
   },
   "en-US": {
-    daily: { title: "Your note is ready", body: "Your space is here whenever you are ready." },
-    return: { title: "Thinking of you", body: "Your Bhumi space is still here, with no expectations." },
-    weekly: { title: "Your weekly reflection", body: "Look back on this week if that feels useful." },
-    milestone: { title: "A gentle milestone", body: "Thank you for making space for your journey." },
+    daily: { title: "Catatan hari ini siap", body: "Catatanmu sudah tersimpan. Buka kapan pun kamu mau." },
+    return: { title: "Sudah lama tidak melihat", body: "Aplikasi masih di sini. Tidak ada yang perlu buru-buru." },
+    weekly: { title: "Ringkasan mingguanmu", body: "Kalau berguna, boleh lihat lagi minggu ini." },
+    milestone: { title: "Satu langkah selesai", body: "Terima kasih sudah menyelesaikan satu langkah minggu ini." },
   },
   "ms-MY": {
-    daily: { title: "Catatan anda sudah sedia", body: "Ruang anda ada di sini apabila anda bersedia." },
-    return: { title: "Mengingati anda", body: "Ruang Bhumi masih ada di sini, tanpa tuntutan." },
-    weekly: { title: "Refleksi mingguan anda", body: "Lihat kembali minggu ini jika ia terasa berguna." },
-    milestone: { title: "Satu penanda lembut", body: "Terima kasih kerana memberi ruang untuk perjalanan anda." },
+    daily: { title: "Catatan hari ini siap", body: "Catatanmu sudah tersimpan. Buka kapan pun kamu mau." },
+    return: { title: "Sudah lama tidak melihat", body: "Aplikasi masih di sini. Tidak ada yang perlu buru-buru." },
+    weekly: { title: "Ringkasan mingguanmu", body: "Kalau berguna, boleh lihat lagi minggu ini." },
+    milestone: { title: "Satu langkah selesai", body: "Terima kasih sudah menyelesaikan satu langkah minggu ini." },
   },
 };
 

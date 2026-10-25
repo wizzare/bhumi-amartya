@@ -1,20 +1,24 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ChevronDown, ChevronUp, Compass } from "lucide-react";
 import { AppNav } from "@/components/navigation/AppNav";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { storageProvider } from "@/lib/storage/storageProvider";
+import { readHdBlueprint } from "@/lib/humandesign/hdRead";
+import { loadHdView } from "@/lib/humandesign/hdLoad";
+import { selectHdView, hdUiCopy, type HdUiState } from "@/lib/humandesign/hdView";
 import type { Blueprint } from "@/lib/types/blueprint";
-import type { HumanDesignChart } from "@/lib/humandesign/types";
 import { getHdState, type HdStateResult } from "@/lib/humandesign/hdState";
+import {
+  getHdRecoveryDueForUid,
+  clearHdRecoverySession,
+  recoverHumanDesignIfNeeded,
+} from "@/lib/humandesign/hdRecovery";
 import { HumanDesignBodygraphLite } from "@/components/blueprint/HumanDesignBodygraphLite";
 import { executeHumanMeaningRuntime } from "@/lib/humanMeaningRuntime/publicInterface";
 import { buildHumanDesignHumanMeaning } from "@/lib/humandesign/presentation";
-import { useLanguage } from "@/app/context/LanguageContext";
-import { isEnlEdition } from "@/lib/config/edition";
 import type { HumanDesignHumanMeaning } from "@/lib/humandesign/presentation";
 
 function getStatusCopy(state: HdStateResult, hasBirthData: boolean, isEn = false): { title: string; body: string } {
@@ -122,38 +126,128 @@ export default function HumanDesignPage() {
   const auth = useAuth();
   const isEn = false;
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
+  const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
   const [hdState, setHdState] = useState<HdStateResult | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryNote, setRecoveryNote] = useState<string | null>(null);
+  const sessionRef = useRef<{ uid: string; active: boolean } | null>(null);
+  const uid = auth?.authStateResolved ? auth.user?.uid : undefined;
+  const [loadedUid, setLoadedUid] = useState<string | null>(null);
+  const [readTick, setReadTick] = useState(0);
+  const [readState, setReadState] = useState<HdUiState>("loading");
+  const controllerRef = useRef<AbortController | null>(null);
+  const [recoveryStopped, setRecoveryStopped] = useState(false);
 
   useEffect(() => {
-    if (!auth?.authStateResolved || !auth.user?.uid) return;
-    let active = true;
-    void storageProvider.getUserBlueprint().then((value) => {
-      if (!active) return;
-      const next = value as Blueprint | null;
+    setBlueprint(null);
+    setProfile(null);
+    setHdState(null);
+    setLoadedUid(null);
+    setRecovering(false);
+    setRecoveryStopped(false);
+    setRecoveryNote(null);
+    setLoadError(null);
+    setReadState("loading");
+    if (!uid) return;
+    const session = { uid, active: true };
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    sessionRef.current = session;
+    const user = auth!.user!;
+    void loadHdView({ uid, session: user, input: auth?.userProfile as unknown as Record<string, unknown> | null,
+      signal: controller.signal, active: () => session.active, online: navigator.onLine,
+      read: () => readHdBlueprint(uid, controller.signal),
+    }).then(outcome => {
+      if (!session.active) return;
+      const next = outcome.blueprint as unknown as Blueprint | null;
+      setLoadedUid(uid);
       setBlueprint(next);
+      setProfile((auth?.userProfile as unknown as Record<string, unknown>) ?? (next?.input as unknown as Record<string, unknown>) ?? null);
       setHdState(getHdState(next?.humanDesign));
-    }).catch((error) => {
-      if (!active) return;
-      setLoadError(error instanceof Error ? error.message : (isEn ? "Failed to read blueprint." : "Gagal membaca blueprint."));
-      setHdState(getHdState({ status: "error", calculationStatus: "error", type: null }));
+      setReadState(outcome.state);
+    }).catch(() => {
+      if (!session.active) return;
+      setLoadedUid(uid);
+      setReadState(navigator.onLine ? "read_error" : "offline_without_cache");
     });
-    return () => { active = false; };
-  }, [isEn, auth?.authStateResolved, auth?.user?.uid]);
+    return () => {
+      session.active = false;
+      controller.abort();
+      clearHdRecoverySession(uid);
+    };
+  }, [uid, readTick, auth?.user, auth?.userProfile]);
 
+  useEffect(() => {
+    const update = () => setReadTick(value => value + 1);
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  const runRecovery = async (uid: string, current: Blueprint | null, currentProfile: Record<string, unknown> | null) => {
+    const session = sessionRef.current;
+    const isActive = () => Boolean(session?.active && sessionRef.current === session && session.uid === uid);
+    if (!current || current.uid !== uid || recovering || !isActive()) return;
+    setRecovering(true);
+    setRecoveryNote(null);
+    try {
+      const result = await recoverHumanDesignIfNeeded({
+        uid,
+        profile: currentProfile ?? {},
+        blueprint: current as unknown as Record<string, unknown>,
+        isActive,
+        signal: controllerRef.current?.signal,
+      });
+      if (!isActive()) return;
+      setRecoveryStopped(["incomplete-birth", "terminal", "exhausted", "cancelled"].includes(result.action));
+      setReadState(result.reason === "input_revision_changed_during_calculation" ? "input_revision_mismatch"
+        : result.reason === "unauthorized" ? "authentication_required"
+          : result.action === "cancelled" ? "cancelled"
+            : result.action === "exhausted" ? "exhausted"
+              : result.action === "still-pending" || result.action === "terminal" ? "retryable_error" : "pending");
+      if (result.blueprint) {
+        setBlueprint(result.blueprint as unknown as Blueprint);
+        setHdState(result.state);
+      }
+      if (result.action === "recovered-canonical") {
+        setReadTick(value => value + 1);
+        setRecoveryNote(isEn ? "Canonical chart recovered." : "Chart canonical berhasil dipulihkan.");
+      } else if (result.action === "still-pending") {
+        setRecoveryNote(isEn ? "Still processing. Please try again later." : "Masih diproses. Silakan coba lagi nanti.");
+      } else if (result.action === "exhausted") {
+        setRecoveryNote(isEn ? "Retry limit reached." : "Batas percobaan tercapai.");
+      }
+    } catch {
+      if (isActive()) {
+        setRecoveryStopped(true);
+        setRecoveryNote(isEn ? "Recovery failed." : "Pemulihan gagal.");
+      }
+    } finally {
+      if (isActive()) {
+        setRecovering(false);
+      }
+    }
+  };
+
+  const view = selectHdView(uid ?? "", blueprint as unknown as Record<string, unknown> | null, profile);
+  const visibleState: HdUiState = !auth?.authStateResolved ? "loading" : !uid ? "authentication_required"
+    : loadedUid !== uid ? "loading" : readState !== "pending" ? readState : view.state;
+  const chart = loadedUid === uid ? view.chart : null;
   const hasBirthData = Boolean(blueprint?.input?.birthDate && blueprint?.input?.birthTime && blueprint?.input?.timezone);
-  const chart = useMemo(
-    () => (hdState?.state === "CANONICAL" || (hdState?.state === "FALLBACK_LABELED" && Boolean((blueprint?.humanDesign as Partial<HumanDesignChart>)?.type)))
-      ? blueprint?.humanDesign as HumanDesignChart
-      : null,
-    [blueprint, hdState],
+  const canManualRetry = Boolean(
+    uid && loadedUid === uid && blueprint && !recovering && !recoveryStopped &&
+    getHdRecoveryDueForUid(uid, blueprint.humanDesign).due,
   );
   const statusCopy = hdState ? getStatusCopy(hdState, hasBirthData, isEn) : null;
   const runtime = useMemo(() => {
     if (!chart || !blueprint) return null;
     return executeHumanMeaningRuntime(blueprint);
   }, [blueprint, chart]);
-  const presentation = useMemo(() => chart && (runtime?.ok || hdState?.state === "FALLBACK_LABELED") ? buildHumanDesignHumanMeaning(chart, { isEn }) : null, [chart, runtime, hdState, isEn]);
+  const presentation = useMemo(() => chart ? buildHumanDesignHumanMeaning(chart, { isEn }) : null, [chart, isEn]);
 
   const signature = chart?.type === "Projector" ? "Success" : chart?.type === "Manifestor" ? "Peace" : chart?.type === "Reflector" ? "Surprise" : "Satisfaction";
   const notSelf = chart?.type === "Projector" ? "Bitterness" : chart?.type === "Manifestor" ? "Anger" : chart?.type === "Reflector" ? "Disappointment" : "Frustration";
@@ -179,7 +273,13 @@ export default function HumanDesignPage() {
             <p className="mt-3 leading-7 text-[#7B8776]">{isEn ? "Discover your natural way of moving, choosing, and finding spaces that feel right." : "Mari mengenal cara alami dirimu bergerak, memilih, dan menemukan ruang yang terasa tepat."}</p>
           </header>
 
-          {!hdState && <p className="py-20 text-center text-sm text-[#7B8776]">{isEn ? "Loading blueprint..." : "Memuat blueprint..."}</p>}
+          <section role={visibleState === "read_error" ? "alert" : "status"} aria-live="polite" aria-busy={visibleState === "loading" || recovering} data-hd-state={visibleState}>
+            <p>{hdUiCopy[visibleState]}</p>
+            {["read_error", "offline_without_cache"].includes(visibleState) && <button type="button" onClick={() => setReadTick(value => value + 1)}>Coba baca lagi</button>}
+            {visibleState === "missing_blueprint" && <Link href="/setup">Lengkapi data kelahiran</Link>}
+            {visibleState === "input_revision_mismatch" && <Link href="/settings">Periksa data kelahiran</Link>}
+            {visibleState === "authentication_required" && <Link href="/login">Masuk kembali</Link>}
+          </section>
           {hdState && hdState.state !== "CANONICAL" && statusCopy && (
             <section className="rounded-2xl border border-[#E9E4D9] bg-white p-6 shadow-sm">
               <p className="text-xs font-bold uppercase tracking-widest text-[#9AA394]">{isEn ? "Human Design Status" : "Status Human Design"}</p>
@@ -187,6 +287,20 @@ export default function HumanDesignPage() {
               {hdState.state === "FALLBACK_LABELED" && hdState.provenance === "historical" && hdState.type && <p className="mt-3 text-sm font-semibold text-[#4F6658]">{isEn ? `Historical type: ${hdState.type}` : `Tipe historis: ${hdState.type}`}</p>}
               <p className="mt-3 text-sm leading-6 text-[#7B8776]">{statusCopy.body}</p>
               {loadError && <p className="mt-3 break-words text-xs text-rose-700">{loadError}</p>}
+              {recoveryNote && <p className="mt-3 text-xs leading-5 text-[#7B8776]">{recoveryNote}</p>}
+              {canManualRetry && (
+                <button
+                  type="button"
+                  disabled={recovering}
+                  onClick={() => {
+                    const uid = auth?.user?.uid;
+                    if (uid) void runRecovery(uid, blueprint, profile);
+                  }}
+                  className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[14px] bg-[#4F5E52] px-5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {recovering ? (isEn ? "Retrying…" : "Mencoba lagi…") : (isEn ? "Try again" : "Coba lagi")}
+                </button>
+              )}
             </section>
           )}
 

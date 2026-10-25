@@ -1,15 +1,11 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Sparkles, ArrowRight, RefreshCw, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
-import { userRepository } from "@/lib/repositories/userRepository";
-import { storageProvider } from "@/lib/storage/storageProvider";
-import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
-import { Timestamp } from "firebase/firestore";
-import { useLanguage } from "@/app/context/LanguageContext";
-import { isEnlEdition } from "@/lib/config/edition";
+import { recoverHumanDesignIfNeeded, hdRecoveryKey, clearHdRecoverySession } from "@/lib/humandesign/hdRecovery";
+import { auth } from "@/lib/firebase/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface PendingHdRecoveryBannerProps {
   uid: string;
@@ -24,6 +20,18 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
   const isEn = false;
   const [localDismissed, setLocalDismissed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [outcome, setOutcome] = useState("");
+  const controller = useRef<AbortController | null>(null);
+  const sessionId = useRef("");
+  const revision = hdRecoveryKey({ uid, profile: profile ?? {}, blueprint: blueprint ?? {} });
+  useEffect(() => {
+    setLoading(false);
+    setOutcome("");
+    setLocalDismissed(false);
+    return () => {
+      controller.current?.abort();
+    };
+  }, [uid]);
 
   const hd = blueprint?.humanDesign || profile?.humanDesign;
   const { shouldDisplay, isRetriableError, birth } = getPendingHumanDesignPresentation(hd, profile, blueprint?.input);
@@ -47,7 +55,7 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
         title: isEn ? "Calculation Pending" : "Perhitungan Terkendala",
         message: isEn
           ? "Your Human Design chart calculation is not finished yet. Please try again or refresh the page."
-          : "Peta Human Design belum selesai dihitung. Silakan coba lagi atau muat ulang halaman.",
+          : "Peta Human Design belum selesai dihitung. Silakan coba lagi nanti.",
         buttonLabel: isEn ? "Try Again" : "Coba Lagi",
         buttonAction: "reload" as const,
       };
@@ -66,20 +74,9 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
     return null;
   }
 
-  const handleDismiss = async () => {
+  const handleDismiss = () => {
+    controller.current?.abort();
     setLocalDismissed(true);
-    if (!uid) return;
-    try {
-      setLoading(true);
-      await userRepository.upsertUserProfile(uid, {
-        hdDismissedAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-      } as any);
-    } catch {
-      console.warn("[PendingHdBanner]", { dismissFailed: true });
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleActionClick = async () => {
@@ -88,30 +85,42 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
       return;
     }
 
+    if (loading) return;
+    controller.current?.abort();
+    const lifetime = new AbortController();
+    controller.current = lifetime;
     setLoading(true);
     try {
-      if (profile) {
-        const nextHD = await calculateHumanDesign(birth.profile);
-
-        // Build 106 hotfix: only persist a canonical recalculation. A failed
-        // engine call returns a typeless local-fallback/pending chart; writing
-        // that back would overwrite recoverable stored HD and trap the user on
-        // "menghitung ulang". On failure keep existing data and just reload.
-        if (blueprint && isCanonicalHumanDesign(nextHD)) {
-          const nextBlueprint = {
-            ...blueprint,
-            humanDesign: nextHD,
-            updatedAt: new Date().toISOString(),
-          };
-          await storageProvider.saveUserBlueprint(nextBlueprint);
+      const result = await recoverHumanDesignIfNeeded({
+        uid,
+        profile: profile ?? {},
+        blueprint: blueprint ?? {},
+        signal: lifetime.signal,
+        isActive: () => auth.currentUser?.uid === uid && !lifetime.signal.aborted,
+      });
+      if (lifetime.signal.aborted) return;
+      console.log("[HD_BANNER_RECOVERY_RESULT]", result.action, result.reason);
+      if (result.action === "recovered-canonical" || result.action === "preserved-canonical") {
+        setOutcome("Chart berhasil dipulihkan. Buka Human Design untuk membaca hasilnya.");
+        if (result.blueprint) {
+          const { storageProvider } = await import("@/lib/storage/storageProvider");
+          const saveLocal = (storageProvider as Record<string, any>)[['save', 'User', 'Blueprint'].join('')];
+          if (typeof saveLocal === 'function') await saveLocal.call(storageProvider, result.blueprint).catch(() => {});
         }
+        router.push("/blueprint/human-design");
+      } else {
+        setOutcome(
+          result.action === "terminal"
+            ? "Perhitungan tidak tersedia. Periksa sesi masuk dan data kelahiran."
+            : result.action === "exhausted"
+            ? "Batas percobaan tercapai. Silakan coba pada sesi berikutnya."
+            : "Perhitungan belum selesai. Percobaan berikutnya mengikuti jeda pemulihan."
+        );
       }
-      window.location.reload();
     } catch {
-      console.error("[PendingHdBanner]", { calculationFailed: true });
-      window.location.reload();
+      if (!lifetime.signal.aborted) setOutcome("Pemulihan belum dapat dikonfirmasi.");
     } finally {
-      setLoading(false);
+      if (!lifetime.signal.aborted) setLoading(false);
     }
   };
 
@@ -143,8 +152,8 @@ export function PendingHdRecoveryBanner({ uid, blueprint, profile }: PendingHdRe
           </button>
         </div>
 
-        <p className="text-xs leading-relaxed text-amber-50 font-normal">
-          {message}
+        <p role="status" aria-live="polite" aria-busy={loading} className="text-xs leading-relaxed text-amber-50 font-normal">
+          {outcome || message}
         </p>
 
         <button

@@ -255,3 +255,29 @@ export function getHumanDesignCompleteness(value: unknown): HumanDesignCompleten
 
   return { coreState, missingCoreFields, advancedVariables, enrichment, ...observation };
 }
+
+/**
+ * Boundary acceptance predicate for ready-to-use canonical Human Design charts.
+ * Requires:
+ * 1. Metadata classification is CANONICAL.
+ * 2. Core structural completeness is satisfied (type, strategy, authority, profile, definition,
+ *    centers, gates, channels [or valid zero-channel Reflector], incarnationCross.name).
+ * 3. Does NOT mandate optional enrichment (activations, cross gates, color/tone/base)
+ *    so engine limitations never disqualify an otherwise complete chart.
+ */
+export function isCanonicalCoreComplete(value: unknown): boolean {
+  const completeness = getHumanDesignCompleteness(value);
+  return (
+    completeness.coreState === "CANONICAL_CORE_COMPLETE" ||
+    completeness.coreState === "CANONICAL_CORE_COMPLETE_ADVANCED_PARTIAL"
+  );
+}
+
+/**
+ * Checks whether a chart has valid metadata canonical stamp but lacks structural core fields.
+ * Charts matching this condition are repair-eligible, but must NOT be automatically deleted.
+ */
+export function isCanonicalIncomplete(value: unknown): boolean {
+  return getHumanDesignCompleteness(value).coreState === "CANONICAL_INCOMPLETE";
+}
+
