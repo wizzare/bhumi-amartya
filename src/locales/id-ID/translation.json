@@ -1,7 +1,7 @@
 {
   "welcome": {
     "title": "Bhumi Amartya",
-    "subtitle": "Ruang untuk pulang, mengenali diri, dan bertumbuh perlahan.",
+    "subtitle": "Tempat untuk pulang, mengenal diri, dan tumbuh pelan-pelan.",
     "newJourney": "🌿 Mulai Langkah Baru",
     "continueJourney": "✨ Lanjutkan Langkah",
     "newUser": "Aku Baru di Sini",
@@ -11,7 +11,7 @@
     "melayu": "🇲🇾 Melayu",
     "connectionSlow": "Sepertinya koneksi melambat atau sesi terganggu.",
     "reload": "Coba Lagi",
-    "connecting": "Menghubungkan perjalanan...",
+    "connecting": "Menghubungkan...",
     "relogin": "Masuk Ulang"
   },
   "login": {
@@ -30,7 +30,7 @@
   },
   "setup": {
     "title": "Bhumi Amartya",
-    "subtitle": "Masukkan data kelahiranmu untuk mulai memetakan jiwamu.",
+    "subtitle": "Masukkan data kelahiran untuk mulai memetakan profilmu.",
     "name": "Nama",
     "fullName": "Nama Lengkap",
     "birthDate": "Tanggal Lahir",
@@ -56,10 +56,10 @@
     "error": "Tidak dapat memuat saran kota."
   },
   "dashboard": {
-    "loading": "Menghubungkan perjalananmu...",
+    "loading": "Memuat dashboard...",
     "unavailable": "Dashboard belum tersedia.",
-    "blueprintMissing": "Peta jiwamu belum tersedia. Selesaikan setup untuk menyiapkan dashboard.",
-    "blueprintPreparing": "Peta jiwamu sedang disiapkan. Silakan coba lagi.",
+    "blueprintMissing": "Peta profilmu belum tersedia. Selesaikan setup untuk menyiapkan dashboard.",
+    "blueprintPreparing": "Peta profilmu sedang disiapkan. Silakan coba lagi.",
     "openSetup": "Buka Setup",
     "coreIdentity": "Identitas Inti",
     "lifePath": "Life Path",
@@ -73,16 +73,16 @@
     "vedicMoonSign": "Vedic",
     "tzolkinSignature": "Tzolkin",
     "humanDesignPendingDescription": "Profil Human Design sedang dihitung.",
-    "openingSpace": "Membuka ruangmu...",
-    "syncingSpace": "Menyelaraskan Ruangmu",
-    "syncingDescription": "Data profil atau peta jiwamu sedang dalam pemulihan. Silakan muat ulang atau buka pengaturan setup.",
+    "openingSpace": "Membuka dashboard...",
+    "syncingSpace": "Menyelaraskan data...",
+    "syncingDescription": "Profil atau peta sedang dipulihkan. Silakan muat ulang atau buka Pengaturan Setup.",
     "reloadButton": "Coba Muat Ulang Data",
     "setupButton": "Ke Halaman Setup",
-    "footerQuote": "Ruang ini tetap ada kapan pun kamu kembali.",
+    "footerQuote": "Halaman ini tetap di sini kapan pun kamu kembali.",
     "calculatingInProgress": "Perhitungan sedang berlangsung",
     "cannotCalculate": "Data Human Design belum dapat dihitung.",
     "defaultName": "Jiwa",
-    "welcomeText": "Ruang untuk pulang dan mengenali diri.",
+    "welcomeText": "Tempat untuk pulang dan mengenal diri.",
     "dailyGuidance": {
       "title": "Panduan Hari Ini",
       "mainInsight": "Wawasan Utama",
@@ -130,7 +130,7 @@
   },
   "kenaliDiri": {
     "title": "Kenali Diri",
-    "subtitle": "Mari memetakan kondisimu saat ini untuk menemukan langkah dukungan yang paling tepat.",
+    "subtitle": "Mari cek kondisi kamu sekarang untuk nemu langkah dukungan yang paling pas.",
     "daily": "Refleksi Harian",
     "weekly": "Refleksi Mingguan",
     "monthly": "Refleksi Bulanan (Penuh)",
@@ -174,7 +174,7 @@
   "wellness": {
     "title": "Wellness",
     "headerTitle": "Ruang Pemulihan & Latihan Hari Ini",
-    "subtitle": "Periksa keadaanmu, pahami polanya, lalu pilih satu tindakan yang mendukung.",
+    "subtitle": "Cek keadaanmu, pahami polanya, lalu pilih satu tindakan yang mendukung.",
     "checkIn": "Check-in Hari Ini",
     "recommended": "Rekomendasi Hari Ini",
     "mapping": "Hasil Pemetaan",
@@ -201,7 +201,7 @@
   },
   "settings": {
     "title": "Pengaturan",
-    "subtitle": "Kelola data dasar, bahasa, dan status akunmu di sini.",
+    "subtitle": "Kelola data dasar, bahasa, dan status akun di sini.",
     "userData": "Data Dirimu",
     "name": "Nama",
     "emailFromGoogle": "Email berasal dari Google Auth dan tidak dapat diubah di sini.",
@@ -256,7 +256,7 @@
     "retrogradeNote": "Mundur (retrograde)",
     "aspectWith": "{aspect} dengan {partner} (orb {orb}°)",
     "ingressNote": "Pergantian zodiak sekitar hari ini",
-    "moonFallbackPersonal": "Amati kebutuhan ritme dan energimu.",
+    "moonFallbackPersonal": "Amati kebutuhan ritme dan tenagamu.",
     "moonFallbackAction": "Beri jeda sebelum memilih respons.",
     "eclipseGlobalNext": "Gerhana berikutnya (global)",
     "eclipseLocalNext": "Gerhana berikutnya (terlihat di lokasimu)",
@@ -266,7 +266,7 @@
     "solarEclipseMeaning": "Gerhana Matahari menandai jendela untuk menata ulang arah dan awal baru.",
     "solarEclipsePersonal": "Perhatikan keputusan yang ingin kamu mulai setelah evaluasi musim ini.",
     "solarEclipseAction": "Tulis satu arah baru dan satu langkah pertama yang realistis.",
-    "lunarEclipseMeaning": "Gerhana Bulan memberi ruang untuk melihat emosi dan pola yang perlu diintegrasikan.",
+    "lunarEclipseMeaning": "Gerhana Bulan memberi kesempatan untuk melihat emosi dan pola yang perlu diintegrasikan.",
     "lunarEclipsePersonal": "Amati hal yang muncul kembali agar bisa dipahami tanpa reaksi berlebihan.",
     "lunarEclipseAction": "Jadwalkan satu sesi journaling atau istirahat untuk menutup siklus dengan sadar.",
     "planets": {
@@ -333,10 +333,10 @@
       }
     }
   },
-  "environment": {
+"environment": {
     "title": "Kondisi Lingkungan",
     "subtitle": "Kondisi dunia di sekitarmu hari ini.",
-    "locationPermissionNeeded": "Izin lokasi belum aktif. Bhumi membutuhkan izin lokasi agar bisa membaca kondisi lingkungan terdekatmu.",
+    "locationPermissionNeeded": "Izin lokasi belum aktif. Bhumi butuh izin lokasi untuk baca kondisi lingkungan terdekatmu.",
     "retry": "Coba Lagi",
     "allowLocation": "Izinkan Lokasi",
     "settingsHint": "Atau buka Pengaturan Perangkat → Aplikasi → Bhumi Amartya → Izin → Lokasi.",
@@ -375,10 +375,10 @@
     "geomagAktif": "Aktif",
     "geomagBadai": "Badai geomagnetik",
     "geomagBadaiKuat": "Badai kuat",
-    "spiritQuiet": "Dalam pembacaan energi Bhumi, medan yang cenderung hening seperti ini dapat dibaca sebagai ruang untuk penenangan dan pembumian.",
-    "spiritMild": "Dalam pembacaan energi Bhumi, getar lembut pada medan seperti ini dapat dibaca sebagai suasana sensitivitas yang sedang lebih terasa.",
-    "spiritActive": "Dalam pembacaan energi Bhumi, kondisi seperti ini dapat dibaca sebagai suasana medan yang terasa lebih aktif.",
-    "spiritStorm": "Dalam pembacaan energi Bhumi, pergeseran pekat seperti ini dapat dibaca sebagai suasana medan yang menuntut perawatan diri dan pembumian.",
+    "spiritQuiet": "Medan yang hening seperti ini bisa jadi ruang untuk menenangkan dan membumi.",
+    "spiritMild": "Getar lembut di medan seperti ini bisa bikin sensitivitas lebih terasa.",
+    "spiritActive": "Kondisi seperti ini bisa bikin medan terasa lebih aktif.",
+    "spiritStorm": "Pergeseran pekat seperti ini bisa bikin butuh perawatan diri dan pembumian.",
     "obsNoteQuiet": "Pengamatan hari ini menunjukkan kondisi yang relatif tenang.",
     "obsNoteMild": "Aktivitas pada pengamatan hari ini terlihat sedikit meningkat.",
     "obsNoteActive": "Aktivitas pada pengamatan hari ini terlihat lebih meningkat.",
@@ -411,7 +411,7 @@
     "groundingLabel": "Grounding sederhana",
     "back": "Kembali",
     "pageTitle": "Kondisi Lingkungan",
-    "pageSubtitle": "Memahami bagaimana dunia di sekitarmu mempengaruhi ritme dan energi batinmu hari ini.",
+    "pageSubtitle": "Memahami bagaimana dunia di sekitarmu mempengaruhi ritme dan perasaan hari ini.",
     "readingSignals": "Membaca sinyal alam...",
     "waitAMoment": "Mohon tunggu sebentar.",
     "refreshingData": "Menyegarkan data...",
@@ -447,7 +447,7 @@
   },
   "premiumBhumi": {
     "title": "Premium Bhumi",
-    "subtitle": "Tingkatkan pengalaman Bhumi-mu dengan akses penuh ke semua fitur premium.",
+    "subtitle": "Tingkatkan pengalaman Bhumi dengan akses penuh ke semua fitur premium.",
     "accountStatus": "Status Akun",
     "freeUser": "Penghuni Bhumi (Gratis)",
     "activeAccess": "Akses premium aktif",
@@ -501,10 +501,10 @@
   },
   "journaling": {
     "title": "Journaling",
-    "subtitle": "Pilih mode yang paling sesuai dengan keadaanmu hari ini. Semua ada di satu tempat.",
+    "subtitle": "Pilih mode yang paling cocok dengan keadaan hari ini. Semua di satu tempat.",
     "entryPoint": "Wellness Section 4 Journaling",
     "todayEntries": "Entri Hari Ini",
-    "noEntriesToday": "Belum ada entri hari ini. Tulis satu — tidak ada batasan satu per hari.",
+    "noEntriesToday": "Belum ada entri hari ini. Tulis satu — nggak harus satu per hari.",
     "history": "Riwayat",
     "searchPlaceholder": "Cari entri...",
     "filters": {
@@ -513,7 +513,7 @@
       "byMood": "Filter mood",
       "byDate": "Tanggal"
     },
-    "emptyState": "Belum ada entri. Mulai dengan satu kalimat yang paling jujur.",
+    "emptyState": "Belum ada entri. Mulai dari satu kalimat yang paling jujur.",
     "draftSaved": "Draft tersimpan",
     "draftRestored": "Draft dipulihkan",
     "draftConflictTitle": "Kamu punya draft dari {date}.",
@@ -652,15 +652,38 @@
     }
   },
   "notifications": {
-    "dailyReminderTitle": "Bhumi mengingatkan dengan lembut",
-    "dailyReminderBody": "Check-in kecil bisa membantu hari ini — langkah kecil bisa mendukung {theme} hari ini.",
-    "gentleNightTitle": "Bhumi menunggumu sebentar",
-    "gentleNightBody": "Ambil satu menit untuk menyapa dirimu malam ini.",
+    "dailyReminderTitle": "Pengingat lembut dari Bhumi",
+    "dailyReminderBody": "Check-in singkat bisa membantu hari ini — satu langkah mendukung {theme} hari ini.",
+    "gentleNightTitle": "Pengingat malam dari Bhumi",
+    "gentleNightBody": "Luangkan satu menit untuk check-in diri malam ini.",
     "birthdayTitle": "Selamat ulang tahun",
-    "birthdayBody": "Selamat ulang tahun. Bhumi di sini menemanimu dengan lembut.",
+    "birthdayBody": "Selamat ulang tahun. Bhumi menemanimu di hari spesial ini.",
     "broadcastTitle": "Kabar dari Bhumi",
     "permissionPrompt": "Izinkan notifikasi untuk pengingat lembut",
     "quietHoursNote": "Notifikasi dijeda selama jam tenang (22:00–07:00)",
     "capReached": "Pengingat hari ini sudah cukup"
+  },
+  "onboarding": {
+    "step1": {
+      "category": "SELAMAT DATANG",
+      "title": "Tempat untuk Pulang dan Kenali Diri",
+      "body": "Bhumi hadir untuk membantumu mengenal diri, memahami pola yang sering muncul, dan melihat potensi yang bisa dikembangkan."
+    },
+    "step2": {
+      "category": "KENALI DIRIMU",
+      "title": "Pahami pola, karakter, dan potensi dirimu.",
+      "body": "Berbagai pendekatan pengenalan diri dirangkum menjadi gambaran yang lebih mudah dipahami tentang kekuatan, kebiasaan, pola kehidupan, dan ruang untuk bertumbuh."
+    },
+    "step3": {
+      "category": "BERTUMBUH",
+      "title": "Kenali. Pahami. Lalu jalani dengan lebih sadar.",
+      "body": "Mengenali diri bukan tentang menjadi orang lain. Bhumi membantumu memahami dirimu dan menjalani proses pertumbuhanmu sendiri, satu langkah pada satu waktu."
+    },
+    "actions": {
+      "next": "Lanjut",
+      "back": "Kembali",
+      "skip": "Lewati",
+      "start": "Mulai Kenali Dirimu"
+    }
   }
 }

@@ -662,5 +662,28 @@
     "permissionPrompt": "Benarkan notifikasi untuk peringatan lembut",
     "quietHoursNote": "Notifikasi dijeda selama jam tenang (22:00–07:00)",
     "capReached": "Peringatan hari ini sudah cukup"
+  },
+  "onboarding": {
+    "step1": {
+      "category": "SELAMAT DATANG",
+      "title": "Ruang untuk Pulang dan Kenali Diri",
+      "body": "Bhumi hadir untuk membantumu mengenali diri, memahami pola yang sering muncul dalam hidup, dan melihat potensi yang bisa kamu kembangkan."
+    },
+    "step2": {
+      "category": "KENALI DIRIMU",
+      "title": "Pahami pola, karakter, dan potensi dirimu.",
+      "body": "Berbagai pendekatan pengenalan diri dirangkum menjadi gambaran yang lebih mudah dipahami tentang kekuatan, kebiasaan, pola kehidupan, dan ruang untuk bertumbuh."
+    },
+    "step3": {
+      "category": "BERTUMBUH",
+      "title": "Kenali. Pahami. Lalu jalani dengan lebih sadar.",
+      "body": "Mengenali diri bukan tentang menjadi orang lain. Bhumi membantumu memahami dirimu dan menjalani proses pertumbuhanmu sendiri, satu langkah pada satu waktu."
+    },
+    "actions": {
+      "next": "Lanjut",
+      "back": "Kembali",
+      "skip": "Lewati",
+      "start": "Mulai Kenali Dirimu"
+    }
   }
 }

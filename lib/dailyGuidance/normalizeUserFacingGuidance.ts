@@ -332,7 +332,17 @@ const BLACKLIST_PATTERNS = [
   { key: "beri_ruang", regex: /beri ruang|memberi ruang/gi, replacement: "sediakan celah" },
   { key: "pelan_pelan", regex: /pelan-pelan|perlahan-lahan/gi, replacement: "tanpa tergesa" },
   { key: "jaga_energi", regex: /(?:jaga|menjaga) energi|batas energi/gi, replacement: "hargai tenagamu" },
-  { key: "tarik_napas", regex: /tarik napas|tarik nafas|bernapaslah|bernafaslah/gi, replacement: "kembali ke tubuh" }
+  { key: "tarik_napas", regex: /tarik napas|tarik nafas|bernapaslah|bernafaslah/gi, replacement: "kembali ke tubuh" },
+  { key: "semesta_mendukung", regex: /semesta (?:yang )?mendukung/gi, replacement: "keadaan mendukung" },
+  { key: "resonansi_dengan", regex: /beresonansi dengan|resonansi dengan/gi, replacement: "selaras dengan" },
+  { key: "hati_nurani", regex: /hati nurani/gi, replacement: "hati" },
+  { key: "perjalanan_jiwa", regex: /perjalanan jiwa/gi, replacement: "perjalanan pribadimu" },
+  { key: "penuh_makna", regex: /penuh makna/gi, replacement: "bermakna" },
+  { key: "biarkan_energi_mengalir", regex: /biarkan energi mengalir/gi, replacement: "biarkan ritmemu mengalir wajar" },
+  { key: "dengarkan_suara_hati", regex: /dengarkan suara hati/gi, replacement: "dengarkan apa yang kamu rasakan" },
+  { key: "keselarasan_abstrak", regex: /keselarasan (?:dengan|semesta|alam|energi)/gi, replacement: "ketertiban" },
+  { key: "vibrasi_suasana", regex: /vibrasi (?:positif|negatif|tinggi|rendah|baik|buruk)/gi, replacement: "suasana" },
+  { key: "transformasi_klise", regex: /transformasi (?:jiwa|batin|spiritual|total)/gi, replacement: "perubahan yang mendalam" }
 ];
 
 const BLACKLIST_PATTERNS_EN = [
@@ -342,7 +352,16 @@ const BLACKLIST_PATTERNS_EN = [
   { key: "give_space", regex: /give space|give yourself space|allow room/gi, replacement: "create quiet room" },
   { key: "slowly", regex: /slowly|take it slow/gi, replacement: "without rushing" },
   { key: "save_energy", regex: /save energy|protect your energy|conserve energy/gi, replacement: "honor your personal capacity" },
-  { key: "take_a_breath", regex: /take a deep breath|take a breath|breathe slowly/gi, replacement: "return to your breath" }
+  { key: "take_a_breath", regex: /take a deep breath|take a breath|breathe slowly/gi, replacement: "return to your breath" },
+  { key: "universe_supports", regex: /the universe (?:that )?supports/gi, replacement: "the situation supports" },
+  { key: "resonates_with", regex: /resonates with/gi, replacement: "matches" },
+  { key: "inner_wisdom", regex: /inner wisdom/gi, replacement: "what you already sense" },
+  { key: "soul_journey", regex: /soul journey/gi, replacement: "personal journey" },
+  { key: "full_of_meaning", regex: /full of meaning/gi, replacement: "meaningful" },
+  { key: "energy_flowing", regex: /let (?:the )?energy flow/gi, replacement: "let your own rhythm settle" },
+  { key: "listen_to_your_heart", regex: /listen to your heart/gi, replacement: "notice what you feel" },
+  { key: "vibration_state", regex: /vibrations? (?:are|feel|seem) (?:high|low|positive|negative|off)/gi, replacement: "mood" },
+  { key: "transformation_spiritual", regex: /(?:deep|spiritual|soul) transformation/gi, replacement: "meaningful change" }
 ];
 
 export function deconflictBlacklistPhrases(text: string | undefined, seenCounts: Record<string, number>, isEn: boolean = false): string | undefined {
