@@ -71,6 +71,7 @@ import { calculateTzolkin } from "@/lib/tzolkin/calculateTzolkin";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
+import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
@@ -144,7 +145,9 @@ export function DashboardClient() {
   const [dgLoading, setDgLoading] = useState(false);
   const [dgError, setDgError] = useState<string | null>(null);
   const [weeklyGuidance, setWeeklyGuidance] = useState<WeeklyGuidance | null>(null);
-    const [appNow, setAppNow] = useState(() => new Date());
+  const [weeklyDetailsOpen, setWeeklyDetailsOpen] = useState(false);
+  const [weeklyExpandedDomainKey, setWeeklyExpandedDomainKey] = useState<string | null>(null);
+  const [appNow, setAppNow] = useState(() => new Date());
 
   const language = getDictionaryKey(profile?.language ?? "id");
   const isEnl = isEnlEdition();
@@ -175,6 +178,7 @@ export function DashboardClient() {
 
   useEffect(() => {
     setDailyGuidance(null);
+    setWeeklyGuidance(null);
   }, [auth?.user?.uid, appDateKey]);
 
   useEffect(() => {
@@ -189,17 +193,19 @@ export function DashboardClient() {
         referenceDate: `${appDateKey}T12:00:00.000Z`,
       }, blueprint as any);
       const arsipViewModel = buildArsipAkashiProfileViewModel(arsipInput);
-      setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel, referenceDate: appNow, timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null }));
+      const relStatus = (profile as any)?.relationshipStatus || (profile as any)?.statusHubungan || (profile as any)?.settings?.relationshipStatus || undefined;
+      setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel, referenceDate: new Date(`${appDateKey}T12:00:00.000Z`), timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null, relationshipStatus: relStatus }));
     } catch (error) {
       console.warn("[WEEKLY_GUIDANCE_BUILD_FAILED]", error);
       try {
         const fallbackArsip = { status: "unavailable" as const, readings: [] as any[], rooms: [] as any[], soulLetters: [] as any[], synthesisVersion: "1.0", contentVersion: "1.0" };
-        setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel: fallbackArsip, referenceDate: appNow, timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null }));
+        const relStatus = (profile as any)?.relationshipStatus || (profile as any)?.statusHubungan || (profile as any)?.settings?.relationshipStatus || undefined;
+        setWeeklyGuidance(buildWeeklyGuidance({ uid, profile, blueprint, arsipViewModel: fallbackArsip, referenceDate: new Date(`${appDateKey}T12:00:00.000Z`), timezone: appTimezone, journey: profile.journeyState || profile.currentJourney || null, relationshipStatus: relStatus }));
       } catch {
         setWeeklyGuidance(null);
       }
     }
-  }, [auth?.user?.uid, profile, blueprint, loading, appDateKey, appTimezone, appNow]);
+  }, [auth?.user?.uid, profile, blueprint, loading, appDateKey, appTimezone]);
 
   useEffect(() => {
     const uid = auth?.user?.uid;
@@ -754,6 +760,34 @@ export function DashboardClient() {
           }
         }
 
+        if (b && birthDate) {
+          const dm = (b as any).destinyMatrix;
+          const dmCenter = dm?.center || dm?.arcanaCenter;
+          const loveLine = dm?.loveLine;
+          try {
+            const canonicalDM = calculateCanonicalDestinyMatrixBlueprint(birthDate);
+            if (canonicalDM) {
+              const isLegacyLoveLine =
+                Array.isArray(loveLine) &&
+                loveLine.length === 3 &&
+                dmCenter !== undefined &&
+                loveLine[0] === dmCenter &&
+                loveLine[1] !== dmCenter &&
+                (canonicalDM.loveLine ? loveLine[0] !== canonicalDM.loveLine[0] : true);
+
+              if (!dm || !Array.isArray(loveLine) || loveLine.length !== 3 || isLegacyLoveLine) {
+                updatedBlueprint.destinyMatrix = {
+                  ...((b as any).destinyMatrix || {}),
+                  ...canonicalDM,
+                };
+                needsSave = true;
+              }
+            }
+          } catch (e) {
+            console.warn("[HYDRATION FAILED] Destiny Matrix", e);
+          }
+        }
+
         if (needsSave) {
           updatedBlueprint.updatedAt = new Date().toISOString();
           void blueprintRepository.saveUserBlueprint(auth.user.uid, updatedBlueprint);
@@ -902,6 +936,8 @@ export function DashboardClient() {
           arcanaCenter={blueprint.destinyMatrix?.center || 0}
           sunSign={blueprint.astrology?.sunSign || ""}
           humanDesign={blueprint.humanDesign}
+          subtitle="Empat perspektif tentang dirimu"
+          uid={profile.uid}
           labels={{
             title: t.dashboard.coreIdentity,
             lifePath: t.dashboard.lifePath,
@@ -945,12 +981,103 @@ export function DashboardClient() {
 
       </div>
 
-      <section className={styles.weekly} aria-labelledby="recent-title">
-        <h2 id="recent-title">MINGGU INI</h2>
-        <p>{weeklyGuidance?.weeklyDirection.paragraphs[0] || 'Konteks mingguan belum tersedia.'}</p>
-        <details>
-          <summary>Baca panduan mingguan lengkap</summary>
-          <WeeklyGuidanceCard guidance={weeklyGuidance} />
+      <section className={styles.weekly} aria-labelledby="weekly-overview-title">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="weekly-overview-title" className="text-xs font-bold uppercase tracking-[0.16em] text-[#4F5E52]">
+            PANDUAN MINGGU INI
+          </h2>
+          {weeklyGuidance?.cosmicSummary && (
+            <span className="rounded-full bg-[#E8E4D9] px-3 py-1 text-[11px] font-bold text-[#4F5E52]">
+              {weeklyGuidance.cosmicSummary.dateRangeFormatted}
+            </span>
+          )}
+        </div>
+
+        {weeklyGuidance?.cosmicSummary ? (
+          <div className="mt-3 space-y-3">
+            <div className="rounded-2xl border border-[#E8E9E5] bg-white/70 p-4">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#7B8776]">
+                <span>{weeklyGuidance.cosmicSummary.lunarPhaseSummary}</span>
+                <span>·</span>
+                <span>{weeklyGuidance.cosmicSummary.planetaryMotionSummary}</span>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-[#4F5E52]">
+                {weeklyGuidance.cosmicSummary.collectiveTheme}
+              </p>
+            </div>
+
+            {weeklyGuidance.cosmicSummary.mostActivePersonalTransit && (
+              <div className="rounded-2xl border border-[#E0E6DD] bg-[#F7FAF6] p-4 text-xs">
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#5A6D5D]">
+                  Transit Paling Aktif Terhadap Chart Milikmu
+                </p>
+                <p className="mt-1 font-semibold leading-relaxed text-[#2C382E]">
+                  {weeklyGuidance.cosmicSummary.mostActivePersonalTransit.summary}
+                </p>
+              </div>
+            )}
+
+            {weeklyGuidance.cosmicSummary.top3HighlightedDomains.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#7B8776]">
+                  3 Domain Kehidupan Paling Menonjol Pekan Ini
+                </p>
+                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {weeklyGuidance.cosmicSummary.top3HighlightedDomains.map((d) => (
+                    <button
+                      key={d.key}
+                      type="button"
+                      onClick={() => {
+                        setWeeklyDetailsOpen(true);
+                        setWeeklyExpandedDomainKey(d.key);
+                        setTimeout(() => {
+                          const el = document.getElementById(`weekly-domain-${d.key}`);
+                          if (el) {
+                            el.scrollIntoView({ behavior: "smooth", block: "start" });
+                          }
+                        }, 60);
+                      }}
+                      className="w-full text-left rounded-xl border border-[#E8E9E5] bg-white p-3 shadow-xs transition hover:border-[#4F5E52] hover:bg-[#FAF9F5] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#4F5E52]"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#4F5E52]">{d.title}</span>
+                        <span className="h-2 w-2 rounded-full bg-[#D97706]" />
+                      </div>
+                      <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#667064]">
+                        {d.headline}
+                      </p>
+                      <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-semibold text-[#4F5E52]">
+                        Buka rincian &rarr;
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="text-xs italic leading-relaxed text-[#6E7B6C]">
+              "{weeklyGuidance.cosmicSummary.mainSpiritualMessage}"
+            </p>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm leading-relaxed text-[#7B8776]">
+            {weeklyGuidance?.weeklyDirection.paragraphs[0] || 'Konteks mingguan sedang disiapkan…'}
+          </p>
+        )}
+
+        <details
+          open={weeklyDetailsOpen}
+          onToggle={(e) => setWeeklyDetailsOpen((e.target as HTMLDetailsElement).open)}
+          className="mt-4 border-t border-[#E8E9E5] pt-3"
+        >
+          <summary className="cursor-pointer text-xs font-bold tracking-wider text-[#4F5E52] hover:text-[#3D493F]">
+            Lihat Pembacaan Lengkap 8 Domain Kehidupan
+          </summary>
+          <WeeklyGuidanceCard
+            guidance={weeklyGuidance}
+            expandedDomainKey={weeklyExpandedDomainKey}
+            onToggleDomain={(key) => setWeeklyExpandedDomainKey(key)}
+          />
         </details>
       </section>
 

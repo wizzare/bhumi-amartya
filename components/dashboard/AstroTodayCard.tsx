@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Compass, Moon as MoonIcon, Sparkles, X, Orbit, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronUp, X, Orbit } from "lucide-react";
 import { CelestialMoon, getMoonIllumination } from "@/components/celestial/CelestialMoon";
 import { RelevantPlanetBadge } from "@/components/celestial/RelevantPlanetBadge";
 import { buildDailyAstroSynthesis } from "@/lib/astrology/dailyAstroSynthesis";
 import { buildAstroHouseActivations } from "@/lib/astrology/astroHouseActivations";
 import { buildTransitNarrative } from "@/lib/astrology/personalizedTransitNarrative";
-import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { translations } from "@/lib/data/translations";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
 import { calculateBazi } from "@/lib/bazi/calculateBazi";
@@ -38,8 +37,25 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const dialogTitle = useId();
   const [detailOpen, setDetailOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showAllTransits, setShowAllTransits] = useState(false);
+
+  useEffect(() => {
+    const handleRefresh = () => setRefreshKey((k) => k + 1);
+    window.addEventListener("focus", handleRefresh);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") handleRefresh();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", handleRefresh);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
+
   useEffect(() => {
     if (!detailOpen) return;
+    setRefreshKey((k) => k + 1);
     const opener = document.activeElement;
     const element = dialog.current;
     element?.showModal();
@@ -50,8 +66,9 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
   }, [detailOpen]);
   const [selectedTransitId, setSelectedTransitId] = useState<string | null>(null);
 
-  // Canonical Daily Astro Synthesis
-  const synthesis = useMemo(() => buildDailyAstroSynthesis({ uid, profileTimezone }), [uid, profileTimezone]);
+  // Canonical Daily Astro Synthesis (Refreshed on mount, modal open & background return)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const synthesis = useMemo(() => buildDailyAstroSynthesis({ uid, profileTimezone }), [uid, profileTimezone, refreshKey]);
   const sky = synthesis.sky;
   const timezone = synthesis.timezone;
   const today = synthesis.dateKey;
@@ -155,13 +172,18 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
 
           {/* Phase Information */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h2 id="astro-preview-heading" className="text-lg font-serif font-medium text-[#2D352E] truncate">
                 {Number.isFinite(moonPhaseAngle) ? moonIllum.phaseLabel : "Fase bulan belum tersedia"}
               </h2>
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#E5EBE3] text-[#4A5849] font-medium shrink-0">
                 {Number.isFinite(moonIllum.fraction) ? `≈${(moonIllum.fraction * 100).toFixed(0)}%` : "Belum tersedia"}
               </span>
+              {moonIllum.subLabel && (
+                <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#EAE4D5] text-[#634E28] font-medium shrink-0">
+                  {moonIllum.subLabel}
+                </span>
+              )}
             </div>
 
             <p className="text-xs text-[#5F6B5E] leading-relaxed line-clamp-2">
@@ -253,9 +275,14 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
                   {!Number.isFinite(moonPhaseAngle) ? "Fase belum tersedia" : moonIllum.isWaxing ? "Bulan Bertambah (Waxing)" : "Bulan Berkurang (Waning)"}
                 </span>
 
-                <h4 className="text-2xl font-serif font-medium text-[#2D352E] mt-1 mb-2">
+                <h4 className="text-2xl font-serif font-medium text-[#2D352E] mt-1 mb-1">
                   {Number.isFinite(moonPhaseAngle) ? moonIllum.phaseLabel : "Fase bulan belum tersedia"}
                 </h4>
+                {moonIllum.subLabel && (
+                  <span className="inline-block mb-2 text-xs px-2.5 py-0.5 rounded-full bg-[#EAE4D5] text-[#634E28] font-medium">
+                    {moonIllum.subLabel}
+                  </span>
+                )}
 
                 {/* Fact Grid: Astronomy Data vs Interpretation */}
                 <div className="grid grid-cols-2 gap-2 w-full mt-3 pt-3 border-t border-[#E4DFD5]/60 text-left">
@@ -283,24 +310,95 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
                 <p className="text-xs">{moonInfo.startDate}–{moonInfo.endDate}</p>
               </section>
 
-              {/* RELEVANT PLANETARY TRANSITS: Filtered to ONLY active events */}
+              {/* CATEGORY 1: PERISTIWA HARI INI (Specific daily events: Ingress, station, exact aspect, moon phase peak) */}
               <section className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#5F6B5E]">
-                    Planet & Transit Relevan
+                    Peristiwa Hari Ini
                   </h4>
-                  <span className="text-xs text-[#5F6B5E]">
-                    {synthesis.westernEvents.length} peristiwa aktif
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#E5EBE3] text-[#4A5849] font-medium">
+                    {synthesis.dailyEvents.length} peristiwa
+                  </span>
+                </div>
+
+                {synthesis.dailyEvents.length === 0 ? (
+                  <div className="p-4 rounded-2xl bg-white border border-[#E4DFD5] text-center text-xs text-[#5F6B5E]">
+                    Tidak ada peristiwa transit spesifik atau pergantian gerak yang mencapai titik balik hari ini.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {synthesis.dailyEvents.map((evt) => (
+                      <div
+                        key={evt.id}
+                        className="rounded-2xl bg-white border border-[#E4DFD5] p-3.5 flex items-start gap-3 shadow-2xs"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-[#E5EBE3] flex items-center justify-center text-[#4A5849] shrink-0 text-xs font-bold">
+                          {evt.type === "ingress" ? "ING" : evt.type === "station" ? "STA" : evt.type === "moon_phase_peak" ? "LUN" : "ASP"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs font-semibold text-[#2D352E] truncate">
+                              {evt.title}
+                            </span>
+                            <span className="text-[11px] font-medium text-[#4A5849] shrink-0 bg-[#F2EFE8] px-2 py-0.5 rounded-md">
+                              {evt.timeLocalFormatted}
+                            </span>
+                          </div>
+                          <p className="text-xs text-[#5F6B5E] mt-0.5 leading-relaxed">
+                            {evt.detail}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              {/* CATEGORY 2: STATUS GERAK PLANET (Mercury–Pluto 8 Canonical Planets) */}
+              <section className="p-3.5 rounded-2xl bg-white border border-[#E4DFD5] flex items-center justify-between gap-3 shadow-2xs">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#5F6B5E] block">
+                    Status Gerak 8 Planet
+                  </span>
+                  <p className="text-xs font-semibold text-[#2D352E] mt-0.5">
+                    {synthesis.planetaryMotions.summaryLabel}
+                  </p>
+                </div>
+                <div className="flex gap-1.5 shrink-0">
+                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#F2EFE8] text-[#4A5849] font-medium">
+                    {synthesis.planetaryMotions.retrogradeCount} Rx
+                  </span>
+                  <span className="text-[11px] px-2 py-0.5 rounded-md bg-[#E5EBE3] text-[#4A5849] font-medium">
+                    {synthesis.planetaryMotions.directCount} Direct
+                  </span>
+                </div>
+              </section>
+
+              {/* CATEGORY 3: TRANSIT & ASPEK AKTIF (Active Aspects within Orb <= 6°) */}
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-bold uppercase tracking-[0.16em] text-[#5F6B5E]">
+                      Transit & Aspek Aktif
+                    </h4>
+                    <span className="text-[11px] text-[#5F6B5E]">
+                      {synthesis.activeAspects.length} aspek aktif · {synthesis.westernEvents.length} grup planet
+                    </span>
+                    <span className="sr-only">{synthesis.westernEvents.length} peristiwa aktif</span>
+                  </div>
+                  <span className="text-xs text-[#5F6B5E] font-medium">
+                    Orb ≤ 6.0°
                   </span>
                 </div>
 
                 {synthesis.westernEvents.length === 0 ? (
                   <p className="text-xs text-[#5F6B5E] p-4 bg-white rounded-2xl border border-[#E4DFD5] text-center">
-                    Langit hari ini tenang tanpa aspek ketat atau transit planet mayor.
+                    Langit hari ini tenang tanpa aspek aktif atau transit mayor dalam batas orb 6.0°.
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {synthesis.westernEvents.map((evt) => {
+                    {synthesis.westernEvents.map((evt, idx) => {
+                      if (!showAllTransits && idx >= 5) return null;
                       const bodyObj = sky.bodies.find((b) => b.body === evt.body);
                       const actObj = activations.find((a) => a.planet === evt.body);
                       const narrative = bodyObj ? buildTransitNarrative(bodyObj, actObj || undefined, context) : null;
@@ -331,14 +429,22 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
                           {/* Aspect tags */}
                           {evt.aspects.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-2.5">
-                              {evt.aspects.map((asp, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[#F2EFE8] text-[#4A5849]"
-                                >
-                                  {ASPECT_LABELS[asp.aspect] || asp.aspect} {asp.partner} ({asp.orb.toFixed(1)}°)
-                                </span>
-                              ))}
+                              {evt.aspects.map((asp, idx) => {
+                                const matched = synthesis.activeAspects.find(
+                                  (a) => (a.a === evt.body && a.b === asp.partner) || (a.b === evt.body && a.a === asp.partner)
+                                );
+                                return (
+                                  <span
+                                    key={idx}
+                                    className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[#F2EFE8] text-[#4A5849] flex items-center gap-1"
+                                  >
+                                    <span>{ASPECT_LABELS[asp.aspect] || asp.aspect} {asp.partner} ({asp.orb.toFixed(1)}°)</span>
+                                    {matched && matched.natureLabel && (
+                                      <span className="text-[9px] text-[#5F6B5E] opacity-75">· {matched.natureLabel}</span>
+                                    )}
+                                  </span>
+                                );
+                              })}
                             </div>
                           )}
 
@@ -364,6 +470,18 @@ export function AstroTodayCard({ context }: AstroTodayCardProps) {
                         </div>
                       );
                     })}
+
+                    {synthesis.westernEvents.length > 5 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAllTransits(!showAllTransits)}
+                        className="w-full py-2.5 px-4 rounded-xl bg-white border border-[#E4DFD5] hover:bg-[#F2EFE8] text-xs font-semibold text-[#4A5849] transition-colors"
+                      >
+                        {showAllTransits
+                          ? "Tampilkan Lebih Sedikit"
+                          : `Lihat Semua (${synthesis.westernEvents.length} Planet & ${synthesis.activeAspects.length} Aspek)`}
+                      </button>
+                    )}
                   </div>
                 )}
               </section>

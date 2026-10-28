@@ -8,7 +8,7 @@
     {
       "file": "app/api/humandesign/bodygraph/route.ts",
       "status": "M",
-      "sha256": "c9a3bbca5f1b0e9f85838830ab1734ae61dc1724627038434de97bd5e1c28a9f"
+      "sha256": "2d0e550cf9b6762e952e446c54f47ff579cf01019879bc8ce25307033410bb96"
     },
     {
       "file": "app/api/humandesign/calculate/route.ts",
@@ -33,7 +33,7 @@
     {
       "file": "app/settings/page.tsx",
       "status": "M",
-      "sha256": "155eed161a016a95a8295f6b413b3bc2d40cf52f0cfdf77525f022c279ba662a"
+      "sha256": "8f67eb64f64a8b54f53e2c8c53d880b99f2d5f9f7a20f35e016c2ee580170b14"
     },
     {
       "file": "app/setup/page.tsx",
@@ -43,17 +43,17 @@
     {
       "file": "components/dashboard/CoreIdentity.tsx",
       "status": "M",
-      "sha256": "b5ad69877b13c19d5866a6a8dbab4f96e9b5b584d4109321cca6f295510b858c"
+      "sha256": "9a93e6d8d3f3e0f5439f91c1b6ed5e873f567edb006dea99c12cfb7dbfb5aeb7"
     },
     {
       "file": "components/dashboard/DashboardClient.tsx",
       "status": "M",
-      "sha256": "86ff4b2113f72b9679b0b44fc323c8644c15b95d3e5d55231ab7f0a1d4948e16"
+      "sha256": "a7cb01223d6a667149ed8fa4f9915f6b6a68efa781583212753eb330a4b36bd7"
     },
     {
       "file": "components/dashboard/PendingHdRecoveryBanner.tsx",
       "status": "M",
-      "sha256": "c7e9b3a75f288c3d3591ea660aa4f7177f55d362026a72b2a2470d52ea6fbfcb"
+      "sha256": "98648bf56a0c09db9666381feb1dea6ee0acaf154601063e78a303e290fb48fc"
     },
     {
       "file": "components/ui/CityAutocomplete.tsx",
@@ -68,7 +68,7 @@
     {
       "file": "lib/firebase/service.ts",
       "status": "M",
-      "sha256": "88d846a965187a540bd92a4676286d12b8fb5932de0dcf9187205a0a6f7ec158"
+      "sha256": "ad967545c6e3fac362ed45a283e5b6a1fda256841ebeffb2c04fb9535e1a5f4b"
     },
     {
       "file": "lib/humandesign/calculateHumanDesign.ts",
@@ -108,7 +108,7 @@
     {
       "file": "src/locales/id-ID/translation.json",
       "status": "M",
-      "sha256": "aa30ae24389234ad6ee8f8cf868a2a592650b1564d86bd4faa4c5f6ce60f88bf"
+      "sha256": "3720d408f3d1c3a70958e0d2c03aa63182483160a43f804ebdfe7a97e132a207"
     },
     {
       "file": "src/locales/ms-MY/translation.json",
@@ -170,7 +170,7 @@
     {
       "file": "components/dashboard/AstroTodayCard.tsx",
       "status": "M",
-      "sha256": "b6af3a023722ae66d0bedba37d840720f031906d431bd58023b119acbf97f048"
+      "sha256": "569353fd36449150b13fb6dc1d172f2ce0044b06b5d54e7733d4b4a07bee146a"
     },
     {
       "file": "components/dashboard/SoulReflectionCard.tsx",
@@ -180,12 +180,12 @@
     {
       "file": "lib/astrology/personalizedTransitNarrative.ts",
       "status": "M",
-      "sha256": "a7a7d840831da0162b523b100206fd77648fe51d0f972aa0355947db09dbaa23"
+      "sha256": "9db2adf1d670b8bb9a9b983f141980939cdecedc508a411d10faa88f04c39465"
     },
     {
       "file": "services/billing-verifier/lib/entitlement.ts",
       "status": "M",
-      "sha256": "2ab353cc96a4d128a3d0efedc21d885e86f09ff8e0573cae1b849b70afe92694"
+      "sha256": "1b541107674893ceb642cc5670efaef59a45b295fecfe93cb6e16d3bc78e902f"
     },
     {
       "file": "components/celestial/",
@@ -202,12 +202,12 @@
     {
       "file": "TODO.md",
       "status": "M",
-      "sha256": "78b7f185f7c914feadeda10c5d1dad3b159a08501d9be540e614615949673d0f"
+      "sha256": "46c48773387234320e13459a7fd925abc9cb828cca68dad5382d6f36ffdef5ea"
     },
     {
       "file": "app/api/access/bootstrap-trial/route.ts",
       "status": "M",
-      "sha256": "a32ad6c8bf9326a893f0511a2b3246a03ec7e055e37a1693c42d1107894b0418"
+      "sha256": "3cec7cf7e08926b8be1ab8d5fc3487ed433f5b6e3e5da69507f0740ddfa7ba0e"
     },
     {
       "file": "components/dashboard/DashboardHeader.tsx",
@@ -222,12 +222,12 @@
     {
       "file": "lib/billing/canonicalAccessBootstrap.ts",
       "status": "M",
-      "sha256": "a9b0b422a805490d89ef2e5b77e8f47b238a0aced57077babf747a3cd41f3698"
+      "sha256": "d99e833c7d40f7d3b0a68cb3177f29b60b1f9566ef8507d769b39b386609d6f8"
     },
     {
       "file": "next.config.ts",
       "status": "M",
-      "sha256": "5aae8b344e20ae6d08b91b383ac693b4a2d0404108e524880eb4a23865bab068"
+      "sha256": "a6bebcda9a28fefb04777ecd41e208d75c5f85c0f5dfff49b0baa3b0224adf99"
     },
     {
       "file": "package-lock.json",
@@ -237,7 +237,7 @@
     {
       "file": "package.json",
       "status": "M",
-      "sha256": "ea34b633e9cd82caee7afb3263339dc2cd050528147e8017ad8acd6b063b55fa"
+      "sha256": "7ee152a15090fdef9bb5ae56db099ab10394931a3d930277349f478ddb83f2ae"
     },
     {
       "file": "services/humandesign-api/main.py",
@@ -287,7 +287,7 @@
     {
       "file": "scripts/run-realtime-dev.mjs",
       "status": "??",
-      "sha256": "fcbb9a9a1c3264976696a32410c6dd66d825a3ed00b2b400a9f83ea0f79e35fc"
+      "sha256": "7c78822e7da3c13aefbd3905c2e91bd3e7dc46068b40c1662b88585d8dbccbc7"
     }
   ],
   "test_harness": [
@@ -339,7 +339,7 @@
     {
       "file": "tests/unit/build106-step8-contracts.test.ts",
       "status": "M",
-      "sha256": "fcd5084c35738919ce87403e1561e3859200c0af6888ce65d83c45ca6aa39274"
+      "sha256": "73f3d9c47112c2820fb02e0fbdfc94803e48c86ad92fbf1f6b560195b7f8a170"
     },
     {
       "file": "tests/unit/build107-hd-existing-user-convergence.test.ts",
@@ -349,12 +349,12 @@
     {
       "file": "tests/unit/build107-production-surface-guard.test.ts",
       "status": "M",
-      "sha256": "9dd848e756653d6d78b700cac45205264515479ae2b948e55a351437bd10dc55"
+      "sha256": "12e0a3287e9970fd82490ae78f0fe61a1c0bac802d19def71f58f545c58b5230"
     },
     {
       "file": "tests/unit/build110-indonesian-only-production.test.ts",
       "status": "M",
-      "sha256": "2df19cf4708f53f415d011a8035477eb85597b28c68a04e7969cdf2bea73f454"
+      "sha256": "b5d3ff73008e99c436c6863adf5ee2140e25c9c9fe6a5ad658fa9b6dba1c5714"
     },
     {
       "file": "tests/unit/hd-hotfix.test.ts",
@@ -459,12 +459,12 @@
     {
       "file": "tests/helpers/mockFirebaseAuth.ts",
       "status": "??",
-      "sha256": "88daf74b166f2ee247fab9e04953f4e702f004bd64a3439ef4970838fbb44530"
+      "sha256": "6437a94fdc2f932978afb0074fb418d167b239016729b6c8cdbef9ab8d658ced"
     },
     {
       "file": "tests/helpers/mockFirebaseFirestore.ts",
       "status": "??",
-      "sha256": "35df5fa12af4fdb7ffb713076e511931cc42761a6455c33005788d856f25a4c8"
+      "sha256": "3cd351e51ca695adafb1ca59ba81cdd88099023d5fb7ee26484cfa291dd76ef2"
     },
     {
       "file": "tests/helpers/mockFirebaseFunctions.ts",
@@ -529,7 +529,7 @@
     {
       "file": "tests/unit/threed-lifecycle-fallback.test.ts",
       "status": "??",
-      "sha256": "99c28192aedf3ef39abbcd21b61ff1a5e94253cf630c382c0ddee8da9aa5c672"
+      "sha256": "92c1357703b2c85c6d2e891c1675ffe63fd09ccc677ad31fd25361381e13de5d"
     }
   ],
   "docs": [
@@ -547,6 +547,125 @@
       "file": "docs/tracking/",
       "status": "??",
       "sha256": "DIRECTORY"
+    }
+  ],
+  "product_weekly_guidance_b118": [
+    {
+      "file": "android/app/build.gradle",
+      "status": "M",
+      "sha256": "2ceeb20ea50e22d1a622c77e5ab002a88d8cee5f33acd43c07e3fd234c2a2c53"
+    },
+    {
+      "file": "lib/config/buildInfo.ts",
+      "status": "M",
+      "sha256": "6724d199e93bb047a58ad28bbf0f50890aa841bb917497cd07a442e73003efb1"
+    },
+    {
+      "file": "lib/calculations/destinyMatrix/mapToBlueprint.ts",
+      "status": "M",
+      "sha256": "3a68c4cd8638d794a95975368298f3af5a9c9b937b00f67bd177b9e90266679a"
+    },
+    {
+      "file": "lib/weeklyGuidance/types.ts",
+      "status": "M",
+      "sha256": "9af03b88adac1afb5d1490da68d44ebee0f0bda57df6b793b5db464143688fa8"
+    },
+    {
+      "file": "lib/weeklyGuidance/weeklyTransitCalculator.ts",
+      "status": "??",
+      "sha256": "f0a2afe481b6d77efb3ee3c7b809526dfe7c6727c7412fae8443cb94bae173a8"
+    },
+    {
+      "file": "lib/weeklyGuidance/weeklyGuidanceEngine.ts",
+      "status": "M",
+      "sha256": "f21f97dbefb30bbf4736883aa264e298fca8e9b713f3f1db87d3d21eae50bb61"
+    },
+    {
+      "file": "components/dashboard/WeeklyGuidanceCard.tsx",
+      "status": "M",
+      "sha256": "a9c2a357ac328588f8d01fce5d362de593990482191fc6ca656288a8cc28402d"
+    },
+    {
+      "file": "components/dashboard/DashboardClient.tsx",
+      "status": "M",
+      "sha256": "2b6f6f33ab178a1f348a271120ad768908aa4866585121d239d0d73019eb507a"
+    },
+    {
+      "file": "tests/unit/build118-weekly-guidance.test.ts",
+      "status": "??",
+      "sha256": "b4a438aa0e2e65545e2a62e195e8ed243e42bcaf0b6d39e045676426e591f10b"
+    },
+    {
+      "file": "tests/unit/version-reconciliation.test.ts",
+      "status": "M",
+      "sha256": "531c8194a965d27f5d84c4252a001484bfad6d58065a998a4288b34ee746e20f"
+    },
+    {
+      "file": "lib/repositories/userRepository.ts",
+      "status": "M",
+      "sha256": "888e33a6a04632e2e456aadc02366ae1cd0ba44550fffc37bb38d564cdbdc366"
+    },
+    {
+      "file": "lib/local/generateLocalBlueprint.ts",
+      "status": "M",
+      "sha256": "bc0fc0b8dff9825f60a01ccded97323e37f6f4d7b2ba0038405ab25876b9dce2"
+    },
+    {
+      "file": "lib/repositories/analyticsRepository.ts",
+      "status": "M",
+      "sha256": "e55575913b90bd394fe6e39b136dbe7213747fc6547d0ea5267a9b67885fadfd"
+    },
+    {
+      "file": "lib/analytics/usageAnalytics.ts",
+      "status": "M",
+      "sha256": "e87041d1186fad4d1adb5cb6f3857031b383c4e21888ecfeb40c6783037eaaa5"
+    },
+    {
+      "file": "tests/unit/build118-analytics-conflict.test.ts",
+      "status": "??",
+      "sha256": "13806d9cb9104ef8a9c3a5d2bd6be1f8ddbf571328a7f71e1d80e084496a9da5"
+    },
+    {
+      "file": "lib/astrology/transitEvents.ts",
+      "status": "??",
+      "sha256": "6174b524138333fbabf4fbfea47e3e0155a7622fb925b21ebde4e9c423b5a9c3"
+    },
+    {
+      "file": "tests/unit/astro-transit-accuracy.test.ts",
+      "status": "??",
+      "sha256": "729f42f48817aab9fb6baebb642d488ab38115016978841b9fa05e01cb12831f"
+    }
+  ],
+  "product_daily_guidance_b118": [
+    {
+      "file": "app/profile/page.tsx",
+      "status": "M",
+      "sha256": "a6b01ead40ed75a9f307610500d0c56a7cdadcf956d166395f03888b9849770a"
+    },
+    {
+      "file": "components/profile/DailyGuidanceCard.tsx",
+      "status": "??",
+      "sha256": "ed66ad85bf23ea4140279701bb9c648041badbddde638909c68719f90e109345"
+    },
+    {
+      "file": "lib/dailyGuidance/dailyTransitCalculator.ts",
+      "status": "??",
+      "sha256": "2710b8af9a05b79f1494c1768023c290003c7bc576192d58d577ff3d9e4c2a18"
+    },
+    {
+      "file": "lib/dailyGuidance/dailyGuidanceEngine.ts",
+      "status": "??",
+      "sha256": "bd209a6309d0b8965fd138d8554e8f0c7b22b3d74e60698ac384222f8d00c79a"
+    },
+    {
+      "file": "tests/unit/build118-daily-guidance.test.ts",
+      "status": "??",
+      "sha256": "153ec6a6dd2499e6570f621cc2a8ed3b96952dc46d226455da8f34c5e51cb5c1"
+    },
+    {
+      "file": "scripts/capture-daily-guidance-outputs.ts",
+      "status": "??",
+      "sha256": "592b154306fe68e5094e11201ea34ac4c2aa4b9e1acd0758f6322e67abba459e"
     }
   ]
 }

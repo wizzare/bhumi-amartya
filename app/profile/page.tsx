@@ -19,6 +19,8 @@ import type { Blueprint } from "@/lib/types/blueprint";
 import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
 import { DailyNoteV2 } from "@/components/dashboard/DailyNoteV2";
+import { DailyGuidanceCard } from "@/components/profile/DailyGuidanceCard";
+import { buildDailyGuidance, type DailyGuidance as WeeklyParityDailyGuidance } from "@/lib/dailyGuidance/dailyGuidanceEngine";
 import { getExistingDailyGuidance } from "@/lib/services/dailyGuidanceService";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
@@ -174,6 +176,7 @@ export default function ProfilePage() {
   const [profileSections, setProfileSections] = useState<ProfileSection[]>([]);
   const [bazi, setBazi] = useState<EnrichedBaziBlueprint | null>(null);
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
+  const [dailyParityGuidance, setDailyParityGuidance] = useState<WeeklyParityDailyGuidance | null>(null);
   const [dailyNoteState, setDailyNoteState] = useState<"loading" | "ready" | "unavailable" | "error">("loading");
   const [dailyNoteError, setDailyNoteError] = useState<string | null>(null);
   const [language, setLanguage] = useState<"id" | "en">("id");
@@ -209,6 +212,7 @@ export default function ProfilePage() {
     const isCurrent = () => isCurrentProfilePageLoad(loadId, activeProfileLoadRef.current, cancelled);
     setLoading(true);
     setDailyGuidance(null);
+    setDailyParityGuidance(null);
     setDailyNoteState("loading");
     setDailyNoteError(null);
 
@@ -312,6 +316,22 @@ export default function ProfilePage() {
                 guidanceSource = "local";
               }
             }
+            // Build 118: Daily Guidance (Weekly Parity 8-Domain Format)
+            try {
+              const parityGuidance = buildDailyGuidance({
+                uid: blueprint.uid,
+                profile: profile as unknown as Record<string, unknown>,
+                blueprint: (canonicalBlueprint || blueprint) as unknown as Record<string, unknown>,
+                timezone,
+                // daily parity params
+              });
+              if (isCurrent()) {
+                setDailyParityGuidance(parityGuidance);
+                setDailyNoteState("ready");
+              }
+            } catch (parityErr) {
+              console.warn("[Profile] Daily parity guidance build error:", parityErr);
+            }
           } catch (guidanceError) {
             if (isCurrent()) {
               console.warn("[Profile] Daily guidance load failed — not blocking profile:", guidanceError);
@@ -381,17 +401,21 @@ export default function ProfilePage() {
               )}
             </section>
 
-            <DailyNoteV2
-              dailyGuidance={dailyGuidance}
-              dailyNoteState={dailyNoteState}
-              dailyNoteError={dailyNoteError}
-              language={language}
-              userName={name}
-              dailyState={null}
-              yesterdayState={null}
-              recentDailyStates={[]}
-              navigatorState={null}
-            />
+            <DailyGuidanceCard guidance={dailyParityGuidance} />
+            {/* Legacy DailyNoteV2 preserved for backwards compatibility */}
+            <div className="hidden">
+              <DailyNoteV2
+                dailyGuidance={dailyGuidance}
+                dailyNoteState={dailyNoteState}
+                dailyNoteError={dailyNoteError}
+                language={language}
+                userName={name}
+                dailyState={null}
+                yesterdayState={null}
+                recentDailyStates={[]}
+                navigatorState={null}
+              />
+            </div>
 
           </div>
         </main>

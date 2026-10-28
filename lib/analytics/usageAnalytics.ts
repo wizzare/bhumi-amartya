@@ -91,7 +91,7 @@ export type AnalyticsMetrics = {
 function getStoredArray<T>(key: string): T[] {
   if (typeof window === "undefined") return [];
   const parsed = safeJsonParse<unknown>(window.localStorage.getItem(key), []);
-  return Array.isArray(parsed) ? parsed as T[] : [];
+  return Array.isArray(parsed) ? (parsed as T[]) : [];
 }
 
 function writeStoredArray<T>(key: string, values: T[]): void {
@@ -109,11 +109,27 @@ export function getActiveAnalyticsUid(fallback?: string | null): string | null {
   return activeUid || profileUid;
 }
 
+// In-memory cache to deduplicate rapid lifecycle/development events (3000ms window)
+const recentEvents = new Map<string, number>();
+
+export function clearAnalyticsDedupCache(): void {
+  recentEvents.clear();
+}
+
 export function trackEvent(eventName: AnalyticsEventName, activeUid?: string | null): void {
   if (typeof window === "undefined") return;
-  const events = getStoredArray<AnalyticsEvent>(ANALYTICS_EVENTS_STORAGE_KEY);
   const uid = getActiveAnalyticsUid(activeUid);
 
+  // Lifecycle Deduplication: prevent firing identical eventName+uid within 3000ms
+  const dedupKey = `${eventName}_${uid || "anon"}`;
+  const now = Date.now();
+  const lastFired = recentEvents.get(dedupKey) || 0;
+  if (now - lastFired < 3000) {
+    return;
+  }
+  recentEvents.set(dedupKey, now);
+
+  const events = getStoredArray<AnalyticsEvent>(ANALYTICS_EVENTS_STORAGE_KEY);
   events.push({
     timestamp: new Date().toISOString(),
     activeUid: uid,
@@ -121,8 +137,8 @@ export function trackEvent(eventName: AnalyticsEventName, activeUid?: string | n
   });
   writeStoredArray(ANALYTICS_EVENTS_STORAGE_KEY, events);
 
-  // Sync to Firestore for tester metrics
-  void analyticsRepository.trackEvent(eventName, uid);
+  // Sync to Firestore for tester metrics (best-effort, non-blocking)
+  void analyticsRepository.trackEvent(eventName, uid).catch(() => {});
 }
 
 export function trackError(errorName: AnalyticsErrorName, activeUid?: string | null, status?: string): void {

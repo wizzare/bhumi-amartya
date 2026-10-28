@@ -1,5 +1,13 @@
-import { calculateCurrentSky, type CurrentSky } from "./calculateCurrentSky";
+import { calculateCurrentSky, type CurrentSky, type SkyBody } from "./calculateCurrentSky";
 import { selectRelevantWesternEvents, type RelevantWesternEvent } from "./relevantWesternEvents";
+import {
+  calculateActiveAspects,
+  calculatePlanetaryMotions,
+  calculateDailyEvents,
+  type ActiveAspectItem,
+  type PlanetaryMotionSummary,
+  type DailyAstroEvent,
+} from "./transitEvents";
 import { findNextGlobalEclipse, findNextVisibleEclipse, type EclipseKindInfo, type ObserverLocation } from "./calculateEclipses";
 import { calculateTzolkin } from "../tzolkin/calculateTzolkin";
 import { calculateWeton } from "../weton/calculateWeton";
@@ -11,7 +19,7 @@ import { getCanonicalToday } from "../dailyGuidance/canonicalToday";
 // AstroTodayCard renders and Wellness / Catatan Hari Ini / Panduan Minggu Ini
 // consume as a contextual LENS (R-PRD-36/41) — never diagnosis, never override.
 
-export const ASTRO_SYNTHESIS_SOURCE_VERSION = "v5-synthesis-1";
+export const ASTRO_SYNTHESIS_SOURCE_VERSION = "v5-synthesis-2";
 
 export interface SynthesisMoonPhase {
   label: string;
@@ -42,6 +50,9 @@ export interface DailyAstroSynthesis {
   sky: CurrentSky;
   moonPhase: SynthesisMoonPhase;
   westernEvents: RelevantWesternEvent[];
+  activeAspects: ActiveAspectItem[];
+  planetaryMotions: PlanetaryMotionSummary;
+  dailyEvents: DailyAstroEvent[];
   eastern: SynthesisEastern;
   eclipses: SynthesisEclipses;
   /**
@@ -80,6 +91,14 @@ export function buildDailyAstroSynthesis(input: BuildSynthesisInput = {}): Daily
   const westernEvents = selectRelevantWesternEvents(sky);
   const moon = sky.bodies.find((b) => b.body === "Moon");
 
+  const longitudes: Partial<Record<SkyBody, number>> = {};
+  sky.bodies.forEach((b) => {
+    longitudes[b.body] = b.longitude;
+  });
+  const activeAspects = calculateActiveAspects(longitudes, canonical.calculationInstant);
+  const planetaryMotions = calculatePlanetaryMotions(canonical.calculationInstant, sky.bodies);
+  const dailyEvents = calculateDailyEvents(canonical.calculationInstant, canonical.timezone);
+
   const tzolkin = safe(() => {
     const t = calculateTzolkin({ birthDate: canonical.localDateKey });
     return { kin: t.kin, kinName: t.kinName, wavespellName: t.wavespell.name, wavespellMeaning: t.wavespell.meaning };
@@ -107,6 +126,9 @@ export function buildDailyAstroSynthesis(input: BuildSynthesisInput = {}): Daily
       phaseAngle: sky.moonPhaseAngle,
     },
     westernEvents,
+    activeAspects,
+    planetaryMotions,
+    dailyEvents,
     eastern: { tzolkin, weton },
     eclipses: {
       globalNext,

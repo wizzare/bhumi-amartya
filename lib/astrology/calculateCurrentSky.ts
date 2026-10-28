@@ -59,10 +59,21 @@ function getSign(longitude: number): string {
   return ZODIAC_SIGNS[Math.floor(normalized / 30)];
 }
 
-function getGeocentricLongitude(body: unknown, bodyName: string, date: Date): number {
+export type EphemerisConvention = "apparent" | "astrometric";
+
+function getGeocentricLongitude(
+  body: unknown,
+  bodyName: string,
+  date: Date,
+  convention: EphemerisConvention = "apparent"
+): number {
   const Ast = Astronomy as typeof Astronomy;
   if (bodyName === "Sun") return Ast.SunPosition(date).elon;
-  return Ast.Ecliptic(Ast.GeoVector(body as Astronomy.Body, date, true)).elon;
+  // Apparent Geocentric Position (aberration = true) is canonical standard in Swiss Ephemeris (SEFLG_SWIEPH)
+  // and matches Bhumi's canonical natal engine (calculateNatalBasics.ts line 305).
+  // Astrometric position (aberration = false) omits stellar aberration.
+  const useAberration = convention === "apparent";
+  return Ast.Ecliptic(Ast.GeoVector(body as Astronomy.Body, date, useAberration)).elon;
 }
 
 export function getMoonPhaseLabel(phaseAngle: number): string {
@@ -215,7 +226,10 @@ export function getMoonPhaseTheme(label: string): string {
   return "Refleksi dan keselarasan batin.";
 }
 
-export function calculateCurrentSky(date: Date = new Date()): CurrentSky {
+export function calculateCurrentSky(
+  date: Date = new Date(),
+  convention: EphemerisConvention = "apparent"
+): CurrentSky {
   console.log("ASTRO_START_V2", date.toISOString());
 
   const Ast: any = Astronomy;
@@ -293,8 +307,8 @@ export function calculateCurrentSky(date: Date = new Date()): CurrentSky {
           lon0 = Ast.EclipticGeoMoon(apsis0.time.date).lon;
         } else {
           const body = BodyObj[name];
-          lon1 = getGeocentricLongitude(body, name, date);
-          lon0 = getGeocentricLongitude(body, name, yesterday);
+          lon1 = getGeocentricLongitude(body, name, date, convention);
+          lon0 = getGeocentricLongitude(body, name, yesterday, convention);
         }
 
         let diff = lon1 - lon0;

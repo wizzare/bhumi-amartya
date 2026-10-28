@@ -30,7 +30,7 @@ import fs from "node:fs";
 import path from "node:path";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import ThreeDPocTestPage from "../../app/test-3d-poc/page";
+import ThreeDPocTestPage from "../harness/routes/test-3d-poc/page";
 
 let passed = 0;
 let failed = 0;
@@ -108,7 +108,7 @@ function stripComments(src: string): string {
 // ---------------------------------------------------------------------------
 type SurfaceClass = "PRODUCT" | "ADMIN_BACKEND_ONLY" | "DEV_ONLY" | "DEPRECATED";
 const ROUTE_CLASSIFICATION: Record<string, SurfaceClass> = {
-  "app/test-3d-poc/page.tsx": "DEV_ONLY",
+  // app/test-3d-poc, test-astro-transit, and test-identitas-inti quarantined to tests/harness/routes/
   "app/page.tsx": "PRODUCT",
   "app/login/page.tsx": "PRODUCT",
   "app/setup/page.tsx": "PRODUCT",
@@ -178,6 +178,16 @@ for (const route of REMOVED_OBSOLETE_ROUTES) {
   ok(`obsolete route removed: ${route}`, !fs.existsSync(route));
 }
 ok("AuditReadiness (only used by the removed /status page) is gone", !fs.existsSync("components/audit/AuditReadiness.tsx"));
+
+// Build 117: test harness routes quarantined to tests/harness/routes/
+const QUARANTINED_DEV_ROUTES = [
+  "app/test-3d-poc/page.tsx",
+  "app/test-astro-transit/page.tsx",
+  "app/test-identitas-inti/page.tsx",
+];
+for (const route of QUARANTINED_DEV_ROUTES) {
+  ok(`test harness route is quarantined from app/: ${route}`, !fs.existsSync(route));
+}
 
 function listPageRoutes(dir: string, acc: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

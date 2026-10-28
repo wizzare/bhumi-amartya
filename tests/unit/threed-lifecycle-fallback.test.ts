@@ -6,7 +6,10 @@ test("Real3DEarth and Animated3DObjectPOC render valid fallback markup and use s
   const earth = fs.readFileSync("C:/tmp/bhumi-build106-recovery/components/environment/Real3DEarth.tsx", "utf8");
   const model = fs.readFileSync("C:/tmp/bhumi-build106-recovery/components/celestial/Animated3DObjectPOC.tsx", "utf8");
   const envPage = fs.readFileSync("C:/tmp/bhumi-build106-recovery/app/dashboard/environment/page.tsx", "utf8");
-  const pocPage = fs.readFileSync("C:/tmp/bhumi-build106-recovery/app/test-3d-poc/page.tsx", "utf8");
+  const pocPath = fs.existsSync("C:/tmp/bhumi-build106-recovery/tests/harness/routes/test-3d-poc/page.tsx")
+    ? "C:/tmp/bhumi-build106-recovery/tests/harness/routes/test-3d-poc/page.tsx"
+    : "C:/tmp/bhumi-build106-recovery/app/test-3d-poc/page.tsx";
+  const pocPage = fs.readFileSync(pocPath, "utf8");
 
   assert.match(earth, /observeNativeAnimationState/);
   assert.match(earth, /nativeActive && inViewport && !document\.hidden/);

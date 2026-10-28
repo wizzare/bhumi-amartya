@@ -7,6 +7,7 @@ export type MoonPhaseGeometry = {
   phaseAngle: number; // 0 to 360 degrees
   isWaxing: boolean;
   phaseLabel: string;
+  subLabel?: string;
 };
 
 /**
@@ -20,15 +21,41 @@ export function getMoonIllumination(phaseAngle: number, labelFallback?: string):
   const isWaxing = normAngle >= 0 && normAngle < 180;
 
   let phaseLabel = labelFallback || "Fase Bulan";
+  let subLabel: string | undefined = undefined;
+
   if (!labelFallback) {
-    if (normAngle < 22.5 || normAngle >= 337.5) phaseLabel = "Bulan Baru";
-    else if (normAngle < 67.5) phaseLabel = "Sabit Awal";
-    else if (normAngle < 112.5) phaseLabel = "Perbani Awal";
-    else if (normAngle < 157.5) phaseLabel = "Cembung Awal";
-    else if (normAngle < 202.5) phaseLabel = "Bulan Purnama";
-    else if (normAngle < 247.5) phaseLabel = "Cembung Akhir";
-    else if (normAngle < 292.5) phaseLabel = "Perbani Akhir";
-    else phaseLabel = "Sabit Akhir";
+    // Canonical symmetric 8-phase astronomical windows (±7.5° on cardinal phases):
+    // New Moon: [352.5°, 360°) ∪ [0°, 7.5°)
+    // Waxing Crescent: [7.5°, 82.5°)
+    // First Quarter: [82.5°, 97.5°) (90° ± 7.5°)
+    // Waxing Gibbous: [97.5°, 172.5°) -> "Bulan Cembung Membesar"
+    // Full Moon: [172.5°, 187.5°) (180° ± 7.5° symmetric) -> "Bulan Purnama"
+    // Waning Gibbous: [187.5°, 262.5°) -> "Bulan Cembung Mengecil"
+    // Last Quarter: [262.5°, 277.5°) (270° ± 7.5°)
+    // Waning Crescent: [277.5°, 352.5°)
+    if (normAngle < 7.5 || normAngle >= 352.5) {
+      phaseLabel = "Bulan Baru";
+    } else if (normAngle < 82.5) {
+      phaseLabel = "Bulan Sabit Awal";
+    } else if (normAngle < 97.5) {
+      phaseLabel = "Bulan Perbani Awal";
+    } else if (normAngle < 172.5) {
+      phaseLabel = "Bulan Cembung Membesar";
+      if (normAngle >= 165.0 || fraction >= 0.98) {
+        subLabel = "Menjelang Purnama";
+      }
+    } else if (normAngle < 187.5) {
+      phaseLabel = "Bulan Purnama";
+    } else if (normAngle < 262.5) {
+      phaseLabel = "Bulan Cembung Mengecil";
+      if (normAngle <= 195.0 || fraction >= 0.98) {
+        subLabel = "Pasca Purnama";
+      }
+    } else if (normAngle < 277.5) {
+      phaseLabel = "Bulan Perbani Akhir";
+    } else {
+      phaseLabel = "Bulan Sabit Akhir";
+    }
   }
 
   return {
@@ -36,6 +63,7 @@ export function getMoonIllumination(phaseAngle: number, labelFallback?: string):
     phaseAngle: normAngle,
     isWaxing,
     phaseLabel,
+    subLabel,
   };
 }
 
@@ -97,22 +125,22 @@ export function CelestialMoon({
     if (isWaxing) {
       // Light is on the right side
       if (frac < 0.5) {
-        // Crescent: crescent on right, inner shadow sweeps right
-        // Outer arc: top (50, 6) to bottom (50, 94) via right side
-        // Inner arc: bottom back to top curving right
-        illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,1 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,1 ${cx},${cy - r} Z`;
-      } else {
-        // Gibbous: right half lit + bulging into left half
+        // Crescent: crescent on right, inner terminator curves right (sweep = 0)
+        // Outer arc: top (50, 6) to bottom (50, 94) via right side (sweep = 1)
+        // Inner arc: bottom back to top curving right towards lit side (sweep = 0)
         illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,1 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,0 ${cx},${cy - r} Z`;
+      } else {
+        // Gibbous: right half lit + bulging into left half (sweep = 1)
+        illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,1 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,1 ${cx},${cy - r} Z`;
       }
     } else {
       // Waning: light is on the left side
       if (frac < 0.5) {
-        // Crescent: crescent on left
-        illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,0 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,0 ${cx},${cy - r} Z`;
-      } else {
-        // Gibbous: left half lit + bulging into right half
+        // Crescent: crescent on left, inner terminator curves left towards lit side (sweep = 1)
         illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,0 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,1 ${cx},${cy - r} Z`;
+      } else {
+        // Gibbous: left half lit + bulging into right half (sweep = 0)
+        illuminatedPath = `M ${cx},${cy - r} A ${r},${r} 0 0,0 ${cx},${cy + r} A ${ellipseRx},${r} 0 0,0 ${cx},${cy - r} Z`;
       }
     }
   }

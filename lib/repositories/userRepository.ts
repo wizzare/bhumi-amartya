@@ -42,6 +42,7 @@ export type UserProfile = {
   // the canonical BCP47 tag for id / en / ms. Legacy short codes remain accepted
   // for back-compat with pre-V5 documents.
   language?: "id-ID" | "en-US" | "ms-MY" | "id" | "en" | "ms";
+  relationshipStatus?: "single" | "in_relationship" | "unspecified" | null;
   onboardingCompleted: boolean;
   baselineWellnessCompleted: boolean;
   baselineWellnessProfile?: BaselineWellnessProfile;

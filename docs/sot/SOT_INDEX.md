@@ -1,11 +1,12 @@
 # BHUMI AMARTYA — SOURCE OF TRUTH (SoT) INDEX
 
 **Document ID:** `SOT-INDEX-001`  
-**Current Workstream:** Phase 1 — Human Design Stabilization  
+**Current Workstream:** Build 118 — Personal Weekly Cosmic & Soul Guidance  
 **Baseline Git Branch:** `hotfix/build110-indonesian-only`  
-**Active HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Last Updated:** 20 Oktober 2026  
-**Status:** ACTIVE BASELINE  
+**Target Build:** **BUILD 118** (`versionCode = 118`, `versionName = "5.0.18"`)  
+**Production Baseline:** Build 117 (`versionCode = 117`, `versionName = "5.0.17"`, Active on Google Play Store)  
+**Last Updated:** 28 Oktober 2026  
+**Status:** ACTIVE AUDITED BASELINE  
 
 ---
 
@@ -15,20 +16,24 @@ Apabila ditemukan inkonsistensi atau pertentangan informasi antar-dokumen, selur
 
 ```mermaid
 flowchart TD
+    L0["Level 0: Founder Explicit Directive\n(Instruksi & Keputusan Terkini Founder)"]
     L1["Level 1: Working Tree Contracts & Runtime Code\n(Source code aktual, database schema, route handlers, automated test suites)"]
     L2["Level 2: Approved Product Requirements & Design Specs\n(PRD, Architecture Decisions, SOT approved, Schema specs)"]
     L3["Level 3: Sprint Reports & Test Evidence\n(Playwright traces, assertion dumps, harness network logs, temp artifacts)"]
-    L4["Level 4: Production Evidence (CURRENTLY NOT VERIFIED)\n(Cloud Firestore live, Vercel deployments, Play Console tracks)"]
+    L4["Level 4: Production Evidence\n(Google Play Store Track: Build 117 Live)"]
 
+    L0 --> L1
     L1 --> L2
     L2 --> L3
     L3 --> L4
 
+    classDef l0 fill:#f8d7da,stroke:#721c24,color:#721c24,font-weight:bold;
     classDef l1 fill:#d1ecf1,stroke:#0c5460,color:#0c5460;
     classDef l2 fill:#d4edda,stroke:#155724,color:#155724;
     classDef l3 fill:#fff3cd,stroke:#856404,color:#856404;
-    classDef l4 fill:#f8d7da,stroke:#721c24,color:#721c24;
+    classDef l4 fill:#e2e3e5,stroke:#383d41,color:#383d41;
 
+    class L0 l0;
     class L1 l1;
     class L2 l2;
     class L3 l3;
@@ -36,62 +41,54 @@ flowchart TD
 ```
 
 ### Aturan Resolusi Konflik:
-1. **Source Code & Runtime Guard Mengalahkan Dokumen Statis:** Dokumen requirements yang menyatakan suatu fitur "selesai" tidak berlaku jika source code atau test suite membuktikan sebaliknya.
-2. **Tidak Mengambil Keputusan Sepihak:** Jika terdapat pertentangan substantif antar dokumen Level 2 atau antara Level 1 dan Level 2, catat konflik pada *SoT Conflict Register* dan eskalasikan ke Founder.
-3. **Produksi Tetap NOT VERIFIED:** Laporan atau asumsi mengenai kondisi produksi tidak boleh dijadikan acuan tanpa bukti telemetri atau akses terverifikasi.
+1. **Founder Explicit Directive Memimpin:** Keputusan Founder pada task aktif menjadi hukum tertinggi.
+2. **Build 117 Baseline Aman:** Build 117 sudah rilis di Google Play Store. Pengembangan fitur Panduan Minggu Ini adalah **BUILD 118** (`versionCode = 118`, `versionName = "5.0.18"`).
+3. **Source Code & Runtime Guard Mengalahkan Dokumen Statis:** Dokumen requirements yang menyatakan suatu fitur "selesai" tidak berlaku jika source code atau test suite membuktikan sebaliknya.
+4. **No Generic Astrological Reading:** Penggunaan data astrologi natal (Sun, Moon, Ascendant, Placidus houses, planetary placements) wajib dihitung secara nyata, bukan menggunakan bahasa bersyarat generik.
 
 ---
 
 ## 2. INVENTARIS DOKUMEN SoT & STATUS SIKLUS HIDUP
 
-| Nama Dokumen | Path Repositori | Pemilik / Asal | Status | Fungsi Utama & Cakupan |
-|---|---|---|---|---|
-| **SOT.md** | `SOT.md` | Core Team (Build 80) | **OUTDATED** | Fondasi arsitektur awal aplikasi, aturan Firestore, Android API 36, dan standar enkripsi. Belum memuat perbaikan HD-01 s/d HD-05. |
-| **V5_SOURCE_OF_TRUTH.md** | `V5_SOURCE_OF_TRUTH.md` | Product Lead (Build 100+) | **OUTDATED** | Rencana V5 untuk modularisasi multi-blueprint, comfort mode, daily rhythm, dan FCM. Menjadi acuan arah arsitektur tetapi bukan kontrak aktif Phase 1. |
-| **SOURCE_OF_TRUTH_V4_SOUL_IDENTITY_SYSTEM.md** | `SOURCE_OF_TRUTH_V4_SOUL_IDENTITY_SYSTEM.md` | Astrological / Soul Engine Lead | **ACTIVE (PROTECTED)** | Spesifikasi domain astrologi, transit ephemeris SwissEph, numerologi, dan arketipe. Dilindungi dari mutasi selama Phase 1. |
-| **TODO.md** | `TODO.md` | OpenCode / Antigravity | **ACTIVE (HYBRID)** | Berisi catatan aktif runner verification HD-05D.1, sekaligus mempertahankan jejak backlog historis Build 80 & 85. |
-| **SCHEMA.md** | `SCHEMA.md` | Backend Lead | **ACTIVE** | Kontrak skema Firestore (`users`, `blueprints`, `dailyGuidance`, `behaviorMemory`). |
-| **SECURITY.md** | `SECURITY.md` | Security Lead | **ACTIVE** | Kebijakan proteksi PII, credential leakage prevention, fail-closed auth, dan Firestore Rules. |
-| **ARCHITECTURE.md** | `ARCHITECTURE.md` | System Architect | **ACTIVE** | Peta dependensi modul Next.js, Capacitor, Firebase, dan external computation bridges. |
-| **PRD.md** | `PRD.md` | Product Management (Build 80) | **LEGACY** | Persyaratan produk awal. Telah disubstitusi oleh spesifikasi sprint dan `V5_PRD.md`. |
-| **V5_PRD.md** | `V5_PRD.md` | Product Management (V5) | **ROADMAP** | Persyaratan fitur V5 masa depan. |
+| Nama Dokumen | Path Repositori | Status | Fungsi Utama & Cakupan |
+|---|---|---|---|
+| **SOT_INDEX.md** | `docs/sot/SOT_INDEX.md` | **ACTIVE** | Peta hierarki otoritas dan indeks dokumen repositori. |
+| **PROJECT_REQUIREMENTS_MATRIX.md** | `docs/requirements/PROJECT_REQUIREMENTS_MATRIX.md` | **ACTIVE** | Matriks kepatuhan persyaratan produk dan verifikasi acceptance. |
+| **MASTER_TODO.md** | `docs/tracking/MASTER_TODO.md` | **ACTIVE** | Backlog dan pelacakan pekerjaan aktif lintas workstream. |
+| **SPRINT_REGISTER.md** | `docs/tracking/SPRINT_REGISTER.md` | **ACTIVE** | Ledger resmi riwayat sprint dan hasil pengujian lokal. |
+| **DECISION_LOG.md** | `docs/tracking/DECISION_LOG.md` | **ACTIVE** | Catatan keputusan arsitektur dan mandat Founder (ADR). |
+| **RISK_REGISTER.md** | `docs/tracking/RISK_REGISTER.md` | **ACTIVE** | Register manajemen risiko teknis dan mitigasi fail-closed. |
+| **EVIDENCE_REGISTER.md** | `docs/tracking/EVIDENCE_REGISTER.md` | **ACTIVE** | Register bukti pengujian otomatis dan assertion traces. |
+| **PATCH_MANIFEST.json** | `docs/tracking/PATCH_MANIFEST.json` | **ACTIVE** | Manifest integritas berkas termodifikasi pada working tree. |
 
 ---
 
-## 3. SOURCE-TO-IMPLEMENTATION MAPPING (HUMAN DESIGN WORKSTREAM)
-
-Peta korespondensi antara kontrak teoritis dan implementasi aktual pada working tree:
+## 3. SOURCE-TO-IMPLEMENTATION MAPPING (BUILD 118 WEEKLY COSMIC GUIDANCE)
 
 | Domain Kontrak | File Dokumen / Spesifikasi | File Implementasi Aktual (Working Tree) | Status Implementasi |
 |---|---|---|---|
-| **Auth Gateway** | `SECURITY.md` §3 | `lib/auth/hdEndpointAuth.ts`<br>`app/api/humandesign/calculate/route.ts`<br>`app/api/humandesign/astrology/route.ts` | **IMPLEMENTED** (Fail-closed, Bearer token, AppCheck non-bypass) |
-| **Bodygraph Decommission** | Sprint HD-01 Decision | `app/api/humandesign/bodygraph/route.ts` | **IMPLEMENTED** (HTTP 410 Gone) |
-| **Core Completeness** | Sprint HD-02 Spec | `lib/humandesign/completeness.ts`<br>`lib/humandesign/hdkitAdapter.ts` | **IMPLEMENTED** (9 centers, gates, channels, cross, profile, type) |
-| **Birth Binding** | Sprint HD-03 Spec | `lib/humandesign/birthFingerprint.ts` | **IMPLEMENTED** (`bip_v1_<fnv1a32>` deterministic hash) |
-| **Timezone & DST** | Sprint HD-03 Spec | `services/humandesign-api/main.py` (`parse_timezone_to_offset`) | **IMPLEMENTED** (IANA timezone string + historical DST) |
-| **Deadlines & Transport** | Sprint HD-04 Spec | `lib/humandesign/hdCommunication.ts` | **IMPLEMENTED** (Client 25s, Proxy 15s, Error classifier) |
-| **Recovery Executor** | Sprint HD-04 Spec | `lib/humandesign/hdRecovery.ts`<br>`lib/repositories/blueprintRepository.ts` | **IMPLEMENTED** (Shared promise deduplication, stale write guard) |
-| **Explicit UI States** | Sprint HD-05 Spec | `lib/humandesign/hdView.ts`<br>`components/blueprint/HdStatus.tsx`<br>`components/blueprint/HdStoredStatus.tsx` | **IMPLEMENTED** (`ready_canonical`, `pending`, `missing_blueprint`, `error`) |
-| **In-Memory Cache** | Sprint HD-05 Spec | `lib/humandesign/hdLoad.ts`<br>`lib/humandesign/hdRead.ts` | **IMPLEMENTED** (5-minute TTL, UID & revision scoped, no localStorage) |
-| **Account Isolation** | Sprint HD-05D.1 Spec | `tests/helpers/hd05dFlowD.mjs` | **VERIFIED LOCAL BROWSER** (7/7 scenarios PASS, 104 checks) |
-| **New User Onboarding** | Sprint HD-05D.2 Spec | `tests/helpers/hd05daFlowA.mjs` | **DRAFTED / NEXT SPRINT** (Ready for execution) |
+| **ISO-8601 Week Boundaries** | Founder Directive §8 | `lib/weeklyGuidance/weeklyTransitCalculator.ts` (`computeWeeklyTimeWindow`) | **IMPLEMENTED** (Luxon ISO week number, anti-collision `YYYY-WXX`) |
+| **Collective Sky Weather** | Founder Directive §2 | `lib/weeklyGuidance/weeklyTransitCalculator.ts` (`calculateWeeklyCollectiveSky`) | **IMPLEMENTED** (SwissEph Apparent, Moon Phase & Illumination, 8 Planet Motions, Real Stations/Ingresses) |
+| **Placidus Natal Transits** | Founder Directive §3 | `lib/weeklyGuidance/weeklyTransitCalculator.ts` (`calculateTransitToNatalAspects`) | **IMPLEMENTED** (Placidus cusps, Cusp Crossing detection, 5 Major Aspects, Orb, Applying/Exact/Separating) |
+| **8 Life Domains Synthesis** | Founder Directive §4 | `lib/weeklyGuidance/weeklyGuidanceEngine.ts` (`buildWeeklyGuidance`) | **IMPLEMENTED** (8 domain mapping, proportional scoring Kuat/Sedang/Ritme Tenang, distinct 1-sentence summaries) |
+| **Canonical Blueprint Depth** | Founder Directive §5, §8 | `lib/weeklyGuidance/weeklyGuidanceEngine.ts` (`synthesizeDomainInterpretation`) | **IMPLEMENTED** (Multi-arcana Karmic Tail 21-7-13, Love Path 7-10-21, BaZi, Vedic Lagna/Dasha, HD Centers/Authority, Numerology) |
+| **Relationship Status Adaptation** | Founder Directive §8, §9 | `lib/weeklyGuidance/weeklyGuidanceEngine.ts`<br>`app/settings/page.tsx` | **IMPLEMENTED** (Single, Berpasangan, Unspecified adaptation for Asmara & Percintaan domain) |
+| **Exact Aspect Peak Timing** | Founder Directive §10 | `lib/weeklyGuidance/weeklyTransitCalculator.ts` | **IMPLEMENTED** (14 sub-interval zero-crossing bisection, labeled with 'sekitar' WIB, Moon traversal vs snapshot house) |
+| **Spiritual & Psychological Safety**| Founder Directive §6 | `lib/weeklyGuidance/weeklyGuidanceEngine.ts` | **IMPLEMENTED** (Deep soul journey, shadow work, strict anti-psychiatric diagnosis & no curse fearmongering) |
+| **Dashboard Cosmic Summary** | Founder Directive §7 | `components/dashboard/DashboardClient.tsx` (section.weekly) | **IMPLEMENTED** (Date range, collective theme, active transit card, top 3 highlighted domains, main spiritual message) |
+| **8-Domain Mobile Experience** | Founder Directive §7, §8 | `components/dashboard/WeeklyGuidanceCard.tsx` | **IMPLEMENTED & FROZEN** (8 vertical full-width accordion cards, distinct summary preview, no horizontal scroll, advice box) |
+| **State Reset & Loop Guard** | Founder Directive §8 | `components/dashboard/DashboardClient.tsx` (lines 176-202) | **IMPLEMENTED** (setWeeklyGuidance reset on UID change, removed 30s re-render loop) |
+| **Temporal Blueprint Cycles** | Founder Directive §10 | `lib/destiny-matrix/annualArcana.ts`<br>`lib/weeklyGuidance/weeklyGuidanceEngine.ts` | **IMPLEMENTED** (resolveDestinyMatrixArcanaAtAge from canonical graph nodes BM01-BM22) |
+| **Telemetry & Idempotency** | Founder Directive §10 | `lib/analytics/usageAnalytics.ts`<br>`lib/repositories/analyticsRepository.ts` | **IMPLEMENTED** (3000ms deduplication, ALREADY_EXISTS idempotent soft-warning, dev-to-prod Open Risk documented) |
+| **Build 118 Versioning** | Founder Directive §10 | `android/app/build.gradle`<br>`lib/config/buildInfo.ts` | **IMPLEMENTED** (`versionCode = 118`, `versionName = "5.0.18"`) |
 
 ---
 
-## 4. REKONSILIASI KONFLIK VERSI (BUILD 80 s/d BUILD 110)
+## 4. REKONSILIASI KONFLIK VERSI (BUILD 117 s/d BUILD 118)
 
-| Komponen Metadata | Nilai di File Statis | Nilai di Active Git / TODO | Status Rekonsiliasi |
+| Komponen Metadata | Nilai di File Statis | Nilai di Active Git / Target | Status Rekonsiliasi |
 |---|---|---|---|
-| **App Version** | `4.4.5` (`package.json`) | `Build 110` (`hotfix/build110-indonesian-only`) | Terjadi akumulasi versioning. Versi `4.4.5` adalah versi semver di npm, sedangkan `Build 110` merujuk pada `versionCode` rilis Android. |
-| **Worktree Referensi** | `bhumi-build83-access-hotfix` (`TODO.md` line 14) | `bhumi-build106-recovery` (Filesystem aktual) | Catatan `TODO.md` baris 14 adalah sisa teks Build 85 historis. Repositori kerja aktif yang sah adalah `C:\tmp\bhumi-build106-recovery`. |
-| **Target SDK Android** | API 36 (`SOT.md`) | API 36 (`package.json` `@capacitor/android 8.3.4`) | Konsisten pada level spesifikasi dan dependensi. |
-| **Founder Dashboard** | Tercampur di `/app/admin` (`TODO.md` line 109) | Terpisah di `C:\tmp\bhumi-founder-dashboard` | **RESOLVED BY MANDATE:** Founder Dashboard adalah repositori independen. Halaman `/admin` di repositori ini adalah legacy yang akan didekomisi. |
-
----
-
-## 5. DAFTAR PERUBAHAN YANG MEMERLUKAN KEPUTUSAN FOUNDER
-
-1. **Penyatuan / Cleanup `TODO.md`:** `TODO.md` saat ini merupakan dokumen hybrid yang memuat teks historis Build 80, Build 85, dan catatan Build 110. Diusulkan untuk mengarsipkan to-do lama ke `docs/archive/` setelah Phase 1 selesai.
-2. **Migrasi FNV-1a 32-Bit:** Algoritma sidik jari input saat ini menggunakan FNV-1a 32-bit (`bip_v1`). Keputusan diperlukan apakah perlu di-upgrade ke 64-bit atau SHA-256 pada Phase 2.
-3. **Pembersihan Rute `/admin`:** Keputusan final mengenai waktu penghapusan rute `/app/admin/**` dari repositori mobile ini.
-4. **Otorisasi HD-06 & Release Gate:** Prosedur rilis dan verifikasi endpoint produksi Human Design di Railway/Vercel membutuhkan izin eksplisit Founder.
+| **App Version (Android)** | `versionCode 117`, `"5.0.17"` | `versionCode 118`, `"5.0.18"` | Diselaraskan secara atomik di `build.gradle` dan `buildInfo.ts`. |
+| **Semver package.json** | `"version": "4.4.5"` | `"version": "4.4.5"` | **Decoupled by mandate**: npm semver sengaja dipisahkan dari rilis Android native. |
+| **Release Baseline** | Build 117 (Google Play Store) | Build 118 (Target Local Staging) | Build 117 adalah rilis produksi lama. Seluruh pengembangan mingguan baru menjadi Build 118. |
+| **Rute Karantina** | 3 rute uji | `tests/harness/routes/` | Tiga rute uji (`test-3d-poc`, `test-astro-transit`, `test-identitas-inti`) tetap aman terkarantina di luar `app/`. |

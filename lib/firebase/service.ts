@@ -48,6 +48,7 @@ export interface UserProfile {
   longitude: number | null;
   timezone?: string | null;
   language: string;
+  relationshipStatus?: "single" | "in_relationship" | "unspecified" | null;
   setupCompleted: boolean;
   authProvider: "google" | "local" | null;
   plan?: UserPlan;

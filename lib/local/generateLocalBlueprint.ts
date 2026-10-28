@@ -22,6 +22,7 @@ export type LocalUserProfile = {
   longitude?: number | null;
   timezone?: string | null;
   language: "id" | "en";
+  relationshipStatus?: "single" | "in_relationship" | "unspecified" | null;
   setupCompleted: boolean;
   authProvider?: "google" | "local";
   plan?: UserPlan;

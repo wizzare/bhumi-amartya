@@ -164,6 +164,7 @@ export default function SettingsPage() {
   const [birthTime, setBirthTime] = useState("");
   const [selectedCity, setSelectedCity] = useState<CitySelection | null>(null);
   const [language, setLocalLanguage] = useState<"id" | "en">("id");
+  const [relationshipStatus, setRelationshipStatus] = useState<"single" | "in_relationship" | "unspecified">("unspecified");
   const [plan, setPlan] = useState<UserPlan>(createDefaultUserPlan());
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -248,6 +249,8 @@ export default function SettingsPage() {
             ? "en"
             : "id";
       setLocalLanguage(normalizedLanguage);
+      const rawRel = (activeProfile as any)?.relationshipStatus;
+      setRelationshipStatus(rawRel === "single" || rawRel === "in_relationship" ? rawRel : "unspecified");
     } else if (googleEmail) {
       setEmail(googleEmail);
     }
@@ -636,6 +639,7 @@ export default function SettingsPage() {
       timezone: nextTimezone,
       timezoneSource, // BUILD 31
       language: currentProfile.language,
+      relationshipStatus: relationshipStatus,
       authProvider: googleEmail ? "google" : currentProfile.authProvider || "local",
       updatedAt: now,
     };
@@ -751,6 +755,34 @@ export default function SettingsPage() {
             />
           </label>
           <Field label={t.settings.birthTime} value={birthTime} type="time" onChange={setBirthTime} />
+          <div className="flex flex-col gap-2 text-sm text-[#7B8776] pt-2 border-t border-[#F5F1E8]">
+            <span className="text-sm font-medium text-[#4F5E52]">{isEn ? "Relationship Status" : "Status Hubungan"}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { value: "single", label: "Single" },
+                { value: "in_relationship", label: "Berpasangan" },
+                { value: "unspecified", label: "Tidak ingin menyebutkan" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setRelationshipStatus(opt.value as any)}
+                  className={`rounded-2xl border px-4 py-3 text-center text-sm font-medium transition ${
+                    relationshipStatus === opt.value
+                      ? "border-[#4F5E52] bg-[#4F5E52] text-white shadow-sm"
+                      : "border-black/5 bg-white text-[#33413A] hover:border-[#7D977B]"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-[#8B9488]">
+              {isEn
+                ? "Optionally used to personalize your weekly relationship guidance context."
+                : "Pilihan untuk menyelaraskan konteks panduan asmara mingguan secara personal."}
+            </p>
+          </div>
         </section>
 
 
