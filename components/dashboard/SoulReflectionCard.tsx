@@ -1,18 +1,26 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Quote } from "lucide-react";
 import { cleanMarkdown } from "@/lib/utils/markdown";
-import { isEnlEdition } from "@/lib/config/edition";
+import { normalizeIndonesianSentenceCase } from "@/lib/utils/sentenceCase";
 
 interface SoulReflectionCardProps {
   language: "id" | "en";
   reflection?: string;
+  paragraphs?: string[];
   loading?: boolean;
   compact?: boolean;
 }
 
-export function SoulReflectionCard({ language, reflection, loading, compact = false }: SoulReflectionCardProps) {
+export function SoulReflectionCard({
+  language,
+  reflection,
+  paragraphs,
+  loading,
+  compact = false,
+}: SoulReflectionCardProps) {
   const isEn = false;
   const [isExpanded, setIsExpanded] = React.useState(false);
   const cleanedReflection = React.useMemo(
@@ -20,18 +28,57 @@ export function SoulReflectionCard({ language, reflection, loading, compact = fa
     [reflection],
   );
 
-  if (compact) return (
-    <section className="my-6 rounded-2xl border border-current/10 bg-white p-5" aria-labelledby="main-insight-title" aria-busy={loading}>
-      <h2 id="main-insight-title" className="font-serif text-xl">INSIGHT UTAMA</h2>
-      <p className="mt-3 text-sm leading-relaxed">{loading ? 'Menyiapkan refleksimu…' : cleanedReflection?.split(/\n\s*\n/)[0] || 'Refleksi hari ini belum tersedia.'}</p>
-      {!loading && cleanedReflection && (
-        <details className="mt-3">
-          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold">Baca refleksi lengkap</summary>
-          <p className="whitespace-pre-line text-sm leading-relaxed">{cleanedReflection}</p>
-        </details>
-      )}
-    </section>
-  );
+  if (compact) {
+    const rawParagraphs =
+      paragraphs && paragraphs.length > 0
+        ? paragraphs
+        : cleanedReflection
+          ? cleanedReflection.split(/\n\s*\n/).filter(Boolean)
+          : [];
+
+    const activeParagraphs = rawParagraphs.map((p) => normalizeIndonesianSentenceCase(p));
+    const firstParagraph = activeParagraphs[0];
+    const remainingParagraphs = activeParagraphs.slice(1);
+
+    return (
+      <section
+        className="my-6 rounded-2xl border border-current/10 bg-white p-5 shadow-sm"
+        aria-labelledby="main-insight-title"
+        aria-busy={loading}
+      >
+        <h2 id="main-insight-title" className="font-serif text-xl text-[#4F5E52]">
+          INSIGHT UTAMA
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-[#2D352E]">
+          {loading
+            ? "Menyiapkan arahan hari ini…"
+            : firstParagraph || "Arahan hari ini belum tersedia."}
+        </p>
+        {!loading && (remainingParagraphs.length > 0 || firstParagraph) && (
+          <details className="mt-3">
+            <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-[#4F5E52] hover:text-[#2D352E]">
+              Baca refleksi lengkap
+            </summary>
+            {remainingParagraphs.length > 0 && (
+              <div className="mt-2 space-y-3 text-sm leading-relaxed text-[#5F6B5D]">
+                {remainingParagraphs.map((para, idx) => (
+                  <p key={idx}>{para}</p>
+                ))}
+              </div>
+            )}
+            <div className="mt-4 pt-3 border-t border-[#E8E9E5]">
+              <Link
+                href="/profile"
+                className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+              >
+                Lihat Catatan Hari Ini di Profil &rarr;
+              </Link>
+            </div>
+          </details>
+        )}
+      </section>
+    );
+  }
 
   return (
     <div className="mt-8 space-y-4">
@@ -63,19 +110,24 @@ export function SoulReflectionCard({ language, reflection, loading, compact = fa
           ) : (
             <div className="space-y-4">
               <p className="text-[9px] text-[#7B8776] font-bold uppercase tracking-wider mb-2">
-                {isEn
-                  ? "Reading your soul today"
-                  : "Refleksi Hari Ini"}
+                {isEn ? "Reading your soul today" : "Refleksi Hari Ini"}
               </p>
-              <h2 className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}>
-                {cleanedReflection || (isEn ? "Preparing a message for your soul..." : "Menyiapkan refleksimu...")}
+              <h2
+                className={`whitespace-pre-line text-[#4F6658] text-lg sm:text-xl font-serif italic leading-relaxed px-2 transition-all duration-500 ${isExpanded ? "" : "line-clamp-4"}`}
+              >
+                {cleanedReflection ||
+                  (isEn ? "Preparing a message for your soul..." : "Menyiapkan refleksimu...")}
               </h2>
 
               {cleanedReflection && cleanedReflection.length > 150 && (
                 <p className="text-[9px] font-bold text-[#9BB89A] uppercase tracking-widest mt-4">
                   {isExpanded
-                    ? (isEn ? "Collapse" : "Tutup")
-                    : (isEn ? "Read More" : "Baca Selengkapnya")}
+                    ? isEn
+                      ? "Collapse"
+                      : "Tutup"
+                    : isEn
+                      ? "Read More"
+                      : "Baca Selengkapnya"}
                 </p>
               )}
             </div>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 import { BHUMI_TOKENS } from "@/components/onboarding/onboardingTokens";
 import styles from "./DashboardClient.module.css";
 import { useAuth } from "@/context/AuthContext";
@@ -14,6 +15,7 @@ import { getCachedWeatherAqi, type WeatherApiResult } from "@/lib/environment/we
 import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
+import { buildDailyGuidance } from "@/lib/dailyGuidance/dailyGuidanceEngine";
 import { AccuracyUpgradeBanner } from "@/components/dashboard/AccuracyUpgradeBanner";
 import { PendingHdRecoveryBanner } from "@/components/dashboard/PendingHdRecoveryBanner";
 import { GuardianIdentityCard } from "@/components/dashboard/GuardianIdentityCard";
@@ -75,6 +77,9 @@ import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyM
 import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
 import { calculateHumanDesign } from "@/lib/humandesign/calculateHumanDesign";
 import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
+import { generateLocalBlueprint, type LocalUserProfile } from "@/lib/local/generateLocalBlueprint";
+import { revisionOf } from "@/lib/profile/canonicalState";
+import { compareBirthInputMatch } from "@/lib/humandesign/birthFingerprint";
 import { WeeklyGuidanceCard } from "@/components/dashboard/WeeklyGuidanceCard";
 import { buildWeeklyGuidance } from "@/lib/weeklyGuidance/weeklyGuidanceEngine";
 import type { WeeklyGuidance } from "@/lib/weeklyGuidance/types";
@@ -156,17 +161,25 @@ export function DashboardClient() {
   const appTimezone = profile?.timezone || profile?.profile?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const appDateKey = getLocalDateKey(appNow, appTimezone);
   const appEnvironmentWindowKey = getEnvironmentWindowKey(appNow, appDateKey);
-  const mirrorDaily = buildMirrorDailyReflection({
-    guidance: dailyGuidance,
-    userName: profile?.fullName || profile?.displayName || profile?.name,
-    now: appNow,
-    timezone: appTimezone,
-    language,
-    loading: dgLoading,
-    error: dgError,
-  });
-  const visibleSoulReflection = mirrorDaily.text;
-  // TEST CHANGE
+  const dailyParityGuidance = useMemo(() => {
+    if (!profile || !blueprint || loading) return null;
+    const uid = auth?.user?.uid || profile.uid || blueprint.uid;
+    if (!uid) return null;
+    try {
+      return buildDailyGuidance({
+        uid,
+        profile: profile as unknown as Record<string, unknown>,
+        blueprint: blueprint as unknown as Record<string, unknown>,
+        timezone: appTimezone,
+        referenceDate: appNow,
+      });
+    } catch (err) {
+      console.warn("[Dashboard] Daily guidance build error:", err);
+      return null;
+    }
+  }, [auth?.user?.uid, profile, blueprint, appTimezone, appNow, loading]);
+
+  const arahHariIniParagraphs = dailyParityGuidance?.dailyDirection?.paragraphs || null;
 
 
   const [weatherAqi, setWeatherAqi] = useState<WeatherApiResult | null>(null);
@@ -613,6 +626,7 @@ export function DashboardClient() {
   }
 
   useEffect(() => {
+    let cancelled = false;
     const watchdog = setTimeout(() => {
       if (loading) {
         setLoading(false);
@@ -646,9 +660,18 @@ export function DashboardClient() {
       try {
         let p = await storageProvider.getUserProfile();
         let b = await storageProvider.getUserBlueprint() as any;
+        if (cancelled) return;
+        const verifiedProfile = auth.userProfile?.uid === auth.user.uid && revisionOf(auth.userProfile) ? auth.userProfile : null;
+        const canonicalOnly = Boolean(verifiedProfile);
+        if (verifiedProfile) {
+          p = verifiedProfile as unknown as typeof p;
+          const storedHd = b?.humanDesign;
+          b = { ...generateLocalBlueprint(verifiedProfile as unknown as LocalUserProfile), uid: auth.user.uid };
+          if (isCanonicalHumanDesign(storedHd) && compareBirthInputMatch(auth.user.uid, storedHd, verifiedProfile) === "MATCH") b.humanDesign = storedHd;
+        }
 
         // Reconcile cached blueprint if missing or non-canonical
-        if (!b || !isCanonicalHumanDesign(b.humanDesign)) {
+        if (!canonicalOnly && (!b || !isCanonicalHumanDesign(b.humanDesign))) {
           const serverBp = await blueprintRepository.getUserBlueprint(auth.user.uid).catch(() => null);
           if (serverBp && (isCanonicalHumanDesign(serverBp.humanDesign) || !b)) {
             b = serverBp;
@@ -788,19 +811,20 @@ export function DashboardClient() {
           }
         }
 
-        if (needsSave) {
+        if (needsSave && !canonicalOnly) {
           updatedBlueprint.updatedAt = new Date().toISOString();
           void blueprintRepository.saveUserBlueprint(auth.user.uid, updatedBlueprint);
           void storageProvider.saveUserBlueprint(updatedBlueprint);
         }
 
         // CRITICAL REFACTOR: Set profile and basic blueprint IMMEDIATELY to unblock Dashboard entry
+        if (cancelled) return;
         setProfile(p);
         setBlueprint(updatedBlueprint);
         setLoading(false);
         clearTimeout(watchdog);
 
-        if (auth.user.email) {
+        if (!canonicalOnly && auth.user.email) {
           void repairOwnerHumanDesign(auth.user.uid, auth.user.email);
         }
 
@@ -809,7 +833,7 @@ export function DashboardClient() {
 
         // NON-BLOCKING: Trigger background HD calculation asynchronously if HD is pending/non-canonical
         const isHdCanonical = isCanonicalHumanDesign(updatedBlueprint.humanDesign);
-        if (!isHdCanonical && birthDate) {
+        if (!canonicalOnly && !isHdCanonical && birthDate) {
           console.log("[BACKGROUND HD] Triggering non-blocking HD calculation for new/partial user...");
           const { triggerBackgroundHdCalculation } = await import("@/lib/engines/blueprintRecoveryEngine");
           // P0 H4: refresh local state after the background attempt settles so
@@ -831,13 +855,13 @@ export function DashboardClient() {
       } catch (err) {
         console.error("[DASHBOARD BOOT ERROR]", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
         clearTimeout(watchdog);
       }
     };
 
     void boot();
-    return () => clearTimeout(watchdog);
+    return () => { cancelled = true; clearTimeout(watchdog); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth, router]);
 
@@ -955,16 +979,10 @@ export function DashboardClient() {
 
       <SoulReflectionCard
         language={legacyUiLanguage}
-        reflection={visibleSoulReflection}
-        loading={!visibleSoulReflection && dgLoading}
+        paragraphs={arahHariIniParagraphs || undefined}
+        loading={!arahHariIniParagraphs && (loading || dgLoading)}
         compact
       />
-
-      <section className={styles.action} aria-labelledby="action-title">
-        <h2 id="action-title">SATU TINDAKAN</h2>
-        <p>{dailyGuidance?.categories?.advice?.advice || dailyGuidance?.groundedAction || (dgLoading ? 'Menyiapkan arahan hari ini…' : 'Arahan hari ini belum tersedia.')}</p>
-        <Link href="/wellness">Buka Wellness</Link>
-      </section>
 
       <div className={styles.supporting}>
       <AstroTodayCard
@@ -1088,10 +1106,23 @@ export function DashboardClient() {
 
       <AccuracyUpgradeBanner uid={profile.uid} blueprint={blueprint} profile={profile} />
 
-      <footer className="mt-20 mb-10 text-center">
-        <p className="text-[10px] text-[#9AA394] font-bold uppercase tracking-[0.3em] opacity-60">
-          {t.dashboard.footerQuote || "Ruang ini tetap ada kapan pun kamu kembali."}
-        </p>
+      <footer className="mt-20 mb-12 text-center px-4">
+        {/* t.dashboard.footerQuote memorial dedication */}
+        <div className="mx-auto max-w-md space-y-1.5">
+          <p className="flex items-center justify-center gap-1.5 text-xs text-[#7B8776] tracking-wide">
+            <span>Aplikasi Bhumi Amartya ini dipersembahkan dengan cinta untuk</span>
+            <Heart size={13} className="text-[#A36657] fill-[#A36657]/20 shrink-0 inline-block" />
+          </p>
+          <h3 className="font-serif text-lg font-bold text-[#4F5E52] tracking-wide">
+            Sheina Khazmalia
+          </h3>
+          <p className="text-xs text-[#9AA394] tracking-wider">
+            17 Oktober 1988 – 5 November 2026
+          </p>
+          <p className="pt-1 text-xs italic leading-relaxed text-[#7B8776]">
+            &ldquo;Semoga setiap manfaat yang hadir melalui aplikasi ini menjadi cahaya bagi jiwanya.&rdquo;
+          </p>
+        </div>
       </footer>
 
     </main>

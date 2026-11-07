@@ -1,10 +1,169 @@
 # BHUMI AMARTYA — MASTER TRACKING TO-DO
 
+## Current Release 119 gates — 2026-11-03
+
+- [x] BP03 result contract closed for the local baseline by Founder decision; TypeScript, Build 115 regression and live normalizer accepted PASS. Earlier outstanding BP03 contract and TypeScript entries below are historical.
+- [ ] Release QA: verify legacy Human Design records and non-destructive revalidation in a browser; synthetic legacy compatibility remains PARTIAL.
+- [ ] Verify the integrated Settings → profile receipt → shared state → BP10 stale-profile race.
+  Synthetic AuthProvider/BP10 Chromium coverage now passes, but real emulator receipt-to-render evidence remains blocked by the existing QA runtime/security gate; see `RELEASE119_BP10_FINAL_INTEGRATION_RESULT.md`.
+- [ ] Close trusted Blueprint result persistence and Firestore security, including legitimate writes and provenance.
+  BP06 now recomputes in memory from the accepted canonical profile; the real canonical adapter and BP06 hook passed 12 local emulator checks using a synthetic provider context. Verify actual provider-to-page integration and address the remaining Blueprint writer/consumer contracts and candidate Rules before global acceptance.
+  BP07 now recomputes from the accepted canonical profile; 16 local emulator groups cover BP06/BP07 and canonical UID controls with a synthetic provider context. Setup still requires a persisted full Blueprint and Settings still writes one; a trusted replacement and browser-level verification remain open.
+  Update: authenticated Settings no longer writes the full Blueprint and uses the existing server profile repository for preferences; Setup now reports its confirmed canonical save and remains incomplete until persisted-output dependencies are resolved. Actual browser flow and HD trusted writer remain open.
+  Further update: Setup now has a receipt-verified canonical completion path and a nonpersisted dashboard calculation; local emulator and synthetic route predicates passed. Verify actual browser navigation/reload, other stored-Blueprint consumers and the HD trusted writer before release.
+  Human Design update: client writers now fail closed on HD payloads, default recovery preserves stored data, and local Rules tests passed 15 groups. Mixed Blueprint writes containing HD are blocked; implement and verify an independent server-calculated HD writer bound to the authoritative birth revision, assess older records, and resolve dependent consumers before global persistence acceptance.
+  Follow-up: mixed non-HD writes now work when HD and input exactly match stored values (20 current-local-Rules emulator groups); a strictly empty missing-result placeholder also works (unit evidence). New usable or changed HD/input still fail closed. Candidate Rules continue to restrict arbitrary derived writes. The independent HD writer, legacy provenance and remaining consumers stay open.
+- [ ] Recover and verify the Firebase Functions main entrypoint and required exports.
+- [ ] Verify legacy Android compatibility and complete final release QA. Release 119 remains BLOCKED.
+
+---
+
+## Release 119 / Build 120 Operational Ledger & Handover — 2026-11-07
+
+### COMPLETED LOCALLY (DONE_LOCAL)
+- [x] **Dashboard Memorial Footer**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** `components/dashboard/DashboardClient.tsx`, `src/locales/id-ID/translation.json`.
+  - **Details:** Replaced legacy quote with dedication to Sheina Khazmalia (17 Oktober 1988 – 5 November 2026), heart icon, responsive styling, clean TypeScript.
+  - **Remaining Action:** Included in Build 120 release bundle.
+  - **Blocker / Dependency:** None.
+
+- [x] **Lilith Mean Black Moon Calculation Correction & Global Parity**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** `lib/astrology/calculateNatalBasics.ts`, `lib/astrology/calculateNatalChart.ts`, `tests/unit/build119-bp04-differential.test.ts`, `tests/unit/lilith-parity.test.ts`, `scripts/validate_lilith_global.py`.
+  - **Details:** Replaced broken linear formula (`315.2 + 0.1114 * days`, +51.74° error) with IAU/ELP 2000-82 lunar mean apogee with true ecliptic projection. Verified across 15 global fixtures (1900–2035) with max error 0.00491° (< 18 arcsec) vs Swiss Ephemeris (`SE_MEAN_APOG`). Founder chart corrected to Aries 26°47′, House 3.
+  - **Remaining Action:** Included in Build 120 release bundle.
+  - **Blocker / Dependency:** None.
+
+- [x] **BaZi & Vedic Local Calculation Recovery**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** `lib/bazi/useBaziData.ts`, `lib/vedic/useVedicData.ts`, `tests/unit/bazi-vedic-local-recovery.test.ts`.
+  - **Details:** Removed non-canonical blocking gate (`revisionOf(profile)`). In-memory calculations now calculate `status: "ready"` for complete legacy profiles. Preserved UID security boundaries and 0 client Firestore writes.
+  - **Remaining Action:** Included in Build 120 release bundle.
+  - **Blocker / Dependency:** None.
+
+- [x] **11 Blueprint Zero-Regression Verification**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** BP01 (`tests/unit/build119-bp01-d2-calculation.test.ts`: 30/30 PASS), BP02 (`tests/unit/build119-bp02-parity-regression.test.ts`: 10/10 PASS), BP03 (`tests/unit/build119-bp03-native-engine-parity.test.ts`: 5/5 PASS), BP04 (`tests/unit/build119-bp04-differential.test.ts`: PASS), BP05 (`tests/unit/build120-bp05-calculation.test.ts`: 7/7 PASS), BP06 (`tests/unit/build121-bp06-sprint1.test.ts`: 8/8 PASS), BP07 (`tests/unit/build122-bp07-sprint1.test.ts`: 13/13 PASS), BP08 (`tests/unit/build123-bp08-sprint1.test.ts`: 791 assertions PASS), BP09 (`tests/unit/build124-bp09-sprint1.test.ts`: 112 assertions PASS), BP10 (`scripts/validateAstrocartographyR8A.ts`: 58/58 PASS), BP11 (`scripts/checkZiWei.ts`: 80/80 PASS).
+  - **Details:** Zero regressions across all eleven core astrology and blueprint calculation engines.
+  - **Remaining Action:** Maintain in continuous automated testing suite.
+  - **Blocker / Dependency:** None.
+
+- [x] **Dashboard Daily Insight Alignment & Action Section Removal**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** `components/dashboard/SoulReflectionCard.tsx`, `components/dashboard/DashboardClient.tsx`, `components/dashboard/DashboardClient.module.css`, `tests/unit/build120-dashboard-insight-alignment.test.ts`, `tests/unit/dashboard-design1-invariants.test.ts`.
+  - **Details:** Unified Dashboard "Insight Utama" with Profile "Catatan Hari Ini → Arah Hari Ini" using shared `buildDailyGuidance().dailyDirection.paragraphs`. Removed duplicate greeting ("Halo..."). Removed entire "SATU TINDAKAN" section and its container styling. 100% exact parity across accounts/dates, verified clean responsive rendering and TypeScript PASS.
+  - **Remaining Action:** Included in Build 120 release bundle.
+  - **Blocker / Dependency:** None.
+
+- [x] **Setup & Settings Canonical Fallback Safety (Founder Gate Verified)**
+  - **Status:** DONE_LOCAL (SAFE)
+  - **Evidence / File:** `lib/profile/canonicalBirthFields.ts`, `lib/billing/serverOwnedAccessFields.ts`, `lib/repositories/userRepository.ts`, `app/setup/page.tsx`, `app/settings/page.tsx`, `tests/unit/build120-fallback-safety.test.ts`.
+  - **Details:** Fallback verified against 5 safety requirements:
+    1. Permitted legacy profile & birth fields (`fullName`, `birthDate`, `birthTime`, `birthCity`, `latitude`, `longitude`, `timezone`, `setupCompleted`) are preserved for uncanonicalized profiles.
+    2. Server-owned canonical metadata (`canonicalBirthRevision`, `canonicalBirthEpoch`, `canonicalBirthOperationId`, etc.) is unconditionally stripped by `stripCanonicalServerMetadata`—no fake receipts/epochs can be written.
+    3. Server-owned access & lifetime fields (`isLifetime`, `lifetime`, `isPremium`, `role`, etc.) are unconditionally stripped by `stripServerOwnedAccessFields`.
+    4. Profiles with existing server-verified canonical records are protected via `stripClientBirthWrites`, preventing rogue client birth overwrites.
+    5. Zero direct writes to `users/{uid}/canonical/*`, `users/{uid}/birthOperations/*`, or protected Blueprint paths. All authorization/validation failures fail closed and report errors to the user.
+  - **Remaining Action:** Included in Build 120 release bundle.
+  - **Blocker / Dependency:** None.
+
+- [x] **Android Build 120 Local QA APK Assembly & Fresh Asset Verification**
+  - **Status:** DONE_LOCAL (PASS)
+  - **Evidence / File:** `android/app/build/outputs/apk/debug/app-debug.apk` (12.8 MB, assembled with exit code 0), `android/app/build/outputs/apk/debug/output-metadata.json`, `android/app/src/main/assets/public/`.
+  - **Pipeline & QA Verification Breakdown:**
+    - **Next.js Production Static Export:** PASS (`node scripts/run-prod-build.mjs`, 78/78 static routes generated, 110 RSC aliases created, exit code 0).
+    - **Capacitor Android Sync:** PASS (`npx cap sync android`, synced web assets into `android/app/src/main/assets/public/` in 733ms).
+    - **Fresh Web Asset Content:** VERIFIED (Inspected chunk `1456-1bd3201d383f2010.js` in assets: Sheina Khazmalia Memorial Footer present, unified Insight Utama `dailyDirection.paragraphs` present, Lilith IAU/ELP 2000-82 formula present, BaZi/Vedic recovery present).
+    - **QA APK Binary:** Assembled `com.bhumiamartya.app.qa` (`versionCode = 120`, `versionName = "5.0.20-qa"`). Suffix `.qa` strictly prevents overwriting or conflicting with Google Play 119 production app (`com.bhumiamartya.app`).
+    - **Localhost Runtime QA:** PASS in Chromium browser / node runtime across Dashboard (Memorial Sheina, no duplicate greeting, SATU TINDAKAN removed), Profile (100% exact parity on Arah Hari Ini), Lilith (Aries 26°47′, House 3), BaZi & Vedic (local calculation recovery with zero protected writes), and Setup/Settings fallback.
+    - **Physical Android Device QA:** PENDING (ADB status: no physical USB device connected).
+    - **Security Governance Note:** Client-side fallback guards (`stripCanonicalServerMetadata`, `stripServerOwnedAccessFields`, `stripClientBirthWrites`) fail closed safely, but do NOT replace production Firestore Rules hardening. Production rules remain unchanged on `bhumiamartya-fe85c` for backward compatibility with active Play Store release 119.
+  - **Remaining Action:** Physical device QA when device is connected; Founder sign-off for final release AAB assembly (`gradlew bundleRelease`).
+  - **Blocker / Dependency:** None.
+
+- [x] **Build 120 Release Configuration Readiness**
+  - **Status:** DONE_LOCAL / WAITING_APPROVAL
+  - **Evidence / File:** `android/app/build.gradle` (`versionCode 120`, `versionName "5.0.20"`), `lib/config/buildInfo.ts` (`CURRENT_VERSION_CODE = 120`, `CURRENT_VERSION_NAME = "5.0.20"`), `tests/unit/version-reconciliation.test.ts` (24/24 PASS).
+  - **Details:** VersionCode 120 verified unallocated in Play Console (current track is 119 / 5.0.19). AAB build, release signing, and upload withheld pending Founder authorization.
+  - **Remaining Action:** Founder sign-off for final release build assembly.
+  - **Blocker / Dependency:** WAITING_APPROVAL (Founder authorization required before AAB generation or store distribution).
+
+- [x] **Canonical Vercel API Adapter & Local Tests**
+  - **Status:** DONE_LOCAL
+  - **Evidence / File:** `services/billing-verifier/api/canonical/`, `lib/profile/canonicalHttps.ts`, `tests/unit/build126-canonical-route.test.cjs`.
+  - **Remaining Action:** Keep local until deployment authorization.
+  - **Blocker / Dependency:** Production Vercel deployment not authorized.
+
+- [x] **Cloudflare Workers Feasibility POC**
+  - **Status:** DONE_LOCAL (27/27 checks PASS)
+  - **Evidence / File:** `services/canonical-worker/`, `tests/integration/canonical-worker-emulator.test.mjs`.
+  - **Remaining Action:** Standalone feasibility proven; no production deployment.
+  - **Blocker / Dependency:** Phase D approved as local POC; production deployment deferred by Founder directive.
+
+### BLOCKED / NOT DEPLOYED / WAITING_APPROVAL
+- [x] **Android Build 120 Final AAB Assembly & Official Release Signing**
+  - **Status:** BUILD_VERIFIED
+  - **Evidence / File:** `android/app/build/outputs/bundle/release/app-release.aab`, `release-artifacts/build120/bhumi-amartya-release-v5.0.20-build120.aab`.
+  - **Details:** 
+    - Package ID: `com.bhumiamartya.app`
+    - Version: `versionCode = 120`, `versionName = "5.0.20"`
+    - Size: 9,770,389 bytes (9.77 MB)
+    - SHA-256: `D0C9139CBB9EBFA4FB045897C97911530A39E8DDD740064C9D068385DF200750`
+    - Signer: `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID` (official keystore verified by jarsigner)
+    - Static Web Assets: Fresh (Next.js production static export 78 pages, synced via Capacitor)
+  - **Remaining Action:** Google Play Console upload upon explicit Founder order.
+  - **Blocker / Dependency:** None for local AAB.
+
+- [ ] **Google Play Store Internal Track Upload**
+  - **Status:** WAITING_APPROVAL (`PLAY_UPLOAD = NOT_PERFORMED`)
+  - **Evidence / File:** Release bundle ready at `release-artifacts/build120/bhumi-amartya-release-v5.0.20-build120.aab`.
+  - **Remaining Action:** Manual or automated upload to Google Play Internal Testing upon Founder directive.
+  - **Blocker / Dependency:** Founder explicit upload authorization.
+
+- [x] **Physical Android Device QA**
+  - **Status:** WAIVED_BY_FOUNDER
+  - **Evidence / File:** Founder directive: "Founder telah memeriksa aplikasi melalui localhost dan menyatakan hasilnya sesuai. Physical Android QA tidak diwajibkan untuk BUILD 120."
+  - **Remaining Action:** None for Build 120.
+  - **Blocker / Dependency:** None.
+
+- [ ] **Production Cloudflare Backend Deployment**
+  - **Status:** BLOCKED / NOT DEPLOYED (Fase D POC preserved locally only)
+  - **Evidence / File:** `services/canonical-worker/`.
+  - **Remaining Action:** Hold until explicit Founder deployment order.
+  - **Blocker / Dependency:** Founder directive: "Pertahankan seluruh hasil Cloudflare Workers POC, tetapi jangan deploy produksi sekarang."
+
+- [ ] **Billing Verifier Migration from Vercel Hobby**
+  - **Status:** BLOCKED / NOT DEPLOYED
+  - **Evidence / File:** `services/billing-verifier/`.
+  - **Remaining Action:** Assess migration path when authorized.
+  - **Blocker / Dependency:** Dependent on backend infrastructure decision.
+
+- [ ] **Production Hardened Firestore Rules**
+  - **Status:** BLOCKED / NOT DEPLOYED
+  - **Evidence / File:** `firestore.rules`, `tests/integration/build126-hd-rules-local.cjs`.
+  - **Security Implications of Currently Deployed Rules:**
+    The deployed production rules on `bhumiamartya-fe85c` allow client-side writes to certain collections without strict server-verified canonical checks, meaning legacy 118/119 clients can still perform standard profile updates. Hardening rules prematurely would break legacy clients (118/119) that lack the canonical mutation protocol. Candidate rules remain in local emulator only.
+  - **Remaining Action:** Maintain local rules testing; wait for 118/119 client phase-out plan.
+  - **Blocker / Dependency:** Backward compatibility with active Play Store release 119.
+
+- [ ] **Legacy 118/119 Compatibility with Hardened Rules**
+  - **Status:** BLOCKED / NOT DEPLOYED
+  - **Evidence / File:** `tests/integration/release119-legacy-attestation-emulator.cjs`.
+  - **Remaining Action:** Test transition protocol without breaking active users.
+  - **Blocker / Dependency:** Deployed Firestore Rules cannot be hardened until legacy client transition is verified.
+
+- [x] **Final Real-Device Verification**
+  - **Status:** WAIVED_BY_FOUNDER
+  - **Evidence / File:** Founder explicit directive: "Physical Android QA tidak diwajibkan untuk BUILD 120." Localhost runtime verification accepted.
+  - **Remaining Action:** None for Build 120 release gate.
+  - **Blocker / Dependency:** None.
+
 **Document ID:** `TODO-MASTER-001`  
-**Current Workstream:** Workstream 2 — Billing & Entitlement (ACTIVE)  
+**Current Workstream:** Build 119 - BP02 Destiny Matrix (BP02 ACTIVE; scope-locked)  
 **Baseline Git Branch:** `hotfix/build110-indonesian-only`  
-**Active HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Last Updated:** 21 Oktober 2026  
+**Active HEAD:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)  
+**Last Updated:** 31 Oktober 2026 (Sinkronisasi BP02 — entri lama dipertahankan)  
 **Status:** ACTIVE OPERATIONAL TRACKER  
 
 ---
@@ -401,3 +560,191 @@ Pengerjaan proyek Bhumi Amartya dibagi secara ketat berdasarkan keputusan Founde
 * [x] **TODO-B118-54 (Foundations Drawer Deep Transparency):** Menghadirkan 3 hingga 6 entri teknis terstruktur per domain pada drawer `<details>` "Dasar Pembacaan", memaparkan derajat orb transit, rumah Placidus, Weton, BaZi, Tzolkin, dan Cetak Biru Kanonikal secara transparan kepada pengguna.
 * [x] **TODO-B118-55 (Comprehensive Test Suite & Quality Gate):** Memperluas `tests/unit/build118-daily-guidance.test.ts` menjadi 389 automated checks mencakup 16 Sections pengujian ketat. Total 856 assertions lulus di 7 test suites tanpa kegagalan; `npx tsc --noEmit` 0 errors; HTTP 200 OK localhost:3000/profile.
 * [x] **TODO-B118-56 (Dual-Fixture Synthesis Output Capture):** Mengeksekusi script `scripts/capture-daily-guidance-outputs.ts` menghasilkan output aktual lengkap tersimpan di `scratch/build118-daily-guidance-parity-outputs.json`. Release tetap dibatasi (STOP AND WAIT FOR FOUNDER REVIEW).
+
+---
+
+## 5. BUILD 119 — BLUEPRINT SPRINT PROGRAM: BP02 DESTINY MATRIX (SCOPE-LOCKED)
+
+> **Scope-lock Founder (31 Okt 2026):** Pekerjaan & dokumentasi fokus **eksklusif BP02 — Destiny Matrix**. Status resmi BP01 dan Blueprint lain TIDAK diubah; hanya dependency yang relevan dicatat. **Build 119 status: `IN PROGRESS — NOT PRODUCTION READY`.** Build 118 (`versionCode = 118`, `versionName = "5.0.18"`, HEAD `41e89d8d`) tetap baseline rilis; tidak dipromosikan. Tanpa commit/push/deploy/migration. Status skema: PLANNED, IN PROGRESS, BLOCKED, PASS LOCAL, ACCEPTED, FROZEN, CLOSED.
+
+### 5.1 BP02 — Status Aktual
+
+| Sprint BP02 | Status | Tests / Evidence (aktual, exit code) | Catatan |
+|---|---|---|---|
+| **BP02-A / A1 — Complete Audit & Gap Analysis** | **COMPLETE — READY WITH FOUNDER DECISIONS** | `scripts/acceptDestinyMatrixV1.ts` 74/74 PASS exit 0; R5 validator PASS; annual/ancestral/health PASS; `npm run check:matrix` exit 1 (stale — didokumentasikan, TIDAK diperbaiki); `scripts/validateBhumiMatrixV1.ts` exit 1 (stale — didokumentasikan) | Laporan: `BUILD119_OPENCODE_BP02_A_DESTINY_MATRIX_COMPLETE_AUDIT_REPORT.md`; 4 keputusan Founder D-02-1..D-02-4 pending keputusan lanjutan |
+| **BP02-B — Content Architecture (22 Arcana × Posisi)** | **IN PROGRESS — PROPOSAL, MENUNGGU FOUNDER REVIEW** | Engine canonical read-only exit 0 (fixture-dump / annual / dict drivers di Temp\opencode); engine frozen; 0 mutasi source | Laporan: `BUILD119_OPENCODE_BP02_B_DESTINY_MATRIX_CONTENT_ARCHITECTURE_REPORT.md`; keputusan arsitektur D-B-1..D-B-8 pending Founder |
+| **BP02-C / C1 / C2 — UI/UX & Editorial Proposal** | **IN PROGRESS — PROPOSAL, MENUNGGU FOUNDER REVIEW** | Proposal desain UI/UX 10 bab + diagram interaktif + Health Card Option A + states isolasi UID; nol implementasi source | Laporan: `BUILD119_OPENCODE_BP02_C_PREMIUM_DESTINY_MATRIX_UI_UX_PROPOSAL.md`; realisasi gate BP02-D1..D6 (izin per sprint) |
+| **BP02-D1 — Data Integrity & Ownership** | **PLANNED / NOT STARTED** | belum ada | Termasuk user data isolation khusus Destiny Matrix (§25 PRM) |
+| **BP02-D2 — Contract & Calculation Verification** | **PLANNED / NOT STARTED** | belum ada | Engine frozen sepanjang sprint |
+| **BP02-D3 — Arcana & Channel Editorial Corpus** | **PLANNED / NOT STARTED** | belum ada | Korpus `BHUMI_EDITORIAL_DEVELOPMENT-v1` (D-B-1) |
+| **BP02-D4 / D4.1 — Cross-Position Synthesis & Editorial Polish** | **PLANNED / NOT STARTED** | belum ada | — |
+| **BP02-D5 — Premium Destiny Matrix UI/UX** | **PLANNED / NOT STARTED** | belum ada | Tanpa "Keterangan selengkapnya" pada pembacaan wajib |
+| **BP02-D6 — Final QA & Acceptance** | **PLANNED / NOT STARTED** | belum ada | — |
+| **BP02-E — Founder Acceptance, Freeze & Closure** | **PLANNED / NOT STARTED** | belum ada | Founder Gate — tanpa persetujuan Founder tidak ada FROZEN/CLOSED |
+
+**Scope & larangan (dari Founder):** BP01 (termasuk D6 yang masih berjalan — workstream terpisah, **tidak ditutup, tidak diubah statusnya**), BP03 Human Design, BP04–BP11, Dashboard & guidance system, shared calculators/engines/translators lintas sistem, Firebase Auth/Firestore Rules/schema/billing/Premium, komponen global & konfigurasi aplikasi — **dilarang diubah**. Jika perbaikan BP02 membutuhkan perubahan shared code → laporkan dependency & blast radius dulu; tidak ada perubahan lintas sistem otomatis.
+
+**Technical Debt & keputusan formula terbuka (didokumentasikan):** D-02-1 (ADR-DASH-05 validator drift), D-02-2 (legacy chartHeart mismatch — "BLOCKED BY FORMULA AMBIGUITY"), D-B-1..D-B-7 (pending approval per item); D-B-8 **RESOLVED — Option A** (Health Card angka canonical engine, ADR-DM-04), stale checkpoints `check:matrix` / `validateBhumiMatrixV1`.
+
+### 5.2 Backlog BP02 (Master Directive)
+
+* [x] **BP02-A / A1** — Audit & Gap Analysis (COMPLETE — READY WITH FOUNDER DECISIONS)
+* [~] **BP02-B** — Content Architecture (IN PROGRESS — menunggu Founder Review)
+* [ ] **BP02-C / C1 / C2** — UI/UX & Editorial Proposal (IN PROGRESS — proposal ditulis, menunggu Founder Review; D-B-8 Option A tercatat ADR-DM-04)
+* [ ] **BP02-D1** — Data Integrity & Ownership (PLANNED / NOT STARTED)
+* [ ] **BP02-D2** — Contract & Calculation Verification (PLANNED / NOT STARTED)
+* [ ] **BP02-D3** — Arcana & Channel Editorial Corpus (PLANNED / NOT STARTED)
+* [ ] **BP02-D4 / D4.1** — Cross-Position Synthesis & Editorial Polish (PLANNED / NOT STARTED)
+* [ ] **BP02-D5** — Premium Destiny Matrix UI/UX (PLANNED / NOT STARTED)
+* [ ] **BP02-D6** — Final QA & Acceptance (PLANNED / NOT STARTED)
+* [ ] **BP02-E** — Founder Acceptance, Freeze & Closure (PLANNED / NOT STARTED)
+
+### 5.3 Kebijakan Permanent Continuous Governance (Build 119 → 120+)
+
+Wajib untuk **seluruh 11 Blueprint** pada setiap sprint (1) Preflight read; (2) Implementation dengan scope-lock; (3) Verification dengan evidence exit-code aktual; (4) Documentation Sync (SOT Index, Master TODO, PRM, Sprint Register, Decision Log, Risk Register, Evidence Register, Handover Log, Patch Manifest); (5) Traceability `Requirement ID → Sprint → Source Change → Test Evidence → Founder Decision → Final Status`; (6) Status Control (PLANNED/IN PROGRESS/BLOCKED/PASS LOCAL/ACCEPTED/FROZEN/CLOSED); (7) **Founder Gate** — tanpa persetujuan Founder tidak ada FROZEN/CLOSED, promosi build, commit/push/deploy.
+
+**User Data Isolation & Personalization (PERMANEN, saat ini bersifat BP02-scope sesuai scope-lock):** setiap hasil Destiny Matrix wajib berasal dari input valid pengguna aktif; tidak ada pembacaan milik pengguna lain; diuji dengan dua UID berbeda (tanggal lahir sama/berbeda), logout, account switching, stale data, dan request race. Seluruh isu wajib lolos acceptance sebelum BP02 FROZEN/CLOSED. Rincian: `docs/requirements/PROJECT_REQUIREMENTS_MATRIX.md` §25.
+
+### 5.4 Persiapan Readiness Build 120
+
+Saat Build 120 dimulai: susun **`BUILD119_TO_BUILD120_READINESS_AND_GAP_REPORT.md`** — baseline terakhir yang disetujui; status 11 Blueprint; fitur frozen & closed; open bugs; technical debt; unresolved decisions; pending enhancements; regression baseline; rekomendasi prioritas Build 120. Pembaruan governance bersifat inkremental per sprint (tidak menunggu Build 119 selesai).
+
+### 2026-11-03 — Release 119/120 profile integrity roadmap addendum
+
+- [ ] Release 119 blocker: establish an authorized, authoritative shared birth-profile freshness contract and truthful server persistence acknowledgment; same-account stale completion and resolved-false save helper are reproduced only in synthetic tests.
+- [ ] Founder review of `BUILD126_SHARED_PROFILE_AUTHORITATIVE_REVISION_AND_PERSISTENCE_ACK_DESIGN.md`; preferred persisted server revision is PROPOSED, schema necessity remains UNVERIFIED, implementation not authorized.
+- [ ] Resolve BP10 P0/P1, obtain Founder local-freeze approval, then run consolidated Blueprint, minimum security and Android readiness gates. No production access, Git writes, build or Play action is authorized by this entry.
+- [ ] Release 120, after Release 119 completion: broader Security & Authorization, shared profile delegation, Founder/Admin, Firestore Rules closure, communications, Arsip and Billing/Entitlement. Release-critical minimum security remains a Release 119 gate.
+
+
+### 2026-11-03 — Profile revision final design gate
+
+- [ ] Founder review of NEW_SERVER_REVISION recommendation and explicit authorization for separate schema, trusted server, Rules, compatibility, migration and implementation.
+- [ ] Verify all released client write paths, true old-client update/read-only behavior, authoritative profile deletion and receipt lifecycle; legacy migration and minimum security remain BLOCKED.
+- [ ] Close BP10 freshness before Founder freeze and Release 119 readiness; broader Security/Authorization and Billing remain Release 120 after actual Release 119 completion. No build, production access or Git write is authorized by this entry.
+- Evidence: `BUILD126_PROFILE_REVISION_FINAL_IMPLEMENTATION_SECURITY_AND_LEGACY_DESIGN.md`.
+
+
+### 2026-11-03 — Profile revision local implementation blocked
+
+- [ ] Establish the trusted server host/token/owner/IAM and Android static-export routing; finish known-writer/alias and legacy-client compatibility verification.
+- [ ] Design/test truthful rejected/offline write behavior in older binaries before Rules fence; current synthetic emulator permits owner unversioned birth writes and arbitrary revision-like fields.
+- [ ] Only after the Phase A gate, implement approved canonical revision/receipt, client acknowledgment, Rules candidate and emulator regressions. No schema, endpoint or candidate was implemented by this task.
+- [ ] BP10 freeze and Release 119 remain blocked; full Security & Authorization/Billing remain Release 120 after Release 119, with minimum safety still mandatory for Release 119.
+- Evidence: `BUILD126_PROFILE_REVISION_SERVER_CONTRACT_LOCAL_IMPLEMENTATION_REPORT.md`.
+
+
+### 2026-11-03 — Build 126 current baseline and profile boundary
+
+[ ] Release 119 roadmap / known issue: close candidate Rules bypasses, reconcile integrated canonical state and truthful receipts, verify legacy Android, rerun emulator and BP10 Chromium gates. Current baseline accepted; isolated prototype is not application integration. See BUILD126_RELEASE119_CURRENT_BASELINE_AND_PROFILE_IMPLEMENTATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile security closure
+
+[ ] Release 119 roadmap / known issue: provide and test a trusted Blueprint input writer before restricting legacy writes; complete server initialization/receipt and Rules bypass/negative-control suite before shared freshness integration. BP10 remains unresolved. See BUILD126_RELEASE119_PROFILE_SECURITY_CLOSURE_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Blueprint writer prototype
+
+[ ] Release 119 roadmap / known issue: migrate Blueprint writers and consumers safely, secure computed outputs and provenance, close profile initialization and receipt gates, then re-run full Phase A. The local input-only prototype is not an integrated writer. See BUILD126_RELEASE119_TRUSTED_BLUEPRINT_WRITER_AND_PROFILE_CONTRACT_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Phase A security integration
+
+[ ] Release 119 roadmap / known issue: restore a trustworthy Blueprint computation/persistence path, resolve missing Functions entrypoint modules, repair legacy initialization and receipt behavior, and finish Phase A before shared profile/BP10 integration. See BUILD126_RELEASE119_PHASE_A_FINAL_SECURITY_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Functions integration recovery
+
+[ ] Release 119 roadmap / known issue: recover verified Functions welcomeMessage, birthdayScheduler and broadcastEmail sources; verify existing exports, then integrate and test the canonical callable and legitimate Blueprint contract before Phase B. See BUILD126_RELEASE119_FUNCTIONS_BLUEPRINT_WRITER_AND_PROFILE_INTEGRATION_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 local Functions continuation
+
+[ ] Release 119 roadmap / known issue: recover verified missing Functions modules and finish legacy alias/data preservation, callable receipt/client retry, trusted Blueprint writer and integrated consumers before shared freshness or BP10 freeze. Local emulator success is not production evidence. See BUILD126_RELEASE119_FUNCTIONS_RECOVERY_AND_TRUSTED_PROFILE_CONTINUATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile alias integration gate
+
+[ ] Release 119 roadmap / known issue: close full alias/timeout/receipt handling and actual Blueprint writer/consumer security before shared freshness and BP10 integration; recover main Functions modules and verify legacy Android separately. See BUILD126_RELEASE119_LOCAL_PROFILE_BLUEPRINT_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile and Blueprint integration gates
+
+[ ] Release 119 roadmap / known issue: validate real timeout recovery and persistent idempotency identity, complete profile security/Rules gates, integrate a secure Blueprint writer and actual consumer, and only then close BP10 freshness. See BUILD126_RELEASE119_CANONICAL_PROFILE_BP10_AND_BLUEPRINT_E2E_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 application save integration
+
+[ ] Release 119 roadmap / known issue: complete pending save recovery across tab closure and revision changes, Blueprint writer/consumer, authoritative shared state and integrated BP10 race; investigate four failing Build 115 tests. Main Functions and Android remain separate release blockers. See BUILD126_RELEASE119_ACTUAL_APPLICATION_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 shared profile and HD triage
+
+[ ] Release 119 roadmap / known issue: establish authoritative server/cache provenance and full Settings-to-receipt-to-BP10 browser flow; resolve four Build 115 fixture/contract mismatches without weakening authentication; secure Blueprint writer. See BUILD126_RELEASE119_SHARED_PROFILE_BP10_AND_HD_REGRESSION_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Settings provider integration
+
+[ ] Release 119 roadmap / known issue: review a safe combined-emulator QA runtime configuration without bypassing guards, then run the real Settings-to-receipt-to-provider-to-BP10 sequence. Complete Blueprint writer, HD fixture/contract decisions and legacy Android gates. See BUILD126_RELEASE119_SETTINGS_AUTHPROVIDER_BP10_INTEGRATED_E2E_REPORT.md.
+
+
+### 2026-11-03 — Build 126 QA runtime and HD token evidence
+
+[ ] Release 119 roadmap / known issue: obtain Founder decision on a narrowly scoped fail-closed test-only execution contract compatible with the deliberate QA runtime guard; complete authenticated HD fixtures and writer/normalizer contract reconciliation, then run actual BP10 E2E. See BUILD126_RELEASE119_QA_RUNTIME_AND_BP10_TRUE_E2E_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 OpenCode QA reconciliation
+
+[ ] Release 119 roadmap / known issue: review a production-isolated QA build identity and fully bound emulator execution before enabling qaOnly; current candidate is quarantined. Complete integrated BP10, Blueprint and other release gates. See BUILD126_OPENCODE_QA_GUARD_RECONCILIATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 QA build isolation execution gate
+
+QA-only runtime and BP10 integrated E2E remain blocked: independently verified build identity and production artifact isolation are absent. Guard 568/538, standalone helper 42 and BP10 math 6,948/1,444 passed locally; the old freshness probe failed against the current fail-closed save contract. See BUILD126_RELEASE119_QA_BUILD_ISOLATION_AND_TRUE_BP10_E2E_REPORT.md. No feature freeze or release approval.
+
+
+### 2026-11-03 — Build 126 freshness probe reconciliation
+
+The old helper probe now verifies explicit failure and no subsequent Blueprint callback on rejected profile persistence: 10 checks passed. Actual isolated QA harness and BP10 integrated E2E remain blocked and unimplemented; no freeze recommendation. See BUILD126_RELEASE119_QA_HARNESS_EXECUTION_AND_BP10_E2E_ACCEPTANCE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 isolated QA login smoke
+
+A dedicated local Next target started against three synthetic loopback emulators; actual login and Auth Emulator smoke passed (3 checks). Production artifact isolation and the full QA security contract remain blocked; BP10 E2E was not run. See BUILD126_RELEASE119_QA_HARNESS_IMPLEMENTATION_RESULT.md.
+
+
+### 2026-11-03 — Build 126 QA security acceptance
+
+Candidate Rules passed 13 scoped authenticated emulator checks and the actual login smoke passed. Process identity remains blocked on independent lineage and complete fallback evidence; production artifact isolation remains blocked because the isolated release build fails TypeScript. BP10 E2E not run. See BUILD126_RELEASE119_QA_SECURITY_ACCEPTANCE_AND_BP10_E2E_REPORT.md.
+
+
+### 2026-11-03 — Build 126 owned QA stack and TypeScript progress
+
+Owned local emulator stack, app-scope loopback and login smoke executed; continuous listener ownership and comprehensive browser egress isolation remain blocked, so BP10 E2E was not run. TypeScript improved from 18 to two Human Design status-contract diagnostics; repository TSC remains FAIL. See BUILD126_RELEASE119_QA_UNBLOCK_AND_BP10_INTEGRATED_EXECUTION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 launcher and browser boundary
+
+Launcher IPC challenge, parent checks and periodic process/listener monitoring were exercised; owned Firestore termination closed the QA session. Chromium WebRTC bypassed HTTP interception; added browser defense-in-depth did not establish OS egress isolation. Local BP10 E2E remains blocked. Two protected Human Design status-contract TypeScript diagnostics remain. See BUILD126_RELEASE119_QA_SECURITY_AND_BP10_E2E_FINAL_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 offline namespace capability
+
+A disposable WSL network namespace passed loopback and external TCP/UDP/DNS denial checks, but the actual app/emulators/Chromium were not run inside it and sandbox acceptance remains blocked. Two Human Design calculationStatus diagnostics remain unresolved; a separate existing live normalizer test failed. See BUILD126_RELEASE119_OFFLINE_QA_AND_BP10_E2E_REPORT.md.
+# Release 119 Functions main local recovery
+
+- [x] Load actual main entrypoint and exercise scoped canonical authentication, revision, receipt and candidate Rules in local emulator (10 checks, exit 0).
+- [ ] Verify restored historical privileged and scheduled functions, production provenance, and remaining release gates before release; no deployment is authorized.
+# Build 126R3 admin follow-up
+
+- [x] Verify broadcast token revocation and bounded payload locally with synthetic emulator and fake-provider tests.
+- [ ] Complete claim-authorized list/search, communications, analytics and entitlement integration; verify expired tokens and authenticated browser behavior before release.
+# R3 continuation — admin reply
+
+- [x] Move the scoped admin inbox reply to a non-revoked claim-authorized callable and verify locally with synthetic emulator data.
+- [ ] Complete secure inbox listing, user list/search, analytics and entitlement boundaries; verify the integrated browser journey.
+# R3 targeted entitlement blocker
+
+- [ ] Replace profile-role/badge premium decisions with validated claim or server-grant inputs while preserving legitimate legacy and billing access; two synthetic negative assertions currently fail.
+- [x] Verify candidate Rules reject protected entitlement changes and direct privileged collection reads locally (29 authorization groups; exit 0).

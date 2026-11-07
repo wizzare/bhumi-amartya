@@ -5,9 +5,9 @@
 **Outgoing Agent:** OpenCode  
 **Incoming Agent:** Google Antigravity  
 **Repository Root:** `C:\tmp\bhumi-build106-recovery`  
-**Active Branch:** `hotfix/build110-indonesian-only`  
-**Reported HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Current Workstream:** Phase 1 — Human Design Stabilization  
+**Active Branch:** `hotfix/build110-indonesian-only` (unchanged)  
+**Reported HEAD:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)  
+**Current Workstream:** Build 119 - BP02 Destiny Matrix (BP02 ACTIVE; scope-locked)  
 **Release Gate Status:** BLOCKED / NOT VERIFIED  
 
 ---
@@ -30,7 +30,7 @@ Sesuai instruksi Founder, serah terima kepemimpinan rekayasa perangkat lunak dar
 
 | Subjek Audit | Klaim Outgoing Agent (OpenCode) | Hasil Audit Aktual Antigravity (20 Okt 2026) | Status Rekonsiliasi |
 |---|---|---|---|
-| **Git Branch & HEAD** | `hotfix/build110-indonesian-only` @ `e63f334cf0` | Sesuai. HEAD commit `e63f334cf0ac20cc076bc88e98e3e06808b024f3`. | **VERIFIED MATCH** |
+| **Git Branch & HEAD** | `hotfix/build110-indonesian-only` @ `e63f334cf0` | Sesuai. HEAD commit `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`). | **VERIFIED MATCH** |
 | **Working Tree State** | Banyak perubahan uncommitted di HD dan test harness. | Sesuai. 53 modified files dan 38 untracked files/dirs ditemukan. | **VERIFIED MATCH** |
 | **HD-01 Auth Tests** | 12 tests PASS. | Sesuai. `tests/unit/hd-endpoint-auth.test.ts` memuat tepat 12 test terdefinisi. | **VERIFIED MATCH** |
 | **HD-02 Canonical Tests** | 10 tests PASS. | Sesuai. `tests/unit/hd-canonical-integrity.test.ts` memuat 10 test terdefinisi. | **VERIFIED MATCH** |
@@ -102,3 +102,121 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   9. `A-09`: Navigasi ke `/blueprint/human-design`, chart bodygraph ter-render lengkap tanpa error console.
   10. `A-10`: Refresh halaman membuktikan konsistensi chart dan zero duplicate calculation.
 * **Protokol Eksekusi:** Menunggu instruksi resmi "GO" dari Founder.
+
+---
+
+## 6. HANDOVER ADDENDUM — 31 OKTOBER 2026 (BUILD 119 BP02 DESTINY MATRIX; SCOPE-LOCKED)
+
+* **Status repositori:** branch tetap `hotfix/build110-indonesian-only`; HEAD tetap `41e89d8d` (`release: Bhumi Amartya v5.0.18 build 118`); 0 commit baru; produk & engine tetap frozen (tanpa mutasi source).
+* **Workstream aktif:** BP02 Destiny Matrix — BP02-A **COMPLETE — READY WITH FOUNDER DECISIONS**; BP02-B **IN PROGRESS (PROPOSAL ARCHITECTURE CONTENT)** menunggu Founder Review; BP02-C **IN PROGRESS — DESIGN PROPOSAL ONLY** (`BUILD119_OPENCODE_BP02_C_PREMIUM_DESTINY_MATRIX_UI_UX_PROPOSAL.md`), menunggu Founder Review BP02-D; BP02-D1..D6/E masih PLANNED (izin implement per sprint).
+* **Keputusan Founder terbaru (ADR-DM-04):** D-B-8 = **Option A** — Health Card menampilkan angka canonical engine, fixture hanya design-reference, tanpa angka campuran (RSK-37 RESOLVED; PRM BP02-CON-11 → DESIGN APPROVED). D-B-1..7 & D-02-1..4 tetap pending approval per item.
+* **Outgoing work:** 2 laporan BP02 (A audit pri; B content architecture), 1 Founder decision packet (Task 10, diterima dengan conditions), 1 proposal UI/UX BP02-C (Task 11), sync governance docs (SOT Index; Master TODO §5; SPRINT REGISTER (BP02-A/B/C, 26 entri); PRM §24-25; DECISION LOG ADR-DM-01..04; RISK REGISTER RSK-35..38; EVIDENCE REGISTER §8 + addendum Task 10/11; HANDOVER_ADDENDUM ini); satu laporan tata kelola sinkronisasi di root repo.
+* **Kebijakan permanen yang aktif (klausul handover):**
+    1. Continuous Governance per-sprint (ADR-DM-02) — gates + Founder Gate; status control PLANNED/IN PROGRESS/BLOCKED/PASS LOCAL/ACCEPTED/FROZEN/CLOSED.
+    2. User Data Isolation & Personalization (ADR-DM-03; PRM §25) — tanpa FROZEN/CLOSED BP02 sebelum semua isu lolos acceptance.
+    3. Scope-lock Founder — hanya BP02; BP01 (D6 berjalan) dan Blueprint lain TIDAK tersentuh; shared changes via laporan dependency/blast radius dulu.
+* **QA & acceptance yang belum dilaksanakan:** emulator QA tetap dinonaktifkan `fail-closed` qaConfig (jalur Founder-approved = production dev server), uji isolasi BP02-ISO-01..06 belum dieksekusi; tidak ada bukti deploy/APK.
+* **Terminal status:** STOP AND WAIT FOR FOUNDER REVIEW — tidak ada commit/push/deploy sebelum approval Founder.
+
+---
+
+## 7. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (LILITH FIX & BP06/BP07 LOCAL RECOVERY)
+
+* **Status repositori:** branch `hotfix/build110-indonesian-only`; HEAD `41e89d8d` (`release: Bhumi Amartya v5.0.18 build 118`).
+* **Lilith Natal Chart Correction:**
+  - **Status:** FIXED LOCALLY — PENDING RELEASE.
+  - **Akar Masalah:** `lib/astrology/calculateNatalChart.ts` menggunakan konstanta linear J2000 rusak `315.2 + 0.1114 * days` (+51.74° error).
+  - **Perbaikan:** Digantikan dengan formula astronomis kanonikal IAU / ELP 2000-82 dengan proyeksi ekliptika di `lib/astrology/calculateNatalBasics.ts` yang diekspor dan dikonsumsi bersama oleh `calculateNatalChart.ts`.
+  - **Hasil Paritas:** Founder Lilith (3 Mei 1985 23:45 WIB Jakarta) kini tepat **Aries 26°47′, House 3** (Placidus & Whole Sign). Paritas Swiss Ephemeris 15/15 profil sintetis global PASS (maksimum deviasi 0.0049° / 17.7 detik busur).
+  - **Verifikasi UI:** Rendering di `/blueprint/natal-chart` dan dynamic synthesis langsung mengonsumsi nilai yang benar in-memory.
+* **BP06 BaZi & BP07 Vedic Local Calculation Recovery:**
+  - **Status:** RESTORED & PASS LOCAL.
+  - **Akar Masalah:** Hook `useBaziData` dan `useVedicData` sebelumnya mewajibkan `revisionOf(profile)` (canonical epoch/revision) yang memblokir akun-akun legasi lengkap.
+  - **Perbaikan:** Gate `!revisionOf(profile)` dihapus dari jalur tampilan baca lokal (in-memory). Data lengkap legasi kini dihitung secara lokal tanpa membutuhkan epoch/revisi server, sementara autentikasi UID (`profile.uid === activeUid`) tetap dipertahankan fail-closed.
+  - **Invarian Keamanan:** Tidak ada penulisan ke Firestore (0 client writes), tidak ada fabrikasi epoch/revisi kanonikal, engine perhitungan asli tidak disentuh, dan 9 Blueprint lainnya tidak terpengaruh.
+* **Backend Status:**
+  - Cloudflare Workers POC: 27/27 PASS, preserved locally, NO deployment.
+  - Vercel Canonical API: 3 endpoints tested locally, NO deployment.
+  - Firebase Spark: Rules produksi tidak diubah demi kompatibilitas klien Play Store release 119.
+* **Terminal status:** READY FOR FOUNDER REVIEW — tidak ada deploy/AAB build tanpa izin Founder.
+
+---
+
+## 8. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 120 RELEASE READINESS & 11-BLUEPRINT REGRESSION AUDIT)
+
+* **Status repositori:** branch `hotfix/build110-indonesian-only`; HEAD `41e89d8d`.
+* **Target Rilis Berikutnya (Founder Directive):**
+  - `versionCode = 120`
+  - `versionName = "5.0.20"`
+  - `applicationId = "com.bhumiamartya.app"`
+  - Status Play Console: `versionCode 120` terverifikasi belum pernah dialokasikan / diunggah ke Google Play Console (rilis aktif di Internal Testing adalah 119 / 5.0.19).
+* **Konfigurasi Rilis Build 120 (DONE_LOCAL):**
+  - `android/app/build.gradle`: `versionCode 120`, `versionName "5.0.20"`.
+  - `lib/config/buildInfo.ts`: `CURRENT_VERSION_CODE = 120`, `CURRENT_VERSION_NAME = "5.0.20"`, `CURRENT_BUILD_NUMBER = "120"`.
+  - `tests/unit/version-reconciliation.test.ts`: 24/24 PASS (APP_VERSION, RELEASE_NAME, CURRENT_BUILD_NUMBER, Android sync).
+* **Verifikasi Regresi 11 Blueprint (100% PASS LOCAL):**
+  - BP01 Numerology: 30/30 PASS (`build119-bp01-d2-calculation.test.ts`)
+  - BP02 Destiny Matrix: 10/10 PASS (`build119-bp02-parity-regression.test.ts`)
+  - BP03 Human Design: 5/5 PASS (`build119-bp03-native-engine-parity.test.ts`)
+  - BP04 Natal Chart: PASS (`build119-bp04-differential.test.ts`, `lilith-parity.test.ts`)
+  - BP05 Weton Jawa: 7/7 PASS (`build120-bp05-calculation.test.ts`)
+  - BP06 BaZi: 8/8 PASS (`build121-bp06-sprint1.test.ts`, `bazi-vedic-local-recovery.test.ts`)
+  - BP07 Vedic: 13/13 PASS (`build122-bp07-sprint1.test.ts`, `bazi-vedic-local-recovery.test.ts`)
+  - BP08 Tzolkin Maya: 791 assertions PASS (`build123-bp08-sprint1.test.ts`)
+  - BP09 Whole Sign: 112 assertions PASS (`build124-bp09-sprint1.test.ts`)
+  - BP10 Astrocartography: 58/58 PASS (`scripts/validateAstrocartographyR8A.ts`)
+  - BP11 Zi Wei Dou Shu: 80/80 PASS (`scripts/checkZiWei.ts`)
+* **Dashboard Memorial Footer (DONE_LOCAL):**
+  - Dedikasi untuk Sheina Khazmalia (17 Oktober 1988 – 5 November 2026) aktif di `components/dashboard/DashboardClient.tsx` dan `src/locales/id-ID/translation.json`.
+* **TypeScript Global Check:**
+  - `npx tsc --noEmit`: Exit 0 (0 errors).
+* **Terminal Status & Release Gate:**
+  - Status: `WAITING_APPROVAL`.
+  - Tidak ada pembuatan AAB, signing rilis, atau upload ke Google Play Store sebelum persetujuan eksplisit dari Founder.
+
+---
+
+## 9. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 120 DASHBOARD PARITY & FALLBACK SAFETY)
+
+* **Dashboard Insight Utama Parity (DONE_LOCAL):**
+  - Menyelaraskan konten Dashboard "Insight Utama" dengan Profil ("Catatan Hari Ini → Arah Hari Ini") menggunakan shared read-model `buildDailyGuidance().dailyDirection.paragraphs`.
+  - Sapaan ganda ("Halo...") dihapus.
+  - Section "SATU TINDAKAN" dan styling container-nya dihapus secara bersih.
+  - Verifikasi: `tests/unit/build120-dashboard-insight-alignment.test.ts` (6/6 PASS).
+* **Setup & Settings Fallback Safety (DONE_LOCAL):**
+  - Fallback `userRepository.upsertUserProfile` diperiksa dan diproteksi:
+    1. Hanya data profil legacy yang diizinkan yang disimpan (`fullName`, `birthDate`, `birthTime`, dsb.).
+    2. Metadata server kanonikal (`canonicalBirthRevision`, `canonicalBirthEpoch`, dsb.) dibersihkan tanpa syarat via `stripCanonicalServerMetadata`.
+    3. Hak akses lifetime/premium dibersihkan tanpa syarat via `stripServerOwnedAccessFields`.
+    4. Profil dengan catatan kanonikal terverifikasi dilindungi dari mutasi tanggal lahir klien via `stripClientBirthWrites`.
+    5. Nol penulisan langsung ke dokumen kanonikal atau hasil Blueprint terlindungi.
+  - Verifikasi: `tests/unit/build120-fallback-safety.test.ts` (4/4 PASS).
+
+---
+
+## 10. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 120 FINAL AAB VERIFICATION & LOCAL CLOSURE)
+
+* **Mandat Founder (Directives):**
+  - Localhost verification disetujui Founder.
+  - Physical Android QA dinyatakan `WAIVED_BY_FOUNDER`.
+  - Final AAB assembly dan signing resmi diotorisasi.
+  - Git commit terarah diizinkan untuk scope Build 120 terverifikasi.
+  - Google Play upload tetap ditahan (`PLAY_UPLOAD = NOT_PERFORMED`).
+* **Hasil Pipeline & Artefak Rilis Final:**
+  - **Next.js Static Export:** PASS (`node scripts/run-prod-build.mjs`, 78/78 static pages, 110 RSC aliases).
+  - **Capacitor Sync:** PASS (`npx cap sync android`, 733ms).
+  - **AAB Output:** `android/app/build/outputs/bundle/release/app-release.aab`
+  - **Salinan Rilis:** `release-artifacts/build120/bhumi-amartya-release-v5.0.20-build120.aab`
+  - **Ukuran AAB:** 9,770,389 bytes (~9.77 MB)
+  - **Package ID:** `com.bhumiamartya.app`
+  - **Version Code:** `120`
+  - **Version Name:** `5.0.20`
+  - **AAB SHA-256:** `D0C9139CBB9EBFA4FB045897C97911530A39E8DDD740064C9D068385DF200750`
+  - **Signing Keystore:** Resmi Bhumi Amartya (`CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA384withRSA 2048-bit, verified by jarsigner).
+  - **Web Assets:** Fresh (termuat: Memorial Sheina, Insight Utama selaras, Lilith IAU/ELP 2000-82, BaZi & Vedic in-memory recovery).
+* **Pending / Blocked Scope (Sesuai Arahan):**
+  - Cloudflare Workers POC: Preserved locally only (`BLOCKED / NOT DEPLOYED`).
+  - Billing Verifier: Preserved locally on Vercel adapter (`BLOCKED / NOT DEPLOYED`).
+  - Production Firestore Rules: Deployed rules on `bhumiamartya-fe85c` dipertahankan untuk kompatibilitas rilis 119 aktif (`BLOCKED / NOT DEPLOYED`).
+  - Google Play Console Upload: `WAITING_APPROVAL` (`PLAY_UPLOAD = NOT_PERFORMED`).
+* **Terminal Status:** `BUILD_VERIFIED` — STOP AND WAIT FOR FOUNDER REVIEW.

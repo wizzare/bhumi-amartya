@@ -6,6 +6,7 @@ import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { BuildInfo, getRuntimeBuildInfo, hasBuildInfoChanged } from "@/lib/config/buildInfo";
 import type { GaiaProfile } from "@/lib/profile/gaia/types";
 import { stripServerOwnedAccessFields } from "@/lib/billing/serverOwnedAccessFields";
+import { stripClientBirthWrites, stripCanonicalServerMetadata } from "@/lib/profile/canonicalBirthFields";
 import { guardMonotonicProfilePatch } from "@/lib/auth/profileMonotonicity";
 
 export type BaselineWellnessProfile = {
@@ -30,6 +31,7 @@ export type UserProfile = {
   displayName?: string | null;
   photoURL?: string | null;
   fullName?: string;
+  birthName?: string | null;
   birthDate?: string;
   birthTime?: string;
   birthCity?: string;
@@ -83,6 +85,11 @@ export type UserProfile = {
   profileVersion?: string | null;
   engineVersion?: string | null;
   migrationVersion?: string | null;
+  canonicalBirthRevision?: number;
+  canonicalBirthEpoch?: string | null;
+  canonicalBirthSchemaVersion?: number;
+  canonicalBirthUpdatedAt?: string | null;
+  canonicalBirthOperationId?: string | null;
   gaiaGeneratedAt?: string | null;
   gaiaProfile?: GaiaProfile | null;
   lastSeen?: Timestamp | string | null;
@@ -146,7 +153,11 @@ const upsertUserProfile = async (uid: string, data: Partial<UserProfile>) => {
     uid,
     updatedAt: now,
   };
-  const safePayload = stripServerOwnedAccessFields(payload);
+  const baseSafe = stripCanonicalServerMetadata(stripServerOwnedAccessFields(payload));
+  const existingSnap = await getDoc(userRef).catch(() => null);
+  const existingData = existingSnap?.exists() ? existingSnap.data() : null;
+  const hasCanonical = Boolean(existingData?.canonicalBirthEpoch && existingData?.canonicalBirthRevision);
+  const safePayload = hasCanonical ? stripClientBirthWrites(baseSafe) : baseSafe;
 
   await debugFirestoreOperation(
     { operation: "setDoc", path, uid, payloadKeys: Object.keys(safePayload) },
@@ -229,13 +240,13 @@ const markBlueprintRecoveryRequired = async (
         if (current && current.setupCompleted === true && current.blueprintStatus === "ready") {
           return "ALREADY_READY";
         }
-        const payload = stripServerOwnedAccessFields({
+        const payload = stripClientBirthWrites(stripServerOwnedAccessFields({
           ...profileData,
           uid,
           setupCompleted: false,
           blueprintStatus: "recovery_required" as BlueprintStatus,
           updatedAt: Timestamp.now(),
-        });
+        }));
         tx.set(userRef, sanitizeForFirestore(payload), { merge: true });
         return "RECOVERY_REQUIRED_WRITTEN";
       }),
@@ -268,11 +279,11 @@ const reconcileMinimalProfile = async (
         const guarded = guardMonotonicProfilePatch(current, patch);
         const writeKeys = Object.keys(guarded);
         if (writeKeys.length === 0) return [];
-        const payload = stripServerOwnedAccessFields({
+        const payload = stripClientBirthWrites(stripServerOwnedAccessFields({
           ...guarded,
           uid,
           updatedAt: Timestamp.now(),
-        });
+        }));
         tx.set(userRef, sanitizeForFirestore(payload), { merge: true });
         return writeKeys;
       }),
@@ -363,7 +374,7 @@ const updatePresence = async (
 
   await debugFirestoreOperation(
     { operation: "setDoc", path, uid, payloadKeys: Object.keys(payload) },
-    () => setDoc(userRef, sanitizeForFirestore(payload), { merge: true }),
+    () => setDoc(userRef, sanitizeForFirestore(stripClientBirthWrites(payload)), { merge: true }),
   );
 };
 
