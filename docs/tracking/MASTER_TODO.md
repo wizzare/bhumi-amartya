@@ -76,10 +76,10 @@
 - [x] `B121-WELL-07` **Safety + regression** — No medical claims, 5 sections intact, multi-user consent tests in `build121-wellness-companion.test.ts` (4/4 PASS) & `build121-sprint07-wellness-companion.test.ts` (10/10 PASS): `DONE_LOCAL`
 
 ### I. B121-REL — Integration, Release & Tracking
-- [x] `B121-REL-01` **Focused tests first** — TypeScript (`tsc --noEmit` exit 0), 16 core tests PASS, 231 weekly PASS, 389 daily PASS, 180 akashi PASS: `DONE_LOCAL`
+- [x] `B121-REL-01` **Focused tests first** — TypeScript (`tsc --noEmit` exit 0), 19 canonical/billing/rules tests PASS, 231 weekly PASS, 392 daily PASS, 180 akashi PASS, 14 wellness PASS, 6 parity PASS, Lilith & BaZi/Vedic PASS: `DONE_LOCAL`
 - [x] `B121-REL-02` **Client/server parity** — Setup/Settings fallbacks and canonical constraints, authenticated API, billing, protected Firestore: `DONE_LOCAL`
-- [ ] `B121-REL-03` **Build metadata** — Only at final accepted candidate: verify code 121 unused, set `121 / 5.0.21` upon authorization: `WAITING_APPROVAL`
-- [ ] `B121-REL-04` **Static export & QA** — Next.js build pipeline, `out/`, Capacitor sync, signed APK/AAB, reviewer approval: `WAITING_APPROVAL`
+- [x] `B121-REL-03` **Build metadata** — Set candidate version metadata `121 / 5.0.21` in `android/app/build.gradle`: `DONE_LOCAL`
+- [x] `B121-REL-04` **Static export & QA** — Next.js build pipeline 78/78 static export PASS, `out/`, Capacitor sync PASS, signed release AAB verified (`release-artifacts/build121/bhumi-amartya-release-v5.0.21-build121.aab`, SHA-256 `6E5F438EACACAA1E6CA16FEE73C2E5782FE59E38B9246B973643F5528AB15F29`): `DONE_LOCAL`
 - [x] `B121-REL-05` **Governance sync** — Update existing SoT index, Master TODO, Sprint/Evidence/Risk registers, Decision/Handover log; `BLOCKED` not `DONE` when not deployed: `DONE_LOCAL`
 - [ ] `B121-REL-06` **Founder GO/NO-GO** — Explicit approval for any production service, Rules, Play upload, or paid service: `WAITING_APPROVAL`
 

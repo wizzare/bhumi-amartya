@@ -1,5 +1,20 @@
 # BHUMI AMARTYA — SOURCE OF TRUTH (SoT) INDEX
 
+> **Current Founder Decision — 2026-11-07, Build 121 / Release 5.0.21:**
+> - **Build 121 Sprints Completed & Locally Verified (121-01 s.d. 121-08 PASS LOCAL):**
+>   - **Sprint 121-01 (Cloudflare Canonical Worker):** Complete canonical worker POC passing 19/19 checks, token verification, REST transactions, and fail-closed error mapping.
+>   - **Sprint 121-02 (Billing Verifier & Entitlements):** Adapted all 5 billing endpoints to Worker runtime, passing 5/5 verification checks, token replay protection, and anti-downgrade.
+>   - **Sprint 121-03 (Firestore Rules & Client Compatibility):** Hardened security rules candidate verified on emulator (19/19 PASS), protecting Blueprint, canonical birth, server fields, and client compatibility (118, 119, 120, 121).
+>   - **Sprint 121-04 (Arsip Akashi Grounding):** 11 Blueprint systems mapped with provenance, 3x3 reading (180/180 PASS) and 5x5 Soul Letter contracts verified.
+>   - **Sprint 121-05 (Panduan Minggu Ini Dashboard):** 9-section weekly synthesis (231/231 + 7/7 PASS), Monday-Sunday boundaries, Akashi grounding, and multi-dimensional cache isolation.
+>   - **Sprint 121-06 (Catatan Hari Ini Profile & Dashboard Parity):** 11-system daily intelligence (392/392 + 9/9 PASS), 100% exact parity with Dashboard Soul Reflection, 8 accordions intact.
+>   - **Sprint 121-07 (Wellness Personal Companion):** Section 03 Kristal & Aroma Pendamping (4/4 + 10/10 PASS), priority order (check-in condition > preferences > symbolic blueprint), safety disclaimers, no-ingestion enforcement, and worldview consent opt-out.
+>   - **Sprint 121-08 (Final Integration & Release Readiness):** Clean static export (78/78 pages), fresh Capacitor sync, signed release AAB assembled (`release-artifacts/build121/bhumi-amartya-release-v5.0.21-build121.aab`, SHA-256: `6E5F438EACACAA1E6CA16FEE73C2E5782FE59E38B9246B973643F5528AB15F29`).
+> - **Operational & Production Safety Status:**
+>   - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare Worker & Billing Verifier remain local; live Vercel verifier untouched).
+>   - `FIRESTORE_RULES = UNTOUCHED` (Live production rules on `bhumiamartya-fe85c` remain unmutated to protect legacy Play Store clients).
+>   - `PLAY_UPLOAD = NOT PERFORMED` (Google Play upload strictly held pending Founder directive).
+
 > **Current Founder Decision — 2026-11-07, Build 120 / Release 5.0.20:**
 > - **Build 120 Scope Completed & Verified:**
 >   - Dashboard Memorial Footer: Dedication to Sheina Khazmalia (17 Oktober 1988 – 5 November 2026).
@@ -261,3 +276,28 @@ Launcher IPC challenge, parent checks and periodic process/listener monitoring w
 ### 2026-11-03 — Build 126 offline namespace capability
 
 A disposable WSL network namespace passed loopback and external TCP/UDP/DNS denial checks, but the actual app/emulators/Chromium were not run inside it and sandbox acceptance remains blocked. Two Human Design calculationStatus diagnostics remain unresolved; a separate existing live normalizer test failed. See BUILD126_RELEASE119_OFFLINE_QA_AND_BP10_E2E_REPORT.md.
+
+
+## 2026-11-07 — BUILD 121 PLANNING & SOT RECONCILIATION ADDENDUM
+
+**Otoritas & Sumber:** Founder Directive (7 November 2026), `01_BUILD121_SOURCE_OF_TRUTH.md`, `02_BUILD121_PRD.md`, `03_BUILD121_MASTER_TODO_ADDENDUM.md`, `04_BUILD121_ANTIGRAVITY_KICKOFF.md`.  
+**Status Operasional:** PLANNING / LOCAL ADVANCEMENT. Belum deploy, push, commit otomatis, bump version code/name, atau mengaktifkan layanan berbayar.  
+**Production Baseline:** BUILD 120 AAB signed (SHA-256 `D0C9139CBB9EBFA4FB045897C97911530A39E8DDD740064C9D068385DF200750`), commit `cdec29d` + `6a8fe26`. Upload Google Play Store belum terkonfirmasi; production tetap berstatus `NOT VERIFIED`.  
+**Invarian Terkunci:**
+1. Pertahankan seluruh hasil BUILD 120 tanpa regresi:
+   - Dashboard Memorial Footer untuk Sheina Khazmalia (17 Okt 1988 – 5 Nov 2026) dan penghapusan permanen seksi "SATU TINDAKAN".
+   - Lilith Mean Black Moon IAU/ELP 2000-82 formula & global ephemeris parity (< 18 arcsec error).
+   - BaZi & Vedic in-memory calculation recovery (status "ready" untuk profil lengkap, 0 direct write Firestore).
+   - Dashboard & Profile `Arah Hari Ini` parity 100% exact match via `buildDailyGuidance().dailyDirection`.
+   - Setup & Settings fallback sanitization guards (`stripCanonicalServerMetadata`, `stripServerOwnedAccessFields`, `stripClientBirthWrites`).
+2. Batas Teknis:
+   - Firebase Spark tier dipertahankan; tidak ada Firebase Blaze / Cloud Functions deploy; tidak ada biaya baru.
+   - Cloudflare Workers Free adalah kandidat host terpercaya untuk canonical backend (POC lokal 27/27 checks PASS).
+   - Vercel Billing Verifier (`services/billing-verifier/`) tetap live hingga cutover teruji aman dan disetujui Founder.
+   - Firestore Rules hardening tidak boleh di-rollout langsung jika memutus klien Android 118/119/120; wajib memiliki compatibility matrix dan rencana transisi.
+3. Kontrak Fitur Pengalaman Produk:
+   - **Arsip Akashi (Profil):** Merangkum pola identitas stabil berbasis 11 sistem Blueprint yang tersedia; tidak mengarang trauma/past-life; jujur atas data parsial; isolasi ketat per UID.
+   - **Panduan Minggu Ini (Dashboard):** Lokasi `Kondisi Lingkungan → Panduan Minggu Ini → Disarankan`; rentang Senin–Minggu timezone lokal; 9 seksi terstruktur dengan Saran Bhumi; tanpa raw transit JSON.
+   - **Catatan Hari Ini (Profil):** Tetap di Profil; format 8 accordion + Arah Hari Ini; personalisasi transit & siklus; ringkasan Dashboard Arah Hari Ini 100% identik tanpa duplicate greeting.
+   - **Wellness Section 03:** Penambahan kartu Kristal Pendamping & Aroma Pendamping sebelum Pagi/Siang/Malam; opt-in eksplisit; aman tanpa klaim medis/terapi; 5 seksi tetap utuh.
+

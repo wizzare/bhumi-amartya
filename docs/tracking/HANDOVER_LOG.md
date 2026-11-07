@@ -616,3 +616,52 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-08 FINAL INTEGRATION & RELEASE (B121-REL)**.
+
+---
+
+## 21. SPRINT 121-08: FINAL INTEGRATION & RELEASE READINESS (B121-REL) — 07 NOVEMBER 2026
+
+* **Status:** `PASS LOCAL`
+* **Commit:** Pending local commit
+* **Tujuan:** Menyelesaikan integrasi menyeluruh BUILD 121, regression multi-lapisan (Backend, Rules, 11 Blueprint, Arsip Akashi, Panduan Minggu Ini, Catatan Hari Ini, Wellness Companion, Paritas Dashboard/Profile, Lilith ephemeris, BaZi/Vedic recovery, Memorial Footer Sheina), eksekusi pipeline ekspor statis Next.js (78/78 rute), sinkronisasi Capacitor Android, perakitan dan verifikasi kandidat AAB Build 121 (`versionCode = 121`, `versionName = "5.0.21"`), verifikasi sertifikat penandatanganan resmi, serta penguncian rilis produksi berbasis dependensi backend.
+* **Hasil Verifikasi Kunci:**
+  1. **Integrasi Regresi Menyeluruh (100% PASS across all suites):**
+     - **Backend & Keamanan:** Cloudflare Canonical Worker passing 19/19 checks (`build121-sprint01-canonical-worker.test.ts`), Billing Verifier passing 5/5 checks (`build121-sprint02-billing-verifier.test.ts`), Firestore candidate rules passing 19/19 emulator checks (`build121-sprint03-firestore-rules.test.ts`), dan kompatibilitas klien 118-121 passing (`build121-client-compatibility-matrix.test.ts`).
+     - **Inteligensi Personal 11 Blueprint & Arsip Akashi:** Grounding 11 blueprint terbukti berakar pada data personal tanpa fabrikasi (`build121-sprint04-arsip-akashi.test.ts` 7/7 PASS, `arsip_akashi_3x3_contract.test.ts` 180/180 PASS).
+     - **Panduan Minggu Ini & Catatan Hari Ini:** Panduan Minggu Ini Dashboard 9 bagian passing (`build118-weekly-guidance.test.ts` 231/231 PASS, `build121-sprint05-weekly-guidance.test.ts` 7/7 PASS); Catatan Hari Ini Profil 8 domain + temporal Weton/BaZi/Tzolkin passing (`build118-daily-guidance.test.ts` 392/392 PASS, `build121-sprint06-daily-guidance.test.ts` 9/9 PASS).
+     - **Paritas Dashboard & Profil:** Teks Arah Hari Ini 100% identik karakter demi karakter dengan Insight Utama Dashboard (`build120-dashboard-insight-alignment.test.ts` 6/6 PASS).
+     - **Wellness Personal Companion:** Kristal & Aroma Section 03 passing 14/14 checks (`build121-wellness-companion.test.ts` 4/4 PASS, `build121-sprint07-wellness-companion.test.ts` 10/10 PASS), perlindungan respirasi, larangan penelanan, ketiadaan klaim medis, dan opt-out worldview spiritual 100% terverifikasi.
+     - **Baseline BUILD 120:** Ephemeris Lilith IAU/ELP 2000-82 passing (`lilith-parity.test.ts`), BaZi & Vedic in-memory recovery passing (`bazi-vedic-local-recovery.test.ts`), Memorial Footer Sheina Khazmalia utuh, dan kontainer SATU TINDAKAN terbukti terhapus.
+  2. **Pipeline Ekspor Statis & Capacitor Android:**
+     - `node scripts/run-prod-build.mjs`: **78/78 static routes** teroptimasi, 110 alias RSC statis dibuat, 0 error kompilasi.
+     - `npx cap sync android`: Berhasil menyinkronkan seluruh aset web `out/` ke `android/app/src/main/assets/public/` (1.62s).
+  3. **Perakitan & Verifikasi Kandidat Release AAB 121:**
+     - Output bundle: `android/app/build/outputs/bundle/release/app-release.aab`
+     - Salinan rilis: `release-artifacts/build121/bhumi-amartya-release-v5.0.21-build121.aab`
+     - Metadata: `applicationId = "com.bhumiamartya.app"`, `versionCode = 121`, `versionName = "5.0.21"`.
+     - Ukuran berkas: **9,781,311 bytes** (~9.78 MB).
+     - SHA-256: `6E5F438EACACAA1E6CA16FEE73C2E5782FE59E38B9246B973643F5528AB15F29`.
+     - Sertifikat Penandatanganan: Terverifikasi resmi dengan `jarsigner -verify -verbose -certs` (`CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA256withRSA 2048-bit, valid hingga 2053).
+  4. **Gerbang Kesiapan Rilis & Dependensi Backend (Release Gate Governance):**
+     - **Cloudflare Canonical Worker:** Lulus 27/27 pengujian lokal, namun **BELUM DIDEPLOY** ke produksi (`PRODUCTION_DEPLOYMENT = NOT PERFORMED`). Konfigurasi client 121 mempertahankan fallback fail-closed dan tidak memanggil endpoint Worker yang belum live.
+     - **Billing Verifier:** Port ke Worker runtime lulus pengujian lokal; endpoint produksi Vercel (`https://bhumi-billing-verifier.vercel.app`) tetap live dan aktif sebagai otoritas billing Play Store saat ini.
+     - **Firestore Rules Hardening:** Snapshot kandidat rules aman di emulator, namun **TIDAK DITERAPKAN** ke Firestore produksi demi menjaga kelangsungan operasional klien Play Store 119 yang aktif.
+     - **Google Play Store Upload:** Ditahan (`PLAY_UPLOAD = NOT_PERFORMED`) hingga Founder menerbitkan otorisasi rilis eksplisit.
+
+* **Bukti Eksekusi Uji:**
+  - Full Regression Sprints 01-08: **100% PASS** (Total >900 asersi dan tes unit/integrasi).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+  - Next.js Production Build: `node scripts/run-prod-build.mjs` (**PASS**, 78/78 static pages, exit code 0).
+  - Capacitor Android Sync: `npx cap sync android` (**PASS**, exit code 0).
+  - Gradle Bundle Release: `gradlew.bat bundleRelease` (**BUILD SUCCESSFUL in 1m 27s**, exit code 0).
+  - Jarsigner Verification: `jarsigner -verify -verbose -certs` (**jar verified**, signed by `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak disentuh di server produksi).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `FIREBASE_PLAN = SPARK` (Tidak ada aktivasi Blaze).
+  - `PLAY_UPLOAD = NOT PERFORMED` (Menunggu otorisasi Founder).
+  - `BACKEND_DEPLOYMENT_DEPENDENCIES = BLOCKED`
+  - `FIRESTORE_ROLLOUT = BLOCKED`
+  - `AAB_121 = VERIFIED`
