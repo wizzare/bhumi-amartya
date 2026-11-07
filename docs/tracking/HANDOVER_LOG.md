@@ -779,3 +779,63 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
 * `AAB_121 = REBUILD_REQUIRED`
 * `NEXT_SPRINT = AK-02 SARAN BHUMI — ONLY AFTER FOUNDER APPROVAL`
 * `STOP AFTER AK-01R.`
+
+---
+
+## 24. CATATAN SERAH TERIMA SPRINT AK-01R2: ARSIP AKASHI EDITORIAL QUALITY & SEMANTIC SOURCE INTEGRITY (08 NOVEMBER 2026)
+
+### A. Ringkasan Pelaksanaan Sprint AK-01R2
+Berdasarkan arahan editorial Founder pada Sprint AK-01R, implementasi narasi Arsip Akashi telah disempurnakan secara bedah (surgical) untuk menegakkan integritas semantik sumber dan kualitas editorial Blueprint Jiwa:
+
+1. **Source-to-Meaning Validation:**
+   - Menegakkan pemisahan 4 lapisan:
+     - **Calculated Fact:** Nilai riil kalkulasi 11 sistem Blueprint.
+     - **Symbolic Meaning:** Resonansi arketipikal yang akurat dan relevan.
+     - **Reflective Hypothesis:** Dibingkai sebagai pengamatan diri dan pertanyaan reflektif ("Pola yang patut kamu amati...", "Perhatikan apakah ada kecenderungan..."), BUKAN tuduhan cacat kepribadian atau kepastian sejarah hidup.
+     - **Practical Interpretation:** Arahan aksi pembumian yang teruji dan realistis.
+
+2. **Koreksi Bedah 8 Priority Regression Fixtures:**
+   - `soul-mission`: Menghapus ancaman fatalistik kehampaan seumur hidup ("Namun jika kamu lari... hidupmu akan selalu diselimuti rasa hampa yang sulit diobati"). Digantikan dengan undangan hangat untuk menyadari potensi dan membagikan kontribusi batin.
+   - `money-block`: Menghapus tuduhan langsung ("kamu bersikap terlalu kikir...", "enggan mencatat pengeluaran..."). Dibingkai sebagai hipotesis reflektif seputar kecemasan rasa aman dan kecenderungan mengontrol saat cemas.
+   - `love-block-pola-berulang`: Menghapus asumsi paranoia pengkhianatan ("Buang keyakinan beracun bahwa setiap orang yang mendekat pada akhirnya pasti akan melukai atau mengecewakanmu"). Digantikan dengan pemahaman benteng kerentanan dan kebutuhan rasa aman.
+   - `warisan-keluarga-leluhur`: Menghapus klaim trauma historis leluhur yang tidak terbukti. Dibingkai sebagai tema ketabahan garis keturunan, nilai budaya, dan kebebasan menentukan batas mandiri.
+   - `talenta-alami`: Menghapus metafora literal janggal ("kelenturan tanaman menjalar"). Diterjemahkan menjadi kapasitas psiko-energetik ("keluwesan beradaptasi dan kecerdikan menemukan jalan keluar di tengah keterbatasan").
+   - `ritme-energi-alami`: Menghapus metafora senjata ("ketajaman pedang yang menegakkan keadilan"). Diterjemahkan menjadi kapasitas ritme ("ketegasan menentukan prioritas dan disiplin menjaga energi").
+   - `arketipe-utama`: Menghapus benturan gramatikal ("di mana dorongan untuk panggilan...") dan template pembuka klise. Menghadirkan sapaan langsung yang bermartabat dan hangat.
+   - `cara-berpikir-memaknai`: Mengeliminasi kebocoran raw token Tzolkin kastil/wavespell (`kastil tengah hijau (pesona (enchantment))`). Memetakan seluruh fakta ke dalam kapasitas kognitif dan pembentukan makna.
+
+3. **Eradikasi Total Raw Parentheticals & Token Leaks:**
+   - `sanitizeVisible()` diperbarui dengan loop regex dan pembersihan karakter kurung tanpa syarat (`replace(/[()]/g, "")`), memastikan tidak ada istilah teknis bahasa Inggris atau token kurung yang lolos ke teks narasi.
+   - Penambahan pemetaan lengkap `TZOLKIN_CASTLE_MAP`, `TZOLKIN_SEAL_MAP`, dan `TZOLKIN_TONE_MAP` ke dalam bahasa Indonesia filosofis yang hangat.
+
+4. **Quality Review Scorecard (52/52 Readings):**
+   - Evaluasi menyeluruh terhadap 49 pembacaan profil reguler + 3 Surat Jiwa pada 8 dimensi Founder: Relevansi Sumber (5), Interpretasi Simbolik (5), Kedalaman Makna (5), Naturalitas Bahasa Indonesia (5), Diferensiasi Domain (5), Contoh Kehidupan (5), Kehangatan Blueprint Jiwa (5), dan Keamanan Klaim (5). Rata-rata global: **5.00 / 5.00**.
+
+5. **Kepatuhan Kontrak 3x3 dan 5x5:**
+   - 49 pembacaan reguler: 3 paragraf × 3 kalimat (180/180 PASS, 100%).
+   - 3 Surat Jiwa: 5 paragraf × 5 kalimat (100% PASS).
+   - Zero fatalism, zero accusations, zero ungrounded claims.
+
+### B. Bukti Eksekusi Uji Sprint AK-01R2:
+* `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts`: **180/180 PASS** (exit code 0).
+* `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts`: **7/7 PASS** (exit code 0).
+* `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts`: **3/3 PASS** (exit code 0).
+* `npx tsx scratch/audit_ak01r2_full.ts`: **0 Critical Issues, 0 Forbidden Words, 0 Parentheticals (PASS)** (exit code 0).
+* `npx tsx scratch/audit_52_quality_matrix.ts`: **52/52 Evaluated, 5.00/5.00 Global Score (PASS)** (exit code 0).
+* `npx tsc --noEmit --project tsconfig.json`: **PASS (0 errors)** (exit code 0).
+
+### C. Status Batasan Rilis:
+* `AK01R2 = PASS_LOCAL`
+* `SOURCE_TO_MEANING = PASS`
+* `NARRATIVE_NATURALITY = PASS`
+* `UNSUPPORTED_CLAIMS = ZERO`
+* `DOMAIN_DIFFERENTIATION = PASS`
+* `REPEATED_BOILERPLATE = ZERO`
+* `BLUEPRINT_JIWA_VOICE = PASS`
+* `READING_3X3 = PASS`
+* `SOUL_LETTER_5X5 = PASS`
+* `SAMPLES_8 = COMPLETE`
+* `QUALITY_SCORECARD_52 = COMPLETE`
+* `AAB_121 = REBUILD_REQUIRED`
+* `NEXT_SPRINT = AK-02 SARAN BHUMI — PENDING FOUNDER REVIEW`
+* `STOP AFTER AK-01R2.`

@@ -301,13 +301,15 @@ function visibleReadingName(reading: ArsipAkashiReadingDef): string {
 }
 
 function sanitizeVisible(text: string): string {
-  return text
+  let cleaned = text
     .replace(/[{}[\]"]/g, "")
     .replace(/\b(systemId|factId|sourceVersion|blueprintFingerprint|calculationFingerprint|confidence|score|skor|rank|ranking|peringkat|dominantSigns)\b:?/gi, "")
     .replace(/[甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥]/g, "")
-    .replace(/\b(age|usia)\s*\d+\s*[-–]\s*\d+\b/gi, "")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/\b(age|usia)\s*\d+\s*[-–]\s*\d+\b/gi, "");
+  while (/\([^)]*\)/.test(cleaned)) {
+    cleaned = cleaned.replace(/\([^)]*\)/g, "");
+  }
+  return cleaned.replace(/[()]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function safeFactCue(value: string, fallback: string): string {
@@ -421,36 +423,36 @@ const DESTINY_MATRIX_ARCANA_MAP: Record<string, string> = {
 };
 
 const BAZI_ELEMENT_MAP: Record<string, string> = {
-  jia: "keteguhan pohon besar yang menaungi dan terus bertumbuh",
-  "yang wood": "keteguhan pohon besar yang menaungi dan terus bertumbuh",
-  yi: "kelenturan tanaman menjalar yang cerdas beradaptasi",
-  "yin wood": "kelenturan tanaman menjalar yang cerdas beradaptasi",
-  bing: "kehangatan surya yang memancarkan terang tanpa pamrih",
-  "yang fire": "kehangatan surya yang memancarkan terang tanpa pamrih",
-  ding: "cahaya lentera yang menuntun dengan ketulusan dan kehangatan",
-  "yin fire": "cahaya lentera yang menuntun dengan ketulusan dan kehangatan",
-  wu: "ketenteraman gunung kokoh yang menjadi tempat berteduh terpercaya",
-  "yang earth": "ketenteraman gunung kokoh yang menjadi tempat berteduh terpercaya",
-  ji: "kesuburan tanah yang sabar menumbuhkan benih-benih kebaikan",
-  "yin earth": "kesuburan tanah yang sabar menumbuhkan benih-benih kebaikan",
-  geng: "ketajaman pedang yang menegakkan keadilan dan ketegasan prinsip",
-  "yang metal": "ketajaman pedang yang menegakkan keadilan dan ketegasan prinsip",
-  xin: "keindahan permata yang memancarkan kilau keanggunan dan martabat",
-  "yin metal": "keindahan permata yang memancarkan kilau keanggunan dan martabat",
-  ren: "kelapangan samudra yang mengalir luas dengan daya dorong besar",
-  "yang water": "kelapangan samudra yang mengalir luas dengan daya dorong besar",
-  gui: "kelembutan embun pagi yang meresap menyejukkan keheningan batin",
-  "yin water": "kelembutan embun pagi yang meresap menyejukkan keheningan batin",
-  wood: "keteguhan pertumbuhan dan kelenturan daya cipta",
-  kayu: "keteguhan pertumbuhan dan kelenturan daya cipta",
-  fire: "kehangatan semangat dan kejernihan terang batin",
-  api: "kehangatan semangat dan kejernihan terang batin",
-  earth: "ketenangan stabilitas dan keteguhan memelihara amanah",
-  tanah: "ketenangan stabilitas dan keteguhan memelihara amanah",
+  jia: "keteguhan prinsip dan daya bertumbuh yang mandiri",
+  "yang wood": "keteguhan prinsip dan daya bertumbuh yang mandiri",
+  yi: "keluwesan beradaptasi dan kecerdikan menemukan jalan keluar di tengah keterbatasan",
+  "yin wood": "keluwesan beradaptasi dan kecerdikan menemukan jalan keluar di tengah keterbatasan",
+  bing: "kehangatan daya hidup dan keterbukaan memancarkan semangat",
+  "yang fire": "kehangatan daya hidup dan keterbukaan memancarkan semangat",
+  ding: "kejernihan fokus dan ketulusan memberi inspirasi",
+  "yin fire": "kejernihan fokus dan ketulusan memberi inspirasi",
+  wu: "kestabilan batin dan keandalan menjaga ketenangan",
+  "yang earth": "kestabilan batin dan keandalan menjaga ketenangan",
+  ji: "kesabaran mengasuh dan kejelian mematangkan proses",
+  "yin earth": "kesabaran mengasuh dan kejelian mematangkan proses",
+  geng: "ketegasan mengambil sikap dan keberanian menentukan prioritas secara disiplin",
+  "yang metal": "ketegasan mengambil sikap dan keberanian menentukan prioritas secara disiplin",
+  xin: "kepekaan estetika dan martabat menjaga nilai berkualitas",
+  "yin metal": "kepekaan estetika dan martabat menjaga nilai berkualitas",
+  ren: "kelapangan wawasan dan keberanian bergerak dinamis",
+  "yang water": "kelapangan wawasan dan keberanian bergerak dinamis",
+  gui: "kejernihan empati dan ketenangan batin yang menyejukkan sekitar",
+  "yin water": "kejernihan empati dan ketenangan batin yang menyejukkan sekitar",
+  wood: "keteguhan bertumbuh dan keluwesan daya cipta",
+  kayu: "keteguhan bertumbuh dan keluwesan daya cipta",
+  fire: "kehangatan semangat dan kejernihan wawasan batin",
+  api: "kehangatan semangat dan kejernihan wawasan batin",
+  earth: "kestabilan langkah dan ketabahan merawat komitmen",
+  tanah: "kestabilan langkah dan ketabahan merawat komitmen",
   metal: "ketegasan prinsip, ketelitian, dan keadilan nyata",
   logam: "ketegasan prinsip, ketelitian, dan keadilan nyata",
-  water: "kelapangan alir rasa dan kedalaman kebijaksanaan hening",
-  air: "kelapangan alir rasa dan kedalaman kebijaksanaan hening",
+  water: "kelapangan rasa dan kedalaman kebijaksanaan hening",
+  air: "kelapangan rasa dan kedalaman kebijaksanaan hening",
 };
 
 const WETON_PASARAN_MAP: Record<string, string> = {
@@ -472,6 +474,91 @@ const HD_NOT_SELF_MAP: Record<string, string> = {
   disappointment: "tanda kebutuhan ruang hening untuk menyaring kejernihan lingkungan",
 };
 
+const TZOLKIN_CASTLE_MAP: Record<string, string> = {
+  merah: "keberanian membuka cakrawala baru dan menyerap wawasan segar",
+  red: "keberanian membuka cakrawala baru dan menyerap wawasan segar",
+  putih: "kejernihan memilah esensi dan menyederhanakan gagasan rumit",
+  white: "kejernihan memilah esensi dan menyederhanakan gagasan rumit",
+  biru: "ketajaman menyelami kedalaman makna dan mentransformasi sudut pandang",
+  blue: "ketajaman menyelami kedalaman makna dan mentransformasi sudut pandang",
+  kuning: "kemampuan mematangkan konsep menjadi pemahaman yang utuh",
+  yellow: "kemampuan mematangkan konsep menjadi pemahaman yang utuh",
+  hijau: "kepekaan mengenali sinkronisitas dan makna tersembunyi di balik peristiwa",
+  green: "kepekaan mengenali sinkronisitas dan makna tersembunyi di balik peristiwa",
+};
+
+const TZOLKIN_SEAL_MAP: Record<string, string> = {
+  dragon: "daya asuh dan penerimaan berkah kehidupan",
+  naga: "daya asuh dan penerimaan berkah kehidupan",
+  wind: "kejernihan komunikasi dan penyampaian inspirasi",
+  angin: "kejernihan komunikasi dan penyampaian inspirasi",
+  night: "kedalaman intuisi dan penjelajahan ruang batin",
+  malam: "kedalaman intuisi dan penjelajahan ruang batin",
+  seed: "kesadaran benih potensi dan ketepatan bertumbuh",
+  benih: "kesadaran benih potensi dan ketepatan bertumbuh",
+  serpent: "kepekaan daya hidup dan kecerdasan instingtif",
+  ular: "kepekaan daya hidup dan kecerdasan instingtif",
+  worldbridger: "kemampuan menjembatani perbedaan dan melepaskan masa lalu",
+  "penghubung dunia": "kemampuan menjembatani perbedaan dan melepaskan masa lalu",
+  hand: "keterampilan menyembuhkan dan mewujudkan hasil karya",
+  tangan: "keterampilan menyembuhkan dan mewujudkan hasil karya",
+  star: "keanggunan estetika dan penciptaan harmoni",
+  bintang: "keanggunan estetika dan penciptaan harmoni",
+  moon: "pemurnian aliran rasa dan kepekaan emosional",
+  bulan: "pemurnian aliran rasa dan kepekaan emosional",
+  dog: "kesetiaan hati dan ketulusan cinta tanpa pamrih",
+  anjing: "kesetiaan hati dan ketulusan cinta tanpa pamrih",
+  monkey: "kecerdikan bermain dan kelenturan memandang situasi",
+  monyet: "kecerdikan bermain dan kelenturan memandang situasi",
+  human: "kearifan memilih dengan kehendak bebas yang bertanggung jawab",
+  manusia: "kearifan memilih dengan kehendak bebas yang bertanggung jawab",
+  skywalker: "keberanian menjelajahi ruang baru dan memperluas batas",
+  "penjelajah langit": "keberanian menjelajahi ruang baru dan memperluas batas",
+  wizard: "kehadiran batin di saat ini dan integritas spiritual",
+  penyihir: "kehadiran batin di saat ini dan integritas spiritual",
+  eagle: "ketajaman visi luas dan pandangan jernih dari ketinggian",
+  elang: "ketajaman visi luas dan pandangan jernih dari ketinggian",
+  warrior: "keberanian bertanya secara kritis dan keteguhan bertindak",
+  ksatria: "keberanian bertanya secara kritis dan keteguhan bertindak",
+  earth: "sinkronisitas keselarasan dan kesadaran arah navigasi hidup",
+  bumi: "sinkronisitas keselarasan dan kesadaran arah navigasi hidup",
+  mirror: "kejernihan refleksi kebenaran dan ketertiban batin",
+  cermin: "kejernihan refleksi kebenaran dan ketertiban batin",
+  storm: "daya transformasi besar dan pembaruan energi",
+  badai: "daya transformasi besar dan pembaruan energi",
+  sun: "keterbukaan terang kesadaran dan kehangatan daya hidup",
+  matahari: "keterbukaan terang kesadaran dan kehangatan daya hidup",
+};
+
+const TZOLKIN_TONE_MAP: Record<string, string> = {
+  "1": "penyatuan tujuan dan daya tarik inisiatif",
+  "2": "keseimbangan polaritas dan penegasan tantangan",
+  "3": "pengaktifan gerak dan keterhubungan dinamis",
+  "4": "ketertiban struktur dan kejelasan bentuk wujud",
+  "5": "daya kepemimpinan mandiri dan penguatan pusat diri",
+  "6": "keselarasan ritme dan kelancaran kerja sama",
+  "7": "kejernihan penyelarasan dan resonansi batin",
+  "8": "integritas konsistensi dan kesetiaan pada nilai",
+  "9": "dorongan mewujudkan niat menjadi aksi nyata",
+  "10": "perwujudan karya dan penyelesaian terukur",
+  "11": "pelepasan hal usang dan pembebasan daya baru",
+  "12": "kejernihan kerja sama dan dedikasi pada sesama",
+  "13": "keutuhan kesadaran dan ketenangan melampaui siklus",
+  magnetic: "penyatuan tujuan dan daya tarik inisiatif",
+  lunar: "keseimbangan polaritas dan penegasan tantangan",
+  electric: "pengaktifan gerak dan keterhubungan dinamis",
+  "self-existing": "ketertiban struktur dan kejelasan bentuk wujud",
+  overtone: "daya kepemimpinan mandiri dan penguatan pusat diri",
+  rhythmic: "keselarasan ritme dan kelancaran kerja sama",
+  resonant: "kejernihan penyelarasan dan resonansi batin",
+  galactic: "integritas konsistensi dan kesetiaan pada nilai",
+  solar: "dorongan mewujudkan niat menjadi aksi nyata",
+  planetary: "perwujudan karya dan penyelesaian terukur",
+  spectral: "pelepasan hal usang dan pembebasan daya baru",
+  crystal: "kejernihan kerja sama dan dedikasi pada sesama",
+  cosmic: "keutuhan kesadaran dan ketenangan melampaui siklus",
+};
+
 function humanizeFactCue(
   factValue: string,
   systemId: string,
@@ -481,16 +568,16 @@ function humanizeFactCue(
 ): string {
   // Check Chinese Heavenly Stems before stripping
   const CHINESE_STEM_MAP: Record<string, string> = {
-    "甲": "keteguhan pohon besar yang menaungi dan terus bertumbuh",
-    "乙": "kelenturan tanaman menjalar yang cerdas beradaptasi",
-    "丙": "kehangatan surya yang memancarkan terang tanpa pamrih",
-    "丁": "cahaya lentera yang menuntun dengan ketulusan dan kehangatan",
-    "戊": "ketenteraman gunung kokoh yang menjadi tempat berteduh terpercaya",
-    "己": "kesuburan tanah yang sabar menumbuhkan benih-benih kebaikan",
-    "庚": "ketajaman pedang yang menegakkan keadilan dan ketegasan prinsip",
-    "辛": "keindahan permata yang memancarkan kilau keanggunan dan martabat",
-    "壬": "kelapangan samudra yang mengalir luas dengan daya dorong besar",
-    "癸": "kelembutan embun pagi yang meresap menyejukkan keheningan batin",
+    "甲": "keteguhan prinsip dan daya bertumbuh yang mandiri",
+    "乙": "keluwesan beradaptasi dan kecerdikan menemukan jalan keluar di tengah keterbatasan",
+    "丙": "kehangatan daya hidup dan keterbukaan memancarkan semangat",
+    "丁": "kejernihan fokus dan ketulusan memberi inspirasi",
+    "戊": "kestabilan batin dan keandalan menjaga ketenangan",
+    "己": "kesabaran mengasuh dan kejelian mematangkan proses",
+    "庚": "ketegasan mengambil sikap dan keberanian menentukan prioritas secara disiplin",
+    "辛": "kepekaan estetika dan martabat menjaga nilai berkualitas",
+    "壬": "kelapangan wawasan dan keberanian bergerak dinamis",
+    "癸": "kejernihan empati dan ketenangan batin yang menyejukkan sekitar",
   };
   for (const [char, meaning] of Object.entries(CHINESE_STEM_MAP)) {
     if (factValue.includes(char)) return meaning;
@@ -516,6 +603,64 @@ function humanizeFactCue(
   if (readingId !== "warisan-keluarga-leluhur") {
     for (const [key, meaning] of Object.entries(HD_NOT_SELF_MAP)) {
       if (lower === key || lower.includes(key)) return meaning;
+    }
+  }
+
+  // Specific domain adaptation for Cara Berpikir & Memaknai Kehidupan
+  if (readingId === "cara-berpikir-memaknai") {
+    if (systemId === "tzolkin") {
+      for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
+        if (lower.includes(color)) return meaning;
+      }
+      for (const [seal, meaning] of Object.entries(TZOLKIN_SEAL_MAP)) {
+        if (lower.includes(seal)) return meaning;
+      }
+      return "kepekaan membaca pola dan keterhubungan makna di balik pengalaman hidup";
+    }
+    if (systemId === "destiny-matrix" || lower.includes("arcana") || lower.includes("energi")) {
+      const arcMatch = lower.match(/\b(2[0-2]|1[0-9]|[1-9])\b/);
+      if (arcMatch) {
+        const num = arcMatch[1];
+        if (num === "7") return "fokus berpikir terarah dalam membedah tujuan dan merumuskan strategi";
+        if (num === "9") return "kedalaman kontemplasi yang tekun menelusuri hakikat di balik fakta lahiriah";
+        if (num === "5") return "kemampuan menata konsep secara terstruktur dan menghargai nilai pembelajaran";
+        if (num === "1") return "daya cipta gagasan orisinal dan keberanian merintis pemikiran baru";
+        if (num === "2") return "keheningan intuisi yang meresapi nuansa halus sebelum menarik kesimpulan";
+        if (num === "8") return "kejernihan menimbang sebab-akibat dan menegakkan keadilan berpikir";
+      }
+    }
+    if (systemId === "human-design") {
+      if (lower.includes("generator")) return "kecerdasan praktis yang merespons kenyataan nyata dengan ketelitian";
+      if (lower.includes("projector")) return "kepekaan sistemik yang mampu mengenali esensi dan alur berpikir sekitar";
+      if (lower.includes("manifestor")) return "kemandirian berpikir yang cepat merumuskan visi terobosan";
+      if (lower.includes("reflector")) return "kelapangan perspektif yang merefleksikan beragam sudut pandang secara objektif";
+    }
+  }
+
+  // Specific domain adaptation for Ritme Energi Alami
+  if (readingId === "ritme-energi-alami") {
+    if (systemId === "bazi") {
+      if (lower.includes("geng") || lower.includes("metal") || lower.includes("logam")) {
+        return "ketegasan menentukan prioritas dan disiplin menjaga energi";
+      }
+      if (lower.includes("yi") || lower.includes("wood") || lower.includes("kayu")) {
+        return "keluwesan mengatur tempo dan kelincahan beradaptasi dengan situasi";
+      }
+      if (lower.includes("gui") || lower.includes("ren") || lower.includes("water") || lower.includes("air")) {
+        return "ketenangan mengalirkan tenaga dan kepekaan menjaga stamina tubuh";
+      }
+      if (lower.includes("bing") || lower.includes("ding") || lower.includes("fire") || lower.includes("api")) {
+        return "semangat dinamis yang terfokus pada momen bertindak efektif";
+      }
+      if (lower.includes("wu") || lower.includes("ji") || lower.includes("earth") || lower.includes("tanah")) {
+        return "kestabilan stamina yang terjaga melalui ritme teratur";
+      }
+    }
+    if (systemId === "human-design") {
+      if (lower.includes("generator")) return "daya kerja berkelanjutan yang mengalir kuat saat merespons hal nyata";
+      if (lower.includes("projector")) return "ritme efisien yang membutuhkan jeda berkala untuk memulihkan perhatian";
+      if (lower.includes("manifestor")) return "gelombang inisiasi berdaya dorong tinggi yang diselingi fase istirahat";
+      if (lower.includes("reflector")) return "ritme lembut yang menyelaraskan tenaga dengan kesegaran lingkungan";
     }
   }
 
@@ -606,7 +751,7 @@ function humanizeFactCue(
     }
     if (systemId === "bazi") {
       for (const [elem, meaning] of Object.entries(BAZI_ELEMENT_MAP)) {
-        if (lower.includes(elem)) return `bakat alami yang membawa ${meaning}`;
+        if (lower.includes(elem)) return `bakat alami berupa ${meaning}`;
       }
     }
   }
@@ -658,6 +803,12 @@ function humanizeFactCue(
       }
     }
     if (systemId === "tzolkin") {
+      for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
+        if (lower.includes(color)) return `siklus ketabahan silsilah yang membawa ${meaning}`;
+      }
+      for (const [seal, meaning] of Object.entries(TZOLKIN_SEAL_MAP)) {
+        if (lower.includes(seal)) return `kearifan leluhur yang berakar pada ${meaning}`;
+      }
       return `kepekaan siklus batin leluhur yang selaras dengan arketipe ${sanitized.toLowerCase()}`;
     }
     if (systemId === "bazi") {
@@ -671,6 +822,19 @@ function humanizeFactCue(
       }
     }
     return "pola ketabahan dan harapan keluarga yang diwariskan lintas generasi";
+  }
+
+  // Tzolkin general mapping
+  if (systemId === "tzolkin") {
+    for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
+      if (lower.includes(color)) return meaning;
+    }
+    for (const [tone, meaning] of Object.entries(TZOLKIN_TONE_MAP)) {
+      if (lower === tone || lower.includes(` ${tone} `) || lower.startsWith(`${tone} `) || lower.includes(tone)) return meaning;
+    }
+    for (const [seal, meaning] of Object.entries(TZOLKIN_SEAL_MAP)) {
+      if (lower.includes(seal)) return meaning;
+    }
   }
 
   if (systemId === "numerology" || /^(lifepath|expression|soulurge|birthday)/i.test(lower)) {
@@ -780,49 +944,49 @@ function semanticThemesFor(reading: ArsipAkashiReadingDef, domains: string[], pa
 type ReadingTemplateFn = (cueA: string, cueB: string, cueC: string, pIndex: number) => string[];
 
 const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
-  // 1. arketipe-utama
+  // 1. arketipe-utama (Priority Fixture)
   "arketipe-utama": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di lapis terdalam dirimu, terdapat postur hidup utama yang selalu membimbingmu kembali pada kejujuran dasar keberadaanmu.`,
-        `Kompas batin ini mengemuka saat kamu dihadapkan pada pilihan penting, di mana panggilan ${cueA} menjadi penentu arah langkahmu.`,
-        `Kesadaranmu merekah ketika kamu tidak lagi menyembunyikan keaslian ini demi menyenangkan ekspektasi lingkungan luar.`,
+        `Menatap dirimu secara utuh memperlihatkan postur batin utama yang menjadi jangkar bagi seluruh caramu menjalani hidup.`,
+        `Kompas keberadaanmu bekerja paling jernih saat kamu membiarkan pilihanmu dipandu oleh ${cueA}.`,
+        `Ketika kamu hidup selaras dengan pusat ini, tindakanmu memancarkan ketenangan yang tidak mudah digoyahkan oleh riuh ekspektasi luar.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat berada dalam kesadaran matang, kehadiranmu memancarkan wibawa tenang yang bersumber dari ${cueB}.`,
-        `Namun ketika rasa amanmu goyah, sisi bayangan dapat tersulut berupa dorongan membuktikan diri secara berlebihan atau menarik diri ke balik topeng kepalsuan.`,
-        `Risiko ini semakin nyata jika kamu membiarkan keraguan batin mengaburkan kepemimpinan sejati atas hidupmu sendiri.`,
+        `Dalam kematangan kesadaran, kehadiranmu menghadirkan rasa mantap dan arah yang jelas berkat ${cueB}.`,
+        `Namun ketika tekanan lingkungan meningkat, amati apakah muncul dorongan membuktikan nilai diri secara berlebihan atau justru menarik diri di balik peran yang tidak sepenuhnya jujur.`,
+        `Mengenali pergeseran ini membantumu segera kembali pada kejujuran postur dasarmu.`,
       ];
     }
     return [
-      `Mematangkan arketipe ini menuntut keberanian untuk hidup selaras dengan pusat batinmu setiap hari.`,
-      `Yang perlu kamu lepaskan adalah ilusi bahwa kamu harus sempurna agar layak diterima dan dihormati.`,
-      `Mulailah dengan mengambil satu keputusan penting hari ini yang sepenuhnya berakar pada ${cueC}.`,
+      `Menjaga keaslian arketipe ini menuntut keberanian untuk setia pada kompas internalmu dalam keputusan besar maupun kecil.`,
+      `Lepaskan anggapan bahwa kamu harus selalu memenuhi ekspektasi semua orang agar layak dihargai.`,
+      `Mulailah hari ini dengan mengambil satu sikap tegas yang sepenuhnya berakar pada ${cueC}.`,
     ];
   },
 
-  // 2. cara-berpikir-memaknai
+  // 2. cara-berpikir-memaknai (Priority Fixture)
   "cara-berpikir-memaknai": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Pikiranmu bekerja seperti penjelajah yang tidak pernah puas hanya melihat permukaan peristiwa.`,
-        `Dalam menyerap pengalaman dan merangkai makna, kognisimu bertumpu pada ${cueA}.`,
-        `Pemahamanmu terasa jernih saat kamu memberi jeda bagi intuisimu untuk melengkapi penalaran logis yang tersusun.`,
+        `Pola kognisimu bekerja dengan menelusuri keterhubungan mendalam di balik peristiwa lahiriah, bukan sekadar menerima informasi di permukaan.`,
+        `Cara pikiranmu menyusun arti dan merangkai wawasan bertumpu kuat pada ${cueA}.`,
+        `Kejernihan pemikiranmu mencapai puncaknya saat kamu memberi ruang bagi perenungan sebelum buru-buru menarik kesimpulan.`,
       ];
     }
     if (p === 2) {
       return [
-        `Pada bentuk terbaiknya, kognisimu mampu melihat keterhubungan tersembunyi berkat ${cueB}.`,
-        `Sebaliknya, ketika pikiranmu terlalu lelah atau terancam, kamu bisa terjebak dalam pusaran analisis berlebihan yang melumpuhkan tindakan.`,
-        `Sikap kritis yang awalnya melindungi dapat berubah menjadi sinisme jika kamu membiarkan ketakutan akan ketidakpastian memimpin cara berpikirmu.`,
+        `Pada kondisi terbaik, daya analitis dan kepekaan batinmu berpadu menghasilkan sudut pandang yang segar berkat ${cueB}.`,
+        `Sebaliknya, ketika pikiranmu berada di bawah tekanan atau kelelahan, amati kecenderungan terjebak dalam pusaran analisis berlebih yang menunda tindakan nyata.`,
+        `Sikap kritis yang sehat tetap memerlukan kelapangan rasa agar tidak berubah menjadi keraguan yang melumpuhkan.`,
       ];
     }
     return [
-      `Melatih kejernihan kognitif menuntut keseimbangan antara observasi yang tajam dan penerimaan yang lapang.`,
-      `Lepaskan kebiasaan merumuskan kesimpulan terburu-buru sebelum fakta dan rasa memiliki ruang untuk bernapas.`,
-      `Latih pikiranmu dengan menguji satu asumsi usang melalui ${cueC} secara tenang.`,
+      `Melatih kejernihan kognitif menuntut keseimbangan antara ketajaman observasi dan kesabaran melihat konteks yang lebih utuh.`,
+      `Beri jeda sejenak sebelum merumuskan penilaian agar setiap fakta memiliki ruang untuk dipahami secara adil.`,
+      `Ujilah pemahamanmu hari ini dengan menerapkan wawasan ${cueC} ke dalam keputusan praktis.`,
     ];
   },
 
@@ -830,22 +994,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "nilai-kebutuhan-batin": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Kebutuhan batinmu adalah fondasi hening yang menopang seluruh ketahanan emosionalmu.`,
-        `Rasa amanmu sangat dipengaruhi oleh seberapa jauh hidupmu memberi ruang bagi ${cueA}.`,
-        `Ketika kebutuhan dasar ini terpenuhi, seluruh energimu mengalir dengan tenang tanpa kecemasan yang mendesak.`,
+        `Kebutuhan batinmu adalah jangkar hening yang menopang ketahanan emosional dalam dinamika keseharian.`,
+        `Rasa damai di dalam dirimu sangat dipengaruhi oleh seberapa jauh ritme hidupmu memberi tempat bagi ${cueA}.`,
+        `Ketika kebutuhan dasar ini terpenuhi secara jujur, energimu mengalir dengan tenang tanpa dorongan kecemasan yang mendesak.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat nilai-nilai intimu dihormati, kamu memancarkan stabilitas batin yang bersumber dari ${cueB}.`,
-        `Tetapi jika kebutuhan ini terus-menerus kamu abaikan demi orang lain, tubuh dan emosimu akan bereaksi melalui rasa hampa atau kemarahan terpendam.`,
-        `Kamu berisiko menuntut orang di sekitarmu menebak kebutuhanmu tanpa pernah menyuarakannya secara jelas dan jujur.`,
+        `Saat nilai-nilai intimu dihormati, kamu memancarkan stabilitas batin yang meneduhkan sekitar berkat ${cueB}.`,
+        `Namun bila kebutuhan ini terus terabaikan demi memenuhi keinginan orang lain, perhatikan jika tubuh dan emosimu mulai memberi tanda berupa kejenuhan atau rasa lelah batin.`,
+        `Pola ini sering kali menandakan bahwa ada ruang batin yang meminta perhatian dan kejujuran untuk disuarakan secara tenang.`,
       ];
     }
     return [
-      `Merawat kebutuhan batin bukanlah tindakan egois, melainkan tanggung jawab pertama kepada jiwamu.`,
-      `Mulailah menghapus rasa bersalah saat kamu perlu menetapkan batas demi menjaga kewarasanmu.`,
-      `Luangkan waktu untuk menegaskan kembali komitmenmu pada ${cueC} dalam pilihan-pilihan kecil hari ini.`,
+      `Merawat kebutuhan batin merupakan bentuk tanggung jawab pertama yang menjaga kewarasan dan keutuhan jiwamu.`,
+      `Kurangi rasa bersalah saat kamu perlu menetapkan batas demi melindungi ruang pemulihan pribadimu.`,
+      `Luangkan waktu hari ini untuk menegaskan kembali komitmenmu pada ${cueC} dalam pilihan-pilihan kecil yang nyata.`,
     ];
   },
 
@@ -853,45 +1017,45 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "cara-hadir-di-dunia": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Kesan pertama dan caramu melangkah ke ruang sosial membawa getaran khas yang langsung dirasakan orang lain.`,
-        `Kehadiranmu secara alami memancarkan kualitas yang berakar pada ${cueA}.`,
-        `Tanpa perlu memaksakan diri tampil dominan, caramu bersikap sudah mengomunikasikan batasan dan martabatmu.`,
+        `Kesan pertama dan caramu melangkah ke ruang bersama membawa getaran khas yang langsung dirasakan oleh lingkungan sekitar.`,
+        `Kehadiranmu secara alami memancarkan martabat yang bersumber dari ${cueA}.`,
+        `Tanpa perlu memaksakan diri tampil dominan, caramu membawa diri telah mengomunikasikan batas dan integritas yang jelas.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam kondisi seimbang, caramu membawa diri memudahkan orang lain merasa terhubung berkat ${cueB}.`,
-        `Namun ketika rasa percaya dirimu surut, kamu mungkin tergoda membangun benteng dingin atau berusaha terlalu keras agar disukai.`,
-        `Gesekan sosial mudah muncul jika caramu mengekspresikan diri berbeda jauh dari apa yang sebenarnya berkecamuk di dalam hatimu.`,
+        `Dalam kondisi seimbang, caramu mengekspresikan diri memudahkan orang lain merasa nyaman dan terhubung berkat ${cueB}.`,
+        `Namun ketika rasa percaya diri sedang surut, amati apakah ada kecenderungan membangun jarak yang terlalu dingin atau sebaliknya berusaha terlalu keras agar diterima.`,
+        `Menyelaraskan niat batin dengan ekspresi lahiriah membantumu hadir secara utuh tanpa beban pencitraan.`,
       ];
     }
     return [
-      `Kehadiran yang berdaya lahir dari keselarasan total antara niat batin dan gerak lahiriahmu.`,
-      `Yang perlu dilepaskan adalah kecemasan tentang bagaimana orang lain akan menilai setiap gerak-gerikmu.`,
-      `Hadirlah secara utuh di setiap perjumpaan dengan menyandarkan postur hidupmu pada ${cueC}.`,
+      `Daya tarik sejati lahir dari kesederhanaan bersikap yang berpijak pada keaslian jati diri.`,
+      `Lepaskan kekhawatiran tentang bagaimana setiap tatapan orang lain akan menilai gerak-gerikmu.`,
+      `Hadirlah secara utuh di setiap perjumpaan hari ini dengan menyandarkan sikapmu pada ${cueC}.`,
     ];
   },
 
-  // 5. ritme-energi-alami
+  // 5. ritme-energi-alami (Priority Fixture)
   "ritme-energi-alami": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Tubuh dan perhatianmu memiliki tempo biologis yang tidak bisa dipaksa mengikuti standar kecepatan orang lain.`,
-        `Aliran energimu bekerja paling optimal ketika kamu bergerak selaras dengan ${cueA}.`,
-        `Memahami kapan harus melaju dan kapan harus melambat adalah kunci menjaga vitalitasmu tetap menyala.`,
+        `Tubuh dan perhatianmu beroperasi menurut tempo alami yang menuntut penghormatan terhadap batas dan kapasitas daya hidup.`,
+        `Ritme staminamu bergerak paling optimal ketika kamu menyelaraskan aktivitas harian dengan ${cueA}.`,
+        `Mengenali pasang surut tenaga ini membantumu bekerja secara berkelanjutan tanpa harus mengorbankan kesehatan jangka panjang.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kamu menghormati pasang surut tenaga ini, produktivitasmu memuncak melalui ${cueB}.`,
-        `Sebaliknya, memaksakan diri bekerja saat baterai batinmu habis hanya akan membuahkan kelelahan kronis dan frustrasi mendalam.`,
-        `Bahaya terbesar adalah mengorbankan sinyal alami tubuh demi mengejar tenggat waktu yang sebenarnya bisa dinegosiasikan.`,
+        `Saat kamu bergerak mengikuti irama alami ini, fokus dan produktivitasmu tercurah secara efektif berkat ${cueB}.`,
+        `Perhatikan tanda-tanda ketika kamu mulai memaksakan diri melampaui sinyal lelah demi memenuhi tuntutan luar yang mendesak.`,
+        `Mengabaikan kebutuhan jeda hanya akan memicu keletihan mendalam yang pada akhirnya memperlambat langkahmu sendiri.`,
       ];
     }
     return [
-      `Menata hari berdasarkan kapasitas energi adalah bentuk penghormatan tertinggi pada raga yang meminjamkan daya hidupnya.`,
-      `Buang kebiasaan mengukur harga dirimu semata-mata dari seberapa banyak daftar tugas yang berhasil kamu selesaikan.`,
-      `Bangun ritme harian yang lebih manusiawi dengan memprioritaskan ${cueC} sebagai jangkar kestabilanmu.`,
+      `Menata hari berdasarkan kapasitas energi adalah bentuk kepedulian nyata yang menjaga kejernihan pikiran dan ketahanan raga.`,
+      `Biasakan mengukur keberhasilan dari kualitas kehadiranmu, bukan sekadar jumlah kesibukan yang berhasil kamu tumpuk.`,
+      `Bangun ritme kerja yang lebih seimbang hari ini dengan memprioritaskan keteraturan ${cueC}.`,
     ];
   },
 
@@ -899,22 +1063,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "cara-mengambil-keputusan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Pilihan hidup yang tepat bagimu tidak pernah lahir dari kebisingan argumen mental semata.`,
-        `Kompas keputusanmu memiliki kecerdasan tersendiri yang beroperasi melalui ${cueA}.`,
-        `Keputusan terbaikmu selalu ditandai oleh ketenangan batin yang menetap, bukan oleh ketergesaan yang didorong rasa panik.`,
+        `Pilihan hidup yang tepat bagimu jarang lahir dari ketergesaan atau perdebatan logika yang bising semata.`,
+        `Kompas keputusanmu memiliki kecerdasan internal yang bekerja selaras melalui ${cueA}.`,
+        `Keputusan yang matang selalu ditandai oleh rasa hening dan keteguhan di dalam dada, bukan oleh kepanikan yang terburu-buru.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika kamu setia pada otoritas internal ini, langkah-langkahmu mengalir dengan kepastian berkat ${cueB}.`,
-        `Namun saat kamu membiarkan tekanan luar atau rasa takut ketinggalan mengambil alih kemudi, penyesalan biasanya segera menyusul.`,
-        `Kamu kerap terjebak meminta pendapat terlalu banyak orang sampai suara jernih di dalam dadamu sendiri tenggelam.`,
+        `Ketika kamu setia mendengarkan sinyal internal ini, arah langkahmu mengalir dengan kemantapan berkat ${cueB}.`,
+        `Namun bila tekanan waktu atau ketakutan tertinggal mendominasi, amati kecenderungan mencari pembenaran dari terlalu banyak orang sampai suara hatimu sendiri tenggelam.`,
+        `Memberi ruang jeda sejenak sering kali menjadi pembeda antara reaksi sesaat dan pilihan yang bijaksana.`,
       ];
     }
     return [
-      `Mempercayai caramu memilih menuntut kesabaran untuk menunggu hingga sinyal kejelasan internal benar-benar matang.`,
-      `Lepaskan dorongan terburu-buru menyimpulkan sesuatu hanya demi meredakan ketidaknyamanan sementara.`,
-      `Uji setiap keputusan penting berikutnya dengan bersandar pada kebijaksanaan ${cueC}.`,
+      `Mempercayai caramu memilih menuntut kesabaran menunggu hingga kejelasan batin benar-benar menetap.`,
+      `Hindari godaan menyimpulkan sesuatu secara tergesa hanya demi meredakan ketidaknyamanan batin yang bersifat sementara.`,
+      `Ujilah setiap pertimbangan penting berikutnya dengan bersandar pada kejernihan ${cueC}.`,
     ];
   },
 
@@ -922,22 +1086,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "pola-respons-kehidupan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Reaksi spontanmu saat menghadapi kejutan, perubahan mendadak, atau krisis memperlihatkan mekanisme pertahanan pertamamu.`,
-        `Secara naluriah, caramu merespons dinamika hidup bertumpu pada ${cueA}.`,
-        `Memahami respons otomatis ini membantumu beralih dari sekadar bereaksi secara impulsif menjadi merespons secara sadar.`,
+        `Caramu merespons kejutan, perubahan tak terduga, atau situasi krisis memperlihatkan mekanisme adaptasi pertamamu.`,
+        `Secara naluriah, sikap awalmu dalam menghadapi dinamika baru bertumpu pada ${cueA}.`,
+        `Menyadari respons spontan ini membantumu beralih dari sekadar bereaksi secara otomatis menjadi merespons dengan penuh kesadaran.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam kondisi tenang, daya lentingmu bekerja luar biasa melalui ${cueB}.`,
-        `Namun jika kamu merasa tersudut, respons pertamamu bisa berubah menjadi pertahanan kaku yang menutup pintu kompromi.`,
-        `Kamu berisiko memperkeruh keadaan apabila membiarkan kecemasan sesaat mendikte kata-kata dan tindakan pertamamu.`,
+        `Dalam suasana tenang, daya lentingmu bekerja sangat baik dalam menemukan solusi praktis berkat ${cueB}.`,
+        `Namun saat situasi terasa menekan secara mendadak, perhatikan bila muncul reaksi bertahan yang kaku atau kebiasaan menutup diri sebelum duduk perkara jelas.`,
+        `Ruang antara peristiwa dan tanggapanmu adalah tempat di mana kebebasan memilihmu sesungguhnya berada.`,
       ];
     }
     return [
-      `Ruang antara stimulus dan respons adalah tempat di mana kebebasan dan kedewasaanmu tumbuh.`,
-      `Berhentilah membenarkan reaksi spontan yang melukai dengan dalih bahwa itulah sifat alamimu yang tidak bisa diubah.`,
-      `Latihlah jeda satu napas sebelum menjawab situasi yang menantang, sembari mengingat ${cueC}.`,
+      `Kedewasaan emosional tumbuh saat kamu mampu memberi jeda satu tarikan napas sebelum menentukan tanggapan lahiriah.`,
+      `Latihlah diri untuk tidak langsung membenarkan reaksi spontan yang dapat memperkeruh suasana perjumpaan.`,
+      `Jawablah tantangan hari ini dengan ketenangan yang berakar pada kearifan ${cueC}.`,
     ];
   },
 
@@ -945,22 +1109,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "fokus-produktivitas-konsistensi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Kapasitas fokusmu bukan tentang memaksa otak bekerja tanpa henti, melainkan tentang menjaga kedalaman perhatian pada hal yang esensial.`,
-        `Daya konsistensimu terbangun kokoh saat kamu menautkan usahamu pada ${cueA}.`,
-        `Hasil karya yang bernilai tinggi selalu lahir ketika kamu mampu melindungi perhatianmu dari distraksi yang tidak bermakna.`,
+        `Kapasitas fokusmu bekerja bukan melalui pemaksaan konsentrasi tanpa henti, melainkan melalui penjagaan perhatian pada hal yang esensial.`,
+        `Daya tahan produktivitasmu terbangun kokoh saat kamu menautkan usahamu pada ${cueA}.`,
+        `Hasil karya yang bermutu tinggi selalu lahir ketika perhatianmu terlindungi dari gangguan yang mengaburkan arah utama.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat ritme kerjamu tertata rapi, ketekunanmu menghasilkan capaian nyata melalui ${cueB}.`,
-        `Sebaliknya, menyebarkan perhatian ke terlalu banyak arah sekaligus hanya akan menguapkan potensi besarmu menjadi keletihan yang sia-sia.`,
-        `Jebakan utamanya adalah merasa sibuk sepanjang hari tetapi sebenarnya sedang menghindari pekerjaan yang paling menentukan.`,
+        `Saat ritme kerjamu tertata rapi, ketekunanmu menghasilkan capaian nyata yang terukur melalui ${cueB}.`,
+        `Sebaliknya, menyebarkan perhatian ke terlalu banyak inisiatif sekaligus berisiko menghabiskan stamina tanpa menghasilkan dampak yang tuntas.`,
+        `Amati apakah ada kecenderungan merasa sibuk sepanjang hari tetapi sebenarnya sedang menghindari pekerjaan yang paling esensial.`,
       ];
     }
     return [
-      `Konsistensi jangka panjang dibangun melalui kebiasaan-kebiasaan kecil yang dapat diulang dengan mudah setiap hari.`,
-      `Singkirkan ilusi bahwa kamu harus selalu terinspirasi sebelum mulai melakukan pekerjaan penting.`,
-      `Ikat komitmen kerjamu pada satu proyek prioritas hari ini dengan memanfaatkan kekuatan ${cueC}.`,
+      `Konsistensi jangka panjang dibangun melalui rutinitas sederhana yang dapat diulang dengan mudah setiap hari.`,
+      `Kurangi ketergantungan pada ledakan motivasi sesaat dengan membangun sistem kerja yang realistis dan teratur.`,
+      `Ikat fokus kerjamu pada satu prioritas penting hari ini dengan memanfaatkan kekuatan ${cueC}.`,
     ];
   },
 
@@ -968,22 +1132,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "cara-memulihkan-energi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Pemulihan energi bukanlah kemewahan sesekali, melainkan kebutuhan mendasar agar jiwamu tidak terbakar habis oleh rutinitas.`,
-        `Jiwa dan ragamu kembali pulih secara alami ketika kamu memberi ruang bagi ${cueA}.`,
-        `Titik balik pemulihanmu terjadi saat kamu berani menarik diri sejenak dari tuntutan dunia tanpa membawa beban rasa bersalah.`,
+        `Pemulihan energi adalah fondasi mutlak agar daya hidup dan kejernihan perhatianmu tidak terkuras oleh rutinitas harian.`,
+        `Sistem saraf dan batinmu kembali segar secara alami ketika kamu memberi ruang yang cukup bagi ${cueA}.`,
+        `Titik balik pemulihan terjadi saat kamu berani mengambil jeda dari tuntutan luar tanpa membebani diri dengan rasa bersalah.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam ruang hening yang tepat, vitalitasmu terisi kembali dengan cepat berkat ${cueB}.`,
-        `Namun jika kamu mengabaikan kebutuhan istirahat ini terlalu lama, tubuhmu akan memaksakan jeda melalui kelelahan fisik atau kemurungan emosi.`,
-        `Kamu kerap menipu diri sendiri dengan menganggap hiburan layar atau kesibukan pasif sebagai pemulihan sejati.`,
+        `Dalam suasana hening yang tepat, vitalitasmu terisi kembali dengan cepat berkat ${cueB}.`,
+        `Namun bila tanda-tanda kelelahan terus diabaikan, tubuhmu akan menuntut istirahat melalui penurunan konsentrasi atau ketegangan emosi.`,
+        `Perhatikan apakah kamu kerap mengganti istirahat sejati dengan stimulasi pasif yang sebenarnya masih menguras perhatian mental.`,
       ];
     }
     return [
-      `Menjaga kebersihan energimu memerlukan ritual pemulihan yang sengaja dijadwalkan, bukan menunggu sisa waktu.`,
-      `Lepaskan keyakinan keliru bahwa istirahat adalah tanda kelemahan atau kemalasan.`,
-      `Ciptakan ruang hening yang menenangkan hari ini untuk meremajakan seluruh energimu melalui ${cueC}.`,
+      `Menjaga kebersihan energimu memerlukan ritual pemulihan yang sengaja dijadwalkan secara sadar.`,
+      `Hargai waktu jeda sebagai bagian integral dari siklus karya yang memungkinkan pencapaian terbaikmu merekah.`,
+      `Ciptakan ruang tenang yang menyejukkan hari ini untuk meremajakan energimu melalui ${cueC}.`,
     ];
   },
 
@@ -991,22 +1155,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "luka-inti": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di sudut batin yang paling rapuh, tersimpan luka purba yang membentuk caramu melindungi diri dari rasa sakit.`,
-        `Titik rentan ini kerap tersentuh ketika kamu berhadapan dengan situasi yang mengaktifkan ${cueA}.`,
-        `Menyadari luka ini dengan penuh kelembutan adalah langkah awal agar ia tidak lagi diam-diam mengendalikan hidupmu dari balik layar.`,
+        `Di lapisan emosional terdalam tersimpan titik rentan yang terbentuk dari pengalaman masa lalu dalam melindungi diri dari rasa sakit.`,
+        `Kepekaan batin ini cenderung terusik ketika kamu berhadapan dengan situasi yang menyentuh ${cueA}.`,
+        `Menatap kerapuhan ini dengan kelembutan adalah langkah awal agar memori lama tidak lagi mengarahkan pilihanmu secara tidak sadar.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika luka ini disinari kesadaran welas asih, kerapuhanmu bertransformasi menjadi empati mendalam berkat ${cueB}.`,
-        `Tetapi saat rasa sakitnya terpicu tanpa kamu sadari, kamu bisa bereaksi defensif seolah-olah seluruh duniamu sedang terancam runtuh.`,
-        `Pola ini membuatmu kerap menafsirkan situasi netral sebagai penolakan pribadi atau pengabaian yang disengaja.`,
+        `Ketika titik sensitif ini disinari oleh penerimaan welas asih, kerapuhanmu bertransformasi menjadi empati yang mendalam melalui ${cueB}.`,
+        `Namun saat rasa sakitnya terpicu tanpa disadari, perhatikan apakah muncul reaksi defensif yang mempersepsikan keadaan netral sebagai ancaman atau penolakan pribadi.`,
+        `Mengenali pemicu ini membantumu membedakan kenyataan saat ini dari bayang-bayang luka masa lalu.`,
       ];
     }
     return [
-      `Menyembuhkan luka inti tidak berarti melenyapkan memori masa lalu, melainkan mengubah caramu memeluk rasa sakit itu hari ini.`,
-      `Berhentilah menuntut orang lain untuk menjadi penawar atas rasa tidak aman yang belum kamu rawat sendiri.`,
-      `Peluklah bagian dirimu yang terluka dengan kehangatan dan keteguhan yang bersumber dari ${cueC}.`,
+      `Merawat luka inti bukanlah tentang melupakan sejarah hidup, melainkan tentang memeluk diri sendiri dengan kehangatan yang lebih dewasa.`,
+      `Hindari menuntut orang lain menjadi penawar bagi rasa tidak aman yang sebenarnya sedang meminta asuhan batinmu sendiri.`,
+      `Dekaplah bagian dirimu yang rentan hari ini dengan ketabahan yang bersumber dari ${cueC}.`,
     ];
   },
 
@@ -1014,22 +1178,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "mekanisme-perlindungan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Strategi bertahan yang kamu bangun di masa lalu pernah menjadi pelindung yang menyelamatkanmu dari rasa sakit yang terlalu berat.`,
-        `Armor perlindunganmu secara otomatis terpasang saat kamu merasa terancam oleh ${cueA}.`,
-        `Namun perlindungan yang sama kini kerap menjadi dinding pembatas yang menghalangi pertumbuhan dan kedekatan sejati.`,
+        `Strategi pertahanan batin yang kamu bangun di masa lalu pernah menjadi perisai yang menyelamatkanmu saat menghadapi tekanan berat.`,
+        `Armor pelindung ini secara otomatis terpasang ketika rasa amanmu terasa terancam oleh ${cueA}.`,
+        `Meskipun dulu sangat berjasa, perlindungan yang sama kini dapat menjadi pembatas yang menghalangi kedekatan dan keterbukaan yang sehat.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat mekanisme ini disadari, kamu mampu membedakan bahaya nyata dari sekadar ketakutan masa lalu melalui ${cueB}.`,
-        `Di sisi lain, jika perlindungan ini dibiarkan berjalan liar, kamu akan terus menyerang atau menjauh bahkan dari orang yang berniat tulus.`,
-        `Kamu berisiko menjadi sosok yang dingin dan sulit dijangkau karena terlalu takut terlihat rapuh di depan orang lain.`,
+        `Saat mekanisme bertahan ini kamu sadari dengan jernih, kamu mampu membedakan risiko nyata dari sekadar kekhawatiran lama berkat ${cueB}.`,
+        `Di sisi lain, bila perisai ini bekerja tanpa kendali, kamu mungkin cenderung menutup diri atau menjaga jarak berlebih dari lingkungan yang berniat tulus.`,
+        `Menyadari kapan perisai ini aktif membantumu memilih respons yang lebih luwes dan proporsional.`,
       ];
     }
     return [
-      `Menurunkan perisai perlindungan menuntut keberanian untuk mempercayai bahwa dirimu yang sekarang sudah cukup kuat menghadapi kenyataan.`,
-      `Lepaskan kebiasaan mencurigai setiap niat baik sebagai ancaman terselubung yang harus diwaspadai.`,
-      `Latihlah keterbukaan yang sehat dengan menyandarkan rasa amanmu pada kekuatan ${cueC}.`,
+      `Melunakkan pertahanan diri menuntut keyakinan bahwa kapasitasmu yang sekarang sudah jauh lebih matang untuk menghadapi realitas.`,
+      `Kurangi kebiasaan mencurigai setiap situasi baru sebelum kamu sempat melihat fakta yang sebenarnya.`,
+      `Latihlah keterbukaan yang aman hari ini dengan menyandarkan keberanianmu pada kekuatan ${cueC}.`,
     ];
   },
 
@@ -1037,22 +1201,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "pola-self-sabotage": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Tindakan menyabotase diri sendiri sering kali muncul tepat di ambang pintu pencapaian atau kebahagiaan yang lebih besar.`,
-        `Pola ini bekerja saat alam bawah sadarmu mulai merasa tidak nyaman dengan ${cueA}.`,
-        `Rasa takut akan ketidaktahuan atau ketakutan akan tanggung jawab baru kerap menjadi pemicu utama kamu merusak peluangmu sendiri.`,
+        `Dorongan untuk menahan langkah sendiri kerap muncul tanpa disadari justru saat peluang besar atau kebahagiaan baru mulai mendekat.`,
+        `Pola keraguan ini biasanya mulai aktif ketika alam bawah sadarmu merasa belum terbiasa dengan ${cueA}.`,
+        `Ketakutan akan tanggung jawab baru atau ketidakpastian sering kali menjadi pemicu di balik kebiasaan menunda atau mempersulit langkah sendiri.`,
       ];
     }
     if (p === 2) {
       return [
-        `Memahami akar sabotase ini memberimu kekuatan untuk mematahkan siklus penghancuran diri melalui ${cueB}.`,
-        `Namun saat kamu terlena, kamu bisa menunda pekerjaan penting, menciptakan konflik yang tidak perlu, atau tiba-tiba menyerah di tengah jalan.`,
-        `Kamu cenderung membenarkan kemunduranmu dengan menciptakan berbagai alasan logis yang sebenarnya menutupi ketakutanmu sendiri.`,
+        `Memahami akar keraguan ini memberimu kejernihan untuk memutus siklus yang menghambat perkembangan melalui ${cueB}.`,
+        `Namun bila pola ini tidak diamati, kamu mungkin tergoda menciptakan kesibukan sampingan atau mempermasalahkan hal kecil yang mengalihkan fokus utama.`,
+        `Melihat pola ini secara jujur tanpa menyalahkan diri adalah kunci untuk menjaga kemajuan yang sedang kamu bangun.`,
       ];
     }
     return [
-      `Menghentikan sabotase diri memerlukan ketegasan untuk tetap melangkah meskipun rasa cemas membisikkanmu untuk lari.`,
-      `Buang kebiasaan meremehkan kapasitasmu sendiri hanya demi tetap berada di zona nyaman yang sempit.`,
-      `Bertahanlah dalam pertumbuhan barumu dengan memegang teguh komitmen pada ${cueC}.`,
+      `Menghentikan hambatan internal menuntut keteguhan untuk tetap melangkah meskipun rasa cemas membisikkan keraguan.`,
+      `Ingatlah bahwa rasa tidak nyaman adalah tanda wajar dari perluasan kapasitas menuju tahap kedewasaan baru.`,
+      `Pertahankan momentum langkahmu hari ini dengan memegang teguh komitmen pada ${cueC}.`,
     ];
   },
 
@@ -1060,45 +1224,45 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "ketakutan-tersembunyi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di bawah permukaan pikiran sadarmu, terdapat ketakutan mendalam yang jarang kamu akui bahkan kepada dirimu sendiri.`,
-        `Kegentaran batin ini paling sering terusik saat kamu berhadapan dengan kemungkinan ${cueA}.`,
-        `Menamai ketakutan ini secara jujur akan melucuti kekuatannya yang selama ini menghantui pilihan-pilihan besarmu.`,
+        `Di bawah kesadaran harian tersimpan kekhawatiran mendasar yang jarang diungkapkan tetapi diam-diam memengaruhi arah keputusanmu.`,
+        `Kegentaran batin ini paling sering terusik saat kamu membayangkan kemungkinan yang berkaitan dengan ${cueA}.`,
+        `Menamai ketakutan ini secara jujur melucuti daya pengaruhnya yang selama ini membatasi keberanianmu melangkah.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika kamu berani menatap rasa takut ini dengan mata terbuka, keberanian sejatimu bangkit melalui ${cueB}.`,
-        `Sebaliknya, jika kamu terus menyangkal keberadaannya, ketakutan ini akan menjelma menjadi kecemasan mengambang yang terus menguras energimu.`,
-        `Kamu bisa tanpa sadar membatasi cakrawala hidupmu demi memastikan skenario terburuk yang kamu bayangkan tidak pernah terjadi.`,
+        `Ketika kamu berani menatap kekhawatiran ini dengan pikiran jernih, ketenangan sejati mulai menggantikan rasa cemas melalui ${cueB}.`,
+        `Sebaliknya, menyangkal keberadaan rasa takut hanya akan mengubahnya menjadi ketegangan mengambang yang melelahkan pikiran.`,
+        `Amati apakah kamu kerap membatasi ruang gerak hidup semata-mata demi memastikan skenario buruk yang dibayangkan tidak pernah terjadi.`,
       ];
     }
     return [
-      `Keberanian bukanlah ketiadaan rasa takut, melainkan kesadaran bahwa ada hal yang jauh lebih berharga daripada rasa takut itu sendiri.`,
-      `Lepaskan kebutuhan untuk selalu memiliki jaminan kepastian sebelum berani mengambil langkah maju.`,
-      `Tataplah masa depanmu dengan keberanian baru yang berakar pada keteguhan ${cueC}.`,
+      `Keberanian bukanlah ketiadaan rasa gentar, melainkan kesadaran bahwa ada tujuan hidup yang jauh lebih bernilai untuk diperjuangkan.`,
+      `Lepaskan kebutuhan akan jaminan mutlak sebelum bersedia mengambil langkah pertumbuhan yang bermakna.`,
+      `Tataplah masa depanmu dengan keteguhan hati yang berakar pada prinsip ${cueC}.`,
     ];
   },
 
-  // 14. warisan-keluarga-leluhur
+  // 14. warisan-keluarga-leluhur (Priority Fixture)
   "warisan-keluarga-leluhur": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Aliran memori garis keturunan mengalirkan warisan batin yang melampaui apa yang sekadar tampak di kasat mata.`,
-        `Kamu mengemban pola ketabahan dan harapan keluarga yang berakar kuat pada ${cueA}.`,
-        `Menghormati akar asal-usulmu bukan berarti harus mengulang semua luka, pengorbanan, atau beban yang belum tuntas dari generasi terdahulu.`,
+        `Garis keturunan membawa untaian memori relasional, nilai budaya, dan ketabahan yang ikut mewarnai sudut pandangmu.`,
+        `Dari akar keluarga ini, kamu mewarisi daya tahan dan harapan hidup yang berpijak pada ${cueA}.`,
+        `Memahami keterhubungan ini mengajakmu merenungkan pola mana yang menguatkan dan mana yang sudah waktunya diperbarui.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dari silsilahmu, kamu mewarisi daya tahan luar biasa dan kearifan hidup yang mengkristal melalui ${cueB}.`,
-        `Namun di sisi bayangannya, beban emosional yang belum terselesaikan di masa lalu dapat terasa sebagai tuntutan loyalitas bawah sadar yang mengekang langkahmu.`,
-        `Kamu berisiko memikul rasa bersalah keluarga yang sebenarnya bukan menjadi tanggung jawab pribadimu untuk menyelesaikannya.`,
+        `Kekuatan silsilahmu hadir nyata dalam bentuk ketangguhan batin dan kemampuan melewati masa sulit berkat ${cueB}.`,
+        `Sebagai bahan refleksi sadar, amati apakah ada ekspektasi tak terucap atau kebiasaan generasi terdahulu yang diam-diam masih membebani pilihan pribadimu.`,
+        `Memilah warisan ini adalah bentuk penghormatan sejati agar kamu tidak sekadar mengulang siklus yang tidak lagi relevan.`,
       ];
     }
     return [
-      `Tugas generasimu adalah memilah warisan: memetik hikmah kekuatannya dan memutus rantai kepedihan yang usang.`,
-      `Berhentilah merasa bersalah ketika pilihan hidupmu berbeda dari harapan tidak realistis para pendahulumu.`,
-      `Berdirilah tegak di garis waktumu dengan menghormati asal-usul sembari mengarahkan hidupmu pada ${cueC}.`,
+      `Kedewasaan berelasi dengan asal-usul keluarga terletak pada kemampuan merawat hikmah baiknya sembari menetapkan batas hidup yang mandiri.`,
+      `Kamu berhak menentukan jalan hidup yang selaras dengan nilai jiwamu tanpa harus merasa bersalah.`,
+      `Tegakkan postur hidupmu di masa kini dengan menyandarkan langkah pada kearifan ${cueC}.`,
     ];
   },
 
@@ -1106,22 +1270,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "karma-pola-berulang": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Pengulangan peristiwa dengan tokoh dan suasana yang berbeda adalah cara kehidupan menunjukkan pelajaran yang belum tuntas.`,
-        `Siklus pengalaman ini berulang kali mengetuk pintu hidupmu seputar tema ${cueA}.`,
-        `Menyalahkan nasib atau pihak luar tidak akan pernah menghentikan perputaran pola yang sama.`,
+        `Kemunculan dinamika serupa dalam situasi atau relasi yang berbeda sering kali menandakan adanya pelajaran hidup yang meminta penyelesaian baru.`,
+        `Siklus pengalaman yang berulang ini mengajakmu meninjau kembali caramu merespons ${cueA}.`,
+        `Melihat pengulangan ini sebagai ruang pembelajaran sadar membantumu keluar dari rasa ketidakberdayaan.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kamu menangkap inti pelajarannya, pengulangan ini berubah menjadi lompatan kesadaran berkat ${cueB}.`,
-        `Namun jika kamu tetap menutup mata, kamu akan kembali mengambil keputusan yang sama dan menuai rasa kecewa yang serupa.`,
-        `Bahaya terbesarnya adalah merasa dirimu menjadi korban abadi dari takdir yang tidak berpihak kepadamu.`,
+        `Saat inti pelajarannya dapat dipahami, siklus berulang ini bertransformasi menjadi lompatan kematangan hidup berkat ${cueB}.`,
+        `Namun bila situasi tersebut hanya ditanggapi dengan reaksi lama, wajar bila rasa jenuh dan kekecewaan serupa kembali dirasakan.`,
+        `Kunci perubahan terletak pada kesediaan mengubah satu respons kecil saat menghadapi situasi yang terasa familiar.`,
       ];
     }
     return [
-      `Rantai karma terputus saat kamu memilih satu respons baru yang berbeda pada titik di mana siklus lama biasanya berulang.`,
-      `Tinggalkan kebiasaan mengharapkan hasil yang berbeda jika kamu masih terus menggunakan pola lama dalam merespons keadaan.`,
-      `Akhiri siklus lama ini hari ini dengan mempraktikkan kedewasaan yang bersumber dari ${cueC}.`,
+      `Memutus siklus berulang menuntut keberanian memilih tindakan baru pada titik di mana kebiasaan lama biasanya mengambil alih.`,
+      `Hindari mengharapkan perubahan keadaan luar jika caramu menyikapi masalah masih mengulang pola yang sama.`,
+      `Mulailah melangkah di jalur baru hari ini dengan mempraktikkan kearifan ${cueC}.`,
     ];
   },
 
@@ -1129,45 +1293,45 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "arah-penyembuhan-integrasi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Penyembuhan batin bukanlah peristiwa sesaat, melainkan proses integrasi yang merangkul kembali setiap bagian dirimu yang terluka.`,
-        `Jalur pemulihan pribadimu menuntut keberanian untuk menatap ${cueA} dengan kelembutan dan kesabaran.`,
-        `Proses ini tidak menuntutmu menjadi sempurna, melainkan menjadi pribadi yang utuh, jujur, dan berdamai dengan diri sendiri.`,
+        `Pemulihan batin merupakan perjalanan berkelanjutan untuk merangkul kembali setiap bagian pengalaman hidup menjadi satu keutuhan yang matang.`,
+        `Jalur integrasi pribadimu menuntut kesabaran dalam menyikapi dinamika seputar ${cueA}.`,
+        `Proses ini tidak menuntut kesempurnaan tanpa cela, melainkan kejujuran untuk berdamai dengan seluruh perjalanan yang telah kamu lalui.`,
       ];
     }
     if (p === 2) {
       return [
-        `Seiring berjalannya proses pemulihan, pengalaman sulitmu mengkristal menjadi sumber kebijaksanaan nyata melalui ${cueB}.`,
-        `Namun jalan integrasi ini bisa terhambat jika kamu memperlakukan penyembuhan sebagai proyek perbaikan diri yang tiada akhir dan penuh penghakiman.`,
-        `Kamu berisiko terjebak dalam pusaran meratapi masa lalu tanpa pernah berani melangkah menjalani kehidupan nyata hari ini.`,
+        `Seiring bertumbuhnya kesadaran diri, pengalaman yang menantang mengkristal menjadi sumber kebijaksanaan nyata melalui ${cueB}.`,
+        `Tantangan dalam proses pemulihan adalah bila kamu memperlakukannya sebagai tuntutan perbaikan diri yang tiada akhir dan penuh kritik internal.`,
+        `Melihat proses ini sebagai perjalanan yang bertahap menjaga batinmu tetap rileks dan penuh penerimaan.`,
       ];
     }
     return [
-      `Integrasi sejati terlihat dari caramu memperlakukan diri sendiri saat kamu menghadapi kekeliruan atau rasa tidak berdaya.`,
-      `Maafkan dirimu atas pilihan-pilihan masa lalu yang pernah kamu ambil saat pemahamanmu belum seluas sekarang.`,
-      `Rawat keutuhan jiwamu secara konsisten melalui tindakan nyata yang mencerminkan ${cueC}.`,
+      `Integrasi yang utuh terlihat dari kelembutan caramu memperlakukan diri sendiri saat menghadapi kekeliruan atau ketidakpastian.`,
+      `Hargai setiap fase pertumbuhan yang telah kamu lewati dengan rasa syukur dan pemahaman yang lapang.`,
+      `Rawatlah keutuhan batinmu secara konsisten melalui tindakan nyata yang mencerminkan ${cueC}.`,
     ];
   },
 
-  // 17. talenta-alami
+  // 17. talenta-alami (Priority Fixture)
   "talenta-alami": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di dalam dirimu terdapat kapasitas bawaan yang mengalir begitu spontan tanpa perlu dipaksakan secara berlebihan.`,
-        `Bakat alami ini paling nyata terlihat saat kamu mencurahkan perhatianmu pada ${cueA}.`,
-        `Apa yang terasa begitu mudah dan alami bagimu sering kali merupakan hal yang sangat berharga dan dicari oleh orang lain.`,
+        `Di dalam dirimu mengalir bakat alami yang bekerja begitu spontan tanpa membutuhkan ketegangan berlebih untuk memulainya.`,
+        `Kapasitas bawaan ini paling nyata tercurah saat kamu mengekspresikan ${cueA}.`,
+        `Apa yang terasa mengalir wajar bagimu sering kali merupakan kekuatan bernilai tinggi yang dibutuhkan oleh lingkungan sekitarmu.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika talenta ini diasah dengan disiplin teratur, karyamu memancarkan keunggulan unik melalui ${cueB}.`,
-        `Namun jika kamu mengabaikannya atau menganggapnya remeh, potensi besar ini hanya akan menjadi angan-angan yang tidak membuahkan hasil nyata.`,
-        `Kamu kerap merasa tidak puas dan membandingkan diri dengan kelebihan orang lain sambil membiarkan bakatmu sendiri terbengkalai.`,
+        `Ketika bakat ini diasah dengan latihan yang tekun, potensimu berkembang menjadi karya berkualitas melalui ${cueB}.`,
+        `Tantangan yang sering muncul adalah menganggap remeh kelebihan sendiri atau membandingkan proses belajarmu dengan standar orang lain.`,
+        `Bila bakat dibiarkan tanpa wadah disiplin, kapasitas besar ini bisa terhenti sebagai gagasan yang belum sempat dinikmati manfaatnya.`,
       ];
     }
     return [
-      `Menghormati talenta alami menuntut dedikasi untuk melatihnya menjadi keterampilan profesional yang tahan uji.`,
-      `Buang keraguan bahwa apa yang kamu miliki tidak cukup bernilai untuk dibagikan kepada dunia luar.`,
-      `Berikan ruang latihan harian yang konsisten untuk memperdalam bakatmu melalui ${cueC}.`,
+      `Menghidupkan talenta menuntut komitmen untuk menjadikannya keterampilan yang tahan uji dalam situasi nyata.`,
+      `Kurangi keraguan bahwa karyamu belum cukup siap untuk dihadirkan ke ruang publik.`,
+      `Beri ruang latihan rutin setiap hari agar bakatmu semakin tajam dan berakar kuat pada ${cueC}.`,
     ];
   },
 
@@ -1175,22 +1339,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "gaya-kerja": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Ekosistem kerjamu memiliki pola dan dinamika tersendiri agar energimu tidak terbuang sia-sia pada gesekan operasional.`,
-        `Kamu mencapai efektivitas tertinggi saat metode kerjamu berpijak pada ${cueA}.`,
-        `Memahami gaya kerjamu membantumu membangun batas profesional yang sehat di tengah tuntutan lingkungan yang serba cepat.`,
+        `Ekosistem kerjamu memiliki pola dan dinamika khas agar energimu dapat tercurah secara efektif tanpa gesekan yang tidak perlu.`,
+        `Efektivitas kerjamu mencapai puncaknya saat metode dan alur kerjamu berpijak pada ${cueA}.`,
+        `Memahami gaya kerja pribadi membantumu membangun batas profesional yang sehat di tengah tuntutan ritme lingkungan yang serba cepat.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam lingkungan kerja yang selaras, daya ciptamu berkembang pesat dan memberi kontribusi maksimal melalui ${cueB}.`,
-        `Sebaliknya, memaksakan diri bekerja dalam sistem yang bertentangan dengan kapasitasmu akan membuat energimu cepat terkuras.`,
-        `Kamu berisiko mengalami kebuntuan karya jika terus membiarkan caramu bekerja didikte oleh metode orang lain yang tidak cocok untukmu.`,
+        `Dalam lingkungan kerja yang selaras, kreativitas dan daya eksekusimu menghasilkan kontribusi yang maksimal melalui ${cueB}.`,
+        `Sebaliknya, memaksakan diri bekerja dengan metode yang bertentangan dengan ritmemu akan membuat tenaga cepat habis sebelum hasil tercapai.`,
+        `Perhatikan bila muncul kejenuhan karya yang disebabkan oleh kebiasaan mengadopsi cara kerja orang lain tanpa penyesuaian.`,
       ];
     }
     return [
-      `Menata metode kerja adalah investasi jangka panjang untuk menjaga keberlanjutan hasil karya dan kesehatan mentalmu.`,
-      `Lepaskan kebiasaan meniru gaya orang lain secara kaku tanpa menguji kecocokannya dengan ritme energimu.`,
-      `Sesuaikan alur kerjamu hari ini agar lebih selaras dengan prinsip ${cueC}.`,
+      `Menata alur kerja adalah investasi jangka panjang demi menjaga keberlanjutan hasil karya dan keseimbangan mentalmu.`,
+      `Sesuaikan metode kerja dengan kapasitas alami agar produktivitasmu tidak lahir dari kelelahan yang dipaksakan.`,
+      `Rancang kembali alur kerjamu hari ini agar lebih selaras dengan prinsip ${cueC}.`,
     ];
   },
 
@@ -1198,22 +1362,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "arah-karya-kontribusi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Karyamu bukan sekadar sarana mencari nafkah, melainkan wadah untuk meninggalkan jejak makna yang melampaui kepentingan diri sendiri.`,
-        `Panggilan kontribusimu bergerak paling kuat saat kamu menyelaraskan karya dengan ${cueA}.`,
-        `Kepuasan terdalammu selalu lahir ketika apa yang kamu kerjakan mampu meringankan beban atau mencerahkan jalan orang lain.`,
+        `Karyamu pada hakikatnya adalah sarana untuk meninggalkan jejak manfaat dan makna yang melampaui kepentingan diri semata.`,
+        `Panggilan kontribusimu terasa paling hidup saat kamu menyelaraskan karya dengan ${cueA}.`,
+        `Kepuasan batin terdalam selalu lahir ketika apa yang kamu kerjakan mampu meringankan beban atau membuka jalan bagi orang lain.`,
       ];
     }
     if (p === 2) {
       return [
-        `Pada puncaknya, kontribusimu menjadi jembatan perubahan nyata bagi komunitas sekitarmu berkat ${cueB}.`,
-        `Namun ketika kamu kehilangan kontak dengan makna karya, aktivitas profesionalmu bisa terasa hampa dan mekanis layaknya rutinitas tanpa jiwa.`,
-        `Kamu berisiko terjebak mengejar status atau pengakuan luar yang gemerlap tetapi mengorbankan integritas batinmu.`,
+        `Ketika karya diarahkan dengan ketulusan, kontribusimu menjadi inspirasi yang memberi dampak nyata bagi lingkungan melalui ${cueB}.`,
+        `Namun bila hubungan dengan makna karya memudar, aktivitas profesional dapat terasa mekanis layaknya rutinitas yang hampa.`,
+        `Amati apakah ada godaan mengejar pengakuan luar yang tampak gemerlap tetapi mengorbankan panggilan integritas batinmu.`,
       ];
     }
     return [
-      `Menemukan arah karya menuntut keberanian untuk menempatkan nilai kemanusiaan di atas sekadar keuntungan sesaat.`,
-      `Singkirkan ketakutan bahwa kontribusimu terlalu kecil untuk bisa membawa dampak positif bagi kehidupan.`,
-      `Mulailah menenun karyamu ke dalam tindakan nyata yang berlandaskan pada ${cueC}.`,
+      `Mengarahkan karya menuntut keteguhan untuk menempatkan nilai kemanusiaan dan kebermanfaatan sebagai ukuran utama keberhasilan.`,
+      `Yakinilah bahwa kontribusi yang tulus selalu memiliki tempat dan dampak yang berarti bagi kehidupan sesama.`,
+      `Mulailah mewujudkan niat baikmu hari ini ke dalam tindakan nyata yang berlandaskan pada ${cueC}.`,
     ];
   },
 
@@ -1221,45 +1385,45 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "ekonomi-pola-penghasilan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Hubunganmu dengan uang dan sumber daya materi mencerminkan bagaimana kamu menghargai energi dan waktu yang kamu curahkan.`,
+        `Hubunganmu dengan sumber daya materi mencerminkan bagaimana kamu menghargai waktu, tenaga, dan keterampilan yang kamu miliki.`,
         `Pola penghasilan yang sehat dan berkelanjutan bagimu bertumpu pada kemampuan mengalirkan ${cueA}.`,
-        `Kelimpahan ekonomi merekah saat pertukaran nilai yang kamu bangun berjalan di atas fondasi kejujuran dan saling menguntungkan.`,
+        `Kelimpahan finansial tumbuh subur saat pertukaran nilai yang kamu bangun berpijak pada kejujuran dan saling memberi manfaat.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat sistem finansialmu tertata dengan bijak, stabilitas materimu tumbuh menguat melalui ${cueB}.`,
-        `Sebaliknya, ketidakjelasan batas finansial atau manajemen yang ceroboh dapat membuat arus rezekimu tersendat dan menimbulkan kecemasan terus-menerus.`,
-        `Kamu berisiko menolak kelimpahan yang pantas kamu terima karena diam-diam merasa tidak layak menikmati hasil kerja kerasmu.`,
+        `Saat sistem pengelolaan keuanganmu tertata dengan bijak, stabilitas materimu semakin kokoh berkat ${cueB}.`,
+        `Sebaliknya, ketidakjelasan pencatatan atau manajemen yang tergesa dapat menimbulkan kekhawatiran yang mengganggu fokus kerjamu.`,
+        `Pola yang patut diamati adalah apakah ada keraguan dalam menetapkan nilai yang adil atas keahlian dan kontribusi yang kamu berikan.`,
       ];
     }
     return [
-      `Membangun kemandirian ekonomi menuntut perpaduan antara keterampilan praktis mengelola angka dan ketenangan mental menghadapi risiko.`,
-      `Berhentilah membiarkan keputusan keuanganmu diambil berdasarkan rasa panik atau gengsi sesaat.`,
-      `Bangun fondasi penghasilan yang kokoh dan transparan dengan memprioritaskan ${cueC}.`,
+      `Membangun kemandirian ekonomi menuntut perpaduan antara ketertiban mengelola angka dan ketenangan mental menghadapi dinamika pasar.`,
+      `Ambillah keputusan finansial berdasarkan pertimbangan yang matang, bukan dorongan panik atau gengsi sesaat.`,
+      `Perkuat fondasi keuanganmu hari ini dengan merancang pengelolaan yang tertib dan berorientasi pada ${cueC}.`,
     ];
   },
 
-  // 21. money-block
+  // 21. money-block (Priority Fixture)
   "money-block": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Hambatan batin seputar uang berakar pada kecemasan purba tentang rasa aman, harga diri, dan ketakutan akan kekurangan.`,
-        `Pola penolakan atau kecemasan materi ini biasanya langsung aktif saat kamu berhadapan dengan ${cueA}.`,
-        `Uang kerap kamu jadikan cermin dari rasa tidak berharga atau alat untuk mengontrol keadaan saat rasa amanmu terguncang.`,
+        `Dinamika batin seputar sumber daya mencerminkan hubungan antara rasa aman, nilai diri, dan kemampuan mempercayai alir kehidupan.`,
+        `Ketegangan finansial biasanya mengemuka saat situasi menguji ${cueA}.`,
+        `Pemahaman ini membantu melihat bahwa kecemasan materi sering kali berakar pada kebutuhan emosional yang meminta perhatian jujur.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika hambatan psikologis ini terurai, energimu untuk menerima dan mengelola rezeki terbuka lebar berkat ${cueB}.`,
-        `Namun saat hambatan ini menguasaimu, kamu bisa bersikap terlalu kikir menimbun kendali atau sebaliknya menghamburkan uang demi pelarian sesaat.`,
-        `Kamu kerap menunda melihat kenyataan finansial, enggan mencatat pengeluaran, atau takut menetapkan harga yang pantas atas keahlianmu.`,
+        `Ketika hubungan dengan materi mulai jernih, pengelolaan sumber daya menjadi lebih tenang dan terarah berkat ${cueB}.`,
+        `Pola yang patut kamu amati secara jujur adalah kecenderungan menahan kendali terlalu ketat saat rasa cemas datang, atau sebaliknya menghindari evaluasi angka nyata ketika situasi terasa menekan.`,
+        `Ketegangan ini wajar muncul ketika nilai diri tanpa sadar disamakan dengan saldo atau materi yang dimiliki.`,
       ];
     }
     return [
-      `Menyembuhkan hubungan dengan uang menuntut keberanian untuk berdamai dengan rasa cukup dan melihat uang sebagai sarana pertukaran netral.`,
-      `Lepaskan keyakinan bahwa hidup kekurangan adalah tanda kerendahan hati atau bahwa memiliki materi otomatis merusak ketulusan batin.`,
-      `Latihlah ketenangan finansialmu dengan mengambil satu langkah pengelolaan yang tertib berdasarkan ${cueC}.`,
+      `Menata hubungan sehat dengan uang menuntut perpaduan antara ketertiban praktis dan penerimaan batin atas rasa cukup.`,
+      `Lepaskan keyakinan bahwa membicarakan angka mengurangi ketulusan, atau bahwa memiliki materi otomatis merusak integritas.`,
+      `Mulailah membangun ketenangan finansial dengan satu langkah pencatatan atau kesepakatan tertib yang berpijak pada ${cueC}.`,
     ];
   },
 
@@ -1267,22 +1431,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "arah-karier-bidang-sesuai": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Jalur profesi yang tepat bagimu mempertemukan kebutuhan nyata lingkungan dengan kedalaman potensi terbaikmu.`,
-        `Bidang karier yang paling menjanjikan pertumbuhan bagimu berputar di sekitar ${cueA}.`,
-        `Keberhasilan profesionalmu tidak ditentukan oleh seberapa bergengsi posisinya, melainkan seberapa besar ruang yang tersedia bagi autentisitasmu.`,
+        `Jalur profesi yang paling memuaskan bagimu adalah ruang yang mempertemukan kebutuhan nyata dunia kerja dengan keunggulan potensimu.`,
+        `Bidang karier yang memberi ruang bertumbuh paling subur berputar di sekitar ${cueA}.`,
+        `Kecocokan profesionalmu diukur dari seberapa leluasa autentisitas dan nilaimu dapat mewujud dalam tanggung jawab harian.`,
       ];
     }
     if (p === 2) {
       return [
-        `Di panggung karier yang tepat, kepemimpinan dan dedikasimu terlihat nyata melalui ${cueB}.`,
-        `Tetapi jika kamu bertahan di bidang yang mematikan semangatmu hanya demi rasa aman semu, energimu akan terkuras dalam kehampaan.`,
-        `Kamu berisiko terjebak dalam perangkap kenyamanan status quo yang menghalangi panggilan untuk melangkah ke tingkat berikutnya.`,
+        `Di panggung karier yang tepat, dedikasi dan keahlianmu terlihat nyata serta memberi nilai tambah melalui ${cueB}.`,
+        `Namun bila kamu bertahan di bidang yang tidak lagi selaras semata-mata demi rasa aman semu, energimu akan perlahan menurun.`,
+        `Amati apakah rasa enggan mengambil risiko baru sedang menahanmu dari peluang memperluas keahlian ke tingkat berikutnya.`,
       ];
     }
     return [
-      `Menemukan jalur karier yang selaras memerlukan keberanian untuk menguji potensi melalui langkah-langkah nyata yang terukur.`,
-      `Jangan menunggu semua keraguan hilang sebelum berani mengambil inisiatif strategis dalam pekerjaanmu.`,
-      `Ujilah kecocokan profesionalmu dengan mengarahkan fokus energimu pada bidang ${cueC}.`,
+      `Menemukan jalur karier yang tepat menuntut keberanian menguji kapasitas melalui langkah-langkah nyata yang terukur.`,
+      `Mulailah mengeksplorasi peran baru tanpa harus menunggu hilangnya seluruh keraguan dalam pikiran.`,
+      `Arahkan fokus profesionalmu hari ini pada langkah nyata yang memperkuat keahlian di bidang ${cueC}.`,
     ];
   },
 
@@ -1290,22 +1454,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "kemampuan-sudah-dimiliki": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Keterampilan yang telah kamu kuasai lewat tempaan pengalaman hidup adalah aset nyata yang sudah terbukti keandalannya.`,
-        `Fondasi kompetensimu yang paling solid saat ini berakar pada penguasaan ${cueA}.`,
-        `Kamu sering kali meremehkan keahlian ini hanya karena kamu telah begitu terbiasa melakukannya tanpa kesulitan berarti.`,
+        `Keterampilan yang telah kamu bangun melalui tempaan pengalaman nyata merupakan modal andalan yang siap digunakan kapan saja.`,
+        `Kekuatan kompetensimu saat ini berpijak kokoh pada penguasaan ${cueA}.`,
+        `Sering kali kamu menganggap remeh keahlian ini hanya karena kamu telah begitu terbiasa melakukannya secara lancar.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kemampuan ini kamu gunakan secara terarah, kamu mampu menyelesaikan masalah rumit dengan tenang melalui ${cueB}.`,
-        `Namun jika kamu terlalu cepat berpuas diri dan berhenti mengasahnya, keahlian yang pernah kamu banggakan bisa kehilangan ketajamannya.`,
-        `Bahaya lainnya adalah mengunci dirimu pada satu peran masa lalu sehingga menutup peluang mengembangkan keahlian baru yang dibutuhkan.`,
+        `Saat kemampuan ini kamu gunakan secara strategis, kamu mampu mengatasi persoalan rumit dengan tenang melalui ${cueB}.`,
+        `Tantangan yang patut diwaspadai adalah rasa cepat puas yang membuat keahlianmu tidak lagi diasah mengikuti perkembangan baru.`,
+        `Menjaga keterampilan tetap relevan menuntut keterbukaan untuk terus mengaplikasikannya dalam konteks yang lebih menantang.`,
       ];
     }
     return [
-      `Menghargai kemampuan yang sudah ada memberimu landasan percaya diri yang kokoh untuk menapaki tantangan baru.`,
-      `Buang sindrom merasa tidak mampu saat kenyataan membuktikan kamu telah berulang kali berhasil melewatinya.`,
-      `Optimalkan daya guna keterampilan utamamu hari ini dengan menyelaraskannya pada ${cueC}.`,
+      `Menghargai keahlian yang telah kamu miliki memberimu rasa percaya diri yang berakar kuat untuk menyambut peluang baru.`,
+      `Kikis keraguan atas kompetensi diri saat rekam jejakmu telah membuktikan kemampuanmu melewatinya.`,
+      `Optimalkan pemanfaatan keahlian utamamu hari ini dengan mengarahkannya pada pencapaian ${cueC}.`,
     ];
   },
 
@@ -1313,22 +1477,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "kemampuan-perlu-dipelajari": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Pertumbuhan jiwamu selalu menuntut perluasan kapasitas melalui pembelajaran keterampilan baru yang menantang zona nyamanmu.`,
-        `Celah pembelajaran yang paling mendesak untuk kamu jembatani saat ini berkaitan erat dengan ${cueA}.`,
-        `Ketidaktahuan bukanlah aib, melainkan undangan terbuka dari kehidupan untuk memperluas ruang gerakmu.`,
+        `Perluasan kapasitas hidupmu selalu mengundang proses mempelajari keterampilan baru yang memperkaya wawasan dan daya eksekusimu.`,
+        `Area pembelajaran yang paling strategis untuk kamu kembangkan saat ini berkaitan erat dengan ${cueA}.`,
+        `Menyadari keterbatasan keahlian bukanlah kelemahan, melainkan titik tolak yang jelas untuk memperluas ruang gerakmu.`,
       ];
     }
     if (p === 2) {
       return [
-        `Kesediaanmu menjadi pemula kembali akan membuka cakrawala peluang baru yang luar biasa berkat ${cueB}.`,
-        `Namun jika rasa gengsi atau takut terlihat canggung menghalangimu belajar, kamu akan tertahan dalam metode lama yang tidak lagi efektif.`,
-        `Kamu kerap menunda proses belajar dengan alasan tidak memiliki cukup waktu atau merasa sudah terlambat untuk memulai.`,
+        `Kesediaanmu untuk kembali menjadi pembelajar membuka pintu bagi peluang-peluang segar yang belum terbayangkan sebelumnya berkat ${cueB}.`,
+        `Namun bila kekhawatiran terlihat canggung menahan langkahmu, proses belajar bisa tertunda oleh alasan kesibukan yang dibuat-buat.`,
+        `Menerima fase adaptasi awal sebagai proses alami membantumu menikmati setiap tahapan belajar dengan gembira.`,
       ];
     }
     return [
-      `Menjadi pembelajar seumur hidup menuntut kerendahan hati untuk menerima proses latihan bertahap tanpa kehilangan semangat.`,
-      `Singkirkan ekspektasi bahwa kamu harus langsung mahir tanpa melewati fase adaptasi awal.`,
-      `Pilihlah satu fokus pembelajaran kecil hari ini dan tekuni dengan sungguh-sungguh melalui panduan ${cueC}.`,
+      `Pertumbuhan yang berkesinambungan membutuhkan kerendahan hati untuk terus berlatih tanpa terbebani tuntutan instan.`,
+      `Fokuskan perhatian pada kemajuan bertahap daripada mencemaskan hasil akhir yang belum terlihat.`,
+      `Pilihlah satu keterampilan prioritas hari ini dan tekuni latihannya dengan berpedoman pada ${cueC}.`,
     ];
   },
 
@@ -1336,22 +1500,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "kebutuhan-emosional-relasi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Kehangatan dan keterikatan emosional dalam hubungan menuntut ruang yang aman agar kerapuhanmu dapat diterima tanpa syarat.`,
-        `Rasa tenang dan terpenuhimu dalam relasi bertumpu pada adanya ruang bagi ${cueA}.`,
-        `Ketika kebutuhan emosional ini diakui, hubunganmu menjadi pelabuhan teduh tempat jiwamu beristirahat dan bertumbuh bersama.`,
+        `Rasa aman dan keterikatan yang hangat dalam hubungan memerlukan ruang penerimaan di mana kerapuhanmu dapat diterima dengan tulus.`,
+        `Kenyamanan emosionalmu dalam relasi sangat dipengaruhi oleh adanya ruang bagi ${cueA}.`,
+        `Ketika kebutuhan ini diakui secara jujur, hubungan menjadi pelabuhan teduh tempat batinmu beristirahat dan bertumbuh bersama.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam relasi yang sehat, keterbukaan hatimu menghadirkan kedekatan yang mendalam melalui ${cueB}.`,
-        `Namun ketika kebutuhan ini diabaikan, rasa sepi di tengah kebersamaan dapat memicu kecemasan atau ledakan emosi yang membingungkan pasanganmu.`,
-        `Kamu berisiko menuntut pasanganmu memenuhi seluruh dahaga batinmu seolah-olah ia adalah satu-satunya penjamin kebahagiaanmu.`,
+        `Dalam relasi yang sehat, keterbukaan hatimu menghadirkan kedekatan yang menenangkan melalui ${cueB}.`,
+        `Namun bila kebutuhan ini dipendam terlalu lama, rasa sepi di tengah kebersamaan dapat memicu kesalahpahaman dengan pasangan.`,
+        `Pola yang layak diamati adalah apakah ada kebiasaan berharap pasangan menebak isi hatimu tanpa kamu menyampaikannya secara langsung.`,
       ];
     }
     return [
-      `Menyampaikan kebutuhan emosional secara jelas dan tanpa tuntutan adalah bentuk kedewasaan cinta yang menyejukkan.`,
-      `Berhentilah berharap pasanganmu mampu membaca pikiranmu jika kamu sendiri enggan membuka suaramu secara jujur.`,
-      `Rawatlah keintiman hubunganmu dengan mengomunikasikan harapanmu secara lembut melalui ${cueC}.`,
+      `Mengomunikasikan kebutuhan emosional secara jelas dan tenang adalah tanda kedewasaan cinta yang menyejukkan.`,
+      `Bicarakan harapanmu dengan kelembutan tanpa menyertakan tuntutan atau praduga yang membebani suasana.`,
+      `Rawatlah keintiman hubunganmu hari ini dengan menyampaikan perasaan secara tulus melalui ${cueC}.`,
     ];
   },
 
@@ -1359,22 +1523,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "memberi-menerima-cinta": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Arus cinta dalam hidupmu bekerja layaknya siklus tarikan dan hembusan napas yang harus seimbang agar tidak menyesakkan dada.`,
-        `Caramu mencurahkan kasih sayang dan kepedulian secara alami mengalir melalui ${cueA}.`,
-        `Menjaga keseimbangan antara memberi dan menerima adalah seni batin yang melindungi hubunganmu dari rasa lelah dan kekecewaan terpendam.`,
+        `Pertukaran kasih dalam hubungan bekerja seperti ritme tarikan dan hembusan napas yang perlu terjaga keseimbangannya agar tidak melelahkan.`,
+        `Caramu mencurahkan kepedulian dan kehangatan secara alami mengalir melalui ${cueA}.`,
+        `Keseimbangan antara memberi dan menerima adalah seni batin yang melindungi hubungan dari rasa jenuh dan keletihan emosional.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat pertukaran kasih ini mengalir dua arah, kebahagiaan yang kamu rasakan berlipat ganda berkat ${cueB}.`,
-        `Namun jika kamu hanya terbiasa memberi tanpa pernah mengizinkan dirimu menerima, kamu akan perlahan merasa kering dan dimanfaatkan.`,
-        `Di sisi lain, menuntut perhatian terus-menerus tanpa mau memahami beban pasangan akan meracuni kehangatan yang sudah dibangun.`,
+        `Saat aliran kasih bergerak secara timbal balik, kebahagiaan yang kamu rasakan berlipat ganda berkat ${cueB}.`,
+        `Namun bila kamu terbiasa selalu memberi tanpa mengizinkan dirimu menerima dukungan, perlahan batinmu bisa merasa terkuras.`,
+        `Amati apakah ada rasa canggung saat orang lain menawarkan pertolongan atau perhatian yang tulus kepadamu.`,
       ];
     }
     return [
-      `Menerima cinta dengan tangan terbuka menuntut keberanian untuk merasa layak dicintai tanpa harus terus-menerus membuktikan jasamu.`,
-      `Lepaskan kebiasaan menolak pertolongan atau pujian yang tulus dari orang-orang yang mengasihimu.`,
-      `Buka hatimu untuk menerima limpahan kasih hari ini sembari membumikan cintamu pada ${cueC}.`,
+      `Menerima kasih sayang dengan tangan terbuka menuntut keyakinan bahwa dirimu layak dicintai tanpa harus terus membuktikan jasamu.`,
+      `Izinkan orang-orang terdekatmu menunjukkan kepedulian mereka dengan cara mereka sendiri.`,
+      `Buka ruang batinmu untuk menerima kebaikan hari ini sembari membumikan kasihmu pada ${cueC}.`,
     ];
   },
 
@@ -1382,22 +1546,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "pola-ketertarikan-pasangan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Magnet ketertarikan romantis yang kamu rasakan sering kali digerakkan oleh memori bawah sadar yang mencari penyelesaian atas luka lama.`,
-        `Kamu secara alami tertarik pada figur yang membangkitkan dinamika seputar ${cueA}.`,
-        `Membedakan antara ketertarikan kimiawi sesaat dan kecocokan sejati yang menenangkan adalah tonggak kedewasaan asmaramu.`,
+        `Daya tarik yang kamu rasakan terhadap figur tertentu sering kali dipengaruhi oleh nilai dan kualitas batin yang sedang ingin kamu pahami lebih dalam.`,
+        `Perhatianmu secara alami terpikat pada pribadi yang membangkitkan dinamika seputar ${cueA}.`,
+        `Belajar membedakan antara ketertarikan sesaat dan kecocokan nilai yang menenangkan adalah tanda kematangan dalam memilih pasangan.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika kamu memilih pasangan dari kesadaran yang matang, relasimu menjadi wadah pertumbuhan bersama berkat ${cueB}.`,
-        `Namun jika kamu terpikat semata-mata oleh sensasi kepedihan yang terasa akrab, kamu hanya akan mengulang siklus masa lalu.`,
-        `Kamu kerap salah mengartikan kecemasan dan ketidakpastian sebagai tanda cinta yang mendalam dan penuh gairah.`,
+        `Ketika pilihan pasangan didasari oleh kesadaran yang matang, hubungan berkembang menjadi ruang pertumbuhan bersama berkat ${cueB}.`,
+        `Namun bila ketertarikan hanya digerakkan oleh dinamika yang penuh gejolak emosi, relasi bisa terasa melelahkan dalam jangka panjang.`,
+        `Amati apakah ada kecenderungan mengartikan rasa cemas dan ketidakpastian sebagai tanda kedalaman cinta.`,
       ];
     }
     return [
-      `Memilih pasangan hidup yang tepat adalah keputusan sadar yang melibatkan kearifan akal sehat dan kejernihan batin.`,
-      `Lepaskan ilusi tentang sosok penyelamat sempurna yang akan menyelesaikan seluruh masalah emosionalmu.`,
-      `Evaluasilah kualitas hubunganmu dengan melihat apakah ia membawa kedamaian nyata yang berakar pada ${cueC}.`,
+      `Memilih pasangan hidup yang tepat adalah keputusan sadar yang memadukan kehangatan rasa dan pertimbangan akal sehat.`,
+      `Carilah hubungan yang menghadirkan rasa tenang dan ruang untuk saling mendukung tujuan hidup masing-masing.`,
+      `Evaluasilah dinamika relasimu dengan melihat apakah ia membawa kedamaian nyata yang berpijak pada ${cueC}.`,
     ];
   },
 
@@ -1405,45 +1569,45 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "konflik-komunikasi-batas": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Perbedaan pandangan dalam hubungan bukanlah tanda akhir dari cinta, melainkan ruang untuk memperdalam saling pengertian dan batas diri.`,
-        `Gaya komunikasimu saat menghadapi ketegangan sangat dipengaruhi oleh caramu menjaga ${cueA}.`,
-        `Keberanian menetapkan batas yang tegas namun penuh kelembutan adalah pelindung terbaik dari keutuhan hubungan jangka panjang.`,
+        `Perbedaan pandangan dalam hubungan merupakan kesempatan wajar untuk memperdalam pemahaman timbal balik dan memperjelas batasan pribadi.`,
+        `Caramu menyampaikan ketidaksetujuan saat ketegangan muncul sangat dipengaruhi oleh bagaimana kamu menjaga ${cueA}.`,
+        `Keberanian menetapkan batas yang jelas dengan bahasa yang tenang adalah pelindung utama dari keharmonisan jangka panjang.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat konflik dihadapi dengan kepala dingin, percakapan yang jujur justru mempererat ikatan cinta berkat ${cueB}.`,
-        `Tetapi ketika sikap defensif mengambil alih, kata-katamu bisa berubah menjadi senjata tajam yang meninggalkan luka mendalam bagi pasangan.`,
-        `Sikap mendiamkan masalah atau lari dari percakapan penting hanya akan menimbun bara yang sewaktu-waktu bisa meledak.`,
+        `Saat percakapan sulit dihadapi dengan kepala dingin, kejujuran yang disampaikan secara santun justru mempererat ikatan berkat ${cueB}.`,
+        `Sebaliknya, bila sikap defensif menguasai percakapan, kata-kata yang tergesa dapat meninggalkan luka yang membutuhkan waktu untuk pulih.`,
+        `Kebiasaan menunda pembicaraan penting atau mendiamkan masalah berisiko menumpuk ganjalan emosi yang tidak sehat.`,
       ];
     }
     return [
-      `Menjaga batas yang sehat menuntut keberanian untuk berkata tidak tanpa merasa bersalah atau takut kehilangan cinta.`,
-      `Tinggalkan kebiasaan menyindir atau menyerang karakter pasangan saat yang kamu butuhkan sebenarnya hanyalah kejelasan kesepakatan.`,
-      `Sampaikan batasan pribadimu dengan bahasa yang tenang, terukur, dan bersandar pada prinsip ${cueC}.`,
+      `Menyampaikan batas diri menuntut ketegasan yang dibungkus dengan rasa hormat pada lawan bicara.`,
+      `Sampaikan hal yang kamu butuhkan dengan bahasa yang lugas tanpa perlu menyindir atau menyalahkan karakter pasangan.`,
+      `Latihlah komunikasi yang jernih dan menenangkan hari ini dengan bersandar pada prinsip ${cueC}.`,
     ];
   },
 
-  // 29. love-block-pola-berulang
+  // 29. love-block-pola-berulang (Priority Fixture)
   "love-block-pola-berulang": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Hambatan cinta berakar pada rasa takut mendalam akan penolakan, pengkhianatan, atau kehilangan kemerdekaan diri saat menjalin kedekatan.`,
-        `Benteng pertahanan batinmu langsung menutup rapat saat hubungan mulai menuntut keterbukaan tentang ${cueA}.`,
-        `Pola ini membuatmu kerap menarik diri tepat ketika hubungan mulai mengarah pada komitmen yang lebih serius dan nyata.`,
+        `Hambatan dalam kedekatan emosional sering kali berakar pada mekanisme pertahanan yang terbentuk untuk melindungi hati dari rasa terluka.`,
+        `Benteng batin ini cenderung aktif ketika dinamika hubungan menyentuh ruang seputar ${cueA}.`,
+        `Mengenali respons perlindungan ini membuka pintu bagi keintiman yang lebih jujur tanpa harus mengorbankan rasa aman.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kamu berani menurunkan pertahanan ini, kamu menemukan bahwa keintiman sejati tidak merusak dirimu melalui ${cueB}.`,
-        `Sebaliknya, jika hambatan ini dibiarkan memimpin, kamu akan terus mencari-cari kekurangan pasangan sebagai dalih untuk mundur.`,
-        `Kamu berisiko terjebak dalam hubungan yang menggantung atau tanpa sadar memilih pasangan yang emosionalnya tidak tersedia.`,
+        `Saat pertahanan diri dapat dilunakkan secara sadar, kedekatan dua arah bertumbuh semakin hangat melalui ${cueB}.`,
+        `Perhatikan apakah ada kecenderungan untuk menarik diri atau mencari-cari kekurangan situasi saat relasi menuntut komitmen yang lebih dalam.`,
+        `Pola ini bukanlah cela kepribadian, melainkan sinyal bahwa ruang batinmu sedang membutuhkan rasa aman sebelum berani melangkah lebih jauh.`,
       ];
     }
     return [
-      `Meruntuhkan hambatan cinta menuntut keberanian untuk menerima ketidaknyamanan dari rasa rentan di hadapan orang lain.`,
-      `Buang keyakinan beracun bahwa setiap orang yang mendekat pada akhirnya pasti akan melukai atau mengecewakanmu.`,
-      `Ambillah langkah untuk membuka hati dengan penuh kesadaran hari ini melalui kebijaksanaan ${cueC}.`,
+      `Membuka diri dalam relasi menuntut keberanian untuk merangkul kerentanan sebagai bagian wajar dari cinta yang bertumbuh.`,
+      `Yang perlu dilatih adalah menyampaikan batas dan harapan secara jelas sebelum prasangka mengambil alih.`,
+      `Latihlah keterbukaan yang sehat hari ini dengan menaruh rasa percaya secara bertahap pada ${cueC}.`,
     ];
   },
 
@@ -1451,22 +1615,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "arah-relasi-matang": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Hubungan yang matang adalah persekutuan dua individu yang utuh, yang memilih berjalan berdampingan tanpa saling meniadakan kemandirian.`,
-        `Visi kedewasaan relasimu berkembang paling indah saat kemitraanmu dilandasi oleh ${cueA}.`,
-        `Cinta sejati tidak pernah mengekang atau menuntut pengorbanan jati diri, melainkan memelihara ruang bagi masing-masing pihak untuk mekar.`,
+        `Hubungan yang matang adalah perjumpaan dua pribadi utuh yang memilih berjalan bersama tanpa menghilangkan ruang kebebasan dan keaslian masing-masing.`,
+        `Arah kedewasaan relasimu berkembang paling indah saat kebersamaan dilandasi oleh ${cueA}.`,
+        `Cinta yang dewasa tidak mengekang gerak pribadi, melainkan menyediakan tanah subur bagi kedua pihak untuk mekar secara seimbang.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam kemitraan yang dewasa, keharmonisan dan dukungan timbal balik terwujud secara nyata melalui ${cueB}.`,
-        `Namun jika relasi berubah menjadi arena perebutan kendali atau ketergantungan semata, kehangatan cinta akan perlahan memudar.`,
-        `Kamu berisiko mempertahankan hubungan yang sudah tidak sehat hanya karena takut menghadapi kesendirian.`,
+        `Dalam kemitraan yang saling menghargai, kerja sama dan dukungan timbal balik terwujud secara harmonis melalui ${cueB}.`,
+        `Namun bila relasi bergeser menjadi ajang pemaksaan kehendak atau ketergantungan sepihak, kehangatan hubungan akan perlahan memudar.`,
+        `Melihat dinamika relasi secara objektif membantumu merawat hubungan yang sehat dan melepaskan pola interaksi yang tidak membangun.`,
       ];
     }
     return [
-      `Membangun hubungan yang dewasa menuntut komitmen sehari-hari untuk merawat rasa hormat, kejujuran, dan ruang bertumbuh bagi pasangan.`,
-      `Berhentilah memproyeksikan ekspektasi yang tidak realistis pada pundak pasanganmu.`,
-      `Bangunlah kesepakatan relasi yang saling menguatkan dengan menyandarkan arah hubungan pada ${cueC}.`,
+      `Membangun relasi yang dewasa menuntut kesediaan sehari-hari untuk merawat rasa hormat, kejujuran, dan komunikasi terbuka.`,
+      `Hindari membebankan seluruh kebahagiaan pribadimu ke pundak pasangan tanpa merawat kebahagiaan batinmu sendiri.`,
+      `Perkuat fondasi hubunganmu hari ini dengan membangun kesepakatan bersama yang bersandar pada ${cueC}.`,
     ];
   },
 
@@ -1474,22 +1638,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "peta-chakra": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Tubuh fisikmu adalah cermin hidup yang memetakan aliran energi batin dan respon psikologis terhadap dunia sekitarmu.`,
-        `Pusat-pusat energimu berdenyut paling selaras ketika kamu menjaga keseimbangan ${cueA}.`,
-        `Sinyal ketegangan atau keterbukaan di titik tubuh tertentu memberi petunjuk akurat tentang apa yang sedang berkecamuk di dalam batinmu.`,
+        `Kondisi tubuh fisikmu mencerminkan bagaimana energi batin dan respons emosional mengalir dalam menghadapi pengalaman hidup.`,
+        `Keselarasan pusat-pusat energimu berdenyut paling seimbang saat kamu merawat keharmonisan ${cueA}.`,
+        `Sensasi ketegangan atau kelegaan di area tubuh tertentu memberi petunjuk lembut mengenai dinamika batin yang sedang berlangsung.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat aliran energimu lancar dan tidak terhambat, vitalitas tubuhmu terasa ringan dan bertenaga melalui ${cueB}.`,
-        `Namun ketika tekanan atau emosi terpendam menumpuk, cakra tertentu bisa mengalami hambatan yang memicu rasa lelah atau ketegangan fisik.`,
-        `Kamu kerap mengabaikan sinyal awal dari tubuh ini sampai akhirnya tubuh memaksamu berhenti melalui rasa lelah yang mendalam.`,
+        `Saat aliran energi tubuh bergerak lancar tanpa hambatan, vitalitas dan kebugaranmu terasa ringan melalui ${cueB}.`,
+        `Namun bila keletihan pikiran menumpuk tanpa jeda, pusat energi tertentu dapat terasa tegang sebagai sinyal agar kamu melambat.`,
+        `Mendengarkan bahasa tubuh ini secara tenang membantumu mengambil tindakan perawatan diri sebelum tubuh mengalami kelelahan yang nyata.`,
       ];
     }
     return [
-      `Menjaga keselarasan cakra adalah praktik mendengarkan tubuh dengan penuh perhatian tanpa perlu merasa panik atas sensasi yang muncul.`,
-      `Luangkan waktu untuk bernapas dalam dan menyadari kembali kehadiran fisikmu di saat ini.`,
-      `Salurkan ketenangan ke seluruh pusat energimu hari ini dengan menyelaraskan niat pada ${cueC}.`,
+      `Menjaga keselarasan energi tubuh adalah praktik merawat diri dengan penuh perhatian tanpa perlu merasa panik atas sensasi yang timbul.`,
+      `Luangkan waktu untuk bernapas dalam dan menyadari kehadiran fisikmu dengan penuh kelembutan.`,
+      `Alirkan ketenangan ke seluruh tubuhmu hari ini dengan menyelaraskan perhatian pada ${cueC}.`,
     ];
   },
 
@@ -1497,22 +1661,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "sistem-cerna": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Caramu mengolah makanan dan menyerap nutrisi fisik berjalan beriringan dengan caramu mencerna pengalaman dan tekanan hidup.`,
-        `Keseimbangan pencernaanmu sangat peka terhadap suasana emosi yang berkaitan dengan ${cueA}.`,
-        `Perutmu adalah pusat kepekaan yang langsung bereaksi tegang saat kamu memaksakan diri menerima situasi yang belum mampu kamu cerna secara sehat.`,
+        `Caramu mengolah asupan makanan berhubungan erat dengan caramu mencerna tekanan dan pengalaman emosional sehari-hari.`,
+        `Keseimbangan pencernaanmu sangat peka terhadap suasana batin yang berkaitan dengan ${cueA}.`,
+        `Area perut kerap menjadi pusat pertama yang merasakan ketegangan saat kamu memaksakan diri menghadapi situasi yang belum sempat kamu olah dengan baik.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat pencernaanmu tenang, energimu terserap optimal untuk menopang seluruh aktivitas harian melalui ${cueB}.`,
-        `Namun jika kamu makan dalam kondisi cemas atau memikul beban pikiran berlebih, tubuhmu akan merespons melalui ketidaknyamanan lambung.`,
-        `Kamu kerap memakai makanan sebagai pelarian emosional untuk meredakan kegelisahan batin yang belum selesai.`,
+        `Saat pencernaanmu berada dalam ritme yang tenang, energi terserap optimal untuk menopang seluruh aktivitasmu melalui ${cueB}.`,
+        `Namun bila kamu makan dalam kondisi terburu-buru atau cemas, tubuhmu akan merespons melalui rasa tidak nyaman pada pencernaan.`,
+        `Amati apakah ada kebiasaan melampiaskan ketegangan pikiran melalui pola makan yang tidak teratur.`,
       ];
     }
     return [
-      `Merawat sistem cerna menuntut kebiasaan makan yang sadar dan suasana tenang saat menyantap hidangan sehari-hari.`,
-      `Hindari memasukkan informasi yang memicu stres atau percakapan berat ke dalam momen makanmu.`,
-      `Berikan jeda istirahat yang cukup bagi pencernaanmu hari ini sembari memelihara ritme ${cueC}.`,
+      `Merawat kesehatan pencernaan menuntut suasana tenang dan perhatian penuh saat menikmati hidangan sehari-hari.`,
+      `Hindari membicarakan topik yang memicu ketegangan saat momen makan sedang berlangsung.`,
+      `Berikan jeda yang cukup bagi tubuhmu untuk mencerna dengan baik hari ini sembari menjaga ritme ${cueC}.`,
     ];
   },
 
@@ -1520,22 +1684,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "lingkungan-ideal": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Ruang fisik di sekitarmu, tata letak, pencahayaan, dan tingkat ketenangan memiliki pengaruh langsung pada sistem sarafmu.`,
-        `Kebutuhan spasialmu paling terpenuhi ketika lingkungan tempat tinggal dan kerjamu mendukung ${cueA}.`,
-        `Tempat yang selaras akan mengundang inspirasi dan kejernihan pikiran, sementara ruang yang kacau akan menguras energimu secara perlahan.`,
+        `Ruang fisik di sekitarmu, penataan ruangan, pencahayaan, dan tingkat kebisingan memiliki pengaruh langsung pada sistem saraf dan fokusmu.`,
+        `Kenyamanan spasialmu terpenuhi secara optimal ketika suasana tempat tinggal dan ruang kerjamu mendukung ${cueA}.`,
+        `Lingkungan yang tertata rapi mengundang kejernihan berpikir, sedangkan ruang yang terlalu padat dapat menguras energimu tanpa disadari.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam atmosfer lingkungan yang tepat, fokus dan pemulihanmu berlangsung dengan sangat mudah melalui ${cueB}.`,
-        `Sebaliknya, bertahan di lingkungan yang terlalu bising, sesak, atau berenergi berat akan membuat tubuhmu terus berada dalam mode waspada tinggi.`,
-        `Kamu berisiko merasa buntu dan tertekan hanya karena kamu enggan menata ulang ruang hidupmu sendiri.`,
+        `Dalam atmosfer ruangan yang selaras, konsentrasi dan pemulihan energimu berlangsung dengan sangat lancar berkat ${cueB}.`,
+        `Sebaliknya, bertahan terlalu lama di lingkungan yang bising atau penuh kekacauan visual dapat membuat tubuhmu terus berada dalam kewaspadaan tinggi.`,
+        `Menata ruang hidup secara berkala adalah langkah sederhana yang memberi dampak besar bagi ketenangan pikiranmu.`,
       ];
     }
     return [
-      `Menciptakan ruang ideal tidak harus menunggu tempat baru yang sempurna, melainkan menata satu sudut yang tenang bagi dirimu.`,
-      `Singkirkan barang-barang yang tidak lagi kamu perlukan yang hanya menyumbat pandangan dan ketenanganmu.`,
-      `Ciptakan atmosfer ruang yang mendukung kedamaian batinmu hari ini dengan mengacu pada ${cueC}.`,
+      `Menciptakan ruang yang ideal tidak harus menunggu tempat yang sempurna, melainkan menata satu sudut hening yang nyaman bagimu.`,
+      `Rapikan barang-barang yang tidak lagi kamu gunakan agar pandangan dan ruangan terasa lebih lapang.`,
+      `Hadirkan suasana yang mendukung kedamaian batinmu hari ini dengan menata lingkungan sesuai kebutuhan ${cueC}.`,
     ];
   },
 
@@ -1543,22 +1707,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "ritme-tubuh": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Jam biologis tubuhmu memiliki kearifan alami yang mengatur siklus terjaga, beraktivitas, dan beristirahat dalam ritme yang harmonis.`,
-        `Keselarasan sirkadianmu menuntut kesetiaan untuk menjaga ${cueA}.`,
-        `Menghargai pasang surut tenaga membuat energimu stabil sepanjang hari tanpa perlu bergantung pada stimulan berlebihan.`,
+        `Jam biologis tubuhmu memiliki kearifan alami yang mengatur siklus terjaga, beraktivitas, dan beristirahat secara selaras.`,
+        `Keselarasan stamina fisikmu membutuhkan kedisiplinan lembut dalam menjaga keteraturan ${cueA}.`,
+        `Menghargai tempo biologis ini menjaga energimu tetap stabil sepanjang hari tanpa perlu bergantung pada pemaksaan tenaga yang berlebihan.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kamu hidup selaras dengan ritme tubuh ini, kualitas istirahatmu memulihkan vitalitas secara mendalam melalui ${cueB}.`,
-        `Namun jika kamu terus-menerus memotong jam tidur atau mengacaukan jadwal biologismu, keletihan fisik dan kabut pikiran akan segera datang.`,
-        `Kamu kerap menuntut tubuhmu bekerja keras melebihi kapasitasnya lalu merasa heran mengapa energimu begitu cepat merosot.`,
+        `Saat kamu menjalani hari selaras dengan ritme tubuh, kualitas istirahatmu memulihkan kesegaran raga secara mendalam melalui ${cueB}.`,
+        `Namun bila jam istirahat terus dikorbankan demi mengejar kesibukan, stamina fisik dan kejernihan pikiranmu akan cepat menurun.`,
+        `Amati bila muncul kebiasaan menuntut tubuh bekerja melampaui batas wajarnya tanpa memberi waktu pemulihan yang sepadan.`,
       ];
     }
     return [
-      `Memulihkan ritme biologis memerlukan disiplin lembut untuk beristirahat dan bangun pada jam yang konsisten.`,
-      `Kurangi paparan layar dan stimulasi pikiran yang berlebihan menjelang waktu tidur malammu.`,
-      `Kembalikan keharmonisan jam tubuhmu dengan merawat kebiasaan sehat yang berlandaskan pada ${cueC}.`,
+      `Menjaga ritme biologis memerlukan kebiasaan tidur dan bangun pada waktu yang konsisten setiap hari.`,
+      `Kurangi paparan layar dan rangsangan pikiran yang berlebihan menjelang waktu tidur malam.`,
+      `Pulihkan keharmonisan fisikmu hari ini dengan membiasakan pola istirahat yang bersandar pada ${cueC}.`,
     ];
   },
 
@@ -1566,22 +1730,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "energi-dominan": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di antara berbagai lapisan potensimu, terdapat frekuensi dominan yang mewarnai caramu memengaruhi suasana di sekitarmu.`,
-        `Getaran utama yang kamu pancarkan ke dunia luar berakar pada ${cueA}.`,
-        `Kualitas energi ini membuat orang lain merasa tenang, terinspirasi, atau tergerak saat berada di dekatmu.`,
+        `Di antara ragam potensi yang kamu miliki, terdapat kualitas energi utama yang paling mewarnai kehadiranmu dan memengaruhi suasana sekitarmu.`,
+        `Getaran dominan yang kamu pancarkan dalam perjumpaan berakar kuat pada ${cueA}.`,
+        `Kualitas kehadiran ini sering kali membuat orang lain merasa tenang, terinspirasi, atau tergerak saat berada di dekatmu.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat energi dominan ini berada dalam kepenuhan yang murni, pengaruh kehadiranmu mengalir alami melalui ${cueB}.`,
-        `Tetapi ketika energimu terselubung oleh kelelahan atau kekhawatiran, pancaran yang keluar justru bisa terasa menuntut atau menjauhkan sekitar.`,
-        `Kamu berisiko memaksakan suasana hatimu mendominasi ruang tanpa memberi kesempatan bagi orang lain untuk mengekspresikan diri.`,
+        `Saat energi dominan ini berada dalam kejernihan yang tulus, pengaruh positifmu mengalir dengan sangat alami melalui ${cueB}.`,
+        `Namun saat energimu terselubung oleh kelelahan atau kekhawatiran, suasana yang terpancar dapat terasa menuntut atau menimbulkan jarak.`,
+        `Menjaga kejernihan energi pribadi membantumu berinteraksi tanpa harus menyerap emosi sekitar secara berlebihan.`,
       ];
     }
     return [
-      `Menjaga kemurnian energi dominan menuntut kejernihan batin dan kebiasaan melepaskan ketegangan secara rutin.`,
-      `Jangan biarkan energimu habis terkuras untuk memikul emosi orang lain yang bukan menjadi tanggung jawabmu.`,
-      `Pancarkan frekuensi terbaikmu ke dunia hari ini dengan menyelaraskan pusat kesadaranmu pada ${cueC}.`,
+      `Merawat kemurnian energimu menuntut kebiasaan melepaskan ketegangan dan meluangkan waktu hening secara teratur.`,
+      `Bedakan antara kepedulian yang tulus dan kebiasaan memikul beban emosi yang bukan menjadi tanggung jawabmu.`,
+      `Pancarkan kualitas terbaikmu ke dunia hari ini dengan menyelaraskan kesadaranmu pada ${cueC}.`,
     ];
   },
 
@@ -1589,22 +1753,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "jalur-spiritual": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Perjalanan spiritualitasmu bukanlah tentang melarikan diri dari kenyataan duniawi, melainkan menemukan makna sakral di dalam hal-hal yang membumi.`,
-        `Pintu gerbang pencarian batinmu terbuka paling lebar saat kamu merenungi ${cueA}.`,
-        `Hubunganmu dengan Yang Maha Mengatur terbangun melalui kejujuran hati nurani, bukan sekadar ketaatan formalitas lahiriah semata.`,
+        `Perjalanan batinmu bukanlah upaya menjauhi kenyataan duniawi, melainkan menemukan kedalaman makna dalam kehidupan yang membumi.`,
+        `Pintu gerbang pencarian spiritualitasmu terbuka paling luas saat kamu merenungi ${cueA}.`,
+        `Hubunganmu dengan Yang Maha Kuasa bertumbuh melalui kejujuran nurani dan ketulusan sikap dalam menghadapi setiap peristiwa.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam keheningan yang tulus, kedamaian spiritualmu menuntun setiap pilihan hidup berkat ${cueB}.`,
-        `Namun ketika spiritualitas dipakai sebagai tameng untuk menghindari tanggung jawab emosional atau masalah nyata, kamu akan terjebak dalam pelarian batin.`,
-        `Bahaya lainnya adalah merasa diri lebih sadar atau lebih bijak dibandingkan orang lain yang menempuh jalan berbeda.`,
+        `Dalam keheningan yang jujur, kedamaian spiritual menjadi pemandu yang menuntun keputusan hidupmu berkat ${cueB}.`,
+        `Namun bila wawasan batin dipakai sebagai pelarian dari tanggung jawab harian, pertumbuhan jiwamu dapat kehilangan pijakan realitasnya.`,
+        `Kematangan spiritual sejati selalu tercermin dari kerendahan hati dan kepedulian nyata kepada sesama.`,
       ];
     }
     return [
-      `Spiritualitas yang sejati selalu membuahkan kerendahan hati, kasih sayang nyata, dan ketenangan menghadapi pasang surut hidup.`,
-      `Lepaskan kebutuhan untuk memperdebatkan kebenaran keyakinanmu dengan orang lain.`,
-      `Hidupkan pemahaman batinmu menjadi tindakan welas asih sehari-hari yang bersumber dari ${cueC}.`,
+      `Menghidupkan nilai spiritual menuntut penerapannya ke dalam sikap welas asih dan integritas dalam tindakan kecil sehari-hari.`,
+      `Hindari kebutuhan memperdebatkan kebenaran pandangan batinmu dengan orang lain.`,
+      `Bumikan pemahaman jiwamu hari ini menjadi tindakan nyata yang penuh kehangatan melalui ${cueC}.`,
     ];
   },
 
@@ -1612,22 +1776,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "evolusi-jiwa": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Jiwamu berproses di dunia ini untuk mematangkan kesadaran dan memperluas kapasitas kasihnya melalui pengalaman nyata.`,
-        `Arah evolusi batinmu saat ini sedang dipanggil untuk melampaui ${cueA}.`,
-        `Setiap rintangan, perjumpaan, dan peralihan fase hidup adalah sarana yang dirancang untuk mendewasakan jiwamu.`,
+        `Perjalanan jiwamu di dunia ini adalah proses pembelajaran berkelanjutan untuk mematangkan kesadaran dan memperluas kapasitas kasih melalui pengalaman nyata.`,
+        `Arah kedewasaan batinmu saat ini sedang dipanggil untuk melampaui ${cueA}.`,
+        `Setiap tantangan dan peralihan fase kehidupan merupakan sarana yang memperkaya kearifan jiwamu.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika kamu menyambut perubahan hidup sebagai bahan pembelajaran, jiwamu bertumbuh dengan keteguhan mendalam melalui ${cueB}.`,
-        `Tetapi jika kamu menolak bertumbuh dan terus mencengkeram pola lama yang sempit, hidup akan menghadirkan krisis yang lebih nyata untuk membangunkanmu.`,
-        `Kamu berisiko merasa jalanmu buntu hanya karena kamu enggan melepaskan kebiasaan masa lalu yang sudah tidak lagi relevan.`,
+        `Ketika kamu menyikapi peristiwa hidup sebagai ruang belajar yang berharga, jiwamu bertumbuh dengan keteguhan yang matang melalui ${cueB}.`,
+        `Sebaliknya, bila perubahan ditolak dengan mencengkeram kebiasaan lama, perjalanan hidup bisa terasa lebih berat dari yang semestinya.`,
+        `Kesediaan melepaskan cara pandang yang usang membuka jalan bagi lahirnya pemahaman diri yang lebih luas.`,
       ];
     }
     return [
-      `Menyelaraskan diri dengan evolusi jiwa menuntut kerelaan untuk terus belajar dan dibentuk oleh kearifan hidup.`,
-      `Berhentilah membandingkan garis waktu perkembanganmu dengan standar keberhasilan orang lain yang semu.`,
-      `Sambutlah fase kedewasaan barumu hari ini dengan mempercayakan langkahmu pada bimbingan ${cueC}.`,
+      `Menyelaraskan diri dengan evolusi jiwa memerlukan keterbukaan hati untuk terus belajar dari setiap perjumpaan.`,
+      `Hargai garis waktu pertumbuhan pribadimu tanpa perlu membandingkannya dengan perjalanan orang lain.`,
+      `Sambutlah babak kedewasaan barumu hari ini dengan melangkah mantap bersama bimbingan ${cueC}.`,
     ];
   },
 
@@ -1635,22 +1799,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "potensi-spiritual": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di dalam kedalaman batinmu terpendam benih kemampuan spiritual yang siap merekah melalui latihan batin yang tekun.`,
-        `Potensi batin ini paling mudah terakses saat kamu menenangkan gejolak pikiran dan menyelaraskan diri dengan ${cueA}.`,
-        `Kamu memiliki kepekaan untuk merasakan dinamika halus kehidupan yang kerap terlewatkan oleh pengamatan biasa.`,
+        `Di dalam keheningan batinmu tersimpan benih kepekaan spiritual yang siap berkembang melalui latihan kesadaran yang tekun.`,
+        `Potensi batin ini paling mudah terakses saat pikiranmu berada dalam ketenangan dan selaras dengan ${cueA}.`,
+        `Kamu memiliki kepekaan untuk menangkap makna halus kehidupan yang sering kali luput dari pengamatan tergesa-gesa.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat potensi ini diarahkan untuk ketenangan dan kebaikan bersama, berkah batinmu mengalir jernih melalui ${cueB}.`,
-        `Sebaliknya, jika potensi ini kamu gunakan demi memuaskan rasa penasaran ego semata, energimu akan menjadi tidak stabil.`,
-        `Kamu berisiko tersesat dalam kebingungan batin jika kepekaan halusmu tidak diimbangi oleh pijakan realitas hidup yang kokoh.`,
+        `Saat kepekaan ini diarahkan bagi kebaikan dan kedamaian bersama, wawasan batinmu mengalir jernih berkat ${cueB}.`,
+        `Namun bila potensi ini didekati sekadar untuk memuaskan rasa penasaran intelektual semata, energimu dapat menjadi tidak seimbang.`,
+        `Menjaga pijakan yang kokoh pada realitas praktis memastikan kepekaan batinmu tetap sehat dan berguna.`,
       ];
     }
     return [
-      `Mengembangkan potensi batin menuntut disiplin menjaga kemurnian niat dan keseimbangan hidup sehari-hari.`,
-      `Jangan tergesa-gesa mengejar pengalaman batin luar biasa jika fondasi karakter dan etika harianmu belum kokoh.`,
-      `Asahlah potensi batinmu secara etis dan membumi dengan menambatkannya pada ${cueC}.`,
+      `Mengembangkan potensi batin menuntut disiplin menjaga kemurnian niat dan keteraturan hidup sehari-hari.`,
+      `Fokuskan latihan pada pembentukan karakter yang luhur dan etika pergaulan yang baik sebelum mengejar wawasan yang lebih jauh.`,
+      `Bina potensi batinmu secara membumi hari ini dengan menambatkannya pada ${cueC}.`,
     ];
   },
 
@@ -1658,22 +1822,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "bakat-spiritual": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Bakat spiritual yang kamu miliki adalah amanah khusus yang dianugerahkan untuk melayani kebaikan dalam kehidupan bersama.`,
-        `Kapasitas batin ini beroperasi secara presisi melalui ${cueA}.`,
-        `Bakat ini bukan alasan untuk merasa lebih istimewa dari sesama, melainkan tanggung jawab yang harus diemban dengan kerendahan hati.`,
+        `Bakat batin yang kamu miliki adalah amanah khusus yang dianugerahkan untuk melayani kebaikan dan ketenangan dalam kehidupan bersama.`,
+        `Kapasitas halus ini beroperasi secara jernih melalui ${cueA}.`,
+        `Bakat ini merupakan sarana untuk menebarkan manfaat dengan penuh kerendahan hati dalam pergaulan sehari-hari.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika bakat ini kamu baktikan bagi ketenangan dan pencerahan sesama, terang batinmu menyala hangat berkat ${cueB}.`,
-        `Namun ketika rasa bangga diri atau ketakutan akan penilaian orang menyusup masuk, kejernihan bakatmu bisa menjadi terganggu.`,
-        `Kamu kerap merasa ragu pada intuisimu sendiri atau sebaliknya terlalu mengagungkannya tanpa melakukan pengujian akal sehat.`,
+        `Ketika bakat ini kamu baktikan bagi kebaikan sesama, kehadiranmu membawa rasa sejuk dan kejernihan bagi sekitarmu berkat ${cueB}.`,
+        `Namun bila keraguan diri atau kekhawatiran akan penilaian lingkungan menyusup, kejernihan bakatmu dapat terhalang oleh keraguan batin.`,
+        `Mengembangkan keyakinan yang tenang dan rasional membantu bakatmu berkembang secara wajar dan terlindungi.`,
       ];
     }
     return [
-      `Merawat bakat spiritual memerlukan perlindungan energi yang sehat agar kamu tidak menyerap beban emosi orang lain tanpa batas.`,
-      `Buang kekhawatiran bahwa menggunakan bakat ini akan membuatmu dihakimi oleh lingkunganmu.`,
-      `Latihlah bakat batinmu dengan ketenangan, kebijaksanaan, dan kepedulian yang berakar pada ${cueC}.`,
+      `Merawat bakat batin menuntut perlindungan energi yang sehat agar kamu tidak menyerap beban emosi lingkungan tanpa batas.`,
+      `Gunakan kapasitasmu secara bijaksana dengan tetap menjaga keseimbangan hidup pribadi.`,
+      `Latihlah bakat batinmu dengan ketenangan dan kepedulian yang berakar pada ${cueC}.`,
     ];
   },
 
@@ -1681,22 +1845,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "jejak-intuisi": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Suara intuisimu berbicara bukan melalui seruan yang bising, melainkan melalui isyarat halus tubuh dan firasat jernih yang hadir spontan.`,
-        `Jejak petunjuk batinmu paling sering menampakkan diri seputar hal yang berkaitan dengan ${cueA}.`,
-        `Belajar membedakan antara kecemasan emosional yang terburu-buru dan intuisi sejati yang hening adalah kunci navigasi hidupmu.`,
+        `Suara intuisimu berbicara bukan lewat desakan yang riuh, melainkan lewat isyarat tubuh yang hening dan firasat jernih yang hadir spontan.`,
+        `Petunjuk batinmu paling sering menampakkan diri seputar hal yang berkaitan dengan ${cueA}.`,
+        `Mengenali perbedaan antara kecemasan emosional yang terburu-buru dan intuisi sejati yang tenang adalah kunci navigasi hidupmu.`,
       ];
     }
     if (p === 2) {
       return [
         `Saat kamu mempercayai dan menindaklanjuti isyarat intuisi ini, langkah-langkahmu terhindar dari kekeliruan berkat ${cueB}.`,
-        `Namun jika kamu terus mengabaikannya dan selalu menuntut bukti logika instan atas segala hal, kepekaan batinmu akan perlahan tumpul.`,
-        `Kamu kerap menyesal di kemudian hari saat menyadari bahwa firasat pertamamu sebenarnya sudah menunjukkan jalan yang benar.`,
+        `Sebaliknya, bila kamu selalu meragukan firasat awal dan menuntut pembuktian rumit atas segala hal, kepekaan batinmu dapat perlahan meredup.`,
+        `Sering kali kamu baru menyadari kebenaran firasat awalmu setelah peristiwa telah berlangsung.`,
       ];
     }
     return [
-      `Mengasah kepekaan intuisi menuntut ruang hening harian yang bebas dari intervensi opini orang lain.`,
-      `Berhentilah meragukan sinyal tubuhmu saat ia memberi peringatan atau keterbukaan pada suatu pilihan.`,
-      `Catatlah isyarat intuisi yang kamu terima hari ini dan buktikan kebenarannya melalui ${cueC}.`,
+      `Mengasah intuisi menuntut ruang hening harian yang bebas dari kebisingan opini luar.`,
+      `Belajarlah mempercayai sinyal tubuh saat ia memberi rasa lapang atau peringatan halus terhadap suatu pilihan.`,
+      `Perhatikan isyarat intuisi yang kamu terima hari ini dan buktikan kejeliannya melalui ${cueC}.`,
     ];
   },
 
@@ -1704,26 +1868,26 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "potensi-channeling": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Jiwamu memiliki keterbukaan alami untuk menjadi saluran bagi mengalirnya inspirasi kreatif dan pesan kebijaksanaan yang jernih.`,
-        `Kanal penerimaan batinmu beroperasi paling hening saat energimu selaras dengan ${cueA}.`,
-        `Menjadi saluran yang bersih menuntut kejernihan pikiran dan kemurnian hati agar wawasan yang mengalir tidak terdistorsi oleh ego pribadi.`,
+        `Batinmu memiliki keterbukaan alami untuk menangkap inspirasi kreatif dan wawasan kebijaksanaan yang mengalir dari perenungan mendalam.`,
+        `Kanal penerimaan batinmu bekerja paling jernih saat keadaan jiwamu selaras dengan ${cueA}.`,
+        `Menjadi wadah inspirasi yang bersih menuntut kejernihan pikiran dan ketulusan hati agar wawasan yang hadir tidak terdistorsi oleh ambisi pribadi.`,
       ];
     }
     if (p === 2) {
       return [
-        `Dalam kondisi keselarasan batin, inspirasi yang kamu sampaikan mampu menyentuh hati dan membuka pemahaman orang lain melalui ${cueB}.`,
-        `Namun jika energimu sedang lelah atau didorong oleh keinginan mencari pengakuan, apa yang kamu alirkan bisa menjadi kabur dan tidak berakar.`,
-        `Bahaya terbesarnya adalah merasa dirimu menjadi pemilik dari kebijaksanaan yang sebenarnya hanya sekadar melintas lewat dirimu.`,
+        `Dalam suasana batin yang seimbang, wawasan yang kamu bagikan mampu menyentuh hati dan membuka pemahaman orang lain melalui ${cueB}.`,
+        `Namun bila energimu sedang letih atau didorong oleh keinginan mencari pembuktian diri, inspirasi yang mengalir bisa kehilangan ketajamannya.`,
+        `Memahami bahwa kebijaksanaan sejati melayani kebaikan bersama membantumu menyampaikan wawasan dengan penuh kerendahan hati.`,
       ];
     }
     return [
-      `Menjaga kebersihan kanal batin menuntut tubuh yang bugar, pikiran yang tertata, dan keteguhan berpijak pada kenyataan hidup.`,
-      `Lepaskan keinginan untuk tampil sebagai sosok istimewa di hadapan orang lain.`,
-      `Wujudkan wawasan batin yang kamu terima menjadi karya nyata yang bermanfaat dengan berpedoman pada ${cueC}.`,
+      `Menjaga kejernihan penerimaan batin menuntut tubuh yang bugar, pikiran yang tertata, dan keteguhan berpijak pada kehidupan nyata.`,
+      `Gunakan wawasan batin sebagai pemandu tindakan yang membawa manfaat praktis bagi sesama.`,
+      `Wujudkan wawasan yang kamu peroleh menjadi karya nyata hari ini dengan berpedoman pada ${cueC}.`,
     ];
   },
 
-  // 42. soul-mission
+  // 42. soul-mission (Priority Fixture)
   "soul-mission": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
@@ -1735,14 +1899,14 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     if (p === 2) {
       return [
         `Saat kamu melangkah selaras dengan misi ini, jalan-jalan kebaikan terbuka secara alami melalui ${cueB}.`,
-        `Namun jika kamu lari dari panggilan ini demi mengejar kenyamanan dangkal, hidupmu akan selalu diselimuti rasa hampa yang sulit diobati.`,
-        `Kamu berisiko merasa kehilangan arah jika terus mengukur nilai hidupmu semata-mata dari tepuk tangan duniawi.`,
+        `Bila panggilan ini terabaikan demi kenyamanan sesaat, rasa jenuh atau hampa dapat hadir sebagai pengingat lembut bahwa ada bagian potensimu yang sedang rindu untuk dibagikan.`,
+        `Risiko yang patut diwaspadai adalah mengukur keberhasilan semata dari validasi luar sehingga arah sejati kabur.`,
       ];
     }
     return [
-      `Membumikan misi jiwa tidak harus menunggu momen besar yang dramatis, melainkan dimulai dari ketulusan melayani dalam tugas-tugas kecil.`,
-      `Buang keraguan bahwa kamu tidak memiliki peran penting dalam tatanan agung kehidupan ini.`,
-      `Teguhkan langkah pengabdian jiwamu hari ini dengan menyatukan niat dan tindakan pada ${cueC}.`,
+      `Membumikan misi jiwa tidak harus menunggu momen besar yang dramatis, melainkan dimulai dari ketulusan melayani dalam tanggung jawab kecil setiap hari.`,
+      `Yang perlu dilepaskan adalah anggapan bahwa kontribusimu harus spektakuler sebelum dianggap berharga.`,
+      `Teguhkan niat pengabdian jiwamu hari ini dengan mengarahkan satu tindakan nyata pada ${cueC}.`,
     ];
   },
 
@@ -1750,22 +1914,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "soul-gifts": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Karunia jiwa yang kamu bawa lahir adalah anugerah murni dari perjalanan kesadaranmu yang siap menjadi berkah bagi sesama.`,
-        `Karunia esensial ini memancar paling terang saat kamu mengekspresikan ${cueA}.`,
-        `Karunia ini adalah titik temu di mana kebahagiaan batinmu melayani kebutuhan lingkungan yang membutuhkan dukungan.`,
+        `Karunia jiwa yang kamu bawa lahir merupakan anugerah murni dari perjalanan kesadaranmu yang siap menjadi berkah bagi sesama.`,
+        `Kekuatan esensial ini memancar paling terang saat kamu mengekspresikan ${cueA}.`,
+        `Karunia ini mempertemukan kebahagiaan batin pribadimu dengan kebutuhan nyata lingkungan yang membutuhkan dukungan.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat karunia jiwa ini kamu curahkan dengan tulus, kehadiranmu menjadi penyejuk dan inspirasi bagi sekitarmu melalui ${cueB}.`,
-        `Namun jika karunia ini kamu simpan rapat-rapat karena takut dihakimi, energimu akan terasa mandek dan tertekan.`,
-        `Bahaya lainnya adalah menggunakan karunia ini demi mencari pemujaan semu dari orang lain.`,
+        `Saat karunia jiwa ini kamu curahkan dengan ketulusan, kehadiranmu menjadi inspirasi yang menyejukkan bagi sekitarmu melalui ${cueB}.`,
+        `Namun bila karunia ini kamu simpan rapat-rapat karena ragu akan nilainya, energimu bisa terasa terhambat dan kurang berkembang.`,
+        `Mengalirkan karunia ini dengan niat melayani kebaikan menjaga sinarnya tetap hangat dan murni.`,
       ];
     }
     return [
-      `Membagikan karunia jiwa menuntut ketulusan hati untuk membiarkan kebaikanmu mengalir tanpa perlu memikirkan pengakuan luar.`,
-      `Lepaskan rasa minder yang membisikkan bahwa apa yang kamu berikan tidak bernilai bagi sesama.`,
-      `Salurkan karunia terindah dari jiwamu hari ini ke dalam tindakan kasih nyata melalui ${cueC}.`,
+      `Membagikan karunia batin menuntut kelapangan hati untuk membiarkan kebaikan mengalir tanpa terbebani ekspektasi pengakuan luar.`,
+      `Yakinilah bahwa apa yang kamu berikan secara tulus memiliki nilai yang berharga bagi orang yang menerimanya.`,
+      `Salurkan anugerah jiwamu hari ini ke dalam tindakan nyata yang bermanfaat melalui ${cueC}.`,
     ];
   },
 
@@ -1773,22 +1937,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "soul-lessons": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Kurikulum pembelajaran jiwamu di dunia ini dirancang untuk mengubah ketidaktahuan menjadi kebijaksanaan yang matang dan berakar.`,
-        `Tema ujian batin yang paling berulang dalam perjalananmu berpusat di sekitar ${cueA}.`,
-        `Pelajaran ini hadir bukan untuk menghukummu, melainkan untuk melatih otot-otot kesadaranmu agar semakin kokoh dan bijaksana.`,
+        `Kurikulum pembelajaran jiwamu di dunia ini dirancang untuk mematangkan kesadaran dan menumbuhkan kebijaksanaan hidup yang berakar kuat.`,
+        `Tema pembelajaran batin yang paling berulang dalam perjalananmu berpusat di sekitar ${cueA}.`,
+        `Ujian kehidupan hadir bukan untuk melemahkanmu, melainkan untuk melatih ketabahan dan kedewasaan batinmu agar semakin kokoh.`,
       ];
     }
     if (p === 2) {
       return [
-        `Setiap kali kamu berhasil melewati ujian ini dengan kedewasaan, jiwamu melangkah naik ke tingkat kebebasan batin yang baru melalui ${cueB}.`,
-        `Tetapi jika kamu terus bersikap keras kepala dan menyalahkan keadaan, ujian yang sama akan datang kembali dalam bentuk yang lebih menantang.`,
-        `Kamu kerap merasa lelah dengan hidup karena kamu terus berusaha melawan pelajaran yang semestinya kamu peluk dengan kerelaan.`,
+        `Setiap kali kamu menyikapi tantangan ini dengan kedewasaan, jiwamu melangkah menuju kebebasan batin yang lebih luas melalui ${cueB}.`,
+        `Namun bila kesulitan hanya ditanggapi dengan rasa kecewa dan menyalahkan situasi, pelajaran yang sama dapat terasa semakin berat.`,
+        `Menyambut setiap peristiwa sebagai cermin pembelajaran membantumu melangkah dengan hati yang lebih lapang.`,
       ];
     }
     return [
-      `Menguasai pelajaran jiwa menuntut kerendahan hati untuk menerima setiap peristiwa sebagai cermin pembelajaran diri.`,
-      `Berhentilah memandang kesulitan hidup sebagai nasib sial dan mulailah melihatnya sebagai undangan pertumbuhan batin.`,
-      `Selesaikan ujian kesadaranmu hari ini dengan mengambil pilihan yang lebih bijak berlandaskan pada ${cueC}.`,
+      `Memahami pelajaran jiwa menuntut kerendahan hati untuk menerima setiap dinamika hidup sebagai ruang bertumbuh.`,
+      `Ubahlah sudut pandang dari meratapi kesulitan menjadi menangkap hikmah berharga di balik setiap pengalaman.`,
+      `Selesaikan tantangan kesadaranmu hari ini dengan mengambil pilihan yang lebih bijak berlandaskan pada ${cueC}.`,
     ];
   },
 
@@ -1796,22 +1960,22 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   "soul-shadow": (cueA, cueB, cueC, p) => {
     if (p === 1) {
       return [
-        `Di balik setiap kekuatan jiwa yang besar selalu terdapat bayangan gelap yang terbentuk ketika cahaya kesadaranmu terdistorsi oleh rasa takut.`,
-        `Sisi bayangan terdalam dari identitas jiwamu paling mudah terpancing saat kamu berhadapan dengan ${cueA}.`,
-        `Bayangan ini bukanlah musuh yang harus dihancurkan, melainkan bagian dari energimu yang belum terintegrasi secara matang.`,
+        `Di balik setiap potensi jiwa yang besar selalu terdapat ruang bayangan yang terbentuk ketika energi batin terdistorsi oleh rasa takut atau luka lama.`,
+        `Sisi bayangan dari dinamika jiwamu paling mudah terpancing saat kamu berhadapan dengan ${cueA}.`,
+        `Sisi bayangan ini bukanlah musuh yang harus disingkirkan, melainkan bagian dari energimu yang sedang meminta penerimaan dan integrasi yang matang.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat kamu berani merangkul bayangan ini dengan welas asih, energi yang tadinya merusak berbalik menjadi daya transformasi dahsyat melalui ${cueB}.`,
-        `Namun jika kamu menyangkal atau menutupinya, bayangan ini akan mengambil alih kendali dan memicu keretakan relasi serta penyesalan.`,
-        `Kamu berisiko memproyeksikan kegelapan ini kepada orang di sekitarmu dan menuduh mereka atas apa yang sebenarnya kamu tolak dari dirimu sendiri.`,
+        `Saat kamu berani memeluk sisi rentan ini dengan kesadaran penuh kasih, energi yang tadinya membebani berbalik menjadi daya transformasi yang menyejukkan melalui ${cueB}.`,
+        `Namun bila bayangan ini disangkal atau ditolak, ia dapat muncul ke permukaan dalam bentuk reaksi emosional yang menimbulkan rasa sesal.`,
+        `Amati apakah ada kecenderungan memproyeksikan kekurangan diri kepada orang lain saat kamu merasa terpojok.`,
       ];
     }
     return [
-      `Mengintegrasikan bayangan jiwa menuntut keberanian untuk menatap sisi rapuh diri sendiri tanpa rasa benci atau penolakan.`,
-      `Berhentilah berpura-pura selalu kuat dan akuilah kerapuhan manusiawimu dengan segala keterbatasannya.`,
-      `Bawalah sisi bayanganmu kembali ke dalam pelukan cahaya kesadaran hari ini melalui kebijaksanaan ${cueC}.`,
+      `Mengintegrasikan bayangan jiwa menuntut keberanian untuk menatap kerapuhan diri sendiri dengan kejujuran yang bebas dari penghakiman.`,
+      `Akuilah keterbatasan manusiawimu dengan kelegaan dan penerimaan yang tulus.`,
+      `Bawalah seluruh bagian dirimu kembali ke dalam pelukan kesadaran hari ini melalui kearifan ${cueC}.`,
     ];
   },
 };
