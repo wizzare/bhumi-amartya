@@ -406,3 +406,48 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-03 FIRESTORE RULES**.
+
+---
+
+## 16. Sprint 121-03: Firestore Rules & Client Compatibility Verification (07 Nov 2026)
+
+* **Status:** PASS LOCAL
+* **Tujuan:** Memvalidasi keamanan Firestore Rules secara ketat di lingkungan emulator lokal, membuktikan isolasi data antar pengguna (UID isolation), proteksi field milik server (server-owned fields & anti-privilege escalation), autorisasi admin berbasis custom claims (fail-closed), serta memetakan dan menguji kompatibilitas nyata klien 118, 119, 120, dan kandidat 121.
+* **Hasil Verifikasi Kunci:**
+  1. **Isolasi Akun (UID Isolation across Collections):**
+     - User A ditolak keras (HTTP 403 `permission-denied`) saat membaca atau menulis dokumen User B pada seluruh koleksi: `users`, `blueprints`, `healingMemory`, `journeyData`, `testerBadgeRegistry`, `adminRoleRegistry`, `adminAuditLogs`, `analytics`, dan `collectionGroup('communications')`.
+  2. **Proteksi Field Milik Server & Anti-Privilege Escalation:**
+     - Klien dilarang menulis atau memperbarui field hak akses: `isPremium`, `membershipType: "LIFETIME"`, `entitlementSource`, `plan`, `trialStartedAt`, `badge: "Founder"`, `testerBadge: "Founder"`, `role: "admin"`, atau `guardianRole: "founder"`.
+     - Klien dilarang menulis ke registry server (`testerBadgeRegistry` dan `adminRoleRegistry`).
+     - Klien dilarang memalsukan metadata kanonikal (`canonicalBirthRevision`, `canonicalBirthEpoch`).
+     - Klien dilarang menulis tanggal lahir langsung ke dokumen pengguna (`birthDate`, `birthCity`, lat/long) atau via nested `profile.blueprintInput`.
+     - Klien dilarang menulis langsung ke subkoleksi server `canonical/birth` atau `birthOperations/{opId}`.
+     - Klien dilarang menulis hasil perhitungan blueprint palsu ke `blueprints/{uid}` (hanya boleh menulis status metadata `status`, `error`, `updatedAt`).
+  3. **Operasi Klien yang Diizinkan (Build 120/121 Compliant):**
+     - Pemilik sah dapat memperbarui field presentasi yang diizinkan (`displayName`, `language`, `theme`, `gender`).
+     - Pemilik sah dapat menginisiasi status blueprint (`status: "pending"`, `updatedAt`).
+     - Pemilik sah dapat menyimpan memori kebiasaan wellness (`behaviorMemory/wellness`) dengan skema kunci terbatas.
+     - Klien dapat membaca konfigurasi publik rilis (`app_config/version`).
+     - Klien unauthenticated dapat mencatat telemetri kegagalan login (`google_signin_failed`).
+  4. **Autorisasi Admin Berbasis Custom Claims (Fail-Closed):**
+     - Pengguna yang mencoba mengaku sebagai admin lewat body dokumen (`role: "admin"`) atau email legacy (`wizzare@gmail.com`) tanpa custom token claim `admin: true` ditolak tegas.
+     - Pengguna dengan custom claim `admin: true` sah sebagai admin, namun tetap tunduk pada boundary fail-closed: dilarang melakukan direct client write pesan admin ke koleksi pengguna lain (harus melalui backend callable tepercaya/Admin SDK), dan dilarang melakukan pembacaan koleksi global (`users` dan collectionGroup `communications`).
+  5. **Matriks Kompatibilitas Klien 118–121 & Kebijakan Transisi:**
+     - **Klien 118:** Onboarding gagal (`permission-denied`) di bawah rules kandidat karena menulis tanggal lahir langsung.
+     - **Klien 119:** Edit profil gagal (`permission-denied`) di bawah rules kandidat karena menulis nested `profile.blueprintInput`.
+     - **Klien 120:** Lolos sanitasi presentasi, namun fallback penulisan tanggal lahir langsung tetap terancam jika endpoint kanonikal tidak aktif.
+     - **Kandidat 121:** Arsitektur ideal; mutasi kelahiran didelegasikan penuh ke Cloudflare Canonical Worker, klien hanya menulis preferensi presentasi.
+     - **Keputusan Rollout:** Rules produksi pada project `bhumiamartya-fe85c` **TIDAK DIUBAH / TIDAK DIDEPLOY** sampai rilis 120/121 didistribusikan dan adopsi klien lama mendekati 0%.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx --test tests/unit/build121-sprint03-firestore-rules.test.ts`: **5/5 PASS** (UID isolation, server fields protection, allowed client ops, admin claims fail-closed, client compatibility matrix; exit code 0).
+  - `npx tsx --test tests/unit/build121-client-compatibility-matrix.test.ts`: **4/4 PASS** (exit code 0).
+  - `npx tsx --test tests/unit/build126r3-entitlement-forgery.test.ts`: **15/15 PASS** (exit code 0).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_RULES_DEPLOYMENT = NOT PERFORMED` (Rules produksi tetap aman).
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak diubah di produksi).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-04 ARSIP AKASHI**.

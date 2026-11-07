@@ -36,13 +36,13 @@
 - [x] `B121-BILL-05` **Persist-before-ack + reconcile** — Retry failures/timeouts/duplicates, refund/revoke, observability without PII: `DONE_LOCAL`
 - [ ] `B121-BILL-06` **Differential & rollout** — Vercel vs Worker fixtures, maintain `bhumi_premium_monthly`/`monthly`; Gate G2 explicit approval before cutover: `WAITING_APPROVAL` (production cutover NOT PERFORMED)
 
-### D. B121-SEC — Firestore Rules, Privacy, Legacy Rollout (P0)
+### D. B121-SEC — Firestore Rules, Privacy, Legacy Rollout (P0) - SPRINT 121-03 COMPLETE
 - [x] `B121-SEC-01` **Live vs candidate gap matrix** — Read-only review of actual deployed rules vs candidate local rules (`firestore.rules`): `DONE_LOCAL`
 - [x] `B121-SEC-02` **Authorization fixes** — Server trust, UID isolation, claim-based admin, no email-based role privilege: `DONE_LOCAL`
 - [x] `B121-SEC-03` **Compatibility matrix** — Matrix of versions 118, 119, 120 and successor 121 regarding birth field edits and onboarding denial documented in `CLIENT_COMPATIBILITY_MATRIX_118_121.md` & verified (4/4 PASS): `DONE_LOCAL`
 - [x] `B121-SEC-04` **Controlled transition** — Minimum supported version / update communication proposal without permissive Rules bypass (Founder decision): `DONE_LOCAL`
-- [x] `B121-SEC-05` **Emulator test expansion** — Multi-user, cross-UID, admin claims, client versions 118/119/120/121 fixture suite in `build121-client-compatibility-matrix.test.ts` (4/4 PASS): `DONE_LOCAL`
-- [ ] `B121-SEC-06` **Rollout / rollback** — Snapshot live rules, staged deployment order, mixed-version risk; `WAITING_APPROVAL` before production writes.
+- [x] `B121-SEC-05` **Emulator test expansion** — Multi-user, cross-UID, admin claims, server-owned field protection, and client versions 118/119/120/121 fixture suite in `tests/unit/build121-sprint03-firestore-rules.test.ts` (5/5 PASS, 40+ assertions), `tests/unit/build121-client-compatibility-matrix.test.ts` (4/4 PASS), and `tests/unit/build126r3-entitlement-forgery.test.ts` (15/15 PASS): `DONE_LOCAL`
+- [ ] `B121-SEC-06` **Rollout / rollback** — Snapshot live rules, staged deployment order, mixed-version risk documented in `CLIENT_COMPATIBILITY_MATRIX_118_121.md` Section 6; `WAITING_APPROVAL` before production writes (production rules deployment NOT PERFORMED).
 
 ### E. B121-AKA — Arsip Akashi (P1)
 - [x] `B121-AKA-01` **Actual source inventory** — Inspect `lib/arsipAkashi/`, `lib/services/humanMeaningService.ts`, `components/profile/details/ProfileSectionClient.tsx`; preserve existing structure & cards: `DONE_LOCAL`
