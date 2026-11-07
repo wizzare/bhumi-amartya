@@ -498,7 +498,7 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
 ## 18. SPRINT 121-05: PANDUAN MINGGU INI DASHBOARD (B121-WEEK) — 07 NOVEMBER 2026
 
 * **Status:** `PASS LOCAL`
-* **Commit:** Pending
+* **Commit:** `a003cde`
 * **Tujuan:** Menyintesis tiga lapisan (Arsip Akashi, Astrologi Mingguan transit-to-natal, dan konteks Journey opsional) ke dalam 9 ranah Panduan Minggu Ini di Dashboard (`WeeklyGuidanceCard`), dengan batas waktu Senin 00:00 – Minggu 23:59 waktu lokal pengguna, isolasi cache multi-dimensi per UID, struktur kalimat berdisiplin tinggi (3–4 kalimat body + 1–2 kalimat Saran Bhumi; 4–6 kalimat sintesis Arah Minggu Ini dengan deklarasi prioritas mingguan), serta degradasi jujur tanpa mengarang progres Journey atau memblokir panduan bagi pengguna baru.
 * **Hasil Verifikasi Kunci:**
   1. **Integrasi Tiga Lapisan (Arsip Akashi + Astrologi Mingguan + Journey):**
@@ -539,7 +539,7 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
 ## 19. SPRINT 121-06: CATATAN HARI INI PROFILE & DASHBOARD PARITY (B121-DAILY) — 07 NOVEMBER 2026
 
 * **Status:** `PASS LOCAL`
-* **Commit:** Pending
+* **Commit:** `bac1239`
 * **Tujuan:** Memastikan pembacaan Catatan Hari Ini di halaman Profil (`DailyGuidanceCard`) berakar secara personal pada 11 sistem Blueprint individual dan konteks arketipal Arsip Akashi, memiliki inteligensi temporal harian yang akurat (Weton, BaZi Day Pillar & relasi Ten Gods, Tzolkin Kin/Tone/Wavespell, transit planet SwissEph terhadap chart natal Placidus), mempertahankan 8 accordion domain kehidupan, menjamin 100% paritas teks Arah Hari Ini dengan Dashboard (`SoulReflectionCard`), serta memiliki isolasi cache multi-dimensi per UID dan pergantian tanggal tengah malam lokal tanpa konten basi (stale).
 * **Hasil Verifikasi Kunci:**
   1. **Personalisasi 11 Sistem Blueprint & Arsip Akashi:**
