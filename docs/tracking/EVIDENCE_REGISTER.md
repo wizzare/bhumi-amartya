@@ -1,10 +1,10 @@
 # BHUMI AMARTYA — TEST EVIDENCE REGISTER
 
 **Document ID:** `EVIDENCE-REG-001`  
-**Workstream:** Phase 1 — Human Design Stabilization  
+**Workstream:** Build 119 - BP02 Destiny Matrix (BP02 ACTIVE; scope-locked)  
 **Baseline Git Branch:** `hotfix/build110-indonesian-only`  
-**Active HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Last Updated:** 20 Oktober 2026  
+**Active HEAD:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)  
+**Last Updated:** 31 Oktober 2026 (Sinkronisasi BP02)  
 **Status:** AUDITED & VERIFIED  
 
 ---
@@ -653,7 +653,7 @@ Untuk setiap eksekusi browser test yang akan datang (termasuk HD-05D.2), runner 
 
 **Audit & Verification Details:**
 - **Mode:** Source Audit, Build Safety, Native Validation, Local Acceptance, Regression Gate
-- **Head Baseline:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`
+- **Head Baseline:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)
 - **Branch:** `hotfix/build110-indonesian-only`
 - **Execution Timestamp:** 2026-10-21T03:15:00Z
 - **Verdict:** **AUDITED & CONTRACT PASS / EMULATOR & STATIC EXPORT GATES OPEN (NO FALSE RUNTIME CLAIMS)**
@@ -937,3 +937,104 @@ Untuk setiap eksekusi browser test yang akan datang (termasuk HD-05D.2), runner 
 - Tidak ada commit, push, reset git, atau pembuatan file APK/AAB.
 - Status Fitur: **CATATAN HARI INI BUILD 118 (DEEP FOUR FOUNDATIONS SYNTHESIS) — PASS LOCAL (PENDING FOUNDER REVIEW)**.
 - Status Rilis: **BLOCKED / PENDING FOUNDER REVIEW**.
+
+---
+
+## 8. SPRINT BP02-A/B: DESTINY MATRIX COMPLETE AUDIT & CONTENT ARCHITECTURE (BUILD 119; SCOPE-LOCKED)
+
+### 1. Bukti Eksekusi Aktual (hanya yang benar-benar berjalan)
+
+* **BP02-A Engine & validators:**
+    - `scripts/acceptDestinyMatrixV1.ts` — 74/74 checks PASS, exit code 0.
+    - R5 validator Destiny Matrix — PASS, exit 0 (annual/ancestral/health posisi present).
+    - `npm run check:matrix` — exit code 1 (stale executor legacy; didokumentasikan sebagai artefak governance, tidak dipakai sebagai gate).
+    - `scripts/validateBhumiMatrixV1.ts` — exit code 1 (stale executor legacy; didokumentasikan; tidak dipakai sebagai gate).
+* **BP02-B canonical read-only runs (Temp\opencode drivers, di luar repo):**
+    - `bp02-fixture-dump.mts` (32 BM nodes + projections + ancestral) — exit 0.
+    - `bp02-bayu.mts` (Karmic Tail Bayu/Aya) — exit 0.
+    - `bp02-annual3.mts` & `bp02-annual.mts` (Arcana Tahunan 3 fixtures; Widhi tahunan 15/The Devil usia 41–42 tahun 2026-05-03 s/d 2028-05-02) — exit 0.
+    - `bp02-dict.mts` (22 Arcana name mapping) — exit 0.
+* **Regression repositori Build 118 (dipegang tanpa regresi):** `build118-agent-consolidation.test.ts` 74/74 PASS; `build119-bp01-numerology-d4.test.ts` dan suite lainnya tetap exit 0 (`npx tsc --noEmit` exit 0); pengaturan QA/emulator fail-closed tidak diubah.
+
+### 2. Bukti yang TIDAK DIKLAIM (belum ada)
+
+* Tidak ada mutasi source engine/UIBP02 — hanya laporan & governance docs.
+* Tidak ada bukti E2E Firestore Rules / Android APK / deploy — BP02 masih menunggu Founder Review BP02-B.
+* Tidak ada hasil user data isolation test (BP02-ISO-01..06) — PLANNED, belum dieksekusi.
+
+### 3. Artefak Laporan
+
+* `BUILD119_OPENCODE_BP02_A_DESTINY_MATRIX_COMPLETE_AUDIT_REPORT.md`
+* `BUILD119_OPENCODE_BP02_B_DESTINY_MATRIX_CONTENT_ARCHITECTURE_REPORT.md`
+* `BUILD119_OPENCODE_BP02_B_FOUNDER_DECISION_PACKET.md` (Task 10 — packet keputusan; diterima Founder dengan conditions)
+* `BUILD119_OPENCODE_BP02_C_PREMIUM_DESTINY_MATRIX_UI_UX_PROPOSAL.md` (Task 11 — design proposal only; untracked; menunggu Founder Review BP02-D)
+
+### 4. Status Rilis
+
+- Fitur BP02: **AUDIT COMPLETE (BP02-A) + ARCHITECTURE PROPOSAL (BP02-B) + UI/UX DESIGN PROPOSAL (BP02-C) - PENDING FOUNDER REVIEW**.
+- Status Rilis: **BLOCKED / PENDING FOUNDER REVIEW** (Build 118 tetap production baseline).
+
+### 5. Addendum 31 Okt 2026 (Task 10/11 — D-B-8 Option A & BP02-C Proposal)
+
+* **Keputusan Founder tercatat:** D-B-8 = Option A (Health Card menampilkan angka canonical engine; fixture tidak direproduksi ke runtime; tanpa angka campuran) — ADR-DM-04; RSK-37 → RESOLVED; PRM BP02-CON-11 → DESIGN APPROVED (D-B-8 Option A).
+* **BP02-C:** proposal UI/UX ditulis sebagai dokumen desain murni — IA 10 bab, diagram interaction spec di atas topology R5 canonical (read-only), Health Card tuple-agnostic Option A, full-reading (tanpa "Keterangan selengkapnya"), 10 data states termasuk gate isolasi UID (BP02-ISO-01..06).
+* **Tidak ada test baru yang dieksekusi** sesi ini; tidak ada mutasi source/engine/adapter/topology/UI; tidak ada commit/push/deploy; semua temuan tetap dalam dokumen proposal menunggu izin implementasi BP02-D1..D6.
+
+## 9. SPRINT B121-00 & BUILD 120 BASELINE INVARIANT EVIDENCE (7 NOVEMBER 2026)
+
+### 1. Bukti Eksekusi Uji Otomatis Baseline Invariant
+* **Dashboard & Profile Parity:** `tests/unit/build120-dashboard-insight-alignment.test.ts`
+  - 100% exact parity character-by-character verified between Profile and Dashboard Arah Hari Ini.
+  - Zero duplicate greeting ('Halo...').
+  - User A & User B isolated & differentiated.
+  - Section 'SATU TINDAKAN' and its container CSS verified completely eliminated.
+  - Sheina Khazmalia memorial footer intact.
+  - Exit code: 0 (PASS).
+* **BaZi & Vedic Local Calculation Recovery:** `tests/unit/bazi-vedic-local-recovery.test.ts`
+  - 5/5 test cases PASS (complete legacy profile calculates ready; canonical calculates ready; invalid fails closed; UID mismatch rejected; 0 client writes).
+  - Exit code: 0 (PASS).
+* **Lilith Mean Black Moon Ephemeris Parity:** `tests/unit/lilith-parity.test.ts`
+  - IAU/ELP 2000-82 formula verified (< 18 arcsec vs Swiss Ephemeris `SE_MEAN_APOG`).
+  - Founder chart verified: Aries 26°47′, House 3.
+  - Exit code: 0 (PASS).
+* **Setup & Settings Fallback Safety:** `tests/unit/build120-fallback-safety.test.ts`
+  - Legacy birth fields preserved.
+  - Fake canonical metadata stripped unconditionally.
+  - Fake privilege/lifetime/role stripped unconditionally.
+  - Canonical immutability protected.
+  - Exit code: 0 (PASS).
+* **Cloudflare Canonical Worker POC:** `services/canonical-worker/test/canonical-worker-poc.cjs`
+  - 27/27 checks PASS locally (RS256 WebCrypto, token revocation, Firestore transactions, CAS revision, idempotency).
+
+### 2. Status Baseline & Rilis
+- Git Branch: `hotfix/build110-indonesian-only` @ commit `6a8fe269234706f76d3dc17bc588d033589bd1bd`.
+- Target: versionCode `121`, versionName `5.0.21` (PROPOSED ONLY; NOT BUMPED).
+- Status Rilis: **PLANNING / LOCAL ADVANCEMENT — PRODUCTION BLOCKED**.
+
+---
+
+## BUILD 121 Implementation Evidence Ledger — 2026-11-07
+
+### 1. Core Implementation Test Evidence Matrix
+
+| Area / Workstream | Test Command / Suite | Assertions / Cases | Exit Code | Invariants & Results Verified |
+| :--- | :--- | :--- | :--- | :--- |
+| **B121-CF (Sprint 121-01 Live)** | `node services/canonical-worker/test/canonical-worker-poc.cjs` | **27 / 27** | 0 (PASS) | Live Worker runtime on 127.0.0.1:8787 against Auth & Firestore emulators. RS256 WebCrypto signature, UID isolation, legacy attestation, atomic transaction, idempotency, revision conflict, revocation, zero secrets leakage. |
+| **B121-CF (Sprint 121-01 Unit)** | `npx tsx --test tests/unit/build121-sprint01-canonical-worker.test.ts` | **5 / 5** | 0 (PASS) | Client integration (Setup, Settings, userRepository), anti-forgery sanitization, auth contract, Firestore REST transaction semantics, and secrets fail-closed protection. |
+| **B121-CF & BILL** | `npx tsx --test services/canonical-worker/test/billing-worker-adaptation.test.ts` | **5 / 5** | 0 (PASS) | 5 billing endpoints ported to WebCrypto/FirestoreRest. Anti-downgrade stale token rejection, token ownership conflict guards, and idempotency verified. |
+| **Canonical Worker Typecheck** | `npm run --prefix services/canonical-worker typecheck` | `tsc --noEmit` | 0 (PASS) | Clean TypeScript build without external Node dependencies. |
+| **B121-SEC** | `npx tsx --test tests/unit/build121-client-compatibility-matrix.test.ts` | **4 / 4** | 0 (PASS) | Documented and proved: client 118 onboarding & client 119 settings direct birth writes are blocked under candidate rules, proving staged migration is mandatory before deployment. |
+| **B121-AKA** | `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts` | **3 / 3** | 0 (PASS) | Patched `safeFactCue` word-length filter to retain core single/two-word blueprint facts; verified non-literal framing of Starseed/Civilization catalogs; sparse profile honest degradation to `unavailable`. |
+| **B121-AKA 3x3 Contract** | `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts` | **180 / 180** | 0 (PASS) | 4 multi-user profiles; 180 regular readings audited (3 paragraphs x 3 sentences = 100% PASS); Soul Letters regression check (5 paragraphs x 5 sentences = 100% PASS). |
+| **B121-WEEK** | `npx tsx tests/unit/build118-weekly-guidance.test.ts` | **231 / 231** | 0 (PASS) | 9 sections contract, Monday–Sunday local timezone rollover, cross-user cache isolation, zero generic text. |
+| **B121-DAILY** | `npx tsx tests/unit/build118-daily-guidance.test.ts` | **389 / 389** | 0 (PASS) | 8 domain accordions, daily direction synthesis, Weton/BaZi/Tzolkin context, temporal differentiation across dates. |
+| **B120 Alignment Parity** | `npx tsx tests/unit/build120-dashboard-insight-alignment.test.ts` | **6 / 6** | 0 (PASS) | 100% exact parity between Profile `Arah Hari Ini` and Dashboard `SoulReflectionCard`; zero duplicate greeting; 0 SATU TINDAKAN; Sheina Khazmalia memorial footer intact. |
+| **B121-WELL** | `npx tsx --test tests/unit/build121-wellness-companion.test.ts` | **4 / 4** | 0 (PASS) | Sections 01–05 preserved; Kristal & Aroma Pendamping cards added to Section 03 before period packages; skip/dislike options; non-medical disclaimers; respiratory sensitivity safeguards. |
+| **Repository Typecheck** | `npx tsc --noEmit --project tsconfig.json` | Full Project | 0 (PASS) | Clean repository-wide compilation with zero TypeScript errors. |
+
+### 2. Operational & Production Safety Status
+* **Cloudflare Worker:** Local implementation and tests PASS; production deployment **WAITING_APPROVAL** (no Cloudflare credentials or deployment initiated).
+* **Billing Verifier:** Ported locally to Worker runtime; live Vercel endpoint remains authoritative in production; cutover **WAITING_APPROVAL**.
+* **Firestore Rules:** Candidate compatibility matrix verified; live rules untouched; production deployment **WAITING_APPROVAL**.
+* **Android Target:** Version maintained at `120 / 5.0.20` until final release candidate sign-off; `121 / 5.0.21` held in readiness.
+* **Paid Services:** Zero paid service upgrades or Firebase Blaze activation initiated.

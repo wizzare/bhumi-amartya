@@ -1,5 +1,90 @@
 # BHUMI AMARTYA — MASTER TRACKING TO-DO
 
+## BUILD 121 Master Backlog & Operational Ledger — 2026-11-07
+
+**Status:** LOCAL IMPLEMENTATION COMPLETE — WAITING FOUNDER REVIEW & DEPLOYMENT SIGN-OFF (Founder Directive 7 November 2026)  
+**Target:** Android `versionCode 121`, tentative `versionName 5.0.21`, package `com.bhumiamartya.app` (konfirmasi Play Console sebelum rilis final).  
+**Baseline Build 120 Carried Forward (DO NOT REOPEN):**
+- [x] Dashboard Memorial Footer (Sheina Khazmalia) & removal of SATU TINDAKAN: `DONE_LOCAL`
+- [x] Lilith Mean Black Moon IAU/ELP 2000-82 formula & global parity (< 18 arcsec): `DONE_LOCAL`
+- [x] BaZi & Vedic in-memory calculation recovery (status ready, 0 client writes): `DONE_LOCAL`
+- [x] 11 Blueprint calculation engines zero regression: `DONE_LOCAL`
+- [x] Dashboard & Profile Arah Hari Ini 100% exact parity via `buildDailyGuidance().dailyDirection`: `DONE_LOCAL`
+- [x] Setup & Settings canonical fallback sanitization (`stripCanonicalServerMetadata`, `stripServerOwnedAccessFields`, `stripClientBirthWrites`): `DONE_LOCAL`
+- [x] Cloudflare canonical Worker POC (`services/canonical-worker/`, 27/27 checks PASS): `DONE_LOCAL`
+- [x] Build 120 Signed AAB (`bhumi-amartya-release-v5.0.20-build120.aab`, SHA-256 `D0C9139C...`): `BUILD_VERIFIED` (Play upload unconfirmed)
+
+### A. B121-00 — Baseline and Governance (P0)
+- [x] `B121-00-01` **Version and worktree reconciliation** — Branch `hotfix/build110-indonesian-only` @ `6a8fe26`, working tree audited, Build 120 verified, code 121 target proposed: `DONE_LOCAL`
+- [x] `B121-00-02` **Read and update governing docs** — Reconcile `docs/sot/SOT_INDEX.md`, `docs/tracking/MASTER_TODO.md`, `SPRINT_REGISTER.md`, `RISK_REGISTER.md`, `EVIDENCE_REGISTER.md`, `DECISION_LOG.md`, and `HANDOVER_LOG.md` without competing files: `DONE_LOCAL`
+- [x] `B121-00-03` **Runtime truth map** — Map actual app/backend routes, Worker package, active Vercel URL, Firestore Rules status, screens, existing tests: `DONE_LOCAL`
+- [x] `B121-00-04` **Ownership/scope gate** — No new costs, no Firebase Blaze, no production deployment or live write without explicit Founder approval: `DONE_LOCAL`
+
+### B. B121-CF — Cloudflare Canonical Backend (P0) — SPRINT 121-01 COMPLETE
+- [x] `B121-CF-01` **Recover local POC** — Confirm `services/canonical-worker/` status and re-verify affected checks in local environment (27/27 live checks PASS): `DONE_LOCAL`
+- [x] `B121-CF-02` **Secure runtime packaging** — Route map, secrets, JWT + revocation, UID isolation, CORS, no credentials in client bundle: `DONE_LOCAL`
+- [x] `B121-CF-03` **Transaction parity** — Revision/epoch, CAS, owner-attested legacy, receipt/idempotency, error mappings: `DONE_LOCAL`
+- [x] `B121-CF-04` **Capacity/compliance gate** — Verify Workers Free current use terms, CPU and request limits: `DONE_LOCAL`
+- [x] `B121-CF-05` **Client transport strategy** — Exact HTTPS base URI mapping and minimum client version; never reintroduce BaZi/Vedic dependency on canonical; verified Setup/Settings client integration: `DONE_LOCAL`
+- [ ] `B121-CF-06` **Preview/deployment plan** — Document test environment, test account isolation, rollback; `WAITING_APPROVAL` before changing Cloudflare/Vercel/Firebase production.
+
+### C. B121-BILL — Billing Verifier and Entitlement (P0)
+- [x] `B121-BILL-01` **Current-state reconciliation** — Inventory 5 live Vercel routes: `/api/access/bootstrap-trial`, `/api/billing/google-play/verify`, `/api/billing/google-play/restore`, `/api/access/refresh-badge`, `/api/billing/reconcile`: `DONE_LOCAL`
+- [x] `B121-BILL-02` **Worker port minimal** — Adapted 5 billing handlers to `services/canonical-worker/src/billing/` using native WebCrypto + `FirestoreRest`; zero external Node dependencies: `DONE_LOCAL`
+- [x] `B121-BILL-03` **Token/UID security** — Verify idempotency, purchaseToken ownership, 1 token vs multiple accounts, revocation, invalid/replay, anti-downgrade (5/5 PASS): `DONE_LOCAL`
+- [x] `B121-BILL-04` **Subscription lifecycle** — PURCHASE/PENDING/ACTIVE/GRACE/HOLD/CANCEL/EXPIRE/REFUND/VOID/RESTORE/REPLACE alignment with Google Play semantics: `DONE_LOCAL`
+- [x] `B121-BILL-05` **Persist-before-ack + reconcile** — Retry failures/timeouts/duplicates, refund/revoke, observability without PII: `DONE_LOCAL`
+- [ ] `B121-BILL-06` **Differential & rollout** — Vercel vs Worker fixtures, maintain `bhumi_premium_monthly`/`monthly`; Gate G2 explicit approval before cutover: `WAITING_APPROVAL`
+
+### D. B121-SEC — Firestore Rules, Privacy, Legacy Rollout (P0)
+- [x] `B121-SEC-01` **Live vs candidate gap matrix** — Read-only review of actual deployed rules vs candidate local rules (`firestore.rules`): `DONE_LOCAL`
+- [x] `B121-SEC-02` **Authorization fixes** — Server trust, UID isolation, claim-based admin, no email-based role privilege: `DONE_LOCAL`
+- [x] `B121-SEC-03` **Compatibility matrix** — Matrix of versions 118, 119, 120 and successor 121 regarding birth field edits and onboarding denial documented in `CLIENT_COMPATIBILITY_MATRIX_118_121.md` & verified (4/4 PASS): `DONE_LOCAL`
+- [x] `B121-SEC-04` **Controlled transition** — Minimum supported version / update communication proposal without permissive Rules bypass (Founder decision): `DONE_LOCAL`
+- [x] `B121-SEC-05` **Emulator test expansion** — Multi-user, cross-UID, admin claims, client versions 118/119/120/121 fixture suite in `build121-client-compatibility-matrix.test.ts` (4/4 PASS): `DONE_LOCAL`
+- [ ] `B121-SEC-06` **Rollout / rollback** — Snapshot live rules, staged deployment order, mixed-version risk; `WAITING_APPROVAL` before production writes.
+
+### E. B121-AKA — Arsip Akashi (P1)
+- [x] `B121-AKA-01` **Actual source inventory** — Inspect `lib/arsipAkashi/`, `lib/services/humanMeaningService.ts`, `components/profile/details/ProfileSectionClient.tsx`; preserve existing structure & cards: `DONE_LOCAL`
+- [x] `B121-AKA-02` **Blueprint-driven fact bundles** — 11 Blueprint systems contribute valid facts; fixed `safeFactCue` word-length filter to prevent dropping single/two-word facts (Manifestor, 8, etc.); non-literal framing: `DONE_LOCAL`
+- [x] `B121-AKA-03` **Narrative quality** — Differentiated per blueprint; verified by `build121-arsip-akashi-grounding.test.ts` (3/3 PASS) and `arsip_akashi_3x3_contract.test.ts` (180/180 PASS, 100% 5x5 Soul Letters): `DONE_LOCAL`
+- [x] `B121-AKA-04` **Privacy & consumers** — Per-UID isolation; safe fact bundle extraction for daily/weekly without leaking full prose: `DONE_LOCAL`
+- [x] `B121-AKA-05` **Multi-profile acceptance** — 4 synthetic profiles, changed blueprint revision, sparse profile honest degradation to `unavailable`: `DONE_LOCAL`
+
+### F. B121-WEEK — Panduan Minggu Ini Dashboard (P1)
+- [x] `B121-WEEK-01` **Existing engine contract** — Inspect `components/dashboard/WeeklyGuidanceCard.tsx`, `lib/weeklyGuidance/weeklyGuidanceEngine.ts`, `weeklyTransitCalculator.ts`: `DONE_LOCAL`
+- [x] `B121-WEEK-02` **Arsip + weekly astro + optional Journey** — Missing Journey not a blocker for new users; no fabricated Journey progress: `DONE_LOCAL`
+- [x] `B121-WEEK-03` **Period correctness** — Monday-Sunday local timezone, current default, upcoming explicit, week rollover, cache isolation: `DONE_LOCAL`
+- [x] `B121-WEEK-04` **Full content quality** — 9 approved sections (8 domain readings: 3-4 sentences + 1-2 sentences Saran Bhumi; Arah Minggu Ini: 4-6 sentences synthesis); verified by `build118-weekly-guidance.test.ts` (231/231 PASS): `DONE_LOCAL`
+- [x] `B121-WEEK-05` **Dashboard QA** — Positioning verified, responsive mobile layout: `DONE_LOCAL`
+- [x] `B121-WEEK-06` **Comparative tests** — 2 users, 2 consecutive weeks, missing Journey, partial astro, same-week stable, timezone change: `DONE_LOCAL`
+
+### G. B121-DAILY — Catatan Hari Ini Profil (P1)
+- [x] `B121-DAILY-01` **Existing daily parity inventory** — Inspect `components/profile/DailyGuidanceCard.tsx`, `lib/dailyGuidance/dailyGuidanceEngine.ts`; preserve BUILD 120 Dashboard Arah Hari Ini parity; verified by `build120-dashboard-insight-alignment.test.ts` (6/6 PASS): `DONE_LOCAL`
+- [x] `B121-DAILY-02` **Blueprint personal context** — Connect available Blueprint/Arsip facts and Human Meaning appropriately with source provenance: `DONE_LOCAL`
+- [x] `B121-DAILY-03` **Temporal differentiation** — Astro/transits, Weton, BaZi day pillar, Tzolkin; verified by `build118-daily-guidance.test.ts` (389/389 PASS): `DONE_LOCAL`
+- [x] `B121-DAILY-04` **Presentation parity** — 3 domains, 8 accordions + Arah Hari Ini; Dashboard uses exact same Arah Hari Ini without duplicate greeting: `DONE_LOCAL`
+- [x] `B121-DAILY-05` **Differential QA** — Synthetic users, consecutive days, unchanged context, partial data, cache isolation: `DONE_LOCAL`
+
+### H. B121-WELL — Wellness Personal Companion (P2; after P0 gate)
+- [x] `B121-WELL-01` **Inspect five-section owner** — Reuse existing curation/library/check-in mapping in `components/wellness/`, `lib/services/wellnessCurationService.ts`: `DONE_LOCAL`
+- [x] `B121-WELL-02` **Preferences/opt-in** — Check `UserWellnessPreferences` propagation & `isWorldviewEligible`; opt-out respected: `DONE_LOCAL`
+- [x] `B121-WELL-03` **Crystal catalog** — Symbolic/reflection meaning, practical safe usage, reuse `spiritual-crystal-holding`: `DONE_LOCAL`
+- [x] `B121-WELL-04` **Aroma catalog** — Lavender/citrus/peppermint entries where safe; sensitivities, breathing, kids/pets, ventilation, no ingestion/topical misuse: `DONE_LOCAL`
+- [x] `B121-WELL-05` **Deterministic selection** — 1 optional crystal & 1 optional aroma, localDate & revision context, cooldown, no cross-UID cache: `DONE_LOCAL`
+- [x] `B121-WELL-06` **Section 03 UI only** — 2 small cards before Pagi/Siang/Malam; skip/not-have/dislike buttons; no new nav/page: `DONE_LOCAL`
+- [x] `B121-WELL-07` **Safety + regression** — No medical claims, 5 sections intact, multi-user consent tests in `build121-wellness-companion.test.ts` (4/4 PASS): `DONE_LOCAL`
+
+### I. B121-REL — Integration, Release & Tracking
+- [x] `B121-REL-01` **Focused tests first** — TypeScript (`tsc --noEmit` exit 0), 16 core tests PASS, 231 weekly PASS, 389 daily PASS, 180 akashi PASS: `DONE_LOCAL`
+- [x] `B121-REL-02` **Client/server parity** — Setup/Settings fallbacks and canonical constraints, authenticated API, billing, protected Firestore: `DONE_LOCAL`
+- [ ] `B121-REL-03` **Build metadata** — Only at final accepted candidate: verify code 121 unused, set `121 / 5.0.21` upon authorization: `WAITING_APPROVAL`
+- [ ] `B121-REL-04` **Static export & QA** — Next.js build pipeline, `out/`, Capacitor sync, signed APK/AAB, reviewer approval: `WAITING_APPROVAL`
+- [x] `B121-REL-05` **Governance sync** — Update existing SoT index, Master TODO, Sprint/Evidence/Risk registers, Decision/Handover log; `BLOCKED` not `DONE` when not deployed: `DONE_LOCAL`
+- [ ] `B121-REL-06` **Founder GO/NO-GO** — Explicit approval for any production service, Rules, Play upload, or paid service: `WAITING_APPROVAL`
+
+---
+
 ## Current Release 119 gates — 2026-11-03
 
 - [x] BP03 result contract closed for the local baseline by Founder decision; TypeScript, Build 115 regression and live normalizer accepted PASS. Earlier outstanding BP03 contract and TypeScript entries below are historical.

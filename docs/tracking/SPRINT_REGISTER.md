@@ -1,10 +1,10 @@
 # BHUMI AMARTYA — SPRINT REGISTER
 
 **Document ID:** `SPRINT-REG-001`  
-**Current Workstream:** Workstream 2 — Billing & Entitlement  
+**Current Workstream:** Build 119 - Blueprint Sprint Program (BP01–BP11; BP02 ACTIVE)  
 **Baseline Git Branch:** `hotfix/build110-indonesian-only`  
-**Active HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Last Updated:** 21 Oktober 2026  
+**Active HEAD:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)  
+**Last Updated:** 31 Oktober 2026 (Sinkronisasi BP02 — entri lama dipertahankan)  
 **Status:** ACTIVE REGISTER  
 
 ---
@@ -46,6 +46,9 @@
 | **PROFILE-DAILY-01** | Build 118 Catatan Hari Ini (Profile Page) — Daily Personal Cosmic & Soul Journal | Antigravity | 28 Okt 2026 | PASS LOCAL | **SUPERSEDED BY PROFILE-DAILY-02** | `tests/unit/build118-daily-guidance.test.ts` (76)<br>`build118-weekly-guidance.test.ts` (231)<br>`build118-analytics-conflict.test.ts` (4)<br>`profile-daily-synthesis-availability.test.ts` (27)<br>`astro-transit-accuracy.test.ts` (44)<br>`version-reconciliation.test.ts` (24)<br>`build107-production-surface-guard.test.ts` (137)<br>`npx tsc --noEmit` (0 errors) | 543 assertions PASS across all suites, local dev server HTTP 200 OK, dual fixture output verified | Proposal arsitektur 2-lapisan 7-bagian digantikan oleh arahan Founder untuk menggunakan paritas format 8-domain Panduan Minggu Ini dengan kekayaan siklus harian. |
 | **PROFILE-DAILY-02** | Build 118 Catatan Hari Ini (Profile Page) — Weekly Guidance Parity & Temporal Richness Addendum | Antigravity | 28 Okt 2026 | PASS LOCAL | **SUPERSEDED BY PROFILE-DAILY-03** | `tests/unit/build118-daily-guidance.test.ts` (239)<br>`build118-weekly-guidance.test.ts` (231)<br>`build118-analytics-conflict.test.ts` (4)<br>`profile-daily-synthesis-availability.test.ts` (27)<br>`astro-transit-accuracy.test.ts` (44)<br>`version-reconciliation.test.ts` (24)<br>`build107-production-surface-guard.test.ts` (137)<br>`npx tsc --noEmit` (0 errors) | 706 assertions PASS across all 7 suites, local dev server HTTP 200 OK, real output in scratch | Paritas 100% format Panduan Minggu Ini dipadukan dengan siklus temporal harian. Diperluas oleh PROFILE-DAILY-03 dengan sintesis lintas sistem 4 fondasi mendalam. |
 | **PROFILE-DAILY-03** | Build 118 Catatan Hari Ini (Profile Page) — Deep Daily Cross-System Synthesis (Four Foundations × Canonical Blueprint) | Antigravity | 28 Okt 2026 | PASS LOCAL | **PASS LOCAL (PENDING FOUNDER REVIEW)** | `tests/unit/build118-daily-guidance.test.ts` (389)<br>`build118-weekly-guidance.test.ts` (231)<br>`build118-analytics-conflict.test.ts` (4)<br>`profile-daily-synthesis-availability.test.ts` (27)<br>`astro-transit-accuracy.test.ts` (44)<br>`version-reconciliation.test.ts` (24)<br>`build107-production-surface-guard.test.ts` (137)<br>`npx tsc --noEmit` (0 errors) | 856 assertions PASS across all 7 suites, local dev server HTTP 200 OK, captured output in `scratch/build118-daily-guidance-parity-outputs.json` | Sintesis lintas sistem organik 4 fondasi harian (Western Transit Placidus, Weton Jawa & kamus watak/wuku, BaZi Ten Gods & Day Ren 壬, Tzolkin Maya Kin/Tone/Wavespell) dipadukan Cetak Biru Kanonikal (Love Path 7–10–21, Ekor Karma 21–7–13, Center Arcana 8, HD Type/Authority/Profile/Not-Self, Life Path) pada seluruh 8 domain. Pencarian akar transit sudut bertanda `signedDiff` sub-menit 'sekitar HH:mm WIB'. Production release BLOCKED pending Founder approval. |
+| **BP02-A** | Build 119 Destiny Matrix - Complete Read-Only Audit (Engine, Content, Security, UI Baseline) | OpenCode / Founder Review | 31 Okt 2026 | COMPLETE - READY WITH FOUNDER DECISIONS | **COMPLETE - READY WITH FOUNDER DECISIONS** | `scripts/acceptDestinyMatrixV1.ts` (74/74 PASS) + 7 validator Destiny Matrix + dictionary audit | `BUILD119_OPENCODE_BP02_A_DESTINY_MATRIX_COMPLETE_AUDIT_REPORT.md` (repo root) | Audit read-only; 4 Founder decisions (D-02-1..4) terdokumentasi; engine frozen; tanpa mutasi source. |
+| **BP02-B** | Build 119 Destiny Matrix - Content Architecture (22 Arcana x Posisi, Chakra A-G, Past Life, Sintesis, Governance Sync) | OpenCode / Founder Review | 31 Okt 2026 | IN PROGRESS - ARCHITECTURE PROPOSAL | **IN PROGRESS - CONTENT ARCHITECTURE (PROPOSAL)** | Engine canonical read-only runs (fixture dump/annual/dict drivers, exit 0) | `BUILD119_OPENCODE_BP02_B_DESTINY_MATRIX_CONTENT_ARCHITECTURE_REPORT.md` + `BUILD119_OPENCODE_BP02_GOVERNANCE_SYNC_REPORT.md` | Proposal & arsitektur konten saja; zero mutasi formula/engine/UI; menunggu Founder Review (BP02-C s/d E PLANNED / NOT STARTED). |
+| **BP02-C** | Build 119 Destiny Matrix - Premium UI/UX Proposal (IA, Diagram Interaktif, Health Card Option A, States Isolasi UID) | OpenCode / Founder Review | 31 Okt 2026 | IN PROGRESS - DESIGN PROPOSAL | **IN PROGRESS - UI/UX PROPOSAL (DESIGN ONLY)** | Proposal dokumen saja; nol test baru & nol test dijalankan; nol mutasi source/engine/UI | `BUILD119_OPENCODE_BP02_C_PREMIUM_DESTINY_MATRIX_UI_UX_PROPOSAL.md` (repo root) | IA 10 bab + chapter nav; diagram interaction spec (R5 canonical); Health Card angka canonical engine (D-B-8 Option A); full reading tanpa "Keterangan selengkapnya"; 10 data states dengan gate isolasi UID; realisasi gate BP02-D1..D6 dengan izin Founder per sprint. |
 
 ---
 
@@ -69,9 +72,21 @@ flowchart TD
     BILL06 --> WS3["Workstream 3: Other Blueprint Modules (DEFERRED / LOCKED)"]
 ```
 
+
+| **B121-00** | Build 121 Baseline & Documentation Reconciliation | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL** | Docs audit & baseline verification | Worktree & docs reconciled, zero competing files. |
+| **B121-CF (Sprint 121-01)** | Cloudflare Canonical Worker & Client Integration | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (27/27 Live + 5/5 Unit)** | `services/canonical-worker/test/canonical-worker-poc.cjs`, `tests/unit/build121-sprint01-canonical-worker.test.ts` | 27/27 live checks + 5/5 unit PASS; client integration, auth security, and Firestore transactions verified. Prod deployment BLOCKED. |
+| **B121-BILL** | Billing Verifier Migration & Subscription Lifecycle Parity | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (5/5 HANDLERS)** | `services/canonical-worker/test/billing-worker-adaptation.test.ts` | 5 handlers ported with WebCrypto/FirestoreRest; anti-downgrade/idempotency PASS; cutover gated. |
+| **B121-SEC** | Firestore Rules Compatibility Matrix (118-121) | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (4/4 CHECKS)** | `tests/unit/build121-client-compatibility-matrix.test.ts` | Compatibility matrix documented; client 118/119 direct write proof; rules deploy BLOCKED. |
+| **B121-AKA** | Arsip Akashi Multi-Blueprint Provenance & Fact Grounding | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (3/3 + 180/180)** | `tests/unit/build121-arsip-akashi-grounding.test.ts` | Fixed fact-cue filter; symbolic non-literal safeguards intact; 180/180 3x3 PASS. |
+| **B121-WEEK** | Panduan Minggu Ini Monday-Sunday 9-Section Dashboard | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (231/231)** | `tests/unit/build118-weekly-guidance.test.ts` | 9 sections contract; Monday-Sunday local time boundary; zero regressions. |
+| **B121-DAILY** | Catatan Hari Ini Profile & Dashboard Arah Hari Ini Parity | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (389/389 + 6/6)** | `tests/unit/build120-dashboard-insight-alignment.test.ts` | 100% exact parity verified; 0 duplicate greeting; 0 SATU TINDAKAN; 389/389 daily PASS. |
+| **B121-WELL** | Wellness Section 03 Crystal & Aroma Companion | Antigravity | 07 Nov 2026 | PASS LOCAL | **PASS LOCAL (4/4)** | `tests/unit/build121-wellness-companion.test.ts` | Section 03 cards before Pagi/Siang/Malam; opt-in/skip actions; respiratory safety; 5 sections intact. |
+
 ### Ringkasan Status Sprint:
 * **Total Sprint Terdaftar:** 23 sprint / sub-sprint.
 * **Sprint Lolos Verifikasi (PASS):** 19 sprint.
 * **Sprint Partial / Open Gates:** 3 sprint (HD-06, HD-06A, BILL-05A).
 * **Sprint Ready / Pending:** 1 sprint (BILL-05B).
 * **Sprint Terkunci (LOCKED / DEFERRED):** Workstream 3 (Weton, BaZi, Vedic, Tzolkin, Destiny Matrix) & BILL-06.
+* **Addendum 31 Okt 2026 (Build 119):** +2 entri baru (BP02-A, BP02-B) - total terdaftar naik menjadi 25 sprint; status Workstream 3 Blueprint (termasuk Destiny Matrix) tidak lagi DEFERRED untuk BP02 sesuai arahan Founder Build 119; BP01-D6 berstatus workstream terpisah (tidak ditutup).
+* **Addendum 31 Okt 2026 (Build 119, Task 10/11):** +1 entri baru (BP02-C) - total terdaftar naik menjadi 26 sprint; BP02-C = DESIGN PROPOSAL ONLY (nol implementasi); D-B-8 diputuskan Founder → Option A (RSK-37 RESOLVED, ADR-DM-04); D-02-1..4 & D-B-1..7 tetap pending approval.

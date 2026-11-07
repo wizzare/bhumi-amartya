@@ -250,3 +250,116 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `PLAY_UPLOAD_CERTIFICATE = MATCH`
   - `GIT_RELEASE_BASELINE = VERIFIED`
   - `BUILD120_INTERNAL_TESTING = READY` (Waiting Founder authorization for upload)
+
+
+---
+
+## 12. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 121 PLANNING & SOT RECONCILIATION)
+
+* **Mandat & Dokumen Sumber:**
+  - Founder Directive (7 November 2026) menyertakan 5 berkas perencanaan:
+    1. `00_README.md`
+    2. `01_BUILD121_SOURCE_OF_TRUTH.md`
+    3. `02_BUILD121_PRD.md`
+    4. `03_BUILD121_MASTER_TODO_ADDENDUM.md`
+    5. `04_BUILD121_ANTIGRAVITY_KICKOFF.md`
+* **Prinsip Rekonsiliasi & Governance:**
+  - Tidak membuat SoT atau Master TODO tandingan. Seluruh mandat diintegrasikan ke dokumen aktif yang telah ada (`SOT_INDEX.md`, `MASTER_TODO.md`, `SPRINT_REGISTER.md`, `RISK_REGISTER.md`, `EVIDENCE_REGISTER.md`, `DECISION_LOG.md`, `HANDOVER_LOG.md`).
+  - Seluruh hasil rilis BUILD 120 (Memorial Footer, Lilith ephemeris, BaZi/Vedic local recovery, Dashboard/Profile parity, Setup/Settings sanitization, Build 120 Signed AAB) dipelihara 100% tanpa regresi.
+  - Status rilis produksi dikunci: tidak ada deploy produksi, push git, commit otomatis, bump version code/name, atau aktivasi layanan berbayar (Firebase Spark tier dipertahankan; no Blaze).
+* **Pekerjaan Lokal Aktif:**
+  - Melanjutkan inventarisasi dan task lokal BUILD 121 yang telah disetujui Founder sesuai prioritas dependensi (P0 Cloudflare & Billing & Rules -> P1 Arsip, Weekly, Daily -> P2 Wellness).
+
+---
+
+## 13. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 121 LOCAL IMPLEMENTATION COMPLETION)
+
+* **Mandat & Status Pelaksanaan:**
+  - Founder Directive: Lanjutkan implementasi lokal BUILD 121 secara berurutan: P0 (Cloudflare & Billing & Rules) -> P1 (Arsip Akashi & Panduan Minggu Ini & Catatan Hari Ini) -> P2 (Wellness Personal Companion).
+  - Status Saat Ini: **SEMUA TASK LOKAL SELESAI & TERVERIFIKASI (ALL LOCAL TASKS PASS)**.
+  - Deployment & Production Actions: **WAITING_APPROVAL** (tidak ada deploy, push, commit otomatis, bump versi Android, atau aktivasi layanan berbayar).
+
+* **Hasil Pekerjaan P0 (Backend & Keamanan):**
+  1. **Cloudflare Canonical & Billing Worker Adaptation (`B121-CF` & `B121-BILL`):**
+     - Mengadaptasi 5 endpoint Billing Verifier ke Cloudflare Worker (`services/canonical-worker/src/billing/`):
+       - `/api/access/bootstrap-trial`
+       - `/api/billing/google-play/verify`
+       - `/api/billing/google-play/restore`
+       - `/api/access/refresh-badge`
+       - `/api/billing/reconcile`
+     - Menggunakan WebCrypto (`crypto.subtle`) dan `FirestoreRest` native tanpa dependensi Node external.
+     - Proteksi anti-downgrade (penolakan token kedaluwarsa yang lebih tua dari langganan aktif), konflik kepemilikan token antar-UID, dan idempotensi transaksi berhasil diverifikasi melalui unit test `services/canonical-worker/test/billing-worker-adaptation.test.ts` (**5/5 PASS**, exit 0).
+     - Worker typecheck: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit 0).
+     - Billing Verifier Vercel eksisting tetap berjalan di produksi; cutover Cloudflare menunggu persetujuan Founder.
+  2. **Firestore Rules Compatibility Matrix (`B121-SEC`):**
+     - Menyelesaikan analisis dan bukti kompatibilitas klien v118, v119, v120, dan kandidat v121 di `docs/architecture/CLIENT_COMPATIBILITY_MATRIX_118_121.md`.
+     - Diverifikasi melalui `tests/unit/build121-client-compatibility-matrix.test.ts` (**4/4 PASS**, exit 0).
+     - Bukti: Rules kandidat yang memblokir write klien langsung ke field kelahiran (`birthDate`, `birthTime`, dll.) akan mematahkan onboarding klien v118 dan penyimpanan profil v119 (HTTP 403 `permission-denied`). Oleh karena itu, Rules produksi saat ini harus dipertahankan hingga migrasi bertahap disetujui.
+
+* **Hasil Pekerjaan P1 (Profile & Personal Intelligence):**
+  1. **Arsip Akashi (`B121-AKA`):**
+     - Memperbaiki `safeFactCue` di `lib/arsipAkashi/readings/readingEngine.ts` dari `words.length > 2` menjadi `words.length >= 1` sehingga nilai blueprint satu/dua kata (seperti "Manifestor", "Projector", "8", "Empress") tidak lagi dibuang dari sintesis naratif.
+     - Mempertahankan framing non-literal pada katalog Starseed (20 arketipe) dan Peradaban (20 arketipe) sebagai metafora batin dan refleksi psikologis.
+     - Diverifikasi melalui `tests/unit/build121-arsip-akashi-grounding.test.ts` (**3/3 PASS**, exit 0).
+     - Kontrak 3x3 multi-user (`tests/unit/arsip_akashi_3x3_contract.test.ts`): **180/180 PASS**, dan Surat Jiwa 5x5: **100% PASS** (exit 0).
+  2. **Panduan Minggu Ini & Catatan Hari Ini (`B121-WEEK` & `B121-DAILY`):**
+     - Panduan Minggu Ini: 9 seksi disepakati, pergantian Senin–Minggu berdasarkan timezone lokal, cache isolation diverifikasi melalui `tests/unit/build118-weekly-guidance.test.ts` (**231/231 PASS**, exit 0).
+     - Catatan Hari Ini: 8 accordion + Arah Hari Ini diverifikasi melalui `tests/unit/build118-daily-guidance.test.ts` (**389/389 PASS**, exit 0).
+     - Paritas 100% Arah Hari Ini antara Dashboard dan Profil + Memorial Footer Sheina Khazmalia diverifikasi melalui `tests/unit/build120-dashboard-insight-alignment.test.ts` (**6/6 PASS**, exit 0).
+
+* **Hasil Pekerjaan P2 (Wellness Personal Companion):**
+  1. **Section 03 Rekomendasi Hari Ini (`B121-WELL`):**
+     - Membuat modul `lib/wellness/wellnessSensoryCompanion.ts` untuk seleksi kristal dan aroma pendamping harian secara deterministik (`uid + date + condition/capacity`).
+     - Menambahkan dua kartu pendamping di `components/wellness/WellnessPageClient.tsx` pada Section 03 tepat **sebelum** paket rekomendasi Pagi/Siang/Malam:
+       - **Kristal Pendamping Hari Ini**: simbol refleksi batin, saran pemakaian tenang, alternatif alami tanpa produk, dan disclaimer non-medis.
+       - **Aroma Pendamping Hari Ini**: pengalaman sensorik kenyamanan, panduan ventilasi dan keamanan (tidak ditelan, jauh dari hewan/bayi), alternatif tanpa produk, dan disclaimer non-medis.
+     - Menyediakan tombol aksi fleksibel ("Lewati / Tidak punya" dan "Lewati / Tidak suka aroma ini").
+     - Safeguard sensitivitas pernapasan (`respiratorySensitivity`) aktif untuk menghindari uap diffuser pekat bagi pengguna yang sensitif.
+     - Seluruh lima seksi Wellness (01 Check-in, 02 Kondisi, 03 Rekomendasi, 04 Praktik Tambahan, 05 Dukungan) tetap utuh.
+     - Diverifikasi melalui `tests/unit/build121-wellness-companion.test.ts` (**4/4 PASS**, exit 0).
+  2. **TypeScript Compilation:**
+     - Seluruh repositori bersih: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit 0).
+
+* **Keputusan Founder yang Diperlukan (Waiting Approval):**
+  1. Persetujuan hasil implementasi lokal P0, P1, dan P2.
+  2. Izin cutover Billing Verifier dari Vercel ke Cloudflare Worker di lingkungan uji/produksi.
+  3. Izin jadwal penerapan Firestore Rules bertahap dengan batas minimum versi klien.
+  4. Otorisasi bump versi Android (`versionCode 121`, `versionName 5.0.21`) dan pembuatan kandidat rilis.
+
+---
+
+## 14. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (SPRINT 121-01: CLOUDFLARE CANONICAL WORKER)
+
+* **Mandat Sprint:** Single Sprint Execution untuk Sprint 121-01 (Cloudflare Canonical Worker).
+* **Fokus Verifikasi:**
+  1. **Integrasi Klien:**
+     - Setup (`app/setup/page.tsx`) memverifikasi tanda terima `COMMITTED` sebelum memperbarui profil pengguna dengan `canonicalBirthEpoch` dan `canonicalBirthRevision`, serta menangani status `CONFLICT` secara fail-closed.
+     - Settings (`app/settings/page.tsx`) memicu mutasi kanonikal hanya melalui `persistCanonicalBirth` atau konfirmasi legacy `confirmLegacyBirth`.
+     - Repositori (`lib/repositories/userRepository.ts`) menerapkan sanitasi ganda: `stripCanonicalServerMetadata` (mencegah pemalsuan field status kanonikal oleh klien) dan `stripClientBirthWrites` (mencegah penulisan langsung ke field tanggal lahir saat data kanonikal aktif).
+     - Transport HTTPS (`lib/profile/canonicalHttps.ts`) memetakan kode status HTTP (401 -> `functions/unauthenticated`, 403 -> `functions/permission-denied`, 400 -> `functions/invalid-argument`) secara fail-closed.
+  2. **Keamanan Autentikasi & Otorisasi:**
+     - Verifikasi RS256 WebCrypto (`services/canonical-worker/src/auth.ts`) terhadap JWKS.
+     - Penolakan token tanpa tanda tangan (`alg: none`), token rusak, tanda tangan yang diubah, token kedaluwarsa, dan token dengan clock skew > 300 detik.
+     - Penolakan token yang dicabut (`revoked`) berdasarkan waktu `validSince` / `tokensValidAfterTime`.
+     - Isolasi UID ketat: token Pengguna Alpha ditolak dengan HTTP 403 (`functions/permission-denied`) bila mencoba membaca atau mengubah profil Pengguna Beta.
+  3. **Transaksi Firestore REST & Penanganan Konflik:**
+     - Menggunakan transaksi ACID Firestore REST (`beginTransaction`, `commit`, `rollback`) dengan pemeriksaan prasyarat updateTime.
+     - Idempotensi penuh: pengiriman ulang dengan `operationId` dan digest payload yang sama mengembalikan status `COMMITTED` (`idempotent: true`) tanpa duplikasi revisi.
+     - Penggunaan ulang `operationId` dengan payload berbeda ditolak dengan status `REJECTED` (`operation_id_payload_mismatch`).
+     - Deteksi konflik revisi (Optimistic Concurrency Control): mutasi dengan revisi kedaluwarsa ditolak dengan status `CONFLICT` dan mengembalikan revisi saat ini tanpa merusak data.
+     - Persyaratan atestasi legacy: inisialisasi data warisan tanpa atestasi pemilik ditolak (`legacy_confirmation_required`).
+  4. **Proteksi Rahasia & Kegagalan Fail-Closed:**
+     - Private key dan credential backend tidak pernah bocor ke respons HTTP atau bundel klien.
+     - Kegagalan backend (400, 401, 403, 500) tidak pernah menghasilkan status kanonikal palsu.
+
+* **Bukti Eksekusi Uji:**
+  - `node services/canonical-worker/test/canonical-worker-poc.cjs`: **27/27 PASS** (live Worker pada 127.0.0.1:8787 melawan Auth & Firestore emulators, exit code 0).
+  - `npx tsx --test tests/unit/build121-sprint01-canonical-worker.test.ts`: **5/5 PASS** (exit code 0).
+  - Typecheck Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (tidak ada deploy ke Cloudflare).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - `BUILD120_AAB = UNTOUCHED`.
+  - Next Sprint: **121-02 BILLING VERIFIER**.
