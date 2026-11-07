@@ -53,11 +53,11 @@
 
 ### F. B121-WEEK — Panduan Minggu Ini Dashboard (P1)
 - [x] `B121-WEEK-01` **Existing engine contract** — Inspect `components/dashboard/WeeklyGuidanceCard.tsx`, `lib/weeklyGuidance/weeklyGuidanceEngine.ts`, `weeklyTransitCalculator.ts`: `DONE_LOCAL`
-- [x] `B121-WEEK-02` **Arsip + weekly astro + optional Journey** — Missing Journey not a blocker for new users; no fabricated Journey progress: `DONE_LOCAL`
-- [x] `B121-WEEK-03` **Period correctness** — Monday-Sunday local timezone, current default, upcoming explicit, week rollover, cache isolation: `DONE_LOCAL`
-- [x] `B121-WEEK-04` **Full content quality** — 9 approved sections (8 domain readings: 3-4 sentences + 1-2 sentences Saran Bhumi; Arah Minggu Ini: 4-6 sentences synthesis); verified by `build118-weekly-guidance.test.ts` (231/231 PASS): `DONE_LOCAL`
-- [x] `B121-WEEK-05` **Dashboard QA** — Positioning verified, responsive mobile layout: `DONE_LOCAL`
-- [x] `B121-WEEK-06` **Comparative tests** — 2 users, 2 consecutive weeks, missing Journey, partial astro, same-week stable, timezone change: `DONE_LOCAL`
+- [x] `B121-WEEK-02` **Arsip + weekly astro + optional Journey** — Missing Journey not a blocker for new users; honest `LIMITED` degradation; no fabricated Journey progress; verified by `build121-sprint05-weekly-guidance.test.ts`: `DONE_LOCAL`
+- [x] `B121-WEEK-03` **Period correctness** — Monday-Sunday local timezone, current default, upcoming explicit, week rollover, multi-dimensional cache fingerprint isolation: `DONE_LOCAL`
+- [x] `B121-WEEK-04` **Full content quality** — 9 approved sections (8 domain readings: 3-4 sentences body + 1-2 sentences Saran Bhumi; Arah Minggu Ini: 4-6 sentences synthesis with explicit `Prioritas mingguanmu adalah...` declaration); verified by `build118-weekly-guidance.test.ts` (231/231 PASS) & `build121-sprint05-weekly-guidance.test.ts` (7/7 PASS): `DONE_LOCAL`
+- [x] `B121-WEEK-05` **Dashboard QA** — Positioning verified, responsive mobile layout, domain 8 canonical title `"Ruang yang Sedang Terbuka"`: `DONE_LOCAL`
+- [x] `B121-WEEK-06` **Comparative tests** — Multi-profile differentiation across distinct charts, 2 consecutive weeks, missing Journey honest fallback, partial blueprint degradation, same-week cache stability, timezone change; verified by `build121-sprint05-weekly-guidance.test.ts` (7/7 PASS): `DONE_LOCAL`
 
 ### G. B121-DAILY — Catatan Hari Ini Profil (P1)
 - [x] `B121-DAILY-01` **Existing daily parity inventory** — Inspect `components/profile/DailyGuidanceCard.tsx`, `lib/dailyGuidance/dailyGuidanceEngine.ts`; preserve BUILD 120 Dashboard Arah Hari Ini parity; verified by `build120-dashboard-insight-alignment.test.ts` (6/6 PASS): `DONE_LOCAL`

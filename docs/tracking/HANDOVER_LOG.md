@@ -492,3 +492,44 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-05 PANDUAN MINGGU INI (B121-WEEK)**.
+
+---
+
+## 18. SPRINT 121-05: PANDUAN MINGGU INI DASHBOARD (B121-WEEK) — 07 NOVEMBER 2026
+
+* **Status:** `PASS LOCAL`
+* **Commit:** Pending
+* **Tujuan:** Menyintesis tiga lapisan (Arsip Akashi, Astrologi Mingguan transit-to-natal, dan konteks Journey opsional) ke dalam 9 ranah Panduan Minggu Ini di Dashboard (`WeeklyGuidanceCard`), dengan batas waktu Senin 00:00 – Minggu 23:59 waktu lokal pengguna, isolasi cache multi-dimensi per UID, struktur kalimat berdisiplin tinggi (3–4 kalimat body + 1–2 kalimat Saran Bhumi; 4–6 kalimat sintesis Arah Minggu Ini dengan deklarasi prioritas mingguan), serta degradasi jujur tanpa mengarang progres Journey atau memblokir panduan bagi pengguna baru.
+* **Hasil Verifikasi Kunci:**
+  1. **Integrasi Tiga Lapisan (Arsip Akashi + Astrologi Mingguan + Journey):**
+     - **Arsip Akashi:** Terintegrasi melalui fact bundles dan rekomendasi terpetakan (`DOMAIN_ARSIP_READING_MAP`), mencantumkan indikator dan arah integrasi dalam `foundations` tanpa menyalin teks prosa mentah.
+     - **Astrologi Mingguan:** Menghitung transit planet aktif terhadap natal chart Placidus, transisi Bulan, dan aspek transit-to-natal (orb <= 5.5°), dengan pembedaan fase temporal awal pekan, tengah pekan, dan akhir pekan.
+     - **Journey:** Mengintegrasikan konteks `activeFocus`, `stage`, `challenge`, `reflection`, dan `nextStep`. Jika kosong/belum dimulai, sistem secara jujur mencatat status `limited` dalam metadata sumber tanpa mengarang progres palsu dan tetap menyajikan panduan astrologi & blueprint secara penuh.
+  2. **Kepatuhan Struktur 9 Bagian & Jumlah Kalimat:**
+     - 8 Ranah Pembacaan (Kabar Minggu Ini, Pikiran, Ekonomi & Rezeki, Asmara & Percintaan, Orang Terdekat, Makna Batin, Yang Mungkin Terasa Berat, Ruang yang Sedang Terbuka):
+       - Body paragraf disuling secara ketat menjadi **3–4 kalimat bermakna** (astrologi + spiritual + blueprint/Akashi/Journey).
+       - Saran Bhumi (`advice`) terdiri dari **1–2 kalimat tindakan terfokus**.
+     - Ranah ke-9 (Arah Minggu Ini / `weeklyDirection`):
+       - Sintesis utuh terdiri dari **4–6 kalimat**, wajib mendeklarasikan prioritas mingguan secara eksplisit (`Prioritas mingguanmu adalah...`) yang merangkum fokus Journey, tanpa pengulangan kata demi kata dari paragraf sebelumnya.
+  3. **Batas Waktu Senin–Minggu & Isolasi Cache Multi-Dimensi:**
+     - Menghitung rentang jendela waktu Senin 00:00:00 hingga Minggu 23:59:59 dalam zona waktu lokal pengguna (`Asia/Jakarta` fallback).
+     - Sidik jari cache (`synthesisFingerprint`) mengintegrasikan kombinasi dinamis: `uid`, `weekKey`, `state`, `relationshipStatus`, `blueprintFingerprint`, `journeyFingerprint`, dan `arsipFingerprint`.
+     - Zero kebocoran cache antar-UID terbukti secara komparatif.
+  4. **Diferensiasi Personal & Temporal Substansial:**
+     - Profil dengan data natal dan blueprint berbeda (Alpha vs Beta) menghasilkan teks pembacaan yang unik across seluruh ranah.
+     - Perubahan minggu kalender menghasilkan perubahan aspek langit kolektif, fase bulan, dan dinamika pekan.
+  5. **Penjajaran UI Dashboard:**
+     - Ranah ke-8 diselaraskan ke judul kanonikal `"Ruang yang Sedang Terbuka"`.
+     - Komponen `WeeklyGuidanceCard.tsx` tetap mempertahankan interaksi accordion, tipografi, dan preview summary tanpa regresi.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx tests/unit/build118-weekly-guidance.test.ts`: **231/231 PASS** (Baseline Build 118 contract; exit code 0).
+  - `npx tsx --test tests/unit/build121-sprint05-weekly-guidance.test.ts`: **7/7 PASS** (Boundary Senin-Minggu, kontrak 9 bagian & kalimat, diferensiasi profil Alpha/Beta, diferensiasi temporal minggu, degradasi jujur Journey, isolasi cache cross-UID, dan grounding Akashi tanpa plagiarisme prosa; exit code 0).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak disentuh).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-06 CATATAN HARI INI (B121-DAILY)**.

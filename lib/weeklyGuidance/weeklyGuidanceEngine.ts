@@ -100,7 +100,7 @@ export const DOMAIN_DEFINITIONS = [
   },
   {
     key: "ruangYangSedangTerbuka",
-    title: "Peluang yang Terbuka",
+    title: "Ruang yang Sedang Terbuka",
     focus: "potensi bertumbuh, rahmat kosmik, dan inisiatif baru",
     domain: "growth",
     primaryHouses: [5, 9, 10, 11],
@@ -300,7 +300,7 @@ export function extractFullCanonicalBlueprint(
 
   // Numerology
   const lpObj = (blueprint.lifePath as any) || (blueprint.numerology as any) || {};
-  const lifePathNumber = Number(lpObj.number || 0) || undefined;
+  const lifePathNumber = Number(lpObj.lifePathNumber || lpObj.lifePath || lpObj.number || 0) || undefined;
   const lpInfo = lifePathNumber ? lifePathData[lifePathNumber] : undefined;
   const lifePathRole = lpInfo ? lpInfo.roleId || lpInfo.role : undefined;
 
@@ -416,7 +416,7 @@ export function extractFullCanonicalBlueprint(
     ? {
         element: String(dmRaw.element),
         polarity: String(dmRaw.polarity || ""),
-        stemPinyin: String(dmRaw.stemPinyin || ""),
+        stemPinyin: String(dmRaw.stemPinyin || dmRaw.pinyin || ""),
       }
     : undefined;
 
@@ -649,6 +649,125 @@ function buildDynamicPhases(
   };
 }
 
+export type ExtractedJourney = {
+  available: boolean;
+  activeFocus?: string;
+  stage?: string;
+  challenge?: string;
+  reflection?: string;
+  nextStep?: string;
+  factIds: string[];
+};
+
+export function extractJourneyContext(
+  journeyInput?: Record<string, unknown> | null,
+  profile?: Record<string, unknown>
+): ExtractedJourney {
+  const j = (journeyInput ||
+    profile?.journeyState ||
+    profile?.currentJourney ||
+    profile?.journeyMemory ||
+    profile?.wellnessJourney) as Record<string, unknown> | undefined;
+
+  if (!j || typeof j !== "object") {
+    return { available: false, factIds: [] };
+  }
+
+  const focus = String(j.activeFocus || j.currentFocus || j.selectedIntention || j.focus || "").trim() || undefined;
+  const stage = String(j.stage || j.activeStage || j.currentStage || "").trim() || undefined;
+  const challenge = String(j.challenge || j.currentChallenge || j.obstacle || "").trim() || undefined;
+  const reflection = String(j.latestReflection || j.recentReflection || j.reflection || "").trim() || undefined;
+  const nextStep = String(j.nextAction || j.pendingAction || j.nextStep || j.action || "").trim() || undefined;
+
+  const factIds: string[] = [];
+  if (focus) factIds.push(`journey/focus:${focus.slice(0, 30)}`);
+  if (stage) factIds.push(`journey/stage:${stage.slice(0, 30)}`);
+  if (challenge) factIds.push(`journey/challenge:${challenge.slice(0, 30)}`);
+  if (reflection) factIds.push(`journey/reflection:${reflection.slice(0, 30)}`);
+  if (nextStep) factIds.push(`journey/nextStep:${nextStep.slice(0, 30)}`);
+
+  const available = factIds.length > 0;
+  return {
+    available,
+    activeFocus: focus,
+    stage,
+    challenge,
+    reflection,
+    nextStep,
+    factIds,
+  };
+}
+
+const DOMAIN_ARSIP_READING_MAP: Record<string, string[]> = {
+  kabarMingguIni: ["arketipe-utama", "cara-hadir-di-dunia", "ritme-energi-alami"],
+  pikiran: ["cara-berpikir-memaknai", "cara-mengambil-keputusan", "pola-respons-kehidupan"],
+  ekonomi: ["ekonomi-pola-penghasilan", "money-block", "arah-karya-kontribusi"],
+  asmara: ["kebutuhan-emosional-relasi", "memberi-menerima-cinta", "pola-ketertarikan-pasangan"],
+  orangTerdekat: ["konflik-komunikasi-batas", "kebutuhan-emosional-relasi", "arah-relasi-matang"],
+  maknaBatin: ["ruang-hening-koneksi-ilahi", "tujuan-jiwa-evolusi", "pintu-masuk-spiritual"],
+  yangMungkinTerasaBerat: ["bayangan-pola-bawah-sadar", "titik-luka-penyembuhan", "karma-pola-berulang"],
+  ruangYangSedangTerbuka: ["talenta-alami", "kemampuan-sudah-dimiliki", "arah-penyembuhan-integrasi"],
+};
+
+function attachArsipAkashiInsight(
+  domainKey: string,
+  arsipViewModel: ArsipAkashiProfileViewModel | undefined,
+  parts: string[],
+  foundations: ReadingFoundationEntry[],
+  usedReadingIds: Set<string>
+) {
+  if (!arsipViewModel || arsipViewModel.status === "unavailable" || !Array.isArray(arsipViewModel.readings) || arsipViewModel.readings.length === 0) {
+    return;
+  }
+  const candidateIds = DOMAIN_ARSIP_READING_MAP[domainKey] || [];
+  const matched = arsipViewModel.readings.find((r) => candidateIds.includes(r.id));
+  if (!matched) return;
+
+  usedReadingIds.add(matched.id);
+  const rec = matched.recommendations?.[0] as {
+    contributingSystems?: string[];
+    growthGap?: string;
+  } | undefined;
+  const contributingSystems = Array.isArray(rec?.contributingSystems) ? rec.contributingSystems : [];
+  const systems = contributingSystems.length ? contributingSystems.join(", ") : "Blueprint";
+  const growthGap = typeof rec?.growthGap === "string" ? rec.growthGap : undefined;
+
+  if (growthGap && growthGap.length > 5) {
+    parts.push(`Pijakan Arsip Akashi (${matched.title}) menyarankan latihan: ${growthGap.toLowerCase()}.`);
+  }
+  foundations.push({
+    system: "Arsip Akashi",
+    indicator: matched.title,
+    detail: growthGap ? `Arah integrasi: ${growthGap}` : `Sintesis ${systems}`,
+  });
+}
+
+function attachJourneyInsight(
+  domainKey: string,
+  journeyContext: ExtractedJourney | undefined,
+  parts: string[],
+  foundations: ReadingFoundationEntry[]
+) {
+  if (!journeyContext || !journeyContext.available) return;
+
+  if (domainKey === "ruangYangSedangTerbuka" && (journeyContext.nextStep || journeyContext.activeFocus)) {
+    const focusText = journeyContext.activeFocus || journeyContext.nextStep;
+    parts.push(`Langkah perjalanan aktifmu (${focusText}) menemukan momentum baik untuk digerakkan.`);
+    foundations.push({
+      system: "Journey",
+      indicator: journeyContext.stage || "Tahap Aktif",
+      detail: `Fokus: ${focusText}`,
+    });
+  } else if (domainKey === "yangMungkinTerasaBerat" && journeyContext.challenge) {
+    parts.push(`Tantangan perjalanan yang sedang kamu amati (${journeyContext.challenge}) mengingatkanmu untuk melambat tanpa rasa bersalah.`);
+    foundations.push({
+      system: "Journey",
+      indicator: "Tantangan Perjalanan",
+      detail: journeyContext.challenge,
+    });
+  }
+}
+
 function synthesizeDomainInterpretation(
   def: (typeof DOMAIN_DEFINITIONS)[number],
   matchedAspect: TransitToNatalAspect | undefined,
@@ -656,7 +775,10 @@ function synthesizeDomainInterpretation(
   cb: ExtractedBlueprint,
   relStatus: RelationshipStatus = "unspecified",
   relevanceScore: number = 0,
-  timezone: string = "Asia/Jakarta"
+  timezone: string = "Asia/Jakarta",
+  arsipViewModel?: ArsipAkashiProfileViewModel,
+  journeyContext?: ExtractedJourney,
+  usedAkashiReadingIds?: Set<string>
 ): {
   evidence: WeeklyAstrologicalEvidence;
   summary: string;
@@ -730,13 +852,13 @@ function synthesizeDomainInterpretation(
     let blueprintContribution = "";
     let spiritualMeaning = "";
     let actionAdvice = "";
+    const parts: string[] = [];
 
     switch (def.key) {
       case "kabarMingguIni": {
         summary = "Fokus utama terarah pada penataan energi dan penegasan prioritas hidup yang jernih.";
         astrologicalMeaning = `Fokus kosmik pekan ini mengalir melalui pergerakan ${tBodyName} di ${matchedAspect.transitSign} derajat ${matchedAspect.transitDegree} yang melintasi ${houseContext}. Pembentukan aspek ${aspectName} dengan ${nBodyName} natalmu menghadirkan dinamika nyata antara dorongan memimpin arah hidup dengan kesiapan menjaga stabilitas vitalitas diri.`;
 
-        const parts: string[] = [];
         if (cb.lifePathNumber) {
           parts.push(`Sebagai pemilik Life Path ${cb.lifePathNumber} (${cb.lifePathRole || "Pribadi"}), kamu dipanggil untuk memimpin langkah dengan integritas yang tenang.`);
           foundations.push({ system: "Numerologi", indicator: `Life Path ${cb.lifePathNumber}`, detail: cb.lifePathRole || "Esensi Jiwa" });
@@ -760,7 +882,6 @@ function synthesizeDomainInterpretation(
         summary = "Pikiran diajak mengendapkan asumsi berlebih dan menjaga kejernihan sebelum bertindak.";
         astrologicalMeaning = `Dinamika berpikir, komunikasi, dan pertimbangan keputusanmu dipicu oleh interaksi ${aspectName} antara ${tBodyName} dan ${nBodyName} natalmu di ${houseContext}. Kejernihan sangat dibutuhkan untuk memisahkan mana fakta objektif dan mana proyeksi kekhawatiran yang belum tentu terjadi.`;
 
-        const parts: string[] = [];
         if (cb.hdOpenCenters.includes("Head") || cb.hdOpenCenters.includes("Ajna")) {
           parts.push(`Pusat ${cb.hdOpenCenters.includes("Ajna") ? "Ajna" : "Kepala"} terbuka di Human Design milikmu menunjukkan bahwa kamu sangat peka menyerap keraguan atau pertanyaan orang lain di sekitarmu.`);
           foundations.push({ system: "Human Design", indicator: "Pusat Ajna/Kepala Terbuka", detail: "Kepekaan menyerap stimulasi ide luar" });
@@ -787,7 +908,6 @@ function synthesizeDomainInterpretation(
         summary = "Pengelolaan materi memerlukan ketelitian realistis dan etika kerja yang teratur.";
         astrologicalMeaning = `Urusan materi, pekerjaan, dan pengelolaan sumber daya terpapar langsung oleh transit ${tBodyName} yang terhubung dengan ${houseContext}. Ini adalah momen pemeriksaan realistis terhadap bagaimana kamu menghargai waktu, keterampilan, dan kapasitas finansialmu.`;
 
-        const parts: string[] = [];
         if (cb.dmMoneyLine.length > 0) {
           const moneyArcanas = cb.dmMoneyLine.map(getArcanaTitle).join(", ");
           parts.push(`Garis Keuangan pada Destiny Matrix-mu (${moneyArcanas}) menegaskan bahwa kelimpahanmu mengalir bukan melalui spekulasi tergesa-gesa, melainkan dari ketepatan nilai kerja dan etika pelayanan yang lurus.`);
@@ -813,8 +933,6 @@ function synthesizeDomainInterpretation(
       }
 
       case "asmara": {
-        const parts: string[] = [];
-
         if (cb.dmLoveLine.length > 0) {
           const loveInterp = interpretLovePathArcana(cb.dmLoveLine, relStatus);
           parts.push(loveInterp.summary);
@@ -897,7 +1015,6 @@ function synthesizeDomainInterpretation(
         summary = "Menegakkan batasan sosial yang sehat demi menjaga kedamaian ruang pribadi.";
         astrologicalMeaning = `Interaksi dengan keluarga, lingkaran sahabat, dan relasi sosial harianmu dipengaruhi oleh pergerakan ${tBodyName} yang mengaktifkan ${houseContext}. Ini adalah momentum untuk menegakkan batasan sosial yang sehat tanpa kehilangan rasa hormat dan kasih sayang.`;
 
-        const parts: string[] = [];
         if (cb.hdProfile) {
           parts.push(`Profil Human Design ${cb.hdProfile} milikmu menentukan bagaimana kamu berinteraksi secara sosial: kamu butuh menjaga ruang pribadi agar energimu tidak terdistorsi oleh tuntutan lingkungan.`);
           foundations.push({ system: "Human Design", indicator: `Profil ${cb.hdProfile}`, detail: "Dinamika peran sosial dan penarikan energi" });
@@ -921,7 +1038,6 @@ function synthesizeDomainInterpretation(
         summary = "Keheningan jiwa menjadi tempat memulihkan kejernihan dan mendengarkan intuisi terdalam.";
         astrologicalMeaning = `Ruang hening, lintasan spiritual, dan renungan terdalammu tersentuh kuat oleh koneksi ${aspectName} antara ${tBodyName} dan ${nBodyName} natalmu di ${houseContext}. Lapisan intuisi terbuka lebih peka, mengundangmu menyelami arti di balik peristiwa-peristiwa yang sedang kamu lalui.`;
 
-        const parts: string[] = [];
         if (cb.vedicNakshatra) {
           parts.push(`Kelahiranmu di bawah naungan Nakshatra ${cb.vedicNakshatra}${cb.vedicNakshatraLord ? ` (dinaungi planet ${cb.vedicNakshatraLord})` : ""} mempertegas bahwa jiwamu selalu mencari kebenaran hakiki di balik tabir kehidupan materi.`);
           foundations.push({ system: "Vedic Jyotish", indicator: `Nakshatra ${cb.vedicNakshatra}`, detail: `Planet Penguasa: ${cb.vedicNakshatraLord || "Utama"}` });
@@ -949,7 +1065,6 @@ function synthesizeDomainInterpretation(
         summary = "Mengenali titik keletihan batin dan melepaskan dorongan mengendalikan hal di luar kuasa.";
         astrologicalMeaning = `Titik friksi, rasa berat, atau keletihan batin pekan ini terkonsentrasi pada tegangan ${aspectName} antara ${tBodyName} dan ${nBodyName} natalmu di ${houseContext}. Ini adalah titik di mana pola lama yang kaku sedang diuji agar kamu belajar melepaskan kendali berlebihan.`;
 
-        const parts: string[] = [];
         if (cb.dmKarmicTail.length > 0) {
           const ktInterp = interpretKarmicTail(cb.dmKarmicTail);
           parts.push(ktInterp.summary);
@@ -979,7 +1094,6 @@ function synthesizeDomainInterpretation(
         summary = "Peluang bertumbuh hadir melalui konsistensi langkah kecil yang dijalankan dengan tulus.";
         astrologicalMeaning = `Ruang berkah, kemudahan, dan potensi bertumbuh hadir melalui harmonisasi ${aspectName} antara ${tBodyName} dan ${nBodyName} natalmu di ${houseContext}. Ini adalah celah kesempatan di mana semesta memberi dukungan bagi inisiatif yang kamu jalankan dengan kerendahan hati.`;
 
-        const parts: string[] = [];
         if (cb.dmTalents.length > 0) {
           const talentArcanas = cb.dmTalents.slice(0, 3).map(getArcanaTitle).join(", ");
           parts.push(`Garis Bakat pada Destiny Matrix (${talentArcanas}) menunjukkan potensi alami yang siap kamu manfaatkan untuk memberi dampak baik.`);
@@ -1004,6 +1118,14 @@ function synthesizeDomainInterpretation(
         break;
       }
     }
+
+    if (arsipViewModel && usedAkashiReadingIds) {
+      attachArsipAkashiInsight(def.key, arsipViewModel, parts, foundations, usedAkashiReadingIds);
+    }
+    if (journeyContext?.available) {
+      attachJourneyInsight(def.key, journeyContext, parts, foundations);
+    }
+    blueprintContribution = parts.join(" ");
 
     const crossSystemSynthesis = cleanSentence(
       `${astrologicalMeaning} ${blueprintContribution} ${spiritualMeaning}`
@@ -1119,6 +1241,12 @@ function synthesizeDomainInterpretation(
     parts.push(`Lentera batin dari ${getArcanaTitle(cb.dmCenter)} menjaga kedamaian di area ini agar tetap utuh.`);
     foundations.push({ system: "Destiny Matrix", indicator: `Pusat Arcana ${cb.dmCenter}`, detail: "Jangkar Keseimbangan Jiwa" });
   }
+  if (arsipViewModel && usedAkashiReadingIds) {
+    attachArsipAkashiInsight(def.key, arsipViewModel, parts, foundations, usedAkashiReadingIds);
+  }
+  if (journeyContext?.available) {
+    attachJourneyInsight(def.key, journeyContext, parts, foundations);
+  }
   const blueprintContribution = parts.join(" ");
 
   const summary = `Ritme di bidang ${def.focus} berjalan stabil tanpa gejolak kosmik yang menuntut tindakan darurat.`;
@@ -1204,6 +1332,9 @@ export function buildWeeklyGuidance(input: {
     }
   }
 
+  const journeyContext = extractJourneyContext(input.journey, input.profile);
+  const usedAkashiReadingIds = new Set<string>();
+
   // Synthesize sections
   const sections: WeeklyGuidanceSection[] = domainAspectMatches.map(({ def, aspect, score }) => {
     const interp = synthesizeDomainInterpretation(
@@ -1213,14 +1344,24 @@ export function buildWeeklyGuidance(input: {
       canonicalBlueprint,
       relationshipStatus,
       score,
-      timezone
+      timezone,
+      input.arsipViewModel,
+      journeyContext,
+      usedAkashiReadingIds
     );
 
+    const distilledAstrology = cleanSentence(interp.astrologicalMeaning.split(/(?<=[.!?])\s+/)[0] || interp.astrologicalMeaning);
+    const distilledSpiritual = cleanSentence(interp.spiritualMeaning.split(/(?<=[.!?])\s+/)[0] || interp.spiritualMeaning);
+    const blueprintSentences = interp.blueprintContribution.split(/(?<=[.!?])\s+/).filter((s) => s.trim().length > 5);
+    const specificSentence = blueprintSentences.find(s => 
+      s.includes("Life Path") || s.includes("energimu") || s.includes("Pola energi") || s.includes("Garis") || s.includes("Love Path") || s.includes("Karmic Tail") || s.includes("Pijakan Arsip Akashi")
+    ) || blueprintSentences[0] || interp.blueprintContribution;
+    const distilledBlueprint = cleanSentence(specificSentence);
+
     const paragraphs = [
-      interp.crossSystemSynthesis || interp.spiritualMeaning,
-      interp.astrologicalMeaning,
-      interp.blueprintContribution,
-      interp.advice.join(" "),
+      distilledAstrology,
+      distilledSpiritual,
+      distilledBlueprint,
     ].filter(Boolean);
 
     return {
@@ -1239,7 +1380,13 @@ export function buildWeeklyGuidance(input: {
       advice: interp.advice,
       phases: interp.phases,
       paragraphs,
-      sourceDomains: [def.domain, "personal-astrology", "canonical-blueprint"],
+      sourceDomains: [
+        def.domain,
+        "personal-astrology",
+        "canonical-blueprint",
+        ...(arsipAvailable ? ["arsip-akashi"] : []),
+        ...(journeyContext.available ? ["journey"] : []),
+      ],
       timingEvidence: aspect ? [aspect.summary] : ["calm-rhythm"],
     };
   });
@@ -1313,17 +1460,55 @@ export function buildWeeklyGuidance(input: {
     mainSpiritualMessage,
   };
 
+  const journeySentence = journeyContext.available && (journeyContext.activeFocus || journeyContext.nextStep)
+    ? `Di tahap perjalanan ${journeyContext.stage || "aktif"}, rawat ${journeyContext.activeFocus || journeyContext.nextStep} sebagai panduan langkahmu.`
+    : "Gunakan pekan ini untuk menyelaraskan ritme harianmu dengan komitmen batin yang jujur.";
+
   const weeklyDirection = {
     title: "Arah Minggu Ini" as const,
     paragraphs: [
-      `Memasuki rentang waktu ${window.dateRangeFormatted}, ${collective.collectiveTheme.toLowerCase()}`,
+      cleanSentence(`Memasuki rentang waktu ${window.dateRangeFormatted}, ${collective.collectiveTheme.toLowerCase()}`),
       mostActivePersonalTransit
-        ? `Transit paling aktif yang menyentuh petamu adalah ${mostActivePersonalTransit.summary}. Peristiwa ini mengarahkan perhatianmu ke rumah ke-${mostActivePersonalTransit.transitHouse} dan ke-${mostActivePersonalTransit.natalHouse} Placidus.`
-        : "Langit minggu ini bergerak dalam harmoni yang tenang tanpa aspek tegang langsung ke penempatan natalmu.",
-      mainSpiritualMessage,
+        ? cleanSentence(`Transit paling aktif yang menyentuh petamu adalah ${mostActivePersonalTransit.summary}. Peristiwa ini mengarahkan perhatianmu ke rumah ke-${mostActivePersonalTransit.transitHouse} dan ke-${mostActivePersonalTransit.natalHouse} Placidus.`)
+        : cleanSentence("Langit minggu ini bergerak dalam harmoni yang tenang tanpa aspek tegang langsung ke penempatan natalmu."),
+      cleanSentence(`Pekan ini mengajakmu untuk ${userFocus}. Prioritas mingguanmu adalah menjaga konsistensi pada arah utama ini dan tidak terpencar oleh distraksi sesaat. ${journeySentence}`),
     ],
-    sourceDomains: ["collective-sky", "personal-transit", "canonical-blueprint"],
+    sourceDomains: [
+      "collective-sky",
+      "personal-transit",
+      "canonical-blueprint",
+      ...(journeyContext.available ? ["journey"] : []),
+      ...(arsipAvailable ? ["arsip-akashi"] : []),
+    ],
   };
+
+  const availableSources: string[] = [];
+  const limitedSources: string[] = [];
+  const unavailableSources: string[] = [];
+
+  if (hasNatalData) availableSources.push("personal-astrology");
+  else limitedSources.push("personal-astrology");
+
+  if (canonicalBlueprint.lifePathNumber || canonicalBlueprint.hdType) availableSources.push("canonical-blueprint");
+  else limitedSources.push("canonical-blueprint");
+
+  if (arsipAvailable) availableSources.push("arsip-akashi");
+  else unavailableSources.push("arsip-akashi");
+
+  if (journeyContext.available) availableSources.push("journey");
+  else limitedSources.push("journey");
+
+  const bpHash = canonicalBlueprint.lifePathNumber
+    ? `lp${canonicalBlueprint.lifePathNumber}_hd${canonicalBlueprint.hdType || ""}_dm${canonicalBlueprint.dmCenter || ""}`
+    : "nobp";
+  const jHash = journeyContext.available
+    ? `j${journeyContext.factIds.length}_${journeyContext.stage || ""}_${journeyContext.activeFocus || ""}`
+    : "noj";
+  const akHash = arsipAvailable
+    ? `ak${input.arsipViewModel.readings.length}_${input.arsipViewModel.readings[0]?.id || ""}`
+    : "noak";
+
+  const synthesisFingerprint = `${input.uid}_${window.weekKey}_${state}_${relationshipStatus}_${bpHash}_${jHash}_${akHash}`;
 
   return {
     uid: input.uid,
@@ -1334,14 +1519,17 @@ export function buildWeeklyGuidance(input: {
     guidancePeriodMode: mode,
     state,
     relationshipStatus,
-    availableSources: hasNatalData ? ["personal-astrology", "canonical-blueprint", "arsip-akashi"] : ["canonical-blueprint"],
-    limitedSources: !hasNatalData ? ["personal-astrology"] : [],
-    unavailableSources: !arsipAvailable ? ["arsip-akashi"] : [],
+    availableSources,
+    limitedSources,
+    unavailableSources,
     cosmicSummary,
     sections,
     weeklyDirection,
     sourceProvenance: {
-      sourceReadingIds: input.arsipViewModel?.readings?.map((r) => r.id) || [],
+      sourceReadingIds: Array.from(new Set([
+        ...Array.from(usedAkashiReadingIds),
+        ...(input.arsipViewModel?.readings?.map((r) => r.id) || []),
+      ])),
       sourceDomains: Array.from(new Set(sections.flatMap((s) => s.sourceDomains))),
       contributingSystems: [
         "Destiny Matrix",
@@ -1350,10 +1538,12 @@ export function buildWeeklyGuidance(input: {
         "Vedic Astrology",
         "Numerology",
         "Western Astrology",
+        ...(arsipAvailable ? ["Arsip Akashi"] : []),
+        ...(journeyContext.available ? ["Journey"] : []),
       ],
       timingFactIds: aspects.map((a) => `${a.transitBody}_${a.aspect}_${a.natalPlacement.name}`),
-      journeyFactIds: [],
+      journeyFactIds: journeyContext.factIds,
     },
-    synthesisFingerprint: `${input.uid}_${window.weekKey}_${state}_${relationshipStatus}`,
+    synthesisFingerprint,
   };
 }
