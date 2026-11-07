@@ -622,7 +622,7 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
 ## 21. SPRINT 121-08: FINAL INTEGRATION & RELEASE READINESS (B121-REL) — 07 NOVEMBER 2026
 
 * **Status:** `PASS LOCAL`
-* **Commit:** Pending local commit
+* **Commit:** `46a0256`
 * **Tujuan:** Menyelesaikan integrasi menyeluruh BUILD 121, regression multi-lapisan (Backend, Rules, 11 Blueprint, Arsip Akashi, Panduan Minggu Ini, Catatan Hari Ini, Wellness Companion, Paritas Dashboard/Profile, Lilith ephemeris, BaZi/Vedic recovery, Memorial Footer Sheina), eksekusi pipeline ekspor statis Next.js (78/78 rute), sinkronisasi Capacitor Android, perakitan dan verifikasi kandidat AAB Build 121 (`versionCode = 121`, `versionName = "5.0.21"`), verifikasi sertifikat penandatanganan resmi, serta penguncian rilis produksi berbasis dependensi backend.
 * **Hasil Verifikasi Kunci:**
   1. **Integrasi Regresi Menyeluruh (100% PASS across all suites):**
