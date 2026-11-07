@@ -83,6 +83,13 @@
 - [x] `B121-REL-05` **Governance sync** — Update existing SoT index, Master TODO, Sprint/Evidence/Risk registers, Decision/Handover log; `BLOCKED` not `DONE` when not deployed: `DONE_LOCAL`
 - [ ] `B121-REL-06` **Founder GO/NO-GO** — Explicit approval for any production service, Rules, Play upload, or paid service: `WAITING_APPROVAL`
 
+### J. B121-AK01 — Arsip Akashi Refinement (Deep Narrative & Blueprint Jiwa Voice) — SPRINT AK-01 COMPLETE
+- [x] `B121-AK01-01` **Eliminate mechanical/formulaic slot language** — Removed boilerplate phrasing across all 49 regular readings (`Bacaan X membaca...`, `Bagian ini berbeda...`, `Melalui cara...`); replaced with warm, evocative, deeply personal voice of Blueprint Jiwa Bhumi Amartya: `DONE_LOCAL`
+- [x] `B121-AK01-02` **Fact cue humanizer (`humanizeFactCue`)** — Convert raw technical blueprint tokens (HD types/authorities/profiles/not-self, Numerology 1-9/11/22/33, Zodiac, Destiny Matrix 1-22, BaZi elements, Weton pasaran) into poetic, flowing Indonesian wisdom phrases: `DONE_LOCAL`
+- [x] `B121-AK01-03` **Strict 3x3 & 5x5 reading contract compliance** — 100% compliance across all 49 standard readings (3 paragraphs x 3 sentences = 9 sentences per reading) and 3 Surat Jiwa (5 paragraphs x 5 sentences); verified by `arsip_akashi_3x3_contract.test.ts` (180/180 PASS): `DONE_LOCAL`
+- [x] `B121-AK01-04` **Substantive personalization differentiation** — 0 duplicate readings across distinct profiles (Alpha, Beta, Gamma); dynamic mutation reactivity; honest sparse degradation; verified by `build121-sprint04-arsip-akashi.test.ts` (7/7 PASS): `DONE_LOCAL`
+- [x] `B121-AK01-05` **Scope discipline** — Zero UI changes in AK-01; Saran Bhumi block & user source disclosure deferred to Sprint AK-02 per Founder Directive: `DONE_LOCAL`
+
 ---
 
 ## Current Release 119 gates — 2026-11-03

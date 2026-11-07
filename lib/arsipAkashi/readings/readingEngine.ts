@@ -311,14 +311,229 @@ function sanitizeVisible(text: string): string {
 }
 
 function safeFactCue(value: string, fallback: string): string {
-  const cleaned = sanitizeVisible(value)
-    .toLowerCase()
+  return humanizeFactCue(value, "general", "general", fallback);
+}
+
+const HD_TYPE_MAP: Record<string, string> = {
+  generator: "daya cipta berkelanjutan yang merespons panggilan nyata",
+  "manifesting generator": "kecepatan bergerak dinamis yang menyatukan inisiasi dan respons",
+  "manifesting-generator": "kecepatan bergerak dinamis yang menyatukan inisiasi dan respons",
+  projector: "kepekaan membimbing dan mengenali esensi sistem sekitar",
+  manifestor: "daya inisiasi mandiri yang berani membuka jalan baru",
+  reflector: "kejernihan cermin batin yang merefleksikan kesehatan lingkungan",
+};
+
+const HD_AUTHORITY_MAP: Record<string, string> = {
+  sacral: "kejujuran sinyal tubuh seketika",
+  emotional: "kejernihan rasa yang mematang bersama waktu dan gelombang perasaan",
+  "solar plexus": "kejernihan rasa yang mematang bersama waktu dan gelombang perasaan",
+  splenic: "ketajaman intuisi seketika demi keselamatan dan ketenangan tubuh",
+  spleen: "ketajaman intuisi seketika demi keselamatan dan ketenangan tubuh",
+  ego: "keteguhan kehendak hati yang tulus",
+  heart: "keteguhan kehendak hati yang tulus",
+  "self-projected": "kejujuran resonansi suara batin saat berbicara tanpa beban",
+  "g-center": "kejujuran resonansi suara batin saat berbicara tanpa beban",
+  environmental: "kejernihan pikiran yang membutuhkan ruang lingkungan yang selaras",
+  mental: "kejernihan pikiran yang membutuhkan ruang lingkungan yang selaras",
+  lunar: "kebijaksanaan menyelaraskan keputusan dengan siklus waktu",
+};
+
+const HD_PROFILE_MAP: Record<string, string> = {
+  "1/3": "fondasi penyelidikan mendalam yang ditempa oleh pengalaman nyata",
+  "1 3": "fondasi penyelidikan mendalam yang ditempa oleh pengalaman nyata",
+  "1/4": "fondasi penyelidikan kokoh yang diperkuat oleh kehangatan jejaring pertemanan",
+  "1 4": "fondasi penyelidikan kokoh yang diperkuat oleh kehangatan jejaring pertemanan",
+  "2/4": "bakat alami yang terpanggil melalui perjumpaan bermakna",
+  "2 4": "bakat alami yang terpanggil melalui perjumpaan bermakna",
+  "2/5": "bakat alami yang mampu memproyeksikan solusi praktis bagi sesama",
+  "2 5": "bakat alami yang mampu memproyeksikan solusi praktis bagi sesama",
+  "3/5": "kebijaksanaan dari uji coba langsung yang menawarkan solusi nyata bagi sesama",
+  "3 5": "kebijaksanaan dari uji coba langsung yang menawarkan solusi nyata bagi sesama",
+  "3/6": "keberanian bereksperimen yang bermuara pada keteladanan hidup matang",
+  "3 6": "keberanian bereksperimen yang bermuara pada keteladanan hidup matang",
+  "4/6": "kehangatan relasi yang tumbuh menjadi figur pengamat bijaksana",
+  "4 6": "kehangatan relasi yang tumbuh menjadi figur pengamat bijaksana",
+  "4/1": "ketetapan arah batin yang berpijak pada persahabatan kokoh",
+  "4 1": "ketetapan arah batin yang berpijak pada persahabatan kokoh",
+  "5/1": "daya kepemimpinan solutif yang berakar pada penyelidikan mendalam",
+  "5 1": "daya kepemimpinan solutif yang berakar pada penyelidikan mendalam",
+  "5/2": "kemampuan menawarkan jalan keluar sembari merawat ruang pemulihan pribadi",
+  "5 2": "kemampuan menawarkan jalan keluar sembari merawat ruang pemulihan pribadi",
+  "6/2": "keteladanan batin yang memerlukan ruang hening untuk menyerap hikmah",
+  "6 2": "keteladanan batin yang memerlukan ruang hening untuk menyerap hikmah",
+  "6/3": "keteladanan jiwa yang terus diperbarui lewat keberanian belajar dari dinamika hidup",
+  "6 3": "keteladanan jiwa yang terus diperbarui lewat keberanian belajar dari dinamika hidup",
+};
+
+const NUMEROLOGY_NUMBER_MAP: Record<string, string> = {
+  "1": "keberanian merintis langkah mandiri dan kepemimpinan orisinal",
+  "2": "kepekaan menyelaraskan rasa dan membangun jembatan kerja sama",
+  "3": "daya ekspresi kreatif yang menyegarkan suasana dan menghidupkan karya",
+  "4": "ketekunan menyusun fondasi yang stabil, tertib, dan berdaya tahan",
+  "5": "keluwesan menjemput dinamika perubahan dan kemerdekaan batin",
+  "6": "kehangatan merawat keharmonisan, keluarga, dan tanggung jawab cinta",
+  "7": "kedalaman kontemplasi yang tekun mencari hakikat kebenaran",
+  "8": "kemampuan mengelola otoritas, daya wujud, dan kelimpahan nyata",
+  "9": "kelapangan welas asih universal yang mengikhlaskan siklus lama",
+  "11": "kepekaan inspirasi intuitif yang menjembatani wawasan batin",
+  "22": "daya wujud besar yang mengubah cita-cita luhur menjadi realitas fisik",
+  "33": "pengabdian penuh welas asih yang mengasuh kesadaran sesama",
+};
+
+const ZODIAC_SIGN_MAP: Record<string, string> = {
+  aries: "dorongan memulai langkah baru dengan keberanian penuh",
+  taurus: "ketenangan menjaga stabilitas, kenyamanan, dan kualitas membumi",
+  gemini: "kelincahan menghubungkan gagasan dan bertukar sudut pandang",
+  cancer: "kelembutan menjaga ruang batin dan kelekatan emosional",
+  leo: "kemuliaan hati yang memancarkan kehangatan dan inspirasi tulus",
+  virgo: "ketelitian menyempurnakan detail dan ketulusan melayani",
+  libra: "kepekaan menimbang keadilan, harmoni, dan keindahan relasi",
+  scorpio: "ketajaman menyelami kedalaman emosi dan transformasi batin",
+  sagittarius: "kelapangan jiwa dalam mencari makna luas dan cakrawala baru",
+  capricorn: "ketangguhan mendaki tanggung jawab melalui integritas dan disiplin",
+  aquarius: "orisinalitas pandangan yang berpihak pada kemanusiaan dan masa depan",
+  pisces: "keheningan empati yang meresapi rasa halus kehidupan",
+};
+
+const DESTINY_MATRIX_ARCANA_MAP: Record<string, string> = {
+  "1": "daya kehendak mencipta dan menggerakkan potensi",
+  "2": "keheningan intuisi yang menjaga kedalaman rahasia batin",
+  "3": "kelimpahan daya asuh yang menyuburkan pertumbuhan dan keindahan",
+  "4": "ketegasan menata struktur, perlindungan, dan tanggung jawab nyata",
+  "5": "kebijaksanaan menyampaikan ajaran dan memelihara nilai luhur",
+  "6": "kejujuran memilih dari keterbukaan cinta yang tulus dan harmonis",
+  "7": "fokus mengarahkan tujuan untuk mengatasi rintangan perjalanan",
+  "8": "kejernihan memahami sebab-akibat dan menegakkan keadilan batin",
+  "9": "kedalaman penjelajahan sunyi guna menemukan lentera kebijaksanaan",
+  "10": "keluwesan berselaras dengan pasang surut roda rezeki kehidupan",
+  "11": "kelembutan menundukkan ego melalui ketabahan dan kekuatan batin",
+  "12": "keberanian melihat dari sudut pandang baru dengan kerelaan bijak",
+  "13": "keikhlasan melepaskan wujud usang demi menyambut pembaruan hidup",
+  "14": "keanggunan memadukan perbedaan dalam kesabaran dan keseimbangan",
+  "15": "kemampuan mengenali keterikatan ilusi dan membebaskan daya sejati",
+  "16": "keberanian meruntuhkan kepalsuan agar fondasi sejati merekah",
+  "17": "kejernihan bakat dan harapan yang menerangi jalan bagi sekitar",
+  "18": "keberanian merangkul ruang bawah sadar dan imajinasi mendalam",
+  "19": "kegembiraan berbagi terang, kelimpahan, dan kejayaan yang hangat",
+  "20": "kebangkitan kesadaran batin yang menyembuhkan ikatan masa lalu",
+  "21": "kelapangan jiwa yang merangkul keutuhan dan perdamaian semesta",
+  "22": "kemurnian hati yang melangkah dengan kepolosan dan kebebasan sejati",
+};
+
+const BAZI_ELEMENT_MAP: Record<string, string> = {
+  jia: "keteguhan pohon besar yang menaungi dan terus bertumbuh",
+  "yang wood": "keteguhan pohon besar yang menaungi dan terus bertumbuh",
+  yi: "kelenturan tanaman menjalar yang cerdas beradaptasi",
+  "yin wood": "kelenturan tanaman menjalar yang cerdas beradaptasi",
+  bing: "kehangatan surya yang memancarkan terang tanpa pamrih",
+  "yang fire": "kehangatan surya yang memancarkan terang tanpa pamrih",
+  ding: "cahaya lentera yang menuntun dengan ketulusan dan kehangatan",
+  "yin fire": "cahaya lentera yang menuntun dengan ketulusan dan kehangatan",
+  wu: "ketenteraman gunung kokoh yang menjadi tempat berteduh terpercaya",
+  "yang earth": "ketenteraman gunung kokoh yang menjadi tempat berteduh terpercaya",
+  ji: "kesuburan tanah yang sabar menumbuhkan benih-benih kebaikan",
+  "yin earth": "kesuburan tanah yang sabar menumbuhkan benih-benih kebaikan",
+  geng: "ketajaman pedang yang menegakkan keadilan dan ketegasan prinsip",
+  "yang metal": "ketajaman pedang yang menegakkan keadilan dan ketegasan prinsip",
+  xin: "keindahan permata yang memancarkan kilau keanggunan dan martabat",
+  "yin metal": "keindahan permata yang memancarkan kilau keanggunan dan martabat",
+  ren: "kelapangan samudra yang mengalir luas dengan daya dorong besar",
+  "yang water": "kelapangan samudra yang mengalir luas dengan daya dorong besar",
+  gui: "kelembutan embun pagi yang meresap menyejukkan keheningan batin",
+  "yin water": "kelembutan embun pagi yang meresap menyejukkan keheningan batin",
+};
+
+const WETON_PASARAN_MAP: Record<string, string> = {
+  legi: "keikhlasan budi pekerti dan pandangan hidup yang optimis",
+  pahing: "semangat ketegasan, martabat diri, dan keberanian bersikap",
+  pon: "kearifan menjaga rasa aman, kebijaksanaan, dan kewibawaan batin",
+  wage: "ketahanan mental dalam menghadapi laku prihatin dan pemikiran hening",
+  kliwon: "kedalaman spiritual, keteguhan hati, dan kepekaan intuisi naluriah",
+};
+
+const HD_NOT_SELF_MAP: Record<string, string> = {
+  frustrasi: "sinyal kejujuran tubuh saat memaksakan hal yang belum selaras",
+  frustration: "sinyal kejujuran tubuh saat memaksakan hal yang belum selaras",
+  pahit: "sinyal batin ketika bimbingan dan kepekaanmu belum dihargai dengan tulus",
+  bitterness: "sinyal batin ketika bimbingan dan kepekaanmu belum dihargai dengan tulus",
+  marah: "dorongan batin yang terhambat saat langkahmu belum terinformasikan dengan baik",
+  anger: "dorongan batin yang terhambat saat langkahmu belum terinformasikan dengan baik",
+  kecewa: "tanda kebutuhan ruang hening untuk menyaring kejernihan lingkungan",
+  disappointment: "tanda kebutuhan ruang hening untuk menyaring kejernihan lingkungan",
+};
+
+function humanizeFactCue(factValue: string, systemId: string, domain: string, fallback: string): string {
+  const sanitized = sanitizeVisible(factValue)
+    .replace(/[.!?]+/g, "")
     .replace(/[_/|:;]+/g, " ")
-    .replace(/\b(undefined|null|unknown|unavailable|nan)\b/g, "")
+    .replace(/\b(undefined|null|unknown|unavailable|nan)\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
-  const words = cleaned.split(/\s+/).filter((word) => word.length >= 1);
-  if (words.length >= 1) return words.slice(0, 9).join(" ");
+
+  if (!sanitized) return fallback;
+
+  const lower = sanitized.toLowerCase();
+
+  for (const [key, meaning] of Object.entries(HD_NOT_SELF_MAP)) {
+    if (lower === key || lower.includes(key)) return meaning;
+  }
+
+  for (const [key, meaning] of Object.entries(HD_PROFILE_MAP)) {
+    if (lower === key || lower.includes(`profile ${key}`) || lower.includes(`profil ${key}`) || lower.includes(`profil relasi ${key}`)) {
+      return meaning;
+    }
+  }
+
+  for (const [key, meaning] of Object.entries(HD_TYPE_MAP)) {
+    if (lower === key || lower.includes(`type ${key}`) || lower === `tipe ${key}`) return meaning;
+  }
+
+  for (const [key, meaning] of Object.entries(HD_AUTHORITY_MAP)) {
+    if (lower === key || lower.includes(`authority ${key}`) || lower.includes(`otoritas ${key}`)) return meaning;
+  }
+
+  if (systemId === "numerology" || /^(lifepath|expression|soulurge|birthday)/i.test(lower)) {
+    const numMatch = lower.match(/\b(11|22|33|[1-9])\b/);
+    if (numMatch && NUMEROLOGY_NUMBER_MAP[numMatch[1]]) {
+      return NUMEROLOGY_NUMBER_MAP[numMatch[1]];
+    }
+  }
+
+  for (const [sign, meaning] of Object.entries(ZODIAC_SIGN_MAP)) {
+    if (lower.includes(sign)) return meaning;
+  }
+
+  if (systemId === "destiny-matrix" || lower.includes("arcana") || lower.includes("energi")) {
+    const arcMatch = lower.match(/\b(2[0-2]|1[0-9]|[1-9])\b/);
+    if (arcMatch && DESTINY_MATRIX_ARCANA_MAP[arcMatch[1]]) {
+      return DESTINY_MATRIX_ARCANA_MAP[arcMatch[1]];
+    }
+  }
+
+  for (const [elem, meaning] of Object.entries(BAZI_ELEMENT_MAP)) {
+    if (lower.includes(elem)) return meaning;
+  }
+
+  for (const [pasaran, meaning] of Object.entries(WETON_PASARAN_MAP)) {
+    if (lower.includes(pasaran)) return meaning;
+  }
+
+  const bareNum = lower.match(/^(11|22|33|[1-9])$/);
+  if (bareNum && NUMEROLOGY_NUMBER_MAP[bareNum[1]]) {
+    return NUMEROLOGY_NUMBER_MAP[bareNum[1]];
+  }
+
+  const cleanedText = lower
+    .replace(/\b(tema batin utama|dari sisi pendukung|melalui strategi kejelasan batin)\b/gi, "")
+    .replace(/\b(jalur rezeki|jalur relasi|ritme energi sumber daya)\b/gi, "kebijaksanaan energi")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (cleanedText.length > 5) {
+    const words = cleanedText.split(/\s+/);
+    return words.slice(0, 10).join(" ");
+  }
+
   return fallback;
 }
 
@@ -369,10 +584,10 @@ function selectReadingFacts(
 }
 
 function semanticThemesFor(reading: ArsipAkashiReadingDef, domains: string[], paragraphIndex: number): string[] {
-  return domains.slice(0, 3).map((domain, offset) => {
+  return domains.slice(0, 3).map((domain) => {
     const meaning = DOMAIN_MEANINGS[domain] ?? DOMAIN_MEANINGS.growth;
     const key = paragraphIndex === 1 ? meaning.core : paragraphIndex === 2 ? meaning.daily : paragraphIndex === 3 ? meaning.strength : paragraphIndex === 4 ? meaning.shadow : meaning.integration;
-    return sanitizeVisible(`${visibleReadingName(reading)}: ${key} ${offset === 0 ? "" : "dari sisi pendukung"}`.trim());
+    return sanitizeVisible(key.trim());
   });
 }
 
@@ -385,28 +600,67 @@ function buildParagraphSentences(
 ): string[] {
   const domainA = DOMAIN_MEANINGS[reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
   const domainB = DOMAIN_MEANINGS[reading.allowedDomains[1] ?? reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
-  const name = visibleReadingName(reading);
+  const name = reading.title;
   const cueA = factCues[0] ?? domainA.core;
-  const cueB = factCues[1] ?? domainB.core;
-  const cueC = factCues[2] ?? purpose.application;
+  let cueB = factCues[1] ?? domainB.core;
+  if (cueB === cueA) {
+    cueB = domainB.daily || domainA.daily;
+  }
+  let cueC = factCues[2] ?? purpose.application;
+  if (cueC === cueA || cueC === cueB) {
+    cueC = themes[2] ?? purpose.application;
+  }
+
   if (paragraphIndex === 1) {
+    let opening: string;
+    switch (reading.roomId) {
+      case "soul-identity":
+        opening = `Mengenali ${name} mengajakmu menyelami ${domainA.core}, yang bertumpu pada ${cueA} sebagai fondasi kompas batinmu.`;
+        break;
+      case "energy-mechanics":
+        opening = `Dinamika ${name} mengalirkan ${domainA.core}, di mana ritme energimu merespons kehidupan melalui ${cueA}.`;
+        break;
+      case "wounds-shadow-lineage":
+        opening = `Menyelami ${name} membuka pemahaman mendalam tentang ${domainA.core}, yang sering kali berakar dari ${cueA}.`;
+        break;
+      case "work-talents":
+        opening = `Ruang berkarya dalam ${name} mempertemukan ${domainA.core} dengan potensi nyata yang bersumber dari ${cueA}.`;
+        break;
+      case "love-relationships":
+        opening = `Dalam hubungan dan kedekatan, ${name} menyentuh dinamika ${domainA.core}, yang mengalir bersama ${cueA}.`;
+        break;
+      case "body-environment":
+        opening = `Keseimbangan raga dan ruang dalam ${name} menuntut kepekaan terhadap ${domainA.core}, selaras dengan ${cueA}.`;
+        break;
+      case "spirituality-evolution":
+        opening = `Perjalanan batin dalam ${name} membimbingmu menyadari ${domainA.core}, yang menuntun langkahmu melalui ${cueA}.`;
+        break;
+      default:
+        opening = `Dalam peta jiwamu, ${name} mencerminkan ${domainA.core}, yang berakar kuat pada ${cueA}.`;
+        break;
+    }
+
+    const activationPhrase = purpose.activation.startsWith("saat") ? purpose.activation : `saat ${purpose.activation}`;
+
     return [
-      `Bacaan ${name} membaca ${purpose.purpose} melalui ${domainA.core} yang terhubung dengan ${cueA}.`,
-      `Dalam keseharian, pola ${name} aktif ketika ${purpose.activation} dan ${domainA.daily} dipertegas oleh ${cueB}.`,
-      `Bagian ini ${purpose.distinction} melalui cara ${cueC} membentuk keputusan dan pilihan kecilmu.`,
+      opening,
+      `Dalam keseharian, dorongan ini terasa nyata ${activationPhrase}, di mana ${domainA.daily} berpadu dengan ${cueB}.`,
+      `Kejernihanmu bertumbuh ketika kamu menyadari bahwa ${cueC} menjadi panduan batin yang memandu setiap pilihan kecilmu.`,
     ];
   }
+
   if (paragraphIndex === 2) {
     return [
-      `Saat matang, kekuatan ${name} menghadirkan ${domainA.strength} yang mendapat bentuk dari ${cueA}.`,
-      `Namun, shadow dari ${name} dapat muncul ketika ${domainA.shadow} dan pertahanan batin dipicu oleh ${cueB}.`,
-      `Risiko ini terasa bila ${domainB.shadow} dan ${cueC} memengaruhi pilihan tanpa diberi nama terlebih dahulu.`,
+      `Saat ruang batinmu berada dalam kesadaran matang, ${name} memancarkan ${domainA.strength} yang bertumpu pada ${cueA}.`,
+      `Sebaliknya, sisi bayangan dapat tersulut ketika ${domainA.shadow}, terutama saat rasa amanmu tertekan oleh ${cueB}.`,
+      `Tantangan ini menjadi lebih berat jika ${domainB.shadow} dan ${cueC} dibiarkan mengendalikan responsmu tanpa disadari terlebih dahulu.`,
     ];
   }
+
   return [
-    `Integrasi ${name} dimulai dengan merawat ${domainA.integration} sambil memperhatikan ${cueA} dengan sadar.`,
-    `Yang perlu dilepas adalah kebiasaan memakai ${cueB} sebagai pembenaran untuk menunda tindakan nyata.`,
-    `Penerapan ${name} bisa dimulai dari ${purpose.application}, terutama ketika ${cueC} muncul dalam situasi harianmu.`,
+    `Langkah integrasi untuk ${name} bermula dari merawat ${domainA.integration}, sembari memelihara ${cueA} dengan penuh kesadaran.`,
+    `Bagian penting dari proses ini adalah kerelaan melepaskan kebiasaan memakai ${cueB} sebagai pembenaran untuk menunda tindakan nyata.`,
+    `Kamu dapat membumikan pertumbuhan ini dengan ${purpose.application}, khususnya saat dinamika seputar ${cueC} hadir di depan matamu.`,
   ];
 }
 
@@ -422,7 +676,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
     const domains = [...new Set(selectedFacts.map((fact) => fact.domain))];
     const semanticThemes = semanticThemesFor(reading, domains.length ? domains : reading.allowedDomains, paragraphIndex);
     const factCues = selectedFacts
-      .map((fact, index) => safeFactCue(fact.value, semanticThemes[index % semanticThemes.length] ?? reading.allowedDomains[index % reading.allowedDomains.length]))
+      .map((fact, index) => humanizeFactCue(fact.value, fact.systemId, fact.domain, semanticThemes[index % semanticThemes.length] ?? reading.allowedDomains[index % reading.allowedDomains.length]))
       .filter(Boolean);
     const sentences = buildParagraphSentences(reading, paragraphIndex, purpose, semanticThemes, factCues).map(sanitizeVisible);
     paragraphs.push(sentences.join(" "));

@@ -1042,6 +1042,9 @@ Untuk setiap eksekusi browser test yang akan datang (termasuk HD-05D.2), runner 
 | **B121-REL (Capacitor Sync)** | `npx cap sync android` | **9 Plugins** | 0 (PASS) | Web assets copied from `out/` to Android assets public directory in 1.62s. |
 | **B121-REL (Release AAB Assembly)** | `.\gradlew.bat bundleRelease` | **100% Tasks** | 0 (PASS) | Production signed bundle assembled (`android/app/build/outputs/bundle/release/app-release.aab` & `release-artifacts/build121/bhumi-amartya-release-v5.0.21-build121.aab`). |
 | **B121-REL (AAB Signature Verification)** | `jarsigner -verify -verbose -certs` | **Signed** | 0 (PASS) | Official keystore signature verified (`CN=Bhumi Amartya, O=Bhumi Amartya, C=ID`, SHA256withRSA 2048-bit). |
+| **B121-AK01 (Arsip Akashi 3x3 Contract)** | `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts` | **180 / 180** readings | 0 (PASS) | 4 multi-user profiles; 180 regular readings audited (3 paragraphs x 3 sentences = 100% PASS); Surat Jiwa regression check (5 paragraphs x 5 sentences = 100% PASS). |
+| **B121-AK01 (Arsip Akashi Grounding & Differentiation)** | `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts` | **7 / 7** | 0 (PASS) | Grounding 11 Blueprint systems, provenance traceability, substantive personalization (0 duplicate readings across Alpha/Beta/Gamma), mutation reactivity, sparse degradation, cross-UID isolation. |
+| **B121-AK01 (Arsip Akashi Symbolic Catalog)** | `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts` | **3 / 3** | 0 (PASS) | Non-literal framing of Starseed and Civilization catalogs; personalized narrative without generic boilerplate; sparse degradation. |
 | **Repository Typecheck** | `npx tsc --noEmit --project tsconfig.json` | Full Project | 0 (PASS) | Clean repository-wide compilation with zero TypeScript errors. |
 
 ### 2. Operational & Production Safety Status

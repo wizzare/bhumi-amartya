@@ -665,3 +665,50 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `BACKEND_DEPLOYMENT_DEPENDENCIES = BLOCKED`
   - `FIRESTORE_ROLLOUT = BLOCKED`
   - `AAB_121 = VERIFIED`
+
+---
+
+## 22. ARSIP AKASHI REFINEMENT — SPRINT AK-01: DEEP NARRATIVE & BLUEPRINT JIWA VOICE — 08 NOVEMBER 2026
+
+* **Status:** `PASS LOCAL`
+* **Commit:** `PENDING`
+* **Tujuan:** Memperdalam kualitas narasi Arsip Akashi agar setara dengan gaya pembacaan Blueprint Jiwa Bhumi Amartya yang hangat, reflektif, intim, dan berwibawa, menghapus total konstruksi kalimat mekanikal/slot rumus ('Bacaan X membaca...', 'Bagian ini berbeda...', 'Melalui cara...'), mengimplementasikan `humanizeFactCue` untuk mengonversi token teknis mentah menjadi frasa kearifan Indonesia, sembari mempertahankan 100% kontrak struktural 3x3 (3 paragraf x 3 kalimat) pada 49 pembacaan standar dan 5x5 pada 3 Surat Jiwa (52 pembacaan total).
+* **Hasil Verifikasi Kunci:**
+  1. **Eliminasi Bahasa Mekanikal & Slot Rumus:**
+     - Menghapus pembuka template `Bacaan [name] membaca...` di paragraf 1.
+     - Menghapus klausa perbandingan teknis `Bagian ini berbeda dari bacaan lain karena...`.
+     - Menghapus akhiran rumus `...melalui cara [cueC] membentuk keputusan dan pilihan kecilmu.`.
+     - Mengganti seluruh pembuka dengan narasi berwibawa yang disesuaikan secara tematis dengan 11 Ruang (Soul Identity, Energy & Mechanics, Wounds & Lineage, Work & Talents, Love & Relationships, Body & Environment, Spirituality & Evolution).
+  2. **Implementasi `humanizeFactCue`:**
+     - Mengonversi nilai fakta mentah sistemik menjadi frasa bahasa Indonesia yang mengalir:
+       - Human Design Types (Generator -> "daya cipta berkelanjutan yang merespons panggilan nyata", Manifestor -> "daya inisiasi mandiri yang berani membuka jalan baru", Projector, Reflector, Manifesting Generator).
+       - Human Design Authorities (Sacral -> "kejujuran sinyal tubuh seketika", Emotional, Splenic, Ego, Self-Projected, Lunar).
+       - Human Design Profiles ("1/3" -> "fondasi penyelidikan mendalam yang ditempa oleh pengalaman nyata", 1/4, 2/4, 2/5, 3/5, 3/6, 4/6, 4/1, 5/1, 5/2, 6/2, 6/3).
+       - Human Design Not-Self (Frustrasi -> "sinyal kejujuran tubuh saat memaksakan hal yang belum selaras", Bitterness, Anger, Disappointment).
+       - Numerology Numbers (1 merintis mandiri, 2 harmoni, 3 ekspresi kreatif, 4 fondasi tertib, 5 dinamika perubahan, 6 tanggung jawab cinta, 7 kontemplasi hakikat, 8 daya kelimpahan, 9 welas asih, 11, 22, 33).
+       - Zodiac Signs (12 tanda zodiak Barat).
+       - Destiny Matrix Arcanas (Arcana 1-22).
+       - BaZi Heavenly Stems / Elements (Jia s/d Gui).
+       - Weton Pasaran Jawa (Legi, Pahing, Pon, Wage, Kliwon).
+  3. **Kepatuhan Kontrak 3x3 dan 5x5 (100% PASS):**
+     - 49 pembacaan reguler terbukti memenuhi tepat 3 paragraf, masing-masing tepat 3 kalimat berakhiran tanda baca titik dengan panjang > 5 karakter (`arsip_akashi_3x3_contract.test.ts` 180/180 PASS).
+     - 3 Surat Jiwa terbukti tetap tepat 5 paragraf x 5 kalimat (100% PASS).
+  4. **Diferensiasi Personalisasi Substantif Antar-Profil:**
+     - 3 profil berlainan (Alpha, Beta, Gamma) menghasilkan 0 bacaan kembar di seluruh 49 pembacaan (`build121-sprint04-arsip-akashi.test.ts` Test 2 PASS).
+     - Nol kemunculan `undefined`, `null`, `NaN`, atau `[object Object]`.
+     - Mutasi data cetak biru terbukti mengubah narasi domain terkait (`build121-sprint04-arsip-akashi.test.ts` Test 3 PASS).
+  5. **Disiplin Lingkup (Scope Discipline):**
+     - Sesuai arahan Founder, UI blok Saran Bhumi dan transparansi Sumber Pembacaan ditunda ke Sprint AK-02.
+     - Dashboard, Weekly/Daily Guidance, Wellness, Billing, Cloudflare, dan Firestore Rules tidak disentuh.
+     - **Catatan Tata Kelola Rilis (Governance Note):** Perubahan narasi runtime pada Sprint AK-01 ini terjadi setelah perakitan rilis AAB Build 121 (Sprint 121-08); oleh karena itu, jika perbaikan narasi ini diadopsi ke produksi, AAB Build 121 perlu dirakit ulang (re-assembled) pada sprint rilis berikutnya sebelum publikasi ke Google Play Console.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts`: **180/180 PASS** (exit code 0).
+  - `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts`: **7/7 PASS** (exit code 0).
+  - `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts`: **3/3 PASS** (exit code 0).
+  - `npx tsc --noEmit --project tsconfig.json`: **PASS** (exit code 0).
+
+* **Status Batasan Rilis:**
+  - `ARSIP_AKASHI_AK01 = PASS_LOCAL`
+  - `NEXT_SPRINT = AK-02 SARAN BHUMI`
+  - `STOP AFTER AK-01. WAIT FOR FOUNDER REVIEW.`
