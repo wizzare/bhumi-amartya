@@ -73,7 +73,7 @@
 - [x] `B121-WELL-04` **Aroma catalog** — Lavender/citrus/peppermint entries where safe; sensitivities, breathing, kids/pets, ventilation, no ingestion/topical misuse: `DONE_LOCAL`
 - [x] `B121-WELL-05` **Deterministic selection** — 1 optional crystal & 1 optional aroma, localDate & revision context, cooldown, no cross-UID cache: `DONE_LOCAL`
 - [x] `B121-WELL-06` **Section 03 UI only** — 2 small cards before Pagi/Siang/Malam; skip/not-have/dislike buttons; no new nav/page: `DONE_LOCAL`
-- [x] `B121-WELL-07` **Safety + regression** — No medical claims, 5 sections intact, multi-user consent tests in `build121-wellness-companion.test.ts` (4/4 PASS): `DONE_LOCAL`
+- [x] `B121-WELL-07` **Safety + regression** — No medical claims, 5 sections intact, multi-user consent tests in `build121-wellness-companion.test.ts` (4/4 PASS) & `build121-sprint07-wellness-companion.test.ts` (10/10 PASS): `DONE_LOCAL`
 
 ### I. B121-REL — Integration, Release & Tracking
 - [x] `B121-REL-01` **Focused tests first** — TypeScript (`tsc --noEmit` exit 0), 16 core tests PASS, 231 weekly PASS, 389 daily PASS, 180 akashi PASS: `DONE_LOCAL`

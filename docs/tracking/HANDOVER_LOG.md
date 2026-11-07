@@ -574,3 +574,45 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-07 WELLNESS (B121-WELL)**.
+
+---
+
+## 20. SPRINT 121-07: WELLNESS PERSONAL COMPANION (B121-WELL) — 07 NOVEMBER 2026
+
+* **Status:** `PASS LOCAL`
+* **Commit:** Pending local commit
+* **Tujuan:** Menyempurnakan modul Rekomendasi Hari Ini (Section 03) pada halaman Wellness (`WellnessPageClient.tsx`) dengan Kristal & Aroma Pendamping yang diposisikan sebelum paket periode Pagi/Siang/Malam, dengan hierarki prioritas nyata: Check-in aktual pengguna (kelelahan, fokus, emosi, kebutuhan) > Preferensi & sensitivitas (respirasi, ventilasi, anak/hewan, persetujuan worldview) > Konteks pendukung Blueprint arketipal & Arsip Akashi. Memastikan perlindungan absolut: larangan penelanan minyak atsiri ("Jangan ditelan"), ketiadaan klaim medis kuratif, alternatif gratis tanpa produk, tombol skip/lewati, seleksi deterministik stabil tanpa kebocoran cache antar-UID, dan integritas 5 section kanonikal Wellness tetap 100% terjaga.
+* **Hasil Verifikasi Kunci:**
+  1. **Urutan Prioritas & Diferensiasi Kondisi Riil Pengguna:**
+     - Prioritas 1: Wellness Check-in aktual (`snapshot` metrik: tidur, energi, emosi, fokus, sosial; kebutuhan; isu saat ini; kondisi fisik).
+     - Prioritas 2: Preferensi dan sensitivitas personal (`respiratorySensitivity`, `indoorVentilation`, `hasBabiesOrPets`, `allowSpiritualContent`, `allowHolisticCompanions`, `rejectedCrystalIds`, `rejectedAromaIds`).
+     - Prioritas 3 (Hanya konteks pendukung): Human Design (tipe, otoritas, pusat energi), Astrologi natal, Arsip Akashi.
+     - Terbukti secara empiris: Dua pengguna dengan tipe Human Design identik (Manifesting Generator) tetapi kondisi check-in berbeda (lelah/stres vs berenergi/fokus) menerima rekomendasi pendamping yang berbeda secara substansial (Amethyst/Lavender untuk restorasi vs Citrine/Sweet Orange untuk momentum).
+  2. **Persetujuan & Perlindungan Sensitivitas (Consent & Safety Guards):**
+     - **Worldview Opt-out:** Jika `allowSpiritualContent === false` atau `allowHolisticCompanions === false`, kartu kristal tidak dipaksakan (`crystal: null`, `optedOut: true`) dan tidak ada modul esoterik yang dirender tanpa izin pengguna.
+     - **Sensitivitas Pernapasan & Ventilasi:** Jika `respiratorySensitivity === true` atau `indoorVentilation === 'poor'`, sistem mengecualikan seluruh aerosol pekat, dupa/asap, dan diffuser ultrasonik tertutup. Sistem mengalihkan ke opsi sirkulasi udara alami (`natural-air`) atau alternatif uap buah segar/teh chamomile dengan instruksi keamanan eksplisit.
+     - **Keamanan Anak & Hewan Peliharaan:** Jika `hasBabiesOrPets === true`, peppermint dan aroma dengan konsentrasi mentol tinggi dikecualikan dari katalog kandidat. Catatan keselamatan ruangan anak/hewan ditambahkan secara otomatis.
+     - **Larangan Penelanan Mutlak:** Seluruh aroma atsiri memuat instruksi tegas `"Hanya untuk penggunaan luar. Jangan ditelan."`.
+     - **Framing Non-Medis:** Seluruh kristal dan aroma menyertakan disclaimer eksplisit bahwa ini merupakan simbolik refleksi batin dan kenyamanan sensorik lingkungan, bukan obat, perawatan medis, atau pengganti intervensi kesehatan klinis.
+  3. **Alternatif Gratis & Tombol Lewati (No-Product Guarantee):**
+     - Setiap rekomendasi kristal dan aroma menyediakan alternatif gratis tanpa produk (misal: meletakkan telapak tangan di dada hangat, berdiri di dekat jendela untuk sirkulasi udara bersih, mengupas kulit jeruk segar).
+     - UI menyediakan tombol `"Lewati / Tidak Punya"` untuk kristal dan `"Lewati / Tidak Suka Aroma Ini"` untuk aroma.
+  4. **Seleksi Deterministik & Isolasi Cache Antar-UID:**
+     - Hasil rekomendasi konsisten dan stabil untuk UID, tanggal lokal, dan kondisi yang sama.
+     - Mutasi check-in pada hari kalender yang sama secara dinamis memicu rekalkulasi pendamping sesuai kondisi terbaru tanpa perlu menunggu esok hari.
+     - Pergantian akun pengguna (account switching) dan pergantian tanggal tengah malam lokal terbukti 100% terisolasi tanpa kebocoran cache antar-UID.
+  5. **Integritas 5 Section Kanonikal Wellness:**
+     - Struktur 5 Section halaman Wellness (01 Check-in, 02 Kondisi, 03 Rekomendasi, 04 Praktik Tambahan, 05 Dukungan Untukmu) tetap utuh dan lengkap.
+     - Dua kartu Kristal & Aroma Pendamping diposisikan secara tepat di Section 03 sebelum perulangan paket waktu Pagi, Siang, dan Malam.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx --test tests/unit/build121-wellness-companion.test.ts`: **4/4 PASS** (Integritas 5 Section, seleksi deterministik UID/tanggal/kondisi, framing non-medis & alternatif tanpa produk, fail-safe sensitivitas pernapasan; exit code 0).
+  - `npx tsx --test tests/unit/build121-sprint07-wellness-companion.test.ts`: **10/10 PASS** (Integrasi 3 profil sintetis, prioritas kondisi nyata > simbolik, eksklusi respirasi & ventilasi buruk, opt-out worldview spiritual, mekanisme penolakan aroma/kristal, fallback tanpa journey, mutasi check-in dinamis same-day, isolasi pergantian akun & rollover tanggal, invariansi keamanan mutlak no-ingestion/non-medis/anak-hewan, preservasi 5 section UI; exit code 0).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak disentuh).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-08 FINAL INTEGRATION & RELEASE (B121-REL)**.

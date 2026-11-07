@@ -31,6 +31,7 @@ import { journeyRepository } from "@/lib/repositories/journeyRepository";
 import { wellnessNavigatorEngine } from "@/lib/engines/wellnessNavigatorEngine";
 import { wellnessSupportEngine } from "@/lib/engines/wellnessSupportEngine";
 import { acknowledgeWellnessActivity, loadWellnessCuration, type WellnessCurationState } from "@/lib/services/wellnessCurationService";
+import { getDailySensoryCompanion } from "@/lib/wellness/wellnessSensoryCompanion";
 import type { WellnessSnapshot } from "@/lib/data/types";
 import type { WellnessMapping } from "@/lib/engines/wellnessMappingEngine";
 import type { WellnessNavigatorState } from "@/lib/engines/wellnessNavigatorEngine";
@@ -257,6 +258,24 @@ function getRecommendationSearchHref(title: string, domain: string): string {
 function WellnessRecommendationSection({ uid, date, curation, snapshot, onReload, isEn = false }: { uid: string; date: string; curation: WellnessCurationState | null; snapshot: WellnessSnapshot | null; onReload: () => void; isEn?: boolean }) {
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
+  const [crystalSkipped, setCrystalSkipped] = React.useState(false);
+  const [aromaSkipped, setAromaSkipped] = React.useState(false);
+
+  const sensory = React.useMemo(() => {
+    return getDailySensoryCompanion({
+      uid,
+      date,
+      condition: curation?.contextSynthesis.primaryCondition,
+      capacity: curation?.contextSynthesis.capacityLevel,
+      careFocus: curation?.contextSynthesis.careFocus,
+      checkIn: snapshot ? {
+        metrics: snapshot.metrics,
+        needs: snapshot.needs,
+        healthCondition: snapshot.healthCondition,
+      } : undefined,
+    });
+  }, [uid, date, curation, snapshot]);
+
   const periods = curation ? [curation.packages.morning, curation.packages.afternoon, curation.packages.evening] : [];
   const labels: Record<string, string> = isEn ? { morning: "Morning", afternoon: "Afternoon", evening: "Evening" } : { morning: "Pagi", afternoon: "Siang", evening: "Malam" };
   if (!curation) return <div className="rounded-3xl border border-[#E8E9E5] bg-white p-5 text-sm text-[#7B8776]">{isEn ? "Recommendations are being prepared. Check back after saving today's check-in." : "Rekomendasi sedang disiapkan. Cek kembali setelah menyimpan kabar hari ini."}</div>;
@@ -266,6 +285,102 @@ function WellnessRecommendationSection({ uid, date, curation, snapshot, onReload
       <p className="mt-2 text-xs font-semibold text-[#7B8776]">{curation.contextSynthesis.careFocus}</p>
       {curation.contextSynthesis.selectedContexts.length > 0 && <p className="mt-2 text-xs text-[#7B8776]">{isEn ? "Active context: " : "Konteks aktif: "}{curation.contextSynthesis.selectedContexts.map((item) => item.label).join(", ")}</p>}
     </div>
+
+    {/* B121-WELL: Kristal & Aroma Pendamping Hari Ini (Section 03, Sebelum Pagi/Siang/Malam) */}
+    {sensory.crystal && (
+      <div className="rounded-3xl border border-[#E8E9E5] bg-[#FAF9F5] p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8C9588]">
+              {isEn ? "Optional Companion" : "Pendamping Opsional"}
+            </span>
+            <h3 className="font-serif text-lg font-bold text-[#4F5E52]">
+              {isEn ? "Today's Crystal Companion" : "Kristal Pendamping Hari Ini"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setCrystalSkipped(!crystalSkipped)}
+            className="text-xs font-semibold text-[#7B8776] hover:text-[#4F5E52] underline underline-offset-2"
+          >
+            {crystalSkipped
+              ? (isEn ? "Show" : "Buka")
+              : (isEn ? "Skip / Don't have" : "Lewati / Tidak punya")}
+          </button>
+        </div>
+
+        {!crystalSkipped ? (
+          <div className="mt-3 space-y-2 text-sm text-[#526053]">
+            <p className="font-semibold text-[#4F5E52]">{sensory.crystal.name}</p>
+            <p className="text-xs italic text-[#7B8776]">{sensory.crystal.symbolicMeaning}</p>
+            <p className="text-xs leading-relaxed text-[#526053]">{sensory.crystal.contextRationale}</p>
+            <div className="rounded-2xl bg-white/80 p-3 text-xs leading-relaxed border border-[#E8E9E5]">
+              <span className="font-semibold text-[#4F5E52]">{isEn ? "Gentle Practice: " : "Cara Menggunakan: "}</span>
+              {sensory.crystal.safePractice}
+            </div>
+            <p className="text-[11px] text-[#7B8776]">
+              <span className="font-medium">{isEn ? "Alternative: " : "Tanpa Produk: "}</span>
+              {sensory.crystal.noProductAlternative}
+            </p>
+            <p className="text-[10px] text-[#9AA394] italic">{sensory.crystal.disclaimer}</p>
+          </div>
+        ) : (
+          <p className="mt-2 text-xs italic text-[#9AA394]">
+            {isEn ? "Crystal companion skipped for today." : "Kristal pendamping dilewati untuk hari ini."}
+          </p>
+        )}
+      </div>
+    )}
+
+    {sensory.aroma && (
+      <div className="rounded-3xl border border-[#E8E9E5] bg-[#FAF9F5] p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8C9588]">
+              {isEn ? "Sensory Companion" : "Pendamping Sensorik"}
+            </span>
+            <h3 className="font-serif text-lg font-bold text-[#4F5E52]">
+              {isEn ? "Today's Aroma Companion" : "Aroma Pendamping Hari Ini"}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => setAromaSkipped(!aromaSkipped)}
+            className="text-xs font-semibold text-[#7B8776] hover:text-[#4F5E52] underline underline-offset-2"
+          >
+            {aromaSkipped
+              ? (isEn ? "Show" : "Buka")
+              : (isEn ? "Skip / Don't like scent" : "Lewati / Tidak suka aroma ini")}
+          </button>
+        </div>
+
+        {!aromaSkipped ? (
+          <div className="mt-3 space-y-2 text-sm text-[#526053]">
+            <p className="font-semibold text-[#4F5E52]">{sensory.aroma.name}</p>
+            <p className="text-xs italic text-[#7B8776]">{sensory.aroma.sensoryExperience}</p>
+            <p className="text-xs leading-relaxed text-[#526053]">{sensory.aroma.contextRationale}</p>
+            <div className="rounded-2xl bg-white/80 p-3 text-xs leading-relaxed border border-[#E8E9E5]">
+              <span className="font-semibold text-[#4F5E52]">{isEn ? "Usage: " : "Cara Pakai Aman: "}</span>
+              {sensory.aroma.safePractice}
+            </div>
+            <p className="text-[11px] text-[#7B8776]">
+              <span className="font-medium">{isEn ? "Safety Note: " : "Catatan Keamanan: "}</span>
+              {sensory.aroma.safetyNotes}
+            </p>
+            <p className="text-[11px] text-[#7B8776]">
+              <span className="font-medium">{isEn ? "Alternative: " : "Tanpa Produk: "}</span>
+              {sensory.aroma.noProductAlternative}
+            </p>
+            <p className="text-[10px] text-[#9AA394] italic">{sensory.aroma.disclaimer}</p>
+          </div>
+        ) : (
+          <p className="mt-2 text-xs italic text-[#9AA394]">
+            {isEn ? "Aroma companion skipped for today." : "Aroma pendamping dilewati untuk hari ini."}
+          </p>
+        )}
+      </div>
+    )}
+
     {periods.map((pack) => {
       const expanded = expandedId === pack.period;
       const periodDescription = isEn ? `These are recommended practices for the ${labels[pack.period].toLowerCase()}.` : `Ini adalah rekomendasi untuk kegiatan di ${labels[pack.period].toLowerCase()}.`;
