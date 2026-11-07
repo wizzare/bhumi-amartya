@@ -6,6 +6,9 @@ import { adaptWetonToArsipAkashi } from "../adapters/wetonAdapter";
 import { adaptBaziToArsipAkashi } from "../adapters/baziAdapter";
 import { adaptVedicToArsipAkashi } from "../adapters/vedicAdapter";
 import { adaptTzolkinToArsipAkashi } from "../adapters/tzolkinAdapter";
+import { adaptWholeSignToArsipAkashi } from "../adapters/wholeSignAdapter";
+import { adaptAstrocartographyToArsipAkashi } from "../adapters/astrocartographyAdapter";
+import { adaptZiWeiToArsipAkashi } from "../adapters/ziWeiAdapter";
 import { localDateParts } from "./timing";
 
 function stableFingerprint(input: { birthDate?: string; birthTime?: string; timezone?: string }): string {
@@ -29,7 +32,7 @@ function unavailableEntry(sysId: string, warning: string, now: string): ArsipAka
 }
 
 export function buildArsipAkashiInputFromProfile(
-  profile: { uid: string; timezone?: string; birthDate?: string; birthTime?: string; referenceDate?: string } | null,
+  profile: { uid: string; timezone?: string; birthDate?: string; birthTime?: string; birthCity?: string; birthPlace?: string; gender?: string | null; referenceDate?: string } | null,
   blueprint: Blueprint | null,
 ): ArsipAkashiInput {
   const uid = profile?.uid ?? "unknown";
@@ -85,7 +88,7 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `numerology/identity/lifePathNumber`,
           systemId: "numerology", domain: "identity",
-          label: "lifePathNumber", value: String(n.lifePathNumber ?? "unknown"),
+          label: "lifePathNumber", value: String(n.lifePathNumber ?? n.lifePath ?? n.number ?? "unknown"),
           sourcePath: "lib/numerology", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
@@ -96,6 +99,20 @@ export function buildArsipAkashiInputFromProfile(
           sourcePath: "lib/numerology", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
+        ...(n.soulUrge != null ? [{
+          factId: `numerology/identity/soulUrge`,
+          systemId: "numerology" as const, domain: "identity" as const,
+          label: "soulUrge", value: normalizeArsipFactValue(n.soulUrge),
+          sourcePath: "lib/numerology", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(n.birthdayNumber != null || n.birthDay != null ? [{
+          factId: `numerology/identity/birthdayNumber`,
+          systemId: "numerology" as const, domain: "identity" as const,
+          label: "birthdayNumber", value: normalizeArsipFactValue(n.birthdayNumber ?? n.birthDay),
+          sourcePath: "lib/numerology", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
       ],
       calculationFingerprint: `numerology-fp-${fp.slice(0, 8)}`,
       calculationVersion: "v1", warnings: [], generatedAt: now,
@@ -140,6 +157,63 @@ export function buildArsipAkashiInputFromProfile(
           sourcePath: "lib/humandesign", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
+        ...(hd.notSelfTheme ? [{
+          factId: `human-design/shadow/notSelfTheme`,
+          systemId: "human-design" as const, domain: "shadow" as const,
+          label: "notSelfTheme", value: normalizeArsipFactValue(hd.notSelfTheme),
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : hd.type ? [{
+          factId: `human-design/shadow/notSelfTheme`,
+          systemId: "human-design" as const, domain: "shadow" as const,
+          label: "notSelfTheme",
+          value: hd.type.toLowerCase().includes("generator")
+            ? "Frustrasi"
+            : hd.type.toLowerCase().includes("projector")
+              ? "Kepahitan"
+              : hd.type.toLowerCase().includes("manifestor")
+                ? "Kemarahan"
+                : "Kekecewaan",
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(hd.type ? [{
+          factId: `human-design/health/energyRecharge`,
+          systemId: "human-design" as const, domain: "health" as const,
+          label: "energyRecharge",
+          value: hd.type.toLowerCase().includes("generator")
+            ? "penyelarasan respons tubuh dan gerak fisik teratur"
+            : hd.type.toLowerCase().includes("projector")
+              ? "istirahat sebelum lelah dan jeda pemulihan tenang"
+              : hd.type.toLowerCase().includes("manifestor")
+                ? "jeda ritme mandiri setelah inisiasi karya"
+                : "pengamatan siklus dan ruang tanpa tekanan luar",
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(hd.type || hd.strategy ? [{
+          factId: `human-design/talents/workType`,
+          systemId: "human-design" as const, domain: "talents" as const,
+          label: "workType",
+          value: `gaya kerja ${normalizeArsipFactValue(hd.type ?? "mandiri")} beroperasi melalui ${normalizeArsipFactValue(hd.strategy ?? "kejelasan langkah")}`,
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }, {
+          factId: `human-design/resources/resourcePacing`,
+          systemId: "human-design" as const, domain: "resources" as const,
+          label: "resourcePacing",
+          value: `ritme energi sumber daya ${normalizeArsipFactValue(hd.type ?? "harian")} dengan otoritas ${normalizeArsipFactValue(hd.authority ?? "kejelasan batin")}`,
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(hd.profile || hd.strategy ? [{
+          factId: `human-design/relationships/interactionStyle`,
+          systemId: "human-design" as const, domain: "relationships" as const,
+          label: "interactionStyle",
+          value: `profil relasi ${normalizeArsipFactValue(hd.profile ?? "intrapersonal")} melalui strategi ${normalizeArsipFactValue(hd.strategy ?? "kejelasan batin")}`,
+          sourcePath: "lib/humandesign", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
       ],
       calculationFingerprint: `human-design-fp-${fp.slice(0, 8)}`,
       calculationVersion: "v1", warnings: [], generatedAt: now,
@@ -159,24 +233,60 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `natal-chart/identity/sunSign`,
           systemId: "natal-chart", domain: "identity",
-          label: "sunSign", value: normalizeArsipFactValue(a.sun?.sign),
+          label: "sunSign", value: normalizeArsipFactValue(a.sun?.sign ?? a.sunSign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `natal-chart/identity/moonSign`,
           systemId: "natal-chart", domain: "identity",
-          label: "moonSign", value: normalizeArsipFactValue(a.moon?.sign),
+          label: "moonSign", value: normalizeArsipFactValue(a.moon?.sign ?? a.moonSign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `natal-chart/mechanics/ascendant`,
           systemId: "natal-chart", domain: "mechanics",
-          label: "ascendant", value: normalizeArsipFactValue(a.ascendant?.sign),
+          label: "ascendant", value: normalizeArsipFactValue(a.ascendant?.sign ?? a.risingSign),
           sourcePath: "lib/natal-chart", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
+        ...(a.planets?.Venus?.sign || a.venusSign || a.venus?.sign ? [{
+          factId: `natal-chart/relationships/venusSign`,
+          systemId: "natal-chart" as const, domain: "relationships" as const,
+          label: "venusSign", value: normalizeArsipFactValue(a.planets?.Venus?.sign ?? a.venusSign ?? a.venus?.sign),
+          sourcePath: "lib/natal-chart", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(a.planets?.Mars?.sign || a.marsSign || a.mars?.sign ? [{
+          factId: `natal-chart/mechanics/marsSign`,
+          systemId: "natal-chart" as const, domain: "mechanics" as const,
+          label: "marsSign", value: normalizeArsipFactValue(a.planets?.Mars?.sign ?? a.marsSign ?? a.mars?.sign),
+          sourcePath: "lib/natal-chart", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(a.chiron || a.planets?.Chiron?.sign ? [{
+          factId: `natal-chart/shadow/chiron`,
+          systemId: "natal-chart" as const, domain: "shadow" as const,
+          label: "chiron", value: normalizeArsipFactValue(a.chiron ?? a.planets?.Chiron?.sign),
+          sourcePath: "lib/natal-chart", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(a.lilith?.sign ? [{
+          factId: `natal-chart/shadow/lilith`,
+          systemId: "natal-chart" as const, domain: "shadow" as const,
+          label: "lilith", value: normalizeArsipFactValue(a.lilith.sign),
+          sourcePath: "lib/natal-chart", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(a.dominantElement || a.dominance?.dominantElement ? [{
+          factId: `natal-chart/health/elementBalance`,
+          systemId: "natal-chart" as const, domain: "health" as const,
+          label: "elementBalance",
+          value: `keseimbangan elemen ${normalizeArsipFactValue(a.dominantElement ?? a.dominance?.dominantElement)}`,
+          sourcePath: "lib/natal-chart", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
       ],
       calculationFingerprint: `natal-chart-fp-${fp.slice(0, 8)}`,
       calculationVersion: "v1", warnings: [], generatedAt: now,
@@ -196,17 +306,50 @@ export function buildArsipAkashiInputFromProfile(
         {
           factId: `destiny-matrix/identity/mainArcana`,
           systemId: "destiny-matrix", domain: "identity",
-          label: "mainArcana", value: normalizeArsipFactValue(dm.energyType),
+          label: "mainArcana", value: normalizeArsipFactValue(dm.energyType ?? dm.dayPoint ?? dm.center ?? dm.arcanaCenter),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
         {
           factId: `destiny-matrix/mechanics/energyType`,
           systemId: "destiny-matrix", domain: "mechanics",
-          label: "energyType", value: normalizeArsipFactValue(dm.energyType),
+          label: "energyType", value: normalizeArsipFactValue(dm.energyType ?? dm.destinyPoint ?? dm.center),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
+        ...(dm.karmicTail && (Array.isArray(dm.karmicTail) ? dm.karmicTail.length > 0 : true) ? [{
+          factId: `destiny-matrix/shadow/karmicTail`,
+          systemId: "destiny-matrix" as const, domain: "shadow" as const,
+          label: "karmicTail", value: Array.isArray(dm.karmicTail) ? dm.karmicTail.join("-") : String(dm.karmicTail),
+          sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }, {
+          factId: `destiny-matrix/karma/karmicTail`,
+          systemId: "destiny-matrix" as const, domain: "karma" as const,
+          label: "karmicTail", value: Array.isArray(dm.karmicTail) ? dm.karmicTail.join("-") : String(dm.karmicTail),
+          sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(dm.loveLine || dm.dayPoint || dm.energyType ? [{
+          factId: `destiny-matrix/relationships/loveLine`,
+          systemId: "destiny-matrix" as const, domain: "relationships" as const,
+          label: "loveLine",
+          value: dm.loveLine
+            ? (Array.isArray(dm.loveLine) ? dm.loveLine.join("-") : String(dm.loveLine))
+            : `jalur relasi arcana ${dm.dayPoint ?? dm.energyType ?? dm.center}`,
+          sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
+        ...(dm.moneyLine || dm.destinyPoint || dm.center ? [{
+          factId: `destiny-matrix/resources/moneyLine`,
+          systemId: "destiny-matrix" as const, domain: "resources" as const,
+          label: "moneyLine",
+          value: dm.moneyLine
+            ? (Array.isArray(dm.moneyLine) ? dm.moneyLine.join("-") : String(dm.moneyLine))
+            : `jalur rezeki arcana ${dm.destinyPoint ?? dm.center ?? dm.energyType}`,
+          sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
+          interpretationEligibility: true, confidence: 1, warnings: [],
+        }] : []),
       ],
       calculationFingerprint: `destiny-matrix-fp-${fp.slice(0, 8)}`,
       calculationVersion: "v1", warnings: [], generatedAt: now,
@@ -215,10 +358,38 @@ export function buildArsipAkashiInputFromProfile(
     systems["destiny-matrix"] = unavailableEntry("destiny-matrix", "Destiny Matrix data not available", now);
   }
 
-  // Whole Sign, Astrocartography, Zi Wei — not stored in Blueprint type
-  systems["whole-sign"] = unavailableEntry("whole-sign", "Whole Sign requires separate calculation flow", now);
-  systems["astrocartography"] = unavailableEntry("astrocartography", "Astrocartography requires separate calculation flow", now);
-  systems["zi-wei-dou-shu"] = unavailableEntry("zi-wei-dou-shu", "Zi Wei requires separate calculation flow", now);
+  // Whole Sign
+  if (bp?.wholeSign) {
+    try {
+      systems["whole-sign"] = adaptWholeSignToArsipAkashi(bp.wholeSign);
+    } catch {
+      systems["whole-sign"] = unavailableEntry("whole-sign", "Whole Sign calculation error", now);
+    }
+  } else {
+    systems["whole-sign"] = unavailableEntry("whole-sign", "Whole Sign requires separate calculation flow", now);
+  }
+
+  // Astrocartography
+  if (bp?.astrocartography) {
+    try {
+      systems["astrocartography"] = adaptAstrocartographyToArsipAkashi(bp.astrocartography);
+    } catch {
+      systems["astrocartography"] = unavailableEntry("astrocartography", "Astrocartography calculation error", now);
+    }
+  } else {
+    systems["astrocartography"] = unavailableEntry("astrocartography", "Astrocartography requires separate calculation flow", now);
+  }
+
+  // Zi Wei Dou Shu
+  if (bp?.ziWei) {
+    try {
+      systems["zi-wei-dou-shu"] = adaptZiWeiToArsipAkashi(bp.ziWei);
+    } catch {
+      systems["zi-wei-dou-shu"] = unavailableEntry("zi-wei-dou-shu", "Zi Wei calculation error", now);
+    }
+  } else {
+    systems["zi-wei-dou-shu"] = unavailableEntry("zi-wei-dou-shu", "Zi Wei requires an authenticated active-profile boundary", now);
+  }
 
   return {
     userId: uid,

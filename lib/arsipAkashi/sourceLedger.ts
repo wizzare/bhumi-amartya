@@ -35,7 +35,7 @@ export const ARSIP_AKASHI_SOURCE_LEDGER: Record<ArsipAkashiSectionId, ArsipAkash
       "natal-chart",
       "bazi",
     ],
-    allowedDomains: ["identity", "karma", "growth", "spirituality"],
+    allowedDomains: ["identity", "karma", "growth", "spirituality", "shadow"],
     required: true,
     birthTimeSensitive: true,
     classification: "calculated",

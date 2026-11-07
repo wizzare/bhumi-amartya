@@ -51,6 +51,16 @@ export function adaptBaziToArsipAkashi(bazi: BaziBlueprint): ArsipAkashiSystemEn
     fact("currentLuckCycle", "timing", `${bazi.currentLuckCycle.pillar.stem} ${bazi.currentLuckCycle.pillar.branch} (age ${bazi.currentLuckCycle.startAge}–${bazi.currentLuckCycle.endAge})`, true),
   );
 
+  if (bazi.relationshipStyle) {
+    facts.push(fact("relationshipStyle", "relationships", `pilar hari ${bazi.dayPillar.stem} ${bazi.dayPillar.branch}: ${bazi.relationshipStyle}`, true));
+  }
+  if (bazi.challenges && bazi.challenges.length > 0) {
+    facts.push(fact("challenges", "shadow", `day master ${bazi.dayMaster.pinyin} (${bazi.dayMaster.element}): ${bazi.challenges.join("; ")}`, true));
+  }
+  if (bazi.moneyStyle) {
+    facts.push(fact("moneyStyle", "resources", `pilar hari ${bazi.dayPillar.stem} ${bazi.dayPillar.branch}: ${bazi.moneyStyle}`, true));
+  }
+
   return {
     systemId: SYSTEM_ID,
     availability: "available",

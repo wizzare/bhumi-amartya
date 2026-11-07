@@ -47,9 +47,9 @@
 ### E. B121-AKA — Arsip Akashi (P1)
 - [x] `B121-AKA-01` **Actual source inventory** — Inspect `lib/arsipAkashi/`, `lib/services/humanMeaningService.ts`, `components/profile/details/ProfileSectionClient.tsx`; preserve existing structure & cards: `DONE_LOCAL`
 - [x] `B121-AKA-02` **Blueprint-driven fact bundles** — 11 Blueprint systems contribute valid facts; fixed `safeFactCue` word-length filter to prevent dropping single/two-word facts (Manifestor, 8, etc.); non-literal framing: `DONE_LOCAL`
-- [x] `B121-AKA-03` **Narrative quality** — Differentiated per blueprint; verified by `build121-arsip-akashi-grounding.test.ts` (3/3 PASS) and `arsip_akashi_3x3_contract.test.ts` (180/180 PASS, 100% 5x5 Soul Letters): `DONE_LOCAL`
+- [x] `B121-AKA-03` **Narrative quality** — Differentiated per blueprint across all 49 readings (0 duplicate readings between Alpha/Beta/Gamma); expanded semantic themes; verified by `build121-sprint04-arsip-akashi.test.ts` (7/7 PASS), `arsip_akashi_3x3_contract.test.ts` (180/180 PASS, 100% 5x5 Soul Letters), and `build121-arsip-akashi-grounding.test.ts` (3/3 PASS): `DONE_LOCAL`
 - [x] `B121-AKA-04` **Privacy & consumers** — Per-UID isolation; safe fact bundle extraction for daily/weekly without leaking full prose: `DONE_LOCAL`
-- [x] `B121-AKA-05` **Multi-profile acceptance** — 4 synthetic profiles, changed blueprint revision, sparse profile honest degradation to `unavailable`: `DONE_LOCAL`
+- [x] `B121-AKA-05` **Multi-profile acceptance** — Multi-user profiles, dynamic blueprint value mutation reactivity, sparse profile honest degradation (0 systems -> UNAVAILABLE, 1-10 systems -> LIMITED): `DONE_LOCAL`
 
 ### F. B121-WEEK — Panduan Minggu Ini Dashboard (P1)
 - [x] `B121-WEEK-01` **Existing engine contract** — Inspect `components/dashboard/WeeklyGuidanceCard.tsx`, `lib/weeklyGuidance/weeklyGuidanceEngine.ts`, `weeklyTransitCalculator.ts`: `DONE_LOCAL`

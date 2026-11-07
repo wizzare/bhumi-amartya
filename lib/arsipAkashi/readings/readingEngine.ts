@@ -317,8 +317,8 @@ function safeFactCue(value: string, fallback: string): string {
     .replace(/\b(undefined|null|unknown|unavailable|nan)\b/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  const words = cleaned.split(/\s+/).filter((word) => word.length > 2);
-  if (words.length >= 3) return words.slice(0, 9).join(" ");
+  const words = cleaned.split(/\s+/).filter((word) => word.length >= 1);
+  if (words.length >= 1) return words.slice(0, 9).join(" ");
   return fallback;
 }
 
@@ -522,61 +522,97 @@ const DOMAIN_THEMES: Record<string, string[]> = {
     "kebutuhan untuk bertindak dari nilai yang terasa jujur",
     "dorongan memperjelas peran tanpa kehilangan keluwesan",
     "keberanian menunjukkan kualitas diri dengan cara yang lebih tenang",
+    "keselarasan antara panggilan batin dan peran yang dijalani",
+    "keinginan menjaga integritas diri di tengah ekspektasi sekitar",
+    "pencarian bentuk ekspresi yang paling sesuai dengan kapasitas alami",
   ],
   mechanics: [
     "ritme mengambil keputusan yang membutuhkan jeda sebelum bergerak",
     "pola energi yang lebih kuat ketika respons tubuh ikut didengar",
     "kebutuhan mengatur tempo agar tindakan tidak lahir dari tekanan sesaat",
+    "pembagian tenaga yang cermat antara inisiasi dan penyelesaian",
+    "respons alami yang bekerja paling jernih saat bebas dari desakan",
+    "keteraturan ritme harian yang menjaga ketahanan batin dan fisik",
   ],
   talents: [
     "kemampuan mengubah gagasan menjadi bentuk kerja yang bisa diuji",
     "bakat menyusun pola, menghubungkan orang, atau membuat proses lebih jelas",
     "kekuatan belajar lewat praktik nyata, bukan hanya perencanaan",
+    "kepekaan merancang solusi praktis dari pengamatan mendalam",
+    "kapasitas menyampaikan wawasan kompleks dalam bahasa yang membumi",
+    "ketelitian mengeksekusi detail karya hingga memberi manfaat nyata",
   ],
   shadow: [
     "kecenderungan menahan keputusan ketika rasa aman belum terasa cukup",
     "risiko mengulang pola lama saat harga diri terlalu dikaitkan dengan hasil",
     "dorongan defensif yang perlu dibaca lebih awal sebelum menjadi jarak",
+    "kebiasaan memikul beban berlebih karena enggan meminta pertolongan",
+    "kekhawatiran akan penolakan yang memicu sikap menutup diri",
+    "pola keraguan batin sebelum mengambil langkah mandiri",
   ],
   relationships: [
     "kebutuhan relasi yang lebih jujur, seimbang, dan tidak ditebak-tebak",
     "kepekaan terhadap suasana emosional yang perlu disertai batas sehat",
     "pola kedekatan yang meminta komunikasi lebih terang dan tidak terburu-buru",
+    "keinginan membangun ruang saling percaya tanpa saling mengekang",
+    "kesadaran akan batas antara memberi perhatian dan menjaga ruang pribadi",
+    "keberanian menyampaikan harapan dengan keterbukaan yang hangat",
   ],
   health: [
     "sensitivitas tubuh terhadap tekanan yang menumpuk tanpa jeda pemulihan",
     "kebutuhan menjaga tidur, makan, gerak ringan, dan ruang mental yang cukup",
     "ritme pemulihan yang membaik ketika beban harian dibuat lebih realistis",
+    "kesadaran akan sinyal kelelahan sebelum tubuh menuntut istirahat paksa",
+    "kebutuhan menyelaraskan aktivitas dengan energi alami yang tersedia",
+    "perhatian lembut pada irama tubuh dan ketenangan saraf",
   ],
   spirituality: [
     "pencarian makna yang meminta praktik sederhana dan membumi",
     "intuisi yang tumbuh ketika hidup tidak terlalu penuh oleh kebisingan",
     "dorongan mengubah pemahaman batin menjadi sikap yang lebih welas asih",
+    "keheningan batin yang menjadi sumber kejernihan saat situasi bimbang",
+    "kesadaran keterhubungan antara perjalanan diri dan kehidupan sekitar",
+    "praktik kehadiran sadar dalam setiap perjumpaan dan keputusan kecil",
   ],
   timing: [
     "perubahan irama tahun yang meminta prioritas dibuat lebih sadar",
     "pertemuan antara momentum membuka jalan dan kebutuhan menyelesaikan yang lama",
     "fase sementara yang mengaktifkan pilihan praktis, bukan kepastian nasib",
+    "kesabaran menunggu saat yang tepat untuk bertindak terarah",
+    "kesiapan menyambut babak baru dengan melepaskan beban yang usang",
+    "kepekaan membaca siklus kehidupan tanpa tergesa memaksakan hasil",
   ],
   location: [
     "pengaruh lingkungan terhadap fokus, pemulihan, dan rasa aman",
     "kebutuhan memilih ruang yang mendukung tubuh dan kejernihan pikiran",
     "kepekaan pada suasana tempat yang perlu diterjemahkan menjadi batas praktis",
+    "pencarian sudut tenang untuk memulihkan energi setelah aktivitas padat",
+    "penataan ruang hidup yang memberi ruang napas dan inspirasi",
+    "penyelarasan diri dengan atmosfer tempat yang memberi ketenangan batin",
   ],
   karma: [
     "pelajaran berulang yang meminta respons baru tanpa menyalahkan diri",
     "pola lama yang ingin diselesaikan melalui kedewasaan, bukan pengulangan",
     "undangan memperbaiki cara memberi, menerima, dan bertanggung jawab",
+    "kesempatan melepaskan ekspektasi masa lalu yang tidak lagi relevan",
+    "penyelesaian siklus batin dengan pemahaman yang lebih welas asih",
+    "pembelajaran memaafkan proses belajar diri sendiri",
   ],
   growth: [
     "arah bertumbuh yang lebih kuat ketika langkah kecil dijaga konsisten",
     "kebutuhan melepas ukuran lama agar pilihan baru bisa diuji",
     "kematangan yang muncul dari latihan, bukan dari tuntutan sempurna",
+    "keberanian memperluas kapasitas diri melalui pengalaman baru",
+    "kesediaan belajar dari kekeliruan dengan sikap terbuka dan rendah hati",
+    "kemajuan bertahap yang dihargai sebagai proses yang utuh",
   ],
   resources: [
     "hubungan dengan uang, tenaga, dan waktu yang meminta struktur lebih sadar",
     "kebutuhan membedakan rasa aman sejati dari dorongan menumpuk kendali",
     "peluang memperkuat ekonomi melalui pencatatan, batas risiko, dan nilai kontribusi",
+    "pengelolaan alokasi energi agar tidak terbuang pada hal yang tidak esensial",
+    "kesadaran nilai diri yang memandu keputusan finansial dan profesional",
+    "keseimbangan antara menabung rasa aman dan berani memanfaatkan peluang",
   ],
 };
 

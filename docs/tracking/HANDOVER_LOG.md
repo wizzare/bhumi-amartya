@@ -451,3 +451,44 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak diubah di produksi).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-04 ARSIP AKASHI**.
+
+---
+
+## 17. Sprint 121-04: Arsip Akashi — Blueprint Grounding & Personalization Differentiation (07 Nov 2026)
+
+* **Status:** PASS LOCAL
+* **Tujuan:** Memastikan seluruh sintesis pembacaan Arsip Akashi (49 bacaan dalam 8 ruang) berakar kuat (grounded) pada 11 sistem kalkulasi Blueprint individual, terdiferensiasi substansial antar pengguna (zero boilerplate / zero duplicate readings across profiles), memiliki keterlacakan provenance fakta per paragraf, bebas halusinasi literal (safeguards Starseed, Asal Usul, Peradaban), patuh terhadap kontrak 3x3 bacaan regular & 5x5 Surat Jiwa, serta mendegradasi status secara jujur (`UNAVAILABLE` / `LIMITED`) saat profil minim data.
+* **Hasil Verifikasi Kunci:**
+  1. **11 Sistem Blueprint Terpetakan & Berakar Nyata:**
+     - Memetakan dan mengintegrasikan fakta kalkulasi individual dari 11 sistem: `human-design`, `destiny-matrix`, `numerology`, `natal-chart`, `weton`, `bazi`, `tzolkin`, `vedic-astrology`, `whole-sign`, `astrocartography`, dan `zi-wei-dou-shu`.
+     - Memperbaiki adapters (`wetonAdapter.ts`, `baziAdapter.ts`, `inputBuilder.ts`) untuk mencakup fakta ranah `relationships`, `resources`, `shadow`, `talents`, dan `health` dengan label dan nilai spesifik (misal: weton lengkap + neptu, Day Pillar BaZi, Day Master Five Elements, Not-Self Theme & Strategy Human Design, Karmic Tail & Love/Money Line Destiny Matrix).
+     - Setiap paragraf dari 3 paragraf bacaan memiliki `deepNarrativeProvenance` yang melacak `selectedFactIds`, `contributingSystems`, dan `paragraphFingerprint`.
+  2. **Diferensiasi Personal Nyata (Alpha vs Beta vs Gamma):**
+     - Menguji 3 profil sintetis berbeda secara menyeluruh across seluruh 49 bacaan: **0 duplicate readings** (100% pembacaan terdiferensiasi unik antar profil).
+     - Memperluas `DOMAIN_THEMES` dari 3 menjadi 6 tema kaya per ranah untuk mencegah tabrakan modulo hash pada pemilihan tema semantik saat fallback parsial.
+     - Menjamin tidak ada teks mengandung nilai mentah JSON, `undefined`, `null`, `NaN`, atau `[object Object]`.
+  3. **Reaktivitas Mutasi Blueprint:**
+     - Perubahan nilai kalkulasi pada sistem blueprint (misal: modifikasi Life Path Numerology atau Day Master BaZi) secara dinamis memicu perubahan teks pembacaan ranah terkait tanpa memerlukan restart atau reload hardcoded.
+  4. **Degradasi Jujur Profil Parsial / Kosong:**
+     - Profil tanpa data blueprint (0 sistem tersedia) secara jujur menetapkan status `unavailable` dengan pesan bimbingan personal.
+     - Profil dengan data terbatas (1–10 sistem) menetapkan status `limited` dengan indikator sistem yang belum lengkap tanpa mengarang fakta palsu.
+  5. **Isolasi Antar-UID & Idempotensi Deterministik:**
+     - Pembacaan Arsip Akashi terisolasi per UID; perhitungan berulang dengan input dan blueprint identik menghasilkan teks dan fingerprint yang 100% stabil (idempotent).
+  6. **Kepatuhan Kontrak 3x3 Bacaan Regular & 5x5 Surat Jiwa:**
+     - Seluruh bacaan regular patuh pada format 3 paragraf × 3 kalimat (total 9 kalimat per bacaan). Audit multi-profil 4 pengguna menghasilkan 180/180 bacaan PASS (100%).
+     - Surat Jiwa patuh pada format 5 paragraf × 5 kalimat (total 25 kalimat per surat, 100% PASS).
+  7. **Perlindungan Simbolis (Symbolic Safeguards):**
+     - Tema Starseed, Peradaban, dan Asal Usul Jiwa diverifikasi berbingkai arketipal metaforis/psikologis non-literal, tanpa klaim alien konkret, alienasi dari kehidupan bumi, atau delusi keunggulan spiritual.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts`: **7/7 PASS** (Grounding 11 sistem, diferensiasi personal Alpha/Beta/Gamma, mutasi nilai, degradasi profil minim, isolasi cross-UID, kontrak 3x3/5x5, dan perlindungan simbolis; exit code 0).
+  - `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts`: **180/180 PASS** (4 multi-user profiles; 180 bacaan regular 3x3 PASS; Soul Letters 5x5 PASS 100%; exit code 0).
+  - `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts`: **3/3 PASS** (exit code 0).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak disentuh).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-05 PANDUAN MINGGU INI (B121-WEEK)**.

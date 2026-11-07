@@ -8,16 +8,18 @@ const SOURCE_PATH = "lib/zi-wei/calculateZiWei.ts";
 function fingerprinted(zw: ZiWeiResult): string {
   const stable = {
     birthDataStatus: zw.birthDataStatus,
-    lunarYear: zw.lunarBirth?.lunarYear,
+    lunarBirth: zw.lunarBirth,
+    civilBirthDate: zw.civilBirthDate,
+    effectiveChartDate: zw.effectiveChartDate,
     bureau: zw.bureau,
     lifeMaster: zw.lifeMaster,
     bodyMaster: zw.bodyMaster,
     palaceCount: zw.palaces.length,
-    palaceKeys: zw.palaces.map((p) => p.key).sort(),
+    palaceKeys: zw.palaces.map((p) => [p.key, p.earthlyBranch, p.majorStars.map(s => s.canonicalName)]),
     decadeCycles: zw.decadeCycles.map((d) => ({ ageStart: d.ageStart, ageEnd: d.ageEnd })),
     methodVersion: zw.method.sourceVersion,
   };
-  const d = JSON.stringify(stable, Object.keys(stable).sort());
+  const d = JSON.stringify(stable);
   const hash = Array.from(d).reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
   return `zi-wei-fp-${hash}`;
 }
@@ -42,9 +44,15 @@ function fact(
 
 export function adaptZiWeiToArsipAkashi(zw: ZiWeiResult): ArsipAkashiSystemEntry {
   const hasTime = zw.birthDataStatus.exactBirthTime;
-  const status: "available" | "partial" = hasTime ? "available" : "partial";
+  const validCore = Boolean(zw.lunarBirth && zw.lifePalace && zw.bodyPalace && zw.bureau && zw.palaces.length === 12 && new Set(zw.palaces.map(p => p.key)).size === 12);
+  const status = zw.status === "unavailable" || (zw.status === "complete" && !validCore) ? "calculation-failed" : zw.status === "complete" ? "available" : "partial";
 
   const facts: ArsipAkashiNormalizedFact[] = [];
+  if (status === "calculation-failed") return {
+    systemId: SYSTEM_ID, availability: "calculation-failed", sourceOwner: SOURCE_PATH,
+    normalizedFacts: [], calculationFingerprint: fingerprinted(zw), calculationVersion: ADAPTER_VERSION,
+    warnings: [zw.calculationError || "Zi Wei calculation unavailable"], generatedAt: new Date().toISOString(),
+  };
 
   if (zw.lunarBirth) {
     facts.push(fact("lunarYear", "timing", String(zw.lunarBirth.lunarYear), false));
@@ -59,7 +67,7 @@ export function adaptZiWeiToArsipAkashi(zw: ZiWeiResult): ArsipAkashiSystemEntry
   if (zw.lifeMaster) facts.push(fact("lifeMaster", "identity", zw.lifeMaster, true));
   if (zw.bodyMaster) facts.push(fact("bodyMaster", "identity", zw.bodyMaster, true));
 
-  const relationPalace = zw.palaces.find((p) => p.key === "relationship");
+  const relationPalace = zw.palaces.find((p) => p.key === "spouse");
   const wealthPalace = zw.palaces.find((p) => p.key === "wealth");
   const careerPalace = zw.palaces.find((p) => p.key === "career");
 
@@ -93,7 +101,7 @@ export function adaptZiWeiToArsipAkashi(zw: ZiWeiResult): ArsipAkashiSystemEntry
     normalizedFacts: facts,
     calculationFingerprint: fingerprinted(zw),
     calculationVersion: ADAPTER_VERSION,
-    warnings: hasTime ? [] : ["Exact birth time required for full Zi Wei Dou Shu calculation"],
-    generatedAt: zw.lunarBirth ? `${zw.lunarBirth.lunarYear.toString().padStart(4, "0")}-${zw.lunarBirth.lunarMonth.toString().padStart(2, "0")}-${zw.lunarBirth.lunarDay.toString().padStart(2, "0")}T00:00:00.000Z` : new Date(0).toISOString(),
+    warnings: zw.calculationError ? [zw.calculationError] : hasTime ? zw.birthDataStatus.notes : ["Exact birth time required for full Zi Wei Dou Shu calculation"],
+    generatedAt: new Date().toISOString(),
   };
 }

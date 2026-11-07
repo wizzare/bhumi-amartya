@@ -44,6 +44,16 @@ export function adaptWetonToArsipAkashi(weton: WetonBlueprint): ArsipAkashiSyste
     fact("pranataMangsa", "timing", `${weton.pranataMangsa.name} (${weton.pranataMangsa.description})`, true),
   ];
 
+  if (weton.relationshipStyle) {
+    facts.push(fact("relationshipStyle", "relationships", `weton ${weton.weton} (neptu ${weton.totalNeptu}): ${weton.relationshipStyle}`, true));
+  }
+  if (weton.challenges && weton.challenges.length > 0) {
+    facts.push(fact("challenges", "shadow", `weton ${weton.weton}: ${weton.challenges.join("; ")}`, true));
+  }
+  if (weton.moneyStyle) {
+    facts.push(fact("moneyStyle", "resources", `weton ${weton.weton} (neptu ${weton.totalNeptu}): ${weton.moneyStyle}`, true));
+  }
+
   return {
     systemId: SYSTEM_ID,
     availability: "available",
