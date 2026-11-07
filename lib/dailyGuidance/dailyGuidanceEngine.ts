@@ -40,6 +40,8 @@ import type {
   ReadingFoundationEntry,
   WeeklyAstrologicalEvidence,
 } from "@/lib/weeklyGuidance/types";
+import type { ArsipAkashiProfileViewModel } from "@/lib/arsipAkashi/profile/viewModel";
+import { generateBlueprintHash } from "@/lib/utils/hashing";
 
 // ============================================================================
 // TYPES & DEFINITIONS (PARITY WITH WEEKLY GUIDANCE + FOUR FOUNDATIONS)
@@ -173,6 +175,7 @@ export type DailyGuidance = {
     paragraphs: string[];
   };
   generatedAt: string;
+  synthesisFingerprint?: string;
 };
 
 export interface BuildDailyGuidanceInput {
@@ -182,6 +185,7 @@ export interface BuildDailyGuidanceInput {
   referenceDate?: Date;
   timezone?: string;
   appNow?: Date;
+  arsipViewModel?: ArsipAkashiProfileViewModel;
 }
 
 export const DAILY_DOMAIN_DEFINITIONS = [
@@ -949,6 +953,18 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
     placidusHouses
   );
 
+  // Extract extra systems (Whole Sign, Astrocartography, Zi Wei Dou Shu)
+  const wsObj = (blueprintObj.wholeSign as Record<string, unknown>) || {};
+  const wsRising = typeof wsObj.risingSign === "string" ? wsObj.risingSign : typeof (wsObj.houses as any)?.[0]?.sign === "string" ? (wsObj.houses as any)[0].sign : undefined;
+
+  const acObj = (blueprintObj.astrocartography as Record<string, unknown>) || {};
+  const acLines = Array.isArray(acObj.lines) ? acObj.lines : [];
+  const acLineFirst = acLines.length > 0 ? (acLines[0] as any) : undefined;
+  const acCity = typeof acLineFirst?.city === "string" ? acLineFirst.city : typeof acLineFirst?.line === "string" ? acLineFirst.line : undefined;
+
+  const zwObj = ((blueprintObj.ziwei || blueprintObj.ziWei) as Record<string, unknown>) || {};
+  const zwMingGong = typeof zwObj.mingGong === "string" ? zwObj.mingGong : typeof (zwObj.palaces as any)?.[0]?.name === "string" ? (zwObj.palaces as any)[0].name : undefined;
+
   const availableSources: string[] = ["Western Astrology", "SwissEph Ephemeris"];
   const limitedSources: string[] = [];
   const unavailableSources: string[] = [];
@@ -960,6 +976,21 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
   if (canonical.dmCenter) availableSources.push("Destiny Matrix");
   if (natalWetonFull || wetonToday) availableSources.push("Weton");
   if (natalTzolkinFull || tzolkinToday) availableSources.push("Tzolkin");
+  if (canonical.vedicNakshatra || canonical.vedicMoonSign || (blueprintObj.vedic as any)?.nakshatra) {
+    availableSources.push("Vedic Astrology");
+  }
+  if (wsRising || blueprintObj.wholeSign) {
+    availableSources.push("Whole Sign");
+  }
+  if (acCity || blueprintObj.astrocartography) {
+    availableSources.push("Astrocartography");
+  }
+  if (zwMingGong || blueprintObj.ziwei || blueprintObj.ziWei) {
+    availableSources.push("Zi Wei Dou Shu");
+  }
+  if (input.arsipViewModel || blueprintObj.arsipAkashi) {
+    availableSources.push("Arsip Akashi");
+  }
 
   // State determination
   let state: "ready" | "limited" | "unavailable" = "ready";
@@ -967,6 +998,12 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
     state = "limited";
     limitedSources.push("Placidus Natal Chart");
   }
+  if (!canonical.hdType) limitedSources.push("Human Design");
+  if (!canonical.lifePathNumber) limitedSources.push("Numerology");
+  if (!canonical.dmCenter) limitedSources.push("Destiny Matrix");
+  if (!natalBaziDayMaster) limitedSources.push("BaZi");
+  if (!natalWetonFull) limitedSources.push("Weton");
+  if (!natalTzolkinFull) limitedSources.push("Tzolkin");
 
   // 5. Match Aspects to 8 Domains (Collision-Free)
   const sections: DailyGuidanceSection[] = [];
@@ -1164,6 +1201,20 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
           detail: canonical.personalYear ? `Tahun Pribadi ${canonical.personalYear}` : `Peran: ${canonical.lifePathRole || "Pembangun"}`,
         });
       }
+      if (zwMingGong) {
+        foundations.push({
+          system: "Zi Wei Dou Shu",
+          indicator: `Ming Gong: ${zwMingGong}`,
+          detail: "Istana kehidupan tradisi astrologi Tiongkok kuno",
+        });
+      }
+      if (canonical.vedicMoonSign) {
+        foundations.push({
+          system: "Vedic Astrology",
+          indicator: `Rasi: ${canonical.vedicMoonSign}`,
+          detail: "Keseimbangan rasa dan kompas batiniah",
+        });
+      }
     } else if (def.key === "pikiran") {
       const dmText = natalBaziDayMaster
         ? `Day Master-mu (${natalBaziDayMaster.polarity} ${natalBaziDayMaster.element}${natalBaziDayMaster.stemPinyin ? ` [${natalBaziDayMaster.stemPinyin}]` : ""})`
@@ -1193,6 +1244,13 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
           system: "Weton Harian",
           indicator: `Hari ${wetonToday.day}`,
           detail: `Watak Nalar: ${wetonDayMeaning.watak}`,
+        });
+      }
+      if (wsRising) {
+        foundations.push({
+          system: "Whole Sign",
+          indicator: `Ascendant: ${wsRising}`,
+          detail: "Kerangka rumah astrologi helenistik utuh",
         });
       }
     } else if (def.key === "ekonomi") {
@@ -1341,6 +1399,14 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
           detail: "Arketipe batin jiwa Vedic",
         });
       }
+      if (input.arsipViewModel && input.arsipViewModel.status !== "unavailable" && Array.isArray(input.arsipViewModel.readings) && input.arsipViewModel.readings.length > 0) {
+        const reading = input.arsipViewModel.readings[0];
+        foundations.push({
+          system: "Arsip Akashi",
+          indicator: reading.title,
+          detail: reading.shortMeaning || "Pola kesadaran arketipal",
+        });
+      }
     } else if (def.key === "yangMungkinTerasaBerat") {
       const ktInterp = interpretKarmicTail(canonical.dmKarmicTail);
       const wetonChallengeSnippet = wetonToday
@@ -1413,6 +1479,13 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
           system: "Weton Harian",
           indicator: `Kekuatan Hari: ${wetonToday.day} ${wetonToday.pasaran}`,
           detail: wetonDayMeaning.strength,
+        });
+      }
+      if (acCity) {
+        foundations.push({
+          system: "Astrocartography",
+          indicator: `Garis Resonansi: ${acCity}`,
+          detail: "Titik ruang geografis yang mendukung ekspansi",
         });
       }
     }
@@ -1569,20 +1642,42 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
   };
 
   // 10. Daily Direction
+  const hdFocus = canonical.hdType
+    ? `kearifan ${canonical.hdType}${canonical.hdAuthority ? ` dengan Otoritas ${canonical.hdAuthority}` : ""}`
+    : "desain jiwamu";
+
+  const lpFocus = canonical.lifePathNumber
+    ? ` serta panggilan jiwa Life Path ${canonical.lifePathNumber}`
+    : "";
+
+  const wetonDailyFocus = wetonToday
+    ? ` di bawah naungan ritme ${wetonToday.weton}`
+    : "";
+
   const dailyDirection = {
     title: "Arah Hari Ini",
     paragraphs: [
       cleanSentence(
-        `Hari ini, prioritas tertinggimu adalah menjaga ketenangan pikiran dan kejujuran rasa di tengah setiap pertemuan dan pekerjaan.`
+        `Hari ini${wetonDailyFocus}, prioritas tertinggimu adalah menjaga ketenangan pikiran dan kejujuran rasa di tengah setiap pertemuan dan pekerjaan.`
       ),
       cleanSentence(
-        `Jadikan kearifan ${canonical.hdType || "desain jiwamu"} dan keselarasan nilai-nilai batinmu sebagai jangkar penuntun saat menghadapi keputusan harian.`
+        `Jadikan ${hdFocus}${lpFocus} dan keselarasan nilai-nilai batinmu sebagai jangkar penuntun saat menghadapi keputusan harian.`
       ),
       cleanSentence(
         `Luangkan waktu jeda yang cukup di sela-sela aktivitas, dan tutup hari ini dengan rasa syukur atas apa yang telah berhasil kamu rawat dengan baik.`
       ),
     ],
   };
+
+  const bpHash = generateBlueprintHash(blueprintObj);
+  const synthesisFingerprint = [
+    input.uid,
+    timeWindow.dayKey,
+    state,
+    relStatus,
+    bpHash,
+    safeZone,
+  ].join(":");
 
   return {
     uid: input.uid,
@@ -1597,6 +1692,7 @@ export function buildDailyGuidance(input: BuildDailyGuidanceInput): DailyGuidanc
     cosmicSummary,
     sections,
     dailyDirection,
+    synthesisFingerprint,
     generatedAt: new Date().toISOString(),
   };
 }

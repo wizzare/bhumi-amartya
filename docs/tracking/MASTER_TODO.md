@@ -60,11 +60,11 @@
 - [x] `B121-WEEK-06` **Comparative tests** — Multi-profile differentiation across distinct charts, 2 consecutive weeks, missing Journey honest fallback, partial blueprint degradation, same-week cache stability, timezone change; verified by `build121-sprint05-weekly-guidance.test.ts` (7/7 PASS): `DONE_LOCAL`
 
 ### G. B121-DAILY — Catatan Hari Ini Profil (P1)
-- [x] `B121-DAILY-01` **Existing daily parity inventory** — Inspect `components/profile/DailyGuidanceCard.tsx`, `lib/dailyGuidance/dailyGuidanceEngine.ts`; preserve BUILD 120 Dashboard Arah Hari Ini parity; verified by `build120-dashboard-insight-alignment.test.ts` (6/6 PASS): `DONE_LOCAL`
-- [x] `B121-DAILY-02` **Blueprint personal context** — Connect available Blueprint/Arsip facts and Human Meaning appropriately with source provenance: `DONE_LOCAL`
-- [x] `B121-DAILY-03` **Temporal differentiation** — Astro/transits, Weton, BaZi day pillar, Tzolkin; verified by `build118-daily-guidance.test.ts` (389/389 PASS): `DONE_LOCAL`
-- [x] `B121-DAILY-04` **Presentation parity** — 3 domains, 8 accordions + Arah Hari Ini; Dashboard uses exact same Arah Hari Ini without duplicate greeting: `DONE_LOCAL`
-- [x] `B121-DAILY-05` **Differential QA** — Synthetic users, consecutive days, unchanged context, partial data, cache isolation: `DONE_LOCAL`
+- [x] `B121-DAILY-01` **Existing daily parity inventory** — Inspect `components/profile/DailyGuidanceCard.tsx`, `lib/dailyGuidance/dailyGuidanceEngine.ts`; preserve BUILD 120 Dashboard Arah Hari Ini parity; verified by `build120-dashboard-insight-alignment.test.ts` (6/6 PASS) & `build121-sprint06-daily-guidance.test.ts` (9/9 PASS): `DONE_LOCAL`
+- [x] `B121-DAILY-02` **Blueprint personal context** — Connect available Blueprint (11 systems) & Arsip Akashi touchpoint with source provenance in foundations; verified by `build121-sprint06-daily-guidance.test.ts`: `DONE_LOCAL`
+- [x] `B121-DAILY-03` **Temporal differentiation** — Astro/transits, Weton, BaZi day pillar & Ten Gods relation, Tzolkin Kin/Tone/Wavespell; verified by `build118-daily-guidance.test.ts` (392/392 PASS) & `build121-sprint06-daily-guidance.test.ts`: `DONE_LOCAL`
+- [x] `B121-DAILY-04` **Presentation parity** — 8 accordions + Arah Hari Ini; Dashboard uses exact same Arah Hari Ini (100% character-by-character identical) without duplicate greeting; Sheina Khazmalia memorial footer intact: `DONE_LOCAL`
+- [x] `B121-DAILY-05` **Differential QA** — 3 synthetic profiles (Alpha, Beta, Gamma), 3 consecutive calendar dates, unchanged context stability, sparse profile honest limited degradation, midnight timezone rollover, multi-dimensional cache fingerprint isolation; verified by `build121-sprint06-daily-guidance.test.ts` (9/9 PASS): `DONE_LOCAL`
 
 ### H. B121-WELL — Wellness Personal Companion (P2; after P0 gate)
 - [x] `B121-WELL-01` **Inspect five-section owner** — Reuse existing curation/library/check-in mapping in `components/wellness/`, `lib/services/wellnessCurationService.ts`: `DONE_LOCAL`

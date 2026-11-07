@@ -533,3 +533,44 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - Next Sprint: **121-06 CATATAN HARI INI (B121-DAILY)**.
+
+---
+
+## 19. SPRINT 121-06: CATATAN HARI INI PROFILE & DASHBOARD PARITY (B121-DAILY) — 07 NOVEMBER 2026
+
+* **Status:** `PASS LOCAL`
+* **Commit:** Pending
+* **Tujuan:** Memastikan pembacaan Catatan Hari Ini di halaman Profil (`DailyGuidanceCard`) berakar secara personal pada 11 sistem Blueprint individual dan konteks arketipal Arsip Akashi, memiliki inteligensi temporal harian yang akurat (Weton, BaZi Day Pillar & relasi Ten Gods, Tzolkin Kin/Tone/Wavespell, transit planet SwissEph terhadap chart natal Placidus), mempertahankan 8 accordion domain kehidupan, menjamin 100% paritas teks Arah Hari Ini dengan Dashboard (`SoulReflectionCard`), serta memiliki isolasi cache multi-dimensi per UID dan pergantian tanggal tengah malam lokal tanpa konten basi (stale).
+* **Hasil Verifikasi Kunci:**
+  1. **Personalisasi 11 Sistem Blueprint & Arsip Akashi:**
+     - Mengintegrasikan hasil kalkulasi personal dari 11 sistem blueprint: Numerology (Life Path & Personal Year), Human Design (Tipe, Profil, Otoritas, Not-Self), Destiny Matrix (Pusat Jiwa, Garis Uang, Garis Cinta, Ekor Karma, Arcana Tahunan), Weton (Weton kelahiran & Wuku), BaZi (Day Master & Ten Gods), Tzolkin (Kin & Gelombang), Vedic Astrology (Nakshatra & Rasi), Whole Sign (Ascendant), Astrocartography (Garis Resonansi), Zi Wei Dou Shu (Ming Gong), serta sentuhan arketipal Arsip Akashi.
+     - Seluruh sistem yang tersedia dicatat dalam `availableSources` dan disintesis secara relevan ke dalam `readingFoundations` per domain tanpa pemaksaan berlebihan.
+  2. **Inteligensi Temporal Harian Teruji:**
+     - **Weton:** Menghitung hari, pasaran, neptu (hari, pasaran, total), wuku, dan deskripsi watak harian.
+     - **BaZi:** Menghitung pilar hari, mendeteksi hari Ren (Air Yang), serta menghitung relasi Ten Gods (Shi Shen) antara pilar harian dengan Day Master pengguna.
+     - **Tzolkin:** Menghitung Kin (1–260), Solar Seal, Galactic Tone, Wavespell, dan arah pertumbuhan harian.
+     - **Astrologi:** Menghitung transit planet harian terhadap penempatan chart natal Placidus (orb <= 5.5°), fase Bulan aktual, dan ringkasan cuaca langit kolektif.
+  3. **Diferensiasi Personal & Temporal Nyata:**
+     - Tiga profil sintetis (Alpha, Beta, Gamma) menghasilkan teks Arah Hari Ini (`dailyDirection`) dan sintesis domain (Asmara, Pikiran, Ekonomi) yang 100% berbeda dan mencerminkan cetak biru masing-masing.
+     - Tiga tanggal kalender berbeda (28 Okt, 05 Nov, 07 Nov) menghasilkan konfigurasi Weton, Tzolkin, dan aspek transit yang terdiferensiasi secara dinamis.
+  4. **Pergantian Tengah Malam (Midnight Rollover) & Sidik Jari Cache:**
+     - Transisi dari 23:59:59 ke 00:00:05 waktu lokal pengguna secara akurat memindahkan `dateKey` dari hari T ke T+1.
+     - Sidik jari cache (`synthesisFingerprint`) menggabungkan `uid + dateKey + state + relStatus + bpHash + timezone`, menjamin invalidasi otomatis saat tanggal berganti atau saat data blueprint pengguna dimodifikasi, serta mencegah tabrakan cache antar-UID.
+  5. **Degradasi Jujur Profil Parsial / Baru:**
+     - Pengguna baru tanpa data kelahiran lengkap mendegradasi status ke `limited` secara transparan dengan mencantumkan sistem yang belum tersedia di `limitedSources`, tanpa error/crash, dan tetap menyajikan 8 accordion dengan ritme asimilasi yang tenang.
+  6. **100% Paritas Arah Hari Ini Dashboard–Profil:**
+     - Teks Arah Hari Ini di Profil dan teks Insight Utama di Dashboard (`SoulReflectionCard`) diverifikasi 100% identik karakter demi karakter (`deepStrictEqual`).
+     - Nol salam pembuka duplikat (`Halo...`), tanpa sisa container `SATU TINDAKAN`, dan dedikasi Memorial Footer Sheina Khazmalia tetap utuh dan terverifikasi.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx tests/unit/build118-daily-guidance.test.ts`: **392/392 PASS** (Baseline 16 bagian Catatan Hari Ini; exit code 0).
+  - `npx tsx --test tests/unit/build121-sprint06-daily-guidance.test.ts`: **9/9 PASS** (11 sistem blueprint & Akashi, diferensiasi 3 profil, inteligensi temporal Weton/BaZi/Tzolkin, progres 3 tanggal, midnight rollover & cache fingerprint, isolasi UID, degradasi parsial, 8 accordion, dan 100% paritas Dashboard-Profil; exit code 0).
+  - `npx tsx tests/unit/build120-dashboard-insight-alignment.test.ts`: **6/6 PASS** (100% exact parity, zero greeting, UID differentiation, SATU TINDAKAN removed, memorial footer verified; exit code 0).
+  - TypeScript Check Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+  - TypeScript Check Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (Cloudflare dan Vercel tidak disentuh).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-07 WELLNESS (B121-WELL)**.
