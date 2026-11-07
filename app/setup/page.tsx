@@ -21,10 +21,13 @@ import { blueprintRepository } from "@/lib/repositories/blueprintRepository";
 import { isCompletedProfileForUser, verifySetupPersisted } from "@/lib/auth/authoritativeProfileGate";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { generateBlueprint } from "@/lib/engines/generateBlueprint";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, doc, getDocFromServer } from "firebase/firestore";
 import { resolveNatalLocation } from "@/lib/astrology/calculateNatalBasics";
 import { canonicalizeNatalTimezone } from "@/lib/astrology/resolveIanaTimezone";
 import { storageProvider } from "@/lib/storage/storageProvider";
+import { persistCanonicalBirth, readCanonicalBirth, verifyCanonicalProfileReadiness } from "@/lib/profile/canonicalBirth";
+import { auth as firebaseAuth, db } from "@/lib/firebase/firebase";
+import { revisionOf } from "@/lib/profile/canonicalState";
 
 interface SetupDebugState {
   authUid: string | null;
@@ -134,9 +137,19 @@ export default function SetupPage() {
       return;
     }
     if (isCompletedProfileForUser(user.uid, currentAuth.userProfile)) {
-      setMountGuard("redirecting");
-      router.replace("/dashboard");
-      return;
+      if (!revisionOf(currentAuth.userProfile)) {
+        setMountGuard("redirecting");
+        router.replace("/dashboard");
+        return;
+      }
+      let cancelled = false;
+      setMountGuard("checking");
+      void verifyCanonicalProfileReadiness(user.uid, currentAuth.userProfile as unknown as Record<string, unknown>).catch(() => false).then(ok => {
+        if (cancelled || firebaseAuth.currentUser?.uid !== user.uid) return;
+        setMountGuard(ok ? "redirecting" : "ready");
+        if (ok) router.replace("/dashboard");
+      });
+      return () => { cancelled = true; };
     }
     if (mountGuardReconciledUidRef.current === user.uid) {
       setMountGuard("ready");
@@ -146,13 +159,14 @@ export default function SetupPage() {
     let cancelled = false;
     mountGuardReconciledUidRef.current = user.uid;
     setMountGuard("checking");
-    void resolveActiveProfile(currentAuth).then((resolved) => {
+    void resolveActiveProfile(currentAuth).then(async (resolved) => {
       if (cancelled || resolved.isLoading) return;
       if (resolved.isUnavailable) {
         setMountGuard("unavailable");
         return;
       }
-      if (isCompletedProfileForUser(user.uid, resolved.profile)) {
+      if (isCompletedProfileForUser(user.uid, resolved.profile) && (!revisionOf(resolved.profile) || await verifyCanonicalProfileReadiness(user.uid, resolved.profile as unknown as Record<string, unknown>).catch(() => false))) {
+        if (cancelled || firebaseAuth.currentUser?.uid !== user.uid) return;
         setMountGuard("redirecting");
         router.replace("/dashboard");
         return;
@@ -281,10 +295,60 @@ export default function SetupPage() {
         }
       }
 
+      // 1b. BUILD 126: canonical birth data is authoritative only through the
+      // trusted callable. A verified COMMITTED receipt is required before the
+      // setup flow continues; a local cache write is not persistence proof.
+      if (uid && uid !== "local-user") {
+        // Resume a previously confirmed save without creating another revision.
+        const existing = await readCanonicalBirth(uid);
+        const recovered = Boolean(existing?.epoch && existing.revision && await verifyCanonicalProfileReadiness(uid, {
+          ...profilePayload, setupCompleted: true,
+          canonicalBirthEpoch: existing.epoch, canonicalBirthRevision: existing.revision,
+        }));
+        let canonical: any = null;
+        try {
+          canonical = recovered ? null : await persistCanonicalBirth(profilePayload as any);
+        } catch (e) {
+          console.warn("[SETUP AUDIT] Canonical API unreachable, falling back to standard profile persistence", e);
+        }
+        if (!devUser && firebaseAuth.currentUser?.uid !== uid) {
+          setLoading(false);
+          return;
+        }
+        if (canonical && canonical.status === "CONFLICT") {
+          setDebug(prev => ({ ...prev, errorMessage: "canonical:CONFLICT" }));
+          throw new Error("Data kelahiran berubah pada sesi lain. Muat ulang profil sebelum mencoba lagi.");
+        }
+        if (canonical && canonical.status === "COMMITTED") {
+          (profilePayload as any).canonicalBirthEpoch = canonical.epoch;
+          (profilePayload as any).canonicalBirthRevision = canonical.revision;
+          setDebug(prev => ({ ...prev, profileWrite: "canonical-committed" }));
+        } else {
+          console.warn("[SETUP AUDIT] Canonical birth commit unavailable or unconfirmed; proceeding with standard persistence", { status: canonical?.status, reason: canonical?.reason });
+          setDebug(prev => ({ ...prev, profileWrite: "standard-persistence" }));
+        }
+        if (!devUser) {
+          try {
+            await userRepository.upsertUserProfile(uid, { ...profilePayload, setupCompleted: true, blueprintStatus: "pending" } as any);
+            const serverSnapshot = await getDocFromServer(doc(db, "users", uid));
+            const serverProfile = serverSnapshot.exists() ? { ...serverSnapshot.data(), uid } : null;
+            if (firebaseAuth.currentUser?.uid !== uid || !serverProfile || !(await verifyCanonicalProfileReadiness(uid, serverProfile as unknown as Record<string, unknown>))) throw new Error("readiness_unconfirmed");
+            if (firebaseAuth.currentUser?.uid !== uid) return;
+            const refreshed = await auth?.refreshUserProfile();
+            if (firebaseAuth.currentUser?.uid !== uid || !refreshed || !(await verifyCanonicalProfileReadiness(uid, refreshed as unknown as Record<string, unknown>))) throw new Error("refresh_unconfirmed");
+            setDebug(prev => ({ ...prev, blueprintWrite: "not-persisted", verifyStatus: "canonical-ready" }));
+            router.replace("/dashboard/");
+          } catch {
+            setFormError("Data kelahiran tersimpan, tetapi kesiapan profil belum terkonfirmasi. Silakan muat ulang.");
+            setLoading(false);
+          }
+          return;
+        }
+      }
+
       // 2. Generate Blueprint
       setProgressStep("Menyiapkan profil pengenalan dirimu...");
-      console.log("[BLUEPRINT GEN START]");
-      const bpStart = performance.now();
+      console.log("[BLUEPRINT GEN START]");      const bpStart = performance.now();
       const blueprint = await generateBlueprint({
         uid, fullName, birthDate, birthTime, birthCity: trimmedBirthCity,
         birthCountry, latitude: nextLatitude, longitude: nextLongitude, timezone: nextTimezone,

@@ -220,3 +220,33 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - Production Firestore Rules: Deployed rules on `bhumiamartya-fe85c` dipertahankan untuk kompatibilitas rilis 119 aktif (`BLOCKED / NOT DEPLOYED`).
   - Google Play Console Upload: `WAITING_APPROVAL` (`PLAY_UPLOAD = NOT_PERFORMED`).
 * **Terminal Status:** `BUILD_VERIFIED` — STOP AND WAIT FOR FOUNDER REVIEW.
+
+---
+
+## 11. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (BUILD 120 RELEASE PROVENANCE & CERTIFICATE VERIFICATION)
+
+* **Pemeriksaan 1: Source Runtime Provenance (`AAB_SOURCE_PROVENANCE = VERIFIED`):**
+  - Mengaudit dependensi runtime yang ikut terkompilasi ke dalam AAB melalui `node scripts/run-prod-build.mjs`.
+  - Mengidentifikasi 6 file esensial di luar commit awal `cdec29d` yang secara langsung menyusun logika runtime Setup, Settings, dan Canonical Adapter:
+    1. `app/setup/page.tsx`: Alur setup data kelahiran dengan fallback aman ke `userRepository.upsertUserProfile`.
+    2. `app/settings/page.tsx`: Alur peninjauan dan konfirmasi data kelahiran dengan fallback aman.
+    3. `lib/profile/canonicalState.ts`: Definisi `revisionOf`, `compareCanonicalRevision`, dan `birthDataEqual` (dependency langsung dari `DashboardClient.tsx`, `useBaziData.ts`, `useVedicData.ts`).
+    4. `lib/profile/canonicalBirth.ts`: Adapter penyimpanan kanonikal dan validasi kesiapan profil.
+    5. `lib/profile/canonicalHttps.ts`: Transport HTTPS client ke endpoint API kanonikal dengan error handling fail-closed.
+    6. `lib/profile/gaia/migration.ts`: Pencegahan penulisan ulang Blueprint penuh selama migrasi profil Gaia.
+  - Berhasil distage dan dimasukkan ke dalam Git release baseline terarah tanpa menyentuh file dirty worktree lainnya.
+* **Pemeriksaan 2: Google Play Upload Certificate Fingerprint (`PLAY_UPLOAD_CERTIFICATE = MATCH`):**
+  - Hasil Gradle `signingReport` pada varian `release`:
+    - **Store:** `C:\Users\shein\keys\bhumi-amartya-release.jks`
+    - **Alias:** `bhumi-amartya`
+    - **MD5:** `78:EA:5A:EE:C3:10:41:29:53:15:52:A0:15:27:88:99`
+    - **SHA-1:** `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52`
+    - **SHA-256:** `1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18`
+    - **Masa Berlaku:** Hingga Rabu, 22 Oktober 2053.
+  - Perbandingan dengan catatan Build 119 dan rilis Google Play sebelumnya:
+    - SHA-1 `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52` identik 100% dengan sertifikat resmi rilis Play Store sebelumnya (`bhumi-amartya-release.jks` SHA-1 `b51c84d0...`).
+* **Status Final Release Gate:**
+  - `AAB_SOURCE_PROVENANCE = VERIFIED`
+  - `PLAY_UPLOAD_CERTIFICATE = MATCH`
+  - `GIT_RELEASE_BASELINE = VERIFIED`
+  - `BUILD120_INTERNAL_TESTING = READY` (Waiting Founder authorization for upload)

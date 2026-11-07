@@ -52,7 +52,8 @@ export async function migrateUserToGaia(profile: UserProfile): Promise<UserProfi
   const migrated = { ...profile, ...payload } as UserProfile;
   invalidateLegacyGaiaCaches(profile.uid);
   await storageProvider.saveUserProfile(migrated as unknown as Parameters<typeof storageProvider.saveUserProfile>[0]);
-  await storageProvider.saveUserBlueprint(blueprint as unknown as Parameters<typeof storageProvider.saveUserBlueprint>[0]);
+  // The Blueprint was only read for synthesis; writing it back would couple a
+  // profile-only update to persistence of its historical Human Design field.
   console.info("[GAIA MIGRATION COMPLETE]", { uid: profile.uid, profileVersion: migrated.profileVersion, migrationVersion: migrated.migrationVersion });
   return migrated;
 }

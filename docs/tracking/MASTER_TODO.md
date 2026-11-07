@@ -110,7 +110,9 @@
     - Version: `versionCode = 120`, `versionName = "5.0.20"`
     - Size: 9,770,389 bytes (9.77 MB)
     - SHA-256: `D0C9139CBB9EBFA4FB045897C97911530A39E8DDD740064C9D068385DF200750`
-    - Signer: `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID` (official keystore verified by jarsigner)
+    - Signer: `CN=Bhumi Amartya, O=Bhumi Amartya, C=ID` (official keystore `bhumi-amartya-release.jks`, SHA-1 `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52`, SHA-256 `1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18`)
+    - Play Upload Certificate Match: `PLAY_UPLOAD_CERTIFICATE = MATCH` (exact certificate matching Build 119 and previous Google Play releases)
+    - Source Runtime Provenance: `AAB_SOURCE_PROVENANCE = VERIFIED` (Setup, Settings, and Canonical Adapter dependencies reconciled into Git baseline)
     - Static Web Assets: Fresh (Next.js production static export 78 pages, synced via Capacitor)
   - **Remaining Action:** Google Play Console upload upon explicit Founder order.
   - **Blocker / Dependency:** None for local AAB.

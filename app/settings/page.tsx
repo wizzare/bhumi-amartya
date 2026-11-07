@@ -38,6 +38,13 @@ import { clearBhumiSessionForSignOut } from "@/lib/auth/onboardingIntent";
 import { deleteUser } from "firebase/auth";
 import { shouldApplyDefaultRegistrationPolicy } from "@/lib/billing/registrationPolicy";
 import { getCurrentBadge } from "@/lib/billing/billingPreparation";
+import {
+  persistCanonicalBirth,
+  readLegacyBirthForReview,
+  confirmLegacyBirth,
+  extractCanonicalRevision,
+  type ProfileSaveResult,
+} from "@/lib/profile/canonicalBirth";
 import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
@@ -133,7 +140,7 @@ function Field({
 
 function normalizeProfileDisplay(profile: LocalUserProfile | StorageUserProfile | null | undefined) {
   const displayName = profile?.fullName || profile?.displayName || "";
-  const birthCity = profile?.birthPlace || profile?.birthCity || profile?.cityOfBirth || "";
+  const birthCity = profile?.birthCity || profile?.cityOfBirth || profile?.birthPlace || "";
 
   return {
     uid: profile?.uid ?? null,
@@ -535,6 +542,36 @@ export default function SettingsPage() {
     }
   };
 
+  const handleReviewLegacyBirth = async () => {
+    const uid = auth?.user?.uid;
+    if (!uid || firebaseAuth.currentUser?.uid !== uid) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const birth = await readLegacyBirthForReview(uid);
+      if (firebaseAuth.currentUser?.uid !== uid) return;
+      if (!birth) {
+        setMessage("Data kelahiran tersimpan belum lengkap. Periksa data profil sebelum melanjutkan.");
+        return;
+      }
+      const reviewed = window.confirm(
+        `Tinjau data kelahiran yang tersimpan:\n\nTanggal: ${birth.birthDate}\nWaktu: ${birth.birthTime}\nKota: ${birth.birthCity}\nTempat: ${birth.birthPlace}\nNegara: ${birth.birthCountry || "—"}\nKoordinat: ${birth.latitude}, ${birth.longitude}\nZona waktu: ${birth.timezone}\n\nSaya telah meninjau data ini dan menyatakan bahwa data tersebut milik saya. Konfirmasi ini tidak memverifikasi ketepatan historis data.`,
+      );
+      if (!reviewed || firebaseAuth.currentUser?.uid !== uid) return;
+      const result = await confirmLegacyBirth(uid, birth);
+      if (firebaseAuth.currentUser?.uid !== uid) return;
+      if ((result.status === "COMMITTED" || result.status === "ALREADY_INITIALIZED") && result.epoch && result.revision && await auth.syncCanonicalProfile(result.epoch, result.revision)) {
+        setMessage("Data kelahiran telah dikonfirmasi. BaZi dan Vedic dapat dimuat kembali.");
+      } else {
+        setMessage(result.reason === "legacy_birth_changed" ? "Data tersimpan berubah. Tinjau ulang sebelum mengonfirmasi." : "Konfirmasi belum selesai. Periksa data dan coba lagi.");
+      }
+    } catch {
+      setMessage("Data kelahiran belum dapat ditinjau. Periksa koneksi dan coba lagi.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     const activeUid = auth?.user?.uid || "local-user";
     const now = new Date().toISOString();
@@ -632,7 +669,8 @@ export default function SettingsPage() {
       birthDate,
       birthTime,
       birthCity,
-      birthPlace: birthCity,
+      // Preserve a distinct stored place when the city itself was not edited.
+      birthPlace: cityChanged ? birthCity : (currentProfile.birthPlace || birthCity),
       cityOfBirth: birthCity,
       latitude: nextLatitude,
       longitude: nextLongitude,
@@ -650,7 +688,7 @@ export default function SettingsPage() {
     }
     nextProfile.dateOfBirth = birthDate;
     nextProfile.timeOfBirth = birthTime;
-    nextProfile.placeOfBirth = birthCity;
+    nextProfile.placeOfBirth = nextProfile.birthPlace;
     nextProfile.hdDismissedAt = null;
 
     setSaving(true);
@@ -664,20 +702,68 @@ export default function SettingsPage() {
             source: "developer-override",
           }
         : plan || createDefaultUserPlan();
-      const nextBlueprint = generateLocalBlueprint(nextProfile);
-      const existingBlueprint = await storageProvider.getUserBlueprint();
-
-      if (birthDataChanged || !isCanonicalHumanDesign(existingBlueprint?.humanDesign)) {
-        nextBlueprint.humanDesign = await calculateHumanDesign(nextProfile) as unknown as LocalHumanDesign;
-      } else {
-        nextBlueprint.humanDesign = (existingBlueprint as any).humanDesign as LocalHumanDesign;
+      // BUILD 126: canonical birth data is authoritative only through the trusted
+      // callable. Only a verified COMMITTED receipt may be treated as saved.
+      let committedProfile: any = nextProfile;
+      let canonicalConfirmed = false;
+      // A preference-only save must not initialize or attest a legacy profile.
+      const needsCanonicalCommit = birthDataChanged || (!originalProfile && !extractCanonicalRevision(nextProfile));
+      if (needsCanonicalCommit && activeUid !== "local-user") {
+        let canonical: ProfileSaveResult | null = null;
+        try {
+          canonical = await persistCanonicalBirth(nextProfile);
+          if (canonical && canonical.status === "UNKNOWN" && canonical.reason !== "previous_request_unresolved") {
+            canonical = await persistCanonicalBirth(nextProfile, canonical.operationId);
+          }
+        } catch (e) {
+          console.warn("[SETTINGS AUDIT] Canonical API unreachable, falling back to standard profile persistence", e);
+        }
+        if (firebaseAuth.currentUser?.uid !== activeUid) return;
+        if (canonical?.status === "CONFLICT") {
+          setMessage(isEn
+            ? "Your birth data changed on another device. Reopen settings to load the latest data before saving."
+            : "Data kelahiranmu berubah di perangkat lain. Buka ulang pengaturan untuk memuat data terbaru sebelum menyimpan.");
+          return;
+        }
+        if (canonical?.status === "COMMITTED") {
+          canonicalConfirmed = true;
+          committedProfile = {
+            ...nextProfile,
+            canonicalBirthEpoch: canonical.epoch,
+            canonicalBirthRevision: canonical.revision,
+          };
+          setOriginalProfile(committedProfile);
+          if (typeof canonical.epoch === "string" && canonical.epoch && Number.isSafeInteger(canonical.revision) && auth?.syncCanonicalProfile) {
+            await auth.syncCanonicalProfile(canonical.epoch, canonical.revision!);
+          }
+        } else {
+          console.warn("[SETTINGS AUDIT] Canonical commit unavailable or unconfirmed; proceeding with standard save", { status: canonical?.status, reason: canonical?.reason });
+        }
       }
 
-      await saveHumanDesignSettings(activeUid, nextProfile,
-        { ...existingBlueprint, ...nextBlueprint, uid: existingBlueprint?.uid || activeUid, input: { ...(existingBlueprint as unknown as { input?: Record<string, unknown> } | null)?.input, birthDate, birthTime, birthCity, latitude: nextLatitude, longitude: nextLongitude, timezone: nextTimezone } },
-        value => storageProvider.saveUserProfile(value as unknown as StorageUserProfile),
-        value => storageProvider.saveUserBlueprint(value as unknown as StorageUserBlueprint),
-      );
+      if (activeUid === "local-user") {
+        const nextBlueprint = generateLocalBlueprint(nextProfile);
+        const existingBlueprint = await storageProvider.getUserBlueprint();
+        nextBlueprint.humanDesign = birthDataChanged || !isCanonicalHumanDesign(existingBlueprint?.humanDesign)
+          ? await calculateHumanDesign(nextProfile) as unknown as LocalHumanDesign
+          : (existingBlueprint as any).humanDesign as LocalHumanDesign;
+        await saveHumanDesignSettings(activeUid, nextProfile,
+          { ...existingBlueprint, ...nextBlueprint, uid: existingBlueprint?.uid || activeUid, input: { ...(existingBlueprint as unknown as { input?: Record<string, unknown> } | null)?.input, birthDate, birthTime, birthCity, latitude: nextLatitude, longitude: nextLongitude, timezone: nextTimezone } },
+          value => storageProvider.saveUserProfile(value as unknown as StorageUserProfile),
+          value => storageProvider.saveUserBlueprint(value as unknown as StorageUserBlueprint),
+        );
+      } else {
+        if (firebaseAuth.currentUser?.uid !== activeUid) throw new Error("SETTINGS_SESSION_CHANGED");
+        try {
+          await userRepository.upsertUserProfile(activeUid, nextProfile);
+        } catch {
+          setMessage(canonicalConfirmed
+            ? "Data kelahiran tersimpan, tetapi perubahan profil lainnya belum tersimpan. Silakan coba lagi."
+            : "Perubahan profil belum tersimpan. Silakan coba lagi.");
+          return;
+        }
+        if (firebaseAuth.currentUser?.uid !== activeUid) return;
+      }
       if (activeUid !== "local-user") {
         await userRepository.updatePresence(activeUid, {
           email: effectiveEmail || null,
@@ -689,9 +775,13 @@ export default function SettingsPage() {
       }
 
 
-      setOriginalProfile(nextProfile);
+      setOriginalProfile(committedProfile);
       setPlan(nextPlan);
-      setMessage(isEn ? "Data updated successfully. Your Blueprint has been refreshed." : "Data berhasil diperbarui. Blueprint-mu sudah diperbarui.");
+      setMessage(activeUid === "local-user"
+        ? (isEn ? "Data updated locally." : "Data diperbarui secara lokal.")
+        : canonicalConfirmed
+          ? (isEn ? "Birth data and profile changes were saved. Some Blueprint results may need to be refreshed." : "Data kelahiran dan perubahan profil tersimpan. Sebagian hasil Blueprint mungkin perlu diperbarui.")
+          : (isEn ? "Profile changes were saved." : "Perubahan profil tersimpan."));
     } catch (error) {
       console.error("[Settings] Save failed", { failed: true });
       setMessage(isEn ? "Failed to save settings. Please try again." : "Gagal menyimpan pengaturan. Silakan coba lagi.");
@@ -755,6 +845,12 @@ export default function SettingsPage() {
             />
           </label>
           <Field label={t.settings.birthTime} value={birthTime} type="time" onChange={setBirthTime} />
+          {auth?.user?.uid && auth.userProfile?.uid === auth.user.uid && !extractCanonicalRevision(auth.userProfile as unknown as Record<string, unknown>) ? (
+            <div className="space-y-2 rounded-lg border border-[#D6DCCF] p-4 text-sm text-[#4F5E52]">
+              <p>Data kelahiran lama belum dikonfirmasi. Tinjau data tersimpan untuk menggunakan BaZi dan Vedic.</p>
+              <button type="button" disabled={saving} onClick={handleReviewLegacyBirth} className="rounded-lg bg-[#4F5E52] px-4 py-2 text-white disabled:opacity-50">Tinjau dan konfirmasi data tersimpan</button>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-2 text-sm text-[#7B8776] pt-2 border-t border-[#F5F1E8]">
             <span className="text-sm font-medium text-[#4F5E52]">{isEn ? "Relationship Status" : "Status Hubungan"}</span>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
