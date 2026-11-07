@@ -709,6 +709,73 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `npx tsc --noEmit --project tsconfig.json`: **PASS** (exit code 0).
 
 * **Status Batasan Rilis:**
-  - `ARSIP_AKASHI_AK01 = PASS_LOCAL`
-  - `NEXT_SPRINT = AK-02 SARAN BHUMI`
+  - `ARSIP_AKASHI_AK01 = SUPERSEDED_BY_AK01R`
+  - `NEXT_SPRINT = AK-01R NARRATIVE QUALITY CORRECTION`
   - `STOP AFTER AK-01. WAIT FOR FOUNDER REVIEW.`
+
+---
+
+## 23. SPRINT AK-01R: ARSIP AKASHI NARRATIVE QUALITY CORRECTION (FOUNDER EDITORIAL REVIEW)
+
+* **Tanggal Eksekusi:** 08 November 2026
+* **Penanggung Jawab:** Google Antigravity
+* **Baseline Commit:** `14459eb9c164a6057e73c068b86ed2514bead96d`
+* **Status Sprint:** **PASS LOCAL (100% AUDIT & TEST COMPLIANCE)**
+
+### A. Tindakan Rekayasa & Editorial:
+1. **Eliminasi Total 5 Formula Kalimat Berulang (Skeleton Templates):**
+   - `"Dalam keseharian, dorongan ini terasa nyata saat..."` -> DIHILANGKAN (0 occurences).
+   - `"...di mana ... berpadu dengan..."` -> DIHILANGKAN (0 occurences).
+   - `"Kejernihanmu bertumbuh ketika kamu menyadari bahwa..."` -> DIHILANGKAN (0 occurences).
+   - `"Menjadi panduan batin yang memandu setiap pilihan kecilmu."` -> DIHILANGKAN (0 occurences).
+   - `"Mengenali [nama reading] mengajakmu menyelami..."` -> DIHILANGKAN (0 occurences).
+   - 45 pembacaan reguler kini memiliki generator narasi unik (`READING_NARRATIVE_TEMPLATES`), masing-masing dengan variasi kalimat pembuka, eksplorasi shadow, dan pembumian integrasi yang organik.
+
+2. **Gaya Blueprint Jiwa (Authentic Soul Blueprint Voice):**
+   - Menghubungi "kamu" secara langsung dengan empati, kehangatan, dan kedalaman psikospiritual.
+   - Menggambarkan pengalaman hidup konkret (ketakutan finansial, benteng pertahanan kedekatan, ritme biologis tubuh, batas relasi).
+   - Seimbang antara pengakuan kekuatan sejati dan penerimaan sisi bayangan tanpa nada menghakimi.
+   - Variasi ritme kalimat di seluruh 7 ruang utama dan sub-bagian Soul Identity.
+
+3. **Source-Aware Humanizer & Domain Semantic Distinction:**
+   - Pemisahan makna angka berdasarkan sistem sumber: Arcana Matrix (1–22) != Numerology Life Path (1–9, 11, 22, 33) != House != Weton Pasaran.
+   - Pembedaan semantik murni:
+     - `Money Block`: Hubungan psikologis dengan uang, rasa cukup, harga diri, ketakutan kekurangan, dan dorongan kontrol berlebih.
+     - `Ekonomi & Pola Penghasilan`: Potensi karya, model penghasilan, pembangunan aset berkelanjutan, dan pertukaran nilai riil.
+     - `Love Block`: Benteng kerentanan, kecurigaan bawah sadar, takut dihakimi/ditinggalkan, dan penarikan diri dari keintiman.
+     - `Kebutuhan Emosional Relasi`: Ruang aman emosional, kebutuhan didengar tanpa syarat, dan kelembutan kasih sayang.
+     - `Warisan Leluhur`: Kearifan garis keturunan, memori keluarga lintas generasi, dan pemutusan rantai beban masa lalu. **CRITICAL GUARD:** Human Design Not-Self theme (Frustrasi / Kemarahan / Kepahitan) secara ketat dieksklusikan dari pembacaan ini (`!(readingId === "warisan-keluarga-leluhur" && fact.systemId === "human-design")`).
+     - `Soul Mission`: Arah kontribusi jiwa dan evolusi pengabdian melampaui ego fana.
+     - `Talenta Alami`: Kapasitas bawaan yang mengalir spontan sebelum dilatih formal.
+   - Pemetaan Heavenly Stems BaZi Tiongkok (甲 s/d 癸) langsung ke kearifan elemen Indonesia sebelum sanitasi teks.
+
+4. **Kepatuhan Kontrak 3x3 dan 5x5 (100% PASS):**
+   - 49 pembacaan standar: tepat 3 paragraf × 3 kalimat (9 kalimat total, panjang > 5 karakter, berakhiran tanda titik). `arsip_akashi_3x3_contract.test.ts` = 180/180 PASS (100%).
+   - 3 Surat Jiwa: tepat 5 paragraf × 5 kalimat (25 kalimat total). 100% PASS.
+   - Zero duplikasi pembacaan antar-profil (Alpha vs Beta vs Gamma = 0 duplicate readings across all 49 readings).
+   - Zero forbidden template phrases across all profiles.
+
+5. **Disiplin Tata Kelola & Batasan Rilis:**
+   - Tidak ada modifikasi UI, Weekly Guidance, Daily Guidance, Wellness, Billing, atau Firestore Rules.
+   - `AAB_121 = REBUILD_REQUIRED` pada tahap rilis berikutnya.
+   - Sprint AK-02 (Saran Bhumi & Sumber Pembacaan) tetap terkunci menunggu persetujuan Founder atas AK-01R.
+
+### B. Bukti Eksekusi Uji:
+* `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts`: **180/180 PASS** (exit code 0).
+* `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts`: **7/7 PASS** (exit code 0).
+* `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts`: **3/3 PASS** (exit code 0).
+* `npx tsx scratch/audit_ak01r_templates.ts`: **0 Forbidden Phrases, 0 HD Not-Self in Ancestral, 0 Contract Violations (PASS)** (exit code 0).
+* `npx tsc --noEmit --project tsconfig.json`: **PASS** (exit code 0).
+
+### C. Status Batasan Rilis:
+* `AK01R_TECHNICAL_TESTS = PASS`
+* `EDITORIAL_QUALITY = PASS`
+* `REPEATED_TEMPLATE_PHRASES = REMOVED`
+* `SOURCE_AWARE_MEANING = VERIFIED`
+* `DOMAIN_DISTINCTION = PASS`
+* `BLUEPRINT_JIWA_VOICE = PASS`
+* `FULL_3X3_SAMPLES = 8`
+* `SOUL_LETTER_5X5 = PRESERVED`
+* `AAB_121 = REBUILD_REQUIRED`
+* `NEXT_SPRINT = AK-02 SARAN BHUMI — ONLY AFTER FOUNDER APPROVAL`
+* `STOP AFTER AK-01R.`
