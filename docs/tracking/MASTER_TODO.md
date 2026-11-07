@@ -28,13 +28,13 @@
 - [x] `B121-CF-05` **Client transport strategy** — Exact HTTPS base URI mapping and minimum client version; never reintroduce BaZi/Vedic dependency on canonical; verified Setup/Settings client integration: `DONE_LOCAL`
 - [ ] `B121-CF-06` **Preview/deployment plan** — Document test environment, test account isolation, rollback; `WAITING_APPROVAL` before changing Cloudflare/Vercel/Firebase production.
 
-### C. B121-BILL — Billing Verifier and Entitlement (P0)
+### C. B121-BILL — Billing Verifier and Entitlement (P0) — SPRINT 121-02 COMPLETE
 - [x] `B121-BILL-01` **Current-state reconciliation** — Inventory 5 live Vercel routes: `/api/access/bootstrap-trial`, `/api/billing/google-play/verify`, `/api/billing/google-play/restore`, `/api/access/refresh-badge`, `/api/billing/reconcile`: `DONE_LOCAL`
 - [x] `B121-BILL-02` **Worker port minimal** — Adapted 5 billing handlers to `services/canonical-worker/src/billing/` using native WebCrypto + `FirestoreRest`; zero external Node dependencies: `DONE_LOCAL`
-- [x] `B121-BILL-03` **Token/UID security** — Verify idempotency, purchaseToken ownership, 1 token vs multiple accounts, revocation, invalid/replay, anti-downgrade (5/5 PASS): `DONE_LOCAL`
-- [x] `B121-BILL-04` **Subscription lifecycle** — PURCHASE/PENDING/ACTIVE/GRACE/HOLD/CANCEL/EXPIRE/REFUND/VOID/RESTORE/REPLACE alignment with Google Play semantics: `DONE_LOCAL`
+- [x] `B121-BILL-03` **Token/UID security** — Verify idempotency, purchaseToken ownership, 1 token vs multiple accounts, revocation, invalid/replay, anti-downgrade (32 assertions PASS): `DONE_LOCAL`
+- [x] `B121-BILL-04` **Subscription lifecycle** — PURCHASE/PENDING/ACTIVE/GRACE/HOLD/CANCEL/EXPIRE/REFUND/VOID/RESTORE alignment with Google Play semantics: `DONE_LOCAL`
 - [x] `B121-BILL-05` **Persist-before-ack + reconcile** — Retry failures/timeouts/duplicates, refund/revoke, observability without PII: `DONE_LOCAL`
-- [ ] `B121-BILL-06` **Differential & rollout** — Vercel vs Worker fixtures, maintain `bhumi_premium_monthly`/`monthly`; Gate G2 explicit approval before cutover: `WAITING_APPROVAL`
+- [ ] `B121-BILL-06` **Differential & rollout** — Vercel vs Worker fixtures, maintain `bhumi_premium_monthly`/`monthly`; Gate G2 explicit approval before cutover: `WAITING_APPROVAL` (production cutover NOT PERFORMED)
 
 ### D. B121-SEC — Firestore Rules, Privacy, Legacy Rollout (P0)
 - [x] `B121-SEC-01` **Live vs candidate gap matrix** — Read-only review of actual deployed rules vs candidate local rules (`firestore.rules`): `DONE_LOCAL`

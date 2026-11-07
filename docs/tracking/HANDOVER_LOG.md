@@ -363,3 +363,46 @@ Untuk mencegah regresi antar-domain, pembagian boundary proyek ditetapkan sebaga
   - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
   - `BUILD120_AAB = UNTOUCHED`.
   - Next Sprint: **121-02 BILLING VERIFIER**.
+
+---
+
+## 15. HANDOVER ADDENDUM — 7 NOVEMBER 2026 (SPRINT 121-02: BILLING VERIFIER & ENTITLEMENT)
+
+* **Mandat Sprint:** Single Sprint Execution untuk Sprint 121-02 (Billing Verifier & Entitlement).
+* **Fokus Verifikasi & Paritas 5 Endpoint:**
+  1. **Paritas Kontrak 5 Endpoint:**
+     - `/api/access/bootstrap-trial`: Memeriksa hak akses lebih tinggi (Founder, Penjaga Bhumi Inti/Alfa, LIFETIME, PREMIUM) -> mengembalikan `HIGHER_ENTITLEMENT`. Memeriksa keberadaan trial aktif 7 hari -> `ALREADY_PRESENT`. Data konflik atau manipulasi durasi -> `DATA_CONFLICT`. Akun baru -> memprovisi trial 7 hari (`PROVISIONED`) secara atomik.
+     - `/api/billing/google-play/verify`: Validasi `purchaseToken` dan `productId === "bhumi_premium_monthly"`. Memverifikasi status Google Play (`ACTIVE`, `GRACE_PERIOD`, `ON_HOLD`, `CANCELED_PAID_THROUGH`, `EXPIRED`, `VOIDED`). Menolak kepemilikan token lintas UID (HTTP 409 `TOKEN_OWNERSHIP_CONFLICT`). Menghasilkan signed entitlement JWT.
+     - `/api/billing/google-play/restore`: Memverifikasi kepemilikan token dan mengembalikan entitlement aktif bagi pemilik sah tanpa duplikasi catatan.
+     - `/api/access/refresh-badge`: Mempertahankan badge Founder, Penjaga Bhumi Inti, Penjaga Bhumi Alfa, dan menetapkan badge `Penghuni Bhumi` bagi pelanggan aktif Premium.
+     - `/api/billing/reconcile`: Merekonsiliasi status pengguna dengan token aktif di ledger token Firestore.
+  2. **Kepemilikan Token & Keamanan Lintas UID:**
+     - Satu token pembelian Google Play terikat eksklusif ke satu UID (`billing_purchase_tokens/{hash}`).
+     - Upaya pendaftaran ulang token yang sama oleh UID berbeda ditolak tegas dengan HTTP 409 `TOKEN_OWNERSHIP_CONFLICT` tanpa memberikan hak akses Premium.
+  3. **Subscription Lifecycle & Anti-Downgrade:**
+     - Siklus lengkap: Purchase Baru (`ACTIVE`), Pending (`SUBSCRIPTION_PENDING`), Grace Period (`GRACE_PERIOD`), Account Hold (`ON_HOLD`), Dibatalkan Berbayar (`CANCELED_PAID_THROUGH`), Kedaluwarsa (`EXPIRED`), dan Dibatalkan/Refund (`VOIDED`).
+     - **Anti-Downgrade Protection:** Kedatangan token lama yang kedaluwarsa atau event lambat tidak menimpa atau menurunkan langganan berbayar aktif pengguna di masa depan (misal langganan aktif hingga 2027 tidak tertimpa oleh token lama 2025).
+     - **Authoritative Cancellation:** Jika token aktif yang berstatus otoritatif dinyatakan `VOIDED` (refund), hak akses Premium dicabut dan profil kembali ke status `FREE`.
+  4. **Integritas Entitlement & Persist-Before-Ack:**
+     - Urutan penyimpanan terjamin: dokumen token pembelian dan profil pengguna disimpan dalam transaksi Firestore atomik sebelum tanda terima dikembalikan ke klien.
+     - Tidak ada pemberian status Premium bila verifikasi Google Play gagal atau tidak valid.
+  5. **Kebijakan Akses (Access Policy):**
+     - Founder: akses seumur hidup (`membershipType: "LIFETIME"`, badge `Founder`) tidak dapat diturunkan.
+     - Penjaga Bhumi Inti & Alfa: akses terjamin selama masa aktif tester.
+     - Premium: membuka seluruh halaman berbayar dengan badge `Penghuni Bhumi`, tidak memberikan hak Admin.
+     - Trial: tepat 7 hari (`free_trial`), kedaluwarsa mengunci halaman berbayar secara aman.
+
+* **Bukti Eksekusi Uji:**
+  - `npx tsx --test tests/unit/build121-sprint02-billing-verifier.test.ts`: **5/5 PASS** (Lifecycle, token ownership, anti-downgrade, access policy, restore/voided; exit code 0).
+  - `npx tsx --test services/canonical-worker/test/billing-worker-adaptation.test.ts`: **5/5 PASS** (5 Cloudflare handlers; exit code 0).
+  - `npx tsx --test tests/unit/billing-entitlement-contract.test.ts tests/unit/billing-entitlement-presentation.test.ts`: **81/81 PASS** (63 contract + 18 presentation checks; exit code 0).
+  - Typecheck Worker: `npm run --prefix services/canonical-worker typecheck` (**PASS**, exit code 0).
+  - Typecheck Root: `npx tsc --noEmit --project tsconfig.json` (**PASS**, exit code 0).
+
+* **Status Batasan Rilis:**
+  - `PRODUCTION_CUTOVER = NOT PERFORMED` (Vercel Billing Verifier tetap aktif di produksi).
+  - `GOOGLE_PLAY_EXTERNAL = PENDING` (memerlukan uji Play Console License Testing nyata saat kandidat rilis diunggah).
+  - `PRODUCTION_DEPLOYMENT = NOT PERFORMED` (tidak ada deploy ke Cloudflare).
+  - `FIRESTORE_RULES = UNTOUCHED` (Rules produksi tetap aman).
+  - `ANDROID_VERSION = UNTOUCHED` (versi tetap 120 / 5.0.20).
+  - Next Sprint: **121-03 FIRESTORE RULES**.
