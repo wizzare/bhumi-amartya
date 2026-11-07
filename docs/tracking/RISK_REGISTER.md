@@ -1,10 +1,10 @@
 # BHUMI AMARTYA — RISK REGISTER
 
 **Document ID:** `RISK-REG-001`  
-**Current Workstream:** Workstream 2 — Billing & Entitlement  
+**Current Workstream:** Build 119 - BP02 Destiny Matrix (BP02 ACTIVE; scope-locked)  
 **Baseline Git Branch:** `hotfix/build110-indonesian-only`  
-**Active HEAD:** `e63f334cf0ac20cc076bc88e98e3e06808b024f3`  
-**Last Updated:** 21 Oktober 2026  
+**Active HEAD:** `41e89d8da3c424c2b6775ec5ceb13f689cacd438` (`release: Bhumi Amartya v5.0.18 build 118`)  
+**Last Updated:** 31 Oktober 2026 (Sinkronisasi BP02)  
 **Status:** ACTIVE LIVE REGISTER  
 
 ---
@@ -319,3 +319,196 @@
 
 
 
+
+---
+
+### RSK-35: Consumer Blast Radius Destiny Matrix pada Guidance Lintas Sistem (MITIGATION BY SCOPE-LOCK)
+* **Severity:** **P1 (BLAST RADIUS - MITIGATED BY SCOPE-LOCK)**
+* **Category:** Multi-System Consumer Blast Radius
+* **Description:** Destiny Matrix mengalir ke Panduan Minggu Ini (line Khuang), Catatan Hari Ini (Ekonomi/Asmara/Berat/Ruang Terbuka), dan translator RIP. Perubahan BP02 berisiko merusak pembacaan lintas sistem jika dilakukan otomatis.
+* **Mitigation:** Scope-lock Founder 31 Okt 2026 — zero mutasi product code; setiap kebutuhan perubahan shared code wajib laporan dependency & blast radius dulu; engine tetap frozen separuh perjalanan BP02.
+* **Current Status:** **MITIGATED (SCOPE-LOCK, NO SOURCE CHANGE)**.
+
+### RSK-36: Stale Checkpoint Executor Blueprint `check:matrix` / `validateBhumiMatrixV1` (RESOLVED BY DOCUMENTED DECISION D-02-1..2)
+* **Severity:** **P2 (STALE GOVERNANCE ARTIFACT - DIDOKUMENTASIKAN, TIDAK DIPERBAIKI)**
+* **Category:** Governance Document Staleness
+* **Description:** Dua executor legasi Blueprint masih merger dengan register lama Blueprint 9 (R4 dst.) yang telah di-refactor ke V1 engine; exit code 1 adalah sisa dokumentasi, bukan kerusakan engine.
+* **Mitigation:** Didokumentasikan pada ADR-DASH-05 (keputusan D-02-1/D-02-2) — tidak diperbaiki sebelum Founder decide; tidak digunakan sebagai gate rilis.
+* **Current Status:** **DOCUMENTED STALE (PENDING FOUNDER DECISION)**.
+
+### RSK-37: Divergensi Emotes 4 Baris Cakra Fixture Referensi vs Engine Canonical (REFERENSI TIDAK DIREPRODUKSI ENGINE)
+* **Severity:** **P2 (CONTENT INTEGRITY - DOKUMENTASI MELEBIHI, TIDAK DIPERBAIKI)**
+* **Category:** Editorial Content Integrity vs Canonical Engine
+* **Description:** Emotions Ajna(5) Vishuddha(6) Anahata(4) Manipura(16) pada referensi Founder TIDAK berasal dari engine canonical (kanonikal engine menghasilkan 8/13/8/8), sedangkan angka 4 tidak muncul di seluruh matriks Widhi; fixture referensi tidak dapat direproduksi oleh engine canonical (kemungkinan fixture lama/chartHeart legacy).
+* **Mitigation:** D-B-8 diputuskan Founder (31 Okt 2026, Task 10/11): **Option A — runtime selalu menampilkan angka canonical engine** (Health Card template tetap tuple-agnostic); fixture referensi bersifat design-reference saja dan tidak direproduksi ke runtime; tidak ada angka campuran engine+legacy; tidak ada formula yang diubah.
+* **Current Status:** **RESOLVED (D-B-8 Option A — Health Card menampilkan angka canonical engine; tanpa angka campuran; implementasi menunggu gate BP02-D5)**.
+
+### RSK-38: User Data Isolation & Cache Cross-User untuk Destiny Matrix (GATE FROZEN/CLOSED BP02)
+* **Severity:** **P1 (DATA PRIVACY & ISOLATION - ACCEPTANCE GATE BP02-D1..E)**
+* **Category:** Security, Privacy & PII; Cross-User Data Isolation
+* **Description:** Hasil Destiny Matrix wajib berasal dari input valid pengguna aktif; risiko kebocoran data antar-akun pada logout, account switching, stale doc, request race, cache active ledger global.
+* **Mitigation:** Requirement isolasi stabil dipasang pada PRM (PRM seksi BP02 User Data Isolation & Personalization): UID ownership & freshness; pembacaan hanya berasal dari data akun aktif (tanpa fixture/founder/hardcode default); cache & negara key by owner identity + input valid; regression tests 2 UID, logout, account switching, request race, cache isolation; guards produksi fail-closed; test sintetis bukan bukti pengganti E2E Firestore Rules.
+* **Current Status:** **PLANNED (BP02-D1) — TIDAK ADA BP02 FROZEN/CLOSED SEBELUM SELURUH ISU ACCEPTANCE TERPENUHI**.
+
+### RSK-B126-PROFILE — Canonical freshness and save acknowledgment
+
+* **Severity:** P1 data-integrity acceptance blocker; production reachability UNVERIFIED.
+* **Evidence:** synthetic same-account newer/older completion returns outdated BP10 result; settings helper resolves when synthetic save callbacks return false. Local-only results do not prove a production incident or authorization violation.
+* **Status:** OPEN — BP10 local freeze and Release 119 readiness BLOCKED. Proposed authority, compatibility and acceptance design: `BUILD126_SHARED_PROFILE_AUTHORITATIVE_REVISION_AND_PERSISTENCE_ACK_DESIGN.md`.
+* **Next decision:** Founder approval of trusted ordering, acknowledgment, security Rules/legacy-client behavior and separately scoped implementation/migration; broader security/Billing remain Release 120, subject to mandatory Release 119 safety gate.
+
+
+### RSK-B126-PROFILE — final design gate update (2026-11-03)
+
+* **Status:** OPEN; BP10 freeze and Release 119 readiness BLOCKED.
+* Preferred design is server-owned revision with atomic compare-and-set and idempotent acknowledgment; server metadata alternative is locally plausible but not established end-to-end. No schema or Rules implementation is authorized.
+* **Additional gate:** prior Android versions may bypass or misreport rejected/local-only birth writes; update enforcement and deployed Rules remain UNVERIFIED. Minimum security and migration must be separately reviewed and authorized.
+* Evidence: `BUILD126_PROFILE_REVISION_FINAL_IMPLEMENTATION_SECURITY_AND_LEGACY_DESIGN.md`.
+
+
+### RSK-B126-PROFILE — Phase A emulator evidence (2026-11-03)
+
+* **Status:** OPEN / BP10 FREEZE BLOCKED / RELEASE 119 BLOCKED.
+* Isolated current-local-Rules synthetic emulator observed owner unversioned birth update and arbitrary revision-like field allowed; cross-account test denied. No claim about deployed production Rules.
+* Trusted static-Android-to-server route/IAM, complete legacy writer fencing, truthful failure/upgrade behavior and migration remain unverified. No local candidate or deployment was created. Evidence: `BUILD126_PROFILE_REVISION_SERVER_CONTRACT_LOCAL_IMPLEMENTATION_REPORT.md`.
+
+
+### 2026-11-03 — Build 126 current baseline and profile boundary
+
+Release 119 remains blocked: candidate Rules permit an arbitrary birthRevision field; unversioned snapshots can bypass the current shared freshness guard; legacy runtime and production security remain unverified. See BUILD126_RELEASE119_CURRENT_BASELINE_AND_PROFILE_IMPLEMENTATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile security closure
+
+Known issue: candidate Rules restriction denies legitimate direct Blueprint input writes without an implemented trusted replacement; partial legacy initialization, receipt and nested/alternative path coverage remain unverified. Release 119 remains blocked. See BUILD126_RELEASE119_PROFILE_SECURITY_CLOSURE_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Blueprint writer prototype
+
+Known issue: the older candidate allowed forged Blueprint provenance; a local derivative denies the tested revision field but computed Blueprint values remain client-writable and consumed. Legacy initialization and rollout remain blocked. See BUILD126_RELEASE119_TRUSTED_BLUEPRINT_WRITER_AND_PROFILE_CONTRACT_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Phase A security integration
+
+Known issue: previous Blueprint Rules allowed forged stored Human Design; metadata-only candidate denies tested forgery but blocks existing legitimate full-result writers. Functions entrypoint has missing local modules; initializer and receipts remain unverified. See BUILD126_RELEASE119_PHASE_A_FINAL_SECURITY_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Functions integration recovery
+
+Release 119 remains blocked by unverified missing Functions modules and unavailable integrated trusted Blueprint/profile writer; restrictive local Rules alone break legitimate writes. Legacy initialization, receipts and Android compatibility remain unresolved. See BUILD126_RELEASE119_FUNCTIONS_BLUEPRINT_WRITER_AND_PROFILE_INTEGRATION_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 local Functions continuation
+
+Known issues: missing production Functions source and unknown deployed exports; inconsistent legacy aliases, retry acknowledgment and trusted Blueprint result/consumer behavior remain unresolved despite partial local callable evidence. See BUILD126_RELEASE119_FUNCTIONS_RECOVERY_AND_TRUSTED_PROFILE_CONTINUATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile alias integration gate
+
+Known issue: conflicting location aliases are conservatively blocked; nested-only legacy records, actual timeout/retry persistence, trusted calculated outputs and Rules/consumer coverage remain unverified. Main Functions and legacy Android remain release blockers. See BUILD126_RELEASE119_LOCAL_PROFILE_BLUEPRINT_AND_BP10_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 profile and Blueprint integration gates
+
+Known issue: real timeout and retry identity across reload, complete alias reconciliation and canonical provenance, legitimate trusted Blueprint output/consumer and installed Android behavior remain unverified. Release 119 remains blocked. See BUILD126_RELEASE119_CANONICAL_PROFILE_BP10_AND_BLUEPRINT_E2E_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 application save integration
+
+Known issue: session-scoped retry identity is not durable after tab close and can block after profile revision changes; callable/Rules/Blueprint shared flow and legacy Android are incomplete. Four selected Build 115 test cases fail in this run. See BUILD126_RELEASE119_ACTUAL_APPLICATION_INTEGRATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 shared profile and HD triage
+
+Known issue: shared revision still lacks proven server/cache provenance; stale BP10 end-to-end remains unverified. Build 115 has four current fixture/contract failures; no historical passing baseline established. Trusted Blueprint and main Functions remain blocked. See BUILD126_RELEASE119_SHARED_PROFILE_BP10_AND_HD_REGRESSION_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 Settings provider integration
+
+Known issue: actual Settings/BP10 emulator browser path remains blocked by QA runtime guard and unverified Blueprint persistence; cached revisions and session recovery need further proof. Build 115 still has four fixture/contract failures. See BUILD126_RELEASE119_SETTINGS_AUTHPROVIDER_BP10_INTEGRATED_E2E_REPORT.md.
+
+
+### 2026-11-03 — Build 126 QA runtime and HD token evidence
+
+Known issue: combined-emulator browser mode is denied by QA runtime contract. Five synthetic HD transport token checks pass but the original Build 115 suite still has four failures; Blueprint, Functions and Android release risks remain. See BUILD126_RELEASE119_QA_RUNTIME_AND_BP10_TRUE_E2E_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 OpenCode QA reconciliation
+
+Known issue: QA-only application execution remains disabled until immutable build identity, Android release isolation and full endpoint/identity controls are demonstrated. The prior OpenCode branch accepted qaOnly values with NODE_ENV production before quarantine. See BUILD126_OPENCODE_QA_GUARD_RECONCILIATION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 QA build isolation execution gate
+
+QA-only runtime and BP10 integrated E2E remain blocked: independently verified build identity and production artifact isolation are absent. Guard 568/538, standalone helper 42 and BP10 math 6,948/1,444 passed locally; the old freshness probe failed against the current fail-closed save contract. See BUILD126_RELEASE119_QA_BUILD_ISOLATION_AND_TRUE_BP10_E2E_REPORT.md. No feature freeze or release approval.
+
+
+### 2026-11-03 — Build 126 freshness probe reconciliation
+
+The old helper probe now verifies explicit failure and no subsequent Blueprint callback on rejected profile persistence: 10 checks passed. Actual isolated QA harness and BP10 integrated E2E remain blocked and unimplemented; no freeze recommendation. See BUILD126_RELEASE119_QA_HARNESS_EXECUTION_AND_BP10_E2E_ACCEPTANCE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 isolated QA login smoke
+
+A dedicated local Next target started against three synthetic loopback emulators; actual login and Auth Emulator smoke passed (3 checks). Production artifact isolation and the full QA security contract remain blocked; BP10 E2E was not run. See BUILD126_RELEASE119_QA_HARNESS_IMPLEMENTATION_RESULT.md.
+
+
+### 2026-11-03 — Build 126 QA security acceptance
+
+Candidate Rules passed 13 scoped authenticated emulator checks and the actual login smoke passed. Process identity remains blocked on independent lineage and complete fallback evidence; production artifact isolation remains blocked because the isolated release build fails TypeScript. BP10 E2E not run. See BUILD126_RELEASE119_QA_SECURITY_ACCEPTANCE_AND_BP10_E2E_REPORT.md.
+
+
+### 2026-11-03 — Build 126 owned QA stack and TypeScript progress
+
+Owned local emulator stack, app-scope loopback and login smoke executed; continuous listener ownership and comprehensive browser egress isolation remain blocked, so BP10 E2E was not run. TypeScript improved from 18 to two Human Design status-contract diagnostics; repository TSC remains FAIL. See BUILD126_RELEASE119_QA_UNBLOCK_AND_BP10_INTEGRATED_EXECUTION_REPORT.md.
+
+
+### 2026-11-03 — Build 126 launcher and browser boundary
+
+Launcher IPC challenge, parent checks and periodic process/listener monitoring were exercised; owned Firestore termination closed the QA session. Chromium WebRTC bypassed HTTP interception; added browser defense-in-depth did not establish OS egress isolation. Local BP10 E2E remains blocked. Two protected Human Design status-contract TypeScript diagnostics remain. See BUILD126_RELEASE119_QA_SECURITY_AND_BP10_E2E_FINAL_CLOSURE_REPORT.md.
+
+
+### 2026-11-03 — Build 126 offline namespace capability
+
+A disposable WSL network namespace passed loopback and external TCP/UDP/DNS denial checks, but the actual app/emulators/Chromium were not run inside it and sandbox acceptance remains blocked. Two Human Design calculationStatus diagnostics remain unresolved; a separate existing live normalizer test failed. See BUILD126_RELEASE119_OFFLINE_QA_AND_BP10_E2E_REPORT.md.
+
+
+### RSK-39: Premature Production Firestore Rules Rollout Breaking Legacy Clients
+* **Severity:** **P0 (CRITICAL)**
+* **Category:** Production Safety & Backward Compatibility
+* **Description:** Hardening rules langsung ke produksi akan memutus klien Android v118/119/120 pada alur onboarding atau edit tanggal lahir.
+* **Impact:** Pengguna Play Store aktif mengalami error `permission-denied` dan gagal menggunakan aplikasi.
+* **Mitigation:** Rules live dipertahankan permisif terkontrol; candidate rules diuji di emulator; rilis 121 menyertakan matriks kompatibilitas versi sebelum rollout produksi.
+* **Current Status:** **OPEN / MITIGATED VIA COMPATIBILITY GATE**.
+
+---
+
+### RSK-40: Cloudflare Workers Free Tier CPU & Concurrency Limits in Production
+* **Severity:** **P0 (CRITICAL)**
+* **Category:** Infrastructure & Scalability
+* **Description:** Cloudflare Workers Free memiliki batasan CPU time 10ms/128MB. Walaupun tes lokal 4ms, eksekusi WebCrypto token revocation dan Firestore REST transaksi multi-roundtrip di produksi perlu diverifikasi.
+* **Impact:** Potensi HTTP 500 / Worker CPU Exceeded pada lonjakan trafik.
+* **Mitigation:** Benchmark berulang pada staging/canary sebelum cutover; audit batas kuota dan fail-closed error handling.
+* **Current Status:** **OPEN / OBSERVABILITY GATE REQUIRED**.
+
+---
+
+### RSK-41: Vercel Billing Cutover Race & Entitlement Disruption
+* **Severity:** **P0 (CRITICAL)**
+* **Category:** Commercial & Entitlement Integrity
+* **Description:** Peralihan endpoint billing dari Vercel ke Cloudflare Worker berisiko menimbulkan race condition atau kegagalan acknowledge purchaseToken Google Play.
+* **Impact:** Pengguna kehilangan akses Premium yang sah atau transaksi tertunda.
+* **Mitigation:** Lima endpoint Vercel tetap live; port bertahap dengan contract parity 100%; cutover hanya setelah end-to-end sandbox testing dan persetujuan Founder.
+* **Current Status:** **OPEN / CUTOVER GATE LOCKED**.
+
+---
+
+### RSK-42: Unintentional Regressions to BUILD 120 Parity & Ephemeris
+* **Severity:** **P1 (HIGH)**
+* **Category:** Product & Algorithmic Parity
+* **Description:** Perubahan refactoring pada guidance engine berisiko merusak paritas Dashboard/Profile Arah Hari Ini, memorial footer, atau formula Lilith/BaZi/Vedic.
+* **Impact:** Kerusakan integritas pembacaan dan regresi produk yang sudah ditutup.
+* **Mitigation:** Suite pengujian `build120-dashboard-insight-alignment.test.ts`, `bazi-vedic-local-recovery.test.ts`, dan `lilith-parity.test.ts` dijalankan wajib sebagai invariant test suite.
+* **Current Status:** **MITIGATED BY AUTOMATED INVARIANT TESTS**.
+
+---
