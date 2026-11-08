@@ -113,6 +113,14 @@
 - [x] `B121-AK01Q-05` **Room ID Mapping & Contract Verification** — Verified room ID mapping for `soul-mission` (`roomTitle: "SOUL IDENTITY"` -> `roomId: "soul-identity"` mapped cleanly in definitions and content bridge); verified 180/180 3x3 contract and 5x5 Soul Letters: `DONE_LOCAL`
 - [x] `B121-AK01Q-06` **Audit Artifact & Release Discipline** — Created comprehensive audit report in `docs/audits/BUILD121_AK01Q_EDITORIAL_ACCEPTANCE_AUDIT.md`; zero UI/engine changes; AAB rebuild required (`AAB_121 = REBUILD_REQUIRED`); stop after AK-01Q: `DONE_LOCAL`
 
+### N. B121-AK02 - Arsip Akashi Refinement (Saran Bhumi — Personalized Practical Wisdom) - SPRINT AK-02 COMPLETE
+- [x] `B121-AK02-01` **49 Standard Readings Dedicated Saran Bhumi** — Equipped all 49 standard readings (45 regular + 2 semester + 2 symbolic origin) with dedicated, non-empty, grounded practical wisdom (1 natural paragraph, 3-5 sentences: pattern of awareness, strength to leverage, 1-2 practical steps) via `SARAN_BHUMI_GENERATORS`: `DONE_LOCAL`
+- [x] `B121-AK02-02` **UI Profile Single Advice Block Consolidation** — Unified advice label to 'Saran Bhumi' in `ProfileSectionClient.tsx`; removed `!card.detailSections?.length` restriction so Saran Bhumi renders seamlessly inside card without duplication or fragmentation: `DONE_LOCAL`
+- [x] `B121-AK02-03` **Surat Jiwa 5x5 Format Preservation** — Verified 3 Surat Jiwa preserve sacred 5 paragraphs x 5 sentences structure and companion letter voice without intrusive advice boxes: `DONE_LOCAL`
+- [x] `B121-AK02-04` **AK-01Q Scorecard Reconciliation** — Mathematically reconciled 64 editorial evaluations to 4.78125 / 5.00 (rounded 4.78 / 5.00), domain differentiation 4.875, warmth 4.75; documented `soul-identity` duplicate room ID note without breaking public contract: `DONE_LOCAL`
+- [x] `B121-AK02-05` **Dedicated Test Suite & Regression Verification** — Implemented and verified 8 tests in `build121-sprint-ak02-saran-bhumi.test.ts` (8/8 PASS); 3x3 contract 180/180 PASS; grounding tests 3/3 PASS; Sprint 121-04 7/7 PASS; TSC clean: `DONE_LOCAL`
+- [x] `B121-AK02-06` **Audit Artifact & Release Discipline** — Created comprehensive audit report in `docs/audits/BUILD121_AK02_SARAN_BHUMI_AUDIT.md`; AAB rebuild required (`AAB_121 = REBUILD_REQUIRED`); stop after AK-02: `DONE_LOCAL`
+
 ---
 
 ## Current Release 119 gates — 2026-11-03

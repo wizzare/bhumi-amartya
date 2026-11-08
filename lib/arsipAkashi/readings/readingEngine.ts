@@ -102,7 +102,7 @@ function symbolicItem(resonance: SymbolicCatalogEntry, isStarseed: boolean) {
     title: resonance.title,
     shortMeaning: resonance.meaning,
     deepExplanation: detailSections.map((section) => section.body).join(" "),
-    practicalReflection: `Refleksi ${resonance.title}: pilih satu kualitas simbolik yang bisa diterjemahkan menjadi tindakan etis hari ini.`,
+    practicalReflection: sanitizeVisible(`Pahami arketipe ${resonance.title} sebagai cermin simbolik untuk mengenali potensi batinmu, bukan sebagai identitas kaku yang membatasi dirimu. Kekuatan simbol ini terletak pada ${symbolicClause(resonance.light)}, yang dapat kamu manfaatkan untuk menghadirkan ketenangan dalam menghadapi tantangan harian. Latihlah penerapannya hari ini dengan mengambil satu tindakan etis yang membumi dan selaras dengan tanggung jawab nyatamu saat ini.`),
     detailSections,
     score: 0,
     supportingThemes: [resonance.meaning],
@@ -133,7 +133,9 @@ export function renderSymbolicOriginReadings(model: ArsipAkashiInsightModel): Ar
     title,
     narrative: `Bacaan ${title} memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terang ${title} tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan ${title}, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasi ${title} adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
     deepExplanation: `Bacaan ${title} memakai resonansi sebagai bahasa simbolik tentang arketipe dan pola jiwa, bukan sebagai bukti asal-usul literal. ${selected.map(({ entry }) => `${entry.title} hadir karena ${symbolicClause(entry.why)}`).join("; ")}. Kualitas terang ${title} tampak ketika ${selected.map(({ entry }) => symbolicClause(entry.light)).join("; sementara ")}. Dalam bayangan ${title}, ${selected.map(({ entry }) => symbolicClause(entry.shadow)).join("; sementara ")}. Arah integrasi ${title} adalah membawa simbol ini ke pilihan nyata tanpa menjadikannya identitas yang kaku.`,
-    practicalReflection: `${title}: ${reflection}`,
+    practicalReflection: id === "resonansi-starseed"
+      ? sanitizeVisible(`Memahami resonansi Starseed ${selected[0]?.entry ? selected[0].entry.title : ""} mengajakmu mengenali pola kepekaan rasa dan kerinduan akan makna mendalam sebagai arketipe simbolik, bukan sebagai alasan untuk menjauh dari kenyataan bumi. Pola yang patut kamu amati adalah kecenderungan merasa terasing saat dinamika lingkungan terasa bising atau melelahkan. Gunakan kepekaan intuisimu dan kekuatan ${selected[0]?.entry ? symbolicClause(selected[0].entry.light) : "budi pekerti"} untuk menghadirkan ketenangan bagi orang-orang di sekitarmu. Langkah paling nyata yang bisa kamu ambil hari ini adalah membumikan pemahaman batinmu ke dalam satu tindakan kepedulian yang konkret di tempat kamu berada saat ini.`)
+      : sanitizeVisible(`Jejak peradaban jiwa ${selected[0]?.entry ? selected[0].entry.title : ""} hadir sebagai cermin simbolik yang merangkum kearifan, estetika, dan ketahanan nilai dari masa lalu untuk memperkaya perjalanan hidupmu saat ini. Pola yang perlu kamu sadari adalah kecenderungan bernostalgia pada masa lampau tanpa menghidupkan pelajaran kebijaksanaannya dalam keputusan harian. Kekuatanmu terletak pada kemampuan memetik prinsip kebaikan dan membawanya menjadi etika hidup yang bersandar pada ${selected[0]?.entry ? symbolicClause(selected[0].entry.light) : "integritas"}. Mulai hari ini, terapkan satu nilai kearifan tersebut ke dalam caramu berkomunikasi, menjaga integritas, serta merawat tanggung jawab profesionalmu secara nyata.`),
     items: selected.map(({ entry, score }) => ({ ...symbolicItem(entry, isStarseed), score, supportingFactIds: factIds, contributingSystems: systems, confidenceBand: systems.length >= 8 ? "high" as const : systems.length >= 4 ? "medium" as const : "limited" as const, explanationEligibility: systems.length >= 2 })),
     order: id === "resonansi-starseed" ? 1 : 2,
   });
@@ -2112,6 +2114,389 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
   },
 };
 
+
+type SaranBhumiGeneratorFn = (cueA: string, cueB: string, cueC: string, isSparse: boolean) => string;
+
+const SARAN_BHUMI_GENERATORS: Record<string, SaranBhumiGeneratorFn> = {
+  // 1. arketipe-utama (SIAPA DIRIMU)
+  "arketipe-utama": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang patut kamu sadari adalah kecenderungan menyesuaikan diri secara berlebihan demi memenuhi ekspektasi sosial di sekitarmu. Ingatlah bahwa kekuatan terbesarmu hadir saat kamu berani berdiri tenang pada jati dirimu yang autentik. Hari ini, pilihlah satu kesempatan untuk menyatakan pandangan atau mengambil sikap yang jujur tanpa rasa takut kehilangan persetujuan orang lain. Langkah kecil ini akan meneguhkan kembali rasa percaya dirimu secara bertahap.`;
+    }
+    return `Pola yang patut kamu amati adalah kecenderungan memaksakan peran luar demi menyenangkan orang lain ketika tekanan lingkungan menyentuh ${cueB}. Kekuatan utamamu bekerja paling jernih saat kehadiranmu berakar kuat pada ${cueA}, menghadirkan ketenangan yang tidak mudah goyah. Pilihlah satu situasi hari ini untuk menegaskan batas atau sikap autentik yang bersandar pada ${cueC}. Keberanian bersikap jujur ini akan membantumu kembali pada kompas internalmu tanpa perlu bersikap konfrontatif.`;
+  },
+
+  // 2. cara-berpikir-memaknai (SIAPA DIRIMU)
+  "cara-berpikir-memaknai": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Saat kamu menghadapi banyak pilihan, perhatikan apakah ada kebiasaan menimbang terlalu lama hingga menunda langkah praktis yang sebenarnya sudah bisa dimulai. Daya analisismu yang mendalam adalah modal berharga, namun ia memerlukan batas waktu agar tidak berubah menjadi keraguan yang melumpuhkan. Cobalah membatasi waktu analisis untuk satu persoalan hari ini, lalu buat satu keputusan konkret yang langsung dapat kamu tindak lanjuti. Kejelasan sering kali lahir dari tindakan nyata, bukan hanya dari perenungan di kepala.`;
+    }
+    return `Saat menghadapi persoalan yang rumit, perhatikan apakah muncul kebiasaan menganalisis terlalu berlarut-larut saat berhadapan dengan ${cueB} hingga menunda eksekusi nyata. Ketajaman menalarmu adalah kekuatan besar saat kamu membiarkan pikiranmu dipandu oleh ${cueA}. Beri jeda sejenak untuk memilah inti persoalan dari kebisingan informasi, lalu turunkan pemahamanmu ke dalam satu keputusan praktis berlandaskan ${cueC}. Langkah nyata yang sederhana akan membantumu bergerak maju dengan pikiran yang lebih lapang.`;
+  },
+
+  // 3. nilai-kebutuhan-batin (SIAPA DIRIMU)
+  "nilai-kebutuhan-batin": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang perlu kamu cermati adalah kebiasaan mengesampingkan kebutuhan emosional pribadimu demi menjaga kenyamanan orang lain di sekitarmu. Stabilitas batinmu hanya dapat terjaga bila kamu memberi ruang yang adil bagi pemulihan dan ketenangan jiwamu sendiri. Luangkan waktu sejenak hari ini untuk bertanya secara jujur apa yang sebenarnya sedang dibutuhkan oleh batinmu, lalu penuhi kebutuhan tersebut tanpa rasa bersalah. Merawat diri sendiri adalah fondasi utama agar kamu tetap dapat hadir dengan tulus bagi orang lain.`;
+    }
+    return `Pola yang perlu kamu cermati adalah kecenderungan menomorduakan rasa nyaman pribadimu saat tuntutan lingkungan menyentuh ${cueB}. Stabilitas batinmu tumbuh semakin kokoh ketika kamu memberi tempat yang layak bagi ${cueA} di dalam ritme harianmu. Mulailah hari ini dengan menegaskan batasan yang sehat dan melindungi ruang istirahatmu melalui ${cueC}. Menghormati kebutuhan batinmu sendiri adalah bentuk tanggung jawab pertama agar energimu tidak terkuras secara sia-sia.`;
+  },
+
+  // 4. cara-hadir-di-dunia (SIAPA DIRIMU)
+  "cara-hadir-di-dunia": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan apakah ada dorongan dalam dirimu untuk memasang topeng atau bersikap terlalu formal saat kamu memasuki ruang sosial yang baru. Kehadiranmu sebenarnya paling berkesan dan menenangkan ketika kamu berani tampil sederhana apa adanya. Dalam percakapan atau pertemuan hari ini, cobalah berkomunikasi dengan lebih santai tanpa merasa harus membuktikan kepintaran atau kehebatanmu. Keaslian sikap akan selalu membangun jembatan kepercayaan yang lebih kokoh daripada kesan sempurna yang dibuat-buat.`;
+    }
+    return `Perhatikan apakah kamu merasakan dorongan untuk memasang benteng peran saat berada di bawah tekanan sosial di sekitar ${cueB}. Daya pikat alamimu justru terpancar paling kuat ketika caramu berinteraksi berakar pada ${cueA}. Hadirkan dirimu secara utuh hari ini tanpa polesan berlebih, dan biarkan ${cueC} memandu caramu merespons orang lain. Keaslian sikap yang membumi akan selalu membuka jalan kerja sama yang lebih tulus dan saling menghargai.`;
+  },
+
+  // 5. ritme-energi-alami (ENERGI & MEKANIKA)
+  "ritme-energi-alami": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap menguras stamina adalah memaksakan diri kamu bekerja terus-menerus mengikuti kecepatan orang lain tanpa menyimak ritme tubuh sendiri. Tubuhmu memiliki siklus pasang surut energi alami yang perlu kamu hormati agar produktivitasmu bertahan dalam jangka panjang. Mulai hari ini, perhatikan kapan energimu berada di puncak untuk menuntaskan pekerjaan berat, dan kapan tubuhmu meminta jeda pemulihan. Mengatur ritme kerja sesuai sinyal tubuh akan menghindarkan dirimu dari kelelahan fisik maupun mental yang berkepanjangan.`;
+    }
+    return `Pola yang kerap menguras stamina adalah memaksakan inisiatif mental secara tergesa saat berhadapan dengan ${cueB}, tanpa menunggu sinyal kesiapan fisik. Energimu bekerja paling efektif dan berkelanjutan saat kamu bergerak selaras dengan ${cueA}. Amati respons tubuhmu sebelum memulai komitmen baru hari ini, dahulukan aktivitas yang memberi rasa mantap, dan jadwalkan jeda pemulihan lewat ${cueC}. Menghormati ritme alami ini akan menjaga kejernihan pikiran dan ketahanan staminamu sepanjang hari.`;
+  },
+
+  // 6. cara-mengambil-keputusan (ENERGI & MEKANIKA)
+  "cara-mengambil-keputusan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Kalau kamu sering merasa ragu saat dihadapkan pada pilihan penting, amati apakah kamu terlalu cepat mencari persetujuan luar karena takut melakukan kesalahan. Kompas internalmu sebenarnya memiliki kecerdasan yang cukup untuk mengenali arah yang benar jika kamu memberi jeda pada pikiran yang berisik. Saat harus mengambil keputusan hari ini, berhentilah sejenak dari meminta pendapat orang lain dan dengarkan resonansi yang paling tenang di dalam dadamu. Ambillah satu keputusan kecil dengan keyakinan penuh dan jalani prosesnya dengan sabar.`;
+    }
+    return `Kalau kamu merasakan keraguan yang mendesak saat menghadapi ${cueB}, waspadai dorongan mencari validasi luar secara terburu-buru. Otoritas keputusanmu bekerja paling jernih saat kamu memberi ruang bagi ${cueA} untuk mematangkan pertimbangan batin. Jangan biarkan tekanan waktu memaksamu menyetujui hal yang belum terasa selaras; tundalah sejenak hingga kejelasan hadir, lalu mantapkan langkahmu pada ${cueC}. Keputusan yang diambil dari ketenangan batin akan selalu membawa hasil yang lebih kokoh.`;
+  },
+
+  // 7. pola-respons-kehidupan (ENERGI & MEKANIKA)
+  "pola-respons-kehidupan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola otomatis yang sering muncul saat keadaan tidak berjalan sesuai rencana adalah bersikap defensif atau menyalahkan situasi secara reaktif. Sikap ini wajar sebagai bentuk perlindungan diri, namun bila dibiarkan akan menghabiskan energimu untuk hal yang tidak bisa diubah. Latihlah jeda beberapa detik sebelum merespons kabar mengejutkan hari ini, lalu tanyakan pada dirimu apa bagian yang masih bisa kamu kendalikan secara positif. Mengalihkan fokus pada tindakan konstruktif akan memulihkan kembali rasa berdayamu.`;
+    }
+    return `Pola otomatis yang sering muncul saat keadaan tidak sesuai harapan adalah bereaksi tergesa di sekitar ${cueB}. Ketahanan batinmu justru berkembang optimal saat kamu menyandarkan caramu merespons pada ${cueA}. Saat menghadapi perubahan rencana hari ini, tarik napas dalam untuk mengendapkan emosi sebelum berbicara, lalu arahkan energimu pada ${cueC}. Respons yang tenang dan terukur akan mengubah hambatan menjadi ruang pembelajaran yang mendewasakan.`;
+  },
+
+  // 8. fokus-produktivitas-konsistensi (ENERGI & MEKANIKA)
+  "fokus-produktivitas-konsistensi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Godaan yang paling sering merusak konsistensi adalah membuka terlalu banyak inisiatif baru secara bersamaan hingga perhatian kamu terpecah. Menyelesaikan satu hal kecil secara tuntas jauh lebih bernilai daripada memulai banyak rencana besar yang akhirnya terbengkalai. Pilihlah tepat satu prioritas pekerjaan terpenting yang ingin kamu selesaikan hari ini, dan singkirkan gangguan gawai selama kamu mengerjakannya. Rasakan kepuasan batin saat kamu berhasil menuntaskan satu tanggung jawab hingga tuntas sebelum beralih ke hal lain.`;
+    }
+    return `Godaan yang kerap memecah perhatianmu adalah dorongan mengerjakan terlalu banyak hal sekaligus saat berhadapan dengan ${cueB}. Daya kerjamu menghasilkan dampak paling nyata saat energimu dipusatkan pada ${cueA}. Tentukan satu sasaran kerja terpenting yang ingin kamu selesaikan hari ini, tutup tab atau aplikasi yang tidak berkaitan, dan tuntaskan langkah bertahap lewat ${cueC}. Konsistensi yang dibangun dari penyelesaian satu per satu akan melipatgandakan hasil karyamu secara terukur.`;
+  },
+
+  // 9. cara-memulihkan-energi (ENERGI & MEKANIKA)
+  "cara-memulihkan-energi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang patut kamu ubah adalah menganggap istirahat sebagai hadiah yang baru boleh diambil setelah tubuhmu jatuh sakit atau benar-benar kehabisan tenaga. Pemulihan energi adalah bagian integral dari ritme hidup yang sehat, bukan tanda kelemahan atau kemalasan. Luangkan waktu jeda tanpa stimulasi layar hari ini, cukup dengan duduk hening, berjalan santai, atau mendengarkan napasmu sendiri. Memberi jeda secara teratur akan menjaga vitalitas dan kejernihan pikiranmu tetap segar menghadapi tantangan hidup.`;
+    }
+    return `Pola yang patut kamu ubah adalah menunda pemulihan hingga tubuh memberi sinyal lelah yang berat di sekitar ${cueB}. Kapasitas energimu pulih paling cepat saat kamu menyelaraskan waktu jedamu dengan ${cueA}. Sisihkan waktu lima belas menit hari ini untuk melepaskan diri dari tuntutan pekerjaan, kurangi stimulasi yang berlebihan, dan biarkan energimu kembali seimbang lewat ${cueC}. Perawatan diri yang disiplin adalah bentuk penghormatan paling mendasar terhadap raga yang menemanimu berjuang.`;
+  },
+
+  // 10. luka-inti (LUKA, BAYANGAN & WARISAN)
+  "luka-inti": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang layak kamu amati adalah rasa takut diabaikan atau merasa tidak cukup berharga saat situasi di sekitarmu terasa menekan. Respon emosional ini bukanlah kekurangan diri yang memalukan, melainkan sinyal bahwa ruang batinmu sedang membutuhkan rasa aman dan penerimaan tulus. Saat perasaan tidak nyaman ini muncul hari ini, jangan memarahinya atau memaksanya hilang; perlakukan dirimu dengan kelembutan sebagaimana kamu merawat seorang sahabat. Pengakuan jujur atas kerapuhanmu justru menjadi awal tumbuhnya ketabahan batin yang sejati.`;
+    }
+    return `Pola yang layak kamu amati adalah rasa cemas yang kerap terpicu saat interaksi harian menyentuh ${cueB}. Ketahanan jiwamu untuk tetap berdiri tegak dan bertumbuh melampaui rasa takut berakar kuat pada ${cueA}. Sadari pemicu tersebut dengan sikap welas asih tanpa buru-buru menghakimi dirimu sendiri, lalu kuatkan rasa aman batinmu hari ini melalui ${cueC}. Memberi ruang penerimaan pada bagian dirimu yang rentan akan mengubah rasa sakit menjadi sumber empati yang mendalam.`;
+  },
+
+  // 11. mekanisme-perlindungan (LUKA, BAYANGAN & WARISAN)
+  "mekanisme-perlindungan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan apakah ada kebiasaan dalam dirimu untuk menarik diri, bersikap sinis, atau memasang jarak dingin saat sebuah hubungan mulai menuntut keterbukaan yang mendalam. Benteng pertahanan ini dahulu mungkin membantumu bertahan, namun kini ia berisiko mengisolasi hatimu dari kehangatan yang sebenarnya kamu rindukan. Dalam lingkar hubungan yang sudah terbukti aman hari ini, cobalah menurunkan sedikit bentengmu dengan menyampaikan perasaan secara jujur. Kedekatan yang tulus hanya dapat bertumbuh ketika kamu berani memperlihatkan ketulusan tanpa baju zirah pelindung.`;
+    }
+    return `Perhatikan apakah ada kebiasaan memasang benteng dingin atau mengontrol keadaan saat dinamika kedekatan menyentuh ${cueB}. Mekanisme perlindungan ini hadir untuk menjaga hatimu, namun kini ia dapat dipandu dengan lebih bijak melalui ${cueA}. Di tengah lingkungan yang aman hari ini, latihlah keterbukaan yang sehat dengan menyampaikan apa yang kamu rasakan tanpa defensif lewat ${cueC}. Melonggarkan pertahanan secara bertahap akan membuka ruang bagi keintiman yang lebih jujur dan melegakan.`;
+  },
+
+  // 12. pola-self-sabotage (LUKA, BAYANGAN & WARISAN)
+  "pola-self-sabotage": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap tidak kamu sadari adalah rasa gelisah yang muncul justru saat hidupmu mulai stabil dan berjalan baik, yang memicu dorongan merusak momentum dengan keputusan ceroboh atau penundaan. Ketakutan akan kegagalan sering kali menyamar sebagai rasa tidak layak menerima kebaikan dalam hidup. Saat dorongan menyabotase diri muncul hari ini, kenali itu sebagai bentuk kecemasan lama yang sedang meminta kepastian, lalu tetaplah tenang memegang komitmenmu. Kamu sepenuhnya layak menikmati hasil baik dari kerja keras dan pertumbuhan yang telah kamu capai.`;
+    }
+    return `Pola yang kerap tidak disadari adalah rasa gelisah yang memicu dorongan menunda atau merusak ritme kerja saat berhadapan dengan ${cueB}. Keyakinan akan kelayakan dirimu untuk bertumbuh dan menerima keberhasilan berakar pada ${cueA}. Saat dorongan menyabotase hadir, berhentilah sejenak, kenali kecemasan tersebut tanpa mengikutinya, dan tetap selesaikan tugas kecilmu lewat ${cueC}. Menjaga ritme positif secara konsisten akan membuktikan pada batinmu bahwa kamu aman untuk melangkah maju.`;
+  },
+
+  // 13. ketakutan-tersembunyi (LUKA, BAYANGAN & WARISAN)
+  "ketakutan-tersembunyi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan jika ada bayangan skenario terburuk yang diam-diam membatasi langkah kamu saat ingin mencoba hal baru dalam hidup. Pikiran sering kali membesar-besarkan risiko yang belum tentu terjadi demi mencegahmu keluar dari zona yang familier. Cobalah memisahkan antara fakta nyata yang ada di depan mata dan kekhawatiran yang hanya hidup dalam imajinasi pikiranmu hari ini. Fokuskan perhatianmu pada satu tindakan kecil yang aman untuk kamu lakukan sekarang, daripada membiarkan rasa takut masa depan melumpuhkan energimu.`;
+    }
+    return `Perhatikan jika kamu merasakan kekhawatiran bawah sadar yang membesar saat membayangkan kemungkinan di sekitar ${cueB}. Kekuatanmu untuk menatap realitas secara jernih dan proporsional bertumpu pada ${cueA}. Tuliskan fakta objektif yang ada saat ini untuk membedakannya dari asumsi yang mencemaskan, lalu sandarkan ketenangan langkahmu pada ${cueC}. Menghadapi ketakutan dengan fakta konkret akan meredakan kepanikan dan mengembalikan kendali hidupmu secara nyata.`;
+  },
+
+  // 14. warisan-keluarga-leluhur (LUKA, BAYANGAN & WARISAN)
+  "warisan-keluarga-leluhur": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang patut kamu renungkan adalah ekspektasi tak terucap atau kebiasaan keluarga yang diam-diam kamu jalani tanpa pernah kamu pertanyakan kecocokannya dengan jiwamu. Menghormati garis keturunan tidak berarti kamu harus mengulang beban emosional atau pola lama yang membatasi pertumbuhanmu. Pilihlah nilai-nilai luhur dan ketabahan keluarga yang menguatkanmu, sambil melepaskan kebiasaan lama yang sudah waktunya diperbarui. Cara terbaik menghormati asal-usulmu adalah dengan menjalani hidupmu sendiri secara sadar, sehat, dan bermartabat.`;
+    }
+    return `Pola yang patut kamu renungkan adalah beban ekspektasi generasi terdahulu yang diam-diam masih membebani pilihan pribadimu di sekitar ${cueB}. Daya tahan silsilah dan harapan hidup yang diwariskan kepadamu bertumpu kuat pada ${cueA}. Hormati nilai luhur keluarga yang menopangmu, sambil menegakkan batasan mandiri yang membebaskanmu dari pengulangan siklus lama melalui ${cueC}. Menjalani hidupmu sendiri dengan integritas adalah bentuk penghormatan paling tulus bagi garis keturunanmu.`;
+  },
+
+  // 15. karma-pola-berulang (LUKA, BAYANGAN & WARISAN)
+  "karma-pola-berulang": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Jika kamu merasa sering menjumpai situasi atau persoalan serupa yang datang berulang kali, perhatikan bagaimana caramu merespons pemicu tersebut sejak awal. Pola hidup yang berulang adalah undangan bagi kesadaranmu untuk memetik hikmah dan mencoba cara bertindak yang berbeda dari masa lalu. Saat situasi yang serupa hadir kembali hari ini, jangan mengulang reaksi otomatis yang lama; ambil waktu jeda dan pilihlah respons yang lebih bijak dan tenang. Perubahan kecil dalam caramu merespons akan memutus lingkaran lama dan membuka babak baru dalam hidupmu.`;
+    }
+    return `Jika kamu merasa menghadapi dinamika serupa yang berulang di sekitar ${cueB}, sadarilah bahwa situasi tersebut mengundangmu untuk mengubah cara merespons. Kapasitas refleksi dirimu untuk memetik hikmah dan mengarahkan kemudi hidup berakar pada ${cueA}. Ketika pemicu yang familier datang kembali hari ini, berhentilah sejenak sebelum bertindak, lalu pilihlah respons baru yang memutus siklus lama lewat ${cueC}. Keberanian mengambil sikap baru akan membebaskan energimu untuk melangkah ke fase yang lebih matang.`;
+  },
+
+  // 16. arah-penyembuhan-integrasi (LUKA, BAYANGAN & WARISAN)
+  "arah-penyembuhan-integrasi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Proses penyembuhan batin bukanlah upaya menghapus pengalaman masa lalu, melainkan kemampuan kamu memeluk seluruh perjalanan hidupmu dengan rasa welas asih. Mengakui bagian dirimu yang pernah terluka tanpa rasa malu akan memulihkan keutuhan jiwamu secara alami. Luangkan momen hening hari ini untuk mengucapkan terima kasih pada dirimu sendiri yang telah bertahan dan belajar sejauh ini. Integrasi sejati tercapai saat kamu tidak lagi memusuhi masa lalu, melainkan menjadikannya pupuk bagi kedewasaan budi pekertimu.`;
+    }
+    return `Proses penyembuhan batin menuntut kesediaan merangkul kerapuhan tanpa menghakimi saat berhadapan dengan ${cueB}. Kematangan jiwamu untuk menyatukan kekuatan dan bayangan menjadi keutuhan batin berakar pada ${cueA}. Luangkan momen hening hari ini untuk memulihkan kelembutan sikap terhadap dirimu sendiri, lalu latih integrasi nyata melalui ${cueC}. Kedamaian batin akan hadir dengan sendirinya saat kamu berhenti memerangi bagian dirimu yang sedang belajar bertumbuh.`;
+  },
+
+  // 17. talenta-alami (KARYA & TALENTA)
+  "talenta-alami": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap menghambat kemajuan adalah meremehkan bakat alamimu sendiri hanya karena kemampuan tersebut terasa mudah bagimu dibandingkan orang lain. Bakat sejati sering kali hadir secara bersahaja dalam caramu mengamati, memecahkan persoalan, atau merangkai gagasan. Luangkan waktu khusus hari ini untuk mengasah keahlian yang kamu kuasai, dan jangan ragu menggunakan kemampuan yang kamu miliki untuk membantu orang di sekitarmu. Nilai bakatmu akan semakin bersinar ketika kamu merawatnya dengan latihan yang disiplin dan tekun.`;
+    }
+    return `Pola yang kerap menghambatmu adalah saat kamu meremehkan bakat sendiri ketika menemui kesulitan teknis di sekitar ${cueB}. Kemampuan alamimu dalam menghadirkan solusi dan karya berakar kuat pada ${cueA}. Dedikasikan waktu khusus hari ini untuk mengasah keahlian tersebut tanpa tergesa-gesa, lalu buktikan hasilnya dalam satu tindakan nyata berlandaskan ${cueC}. Menghargai dan melatih bakat bawaanmu akan mengubah potensi mentah menjadi kontribusi yang bernilai tinggi.`;
+  },
+
+  // 18. gaya-kerja (KARYA & TALENTA)
+  "gaya-kerja": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan apakah energimu sering terkuras karena kamu memaksakan diri bekerja dengan metode orang lain yang tidak cocok dengan kepribadianmu. Menemukan gaya kerja yang autentik adalah kunci utama agar produktivitasmu tidak mengorbankan kesehatan fisik dan mental. Tata ulang alur kerjamu hari ini dengan membagi tugas ke dalam blok waktu yang realistis dan nyaman bagi ritmemu. Ketika caramu bekerja selaras dengan kebiasaan alamimu, hasil karyamu akan terasa lebih memuaskan dan tidak lagi membebani pikiran.`;
+    }
+    return `Perhatikan apakah energimu terkuras karena kamu memaksakan ritme kerja orang lain saat berada di bawah tekanan ${cueB}. Produktivitas terbaikmu justru mengalir secara alami saat caramu mengelola tugas berpijak pada ${cueA}. Rancang lingkungan dan urutan kerjamu hari ini agar mendukung kenyamanan fokusmu, serta komunikasikan metode kerjamu secara lugas melalui ${cueC}. Bekerja dengan metode yang selaras akan melipatgandakan efisiensi tanpa mengorbankan ketenangan batin.`;
+  },
+
+  // 19. arah-karya-kontribusi (KARYA & TALENTA)
+  "arah-karya-kontribusi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Rasa hampa dalam bekerja sering kali muncul ketika karyamu semata-mata diukur dari keuntungan materi tanpa keterhubungan dengan makna yang lebih luas. Mengetahui siapa yang terbantu oleh hasil usahamu akan memberi bahan bakar semangat yang jauh lebih bertahan lama. Tinjau kembali pekerjaan atau proyek yang sedang kamu tangani hari ini, lalu temukan satu cara kecil yang bisa kamu lakukan untuk meningkatkan manfaatnya bagi orang lain. Kebaikan yang kamu salurkan melalui karyamu akan memantulkan kembali kepuasan batin yang mendalam.`;
+    }
+    return `Rasa hampa dalam bekerja kerap muncul ketika orientasi karyamu teralihkan semata oleh tuntutan sesaat di sekitar ${cueB}. Visi kontribusimu akan menyala kembali saat karyamu diarahkan untuk melayani ${cueA}. Tinjau kembali proyek yang sedang kamu geluti hari ini, perjelas dampak positif yang ingin kamu hasilkan, dan teguhkan komitmen pengabdianmu melalui ${cueC}. Memberi makna pada pekerjaan harian akan mengubah rutinitas biasa menjadi sumber kepuasan jiwa.`;
+  },
+
+  // 20. ekonomi-pola-penghasilan (KARYA & TALENTA)
+  "ekonomi-pola-penghasilan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang patut kamu benahi adalah kebiasaan menunda pencatatan keuangan atau merasa ragu menetapkan nilai yang adil atas keahlian dan waktumu. Membangun kemandirian finansial membutuhkan keberanian untuk melihat angka secara objektif tanpa rasa takut atau gengsi. Mulailah hari ini dengan merapikan satu catatan arus pemasukan dan pengeluaranmu, serta susun rencana alokasi yang sederhana dan masuk akal. Ketertiban mengelola hal-hal kecil akan memberi landasan yang kokoh bagi stabilitas ekonomimu di masa depan.`;
+    }
+    return `Pola yang patut kamu benahi adalah keraguan dalam menetapkan nilai yang pantas saat menghadapi dinamika pasar di sekitar ${cueB}. Kemampuanmu membangun pertukaran nilai yang berkelanjutan dan sehat bertumpu pada ${cueA}. Rapikan catatan arus kasmu hari ini, evaluasi kembali struktur penghasilanmu secara objektif, dan ambil keputusan finansial yang tertib lewat ${cueC}. Ketertiban praktis dalam mengelola angka akan menciptakan rasa aman yang menopang ketenangan hidupmu.`;
+  },
+
+  // 21. money-block (KARYA & TALENTA - Standard Example from Founder)
+  "money-block": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Kalau kamu sering merasa ragu saat harus mengambil keputusan mengenai uang, cobalah memisahkan lebih dulu antara kebutuhan yang nyata dan kekhawatiran yang muncul. Kamu bisa mulai dengan mencatat satu keputusan pengeluaran atau pemasukan yang sedang dipertimbangkan, lalu melihat manfaat, risiko, serta kemampuanmu saat ini. Tujuannya bukan memaksamu menjadi lebih berani mengambil risiko, tetapi membantumu mengambil keputusan yang lebih jernih tanpa menjadikan kondisi keuangan sebagai ukuran seluruh nilai dirimu.`;
+    }
+    return `Kalau kamu merasakan gesekan saat berhadapan dengan ${cueA}, cobalah memisahkan lebih dulu antara kebutuhan yang nyata dan kekhawatiran yang muncul di sekitar ${cueB}. Kamu bisa mulai dengan mencatat satu keputusan pengeluaran atau alokasi yang sedang dipertimbangkan, lalu menimbang manfaat dan risikonya secara jernih. Tujuannya bukan memaksamu berspekulasi, melainkan membantumu mengelola sumber daya secara tenang berlandaskan ${cueC} tanpa menjadikan materi sebagai ukuran mutlak nilai dirimu.`;
+  },
+
+  // 22. arah-karier-bidang-sesuai (KARYA & TALENTA)
+  "arah-karier-bidang-sesuai": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Waspadai godaan memilih jalur profesi semata karena gengsi sosial atau mengikuti arus orang banyak, padahal batinmu merasa tertekan dan tidak berkembang. Karier yang memuaskan adalah pertemuan antara keahlian yang kamu kuasai, kebutuhan nyata di masyarakat, dan nilai hidup yang kamu junjung. Pikirkan satu bidang atau peran yang selama ini selalu menarik perhatian kamu, lalu pelajari langkah awal yang dibutuhkan untuk mencapainya. Mengarahkan langkah secara sadar sedikit demi sedikit akan membawamu ke ruang kerja yang memberi kebahagiaan sejati.`;
+    }
+    return `Waspadai jika kamu tergoda memaksakan diri bertahan di jalur karier yang menguras jiwamu semata demi menghindari ketidakpastian di sekitar ${cueB}. Potensi karier terbaikmu berkembang subur saat keahlian dan peranmu berpijak pada ${cueA}. Luangkan waktu hari ini untuk memetakan bidang yang selaras dengan kapasitasmu, lalu ambil satu langkah persiapan nyata lewat ${cueC}. Keberanian menyelaraskan profesi dengan nilai batin akan membuka jalan kemajuan yang lebih bermartabat.`;
+  },
+
+  // 23. kemampuan-sudah-dimiliki (KARYA & TALENTA)
+  "kemampuan-sudah-dimiliki": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap menahan langkahmu adalah sindrom merasa belum siap, sehingga kamu terus-menerus menunggu sertifikasi atau pengakuan luar sebelum berani tampil. Kamu sesungguhnya telah memiliki bekal kecakapan dan pengalaman hidup yang berharga untuk menyelesaikan tantangan saat ini. Buatlah daftar kemampuan yang sudah kamu kuasai dengan baik, lalu gunakan satu kemampuan tersebut untuk menyelesaikan tugas yang sedang tertunda. Menghargai modal yang sudah ada di tanganmu akan melipatgandakan rasa percaya diri untuk melangkah lebih jauh.`;
+    }
+    return `Pola yang kerap menahan langkahmu adalah sindrom merasa belum cukup siap saat menghadapi tantangan di sekitar ${cueB}. Modal keterampilan dan kecakapan yang telah kamu bangun selama ini bertumpu kokoh pada ${cueA}. Beranikan dirimu memanfaatkan keahlian yang sudah ada untuk menyelesaikan tanggung jawab saat ini tanpa menunda, dan buktikan hasilnya melalui ${cueC}. Mengakui kemampuan yang telah kamu miliki akan mempercepat terwujudnya hasil karya nyata.`;
+  },
+
+  // 24. kemampuan-perlu-dipelajari (KARYA & TALENTA)
+  "kemampuan-perlu-dipelajari": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Menyadari keterbatasan keahlian bukanlah alasan bagi kamu untuk merasa rendah diri, melainkan peta jalan yang menunjukkan arah pertumbuhan pribadimu berikutnya. Hindari godaan mempelajari terlalu banyak hal sekaligus secara dangkal karena ingin segera tampak menguasai segalanya. Pilihlah tepat satu keterampilan kunci yang paling mendesak untuk mendukung tujuan hidupmu saat ini, lalu pelajari dasar-dasarnya secara konsisten setiap hari. Kerendahan hati untuk terus belajar akan memastikan dirimu tetap relevan dan berdaya menghadapi perubahan zaman.`;
+    }
+    return `Menyadari celah keterampilan bukanlah kelemahan, melainkan petunjuk arah belajar saat kamu berhadapan dengan ${cueB}. Daya serap kognitif dan kelincahan mentalmu dalam menguasai wawasan baru berakar pada ${cueA}. Pilihlah satu keahlian spesifik yang paling mendukung kemajuanmu saat ini, pelajari prinsip dasarnya secara tekun, dan latih penerapannya melalui ${cueC}. Proses belajar yang fokus dan bertahap akan menutup celah kompetensimu secara elegan.`;
+  },
+
+  // 25. kebutuhan-emosional-relasi (CINTA & RELASI)
+  "kebutuhan-emosional-relasi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang sering memicu kesalahpahaman dalam hubungan adalah mengharapkan orang lain dapat membaca pikiranmu tanpa kamu perlu mengatakannya secara terus terang. Pasangan atau sahabat terbaik sekalipun tidak akan selalu mampu menebak kebutuhan batinmu secara tepat. Latihlah keberanian kamu untuk mengungkapkan perasaan dan kebutuhanmu dengan kalimat yang sederhana, lembut, dan jelas hari ini. Komunikasi yang terbuka dan jujur adalah jembatan paling aman untuk membangun kedekatan yang saling menenangkan.`;
+    }
+    return `Pola yang sering memicu kekecewaan adalah saat kamu memendam kebutuhan batin ketika dinamika hubungan menyentuh ${cueB}. Kapasitasmu menjalin kedekatan yang hangat dan saling menghargai berakar pada ${cueA}. Ungkapkan kebutuhan emosionalmu secara jernih dan tenang tanpa menunggu pasangan menebak-nebak, serta rawat ruang saling percaya lewat ${cueC}. Kejujuran berkomunikasi sedini mungkin akan menghindarkan relasi dari tumpukan prasangka yang tidak perlu.`;
+  },
+
+  // 26. memberi-menerima-cinta (CINTA & RELASI)
+  "memberi-menerima-cinta": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan apakah ada ketimpangan dalam caramu berelasi, di mana kamu terbiasa mencurahkan banyak perhatian bagi orang lain tetapi merasa canggung atau bersalah saat menerima bantuan. Hubungan yang sehat selalu membutuhkan pertukaran dua arah yang seimbang agar tidak ada pihak yang merasa terkuras atau berutang budi. Ketika seseorang menawarkan kebaikan atau bantuan kepadamu hari ini, terimalah dengan senyuman dan ucapan terima kasih yang tulus. Mengizinkan orang lain mengasihimu adalah bentuk penghargaan yang indah bagi hubungan tersebut.`;
+    }
+    return `Perhatikan apakah ada kebiasaan memberi terlalu banyak hingga menguras diri sendiri saat menghadapi dinamika ${cueB}. Ketulusan cintamu mengalir paling indah ketika kamu membiarkan hatimu berakar pada ${cueA}. Latihlah dirimu untuk menerima bantuan dan kebaikan orang lain dengan lapang dada hari ini, serta jaga keseimbangan timbal balik berlandaskan ${cueC}. Memberi dan menerima secara seimbang akan menjaga kehangatan relasi tetap mekar tanpa keletihan batin.`;
+  },
+
+  // 27. pola-ketertarikan-pasangan (CINTA & RELASI)
+  "pola-ketertarikan-pasangan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Amati secara jujur apakah kamu kerap tertarik pada orang yang menghadirkan rasa cemas atau ketidakpastian emosional yang mengingatkanmu pada dinamika masa lalu. Ketertarikan yang intens sering kali disalahartikan sebagai cinta sejati, padahal terkadang itu hanyalah pengulangan rasa tidak aman yang belum selesai. Latihlah kepekaanmu untuk mengenali daya tarik yang bersumber dari rasa aman, ketenangan, dan kesiapan untuk berkomitmen nyata. Memilih hubungan yang membawa damai adalah tanda bahwa kedewasaan batinmu sedang bertumbuh mekar.`;
+    }
+    return `Amati motif ketertarikanmu saat dinamika relasi mulai memperlihatkan ketidakpastian di sekitar ${cueB}. Kompas relasimu bekerja paling bijak ketika kamu menyandarkan pilihan kedekatan pada ${cueA}. Kenali apakah rasa tertarik tersebut bersumber dari kecemasan lama atau kesiapan berbagi hidup, lalu utamakan relasi yang membawa rasa aman lewat ${cueC}. Menghargai martabat dirimu sendiri akan menarik orang-orang yang siap mencintaimu secara dewasa.`;
+  },
+
+  // 28. konflik-komunikasi-batas (CINTA & RELASI)
+  "konflik-komunikasi-batas": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang berbahaya dalam jangka panjang adalah memilih diam dan memendam kekesalan demi menghindari pertengkaran sesaat, hingga akhirnya amarah meluap tak terkendali. Batas pribadi bukanlah tembok pemisah, melainkan petunjuk arah yang jelas agar orang lain tahu cara memperlakukanmu dengan hormat. Sampaikan batas kenyamanan yang kamu butuhkan sedini mungkin dengan bahasa yang lugas, sopan, dan tidak bernada menyerang saat ada hal yang terasa janggal. Menyelesaikan perbedaan kecil dengan kepala dingin akan melindungi hubungan dari keretakan yang lebih besar.`;
+    }
+    return `Pola yang berisiko adalah saat kamu menunda pembicaraan penting ketika terjadi perbedaan sudut pandang di sekitar ${cueB}. Keberanianmu berkomunikasi secara adil dan bermartabat bertumpu kuat pada ${cueA}. Bicarakan ketidaknyamananmu sedini mungkin dengan kepala dingin tanpa nada menyerang, serta tegakkan kesepakatan yang saling menghormati lewat ${cueC}. Batasan yang jelas dan dikomunikasikan secara santun justru menjadi fondasi terkuat bagi keharmonisan hubungan.`;
+  },
+
+  // 29. love-block-pola-berulang (CINTA & RELASI)
+  "love-block-pola-berulang": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Kalau kamu merasa ada dinding tak terlihat yang membuatmu sulit mempercayai orang lain secara utuh, kenali itu sebagai mekanisme perlindungan hati yang wajar setelah pernah merasakan kecewa. Yang perlu dilatih bukanlah membuang kewaspadaan sama sekali, melainkan belajar membuka diri secara bertahap dalam lingkungan yang telah terbukti aman. Cobalah mengambil inisiatif komunikasi yang jujur mengenai satu harapan relasimu hari ini, tanpa membiarkan prasangka lama mendikte langkahmu. Keberanian merangkul kerapuhan secara sadar adalah gerbang pertama menuju cinta yang mendalam dan membahagiakan.`;
+    }
+    return `Kalau kamu merasakan dorongan untuk menarik diri saat kedekatan emosional menyentuh ${cueB}, kenali itu sebagai sinyal bahwa ruang batinmu sedang membutuhkan rasa aman. Kapasitas hatimu untuk membangun keintiman yang hangat dan tulus bertumpu pada ${cueA}. Latihlah keterbukaan yang sehat hari ini dengan mengambil inisiatif komunikasi terbuka yang mengedepankan ${cueC}. Membuka ruang percaya secara bertahap akan membantumu melampaui pola lama tanpa harus mengorbankan keamanan pribadimu.`;
+  },
+
+  // 30. arah-relasi-matang (CINTA & RELASI)
+  "arah-relasi-matang": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Hubungan yang dewasa bukanlah perjumpaan dua orang yang saling menuntut kesempurnaan, melainkan komitmen dua pribadi mandiri yang bersedia berjalan beriringan sambil terus memperbaiki diri. Hindari kebiasaan membebankan seluruh kebahagiaan pribadimu ke pundak pasangan, karena kamu tetap bertanggung jawab penuh atas kedamaian hatimu sendiri. Rawatlah ruang kebebasan dan rasa hormat dalam interaksimu hari ini, dengan mendengarkan tanpa menghakimi dan mendukung impian masing-masing. Cinta yang matang akan selalu memberi ruang bagi kedua belah pihak untuk tumbuh mekar secara seimbang.`;
+    }
+    return `Hubungan yang dewasa menuntut kesediaan melepaskan tuntutan sepihak saat dinamika kebersamaan menyentuh ${cueB}. Kedewasaan relasimu berkembang paling indah saat kamu melandasi kemitraan dengan ${cueA}. Rawatlah rasa hormat dan ruang mandiri masing-masing hari ini, serta perkuat fondasi hubungan lewat kesepakatan nyata berlandaskan ${cueC}. Memberi ruang bagi pasangan untuk menjadi dirinya sendiri akan mengokohkan ikatan kasih yang tulus dan tahan uji.`;
+  },
+
+  // 31. peta-chakra (RAGA & RUANG)
+  "peta-chakra": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang sering terjadi adalah mengabaikan rasa berat atau sesak pada tubuh saat energimu terdistribusi tidak merata akibat stres pikiran yang berkepanjangan. Raga menyimpan memori emosional yang membutuhkan pelepasan melalui napas dan relaksasi yang sadar. Luangkan waktu beberapa menit hari ini agar kamu dapat duduk tenang, arahkan perhatianmu ke setiap pusat tubuh dari dada hingga perut, dan hembuskan ketegangan yang menumpuk. Menjaga keselarasan napas akan membantu memulihkan kembali sirkulasi energimu yang jernih dan menenangkan.`;
+    }
+    return `Pola yang sering terjadi adalah mengabaikan ketegangan fisik saat ritme energimu terganggu oleh ${cueB}. Keseimbangan vitalitas alami tubuhmu mengalir paling lancar saat kamu memusatkan kesadaran pada ${cueA}. Duduklah hening sejenak hari ini, rasakan aliran napas yang mengalir bebas di raga, dan pulihkan keselarasan energimu melalui ${cueC}. Perhatian yang lembut pada tubuh akan mengembalikan vitalitas dan ketenangan batin secara menyeluruh.`;
+  },
+
+  // 32. sistem-cerna (RAGA & RUANG)
+  "sistem-cerna": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan kebiasaan kamu makan terburu-buru sambil memeriksa gawai atau saat pikiran sedang dilanda kekhawatiran yang intens. Organ pencernaan bekerja sangat erat dengan suasana hati dan membutuhkan rasa tenang agar dapat mengolah asupan dengan optimal. Jadikan jam makanmu sebagai jeda suci hari ini, nikmati aroma dan rasa makanan dengan penuh kesadaran tanpa gangguan pekerjaan. Merawat tubuh dimulai dari caramu memperlakukan apa yang masuk ke dalam ragamu dengan penuh penghormatan dan kelembutan.`;
+    }
+    return `Perhatikan bagaimana kebiasaan kamu mengonsumsi makanan secara tergesa saat emosi terpicu oleh ${cueB}. Sistem pencernaanmu merespons paling optimal saat suasana makan diiringi oleh ketenangan berakar pada ${cueA}. Luangkan waktu untuk menikmati santapanmu dengan rileks hari ini, dengarkan sinyal kenyang dari tubuh, dan jaga keteraturan ritme asupanmu lewat ${cueC}. Menghormati kebutuhan nutrisi raga dengan tenang akan menjaga stabilitas stamina dan kejernihan pikiranmu.`;
+  },
+
+  // 33. lingkungan-ideal (RAGA & RUANG)
+  "lingkungan-ideal": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap menurunkan semangatmu adalah saat kamu bertahan terlalu lama di ruangan yang berantakan, pengap, atau penuh kebisingan yang mengacaukan konsentrasi. Suasana tempat kamu tinggal dan bekerja memiliki pengaruh langsung terhadap kejernihan pikiran dan kestabilan emosimu. Mulai hari ini, rapikan satu sudut meja atau ruanganmu, hadirkan sirkulasi udara yang segar, dan atur pencahayaan yang menenangkan mata. Lingkungan fisik yang tertata rapi akan menghadirkan ruang bernapas yang menyegarkan kembali jiwamu.`;
+    }
+    return `Pola yang kerap menurunkan stamina adalah saat kamu memaksakan diri bertahan di lingkungan yang penuh distorsi di sekitar ${cueB}. Kepekaan sensorik dan fokusmu berkembang optimal saat berada di ruang yang tertata selaras dengan ${cueA}. Sisihkan waktu untuk merapikan ruang kerja atau kamarmu hari ini, hadirkan udara segar, dan ciptakan suasana yang menopang pemulihan batin lewat ${cueC}. Menata ruang hidup secara harmonis akan memberi perlindungan bagi ketenangan energimu.`;
+  },
+
+  // 34. ritme-tubuh (RAGA & RUANG)
+  "ritme-tubuh": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang paling sering mengorbankan kesehatan adalah jam tidur yang tidak teratur dan kebiasaan menatap layar terang hingga larut malam. Raga manusia memiliki jam biologis alami yang mengatur perbaikan sel, metabolisme, dan keseimbangan hormon saat terlelap. Usahakan agar kamu beristirahat pada waktu yang konsisten malam ini, matikan perangkat elektronik setengah jam sebelum tidur, dan ciptakan suasana kamar yang sejuk dan gelap. Menjaga disiplin waktu istirahat adalah investasi terbaik untuk memastikan tubuhmu bangun dengan kesegaran penuh besok pagi.`;
+    }
+    return `Pola yang sering mengacaukan stamina adalah mengabaikan jam biologis raga saat mengejar target di sekitar ${cueB}. Daya tahan fisik dan kesegaran tubuhmu terjaga paling prima saat kamu disiplin pada ritme ${cueA}. Tetapkan waktu tidur yang teratur malam ini, kurangi paparan cahaya biru sebelum terlelap, dan selaraskan kembali siklus aktivitas ragamu lewat ${cueC}. Keteraturan ritme biologis akan memastikan kebugaran fisik dan kestabilan emosimu terjaga dalam jangka panjang.`;
+  },
+
+  // 35. energi-dominan (RAGA & RUANG)
+  "energi-dominan": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Kenali kecenderungan energimu yang dominan, apakah lebih condong pada dorongan aksi cepat atau perenungan reflektif yang peka rasa. Ketidakseimbangan sering muncul saat kamu memaksakan satu sisi terus bekerja tanpa memberi ruang bagi penyeimbang untuk hadir. Jika kamu merasa energimu terlalu panas hari ini, seimbangkan dengan meminum air yang cukup dan mencari keheningan; jika terasa lesu, lakukan gerak fisik ringan untuk menyalakan kembali semangatmu. Kebugaran sejati lahir dari seni menjaga keseimbangan dinamis di dalam dirimu.`;
+    }
+    return `Waspadai kecenderungan saat kamu memaksakan energi dominan bekerja melampaui batas ketika terpicu oleh ${cueB}. Kekuatan karakter dan keteguhan ragamu bersumber dari keaslian ${cueA}. Seimbangkan intensitas energimu hari ini dengan aktivitas yang menenangkan pikiran, dan jaga stabilitas batin lewat ${cueC}. Menjaga keseimbangan elemen di dalam diri akan menghindarkanmu dari kelelahan mendadak dan menjaga ketenangan jiwamu.`;
+  },
+
+  // 36. jalur-spiritual (SPIRITUALITAS & EVOLUSI)
+  "jalur-spiritual": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Waspadai jebakan menganggap spiritualitas hanya sebagai kumpulan konsep abstrak atau pelarian dari kesulitan hidup di dunia nyata. Jalan batin yang matang selalu tercermin dari caramu memperlakukan sesama dengan welas asih, kejujuran dalam bekerja, dan tanggung jawab atas tindakanmu. Ambil satu nilai kebajikan yang kamu yakini hari ini, lalu wujudkan ke dalam tindakan nyata yang menolong orang lain atau memperbaiki keadaan di sekitarmu. Nilai spiritualitasmu baru akan hidup ketika ia menjadi napas dari setiap pilihan harianmu.`;
+    }
+    return `Waspadai godaan saat kamu menganggap perjalanan batin sebagai pelarian dari tanggung jawab praktis di sekitar ${cueB}. Jalur spiritualitasmu bertumbuh paling subur saat pencarian makna bersandar pada ${cueA}. Bumikan pemahaman jiwamu hari ini menjadi tindakan nyata yang penuh kehangatan, serta teguhkan integritas pilihanmu melalui ${cueC}. Spiritualitas yang membumi akan selalu memancarkan kerendahan hati dan ketulusan dalam melayani kehidupan.`;
+  },
+
+  // 37. evolusi-jiwa (SPIRITUALITAS & EVOLUSI)
+  "evolusi-jiwa": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang sering melemahkan semangat adalah memandang ujian atau rintangan hidup sebagai hukuman yang tidak adil. Setiap fase sulit sesungguhnya adalah ruang tempaan yang melatih otot kesabaran, kedewasaan empati, dan kejernihan sudut pandang jiwamu. Renungkan satu peristiwa menantang yang pernah kamu lalui, lalu amati kualitas baik apa yang berhasil mekar dari pengalaman tersebut. Mempercayai proses evolusi hidup akan memberimu kekuatan untuk melangkah tegap menghadapi situasi apa pun yang sedang terjadi.`;
+    }
+    return `Pola yang sering melemahkan semangat adalah memandang tantangan hidup sebagai kemunduran semata di sekitar ${cueB}. Kebijaksanaan jiwamu untuk melihat hikmah pendewasaan di balik setiap peristiwa berakar pada ${cueA}. Petik pelajaran berharga dari situasi menantang yang sedang kamu hadapi saat ini, dan lanjutkan langkah pertumbuhanmu dengan optimisme berlandaskan ${cueC}. Memandang hidup sebagai proses belajar yang tak berkesudahan akan membebaskanmu dari rasa putus asa.`;
+  },
+
+  // 38. potensi-spiritual (SPIRITUALITAS & EVOLUSI)
+  "potensi-spiritual": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan apakah ada keraguan dalam dirimu untuk mengakui kepekaan batinmu, atau sebaliknya godaan merasa lebih istimewa dibandingkan orang lain karena memiliki intuisi yang tajam. Potensi batin hadir bukan untuk mengangkat status diri, melainkan sebagai amanah untuk menghadirkan keteduhan bagi lingkar pergaulanmu. Gunakan kepekaan rasamu hari ini untuk mendengarkan keluh kesah seorang kawan dengan penuh perhatian tanpa buru-buru menghakimi. Kebaikan hening yang kamu bagikan secara tulus akan menjadi berkah yang menghangatkan hati banyak orang.`;
+    }
+    return `Waspadai keraguan diri atau godaan merasa lebih tinggi dari orang lain saat kepekaanmu bersinggungan dengan ${cueB}. Potensi batinmu berkembang paling murni saat kamu mendedikasikan kepekaan rasa pada ${cueA}. Hadirkan pendampingan yang tulus bagi orang-orang di sekitarmu hari ini, dan rawat kerendahan hatimu lewat ${cueC}. Menggunakan kepekaan batin untuk melayani sesama akan menjaga kemurnian jiwamu tetap bercahaya.`;
+  },
+
+  // 39. bakat-spiritual (SPIRITUALITAS & EVOLUSI)
+  "bakat-spiritual": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang sering menghalangi mekarnya bakat batin adalah pikiran yang terlalu berisik dan terus-menerus menuntut pembuktian yang kasat mata. Bakat spiritual seperti kepekaan rasa dan ketajaman firasat hanya dapat berkembang subur di dalam tanah keheningan yang tenang. Sediakan waktu sepuluh menit hari ini agar kamu dapat duduk dalam doa, meditasi, atau perenungan hening tanpa mengharapkan pengalaman luar biasa. Kesetiaan merawat keheningan secara rutin akan mempertajam mata batinmu untuk melihat arah hidup yang benar.`;
+    }
+    return `Pola yang menghalangi mekarnya bakat batin adalah kegelisahan pikiran yang menuntut kepastian di sekitar ${cueB}. Ketajaman firasat dan kejernihan mata batinmu terlatih paling dalam saat kamu berada dalam keheningan bersama ${cueA}. Sisihkan waktu hening hari ini untuk menyimak bisikan nuranimu tanpa gangguan, lalu terjemahkan wawasan batinmu ke dalam keputusan bajik lewat ${cueC}. Merawat keheningan harian akan mengasah bakat jiwamu menjadi panduan hidup yang kokoh.`;
+  },
+
+  // 40. jejak-intuisi (SPIRITUALITAS & EVOLUSI)
+  "jejak-intuisi": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Waspadai kecenderungan mencampuradukkan antara bisikan intuisi yang sejati dan dorongan rasa takut atau angan-angan pikiran yang menggebu-gebu. Intuisi sejati selalu berbicara dengan suara yang tenang, mantap, dan tidak memaksakan diri, sedangkan kecemasan sering kali berisik dan mendesak. Saat kamu merasakan firasat mengenai sebuah pilihan hari ini, catatlah firasat tersebut dan amati pembuktian faktualnya secara objektif seiring waktu berjalan. Melatih kepekaan membedakan sinyal rasa akan membuat intuisimu semakin tajam dan dapat diandalkan.`;
+    }
+    return `Waspadai kebiasaan saat kamu mencampuradukkan antara firasat jernih dan kecemasan mental yang berlebihan ketika menghadapi ${cueB}. Kemampuanmu menangkap sinyal kebenaran batin secara tepat bertumpu kuat pada ${cueA}. Perhatikan resonansi yang paling tenang di dalam dadamu sebelum melangkah, lalu uji kebenarannya secara objektif dalam tindakan nyata lewat ${cueC}. Mempercayai suara nurani yang jernih akan menuntunmu melewati masa sulit dengan selamat.`;
+  },
+
+  // 41. potensi-channeling (SPIRITUALITAS & EVOLUSI)
+  "potensi-channeling": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Perhatikan jika ada ide-ide kreatif atau wawasan inspiratif yang kerap melintas di benakmu namun selalu hilang karena tidak segera kamu catat atau tuangkan ke dalam tindakan. Menjadi saluran inspirasi yang baik membutuhkan keteraturan dan wadah praktis agar gagasan tidak berhenti sebagai angan-angan kosong. Sediakan buku catatan agar kamu dapat mendokumentasikan inspirasi yang muncul hari ini tanpa mempedulikan apakah ide itu sudah sempurna atau belum. Keberanian mendokumentasikan wawasan batin adalah langkah pertama mengubah inspirasi menjadi karya nyata yang bermanfaat.`;
+    }
+    return `Waspadai rasa ragu saat kamu ingin mengekspresikan gagasan inspiratif hanya karena takut dinilai salah di sekitar ${cueB}. Kemampuanmu menangkap wawasan segar dan menerjemahkannya ke dalam bahasa yang menyentuh berakar pada ${cueA}. Tuangkan inspirasi yang melintas di benakmu ke dalam tulisan atau karya nyata hari ini, dan salurkan nilai kebaikannya lewat ${cueC}. Menjadi saluran inspirasi yang rendah hati akan memperkaya kehidupan batinmu dan menginspirasi sesama.`;
+  },
+
+  // 42. soul-mission (SOUL IDENTITY)
+  "soul-mission": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang sering mengaburkan misi jiwa adalah anggapan keliru bahwa panggilan hidup harus selalu berupa tindakan kepahlawanan yang spektakuler dan disaksikan banyak orang. Panggilan sejatimu sering kali tersembunyi di dalam ketulusanmu melayani dan menghadirkan kebaikan pada hal-hal kecil setiap hari. Mulai hari ini, dedikasikan perhatian yang kamu miliki untuk merawat tanggung jawab yang sedang ada di hadapanmu dengan sepenuh hati. Menjalankan peran kecil dengan cinta yang besar adalah jalan paling nyata untuk membumikan misi jiwamu di dunia ini.`;
+    }
+    return `Pola yang sering mengaburkan panggilan jiwa adalah saat kamu terdorong mencari pengakuan luar secara berlebihan ketika berhadapan dengan ${cueB}. Panggilan kontribusi batinmu berdenyut paling murni saat hidupmu didedikasikan bagi ${cueA}. Mulai hari ini, dedikasikan waktu dan perhatian tulusmu pada satu tanggung jawab kecil yang nyata, serta teguhkan niat pengabdianmu melalui ${cueC}. Misi jiwa tidak menuntut pembuktian yang spektakuler, melainkan ketulusan melayani dalam langkah harian yang konsisten.`;
+  },
+
+  // 43. soul-gifts (SOUL IDENTITY)
+  "soul-gifts": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Kenali kecenderungan menahan karunia jiwa yang kamu miliki hanya karena merasa dirimu belum suci atau belum sempurna untuk berbagi kebaikan. Karunia jiwamu seperti kemampuan menghibur, mendamaikan pertikaian, atau memberi harapan adalah titipan yang justru mengalir semakin murni saat dibagikan. Carilah satu kesempatan hari ini agar kamu dapat menyemangati seseorang yang sedang merasa letih dengan kehangatan tulusmu. Menjadi saluran berkah bagi sesama akan menyalakan kembali rasa syukur dan kebermaknaan di dalam hatimu.`;
+    }
+    return `Waspadai rasa ragu untuk membagikan kelebihan diri saat bayangan ketidakpercayaan diri muncul di sekitar ${cueB}. Karunia jiwamu mengalir paling murni saat kamu menyandarkan kebaikanmu pada ${cueA}. Hadirkan karunia tersebut untuk meringankan beban orang lain tanpa pamrih hari ini, dan rawat kemurnian niatmu melalui ${cueC}. Membagikan karunia batin dengan rendah hati akan melipatgandakan kelimpahan spiritual di dalam hidupmu.`;
+  },
+
+  // 44. soul-lessons (SOUL IDENTITY)
+  "soul-lessons": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Pola yang kerap memperpanjang beban hidup adalah kebiasaan menyalahkan takdir atau orang lain saat menghadapi peristiwa yang mengecewakan. Setiap kesulitan yang mampir ke dalam hidupmu sesungguhnya membawa pelajaran jiwa yang sangat berharga untuk mendewasakan karaktermu. Tanyakan pada dirimu sendiri hari ini apa pelajaran kedewasaan yang sedang diajarkan oleh masalah yang kamu hadapi, lalu terimalah dengan lapang dada. Kerelaan memetik hikmah dengan rendah hati akan mengubah rasa sakit menjadi kebijaksanaan hidup yang abadi.`;
+    }
+    return `Pola yang kerap memperpanjang beban adalah saat kamu menyalahkan situasi luar ketika menghadapi gesekan di sekitar ${cueB}. Keteguhan batinmu untuk memetik hikmah pendewasaan dari setiap rintangan berakar kuat pada ${cueA}. Renungkan apa yang sedang diajarkan oleh tantangan hidup saat ini kepadamu, lalu ambil sikap yang lebih lapang dada lewat ${cueC}. Kerendahan hati untuk belajar dari setiap ujian akan mempercepat pendewasaan jiwamu menuju kebebasan batin.`;
+  },
+
+  // 45. soul-shadow (SOUL IDENTITY)
+  "soul-shadow": (cueA, cueB, cueC, isSparse) => {
+    if (isSparse) {
+      return `Waspadai dorongan untuk menyangkal, menekan, atau memproyeksikan sifat-sifat yang tidak kamu sukai dari dirimu kepada orang lain di sekitarmu. Bagian bayangan jiwamu tidak akan pernah hilang dengan cara dimusuhi, melainkan hanya dapat dijinakkan melalui kesadaran dan penerimaan yang tulus. Saat kamu merasa sangat kesal terhadap kelemahan orang lain hari ini, berhentilah sejenak dan tanyakan apakah ada bagian serupa di dalam dirimu yang sedang meminta perhatian. Mengenali bayangan diri dengan jujur adalah kunci pembuka bagi keutuhan batin dan kedamaian sejati.`;
+    }
+    return `Waspadai dorongan saat kamu menyangkal kelemahan diri yang kerap terproyeksikan menjadi rasa kesal terhadap orang lain di sekitar ${cueB}. Keberanian menatap diri secara jujur dan merangkul ketidaksempurnaan berakar kuat pada ${cueA}. Sadari bagian bayangan yang sedang aktif saat emosimu terusik hari ini, dan latih respons welas asih yang memulihkan keseimbangan jiwamu lewat ${cueC}. Menyinari bayangan diri dengan kesadaran penuh kasih akan memulihkan keutuhan jiwamu secara mendalam.`;
+  },
+};
+
+function generateSaranBhumi(
+  reading: ArsipAkashiReadingDef,
+  cueA: string,
+  cueB: string,
+  cueC: string,
+  isSparse: boolean,
+): string {
+  const generator = SARAN_BHUMI_GENERATORS[reading.readingId];
+  if (generator) {
+    return sanitizeVisible(generator(cueA, cueB, cueC, isSparse));
+  }
+  if (isSparse) {
+    return sanitizeVisible(`Pola yang layak kamu sadari adalah kecenderungan menunda keputusan saat menghadapi ketidakpastian. Sadarilah bahwa kamu memiliki modal batin yang cukup untuk melangkah secara bertahap. Mulailah hari ini dengan memilih satu tindakan praktis yang paling relevan untuk kamu selesaikan, lalu amati perubahannya dengan tenang.`);
+  }
+  return sanitizeVisible(`Pola yang layak kamu amati adalah kecenderungan ragu saat menghadapi dinamika di sekitar ${cueB}. Kekuatan utamamu untuk mengambil langkah jernih bertumpu pada ${cueA}. Pilihlah satu tindakan praktis hari ini yang berakar pada ${cueC}, lalu jalani prosesnya secara konsisten.`);
+}
+
+
 function buildParagraphSentences(
   reading: ArsipAkashiReadingDef,
   paragraphIndex: number,
@@ -2192,19 +2577,17 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
   }
 
   const deepExplanation = paragraphs.join("\n\n");
-  const reflectionClosers = [
-    `Tutup latihan ${visibleReadingName(reading)} dengan menilai apakah pilihanmu terasa lebih jujur, lebih tenang, atau lebih mudah dijaga tubuh.`,
-    `Akhiri refleksi ${visibleReadingName(reading)} dengan mencatat satu perubahan kecil pada keputusan, relasi, atau ritme tubuhmu.`,
-    `Setelah latihan ${visibleReadingName(reading)}, perhatikan apakah respons barumu membuat keadaan terasa lebih sadar daripada pola lama.`,
-    `Biarkan catatan ${visibleReadingName(reading)} selesai dengan satu ukuran nyata agar pemahaman tidak berhenti sebagai wacana batin.`,
-  ];
-  const reflection = [
-    `Untuk ${visibleReadingName(reading)}, tuliskan satu pemicu dari shadow yang paling terasa minggu ini dan respons otomatis yang biasanya muncul.`,
-    `Lalu pilih satu latihan integrasi yang spesifik: ${purpose.application}, dengan ukuran yang bisa kamu lakukan dalam satu hari.`,
-    reflectionClosers[symbolicHash(`${model.deterministicKey}:${reading.readingId}:reflection-close`) % reflectionClosers.length],
-  ].map(sanitizeVisible).join(" ");
   const supportingFactIds = provenance.flatMap((item) => item.selectedFactIds);
   const contributingSystems = [...new Set(provenance.flatMap((item) => item.contributingSystems))].sort();
+
+  const cuesArray = Array.from(usedCuesInReading);
+  const domainA = DOMAIN_MEANINGS[reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
+  const domainB = DOMAIN_MEANINGS[reading.allowedDomains[1] ?? reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
+  const safeCueA = cuesArray[0] ?? domainA.core;
+  const safeCueB = cuesArray[1] ?? domainB.strength ?? domainA.strength;
+  const safeCueC = cuesArray[2] ?? purpose.application;
+  const isSparse = model.globalCoverage.availableSystems.length === 0 || contributingSystems.length === 0;
+  const saranBhumi = generateSaranBhumi(reading, safeCueA, safeCueB, safeCueC, isSparse);
 
   return {
     id: reading.readingId,
@@ -2213,7 +2596,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
     title: reading.title,
     narrative: deepExplanation.replace(/\n\n/g, " "),
     deepExplanation,
-    practicalReflection: reflection,
+    practicalReflection: saranBhumi,
     deepNarrativeProvenance: provenance,
     recommendations: [{
       itemId: `${reading.readingId}-deep-reflection`,
@@ -2514,7 +2897,9 @@ function renderSemesterReadings(model: ArsipAkashiInsightModel): ArsipAkashiRend
       },
     ];
     const sectionMetadata = bundles.map((item) => `${item.title}:${item.fingerprint}`).join(";");
-    return { id: timing.semesterId, sectionId: "current-life-phase", roomTitle: "FASE KEHIDUPAN SAAT INI", title: `Peruntungan Semester ${semester} Tahun ${timing.activeYear}`, shortMeaning: subtitle, narrative: sections.map((item) => item.body.replace(/\n\n/g, " ")).join(" "), deepExplanation: sections.map((item) => `${item.title}\n${item.body}`).join("\n\n"), practicalReflection: "", detailSections: sections, recommendations: [{ itemId: `${timing.semesterId}-action`, displayLabel: `Aksi Semester ${semester}`, category: "career-action", relevanceScore: Math.min(100, 40 + systems.length * 6), priority: "current", supportingFactIds: factIds, contributingSystems: systems, confidenceBand: systems.length >= 4 ? "high" : systems.length >= 2 ? "medium" : "limited", currentReadiness: `Status semester: ${timing.semesterStatus}.`, growthGap: direction, weeklyGuidanceEligibility: ["career-action", "economy-action", relationshipBranch, sectionMetadata] }], order: first ? 1 : 2 };
+    return { id: timing.semesterId, sectionId: "current-life-phase", roomTitle: "FASE KEHIDUPAN SAAT INI", title: `Peruntungan Semester ${semester} Tahun ${timing.activeYear}`, shortMeaning: subtitle, narrative: sections.map((item) => item.body.replace(/\n\n/g, " ")).join(" "), deepExplanation: sections.map((item) => `${item.title}\n${item.body}`).join("\n\n"), practicalReflection: first
+      ? sanitizeVisible(`Semester pertama tahun ${timing.activeYear} adalah masa untuk membangun fondasi yang kokoh dan dapat diuji secara bertahap, bukan terburu-buru mengejar target besar. Pola yang perlu kamu amati adalah kecenderungan menunda keputusan sederhana saat fokusmu sedang diarahkan pada ${themeText(bundle("TANTANGAN"), 0)}. Gunakan kekuatanmu dalam membaca arah untuk ${direction}. Mulailah dengan memprioritaskan satu komitmen kerja dan satu kebiasaan pengelolaan sumber daya yang berakar pada ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} agar langkahmu tetap konsisten.`)
+      : sanitizeVisible(`Semester kedua tahun ${timing.activeYear} membawa fokus pada penyelesaian, penajaman hasil, dan keberanian menegosiasikan nilai yang telah kamu bangun. Pola yang layak diwaspadai adalah mempertahankan komitmen lama yang sudah tidak selaras saat berhadapan dengan ${themeText(bundle("TANTANGAN"), 0)}. Manfaatkan ketegasan dan pembuktian karya nyata untuk ${direction}. Ambil langkah tegas dengan menuntaskan satu urusan tertunda dan memperjelas kesepakatan penting melalui ${themeText(bundle("SARAN UNTUK MENJALANI SEMESTER"), 0)} sebelum melangkah ke siklus berikutnya.`), detailSections: sections, recommendations: [{ itemId: `${timing.semesterId}-action`, displayLabel: `Aksi Semester ${semester}`, category: "career-action", relevanceScore: Math.min(100, 40 + systems.length * 6), priority: "current", supportingFactIds: factIds, contributingSystems: systems, confidenceBand: systems.length >= 4 ? "high" : systems.length >= 2 ? "medium" : "limited", currentReadiness: `Status semester: ${timing.semesterStatus}.`, growthGap: direction, weeklyGuidanceEligibility: ["career-action", "economy-action", relationshipBranch, sectionMetadata] }], order: first ? 1 : 2 };
   };
   return [make(1), make(2)];
 }

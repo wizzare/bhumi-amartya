@@ -153,18 +153,16 @@ function InsightCard({ card }: { card: ProfileCard }) {
                           <p className="whitespace-pre-line text-sm leading-6 text-[#7B8776]">{humanizeParagraphs(section.body)}</p>
                         </div>
                       )) : (
-                        <>
-                          <div>
-                            <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Pembacaan</p>
-                            <p className="whitespace-pre-line text-sm leading-6 text-[#7B8776]">{humanizeParagraphs(item.expandableInsight)}</p>
-                          </div>
-                          {item.actionableReflection && (
-                            <div className="rounded-xl bg-[#F8F6EF] p-4">
-                              <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Refleksi Hari Ini</p>
-                              <p className="whitespace-pre-line text-sm leading-6 text-[#5E6A61]">{humanize(item.actionableReflection)}</p>
-                            </div>
-                          )}
-                        </>
+                        <div>
+                          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Pembacaan</p>
+                          <p className="whitespace-pre-line text-sm leading-6 text-[#7B8776]">{humanizeParagraphs(item.expandableInsight)}</p>
+                        </div>
+                      )}
+                      {item.actionableReflection && (
+                        <div className="rounded-xl bg-[#F8F6EF] p-4">
+                          <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-[#9AA394]">Saran Bhumi</p>
+                          <p className="whitespace-pre-line text-sm leading-6 text-[#5E6A61]">{humanize(item.actionableReflection)}</p>
+                        </div>
                       )}
                     </div>
                   )}
@@ -192,9 +190,9 @@ function InsightCard({ card }: { card: ProfileCard }) {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#9AA394] mb-2">Penjelasan Mendalam</p>
                 <p className="whitespace-pre-line text-sm leading-6 text-[#7B8776]">{humanizeParagraphs(card.expandableInsight)}</p>
               </div>}
-              {card.actionableReflection && !card.detailSections?.length && (
+              {card.actionableReflection && (
                 <div className="rounded-xl bg-[#F8F6EF] p-4">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#9AA394] mb-2">Refleksi Praktis</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-[#9AA394] mb-2">Saran Bhumi</p>
                   <p className="whitespace-pre-line text-sm leading-6 text-[#5E6A61]">{humanize(card.actionableReflection)}</p>
                 </div>
               )}
