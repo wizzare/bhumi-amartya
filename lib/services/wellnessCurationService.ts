@@ -23,6 +23,7 @@ import { logBehaviorSyncFailure } from "@/lib/firebase/behaviorSyncLogger";
 // Sprint F: Longitudinal Wellness Intelligence
 import { longitudinalWellnessRepository } from "@/lib/repositories/longitudinalWellnessRepository";
 import { journeyRepository } from "@/lib/repositories/journeyRepository";
+import type { DailyState } from "@/lib/repositories/dailyStateRepository";
 import type { AkashiWellnessContext } from "@/lib/intelligence/wellnessAkashiContext";
 
 // Sprint E Hotfix Blocker 1: Cross-day rotation history constants
@@ -379,8 +380,34 @@ async function markJourneyRecommendationCompleted(uid: string, date: string, act
     };
   }
 
+  const existingPracticeResults = Array.isArray(existing?.practiceResults) ? existing.practiceResults : [];
+  let updatedPracticeResults = existingPracticeResults;
+  if (!existingPracticeResults.some((p) => p.practiceId === activityId)) {
+    const libEntry = WELLNESS_RECOMMENDATION_LIBRARY.find((r) => r.id === activityId);
+    if (libEntry) {
+      const practiceCategory = PRACTICE_CATEGORY_TO_DOMAIN[libEntry.domain] || libEntry.domain;
+      updatedPracticeResults = [
+        ...existingPracticeResults,
+        {
+          zone: "B",
+          issue: existing?.dominantIssue || "wellness",
+          issueCategory: existing?.issueCategory || "general",
+          practiceId: activityId,
+          practiceCategory,
+          practiceTitle: libEntry.title,
+          durationMinutes: libEntry.estimatedDuration || 5,
+          completedAt: now,
+          source: "wellness-section-3",
+          practiceHelped: true,
+          reflectionResult: "Selesai dari Rekomendasi Wellness",
+        },
+      ];
+    }
+  }
+
   await journeyRepository.updateDailyRecord(uid, date, {
     wellnessState: { ...wellnessState, wellnessV4: { ...wellnessV4, recommendations, updatedAt: now } },
+    practiceResults: updatedPracticeResults,
   });
 }
 
@@ -621,14 +648,36 @@ export async function acknowledgeWellnessActivity(
 
   if (!completedActivityIds.includes(activityId)) {
     const updatedIds = [...completedActivityIds, activityId];
-    await dailyStateRepository.saveDailyState(uid, date, {
-      completedActivityIds: updatedIds
-    });
+    const libEntry = WELLNESS_RECOMMENDATION_LIBRARY.find((r) => r.id === activityId);
+
+    const statePatch: Partial<DailyState> = {
+      completedActivityIds: updatedIds,
+    };
+    if (libEntry) {
+      if (libEntry.tags?.includes("yoga") || libEntry.subcategory === "yoga") {
+        statePatch.yogaDone = true;
+      }
+      if (libEntry.subcategory === "herbalism" || libEntry.tags?.some((t) => ["herbal-tea", "wedang", "ginger", "turmeric", "tea"].includes(t))) {
+        statePatch.herbalDone = true;
+      }
+      if (libEntry.domain === "meditation" || libEntry.tags?.includes("meditation")) {
+        statePatch.meditationDone = true;
+      }
+      if (libEntry.domain === "mind" || libEntry.subcategory === "journaling") {
+        statePatch.journalingDone = true;
+      }
+      if (libEntry.domain === "sound" || libEntry.subcategory === "sound-healing") {
+        statePatch.audioHealingDone = true;
+      }
+      if (libEntry.domain === "physical" && !libEntry.tags?.includes("yoga")) {
+        statePatch.workoutDone = true;
+      }
+    }
+
+    await dailyStateRepository.saveDailyState(uid, date, statePatch);
     await markJourneyRecommendationCompleted(uid, date, activityId).catch((err) => {
       logBehaviorSyncFailure("recordCompleted", uid, err);
     });
-
-    const libEntry = WELLNESS_RECOMMENDATION_LIBRARY.find((r) => r.id === activityId);
     const duration = libEntry?.estimatedDuration ?? 5;
     const energy = snapshot?.metrics?.energy ?? 5;
     const determinedPeriod = period || inferPeriod();

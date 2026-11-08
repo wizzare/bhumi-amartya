@@ -255,11 +255,43 @@ function getRecommendationSearchHref(title: string, domain: string): string {
   return `https://www.google.com/search?q=${encodeURIComponent(`${title} ${domain} wellness practice`)}`;
 }
 
-function WellnessRecommendationSection({ uid, date, curation, snapshot, onReload, isEn = false }: { uid: string; date: string; curation: WellnessCurationState | null; snapshot: WellnessSnapshot | null; onReload: () => void; isEn?: boolean }) {
+function WellnessRecommendationSection({
+  uid,
+  date,
+  curation,
+  decision,
+  blueprint,
+  snapshot,
+  onReload,
+  isEn = false,
+}: {
+  uid: string;
+  date: string;
+  curation: WellnessCurationState | null;
+  decision?: InnerworkDailyDecision | null;
+  blueprint?: any;
+  snapshot: WellnessSnapshot | null;
+  onReload: () => void;
+  isEn?: boolean;
+}) {
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [expandedId, setExpandedId] = React.useState<string | null>(null);
   const [crystalSkipped, setCrystalSkipped] = React.useState(false);
   const [aromaSkipped, setAromaSkipped] = React.useState(false);
+
+  const bpContext = React.useMemo(() => {
+    if (!blueprint) return undefined;
+    return {
+      hdType: blueprint.humanDesign?.type,
+      hdAuthority: blueprint.humanDesign?.authority,
+      hdProfile: blueprint.humanDesign?.profile,
+      sunSign: blueprint.astrology?.sunSign || blueprint.astrology?.sun?.sign,
+      moonSign: blueprint.astrology?.moonSign || blueprint.astrology?.moon?.sign,
+      risingSign: blueprint.astrology?.risingSign || blueprint.astrology?.ascendant?.sign,
+      lifePath: blueprint.numerology?.lifePathNumber || blueprint.numerology?.lifePath,
+      centerArcana: blueprint.destinyMatrix?.arcanaCenter || blueprint.destinyMatrix?.center,
+    };
+  }, [blueprint]);
 
   const sensory = React.useMemo(() => {
     return getDailySensoryCompanion({
@@ -268,13 +300,15 @@ function WellnessRecommendationSection({ uid, date, curation, snapshot, onReload
       condition: curation?.contextSynthesis.primaryCondition,
       capacity: curation?.contextSynthesis.capacityLevel,
       careFocus: curation?.contextSynthesis.careFocus,
+      blueprint: bpContext,
+      arsipContext: curation?.akashiContext ? { anchorTheme: curation.akashiContext.dominantThemes?.[0] } : undefined,
       checkIn: snapshot ? {
         metrics: snapshot.metrics,
         needs: snapshot.needs,
         healthCondition: snapshot.healthCondition,
       } : undefined,
     });
-  }, [uid, date, curation, snapshot]);
+  }, [uid, date, curation, snapshot, bpContext]);
 
   const periods = curation ? [curation.packages.morning, curation.packages.afternoon, curation.packages.evening] : [];
   const labels: Record<string, string> = isEn ? { morning: "Morning", afternoon: "Afternoon", evening: "Evening" } : { morning: "Pagi", afternoon: "Siang", evening: "Malam" };
@@ -285,6 +319,49 @@ function WellnessRecommendationSection({ uid, date, curation, snapshot, onReload
       <p className="mt-2 text-xs font-semibold text-[#7B8776]">{curation.contextSynthesis.careFocus}</p>
       {curation.contextSynthesis.selectedContexts.length > 0 && <p className="mt-2 text-xs text-[#7B8776]">{isEn ? "Active context: " : "Konteks aktif: "}{curation.contextSynthesis.selectedContexts.map((item) => item.label).join(", ")}</p>}
     </div>
+
+    {/* Decision Engine: Latihan Inti Hari Ini (InnerworkDailyDecision Integration) */}
+    {decision?.mainPractice && (
+      <article className="rounded-3xl border border-[#4F5E52]/30 bg-[#F5F1E8] p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#7B8776]">
+              {isEn ? "Core Daily Practice" : "Latihan Inti Hari Ini"}
+            </span>
+            <h3 className="mt-1 font-serif text-xl font-bold text-[#4F5E52]">
+              {decision.mainPractice.title}
+            </h3>
+          </div>
+          <span className="rounded-full bg-white/80 border border-[#E8E9E5] px-3 py-1 text-xs font-semibold text-[#4F5E52]">
+            {decision.mainPractice.durationMinutes} {isEn ? "min" : "mnt"}
+          </span>
+        </div>
+        <p className="mt-2 text-xs italic leading-relaxed text-[#526053]">
+          {decision.mainPractice.whyThisPractice}
+        </p>
+        <p className="mt-2 text-xs leading-relaxed text-[#526053]">
+          {decision.mainPractice.description}
+        </p>
+        {decision.mainPractice.expectedBenefit && decision.mainPractice.expectedBenefit.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {decision.mainPractice.expectedBenefit.map((benefit, i) => (
+              <span key={i} className="rounded-md bg-white/70 px-2 py-0.5 text-[10px] font-medium text-[#4F5E52]">
+                ✓ {benefit}
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="mt-4">
+          <Link
+            href={getMainPracticeHref(decision.mainPractice.type, decision.mainPractice.category)}
+            className="inline-flex items-center gap-2 rounded-full bg-[#4F5E52] px-5 py-2 text-xs font-bold text-white hover:bg-[#3D4A40] transition-colors"
+          >
+            {isEn ? "Start Practice" : "Mulai Latihan"}
+            <ChevronRight size={14} />
+          </Link>
+        </div>
+      </article>
+    )}
 
     {/* B121-WELL: Kristal & Aroma Pendamping Hari Ini (Section 03, Sebelum Pagi/Siang/Malam) */}
     {sensory.crystal && (
@@ -648,6 +725,7 @@ export function WellnessPageClient() {
 
   const [intelligence, setIntelligence] = React.useState<WellnessDailyIntelligence | null>(null);
   const [decision, setDecision] = React.useState<InnerworkDailyDecision | null>(null);
+  const [blueprint, setBlueprint] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [checkInCompleted, setCheckInCompleted] = React.useState(false);
   const [curation, setCuration] = React.useState<WellnessCurationState | null>(null);
@@ -754,6 +832,7 @@ export function WellnessPageClient() {
         });
         setIntelligence(result);
         setDecision(buildInnerworkDailyDecision(result.recommendationInput));
+        setBlueprint(blueprint);
 
         const snapshot = result.wellnessState?.wellnessSnapshot as WellnessSnapshot | undefined;
         if (snapshot?.checkInCompleted) {
@@ -1007,7 +1086,16 @@ export function WellnessPageClient() {
 
         {/* Section 3: Rekomendasi Hari Ini */}
         <WellnessSection number="3" title={t.wellness.recommended} isEn={isEn}>
-          <WellnessRecommendationSection uid={activeUid} date={intelligence!.date} curation={curation} snapshot={intelligence!.wellnessState?.wellnessSnapshot || null} onReload={() => void loadDailyIntelligence()} isEn={isEn} />
+          <WellnessRecommendationSection
+            uid={activeUid}
+            date={intelligence!.date}
+            curation={curation}
+            decision={decision}
+            blueprint={blueprint}
+            snapshot={intelligence!.wellnessState?.wellnessSnapshot || null}
+            onReload={() => void loadDailyIntelligence()}
+            isEn={isEn}
+          />
         </WellnessSection>
 
         {/* Section 4: Praktik Tambahan */}
