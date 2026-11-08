@@ -2,25 +2,45 @@
 
 import Link from "next/link";
 import type { JourneyData } from "@/lib/journey/createJourneyData";
+import type { GrowthStory } from "@/lib/engines/journeyStoryEngine";
 
-type JourneyCardProps = {
-  journey: JourneyData | null;
+export type JourneyCardProps = {
+  journey?: JourneyData | null;
+  story?: GrowthStory | null;
+  stage?: string;
+  focus?: string;
 };
 
-export function JourneyCard({ journey }: JourneyCardProps) {
+function mapCanonicalStage(stageName?: string): string {
+  if (!stageName) return "Awal Kesadaran";
+  const normalized = stageName.trim().toLowerCase();
+  if (normalized === "awareness") return "Awal Kesadaran";
+  if (normalized === "acceptance") return "Pendalaman Diri";
+  if (normalized === "integration") return "Integrasi Jiwa";
+  return stageName;
+}
+
+export function JourneyCard({ journey, story, stage, focus }: JourneyCardProps) {
+  const stageDisplay = story?.stage?.label
+    || (stage ? mapCanonicalStage(stage) : (journey?.currentStage?.stage ? mapCanonicalStage(journey.currentStage.stage) : "Awal Kesadaran"));
+
+  const focusDisplay = story?.growthFocus
+    || focus
+    || (journey?.weeklyFocus?.theme
+      ? `Fokus saat ini: ${journey.weeklyFocus.theme}.`
+      : "Lihat pola perjalanan batin yang mulai terbentuk dari aktivitasmu.");
+
   return (
     <Link href="/journey" className="mt-6 block">
       <div className="bhumi-card cursor-pointer p-6 transition hover:shadow-lg">
         <p className="text-sm text-[#7B8776]">🌱 Perjalanan Jiwa</p>
         <h2 className="mt-4 text-2xl font-semibold text-[#4F5E52]">
-          {journey?.currentStage.stage || "Awareness"}
+          {stageDisplay}
         </h2>
         <p className="mt-3 text-sm leading-relaxed text-[#7B8776]">
-          {journey?.weeklyFocus.theme
-            ? `Fokus saat ini: ${journey.weeklyFocus.theme}.`
-            : "Lihat pola perjalanan healing yang mulai terbentuk dari aktivitasmu."}
+          {focusDisplay}
         </p>
-        {journey?.timeline.length ? (
+        {journey?.timeline?.length ? (
           <div className="mt-4 space-y-2">
             {journey.timeline.slice(-3).map((item) => (
               <div key={`${item.date}-${item.activityType}-${item.dominantTheme}`} className="rounded-2xl bg-[#F7F8F5] px-3 py-2">

@@ -14,7 +14,7 @@ import { getDictionaryKey } from "@/lib/locale/normalizeLocale";
 import { ArrowLeft, Sparkles, Clock, Heart, Flag } from "lucide-react";
 import { storageProvider } from "@/lib/storage/storageProvider";
 import { getCompletionSummary, mergeDailyStatesWithJourneyRecords } from "@/lib/engines/completionEngine";
-import type { JourneyDailyMemory } from "@/lib/types/journeyDailyRecord";
+import type { JourneyDailyMemory, JourneyUnifiedEvent } from "@/lib/types/journeyDailyRecord";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
@@ -151,6 +151,7 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   const [history, setHistory] = useState<DailyState[]>([]);
   const [story, setStory] = useState<GrowthStory | null>(null);
   const [learning, setLearning] = useState<JourneyDailyMemory | null>(null);
+  const [events, setEvents] = useState<JourneyUnifiedEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [readError, setReadError] = useState<string | null>(null);
 
@@ -226,6 +227,8 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
         setLearning(memory);
         const hydratedStates = mergeDailyStatesWithJourneyRecords(states, memory.last30Days);
         setHistory(hydratedStates);
+        const unifiedEvents = await journeyRepository.getRecentUnifiedEvents(uid, 30).catch(() => []);
+        setEvents(unifiedEvents);
 
         let synthesis = null;
         if (blueprintData) {
@@ -476,43 +479,171 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
             </div>
           </div>
         );
-      case "history":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-serif text-[#4F5E52] px-2 mb-4">{isEn ? "Activity History" : "Riwayat Aktivitas"}</h2>
-            {history.length > 0 ? (
-              <div className="space-y-3">
-                  {history.map((state) => (
-                    <div key={state.date} className="bhumi-card p-5 bg-white border-none shadow-sm flex items-center gap-4">
-                      <div className="text-sm font-bold text-[#4F5E52] w-20 flex items-center gap-2">
-                          <Clock size={14} className="text-[#9AA394]" />
-                          {state.date.slice(5)}
-                      </div>
-                      <div className="flex-1 flex gap-1.5">
-                        {getCompletionSummary(state).items.map((item) => (
-                          <div
-                            key={item.id}
-                            className={`w-2 h-2 rounded-full ${item.completed ? 'bg-[#4F5E52]' : 'bg-[#E8E9E5]'}`}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-3 py-1 rounded-full">
-                        {state.moodLevel ? (isEn ? `Condition ${state.moodLevel}` : `Kondisi ${state.moodLevel}`) : "-"}
-                      </div>
-                    </div>
-                  ))}
+      case "message": {
+        const hasCompanion = Boolean(story.companionMessage?.trim());
+        const hasCoach = Boolean(learning?.coachMemory?.coachMemory?.trim());
+        const hasLesson = Boolean(learning?.growthNarrative?.currentLesson?.trim());
+
+        if (!hasCompanion && !hasCoach && !hasLesson) {
+          return (
+            <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center space-y-4">
+              <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-2 text-[#4F5E52]">
+                <Sparkles size={28} />
               </div>
-            ) : (
+              <h2 className="text-xl font-serif text-[#4F5E52]">
+                {isEn ? "Companion Note" : "Pesan Pendamping"}
+              </h2>
+              <p className="text-sm text-[#7B8776] leading-relaxed italic max-w-sm mx-auto">
+                {isEn
+                  ? "No specific companion message yet. As your practices and reflections unfold, Bhumi will leave personal notes here."
+                  : "Belum ada pesan pendamping khusus. Seiring berjalannya praktik dan refleksimu, Bhumi akan meninggalkan catatan personal di sini."}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
+            {hasCompanion && (
               <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
-                 <p className="text-[#7B8776] leading-relaxed italic">
-                   {isEn
-                     ? "No activity records in your journey yet. Your daily practices and reflections will appear here."
-                     : "Belum ada catatan aktivitas di perjalananmu. Praktik dan refleksi harianmu akan mulai muncul di sini."}
-                 </p>
+                <div className="w-16 h-16 bg-[#F5F1E8] rounded-full flex items-center justify-center mx-auto mb-6 text-[#4F5E52]">
+                  <Sparkles size={32} />
+                </div>
+                <p className="text-xs font-bold uppercase tracking-[0.25em] text-[#7B8776] mb-3">
+                  {isEn ? "Companion Message" : "Pesan Pendamping"}
+                </p>
+                <h2 className="text-xl font-serif text-[#4F5E52] mb-4 leading-relaxed">
+                  “{indonesianize(story.companionMessage, isEn)}”
+                </h2>
+                <p className="text-xs text-[#7B8776] leading-relaxed italic">
+                  {isEn
+                    ? "Read from your living rhythm of practice and blueprint design."
+                    : "Dibaca dari ritme kehadiranmu dan rancangan cetak biru batinmu."}
+                </p>
+              </div>
+            )}
+
+            {hasCoach && (
+              <div className="bhumi-card p-6 bg-[#F5F1E8] text-[#344A38] border border-[#DDE7DB] shadow-sm space-y-3">
+                <p className="text-xs font-bold text-[#4F5E52]/70 uppercase tracking-widest">
+                  {isEn ? "Bhumi Learning Notes" : "Catatan Pembelajaran Bhumi"}
+                </p>
+                <p className="text-sm leading-relaxed font-medium">
+                  {indonesianize(learning!.coachMemory!.coachMemory, isEn)}
+                </p>
+              </div>
+            )}
+
+            {hasLesson && (
+              <div className="bhumi-card p-6 bg-white border border-[#E8E9E5] shadow-sm">
+                <p className="text-xs font-bold text-[#4F5E52] uppercase tracking-widest mb-2">
+                  {isEn ? "Current Reflection Lesson" : "Pelajaran Refleksi Terkini"}
+                </p>
+                <p className="text-sm text-[#4F5E52] leading-relaxed">
+                  “{indonesianize(learning!.growthNarrative!.currentLesson, isEn)}”
+                </p>
               </div>
             )}
           </div>
         );
+      }
+      case "history": {
+        const hasHistory = history.length > 0;
+        const hasEvents = events.length > 0;
+
+        if (!hasHistory && !hasEvents) {
+          return (
+            <div className="p-8 rounded-[2.5rem] bg-white border border-[#E8E9E5] shadow-sm text-center">
+              <p className="text-[#7B8776] leading-relaxed italic">
+                {isEn
+                  ? "No activity records in your journey yet. Your daily practices and reflections will appear here."
+                  : "Belum ada catatan aktivitas di perjalananmu. Praktik dan refleksi harianmu akan mulai muncul di sini."}
+              </p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="space-y-6">
+            <div className="px-2">
+              <h2 className="text-xl font-serif text-[#4F5E52] mb-1">
+                {isEn ? "Living Journey History" : "Riwayat Nyata Perjalanan"}
+              </h2>
+              <p className="text-xs text-[#7B8776]">
+                {isEn
+                  ? "Concrete record of practices, reflections, and mindful moments you've lived."
+                  : "Catatan konkret dari praktik, refleksi, dan momen hadir yang benar-benar kamu jalani."}
+              </p>
+            </div>
+
+            {/* Concrete Unified Events Stream */}
+            {hasEvents && (
+              <div className="space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#7B8776] px-2">
+                  {isEn ? "Recorded Activities & Reflections" : "Aktivitas & Refleksi Tercatat"}
+                </p>
+                {events.map((e) => (
+                  <div key={e.id} className="bhumi-card p-4 bg-white border border-[#E8E9E5] shadow-sm space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#4F5E52]" />
+                        <h3 className="text-sm font-bold text-[#4F5E52]">{e.title}</h3>
+                      </div>
+                      <span className="text-[10px] font-semibold text-[#7B8776] bg-[#F5F1E8] px-2.5 py-0.5 rounded-full">
+                        {e.category}
+                      </span>
+                    </div>
+                    {e.summary && (
+                      <p className="text-xs text-[#526053] leading-relaxed pl-4">
+                        {e.summary}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-[10px] text-[#9AA394] pl-4 pt-1 border-t border-[#F5F1E8]/60">
+                      <span>{e.dateKey}</span>
+                      {e.significance === "meaningful" && (
+                        <span className="text-emerald-700 font-medium">
+                          {isEn ? "✦ Meaningful" : "✦ Bermakna"}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Daily Rhythm Strip */}
+            {hasHistory && (
+              <div className="space-y-3 pt-2">
+                <p className="text-xs font-bold uppercase tracking-wider text-[#7B8776] px-2">
+                  {isEn ? "Daily Rhythm Overview" : "Ringkasan Ritme Harian"}
+                </p>
+                <div className="space-y-2">
+                  {history.map((state) => (
+                    <div key={state.date} className="bhumi-card p-4 bg-white border-none shadow-sm flex items-center gap-4">
+                      <div className="text-xs font-bold text-[#4F5E52] w-20 flex items-center gap-2">
+                        <Clock size={13} className="text-[#9AA394]" />
+                        {state.date.slice(5)}
+                      </div>
+                      <div className="flex-1 flex gap-1.5 flex-wrap">
+                        {getCompletionSummary(state).items.map((item) => (
+                          <div
+                            key={item.id}
+                            title={item.label}
+                            className={`w-2 h-2 rounded-full ${item.completed ? 'bg-[#4F5E52]' : 'bg-[#E8E9E5]'}`}
+                          />
+                        ))}
+                      </div>
+                      <div className="text-[10px] font-bold text-[#4F5E52] bg-[#F5F1E8] px-2.5 py-1 rounded-full">
+                        {state.moodLevel ? (isEn ? `Kondisi ${state.moodLevel}` : `Kondisi ${state.moodLevel}`) : "-"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
       default:
         return <p className="text-center text-[#7B8776]">{isEn ? "This section is being prepared." : "Bagian ini sedang disiapkan."}</p>;
     }

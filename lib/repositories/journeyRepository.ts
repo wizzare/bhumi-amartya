@@ -4,7 +4,8 @@ import { DailyState } from "./dailyStateRepository";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { waitForFirebaseAuthOwner } from "@/lib/auth/waitForFirebaseAuthOwner";
-import type { JourneyDailyMemory, JourneyDailyRecord, JourneyPracticeResult } from "@/lib/types/journeyDailyRecord";
+import type { JourneyDailyMemory, JourneyDailyRecord, JourneyPracticeResult, JourneyUnifiedEvent } from "@/lib/types/journeyDailyRecord";
+import { journeyRepository_v2 } from "./journeyRepository_v2";
 import { reflectionEngine } from "@/lib/engines/reflectionEngine";
 import { journeyStoryEngine } from "@/lib/engines/journeyStoryEngine";
 import { calculatePracticeEffectiveness } from "@/lib/engines/completionEngine";
@@ -69,6 +70,7 @@ function getLocalDailyRecord(uid: string, appDate: string): JourneyDailyRecord |
 
 function getLocalDailyRecords(uid: string, count: number): JourneyDailyRecord[] {
   const records: JourneyDailyRecord[] = [];
+  if (typeof window === "undefined" || !window.localStorage || typeof window.localStorage.key !== "function") return records;
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
     if (!key?.startsWith(localDailyRecordPrefix(uid))) continue;
@@ -82,6 +84,7 @@ function getLocalDailyRecords(uid: string, count: number): JourneyDailyRecord[] 
 
 function getLocalDailyStates(uid: string, count: number): DailyState[] {
   const states: DailyState[] = [];
+  if (typeof window === "undefined" || !window.localStorage || typeof window.localStorage.key !== "function") return states;
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
     if (!key?.startsWith(localDailyStatePrefix(uid))) continue;
@@ -356,5 +359,13 @@ export const journeyRepository = {
     );
 
     return snapshot.docs.map(doc => doc.data() as DailyState);
+  },
+
+  async getRecentUnifiedEvents(uid: string, limitCount: number = 30): Promise<JourneyUnifiedEvent[]> {
+    return journeyRepository_v2.getRecentUnifiedEvents(uid, limitCount);
+  },
+
+  async getUnifiedTimeline(uid: string, options?: { dateFrom?: string; dateTo?: string; limit?: number; categories?: string[] }): Promise<JourneyUnifiedEvent[]> {
+    return journeyRepository_v2.getUnifiedTimeline(uid, options);
   }
 };

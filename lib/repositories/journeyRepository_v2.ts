@@ -6,7 +6,7 @@ import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { waitForFirebaseAuthOwner } from "@/lib/auth/waitForFirebaseAuthOwner";
 import type { JourneyDailyMemory, JourneyDailyRecord, JourneyPracticeResult, JourneyUnifiedEvent } from "@/lib/types/journeyDailyRecord";
 
-import { longitudinalWellnessRepository } from "./longitudinalWellnessRepository";
+import { longitudinalWellnessRepository, emptyLongitudinalWellnessDocument } from "./longitudinalWellnessRepository";
 import { journalRepository } from "./journalRepository";
 import { dailyGuidanceRepository } from "./dailyGuidanceRepository";
 import { reflectionRepository } from "./reflectionRepository";
@@ -73,6 +73,7 @@ function getLocalDailyRecord(uid: string, appDate: string): JourneyDailyRecord |
 
 function getLocalDailyRecords(uid: string, count: number): JourneyDailyRecord[] {
   const records: JourneyDailyRecord[] = [];
+  if (typeof window === "undefined" || !window.localStorage || typeof window.localStorage.key !== "function") return records;
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
     if (!key?.startsWith(localDailyRecordPrefix(uid))) continue;
@@ -86,6 +87,7 @@ function getLocalDailyRecords(uid: string, count: number): JourneyDailyRecord[] 
 
 function getLocalDailyStates(uid: string, count: number): DailyState[] {
   const states: DailyState[] = [];
+  if (typeof window === "undefined" || !window.localStorage || typeof window.localStorage.key !== "function") return states;
   for (let index = 0; index < window.localStorage.length; index += 1) {
     const key = window.localStorage.key(index);
     if (!key?.startsWith(localDailyStatePrefix(uid))) continue;
@@ -345,14 +347,19 @@ export const journeyRepository = {
   
   
   
+  async getRecentUnifiedEvents(uid: string, limitCount: number = 30): Promise<JourneyUnifiedEvent[]> {
+    return this.getUnifiedTimeline(uid, { limit: limitCount });
+  },
+
   async getUnifiedTimeline(uid: string, options?: { dateFrom?: string; dateTo?: string; limit?: number; categories?: string[] }): Promise<JourneyUnifiedEvent[]> {
     const limitCount = options?.limit || 90;
+    const isAuditStore = canUseLocalAuditStore(uid);
     const [states, records, wellnessDoc, journals, weekly] = await Promise.all([
-      this.getRecentDailyStates(uid, limitCount),
-      this.getRecentDailyRecords(uid, limitCount),
-      longitudinalWellnessRepository.get(uid),
-      journalRepository.getJournalEntries(uid, limitCount),
-      reflectionRepository.getRecentWeeklyReflections(uid, Math.ceil(limitCount / 7))
+      this.getRecentDailyStates(uid, limitCount).catch(() => []),
+      this.getRecentDailyRecords(uid, limitCount).catch(() => []),
+      isAuditStore ? emptyLongitudinalWellnessDocument(uid) : longitudinalWellnessRepository.get(uid).catch(() => emptyLongitudinalWellnessDocument(uid)),
+      isAuditStore ? [] : journalRepository.getJournalEntries(uid, limitCount).catch(() => []),
+      isAuditStore ? [] : reflectionRepository.getRecentWeeklyReflections(uid, Math.ceil(limitCount / 7)).catch(() => [])
     ]);
 
     const events: JourneyUnifiedEvent[] = [];
@@ -518,3 +525,5 @@ export const journeyRepository = {
     return snapshot.docs.map(doc => doc.data() as DailyState);
   }
 };
+
+export const journeyRepository_v2 = journeyRepository;

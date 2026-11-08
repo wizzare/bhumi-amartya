@@ -14,6 +14,8 @@ import { AtmosphereVolcanicCard } from "@/components/dashboard/AtmosphereVolcani
 import { getCachedWeatherAqi, type WeatherApiResult } from "@/lib/environment/weatherApiClient";
 import { EnvironmentContextCard } from "@/components/dashboard/EnvironmentContextCard";
 import { DailyUserFlowGuide } from "@/components/dashboard/DailyUserFlowGuide";
+import { JourneyCard } from "@/components/dashboard/JourneyCard";
+import { journeyStoryEngine, GrowthStory } from "@/lib/engines/journeyStoryEngine";
 import { SoulReflectionCard } from "@/components/dashboard/SoulReflectionCard";
 import { buildDailyGuidance } from "@/lib/dailyGuidance/dailyGuidanceEngine";
 import { AccuracyUpgradeBanner } from "@/components/dashboard/AccuracyUpgradeBanner";
@@ -142,7 +144,8 @@ export function DashboardClient() {
   const [dailyGuidance, setDailyGuidance] = useState<DailyGuidance | null>(null);
   const [dailyState, setDailyState] = useState<DailyState | null>(null);
   const [, setYesterdayState] = useState<DailyState | null>(null);
-  const [, setRecentDailyStates] = useState<DailyState[]>([]);
+  const [recentDailyStates, setRecentDailyStates] = useState<DailyState[]>([]);
+  const [journeyStory, setJourneyStory] = useState<GrowthStory | null>(null);
   const [navigatorState, setNavigatorState] = useState<NavigatorState | null>(null);
   const [, setDailyNoteFocus] = useState<string>("");
   const [safetyState, setSafetyState] = useState<SafetyState | null>(null);
@@ -332,6 +335,16 @@ export function DashboardClient() {
       const journeyMemory = wellnessIntelligence.journeyMemory;
       setRecentDailyStates(journeyStates);
       setNavigatorState(navigator);
+      try {
+        const synth = buildUnifiedBlueprintSynthesis({
+          language: guidanceLanguage,
+          profile: p as unknown as Record<string, unknown>,
+          blueprint: b as unknown as Record<string, unknown>,
+        });
+        setJourneyStory(journeyStoryEngine.generateStory(journeyStates, synth));
+      } catch (err) {
+        console.warn("[Dashboard] JourneyStory build error:", err);
+      }
       await journeyRepository.updateDailyRecord(uid, today, {
         navigatorMode: navigator?.mode || "REFLECTION",
       }).catch((error) => console.warn("[JOURNEY_NAVIGATOR_UPDATE_FAILED]", error));
@@ -1101,6 +1114,9 @@ export function DashboardClient() {
 
       <details className={styles.identity}>
         <summary>Ruang pendukung lainnya</summary>
+        <div className="mb-4">
+          <JourneyCard story={journeyStory} />
+        </div>
         <DailyUserFlowGuide language={legacyUiLanguage} />
       </details>
 
