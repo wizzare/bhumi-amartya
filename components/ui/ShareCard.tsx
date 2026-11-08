@@ -52,12 +52,15 @@ export function ShareCard({
 }: ShareCardProps) {
   const [isExporting, setIsExporting] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [now] = useState(() => new Date());
   const cardRef = useRef<HTMLDivElement>(null);
 
   const [activeCategory, setActiveCategory] = useState<ShareCardCategory>(
     defaultCategory || (story ? "journey" : "reflection")
   );
+
+  const effectiveDisplayName = isAnonymous ? "Penghuni Bhumi" : (userName || "Penghuni Bhumi");
 
   // Rule 1 & 2: Lock per-card instance seed and content ONCE via lazy useState initialization
   const [cardSeed] = useState(() => externalSeed || `card-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
@@ -86,7 +89,8 @@ export function ShareCard({
       const dataUrl = await toPng(cardRef.current, {
         cacheBust: true,
         backgroundColor: "#FCFAF5",
-        pixelRatio: 2,
+        canvasWidth: 720,
+        canvasHeight: 1280,
       });
 
       const fileName = `bhumi-amartya-${activeCategory}-${Date.now()}.png`;
@@ -194,8 +198,11 @@ export function ShareCard({
       )}
 
       {/* Card Preview Container */}
-      <div ref={cardRef} className="bg-[#FCFAF5] p-1">
-        <article className="relative w-full overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F8F3E8] via-[#FCFAF5] to-[#E7EBDD] text-[#344A38] shadow-lg">
+      <div className="bg-[#FCFAF5] p-1 flex justify-center">
+        <article
+          ref={cardRef}
+          className="relative w-full max-w-[360px] aspect-[9/16] overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F8F3E8] via-[#FCFAF5] to-[#E7EBDD] text-[#344A38] shadow-lg flex flex-col justify-between"
+        >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full -mr-16 -mt-16 blur-3xl" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#9BB89A]/20 rounded-full -ml-24 -mb-24 blur-3xl" />
           <img src={`${ornamentPath}/flower-branch-left.svg`} alt="" className="pointer-events-none absolute -left-5 top-1 z-0 w-24 opacity-55" />
@@ -205,121 +212,137 @@ export function ShareCard({
           <img src={`${ornamentPath}/leaf-bottom-right.svg`} alt="" className="pointer-events-none absolute -bottom-10 -right-8 z-0 w-28 opacity-75" />
           <img src={`${ornamentPath}/gold-star.svg`} alt="" className="pointer-events-none absolute right-8 top-36 z-0 w-5 opacity-80" />
 
-          <div className="relative z-10 flex flex-col p-4">
-            <header className="text-center">
+          <div className="relative z-10 flex flex-col justify-between h-full p-4">
+            <header className="text-center shrink-0">
               <div className="mx-auto w-fit"><BhumiPageHeader /></div>
               <p className="mt-1 text-[8px] italic text-[#7B8776] opacity-90">Ruang Untuk Pulang dan Kenali Diri</p>
-              <p className="mt-3 font-serif text-2xl leading-tight">{userName || "Penghuni Bhumi"}</p>
-              <p className="mt-1 text-[9px] capitalize italic text-[#7B776D]">{shareDate}</p>
-              <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mt-2 h-4 w-36 object-contain" />
+              <p className="mt-2.5 font-serif text-xl leading-tight">{effectiveDisplayName}</p>
+              <p className="mt-0.5 text-[9px] capitalize italic text-[#7B776D]">{shareDate}</p>
+              <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mt-1.5 h-3.5 w-32 object-contain" />
             </header>
 
             {/* CATEGORY 1: MY JOURNEY */}
             {activeCategory === "journey" && (
-              <>
-                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+              <div className="flex flex-col gap-2 my-auto py-1">
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
                   <div className="flex items-center gap-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
                     <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Tahap Pertumbuhan</p>
                   </div>
-                  <h4 className="mt-1 text-[11px] font-bold text-[#4F6658]">
+                  <h4 className="mt-0.5 text-[11px] font-bold text-[#4F6658]">
                     {story?.stage?.label || "Awal Kesadaran"}
                   </h4>
-                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">
+                  <p className="mt-1 text-[9px] leading-[1.45] text-[#4F5E52]">
                     {story?.stage?.description || "Mulai mengenali ritme batin yang tenang tanpa tergesa-gesa."}
                   </p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
                     <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Fokus Saat Ini</p>
                   </div>
-                  <p className="text-[9px] leading-[1.5] text-[#4F5E52]">
+                  <p className="text-[9px] leading-[1.45] text-[#4F5E52]">
                     {story?.growthFocus || content.soulMessage.summary}
                   </p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
-                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pesan Pendamping</p>
-                  <p className="mt-2 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">
+                <section className="rounded-[1.25rem] border border-white bg-white/65 p-3 shadow-sm">
+                  <p className="text-center text-[8px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pesan Pendamping</p>
+                  <p className="mt-1.5 text-center text-[9px] italic leading-[1.45] text-[#4F5E52]">
                     "{story?.companionMessage || content.manifestationToday.text}"
                   </p>
                 </section>
-              </>
+              </div>
             )}
 
             {/* CATEGORY 2: MY MILESTONE */}
             {activeCategory === "milestone" && (
-              <>
-                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+              <div className="flex flex-col gap-2 my-auto py-1">
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
                   <div className="flex items-center gap-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
-                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Milestone Perjalanan</p>
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Target Langkah Berikutnya</p>
                   </div>
-                  <h4 className="mt-1 text-[11px] font-bold text-[#4F6658]">Target Berikutnya</h4>
-                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">
+                  <h4 className="mt-0.5 text-[11px] font-bold text-[#4F6658]">Milestone Mendatang</h4>
+                  <p className="mt-1 text-[9px] leading-[1.45] text-[#4F5E52]">
                     {story?.nextMilestone || "Menjaga ritme kesadaran harian tanpa menambah beban target baru."}
                   </p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
-                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Fondasi Aktif</p>
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Tahap Berjalan</p>
                   </div>
-                  <p className="text-[9px] leading-[1.5] text-[#4F5E52]">
-                    Tahap: <strong className="text-[#4F6658]">{story?.stage?.label || "Awal Kesadaran"}</strong>. Jejak praktikmu mencerminkan komitmen hadir bagi diri sendiri.
+                  <p className="text-[9px] leading-[1.45] text-[#4F5E52]">
+                    Saat ini berada di tahap: <strong className="text-[#4F6658]">{story?.stage?.label || "Awal Kesadaran"}</strong>. Jejak praktikmu mencerminkan komitmen hadir bagi diri sendiri.
                   </p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
-                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pengingat Langkah Kecil</p>
-                  <p className="mt-2 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">
+                <section className="rounded-[1.25rem] border border-white bg-white/65 p-3 shadow-sm">
+                  <p className="text-center text-[8px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pengingat Langkah Kecil</p>
+                  <p className="mt-1.5 text-center text-[9px] italic leading-[1.45] text-[#4F5E52]">
                     "Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada ketenangan batin yang utuh."
                   </p>
                 </section>
-              </>
+              </div>
             )}
 
             {/* CATEGORY 3: MY REFLECTION (Original Reflection Card) */}
             {activeCategory === "reflection" && (
-              <>
-                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+              <div className="flex flex-col gap-2 my-auto py-1">
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
                   <div className="flex items-center gap-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
                     <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.soulMessage.title}</p>
                   </div>
-                  <p className="mt-1 text-[7px] font-bold uppercase tracking-wider text-[#9AA394]">{content.soulMessage.themeLabel}:</p>
-                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.soulMessage.summary}</p>
+                  <p className="mt-0.5 text-[7px] font-bold uppercase tracking-wider text-[#9AA394]">{content.soulMessage.themeLabel}:</p>
+                  <p className="mt-1 text-[9px] leading-[1.45] text-[#4F5E52]">{content.soulMessage.summary}</p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                <section className="rounded-[1.25rem] border border-white/80 bg-white/60 p-3 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-3.5 w-3.5 shrink-0" />
                     <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.profileToday.title}</p>
                   </div>
-                  <h4 className="text-[11px] font-bold text-[#4F6658]">{content.profileToday.sectionTitle}</h4>
-                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.profileToday.summary}</p>
+                  <h4 className="text-[10px] font-bold text-[#4F6658]">{content.profileToday.sectionTitle}</h4>
+                  <p className="mt-1 text-[9px] leading-[1.45] text-[#4F5E52]">{content.profileToday.summary}</p>
                 </section>
 
-                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
-                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">{content.manifestationToday.title}</p>
-                  <p className="mt-2 text-center text-[8px] italic leading-[1.5] text-[#9AA394]">{content.manifestationToday.lawType}</p>
-                  <p className="mt-1.5 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">"{content.manifestationToday.text}"</p>
+                <section className="rounded-[1.25rem] border border-white bg-white/65 p-3 shadow-sm">
+                  <p className="text-center text-[8px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">{content.manifestationToday.title}</p>
+                  <p className="mt-1 text-center text-[7.5px] italic leading-[1.4] text-[#9AA394]">{content.manifestationToday.lawType}</p>
+                  <p className="mt-1 text-center text-[9px] italic leading-[1.45] text-[#4F5E52]">"{content.manifestationToday.text}"</p>
                 </section>
-              </>
+              </div>
             )}
 
-            <footer className="pt-5 text-center">
-              <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mb-2 h-4 w-44 object-contain" />
+            <footer className="pt-2 text-center shrink-0">
+              <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mb-1.5 h-3.5 w-40 object-contain" />
               <div className="flex flex-col items-center gap-0.5">
-                <p className="text-[8px] font-bold uppercase tracking-[0.2em] text-[#7B8776] opacity-70">Available on Play Store</p>
-                <p className="text-[10px] font-serif italic text-[#4F5E52] opacity-90">Bhumi Amartya</p>
+                <p className="text-[7.5px] font-bold uppercase tracking-[0.2em] text-[#7B8776] opacity-70">Available on Play Store</p>
+                <p className="text-[9px] font-serif italic text-[#4F5E52] opacity-90">Bhumi Amartya</p>
               </div>
             </footer>
           </div>
         </article>
+      </div>
+
+      {/* Privacy Control & Consent */}
+      <div className="px-2 flex items-center justify-between text-xs text-[#7B8776]">
+        <label className="flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+            className="rounded border-[#C2C9BD] text-[#4F5E52] focus:ring-[#4F5E52] h-3.5 w-3.5"
+          />
+          <span className="text-[11px]">Samarkan nama (Anonim)</span>
+        </label>
+        <span className="text-[10px] text-[#A66D23] font-medium flex items-center gap-1">
+          🔒 Bebas Catatan Sensitif
+        </span>
       </div>
 
       {/* Share / Download Action Button */}
@@ -350,6 +373,10 @@ export function ShareCard({
             </p>
           </div>
         )}
+
+        <p className="text-[10px] text-center text-[#7B8776] leading-relaxed px-2">
+          Kartu hanya memuat rangkuman refleksi makro. Catatan pribadi, jurnal emosional, dan data sensitifmu tidak pernah dibagikan.
+        </p>
       </div>
     </div>
   );

@@ -191,6 +191,7 @@ export function ProfileShareCardSection({ title, story }: ProfileShareCardSectio
         <h2 className="text-2xl font-serif text-[#4F5E52]">{title}</h2>
       </header>
       <ShareCard
+        key={`share-${auth?.user?.uid || auditUser || "anon"}-${dateKey}`}
         userName={name}
         profileSections={profileSections}
         dateKey={dateKey}
