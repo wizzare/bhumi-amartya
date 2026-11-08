@@ -64,10 +64,10 @@ export default function JourneyPage() {
 
         let profile = auth?.userProfile;
         let blueprintData = await storageProvider.getUserBlueprint().catch(() => null);
-        if (auditUser && (!profile || !blueprintData)) {
+        if (auditUser) {
           const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
-          profile = profile || (getMockProfile(auditUser) as any);
-          blueprintData = blueprintData || (getMockBlueprint(auditUser) as any);
+          profile = getMockProfile(auditUser) as any;
+          blueprintData = getMockBlueprint(auditUser) as any;
         }
 
         const states = await journeyRepository.getRecentDailyStates(uid).catch(() => []);

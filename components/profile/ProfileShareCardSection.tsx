@@ -137,10 +137,10 @@ export function ProfileShareCardSection({ title, story }: ProfileShareCardSectio
         storageProvider.getUserProfile(),
         storageProvider.getUserBlueprint(),
       ]);
-      if (auditUser && (!profile || !blueprint)) {
+      if (auditUser) {
         const { getMockProfile, getMockBlueprint } = await import("@/lib/dailyGuidance/auditMocks");
-        profile = profile || getMockProfile(auditUser) as any;
-        blueprint = blueprint || getMockBlueprint(auditUser) as any;
+        profile = getMockProfile(auditUser) as any;
+        blueprint = getMockBlueprint(auditUser) as any;
       }
       if (profile) {
         setName(profileName(profile as unknown as LocalRecord));
@@ -185,13 +185,15 @@ export function ProfileShareCardSection({ title, story }: ProfileShareCardSectio
 
   if (!profileSections.length) return null;
 
+  const uid = auth?.user?.uid || auditUser || "anon";
+
   return (
     <section className="space-y-5 pt-4">
       <header className="text-center">
         <h2 className="text-2xl font-serif text-[#4F5E52]">{title}</h2>
       </header>
       <ShareCard
-        key={`share-${auth?.user?.uid || auditUser || "anon"}-${dateKey}`}
+        key={`share-${uid}-${dateKey}`}
         userName={name}
         profileSections={profileSections}
         dateKey={dateKey}
