@@ -2,12 +2,13 @@
 /* eslint-disable @next/next/no-img-element -- html-to-image export waits on native image loading state. */
 
 import React, { useState, useRef } from "react";
-import { Check, Loader2, Share2 } from "lucide-react";
+import { Check, Download, Loader2, Share2 } from "lucide-react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { toPng } from "html-to-image";
 import { Filesystem, Directory } from "@capacitor/filesystem";
 import { Capacitor } from "@capacitor/core";
 import { Toast } from "@capacitor/toast";
+import { Share } from "@capacitor/share";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
 import type { GrowthStory } from "@/lib/engines/journeyStoryEngine";
@@ -80,20 +81,26 @@ export function ShareCard({
     year: "numeric",
   }).format(now), [now]);
 
+  const renderPngDataUrl = async (): Promise<string | null> => {
+    if (!cardRef.current) return null;
+    await waitForCardImages(cardRef.current);
+    return await toPng(cardRef.current, {
+      cacheBust: true,
+      backgroundColor: "#FCFAF5",
+      canvasWidth: 720,
+      canvasHeight: 1280,
+    });
+  };
+
   const handleShare = async () => {
     if (!cardRef.current) return;
 
     setIsExporting(true);
     try {
-      await waitForCardImages(cardRef.current);
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        backgroundColor: "#FCFAF5",
-        canvasWidth: 720,
-        canvasHeight: 1280,
-      });
+      const dataUrl = await renderPngDataUrl();
+      if (!dataUrl) return;
 
-      const fileName = `bhumi-amartya-${activeCategory}-${Date.now()}.png`;
+      const fileName = `bhumi-share-${activeCategory}-${Date.now()}.png`;
 
       // 1. Native mobile runtime (Capacitor)
       if (Capacitor.isNativePlatform()) {
@@ -101,14 +108,33 @@ export function ShareCard({
         await Filesystem.writeFile({
           path: fileName,
           data: base64Data,
-          directory: Directory.Documents,
+          directory: Directory.Cache,
         });
-        await Toast.show({
-          text: "Gambar berhasil disimpan. Kamu bisa cek di folder HP kamu ya.",
-          duration: "long",
+
+        const fileResult = await Filesystem.getUri({
+          path: fileName,
+          directory: Directory.Cache,
         });
-        setSavedToast(true);
-        setTimeout(() => setSavedToast(false), 4000);
+
+        try {
+          await Share.share({
+            title: "Bhumi Amartya — Perjalanan Jiwa",
+            text: "Ruang untuk pulang dan kenali diri bersama Bhumi Amartya.",
+            url: fileResult.uri,
+            dialogTitle: "Bagikan Kartu Perjalanan",
+          });
+        } catch (shareErr: unknown) {
+          const isCancel =
+            (shareErr instanceof Error && (shareErr.name === "AbortError" || /cancel/i.test(shareErr.message))) ||
+            String(shareErr).toLowerCase().includes("cancel");
+          if (!isCancel) {
+            console.error("Native share dialog error:", shareErr);
+            await Toast.show({
+              text: "Gagal membuka menu berbagi. Kamu bisa gunakan tombol Simpan Gambar.",
+              duration: "short",
+            });
+          }
+        }
         return;
       }
 
@@ -124,19 +150,58 @@ export function ShareCard({
               title: "Bhumi Amartya — Perjalanan Jiwa",
               text: "Ruang untuk pulang dan kenali diri bersama Bhumi Amartya.",
             });
-            setSavedToast(true);
-            setTimeout(() => setSavedToast(false), 4000);
             return;
           }
         } catch (shareErr: unknown) {
           if (shareErr instanceof Error && shareErr.name === "AbortError") {
             return; // User cancelled native share sheet
           }
-          // Continue to link download fallback on other errors
         }
       }
 
       // 3. Desktop / Standard Web download fallback
+      await handleSave(dataUrl);
+    } catch (error) {
+      console.error("Share failed:", error);
+      if (Capacitor.isNativePlatform()) {
+        await Toast.show({
+          text: "Terjadi kendala saat menyiapkan gambar. Coba lagi sebentar ya.",
+          duration: "short",
+        });
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSave = async (existingDataUrl?: string) => {
+    if (!cardRef.current && !existingDataUrl) return;
+
+    setIsExporting(true);
+    try {
+      const dataUrl = existingDataUrl || (await renderPngDataUrl());
+      if (!dataUrl) return;
+
+      const fileName = `bhumi-amartya-${activeCategory}-${Date.now()}.png`;
+
+      // 1. Native mobile runtime (Capacitor)
+      if (Capacitor.isNativePlatform()) {
+        const base64Data = dataUrl.split(",")[1];
+        await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Documents,
+        });
+        await Toast.show({
+          text: "Gambar berhasil disimpan di folder Dokumen HP kamu ya.",
+          duration: "long",
+        });
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 4000);
+        return;
+      }
+
+      // 2. Standard Web download
       const link = document.createElement("a");
       link.download = fileName;
       link.href = dataUrl;
@@ -144,7 +209,7 @@ export function ShareCard({
       setSavedToast(true);
       setTimeout(() => setSavedToast(false), 4000);
     } catch (error) {
-      console.error("Export failed:", error);
+      console.error("Save failed:", error);
       if (Capacitor.isNativePlatform()) {
         await Toast.show({
           text: "Gambar belum berhasil disimpan. Coba lagi sebentar ya.",
@@ -345,9 +410,10 @@ export function ShareCard({
         </span>
       </div>
 
-      {/* Share / Download Action Button */}
-      <div className="px-1 space-y-2">
+      {/* Share / Download Action Buttons */}
+      <div className="px-1 space-y-2.5">
         <button
+          type="button"
           onClick={handleShare}
           disabled={isExporting}
           className="w-full bg-[#4F5E52] text-white py-4 rounded-2xl flex items-center justify-center gap-3 text-sm font-bold uppercase tracking-widest hover:bg-[#3F5146] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-md"
@@ -365,11 +431,21 @@ export function ShareCard({
           )}
         </button>
 
+        <button
+          type="button"
+          onClick={() => void handleSave()}
+          disabled={isExporting}
+          className="w-full border border-[#4F5E52]/40 bg-white/80 hover:bg-white text-[#4F5E52] py-3 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+        >
+          <Download size={16} />
+          Simpan Gambar (PNG)
+        </button>
+
         {savedToast && (
           <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center animate-in fade-in">
             <p className="text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
               <Check size={14} />
-              Kartu berhasil disimpan di perangkatmu. Siap dibagikan ke WhatsApp atau Instagram!
+              Gambar berhasil disimpan di perangkatmu. Siap dibagikan ke media sosial!
             </p>
           </div>
         )}
