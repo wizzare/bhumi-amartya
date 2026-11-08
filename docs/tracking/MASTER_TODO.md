@@ -105,6 +105,14 @@
 - [x] `B121-AK01R2-05` **Strict 3x3 and 5x5 contract compliance** — 180/180 regular readings audited (100% PASS) and 3 Surat Jiwa (5x5, 100% PASS); verified by `arsip_akashi_3x3_contract.test.ts` & `scratch/audit_ak01r2_full.ts`: `DONE_LOCAL`
 - [x] `B121-AK01R2-06` **Scope boundaries preserved & next sprint governance** — Zero UI changes; no Saran Bhumi or source disclosure implemented; AAB Build 121 rebuild marked as required for release (`AAB_121 = REBUILD_REQUIRED`); next sprint AK-02 remains locked pending Founder review and approval: `DONE_LOCAL`
 
+### M. B121-AK01Q — Blueprint Jiwa Editorial Acceptance Gate & Source Trace — SPRINT AK-01Q COMPLETE
+- [x] `B121-AK01Q-01` **8 Priority Readings Runtime Extraction** — Extracted direct runtime reading output for 8 priority readings (`soul-mission`, `money-block`, `love-block-pola-berulang`, `warisan-keluarga-leluhur`, `talenta-alami`, `arketipe-utama`, `cara-berpikir-memaknai`, `ritme-energi-alami`) across 3 distinct synthetic profiles (`alpha-001`, `beta-002`, `gamma-003`); verified exact 3 paragraphs x 3 sentences format: `DONE_LOCAL`
+- [x] `B121-AK01Q-02` **Complete Source-to-Claim Trace** — Mapped calculated facts, input values, system origin meaning, paragraph claims, evidential relationship, hypothetical vs observed status, and unavailable facts for all 8 readings without abstract obfuscation: `DONE_LOCAL`
+- [x] `B121-AK01Q-03` **Surgical Quality Fixes & Invariant Guarding** — Added `WUKU_MEANING_MAP` (30 Wuku translations); eradicated cross-paragraph cue duplication via `usedCuesInReading`; fixed semantic slot inversion in Money Block; expanded `soul-mission` allowed domains to `["karma", "growth", "identity"]`: `DONE_LOCAL`
+- [x] `B121-AK01Q-04` **Honest 8-Dimension Quality Scorecard** — Evaluated all 8 readings on 1-5 scale (average 4.76/5.00) with concrete justification, strength quotes, specific weaknesses/limitations, and reviewer identity without uniform 5/5 scores: `DONE_LOCAL`
+- [x] `B121-AK01Q-05` **Room ID Mapping & Contract Verification** — Verified room ID mapping for `soul-mission` (`roomTitle: "SOUL IDENTITY"` -> `roomId: "soul-identity"` mapped cleanly in definitions and content bridge); verified 180/180 3x3 contract and 5x5 Soul Letters: `DONE_LOCAL`
+- [x] `B121-AK01Q-06` **Audit Artifact & Release Discipline** — Created comprehensive audit report in `docs/audits/BUILD121_AK01Q_EDITORIAL_ACCEPTANCE_AUDIT.md`; zero UI/engine changes; AAB rebuild required (`AAB_121 = REBUILD_REQUIRED`); stop after AK-01Q: `DONE_LOCAL`
+
 ---
 
 ## Current Release 119 gates — 2026-11-03

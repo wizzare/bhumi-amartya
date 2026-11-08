@@ -118,7 +118,7 @@ const SECTIONS: Array<{ roomId: ArsipAkashiSectionId; title: string; readings: A
     roomId: "soul-identity", // Reuse soul-identity for SOUL IDENTITY sub-section
     title: "SOUL IDENTITY",
     readings: [
-      { title: "Soul Mission", readingId: "soul-mission", domains: ["karma", "growth"] },
+      { title: "Soul Mission", readingId: "soul-mission", domains: ["karma", "growth", "identity"] },
       { title: "Soul Gifts", readingId: "soul-gifts", domains: ["talents", "identity"] },
       { title: "Soul Lessons", readingId: "soul-lessons", domains: ["karma", "shadow"] },
       { title: "Soul Shadow", readingId: "soul-shadow", domains: ["shadow", "karma"] },

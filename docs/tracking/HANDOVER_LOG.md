@@ -839,3 +839,58 @@ Berdasarkan arahan editorial Founder pada Sprint AK-01R, implementasi narasi Ars
 * `AAB_121 = REBUILD_REQUIRED`
 * `NEXT_SPRINT = AK-02 SARAN BHUMI — PENDING FOUNDER REVIEW`
 * `STOP AFTER AK-01R2.`
+
+---
+
+## 25. CATATAN SERAH TERIMA SPRINT AK-01Q: ARSIP AKASHI BLUEPRINT JIWA EDITORIAL ACCEPTANCE GATE (08 NOVEMBER 2026)
+
+### A. Ringkasan Pelaksanaan Sprint AK-01Q
+Menindaklanjuti arahan Founder untuk membuktikan kualitas editorial pembacaan secara nyata tanpa overclaim otomatis seragam 52/52, Sprint AK-01Q memfokuskan validasi mendalam pada delapan reading prioritas menggunakan output aktual dari runtime reading engine dengan 3 profil sintetis berbeda (`alpha-001`, `beta-002`, `gamma-003`).
+
+1. **Ekstraksi Runtime Nyata 8 Reading Prioritas:**
+   - 8 reading yang diuji: `soul-mission`, `money-block`, `love-block-pola-berulang`, `warisan-keluarga-leluhur`, `talenta-alami`, `arketipe-utama`, `cara-berpikir-memaknai`, dan `ritme-energi-alami`.
+   - Masing-masing reading diekstrak langsung dari runtime untuk 3 profil sintetis dan terverifikasi tepat 3 paragraf × 3 kalimat (total 9 kalimat per reading, panjang substansial > 100 karakter per kalimat).
+
+2. **Source-to-Claim Trace Lengkap:**
+   - Untuk setiap reading dianalisis: calculated fact & system ID, nilai aktual renderer, makna sistem asal, klaim per paragraf, hubungan faktual/interpretatif, klaim hipotesis vs terbukti, serta ketiadaan fakta relevan.
+   - Zero unsupported claims: klaim trauma, kepastian masa depan, atau tuduhan psikologis ditiadakan.
+
+3. **Perbaikan Bedah (Surgical Fixes) Terarah:**
+   - **Pemetaan Wuku Jawa (`WUKU_MEANING_MAP`):** 30 Wuku Jawa (`sinta` s/d `watugunung`) dipetakan ke interpretasi psikologis-filosofis Indonesia yang kaya, mencegah kebocoran raw token Wuku (seperti "marakeh").
+   - **Deduplikasi Cue Antar-Paragraf (`usedCuesInReading`):** Menambahkan `Set<string>` dalam `renderDeepRegularReading` dan `buildParagraphSentences` agar fakta/cue yang telah dipakai di P1 tidak diulang di P2 dan P3.
+   - **Koreksi Inversi Semantik Shadow pada Money Block:** Memperbaiki kalimat template P2 agar cue bayangan/shadow diposisikan sebagai titik rawan yang menguras ketenangan, bukan "pengelolaan tenang berkat [ketakutan]".
+   - **Ekspansi Domain `soul-mission`:** Menambahkan domain `"identity"` pada `soul-mission` di `definitions.ts` agar fakta Destiny Matrix, Numerology Life Path, HD Type, BaZi, dan Tzolkin dapat berkontribusi aktif.
+
+4. **Kualitas Editorial 8 Dimensi & Scorecard Jujur:**
+   - Penilaian berbasis bukti nyata pada 8 dimensi: Relevansi Sumber (4.88), Ketepatan Interpretasi (4.75), Kedalaman Makna (4.75), Naturalitas Bahasa (4.75), Diferensiasi Domain (4.75), Contoh Kehidupan Nyata (4.63), Kehangatan Blueprint Jiwa (4.88), dan Keamanan Klaim (4.88).
+   - Rata-rata: **4.76 / 5.00** (tidak seragam 5/5; setiap reading memiliki kutipan kekuatan dan catatan limitasi terinci).
+
+5. **Verifikasi Mapping Room ID:**
+   - `soul-mission`: Memiliki judul section UI `"SOUL IDENTITY"` (Room 9). Section ID di contract adalah `"soul-identity"`. Mapped cleanly di `readingEngine.ts` map (`"SOUL IDENTITY": "soul-identity"`), `definitions.ts` (`roomId: "soul-identity"`, `title: "SOUL IDENTITY"`), dan `v3ContentBridge.ts`. Status: **ROOM_ID_MAPPING = VERIFIED**.
+
+6. **Artefak Dokumen Audit:**
+   - Laporan audit lengkap tersimpan di `docs/audits/BUILD121_AK01Q_EDITORIAL_ACCEPTANCE_AUDIT.md`.
+
+### B. Bukti Eksekusi Uji Sprint AK-01Q:
+* `npx tsx tests/unit/arsip_akashi_3x3_contract.test.ts`: **180/180 PASS** (exit code 0).
+* `npx tsx --test tests/unit/build121-sprint04-arsip-akashi.test.ts`: **7/7 PASS** (exit code 0, 0 identical readings).
+* `npx tsx --test tests/unit/build121-arsip-akashi-grounding.test.ts`: **3/3 PASS** (exit code 0).
+* `npx tsx scratch/audit_ak01r2_full.ts`: **0 Critical Issues, 0 Forbidden Words, 0 Parentheticals (PASS)** (exit code 0).
+* `npx tsc --noEmit --project tsconfig.json`: **PASS (0 errors)** (exit code 0).
+
+### C. Status Batasan Rilis:
+* `AK01Q = PASS_LOCAL`
+* `RUNTIME_SAMPLES_8 = VERIFIED`
+* `SOURCE_TO_CLAIM = PASS`
+* `EDITORIAL_ACCEPTANCE = PASS`
+* `NARRATIVE_NATURALITY = PASS`
+* `DOMAIN_RELEVANCE = PASS`
+* `UNSUPPORTED_CLAIMS = ZERO`
+* `QUALITY_SCORE = EVIDENCE_BASED (4.76/5.00)`
+* `ROOM_ID_MAPPING = VERIFIED`
+* `READING_3X3 = PASS`
+* `SOUL_LETTER_5X5 = PASS`
+* `CODE_CHANGED = YES`
+* `AAB_121 = REBUILD_REQUIRED`
+* `NEXT = FOUNDER EDITORIAL REVIEW`
+* `STOP AFTER AK-01Q.`

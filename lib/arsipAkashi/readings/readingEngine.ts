@@ -559,6 +559,39 @@ const TZOLKIN_TONE_MAP: Record<string, string> = {
   cosmic: "keutuhan kesadaran dan ketenangan melampaui siklus",
 };
 
+const WUKU_MEANING_MAP: Record<string, string> = {
+  sinta: "keberanian membuka siklus baru dan pembentukan arah",
+  landep: "ketajaman pikiran dan kemampuan memilah hal esensial",
+  wukir: "ketekunan, pertumbuhan bertahap, dan fondasi yang kokoh",
+  kurantil: "keluwesan beradaptasi dan kecermatan membaca perubahan",
+  tolu: "keberanian berekspresi dan menyampaikan kebenaran isi hati",
+  gumbreg: "daya rawat dan tanggung jawab menjaga kebaikan lingkungan",
+  warigalit: "kecermatan pada detail dan keseimbangan kebiasaan",
+  warigagung: "kebijaksanaan melihat dampak tindakan dalam jangka panjang",
+  julungwangi: "martabat diri dan penggunaan pengaruh secara bajik",
+  sungsang: "kemampuan membalik sudut pandang dan memetik hikmah",
+  galungan: "keteguhan memegang nilai kebenaran dan kemenangan batin",
+  kuningan: "kesadaran bersyukur dan penyelesaian secara bermartabat",
+  langkir: "kewaspadaan, strategi matang, dan kemampuan menjaga batas",
+  mandasiya: "keteguhan daya kerja dan kecakapan mengelola tenaga besar",
+  julungpujut: "ketulusan niat dan kesetiaan pada nilai yang diyakini",
+  pahang: "keberanian menghadapi gesekan dan mengubahnya menjadi kemajuan",
+  kuruwelut: "kemampuan merawat kesinambungan dan hubungan yang sehat",
+  marakeh: "kemandirian, ketelitian, dan keberanian memperbaiki arah",
+  tambir: "kecakapan berkomunikasi dan menjembatani perbedaan",
+  medangkungan: "kelapangan pandangan dan tanggung jawab menjaga amanah",
+  maktal: "keteguhan prinsip dan kedalaman transformasi batin",
+  wuye: "kepekaan intuisi dan ketepatan menangkap momentum",
+  manahil: "ketekunan menuntaskan tanggung jawab hingga menghasilkan buah nyata",
+  prangbakat: "keberanian strategis dalam menghadapi persaingan",
+  bala: "ketahanan menghadapi rintangan dan tanggung jawab moral",
+  wugu: "kematangan dalam bertindak dan kedalaman perenungan hening",
+  wayang: "daya imajinasi dan kepekaan membaca peran di balik peristiwa",
+  kulawu: "kebijaksanaan memulihkan diri dan penerimaan yang lapang",
+  dukut: "kesederhanaan, kejujuran batin, dan perhatian pada hal mendasar",
+  watugunung: "kematangan integrasi dan kesiapan memulai babak baru",
+};
+
 function humanizeFactCue(
   factValue: string,
   systemId: string,
@@ -594,6 +627,13 @@ function humanizeFactCue(
 
   const lower = sanitized.toLowerCase();
 
+  // Check WUKU mapping before other lookups
+  for (const [wukuKey, wukuMeaning] of Object.entries(WUKU_MEANING_MAP)) {
+    if (lower === wukuKey || lower.includes(`wuku ${wukuKey}`) || lower.includes(wukuKey)) {
+      return wukuMeaning;
+    }
+  }
+
   // If reading is warisan-keluarga-leluhur, reject HD not-self immediately
   if (readingId === "warisan-keluarga-leluhur" && systemId === "human-design") {
     return fallback;
@@ -608,6 +648,16 @@ function humanizeFactCue(
 
   // Specific domain adaptation for Cara Berpikir & Memaknai Kehidupan
   if (readingId === "cara-berpikir-memaknai") {
+    if (systemId === "weton") {
+      for (const [wukuKey, wukuMeaning] of Object.entries(WUKU_MEANING_MAP)) {
+        if (lower.includes(wukuKey)) return wukuMeaning;
+      }
+      if (lower.includes("legi")) return "keramahan dan keterbukaan menghubungkan berbagai ide";
+      if (lower.includes("pahing")) return "ketegasan menalar dan keberanian memegang prinsip berpikir";
+      if (lower.includes("pon")) return "pertimbangan matang dan cara berpikir yang membumi";
+      if (lower.includes("wage")) return "kecermatan analisis dan ketelitian menguji fakta";
+      if (lower.includes("kliwon")) return "kedalaman intuisi dan kemampuan menangkap makna batin";
+    }
     if (systemId === "tzolkin") {
       for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
         if (lower.includes(color)) return meaning;
@@ -680,6 +730,20 @@ function humanizeFactCue(
 
   // Specific domain adaptation for Money Block (psychological friction with money)
   if (readingId === "money-block") {
+    if (systemId === "human-design") {
+      if (lower.includes("generator") || lower.includes("sacral") || lower.includes("respond")) {
+        return "dorongan memaksakan komitmen kerja tanpa mendengarkan sinyal kelelahan tubuh";
+      }
+      if (lower.includes("projector") || lower.includes("invitation")) {
+        return "dorongan membuktikan nilai diri lewat kerja berlebihan sebelum diakui secara tepat";
+      }
+      if (lower.includes("manifestor") || lower.includes("inform")) {
+        return "kecemasan saat inisiatif mandirimu terhambat oleh keterbatasan sumber daya";
+      }
+      if (lower.includes("reflector")) {
+        return "tekanan menyerap kepanikan finansial lingkungan sekitar";
+      }
+    }
     if (systemId === "destiny-matrix" || lower.includes("arcana") || lower.includes("energi")) {
       const arcMatch = lower.match(/\b(2[0-2]|1[0-9]|[1-9])\b/);
       if (arcMatch) {
@@ -702,6 +766,12 @@ function humanizeFactCue(
         if (n === "5") return "dorongan belanja impulsif demi mencari pelarian rasa bebas sesaat";
         if (n === "8") return "tekanan mental untuk selalu membuktikan kemapanan materi di hadapan orang lain";
       }
+    }
+    if (systemId === "bazi") {
+      return "dorongan mengontrol pengeluaran secara berlebihan saat menghadapi ketidakpastian";
+    }
+    if (systemId === "weton") {
+      return "kekhawatiran akan ketidakpastian rezeki yang memicu keraguan mengambil langkah";
     }
     return "kecemasan tentang kecukupan materi dan dorongan mengontrol keadaan secara berlebih";
   }
@@ -758,6 +828,12 @@ function humanizeFactCue(
 
   // Specific domain adaptation for Love Block & Pola Berulang (relational armor & vulnerability fear)
   if (readingId === "love-block-pola-berulang") {
+    if (systemId === "human-design") {
+      if (lower.includes("generator")) return "dorongan menyenangkan pasangan hingga mengorbankan batas pribadi";
+      if (lower.includes("projector")) return "kekecewaan mendalam ketika perhatian dan bimbinganmu tidak dihargai secara setara";
+      if (lower.includes("manifestor")) return "kecenderungan menutup diri dan menolak kompromi saat merasa dibatasi";
+      if (lower.includes("reflector")) return "kebingungan membedakan perasaan diri sendiri dari ekspektasi pasangan";
+    }
     if (systemId === "destiny-matrix" || lower.includes("arcana") || lower.includes("energi")) {
       const arcMatch = lower.match(/\b(2[0-2]|1[0-9]|[1-9])\b/);
       if (arcMatch) {
@@ -768,6 +844,12 @@ function humanizeFactCue(
         if (num === "15") return "ketertarikan pada dinamika relasi yang penuh drama dan menguras emosi";
         if (num === "18") return "kecurigaan bawah sadar yang menciptakan jarak saat kedekatan menuntut kejujuran";
       }
+    }
+    if (systemId === "bazi") {
+      return "keengganan memperlihatkan kerapuhan karena takut kehilangan kendali dalam hubungan";
+    }
+    if (systemId === "weton") {
+      return "kebiasaan memendam kekecewaan demi mempertahankan kesan hubungan yang baik-baik saja";
     }
     return "benteng pertahanan otomatis yang aktif saat kedekatan terasa menuntut kerentanan";
   }
@@ -796,20 +878,21 @@ function humanizeFactCue(
       }
     }
     if (systemId === "weton") {
-      const dinoMatch = lower.match(/\b(senin|selasa|rabu|kamis|jumat|sabtu|minggu)\b/);
-      const dinoStr = dinoMatch ? `hari ${dinoMatch[1]} ` : "";
+      for (const [wukuKey, meaning] of Object.entries(WUKU_MEANING_MAP)) {
+        if (lower.includes(wukuKey)) return `ketabahan silsilah dalam merawat ${meaning}`;
+      }
       for (const [pasaran, meaning] of Object.entries(WETON_PASARAN_MAP)) {
-        if (lower.includes(pasaran)) return `kearifan leluhur ${dinoStr}yang berakar pada ${meaning}`;
+        if (lower.includes(pasaran)) return meaning;
       }
     }
     if (systemId === "tzolkin") {
       for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
-        if (lower.includes(color)) return `siklus ketabahan silsilah yang membawa ${meaning}`;
+        if (lower.includes(color)) return `daya tahan silsilah yang membawa ${meaning}`;
       }
       for (const [seal, meaning] of Object.entries(TZOLKIN_SEAL_MAP)) {
-        if (lower.includes(seal)) return `kearifan leluhur yang berakar pada ${meaning}`;
+        if (lower.includes(seal)) return meaning;
       }
-      return `kepekaan siklus batin leluhur yang selaras dengan arketipe ${sanitized.toLowerCase()}`;
+      return `daya tahan silsilah yang selaras dengan arketipe ${sanitized.toLowerCase()}`;
     }
     if (systemId === "bazi") {
       for (const [elem, meaning] of Object.entries(BAZI_ELEMENT_MAP)) {
@@ -822,6 +905,55 @@ function humanizeFactCue(
       }
     }
     return "pola ketabahan dan harapan keluarga yang diwariskan lintas generasi";
+  }
+
+  // Specific domain adaptation for Soul Mission (calling, purpose, deeper service)
+  if (readingId === "soul-mission") {
+    if (systemId === "human-design") {
+      if (lower.includes("generator")) return "panggilan mengabdi melalui dedikasi kerja nyata yang menumbuhkan kehidupan";
+      if (lower.includes("projector")) return "panggilan memandu dan menyelaraskan sistem dengan kejernihan visi";
+      if (lower.includes("manifestor")) return "panggilan merintis inisiatif berani yang membuka jalan bagi orang banyak";
+      if (lower.includes("reflector")) return "panggilan merefleksikan kebenaran dan menjaga keutuhan kesadaran bersama";
+    }
+    if (systemId === "destiny-matrix" || lower.includes("arcana")) {
+      const arcMatch = lower.match(/\b(2[0-2]|1[0-9]|[1-9])\b/);
+      if (arcMatch) {
+        const num = arcMatch[1];
+        if (num === "7") return "arah kepemimpinan yang menggerakkan orang lain menuju pencapaian bermakna";
+        if (num === "9") return "panggilan menyelami kebijaksanaan hening dan membagikan pencerahan batin";
+        if (num === "4") return "tanggung jawab membangun tatanan hidup yang stabil dan melindungi sesama";
+        if (num === "10") return "keluwesan membuka peluang rezeki dan menyatukan banyak pihak";
+      }
+      return "arah pengabdian yang mengubah pengalaman hidup menjadi jalan terang bagi sesama";
+    }
+    if (systemId === "numerology") {
+      const numMatch = lower.match(/\b(11|22|33|[1-9])\b/);
+      if (numMatch) {
+        const n = numMatch[1];
+        if (n === "1") return "keberanian menjadi pelopor mandiri yang menginspirasi langkah orang lain";
+        if (n === "7") return "dedikasi menelusuri kebenaran mendalam dan membagikan wawasan jernih";
+        if (n === "4") return "ketekunan membangun fondasi karya yang kokoh dan bermanfaat panjang";
+      }
+      return "komitmen memberi teladan dan membuka jalan bagi pertumbuhan bersama";
+    }
+    if (systemId === "tzolkin") {
+      for (const [seal, meaning] of Object.entries(TZOLKIN_SEAL_MAP)) {
+        if (lower.includes(seal)) return `panggilan mewujudkan ${meaning}`;
+      }
+      for (const [color, meaning] of Object.entries(TZOLKIN_CASTLE_MAP)) {
+        if (lower.includes(color)) return `arah kontribusi yang selaras dengan ${meaning}`;
+      }
+      if (lower.includes("true") || lower.includes("gap")) {
+        return "keberanian membuka portal potensi dan melayani transformasi kesadaran";
+      }
+      return "kepekaan mengenali waktu yang tepat untuk menghadirkan kontribusi bermakna";
+    }
+    if (systemId === "bazi") {
+      for (const [elem, meaning] of Object.entries(BAZI_ELEMENT_MAP)) {
+        if (lower.includes(elem)) return `panggilan mengalirkan ${meaning}`;
+      }
+      return "tanggung jawab merawat keseimbangan hidup dan menyuburkan potensi sekitar";
+    }
   }
 
   // Tzolkin general mapping
@@ -986,7 +1118,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     return [
       `Melatih kejernihan kognitif menuntut keseimbangan antara ketajaman observasi dan kesabaran melihat konteks yang lebih utuh.`,
       `Beri jeda sejenak sebelum merumuskan penilaian agar setiap fakta memiliki ruang untuk dipahami secara adil.`,
-      `Ujilah pemahamanmu hari ini dengan menerapkan wawasan ${cueC} ke dalam keputusan praktis.`,
+      `Bumikan cara berpikirmu hari ini dengan membawa prinsip ${cueC} ke dalam satu keputusan praktis.`,
     ];
   },
 
@@ -1055,7 +1187,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     return [
       `Menata hari berdasarkan kapasitas energi adalah bentuk kepedulian nyata yang menjaga kejernihan pikiran dan ketahanan raga.`,
       `Biasakan mengukur keberhasilan dari kualitas kehadiranmu, bukan sekadar jumlah kesibukan yang berhasil kamu tumpuk.`,
-      `Bangun ritme kerja yang lebih seimbang hari ini dengan memprioritaskan keteraturan ${cueC}.`,
+      `Bangun ritme kerja yang lebih seimbang hari ini dengan memberi ruang bagi ${cueC} di sela aktivitasmu.`,
     ];
   },
 
@@ -1262,7 +1394,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     return [
       `Kedewasaan berelasi dengan asal-usul keluarga terletak pada kemampuan merawat hikmah baiknya sembari menetapkan batas hidup yang mandiri.`,
       `Kamu berhak menentukan jalan hidup yang selaras dengan nilai jiwamu tanpa harus merasa bersalah.`,
-      `Tegakkan postur hidupmu di masa kini dengan menyandarkan langkah pada kearifan ${cueC}.`,
+      `Tegakkan postur hidupmu di masa kini dengan menyandarkan langkah pada ${cueC}.`,
     ];
   },
 
@@ -1409,21 +1541,21 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     if (p === 1) {
       return [
         `Dinamika batin seputar sumber daya mencerminkan hubungan antara rasa aman, nilai diri, dan kemampuan mempercayai alir kehidupan.`,
-        `Ketegangan finansial biasanya mengemuka saat situasi menguji ${cueA}.`,
+        `Beban atau gesekan finansial biasanya terasa saat kamu berhadapan dengan ${cueA}.`,
         `Pemahaman ini membantu melihat bahwa kecemasan materi sering kali berakar pada kebutuhan emosional yang meminta perhatian jujur.`,
       ];
     }
     if (p === 2) {
       return [
-        `Ketika hubungan dengan materi mulai jernih, pengelolaan sumber daya menjadi lebih tenang dan terarah berkat ${cueB}.`,
+        `Titik rawan yang kerap menguras ketenanganmu berputar di sekitar ${cueB}.`,
         `Pola yang patut kamu amati secara jujur adalah kecenderungan menahan kendali terlalu ketat saat rasa cemas datang, atau sebaliknya menghindari evaluasi angka nyata ketika situasi terasa menekan.`,
-        `Ketegangan ini wajar muncul ketika nilai diri tanpa sadar disamakan dengan saldo atau materi yang dimiliki.`,
+        `Ketegangan ini wajar muncul ketika rasa aman batin tanpa sadar disamakan dengan jumlah materi yang terlihat.`,
       ];
     }
     return [
       `Menata hubungan sehat dengan uang menuntut perpaduan antara ketertiban praktis dan penerimaan batin atas rasa cukup.`,
-      `Lepaskan keyakinan bahwa membicarakan angka mengurangi ketulusan, atau bahwa memiliki materi otomatis merusak integritas.`,
-      `Mulailah membangun ketenangan finansial dengan satu langkah pencatatan atau kesepakatan tertib yang berpijak pada ${cueC}.`,
+      `Lepaskan keyakinan bahwa membicarakan angka mengurangi ketulusan, atau bahwa memiliki kepastian materi otomatis merusak integritas.`,
+      `Mulailah membangun ketenangan finansial hari ini dengan langkah konkret, seperti merapikan catatan atau memperjelas kesepakatan, yang bersandar pada ${cueC}.`,
     ];
   },
 
@@ -1593,13 +1725,13 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     if (p === 1) {
       return [
         `Hambatan dalam kedekatan emosional sering kali berakar pada mekanisme pertahanan yang terbentuk untuk melindungi hati dari rasa terluka.`,
-        `Benteng batin ini cenderung aktif ketika dinamika hubungan menyentuh ruang seputar ${cueA}.`,
+        `Benteng batin ini cenderung aktif ketika dinamika kedekatan menyentuh ${cueA}.`,
         `Mengenali respons perlindungan ini membuka pintu bagi keintiman yang lebih jujur tanpa harus mengorbankan rasa aman.`,
       ];
     }
     if (p === 2) {
       return [
-        `Saat pertahanan diri dapat dilunakkan secara sadar, kedekatan dua arah bertumbuh semakin hangat melalui ${cueB}.`,
+        `Tantangan relasional yang paling sering berulang muncul dalam bentuk ${cueB}.`,
         `Perhatikan apakah ada kecenderungan untuk menarik diri atau mencari-cari kekurangan situasi saat relasi menuntut komitmen yang lebih dalam.`,
         `Pola ini bukanlah cela kepribadian, melainkan sinyal bahwa ruang batinmu sedang membutuhkan rasa aman sebelum berani melangkah lebih jauh.`,
       ];
@@ -1607,7 +1739,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     return [
       `Membuka diri dalam relasi menuntut keberanian untuk merangkul kerentanan sebagai bagian wajar dari cinta yang bertumbuh.`,
       `Yang perlu dilatih adalah menyampaikan batas dan harapan secara jelas sebelum prasangka mengambil alih.`,
-      `Latihlah keterbukaan yang sehat hari ini dengan menaruh rasa percaya secara bertahap pada ${cueC}.`,
+      `Latihlah keterbukaan yang sehat hari ini dengan mengambil inisiatif komunikasi terbuka yang mengedepankan ${cueC}.`,
     ];
   },
 
@@ -1898,7 +2030,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     }
     if (p === 2) {
       return [
-        `Saat kamu melangkah selaras dengan misi ini, jalan-jalan kebaikan terbuka secara alami melalui ${cueB}.`,
+        `Langkah nyata menuju panggilan ini terasa semakin mantap saat kamu melatih ${cueB} di tengah dinamika harian.`,
         `Bila panggilan ini terabaikan demi kenyamanan sesaat, rasa jenuh atau hampa dapat hadir sebagai pengingat lembut bahwa ada bagian potensimu yang sedang rindu untuk dibagikan.`,
         `Risiko yang patut diwaspadai adalah mengukur keberhasilan semata dari validasi luar sehingga arah sejati kabur.`,
       ];
@@ -1906,7 +2038,7 @@ const READING_NARRATIVE_TEMPLATES: Record<string, ReadingTemplateFn> = {
     return [
       `Membumikan misi jiwa tidak harus menunggu momen besar yang dramatis, melainkan dimulai dari ketulusan melayani dalam tanggung jawab kecil setiap hari.`,
       `Yang perlu dilepaskan adalah anggapan bahwa kontribusimu harus spektakuler sebelum dianggap berharga.`,
-      `Teguhkan niat pengabdian jiwamu hari ini dengan mengarahkan satu tindakan nyata pada ${cueC}.`,
+      `Teguhkan niat pengabdian jiwamu hari ini dengan mendedikasikan waktu dan perhatian nyata untuk ${cueC}.`,
     ];
   },
 
@@ -1986,18 +2118,24 @@ function buildParagraphSentences(
   purpose: ReturnType<typeof readingPurpose>,
   themes: string[],
   factCues: string[],
+  usedCues?: Set<string>,
 ): string[] {
   const domainA = DOMAIN_MEANINGS[reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
   const domainB = DOMAIN_MEANINGS[reading.allowedDomains[1] ?? reading.allowedDomains[0]] ?? DOMAIN_MEANINGS.growth;
-  const cueA = factCues[0] ?? domainA.core;
-  let cueB = factCues[1] ?? domainB.strength ?? domainA.strength;
+  let cueA = factCues.find((c) => !usedCues?.has(c)) ?? factCues[0] ?? domainA.core;
+  if (paragraphIndex === 1 && usedCues) usedCues.add(cueA);
+
+  let cueB = factCues.find((c) => c !== cueA && !usedCues?.has(c)) ?? domainB.strength ?? domainA.strength;
   if (cueB === cueA) {
-    cueB = factCues[2] ?? domainB.daily ?? domainA.daily;
+    cueB = domainB.daily ?? domainA.daily;
   }
-  let cueC = factCues[2] ?? purpose.application;
+  if (paragraphIndex === 2 && usedCues) usedCues.add(cueB);
+
+  let cueC = factCues.find((c) => c !== cueA && c !== cueB && !usedCues?.has(c)) ?? purpose.application;
   if (cueC === cueA || cueC === cueB) {
     cueC = purpose.application;
   }
+  if (paragraphIndex === 3 && usedCues) usedCues.add(cueC);
 
   const templateFn = READING_NARRATIVE_TEMPLATES[reading.readingId];
   if (templateFn) {
@@ -2029,6 +2167,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
   const purpose = readingPurpose(reading);
   const paragraphs: string[] = [];
   const provenance: DeepNarrativeParagraphProvenance[] = [];
+  const usedCuesInReading = new Set<string>();
 
   for (let paragraphIndex = 1; paragraphIndex <= 3; paragraphIndex++) {
     const selectedFacts = selectReadingFacts(model, reading, paragraphIndex);
@@ -2039,7 +2178,7 @@ function renderDeepRegularReading(model: ArsipAkashiInsightModel, reading: Arsip
     const factCues = selectedFacts
       .map((fact, index) => humanizeFactCue(fact.value, fact.systemId, fact.domain, semanticThemes[index % semanticThemes.length] ?? reading.allowedDomains[index % reading.allowedDomains.length], reading.readingId))
       .filter(Boolean);
-    const sentences = buildParagraphSentences(reading, paragraphIndex, purpose, semanticThemes, factCues).map(sanitizeVisible);
+    const sentences = buildParagraphSentences(reading, paragraphIndex, purpose, semanticThemes, factCues, usedCuesInReading).map(sanitizeVisible);
     paragraphs.push(sentences.join(" "));
     provenance.push({
       paragraphIndex,
