@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element -- html-to-image export waits on native image loading state. */
 
 import React, { useState, useRef } from "react";
-import { Loader2, Share2 } from "lucide-react";
+import { Check, Loader2, Share2 } from "lucide-react";
 import { BhumiPageHeader } from "@/components/ui/BhumiPageHeader";
 import { toPng } from "html-to-image";
 import { Filesystem, Directory } from "@capacitor/filesystem";
@@ -10,15 +10,20 @@ import { Capacitor } from "@capacitor/core";
 import { Toast } from "@capacitor/toast";
 import type { DailyGuidance } from "@/lib/dailyGuidance/types";
 import type { ProfileSection } from "@/lib/types/profileRuntime";
+import type { GrowthStory } from "@/lib/engines/journeyStoryEngine";
 import { createDailyShareCardContent, type DailyShareCardContent } from "@/lib/profile/dailyShareCardEngine";
 
-interface ShareCardProps {
+export type ShareCardCategory = "journey" | "milestone" | "reflection";
+
+export interface ShareCardProps {
   profileSections: ProfileSection[];
   dateKey: string;
   userSeed: string;
   guidance?: DailyGuidance | null;
   userName?: string;
   cardInstanceSeed?: string;
+  story?: GrowthStory | null;
+  defaultCategory?: ShareCardCategory;
 }
 
 const ornamentPath = "/share-card/ornaments";
@@ -35,10 +40,24 @@ async function waitForCardImages(container: HTMLElement): Promise<void> {
   await document.fonts?.ready;
 }
 
-export function ShareCard({ profileSections, dateKey, userSeed, guidance, userName, cardInstanceSeed: externalSeed }: ShareCardProps) {
+export function ShareCard({
+  profileSections,
+  dateKey,
+  userSeed,
+  guidance,
+  userName,
+  cardInstanceSeed: externalSeed,
+  story,
+  defaultCategory,
+}: ShareCardProps) {
   const [isExporting, setIsExporting] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
   const [now] = useState(() => new Date());
   const cardRef = useRef<HTMLDivElement>(null);
+
+  const [activeCategory, setActiveCategory] = useState<ShareCardCategory>(
+    defaultCategory || (story ? "journey" : "reflection")
+  );
 
   // Rule 1 & 2: Lock per-card instance seed and content ONCE via lazy useState initialization
   const [cardSeed] = useState(() => externalSeed || `card-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
@@ -70,8 +89,9 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
         pixelRatio: 2,
       });
 
-      const fileName = `bhumi-amartya-${Date.now()}.png`;
+      const fileName = `bhumi-amartya-${activeCategory}-${Date.now()}.png`;
 
+      // 1. Native mobile runtime (Capacitor)
       if (Capacitor.isNativePlatform()) {
         const base64Data = dataUrl.split(",")[1];
         await Filesystem.writeFile({
@@ -83,13 +103,42 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
           text: "Gambar berhasil disimpan. Kamu bisa cek di folder HP kamu ya.",
           duration: "long",
         });
-      } else {
-        const link = document.createElement("a");
-        link.download = fileName;
-        link.href = dataUrl;
-        link.click();
-        alert("Gambar berhasil disimpan. Kamu bisa cek di folder HP kamu ya.");
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 4000);
+        return;
       }
+
+      // 2. Web Share API with Files support (Mobile Web: Android Chrome / iOS Safari)
+      if (typeof window !== "undefined" && typeof navigator !== "undefined" && navigator.share && navigator.canShare) {
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], fileName, { type: "image/png" });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: "Bhumi Amartya — Perjalanan Jiwa",
+              text: "Ruang untuk pulang dan kenali diri bersama Bhumi Amartya.",
+            });
+            setSavedToast(true);
+            setTimeout(() => setSavedToast(false), 4000);
+            return;
+          }
+        } catch (shareErr: unknown) {
+          if (shareErr instanceof Error && shareErr.name === "AbortError") {
+            return; // User cancelled native share sheet
+          }
+          // Continue to link download fallback on other errors
+        }
+      }
+
+      // 3. Desktop / Standard Web download fallback
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = dataUrl;
+      link.click();
+      setSavedToast(true);
+      setTimeout(() => setSavedToast(false), 4000);
     } catch (error) {
       console.error("Export failed:", error);
       if (Capacitor.isNativePlatform()) {
@@ -97,8 +146,6 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
           text: "Gambar belum berhasil disimpan. Coba lagi sebentar ya.",
           duration: "short",
         });
-      } else {
-        alert("Gambar belum berhasil disimpan. Coba lagi sebentar ya.");
       }
     } finally {
       setIsExporting(false);
@@ -106,7 +153,47 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
   };
 
   return (
-    <div className="mx-auto w-full max-w-sm space-y-6">
+    <div className="mx-auto w-full max-w-sm space-y-4">
+      {/* Category selector pills when story or multiple categories are available */}
+      {story && (
+        <div className="flex justify-center gap-1.5 p-1 bg-[#F5F1E8] rounded-2xl mx-auto w-fit border border-[#E8E9E5]">
+          <button
+            type="button"
+            onClick={() => setActiveCategory("journey")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeCategory === "journey"
+                ? "bg-[#4F5E52] text-white shadow-sm"
+                : "text-[#7B8776] hover:text-[#4F5E52]"
+            }`}
+          >
+            🌱 Perjalanan
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("milestone")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeCategory === "milestone"
+                ? "bg-[#4F5E52] text-white shadow-sm"
+                : "text-[#7B8776] hover:text-[#4F5E52]"
+            }`}
+          >
+            🏔️ Milestone
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("reflection")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              activeCategory === "reflection"
+                ? "bg-[#4F5E52] text-white shadow-sm"
+                : "text-[#7B8776] hover:text-[#4F5E52]"
+            }`}
+          >
+            🕊️ Refleksi
+          </button>
+        </div>
+      )}
+
+      {/* Card Preview Container */}
       <div ref={cardRef} className="bg-[#FCFAF5] p-1">
         <article className="relative w-full overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#F8F3E8] via-[#FCFAF5] to-[#E7EBDD] text-[#344A38] shadow-lg">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/40 rounded-full -mr-16 -mt-16 blur-3xl" />
@@ -127,32 +214,102 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
               <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mt-2 h-4 w-36 object-contain" />
             </header>
 
-            {/* SECTION 1: Pesan untuk Jiwamu */}
-            <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
-              <div className="flex items-center gap-1.5">
-                <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.soulMessage.title}</p>
-              </div>
-              <p className="mt-1 text-[7px] font-bold uppercase tracking-wider text-[#9AA394]">{content.soulMessage.themeLabel}:</p>
-              <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.soulMessage.summary}</p>
-            </section>
+            {/* CATEGORY 1: MY JOURNEY */}
+            {activeCategory === "journey" && (
+              <>
+                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Tahap Pertumbuhan</p>
+                  </div>
+                  <h4 className="mt-1 text-[11px] font-bold text-[#4F6658]">
+                    {story?.stage?.label || "Awal Kesadaran"}
+                  </h4>
+                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">
+                    {story?.stage?.description || "Mulai mengenali ritme batin yang tenang tanpa tergesa-gesa."}
+                  </p>
+                </section>
 
-            {/* SECTION 2: Profil Hari Ini */}
-            <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
-                <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.profileToday.title}</p>
-              </div>
-              <h4 className="text-[11px] font-bold text-[#4F6658]">{content.profileToday.sectionTitle}</h4>
-              <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.profileToday.summary}</p>
-            </section>
+                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Fokus Saat Ini</p>
+                  </div>
+                  <p className="text-[9px] leading-[1.5] text-[#4F5E52]">
+                    {story?.growthFocus || content.soulMessage.summary}
+                  </p>
+                </section>
 
-            {/* SECTION 3: Manifestasi Hari Ini */}
-            <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
-              <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">{content.manifestationToday.title}</p>
-              <p className="mt-2 text-center text-[8px] italic leading-[1.5] text-[#9AA394]">{content.manifestationToday.lawType}</p>
-              <p className="mt-1.5 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">"{content.manifestationToday.text}"</p>
-            </section>
+                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
+                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pesan Pendamping</p>
+                  <p className="mt-2 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">
+                    "{story?.companionMessage || content.manifestationToday.text}"
+                  </p>
+                </section>
+              </>
+            )}
+
+            {/* CATEGORY 2: MY MILESTONE */}
+            {activeCategory === "milestone" && (
+              <>
+                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Milestone Perjalanan</p>
+                  </div>
+                  <h4 className="mt-1 text-[11px] font-bold text-[#4F6658]">Target Berikutnya</h4>
+                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">
+                    {story?.nextMilestone || "Menjaga ritme kesadaran harian tanpa menambah beban target baru."}
+                  </p>
+                </section>
+
+                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">Fondasi Aktif</p>
+                  </div>
+                  <p className="text-[9px] leading-[1.5] text-[#4F5E52]">
+                    Tahap: <strong className="text-[#4F6658]">{story?.stage?.label || "Awal Kesadaran"}</strong>. Jejak praktikmu mencerminkan komitmen hadir bagi diri sendiri.
+                  </p>
+                </section>
+
+                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
+                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">Pengingat Langkah Kecil</p>
+                  <p className="mt-2 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">
+                    "Setiap hari yang kamu lalui dengan kesadaran membawamu lebih dekat pada ketenangan batin yang utuh."
+                  </p>
+                </section>
+              </>
+            )}
+
+            {/* CATEGORY 3: MY REFLECTION (Original Reflection Card) */}
+            {activeCategory === "reflection" && (
+              <>
+                <section className="mt-3 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.soulMessage.title}</p>
+                  </div>
+                  <p className="mt-1 text-[7px] font-bold uppercase tracking-wider text-[#9AA394]">{content.soulMessage.themeLabel}:</p>
+                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.soulMessage.summary}</p>
+                </section>
+
+                <section className="mt-2.5 rounded-[1.25rem] border border-white/80 bg-white/60 p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <img src={`${ornamentPath}/small-leaf-icon.svg`} alt="" className="h-4 w-4 shrink-0" />
+                    <p className="text-[8px] font-bold uppercase tracking-[0.16em] text-[#A66D23]">{content.profileToday.title}</p>
+                  </div>
+                  <h4 className="text-[11px] font-bold text-[#4F6658]">{content.profileToday.sectionTitle}</h4>
+                  <p className="mt-1.5 text-[9px] leading-[1.5] text-[#4F5E52]">{content.profileToday.summary}</p>
+                </section>
+
+                <section className="mt-2.5 rounded-[1.5rem] border border-white bg-white/65 p-4 shadow-sm">
+                  <p className="text-center text-[9px] font-bold uppercase tracking-[0.18em] text-[#4F5E52]">{content.manifestationToday.title}</p>
+                  <p className="mt-2 text-center text-[8px] italic leading-[1.5] text-[#9AA394]">{content.manifestationToday.lawType}</p>
+                  <p className="mt-1.5 text-center text-[10px] italic leading-[1.55] text-[#4F5E52]">"{content.manifestationToday.text}"</p>
+                </section>
+              </>
+            )}
 
             <footer className="pt-5 text-center">
               <img src={`${ornamentPath}/gold-divider.svg`} alt="" className="mx-auto mb-2 h-4 w-44 object-contain" />
@@ -165,7 +322,8 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
         </article>
       </div>
 
-      <div className="px-1">
+      {/* Share / Download Action Button */}
+      <div className="px-1 space-y-2">
         <button
           onClick={handleShare}
           disabled={isExporting}
@@ -179,10 +337,19 @@ export function ShareCard({ profileSections, dateKey, userSeed, guidance, userNa
           ) : (
             <>
               <Share2 size={18} />
-              Bagikan
+              Bagikan Kartu {activeCategory === "journey" ? "Perjalanan" : activeCategory === "milestone" ? "Milestone" : "Refleksi"}
             </>
           )}
         </button>
+
+        {savedToast && (
+          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center animate-in fade-in">
+            <p className="text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+              <Check size={14} />
+              Kartu berhasil disimpan di perangkatmu. Siap dibagikan ke WhatsApp atau Instagram!
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

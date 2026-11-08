@@ -302,6 +302,7 @@ export default function JourneyPage() {
 
             <ProfileShareCardSection
               title={isEn ? "Share your journey on Bhumi Amartya" : "Bagikan perjalananmu di Bhumi Amartya"}
+              story={story}
             />
             {process.env.NODE_ENV === "development" && (
               <MoanaRuntimeDiagnosticsPanel label="Journey main page readback" />

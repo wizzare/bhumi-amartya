@@ -16,6 +16,7 @@ import { HumanMeaningService } from "@/lib/services/humanMeaningService";
 import { CanonicalTranslatorService } from "@/lib/services/canonicalTranslatorService";
 import { profileToCoreIdentity, profileToDashboardUser } from "@/lib/mappers/userProfileMapper";
 import { createDailyContentSeed } from "@/lib/dailyGuidance/dailyContentKey";
+import type { GrowthStory } from "@/lib/engines/journeyStoryEngine";
 
 import { isEnlEdition } from "@/lib/config/edition";
 
@@ -116,7 +117,12 @@ function buildLocalShareGuidance(params: {
   } as DailyGuidance;
 }
 
-export function ProfileShareCardSection({ title }: { title: string }) {
+export interface ProfileShareCardSectionProps {
+  title: string;
+  story?: GrowthStory | null;
+}
+
+export function ProfileShareCardSection({ title, story }: ProfileShareCardSectionProps) {
   const auth = useAuth();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"
     ? window.localStorage.getItem("bhumi_audit_user")
@@ -190,6 +196,7 @@ export function ProfileShareCardSection({ title }: { title: string }) {
         dateKey={dateKey}
         userSeed={auth?.user?.uid ?? name}
         guidance={dailyGuidance}
+        story={story}
       />
     </section>
   );
