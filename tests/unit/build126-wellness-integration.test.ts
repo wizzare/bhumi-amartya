@@ -24,6 +24,7 @@ import { journeyRepository } from "../../lib/repositories/journeyRepository";
 import { buildInnerworkDailyDecision } from "../../lib/engines/innerworkIntelligence";
 import { getDailySensoryCompanion } from "../../lib/wellness/wellnessSensoryCompanion";
 import { buildAkashiWellnessContext } from "../../lib/intelligence/wellnessAkashiContext";
+import { COMMUNITY_CONFIG } from "../../lib/config/community";
 
 describe("BUILD 126 — Wellness Integration & Continuity Verification Suite", () => {
   const uid = `${auditName}_uid`;
@@ -193,6 +194,14 @@ describe("BUILD 126 — Wellness Integration & Continuity Verification Suite", (
         );
       },
       "Attempt to read foreign user data must be rejected"
+    );
+  });
+
+  it("9. Section 05: Sobat Mistis community integration uses official link and safe external CTA", () => {
+    assert.equal(
+      COMMUNITY_CONFIG.whatsappLink,
+      "https://chat.whatsapp.com/D23J6mUNwRQIoVHa3hF5yx",
+      "COMMUNITY_CONFIG.whatsappLink must resolve to official group"
     );
   });
 });

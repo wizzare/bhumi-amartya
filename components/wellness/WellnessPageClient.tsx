@@ -1121,7 +1121,8 @@ export function WellnessPageClient() {
           <div className="space-y-3">
             <SupportCard
               title={isEn ? "Bhumi Inner Circle Community" : "Sobat Mistis Bhumi Amartya"}
-              description={isEn ? "Learn, grow, and walk alongside the Bhumi community." : "Belajar, bertumbuh, dan berjalan bersama komunitas Bhumi."}
+              description={isEn ? "A space to share, learn self-awareness, and grow together with Sobat Mistis." : "Ruang berbagi, belajar mengenali diri, dan bertumbuh bersama Sobat Mistis."}
+              action={isEn ? "Join Sobat Mistis Community" : "Gabung Komunitas Sobat Mistis"}
               href={COMMUNITY_CONFIG.whatsappLink}
               status="ACTIVE"
               Icon={Users}
