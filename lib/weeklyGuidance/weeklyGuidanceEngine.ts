@@ -375,9 +375,16 @@ export function extractFullCanonicalBlueprint(
           }
         }
 
-        // Safe Karmic Tail check
-        if (dmKarmicTail.length !== 3 && Array.isArray(canonicalDM.karmicTail) && canonicalDM.karmicTail.length === 3) {
-          dmKarmicTail = canonicalDM.karmicTail;
+        // Safe Karmic Tail check: validate both values and sequence against canonical
+        const canonKT = canonicalDM.karmicTail;
+        if (Array.isArray(canonKT) && canonKT.length === 3) {
+          const isCanonicalKarmicMatch =
+            dmKarmicTail.length === 3 &&
+            dmKarmicTail.every((val, idx) => val === canonKT[idx]);
+
+          if (!isCanonicalKarmicMatch) {
+            dmKarmicTail = canonKT;
+          }
         }
       }
     } catch {

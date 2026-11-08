@@ -4,12 +4,10 @@ import { Blueprint } from "@/lib/types/blueprint";
 import { sanitizeForFirestore } from "@/lib/firebase/sanitizeForFirestore";
 import { debugFirestoreOperation } from "@/lib/firebase/debugFirestore";
 import { calculateLifePath } from "@/lib/calculations/calculateLifePath";
-import { calculateDestinyMatrix } from "@/lib/calculations/calculateDestinyMatrix";
+import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
-import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
-import { isCanonicalCoreComplete } from "@/lib/humandesign/completeness";
-import { compareBirthInputMatch, computeBirthInputFingerprint } from "@/lib/humandesign/birthFingerprint";
+import { isEmptyLegacyPending, isUnchangedStoredValue } from "@/lib/humandesign/persistenceBoundary";
 import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -61,10 +59,15 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
     positiveTraits: [],
     negativeTraits: [],
   });
-  const calculatedDestinyMatrix = birthDate
-    ? (calculateDestinyMatrix(birthDate) as Blueprint["destinyMatrix"])
-    : undefined;
-  const destinyMatrix: Blueprint["destinyMatrix"] = data.destinyMatrix ?? calculatedDestinyMatrix ?? {
+  let canonicalDM: Blueprint["destinyMatrix"] | undefined;
+  if (birthDate) {
+    try {
+      canonicalDM = calculateCanonicalDestinyMatrixBlueprint(birthDate);
+    } catch {
+      canonicalDM = undefined;
+    }
+  }
+  const rawDestinyMatrix: Blueprint["destinyMatrix"] = data.destinyMatrix ?? canonicalDM ?? {
     dayPoint: 0,
     monthPoint: 0,
     yearPoint: 0,
@@ -72,6 +75,21 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
     arcanaCenter: 0,
     center: 0,
     calculationStatus: "pending",
+  };
+  let dmKarmicTail = Array.isArray(rawDestinyMatrix.karmicTail) ? rawDestinyMatrix.karmicTail.map(Number) : undefined;
+  if (canonicalDM && Array.isArray(canonicalDM.karmicTail) && canonicalDM.karmicTail.length === 3) {
+    const isCanonicalKarmicMatch =
+      Array.isArray(dmKarmicTail) &&
+      dmKarmicTail.length === 3 &&
+      dmKarmicTail.every((val, idx) => val === canonicalDM!.karmicTail![idx]);
+
+    if (!isCanonicalKarmicMatch) {
+      dmKarmicTail = canonicalDM.karmicTail;
+    }
+  }
+  const destinyMatrix: Blueprint["destinyMatrix"] = {
+    ...rawDestinyMatrix,
+    ...(dmKarmicTail ? { karmicTail: dmKarmicTail } : {}),
   };
   const savedLilith = data.natalChart?.lilith ?? data.astrology?.lilith;
   const calculatedLilith = !savedLilith && birthDate && input.birthTime
@@ -156,13 +174,13 @@ export const normalizeBlueprint = (uid: string, data: Partial<Blueprint>): Bluep
     advancedFieldSources: savedHumanDesign?.advancedFieldSources ?? {},
     status: humanDesignStatus,
     source:
-      savedHumanDesign?.source === "hdkit" || savedHumanDesign?.source === "error" || savedHumanDesign?.source === "local-fallback" || savedHumanDesign?.source === "human-design-py" || savedHumanDesign?.source === "verified-override"
+      savedHumanDesign?.source === "hdkit" || savedHumanDesign?.source === "error" || savedHumanDesign?.source === "local-fallback" || savedHumanDesign?.source === "local-calculation" || savedHumanDesign?.source === "human-design-py" || savedHumanDesign?.source === "verified-override"
       || savedHumanDesign?.source === "manual_verified"
         ? savedHumanDesign.source
         : "pending",
     calculationStatus:
       savedHumanDesign?.calculationStatus ??
-      (humanDesignStatus === "ready" || humanDesignStatus === "verified" ? "completed" : humanDesignStatus),
+      (humanDesignStatus === "ready" || humanDesignStatus === "verified" ? "needs_verified_engine" : humanDesignStatus),
     // BUILD 31: Preserve metadata
     timezone: savedHumanDesign?.timezone ?? null,
     timezoneSource: (savedHumanDesign as any)?.timezoneSource ?? null,
@@ -216,6 +234,12 @@ export const omitAstrocartographyForPersistence = (blueprint: Blueprint): Omit<B
 };
 
 const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => {
+  if (Object.prototype.hasOwnProperty.call(blueprint, "humanDesign") && blueprint.humanDesign === null) {
+    throw new Error("HD_TRUSTED_WRITER_REQUIRED");
+  }
+  if (Object.prototype.hasOwnProperty.call(blueprint, "input") && blueprint.input === null) {
+    throw new Error("BLUEPRINT_CANONICAL_INPUT_WRITER_REQUIRED");
+  }
   const blueprintRef = userBlueprintDoc(uid);
   const ensuredHumanDesign = blueprint.humanDesign ?? createPendingHumanDesignChart(
     "Human Design requires precise time zone and birth location.",
@@ -225,58 +249,26 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     const existingSnap = await transaction.get(blueprintRef);
     const existingData = existingSnap.data();
     const oldHd = existingData?.humanDesign;
-    const oldCanonical = isCanonicalHumanDesign(oldHd);
-    const incomingCanonical = isCanonicalCoreComplete(ensuredHumanDesign);
-
-    // Compute input match status between existing chart and incoming input
-    const inputMatch = compareBirthInputMatch(uid, oldHd, blueprint.input || existingData?.input);
-
-    let preserveCanonical = false;
-    if (oldCanonical) {
-      if (inputMatch === "CHANGED" && incomingCanonical) {
-        // Legitimate birth data update: incoming chart is a validated complete canonical chart
-        // calculated for the new inputs. Permit replacement.
-        preserveCanonical = false;
-      } else {
-        // Protect stored canonical: do not allow incoming pending/fallback/incomplete to overwrite,
-        // and do not replace matching canonical chart.
-        preserveCanonical = true;
-      }
+    if (blueprint.humanDesign != null && !isUnchangedStoredValue(blueprint.humanDesign, oldHd)
+      && !(oldHd == null && isEmptyLegacyPending(blueprint.humanDesign))) {
+      throw new Error("HD_TRUSTED_WRITER_REQUIRED");
     }
-
-    // Attach input fingerprint to incoming HD if it's canonical
-    let finalHd = ensuredHumanDesign;
-    if (incomingCanonical && !preserveCanonical) {
-      const fp = computeBirthInputFingerprint(uid, blueprint.input || existingData?.input);
-      if (fp) {
-        finalHd = { ...ensuredHumanDesign, inputHash: fp.revisionHash };
-      }
+    if (blueprint.input != null && !isUnchangedStoredValue(blueprint.input, existingData?.input)) {
+      throw new Error("BLUEPRINT_CANONICAL_INPUT_WRITER_REQUIRED");
     }
-
-    const normalizedPayload = normalizeBlueprint(uid, {
-      ...blueprint,
-      humanDesign: finalHd,
-    });
-    const persistableBlueprint: Partial<Blueprint> = omitAstrocartographyForPersistence(normalizedPayload);
-    if (preserveCanonical) {
-      delete persistableBlueprint.humanDesign;
-    }
+    const persistableBlueprint: Partial<Blueprint> = omitAstrocartographyForPersistence(
+      blueprint.humanDesign != null
+        ? { ...blueprint } as Blueprint
+        : normalizeBlueprint(uid, { ...blueprint, humanDesign: ensuredHumanDesign }),
+    );
+    delete persistableBlueprint.input;
+    delete persistableBlueprint.humanDesign;
     const payload = sanitizeForFirestore({
       ...persistableBlueprint,
       uid,
       updatedAt: Timestamp.now(),
-      generatedAt: Timestamp.now(),
+      ...(blueprint.humanDesign != null ? {} : { generatedAt: Timestamp.now() }),
     });
-
-    if (existingSnap.exists() && !preserveCanonical) {
-      const oldStatus = String(oldHd?.status || oldHd?.calculationStatus || "").toLowerCase();
-      const newStatus = String(ensuredHumanDesign.status || ensuredHumanDesign.calculationStatus || "").toLowerCase();
-      const isOldPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(oldStatus);
-      const isNewPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(newStatus);
-      if (!isOldPending && isNewPending) {
-        transaction.set(doc(db, "users", uid), { hdDismissedAt: null }, { merge: true });
-      }
-    }
 
     transaction.set(blueprintRef, payload, { merge: true });
   });

@@ -10,6 +10,7 @@ import { adaptWholeSignToArsipAkashi } from "../adapters/wholeSignAdapter";
 import { adaptAstrocartographyToArsipAkashi } from "../adapters/astrocartographyAdapter";
 import { adaptZiWeiToArsipAkashi } from "../adapters/ziWeiAdapter";
 import { localDateParts } from "./timing";
+import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 
 function stableFingerprint(input: { birthDate?: string; birthTime?: string; timezone?: string }): string {
   const raw = `${input.birthDate ?? ""}|${input.birthTime ?? ""}|${input.timezone ?? ""}`;
@@ -298,6 +299,16 @@ export function buildArsipAkashiInputFromProfile(
   // Destiny Matrix
   if (bp?.destinyMatrix) {
     const dm = bp.destinyMatrix;
+    let dmKarmicTail = dm.karmicTail;
+    const dmBirthDate = String(bp?.input?.birthDate || (profile as any)?.birthDate || "");
+    if (dmBirthDate) {
+      try {
+        const canonicalDM = calculateCanonicalDestinyMatrixBlueprint(dmBirthDate);
+        if (Array.isArray(canonicalDM.karmicTail) && canonicalDM.karmicTail.length === 3) {
+          dmKarmicTail = canonicalDM.karmicTail;
+        }
+      } catch {}
+    }
     systems["destiny-matrix"] = {
       systemId: "destiny-matrix",
       availability: "available",
@@ -317,16 +328,16 @@ export function buildArsipAkashiInputFromProfile(
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         },
-        ...(dm.karmicTail && (Array.isArray(dm.karmicTail) ? dm.karmicTail.length > 0 : true) ? [{
+        ...(dmKarmicTail && (Array.isArray(dmKarmicTail) ? dmKarmicTail.length > 0 : true) ? [{
           factId: `destiny-matrix/shadow/karmicTail`,
           systemId: "destiny-matrix" as const, domain: "shadow" as const,
-          label: "karmicTail", value: Array.isArray(dm.karmicTail) ? dm.karmicTail.join("-") : String(dm.karmicTail),
+          label: "karmicTail", value: Array.isArray(dmKarmicTail) ? dmKarmicTail.join("-") : String(dmKarmicTail),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         }, {
           factId: `destiny-matrix/karma/karmicTail`,
           systemId: "destiny-matrix" as const, domain: "karma" as const,
-          label: "karmicTail", value: Array.isArray(dm.karmicTail) ? dm.karmicTail.join("-") : String(dm.karmicTail),
+          label: "karmicTail", value: Array.isArray(dmKarmicTail) ? dmKarmicTail.join("-") : String(dmKarmicTail),
           sourcePath: "lib/destiny-matrix", sourceVersion: "v1",
           interpretationEligibility: true, confidence: 1, warnings: [],
         }] : []),

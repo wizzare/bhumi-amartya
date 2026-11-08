@@ -1,4 +1,5 @@
 import type { Blueprint } from "@/lib/types/blueprint";
+import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 import type {
   CanonicalIdentity,
   CanonicalIdentityDomain,
@@ -58,6 +59,20 @@ export class CanonicalTranslatorService {
     const lilith = value as { sign?: string; degree?: number; house?: number };
     if (!lilith.sign) return "";
     return [lilith.sign, typeof lilith.house === "number" ? `rumah ${lilith.house}` : ""].filter(Boolean).join(", ");
+  }
+
+  private static getCanonicalKarmicTail(blueprint: Blueprint): number[] {
+    const raw = blueprint.destinyMatrix?.karmicTail || [];
+    const birthDate = String(blueprint.input?.birthDate || (blueprint as any).birthDate || "");
+    if (birthDate) {
+      try {
+        const canonicalDM = calculateCanonicalDestinyMatrixBlueprint(birthDate);
+        if (Array.isArray(canonicalDM.karmicTail) && canonicalDM.karmicTail.length === 3) {
+          return canonicalDM.karmicTail;
+        }
+      } catch {}
+    }
+    return raw;
   }
 
   public static translate(blueprint: Blueprint): CanonicalIdentity {
@@ -123,7 +138,7 @@ export class CanonicalTranslatorService {
       .filter(Boolean);
 
     return {
-      karmicTail: blueprint.destinyMatrix?.karmicTail || [],
+      karmicTail: this.getCanonicalKarmicTail(blueprint),
       chiron: blueprint.astrology?.chiron || "Unknown",
       emotionalNeeds: { moonSign: blueprint.astrology?.moonSign || "", chartHeart: blueprint.destinyMatrix?.chartHeart || {} },
       emotionalTriggers: {
@@ -150,7 +165,7 @@ export class CanonicalTranslatorService {
         ketu: blueprint.vedic?.planets?.Ketu?.sign || "",
       },
       soulTrace: {
-        karmicTail: blueprint.destinyMatrix?.karmicTail || [],
+        karmicTail: this.getCanonicalKarmicTail(blueprint),
         occultSeal: blueprint.tzolkin?.oracle?.occult?.seal?.name || "",
         occultLesson: blueprint.tzolkin?.oracle?.occult?.tone?.lesson || "",
       },
@@ -263,7 +278,7 @@ export class CanonicalTranslatorService {
       innerChild?: string;
       soulSignature?: string;
     };
-    const hd = blueprint.humanDesign as unknown as Record<string, unknown>;
+    const hd = ((blueprint.humanDesign || {}) as unknown) as Record<string, unknown>;
     const centers = blueprint.humanDesign?.centers || {};
     const openCenters = Object.entries(centers)
       .filter(([, defined]) => defined === false)
@@ -305,7 +320,7 @@ export class CanonicalTranslatorService {
         baziStrengths: blueprint.bazi?.strengths || [],
       },
       lessons: {
-        destinyKarmicTail: blueprint.destinyMatrix?.karmicTail || [],
+        destinyKarmicTail: this.getCanonicalKarmicTail(blueprint),
         tzolkinLessons: [
           blueprint.tzolkin?.galacticTone?.lesson,
           blueprint.tzolkin?.castle?.spiritualLesson,
@@ -320,7 +335,7 @@ export class CanonicalTranslatorService {
         baziChallenges: blueprint.bazi?.challenges || [],
       },
       shadow: {
-        destinyKarmicTail: blueprint.destinyMatrix?.karmicTail || [],
+        destinyKarmicTail: this.getCanonicalKarmicTail(blueprint),
         tzolkinShadow: [
           blueprint.tzolkin?.solarSeal?.challenge,
           blueprint.tzolkin?.galacticTone?.shadow,

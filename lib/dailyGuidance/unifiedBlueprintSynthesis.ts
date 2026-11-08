@@ -10,6 +10,7 @@ import { aspectEngine, type Aspect } from "@/lib/astrology/aspectEngine";
 import { destinyMatrixV3Engine, type DestinyMatrixV3 } from "@/lib/engines/destinyMatrixV3";
 import { calculateNumerology } from "@/lib/calculations/calculateNumerology";
 import { calculateBirthDayNumber, calculatePersonalYear } from "@/lib/calculations/calculateLifePath";
+import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 
 type UnknownRecord = Record<string, unknown>;
 type BlueprintFieldValue = string | number | boolean | string[] | number[] | UnknownRecord | UnknownRecord[];
@@ -691,7 +692,18 @@ export function buildUnifiedBlueprintSynthesis(input: UnifiedBlueprintSynthesisI
     personalQualities: readAvailable(blueprint, [["destinyMatrix", "personalQualities"], ["personalQualities"]]),
     moneyLine: readAvailable(blueprint, [["destinyMatrix", "moneyLine"], ["moneyLine"]]),
     loveLine: readAvailable(blueprint, [["destinyMatrix", "loveLine"], ["loveLine"]]),
-    karmicTail: readAvailable(blueprint, [["destinyMatrix", "karmicTail"], ["karmicTail"]]),
+    karmicTail: (() => {
+      const rawKT = readAvailable(blueprint, [["destinyMatrix", "karmicTail"], ["karmicTail"]]);
+      if (birthDate) {
+        try {
+          const canonicalDM = calculateCanonicalDestinyMatrixBlueprint(birthDate);
+          if (Array.isArray(canonicalDM.karmicTail) && canonicalDM.karmicTail.length === 3) {
+            return canonicalDM.karmicTail;
+          }
+        } catch {}
+      }
+      return rawKT;
+    })(),
     fatherLine: readAvailable(blueprint, [["destinyMatrix", "fatherLine"], ["destinyMatrix", "fatherProgram"], ["fatherProgram"]]),
     motherLine: readAvailable(blueprint, [["destinyMatrix", "motherLine"], ["destinyMatrix", "motherProgram"], ["motherProgram"]]),
     ancestorLine: readAvailable(blueprint, [["destinyMatrix", "ancestorLine"], ["ancestorLine"]]),
