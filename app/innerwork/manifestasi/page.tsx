@@ -32,6 +32,16 @@ function saveActiveManifestation(uid: string, dateKey: string, manifestation: an
 }
 
 export default function ManifestasiPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="manifestasi">
+        <ManifestasiPageContent />
+      </AccessGuard>
+    </ProtectedRoute>
+  );
+}
+
+function ManifestasiPageContent() {
   const isEn = isEnlEdition();
   const auth = useAuth();
   const router = useRouter();

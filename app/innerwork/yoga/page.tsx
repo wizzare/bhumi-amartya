@@ -22,6 +22,16 @@ import { appendMoanaRuntimeDiagnostic } from "@/lib/innerwork/moanaRuntimeDiagno
 import { isEnlEdition } from "@/lib/config/edition";
 
 export default function YogaPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="yoga">
+        <YogaPageContent />
+      </AccessGuard>
+    </ProtectedRoute>
+  );
+}
+
+function YogaPageContent() {
   const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();

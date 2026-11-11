@@ -1,15 +1,21 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
+import { getFirestore } from "firebase-admin/firestore";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
 import type { DailyGuidanceInput } from "@/lib/orchestrators/types";
 import {
   generateDailyGuidanceForRequest,
+  generateStatelessLegacyDailyGuidance,
   getOrGenerateDailyGuidance,
+  minimizeDailyGuidanceResponse,
 } from "@/lib/services/dailyGuidanceService";
 import { isEnlEdition } from "@/lib/config/edition";
 import {
+  getOrCreateHdAdminApp,
   verifyHdRequestAuthentication,
   type HdAuthDependencies,
 } from "@/lib/auth/hdEndpointAuth";
+import { hasFeatureAccess } from "@/lib/billing/accessControl";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -24,6 +30,7 @@ type DailyGuidanceErrorReason =
 
 type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInput> & {
   uid?: string;
+  mode?: string;
   profile?: Record<string, unknown> | null;
   localDateKey?: string;
   date?: string;
@@ -35,23 +42,104 @@ type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInpu
 const CORS_ALLOWED_METHODS = "POST, OPTIONS";
 const CORS_ALLOWED_HEADERS = "Content-Type, Authorization";
 
-// Rate limiting defense-in-depth: 30 requests per minute per IP
+// Dual-layer rate limiting: in-memory + persistent server-side Firestore transaction
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_MAX_REQUESTS = 30;
 const RATE_LIMIT_WINDOW_MS = 60_000;
+const AUTH_IP_MAX_REQUESTS = 30;
+const AUTH_UID_MAX_REQUESTS = 15;
+const LEGACY_IP_MAX_REQUESTS = 10;
+const LEGACY_UID_MAX_REQUESTS = 4;
 
-function checkRateLimit(ip: string): boolean {
+export type DailyGuidanceRateLimitStore = {
+  checkAndIncrement: (bucketKey: string, maxRequests: number, windowMs: number) => Promise<boolean>;
+};
+
+function checkInMemoryRateLimit(bucketKey: string, maxRequests: number, windowMs = RATE_LIMIT_WINDOW_MS): boolean {
   const now = Date.now();
-  const record = rateLimitMap.get(ip);
+  const record = rateLimitMap.get(bucketKey);
   if (!record || now > record.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    rateLimitMap.set(bucketKey, { count: 1, resetTime: now + windowMs });
     return true;
   }
-  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+  if (record.count >= maxRequests) {
     return false;
   }
   record.count += 1;
   return true;
+}
+
+async function checkPersistentRateLimit(
+  bucketKey: string,
+  maxRequests: number,
+  windowMs = RATE_LIMIT_WINDOW_MS,
+): Promise<boolean> {
+  if (!checkInMemoryRateLimit(bucketKey, maxRequests, windowMs)) {
+    return false;
+  }
+
+  const injectedStore =
+    process.env.NODE_ENV !== "production"
+      ? (globalThis as { __dailyGuidanceRateLimitStore?: DailyGuidanceRateLimitStore }).__dailyGuidanceRateLimitStore
+      : undefined;
+  if (injectedStore) {
+    return injectedStore.checkAndIncrement(bucketKey, maxRequests, windowMs);
+  }
+
+  const shouldUseFirestore =
+    process.env.NODE_ENV === "production" || process.env.ENABLE_FIRESTORE_RATE_LIMIT === "1";
+  if (!shouldUseFirestore) {
+    return true;
+  }
+
+  const adminApp = getOrCreateHdAdminApp();
+  if (!adminApp) {
+    return true;
+  }
+
+  try {
+    const db = getFirestore(adminApp);
+    const docId = `dg_${createHash("sha256").update(bucketKey).digest("hex").slice(0, 32)}`;
+    const ref = db.collection("apiRateLimits").doc(docId);
+    const now = Date.now();
+    return await db.runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.exists ? (snap.data() as { count?: number; resetTime?: number } | undefined) : undefined;
+      if (!data || typeof data.resetTime !== "number" || now > data.resetTime) {
+        tx.set(ref, { count: 1, resetTime: now + windowMs, updatedAt: now }, { merge: true });
+        return true;
+      }
+      const currentCount = typeof data.count === "number" ? data.count : 0;
+      if (currentCount >= maxRequests) {
+        return false;
+      }
+      tx.set(ref, { count: currentCount + 1, resetTime: data.resetTime, updatedAt: now }, { merge: true });
+      return true;
+    });
+  } catch {
+    return true;
+  }
+}
+
+async function verifyServerSideEntitlement(uid: string): Promise<boolean> {
+  const injectedCheck =
+    process.env.NODE_ENV !== "production"
+      ? (globalThis as { __dailyGuidanceEntitlementCheck?: (uid: string) => Promise<boolean> })
+          .__dailyGuidanceEntitlementCheck
+      : undefined;
+  if (injectedCheck) {
+    return injectedCheck(uid);
+  }
+
+  const adminApp = getOrCreateHdAdminApp();
+  if (!adminApp) return false;
+  try {
+    const db = getFirestore(adminApp);
+    const snap = await db.collection("users").doc(uid).get();
+    if (!snap.exists) return false;
+    return hasFeatureAccess(snap.data() as Record<string, unknown>, "profile");
+  } catch {
+    return false;
+  }
 }
 
 function allowedCorsOrigin(request: Request): string | null {
@@ -232,13 +320,6 @@ function normalizeDailyGuidanceRequest(
 export async function POST(request: Request) {
   try {
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
-    if (!checkRateLimit(ip)) {
-      return corsJson(
-        request,
-        { ok: false, reason: "rate_limited", note: "Too many requests. Rate limit exceeded." },
-        { status: 429 },
-      );
-    }
     console.log("[DAILY_GUIDANCE_API_START]");
     const body = (await request.json().catch(() => null)) as DailyGuidanceRequestBody | null;
 
@@ -251,23 +332,36 @@ export async function POST(request: Request) {
         : typeof dashboardUser?.uid === "string"
           ? dashboardUser.uid
           : null);
+    const requestedMode =
+      typeof body?.mode === "string" && body.mode.trim()
+        ? body.mode.trim().toLowerCase()
+        : "dashboard";
 
     // Route Authentication & Identity Binding (verified before schema validation)
     const authHeader = request.headers.get("authorization");
-    if (authHeader && authHeader.startsWith("Bearer ")) {
+    let verifiedUid: string | null = null;
+
+    if (authHeader) {
+      if (!authHeader.startsWith("Bearer ")) {
+        return corsJson(
+          request,
+          { ok: false, reason: "unauthorized", note: "Malformed Authorization header." },
+          { status: 401 },
+        );
+      }
       const testAuthDeps =
         process.env.NODE_ENV !== "production"
           ? (globalThis as { __dailyGuidanceAuthDeps?: HdAuthDependencies }).__dailyGuidanceAuthDeps
           : undefined;
       const authResult = await verifyHdRequestAuthentication(request, testAuthDeps);
-      if (!authResult.authenticated) {
+      if (!authResult.authenticated || !authResult.uid) {
         return corsJson(
           request,
           { ok: false, reason: "unauthorized", note: authResult.errorNote || "Authentication failed." },
           { status: authResult.status || 401 },
         );
       }
-      if (authResult.uid && targetUid && authResult.uid !== targetUid) {
+      if (targetUid && authResult.uid !== targetUid) {
         console.error("[DAILY_GUIDANCE_CROSS_ACCOUNT_REJECTED]", {
           callerUid: maskUid(authResult.uid),
           targetUid: maskUid(targetUid),
@@ -278,10 +372,56 @@ export async function POST(request: Request) {
           { status: 403 },
         );
       }
+      verifiedUid = authResult.uid;
+    }
+
+    // Paid / non-dashboard modes strictly require verified Firebase identity + active entitlement
+    if (requestedMode !== "dashboard") {
+      if (!verifiedUid) {
+        return corsJson(
+          request,
+          { ok: false, reason: "unauthorized", note: "Authentication required for non-dashboard modes." },
+          { status: 401 },
+        );
+      }
+      const entitled = await verifyServerSideEntitlement(verifiedUid);
+      if (!entitled) {
+        return corsJson(
+          request,
+          { ok: false, reason: "forbidden", note: "Active premium entitlement required for requested mode." },
+          { status: 403 },
+        );
+      }
+    }
+
+    // Server-side rate limiting (persistent Firestore + in-memory defense-in-depth)
+    if (verifiedUid) {
+      const [ipAllowed, uidAllowed] = await Promise.all([
+        checkPersistentRateLimit(`auth_ip:${ip}`, AUTH_IP_MAX_REQUESTS),
+        checkPersistentRateLimit(`auth_uid:${verifiedUid}`, AUTH_UID_MAX_REQUESTS),
+      ]);
+      if (!ipAllowed || !uidAllowed) {
+        return corsJson(
+          request,
+          { ok: false, reason: "rate_limited", note: "Too many requests. Rate limit exceeded." },
+          { status: 429 },
+        );
+      }
     } else {
-      // Shipped VC 121 / VC 122 backward compatibility under IP rate limiting
+      const [ipAllowed, legacyUidAllowed] = await Promise.all([
+        checkPersistentRateLimit(`legacy_ip:${ip}`, LEGACY_IP_MAX_REQUESTS),
+        checkPersistentRateLimit(`legacy_uid:${ip}:${targetUid || "anon"}`, LEGACY_UID_MAX_REQUESTS),
+      ]);
+      if (!ipAllowed || !legacyUidAllowed) {
+        return corsJson(
+          request,
+          { ok: false, reason: "rate_limited", note: "Too many requests. Rate limit exceeded." },
+          { status: 429 },
+        );
+      }
       console.warn("[DAILY_GUIDANCE_UNAUTHENTICATED_LEGACY_CALL]", {
         uid: maskUid(targetUid),
+        mode: "dashboard-stateless-minimized",
       });
     }
 
@@ -299,29 +439,61 @@ export async function POST(request: Request) {
     const input = normalized.input as DailyGuidanceContext;
     const localDateKey = input.localDateKey as string;
 
-    const result = await getOrGenerateDailyGuidance({
-      uid: input.uid,
-      profile: input.profile,
-      blueprint: input.blueprint,
-      date: localDateKey,
-      generate: async () => {
-        const generated = await generateDailyGuidanceForRequest(input);
-        return typeof body?.memoryHash === "string" && body.memoryHash
-          ? { ...generated, memoryHash: body.memoryHash }
-          : generated;
-      },
-    });
+    if (verifiedUid) {
+      const authenticatedInput: DailyGuidanceContext = {
+        ...input,
+        uid: verifiedUid,
+      };
+      const result = await getOrGenerateDailyGuidance({
+        uid: verifiedUid,
+        profile: authenticatedInput.profile,
+        blueprint: authenticatedInput.blueprint,
+        date: localDateKey,
+        generate: async () => {
+          const generated = await generateDailyGuidanceForRequest(authenticatedInput);
+          return typeof body?.memoryHash === "string" && body.memoryHash
+            ? { ...generated, memoryHash: body.memoryHash }
+            : generated;
+        },
+      });
 
-    if (result.status !== "success" || !result.guidance) {
-      throw new Error(result.error || "DAILY_GUIDANCE_GENERATION_FAILED");
+      if (result.status !== "success" || !result.guidance) {
+        throw new Error(result.error || "DAILY_GUIDANCE_GENERATION_FAILED");
+      }
+
+      const guidance = minimizeDailyGuidanceResponse(result.guidance);
+      const apiResponse = { ok: true, guidance };
+      console.log("[DAILY_GUIDANCE_RESPONSE_SUMMARY]", {
+        ok: true,
+        authenticated: true,
+        date: authenticatedInput.localDateKey,
+        hasGuidance: Boolean(guidance),
+      });
+      return corsJson(request, apiResponse);
     }
 
-    const guidance = result.guidance;
+    // Legacy unauthenticated Dashboard path (VC 121 / VC 122 compatibility):
+    // Strictly stateless — NEVER accesses Firestore user collections or shared inFlightPromises by uid.
+    const statelessInput = {
+      ...input,
+      journalHistory: [],
+      previousJournalEntries: [],
+      meditationHistory: [],
+      previousMeditationEntries: [],
+      audioHealingHistory: [],
+      previousAudioHealingEntries: [],
+      previousGuidance: undefined,
+      healingMemory: null,
+      journeyMemory: null,
+    } as DailyGuidanceContext;
 
+    const guidance = await generateStatelessLegacyDailyGuidance(statelessInput);
     const apiResponse = { ok: true, guidance };
     console.log("[DAILY_GUIDANCE_RESPONSE_SUMMARY]", {
       ok: true,
-      date: input.localDateKey,
+      authenticated: false,
+      stateless: true,
+      date: statelessInput.localDateKey,
       hasGuidance: Boolean(guidance),
     });
     return corsJson(request, apiResponse);

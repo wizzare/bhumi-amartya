@@ -23,6 +23,16 @@ const FOOD_ACTIVITIES = [...Object.values(HEALTHY_FOOD_DATABASE), ...INNERWORK_V
 const FOOD_BY_ID = Object.fromEntries(FOOD_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function HealthyFoodPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="healthy-food">
+        <HealthyFoodPageContent />
+      </AccessGuard>
+    </ProtectedRoute>
+  );
+}
+
+function HealthyFoodPageContent() {
   const isEn = isEnlEdition();
   const auth = useAuth();
   const auditUser = process.env.NODE_ENV === "development" && typeof window !== "undefined"

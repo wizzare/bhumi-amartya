@@ -1,10 +1,13 @@
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
 import test from "node:test";
 import { getEntitlementStatus } from "../../lib/billing/entitlementService";
 import { hasFeatureAccess, type TrialProfile } from "../../lib/billing/accessControl";
 import type { FounderTesterRecord } from "../../lib/billing/founderTesterSourceOfTruth";
 import { POST as dailyGuidancePOST } from "../../app/api/ai/daily-guidance/route";
 
+const ROOT = process.cwd();
 const BASE_NOW = new Date("2026-11-12T00:00:00.000Z");
 
 const founderTesterRecord: FounderTesterRecord = {
@@ -312,4 +315,90 @@ test("VC123-11: /api/ai/daily-guidance allows legacy unauthenticated call with m
   const data = await res.json();
   assert.equal(data.ok, false);
   assert.equal(data.reason, "missing_profile");
+});
+
+test("VC123-12: /api/ai/daily-guidance rejects paid/non-dashboard modes without Bearer token (401) or without entitlement (403)", async () => {
+  const unauthPaidReq = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      uid: "user_paid_mode",
+      mode: "soul-identity",
+    }),
+  });
+  const unauthRes = await dailyGuidancePOST(unauthPaidReq);
+  assert.equal(unauthRes.status, 401);
+
+  const nonEntitledPaidReq = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer valid_token_free_user",
+    },
+    body: JSON.stringify({
+      uid: "free_user_1",
+      mode: "soul-identity",
+    }),
+  });
+  (globalThis as any).__dailyGuidanceAuthDeps = {
+    verifyIdToken: async () => ({ uid: "free_user_1" }),
+  };
+  (globalThis as any).__dailyGuidanceEntitlementCheck = async () => false;
+  let forbiddenRes: Response;
+  try {
+    forbiddenRes = await dailyGuidancePOST(nonEntitledPaidReq);
+  } finally {
+    delete (globalThis as any).__dailyGuidanceAuthDeps;
+    delete (globalThis as any).__dailyGuidanceEntitlementCheck;
+  }
+  assert.equal(forbiddenRes.status, 403);
+});
+
+test("VC123-13: /api/ai/daily-guidance enforces server-side persistent rate limit store across instances", async () => {
+  (globalThis as any).__dailyGuidanceRateLimitStore = {
+    checkAndIncrement: async () => false,
+  };
+  let rateLimitedRes: Response;
+  try {
+    const req = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-forwarded-for": "203.0.113.99",
+      },
+      body: JSON.stringify({ uid: "rate_limited_user" }),
+    });
+    rateLimitedRes = await dailyGuidancePOST(req);
+  } finally {
+    delete (globalThis as any).__dailyGuidanceRateLimitStore;
+  }
+  assert.equal(rateLimitedRes.status, 429);
+  const body = await rateLimitedRes.json();
+  assert.equal(body.reason, "rate_limited");
+});
+
+test("VC123-14: /journal and all /innerwork/* routes isolate data hooks behind AccessGuard", () => {
+  const innerworkLayout = path.join(ROOT, "app", "innerwork", "layout.tsx");
+  assert.equal(fs.existsSync(innerworkLayout), true, "app/innerwork/layout.tsx must exist");
+  const layoutSrc = fs.readFileSync(innerworkLayout, "utf8");
+  assert.equal(layoutSrc.includes('<AccessGuard feature="wellness">'), true);
+
+  const guardedRoutes = [
+    ["app/journal/page.tsx", "JournalPageContent"],
+    ["app/innerwork/journaling/page.tsx", "JournalPageContent"],
+    ["app/innerwork/herbal/page.tsx", "HealthyFoodPageContent"],
+    ["app/innerwork/manifestasi/page.tsx", "ManifestasiPageContent"],
+    ["app/innerwork/meditation/page.tsx", "MeditationPageContent"],
+    ["app/innerwork/workout/page.tsx", "WorkoutPageContent"],
+    ["app/innerwork/yoga/page.tsx", "YogaPageContent"],
+  ] as const;
+
+  for (const [relPath, contentComponent] of guardedRoutes) {
+    const src = fs.readFileSync(path.join(ROOT, relPath), "utf8");
+    const exportIdx = src.indexOf("export default function");
+    const guardIdx = src.indexOf("<AccessGuard", exportIdx);
+    const contentDefIdx = src.indexOf(`function ${contentComponent}`, exportIdx);
+    assert.equal(exportIdx >= 0, true, `${relPath} must have export default function`);
+    assert.equal(guardIdx > exportIdx && guardIdx < contentDefIdx, true, `${relPath} must render <AccessGuard> before ${contentComponent}`);
+  }
 });

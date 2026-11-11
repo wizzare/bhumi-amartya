@@ -16,7 +16,47 @@ export type HdAuthDependencies = {
   verifyIdToken?: (token: string) => Promise<{ uid: string; [key: string]: unknown }>;
 };
 
+function getEnvServiceAccount(): { sa: Record<string, unknown>; projectId: string } | null {
+  const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (rawJson && rawJson.trim()) {
+    try {
+      const parsed = JSON.parse(rawJson.trim()) as Record<string, unknown>;
+      if (typeof parsed.private_key === "string") {
+        parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
+      }
+      const projectId =
+        typeof parsed.project_id === "string" && parsed.project_id.trim()
+          ? parsed.project_id.trim()
+          : EXPECTED_FIREBASE_PROJECT_ID;
+      return { sa: parsed, projectId };
+    } catch {
+      // fall through
+    }
+  }
+
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const projectId =
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID ||
+    EXPECTED_FIREBASE_PROJECT_ID;
+  if (clientEmail && privateKey) {
+    return {
+      sa: {
+        project_id: projectId,
+        client_email: clientEmail,
+        private_key: privateKey,
+      },
+      projectId,
+    };
+  }
+  return null;
+}
+
 function getLocalServiceAccount(): { sa: Record<string, unknown>; projectId: string } | null {
+  const envSa = getEnvServiceAccount();
+  if (envSa) return envSa;
+
   const saPaths = [
     "C:/Users/shein/Downloads/bhumiamartya-fe85c-firebase-adminsdk-fbsvc-00493e4a9c.json",
     "C:/Users/shein/Downloads/bhumiamartya-fe85c-f49e4c95baf3.json",

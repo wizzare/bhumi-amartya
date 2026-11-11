@@ -90,6 +90,18 @@ function getNestedNumber(record: Record<string, unknown> | null, path: string[])
 }
 
 export default function JournalPage() {
+  return (
+    <ProtectedRoute requireProfile>
+      <AccessGuard feature="journaling">
+        <PremiumLock feature="journaling">
+          <JournalPageContent />
+        </PremiumLock>
+      </AccessGuard>
+    </ProtectedRoute>
+  );
+}
+
+function JournalPageContent() {
   const router = useRouter();
   const auth = useAuth();
   const userProfile = auth?.userProfile;

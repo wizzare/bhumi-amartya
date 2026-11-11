@@ -39,6 +39,124 @@ export interface DailyGuidanceResult {
   error: string | null;
 }
 
+export function minimizeDailyGuidanceResponse(guidance: DailyGuidance): DailyGuidance {
+  return {
+    ...guidance,
+    profileSnapshot: null,
+    blueprintSnapshot: null,
+    houseData: null,
+    astroHouseActivations: undefined,
+  };
+}
+
+export async function generateStatelessLegacyDailyGuidance(
+  input: DailyGuidanceContext,
+): Promise<DailyGuidance> {
+  const uid = input.uid;
+  const date = input.localDateKey ?? input.date;
+  const profile = (input.profile ?? (input as Record<string, any>).user ?? {}) as any;
+  const blueprint = (input.blueprint ?? {}) as any;
+
+  try {
+    const generated = await generateDailyGuidanceForRequest(input);
+    const normalized = normalizeUserFacingGuidance(generated, profile);
+    return minimizeDailyGuidanceResponse(normalized);
+  } catch {
+    const localInput = {
+      user: profileToDashboardUser(profile),
+      identity: profileToCoreIdentity(profile, blueprint),
+      blueprint,
+      emotionalState: profile.emotionalState || { currentMood: 5, recurringThemes: [] },
+      emotionalMemory: profile.emotionalMemory || { recurringThemes: [], recurringWounds: [] },
+      healingProgress: profile.healingProgress || { healingStreak: 0 },
+      astrologyTransits: null,
+      journalHistory: [],
+      meditationHistory: [],
+      audioHealingHistory: [],
+      activityHistory: [],
+      momentumState: null,
+      healingMemory: null,
+      adaptiveContext: {
+        dailyVariationSeed: createDailyContentSeed({
+          uid,
+          localDateKey: date,
+          blueprint,
+        }),
+        completionRateYesterday: 0,
+        journalCompletedYesterday: false,
+        meditationCompletedYesterday: false,
+        audioCompletedYesterday: false,
+        practiceCompletedCountYesterday: 0,
+        streakDays: 0,
+        adaptiveTone: "steady_supportive" as const,
+        previousProgressSummary: "Local fallback",
+        previousGuidanceSummaries: [],
+      },
+      language: "id" as const,
+      generatedAt: new Date().toISOString(),
+    };
+
+    const localOutput = generateLocalDailyGuidance(localInput as any);
+    const localGuidance: DailyGuidance = {
+      uid,
+      date,
+      localDateKey: date,
+      schemaVersion: DAILY_GUIDANCE_SCHEMA_VERSION,
+      generatedWithPromptVersion: DAILY_GUIDANCE_PROMPT_VERSION,
+      guidanceVersion: DAILY_GUIDANCE_CONTENT_VERSION,
+      dailyVariationSeed: localInput.adaptiveContext.dailyVariationSeed,
+      blueprintHash: generateBlueprintHash(blueprint),
+      memoryHash: generateMemoryHash({ uid, date }),
+      source: "local-fallback",
+      soulReflectionText: localOutput.soulReflectionText || localOutput.soulReflection.dailyMessage,
+      dailyNoteText: localOutput.dailyNoteText || (localOutput.companionReflection?.fullReflection ?? ""),
+      companionReflection: localOutput.companionReflection || {
+        preview: (localOutput.dailyNoteText || localOutput.soulReflection.dailyMessage).slice(0, 150) + "...",
+        fullReflection: localOutput.dailyNoteText || localOutput.soulReflection.dailyMessage,
+      },
+      aiInsight: localOutput.soulReflectionText || localOutput.soulReflection.dailyMessage,
+      journalPrompt: localOutput.journalingPrompt.prompt,
+      meditationSuggestion: localOutput.meditationRecommendation.title,
+      dailyPractices: [],
+      emotionalFocus: localOutput.soulReflection.theme,
+      spiritualFocus: localOutput.soulReflection.theme,
+      groundedAction: localOutput.soulReflection.guidance,
+      manifestation: localOutput.manifestation,
+      categories: localOutput.categories,
+      innerworkRecommendations: innerworkIntelligence.getRecommendations({
+        activations: [],
+        hdType: getCanonicalHumanDesignType(blueprint.humanDesign) || "",
+        lifePath: blueprint.lifePath?.number || 0,
+        arcanaCenter: blueprint.destinyMatrix?.center || 0,
+        rawBlueprint: blueprint,
+        unifiedBlueprint: buildUnifiedBlueprintSynthesis({
+          language: "id",
+          profile,
+          blueprint,
+        }),
+        gaiaProfile: profile.gaiaProfile || null,
+        activityHistory: [],
+        progressMetrics: calculateProgressMetrics({
+          journalEntries: [],
+          meditationEntries: [],
+          audioHealingEntries: [],
+          physicalActivities: [],
+        }),
+        localDateKey: date,
+      }),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      profileSnapshot: null,
+      blueprintSnapshot: null,
+      astrologyToday: localOutput.astroEnergy.currentEnergy,
+      previousProgressSummary: "Local fallback",
+    };
+
+    const normalized = normalizeUserFacingGuidance(localGuidance, profile);
+    return minimizeDailyGuidanceResponse(normalized);
+  }
+}
+
 export async function generateDailyGuidanceForRequest(
   input: DailyGuidanceContext,
 ): Promise<DailyGuidance> {

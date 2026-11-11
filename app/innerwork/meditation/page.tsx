@@ -87,6 +87,14 @@ function resolveMudraFromTitle(title: string) {
 }
 
 export default function MeditationPage() {
+  return (
+    <AccessGuard feature="meditation">
+      <MeditationPageContent />
+    </AccessGuard>
+  );
+}
+
+function MeditationPageContent() {
   const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();

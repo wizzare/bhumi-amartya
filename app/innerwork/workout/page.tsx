@@ -26,6 +26,16 @@ const WORKOUT_ACTIVITIES = [...Object.values(WORKOUT_DATABASE), ...INNERWORK_VAR
 const WORKOUT_BY_ID = Object.fromEntries(WORKOUT_ACTIVITIES.map((activity) => [activity.id, activity]));
 
 export default function WorkoutPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="workout">
+        <WorkoutPageContent />
+      </AccessGuard>
+    </ProtectedRoute>
+  );
+}
+
+function WorkoutPageContent() {
   const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();
