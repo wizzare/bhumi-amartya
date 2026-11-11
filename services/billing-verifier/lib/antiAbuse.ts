@@ -148,9 +148,13 @@ export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | 
   if (typeof rawBody !== "object" || Array.isArray(rawBody)) {
     return { valid: false, signals: emptySignals };
   }
+  const ALLOWED_KEYS = new Set(["platform", "appVersionCode", "deviceIdHash", "appSetIdHash", "installIdHash"]);
   const obj = rawBody as Record<string, unknown>;
   if (Object.keys(obj).length === 0) {
     return { valid: true, signals: emptySignals };
+  }
+  if (Object.keys(obj).some((k) => !ALLOWED_KEYS.has(k))) {
+    return { valid: false, signals: emptySignals };
   }
   const rawPlatform = typeof obj.platform === "string" ? obj.platform.toLowerCase() : "unknown";
   const platform: BootstrapSignals["platform"] =

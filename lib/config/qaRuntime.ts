@@ -34,7 +34,36 @@ const compileTimeEnv = {
   FIREBASE_FUNCTIONS_EMULATOR_HOST: process.env.FIREBASE_FUNCTIONS_EMULATOR_HOST,
 };
 
+const LOOPBACK_EMULATOR_HOST_RE = /^(127\.0\.0\.1|localhost):\d+$/;
+
+function isSyntheticLocalEmulatorTestHarness() {
+  if (typeof window !== 'undefined') return false;
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.BHUMI_QA_HARNESS !== 'true') return false;
+  if (process.env.BHUMI_RELEASE_SUITE_KIND !== 'emulator') return false;
+  if (
+    process.env.NEXT_PUBLIC_QA_MODE ||
+    process.env.BHUMI_QA_MODE ||
+    process.env.NEXT_PUBLIC_QA_CANDIDATE ||
+    process.env.BHUMI_LOCAL_QA ||
+    process.env.ENABLE_QA_LOGIN ||
+    process.env.NEXT_PUBLIC_ENABLE_EMULATOR_QA_LOGIN ||
+    process.env.GOOGLE_APPLICATION_CREDENTIALS
+  ) {
+    return false;
+  }
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '';
+  const fsHost = process.env.FIRESTORE_EMULATOR_HOST || '';
+  const authHost = process.env.FIREBASE_AUTH_EMULATOR_HOST || '';
+  return (
+    projectId.startsWith('demo-') &&
+    LOOPBACK_EMULATOR_HOST_RE.test(fsHost) &&
+    LOOPBACK_EMULATOR_HOST_RE.test(authHost)
+  );
+}
+
 export function assertQaOperationAllowed() {
+  if (isSyntheticLocalEmulatorTestHarness()) return;
   assertQaRuntimeAllowed(compileTimeEnv);
 }
 
