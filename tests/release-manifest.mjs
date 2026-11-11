@@ -115,6 +115,12 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "Google Play rating eligibility (existing users and 72-hour new-user deferral)",
+    file: "tests/unit/google-play-review-eligibility.test.ts",
+    kind: "node",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "VC 123 Live access expiration & fail-closed security contract",
     file: "tests/unit/vc123-access-expiration-security.test.ts",
     kind: "env",
