@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { isBuild110LocalQa } from "@/lib/config/localQa";
 import type { UserProfile } from "@/lib/repositories/userRepository";
+import { getAntiAbuseUxCopy } from "@/lib/antiAbuse/eligibilityUx";
 
 type AccessGuardProps = {
   children: React.ReactNode;
@@ -170,6 +171,8 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
 
   if (hasAccess) return <>{children}</>;
 
+  const antiAbuseBanner = getAntiAbuseUxCopy(userProfile as Record<string, unknown> | null);
+
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 flex items-center justify-center">
       <section className="w-full max-w-md rounded-[2rem] bg-white p-8 text-center shadow-sm border border-[#E8E9E5]">
@@ -177,24 +180,51 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
           Akses Bhumi
         </p>
         <h1 className="text-2xl font-serif text-[#4F5E52] mb-3">
-          Perjalanan Berlanjut dari Dashboard
+          {antiAbuseBanner ? antiAbuseBanner.title : "Perjalanan Berlanjut dari Dashboard"}
         </h1>
         <p className="text-sm leading-relaxed text-[#7B8776] mb-8">
-          Masa akses penuh akun ini sudah selesai. Dashboard tetap terbuka untuk melihat status dan langkah berikutnya.
+          {antiAbuseBanner ? antiAbuseBanner.description : "Masa akses penuh akun ini sudah selesai. Dashboard tetap terbuka untuk melihat status dan langkah berikutnya."}
         </p>
         <button
           type="button"
-          onClick={() => router.replace("/dashboard")}
+          onClick={() => router.replace("/premium-bhumi")}
           className="w-full rounded-2xl bg-[#4F5E52] px-5 py-4 text-sm font-bold text-white transition-colors hover:bg-[#3D4A3F] mb-3"
         >
-          Kembali ke Dashboard
+          {antiAbuseBanner ? antiAbuseBanner.primaryCtaLabel : "Buka Premium Bhumi"}
         </button>
+        {antiAbuseBanner ? (
+          <div className="mb-3 flex flex-col gap-2.5">
+            <button
+              type="button"
+              onClick={() => router.replace("/premium-bhumi?restore=1")}
+              className="w-full rounded-2xl border border-[#4F5E52] px-5 py-3.5 text-sm font-bold text-[#4F5E52] bg-white transition-colors hover:bg-[#F2F4F0]"
+            >
+              {antiAbuseBanner.restoreCtaLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void auth?.logout?.().finally(() => router.replace("/login"));
+              }}
+              className="w-full rounded-2xl border border-[#D8DDD5] px-5 py-3 text-xs font-semibold text-[#5F6B5E] bg-white transition-colors hover:bg-[#F7F4EE]"
+            >
+              {antiAbuseBanner.switchAccountCtaLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => router.replace("/bantuan")}
+              className="w-full rounded-2xl border border-[#D8DDD5] px-5 py-3 text-xs font-semibold text-[#5F6B5E] bg-white transition-colors hover:bg-[#F7F4EE]"
+            >
+              {antiAbuseBanner.verifyAccountCtaLabel}
+            </button>
+          </div>
+        ) : null}
         <button
           type="button"
-          onClick={() => router.replace("/premium-bhumi")}
+          onClick={() => router.replace("/dashboard")}
           className="w-full rounded-2xl border border-[#4F5E52] px-5 py-4 text-sm font-bold text-[#4F5E52] bg-white transition-colors hover:bg-[#F2F4F0]"
         >
-          Buka Premium Bhumi
+          Kembali ke Dashboard
         </button>
       </section>
     </main>

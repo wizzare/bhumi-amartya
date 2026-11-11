@@ -23,6 +23,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BhumiBillingPlugin.class);
         registerPlugin(ReviewPlugin.class);
         registerPlugin(AppUpdatePlugin.class);
+        registerPlugin(DeviceIntegrityPlugin.class);
         super.onCreate(savedInstanceState);
 
         if (getBridge() != null) {

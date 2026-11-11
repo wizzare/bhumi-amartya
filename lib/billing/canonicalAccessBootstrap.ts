@@ -1,8 +1,26 @@
 import { Capacitor } from "@capacitor/core";
 import { assertQaOperationAllowed } from '../config/qaRuntime';
+import { collectClientAntiAbuseSignals } from "../antiAbuse/clientSignals";
 
-export type TrialBootstrapOutcome = "PROVISIONED" | "ALREADY_PRESENT" | "HIGHER_ENTITLEMENT" | "EXPIRED_BY_ACCOUNT_AGE" | "DATA_CONFLICT" | "AUTH_CREATION_TIME_UNAVAILABLE" | "RETRYABLE_ERROR";
-export type TrialBootstrapResponse = { ok: boolean; outcome: TrialBootstrapOutcome };
+export type TrialBootstrapOutcome =
+  | "PROVISIONED"
+  | "ALREADY_PRESENT"
+  | "HIGHER_ENTITLEMENT"
+  | "FREE_LIMIT_REACHED"
+  | "VERIFICATION_REQUIRED"
+  | "SIGNAL_UNAVAILABLE"
+  | "EXPIRED_BY_ACCOUNT_AGE"
+  | "DATA_CONFLICT"
+  | "AUTH_CREATION_TIME_UNAVAILABLE"
+  | "RETRYABLE_ERROR";
+
+export type TrialBootstrapResponse = {
+  ok: boolean;
+  outcome: TrialBootstrapOutcome;
+  eligibilityStatus?: string;
+  reasons?: string[];
+  mode?: string;
+};
 
 const inFlight = new Map<string, Promise<TrialBootstrapResponse>>();
 const completeUids = new Set<string>();
@@ -33,13 +51,39 @@ export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRe
   if (existing) return existing;
   const request: Promise<TrialBootstrapResponse> = (async (): Promise<TrialBootstrapResponse> => {
     try {
-      const response = await fetch(verifierUrl(), { method: "POST", headers: { Authorization: `Bearer ${await getIdToken(true)}`, "Content-Type": "application/json" } });
+      const clientSignals = await collectClientAntiAbuseSignals().catch(() => null);
+      const response = await fetch(verifierUrl(), {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${await getIdToken(true)}`,
+          "Content-Type": "application/json",
+        },
+        body: clientSignals ? JSON.stringify(clientSignals) : undefined,
+      });
       const body = await response.json() as Partial<TrialBootstrapResponse>;
       const outcome: TrialBootstrapOutcome = body.outcome || "RETRYABLE_ERROR";
-      if (!response.ok || !body.ok) return { ok: false, outcome };
+      if (!response.ok || !body.ok) {
+        if (outcome === "FREE_LIMIT_REACHED" || outcome === "VERIFICATION_REQUIRED" || outcome === "SIGNAL_UNAVAILABLE") {
+          await refreshUserProfile().catch(() => {});
+          completeUids.add(uid);
+        }
+        return {
+          ok: false,
+          outcome,
+          eligibilityStatus: body.eligibilityStatus,
+          reasons: body.reasons,
+          mode: body.mode,
+        };
+      }
       await refreshUserProfile();
       completeUids.add(uid);
-      return { ok: true, outcome };
+      return {
+        ok: true,
+        outcome,
+        eligibilityStatus: body.eligibilityStatus,
+        reasons: body.reasons,
+        mode: body.mode,
+      };
     } catch {
       return { ok: false, outcome: "RETRYABLE_ERROR" };
     } finally {

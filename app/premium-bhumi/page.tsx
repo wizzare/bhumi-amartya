@@ -14,6 +14,7 @@ import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/
 import { getBillingPresentation } from "@/lib/billing/entitlementPresentation";
 import { purchaseAndRecoverPremium, restoreAndRecoverPremium, queryPremiumSubscription, isGooglePlayBillingAvailable, GOOGLE_PLAY_BASE_PLAN_ID } from "@/lib/billing/googlePlayBilling";
 import { isEnlEdition } from "@/lib/config/edition";
+import { getAntiAbuseUxCopy } from "@/lib/antiAbuse/eligibilityUx";
 
 let isSubscribeInFlight = false;
 let isRestoreInFlight = false;
@@ -82,6 +83,7 @@ export default function PremiumBhumiPage() {
   const isPremium = presentation.state === "premium_active";
   const isTrial = presentation.state === "trial_active";
   const isExpired = presentation.state === "trial_exhausted" || presentation.state === "premium_expired";
+  const antiAbuseBanner = !isPremium && !isTrial ? getAntiAbuseUxCopy(profile) : null;
 
   // Founder = Lifetime, No expiry date. Show "Akses hingga" only for non-lifetime users with a valid date.
   const isFounder = presentation.isLifetime || badge === "Founder";
@@ -242,6 +244,13 @@ export default function PremiumBhumiPage() {
             {!isFounder && accessUntil && (
               <div className="text-sm text-[#7B8776] border-t border-[#F5F1E8] pt-3">
                 <p>{t.premiumBhumi?.accessUntil || "Akses hingga"}: {accessUntil.toLocaleDateString(isEn ? "en-US" : "id-ID", { day: "numeric", month: "long", year: "numeric" })}</p>
+              </div>
+            )}
+
+            {antiAbuseBanner && (
+              <div className="rounded-2xl border border-[#D8C7A8] bg-[#FDF9F1] p-4 text-sm text-[#4F5E52] space-y-1.5" role="status">
+                <p className="font-semibold text-[#2D352E]">{antiAbuseBanner.title}</p>
+                <p className="text-xs leading-relaxed text-[#5F6B5E]">{antiAbuseBanner.description}</p>
               </div>
             )}
           </div>

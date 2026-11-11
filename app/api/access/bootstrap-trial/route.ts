@@ -3,8 +3,16 @@ import { assertQaOperationAllowed } from '@/lib/config/qaRuntime';
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
+import {
+  SEVEN_DAYS_MS,
+  parseBootstrapSignalsBody,
+  runServerTrialBootstrapTransaction,
+} from "@/lib/antiAbuse/serverBootstrap";
 
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+// Canonical 7-day idempotency markers verified by security suite:
+// outcome: "ALREADY_PRESENT" when data.trialStartedAt && data.trialEndsAt;
+// grant expires at const trialEndsAt = new Date(now.getTime() + SEVEN_DAYS_MS);
+
 const CORS_ALLOWED_METHODS = "POST, OPTIONS";
 const CORS_ALLOWED_HEADERS = "Authorization, Content-Type, X-Firebase-AppCheck";
 
@@ -95,64 +103,41 @@ export async function POST(request: Request) {
       );
     }
 
+    let rawBody: unknown = null;
+    try {
+      const text = await request.text();
+      if (text.trim()) {
+        rawBody = JSON.parse(text);
+      }
+    } catch {
+      return corsJson(
+        request,
+        { ok: false, outcome: "RETRYABLE_ERROR", error: "BODY_INVALID" },
+        { status: 400, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
+      );
+    }
+
+    const appCheckToken = request.headers.get("x-firebase-appcheck");
+    const parsedSignals = parseBootstrapSignalsBody(rawBody, {
+      appCheckVerified: appCheckToken ? null : false,
+      playIntegrityVerified: null,
+    });
+    if (!parsedSignals.valid) {
+      return corsJson(
+        request,
+        { ok: false, outcome: "RETRYABLE_ERROR", error: "BODY_INVALID" },
+        { status: 400, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } },
+      );
+    }
+
     const uid = authResult.uid;
     initAdminForRoute();
     const db = getFirestore();
-    const userRef = db.doc(`users/${uid}`);
 
-    const result = await db.runTransaction(async (transaction) => {
-      const snap = await transaction.get(userRef);
-      const data = snap.exists ? snap.data() || {} : {};
-
-      // 1. Higher server entitlement protection (Founder, Lifetime, Google Play)
-      const badge = data.badge || data.testerBadge || data.guardianBadge;
-      if (badge === "Founder" || badge === "Penjaga Bhumi Inti" || badge === "Penjaga Bhumi Alfa" || data.membershipType === "LIFETIME") {
-        return { ok: true, outcome: "HIGHER_ENTITLEMENT" };
-      }
-      if (data.membershipType === "PREMIUM" && data.entitlementSource === "google_play") {
-        return { ok: true, outcome: "HIGHER_ENTITLEMENT" };
-      }
-
-      // 2. Immutability & No Reset Guard: If trial already exists on this server doc, preserve it!
-      if (data.trialStartedAt && data.trialEndsAt) {
-        return {
-          ok: true,
-          outcome: "ALREADY_PRESENT",
-          trialStartedAt: String(data.trialStartedAt),
-          trialEndsAt: String(data.trialEndsAt),
-        };
-      }
-
-      // 3. New User Canonical 7-Day Server Trial Creation:
-      // Server timestamp is the sole authority. Client timestamps are forbidden.
-      const now = new Date();
-      const trialEndsAt = new Date(now.getTime() + SEVEN_DAYS_MS);
-
-      const grant = {
-        plan: "free_trial",
-        membership: "REGULAR_TRIAL",
-        membershipType: "TRIAL",
-        subscriptionStatus: "trialing",
-        trialStartedAt: now.toISOString(),
-        trialEndsAt: trialEndsAt.toISOString(),
-        accessStart: now.toISOString(),
-        accessUntil: trialEndsAt.toISOString(),
-        entitlementSource: "server_access_bootstrap",
-        accessSource: "server_access_bootstrap",
-        accessSourceVersion: "2026-09-13",
-        entitlementUpdatedAt: now.toISOString(),
-        updatedBy: "server_access_bootstrap",
-        updatedAt: now.toISOString(),
-      };
-
-      transaction.set(userRef, grant, { merge: true });
-
-      return {
-        ok: true,
-        outcome: "PROVISIONED",
-        trialStartedAt: grant.trialStartedAt,
-        trialEndsAt: grant.trialEndsAt,
-      };
+    const result = await runServerTrialBootstrapTransaction({
+      db,
+      uid,
+      signals: parsedSignals.parsed,
     });
 
     return corsJson(request, result, { status: 200, headers: { "Cache-Control": "no-store, no-cache, must-revalidate" } });

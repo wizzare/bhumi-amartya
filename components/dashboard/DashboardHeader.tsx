@@ -36,6 +36,7 @@ export function DashboardHeader({ userName, language, compact = false }: Dashboa
 
   if (compact) return (
     <header className="py-4">
+      <BhumiPageHeader inline className="mb-2.5" />
       <p className="text-sm">{greeting}</p>
       <h1 className="font-serif text-2xl">{userName}</h1>
       <p className="text-sm">{dateString} · {timeString}</p>
