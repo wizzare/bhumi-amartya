@@ -122,7 +122,11 @@ const isStuck = (value: string) => value === "Menghitung..." || value === "Perlu
 {
   const core = fs.readFileSync("components/dashboard/CoreIdentity.tsx", "utf8");
   ok("CoreIdentity imports isRecognizedHumanDesignType", /import\s*\{[^}]*isRecognizedHumanDesignType[^}]*\}\s*from\s*"@\/lib\/humandesign\/hdAudit"/.test(core));
-  ok("CoreIdentity early-returns the recognized type", /if\s*\(\s*isRecognizedHumanDesignType\(hdState\.type\)\s*\)/.test(core));
+  ok(
+    "CoreIdentity early-returns the recognized type",
+    /const\s+isRecognized\s*=\s*isRecognizedHumanDesignType\([^)]+\)[\s\S]*if\s*\(\s*isRecognized\b/.test(core)
+      || /if\s*\(\s*isRecognizedHumanDesignType\(hdState\.type\)\s*\)/.test(core),
+  );
   ok("CoreIdentity no longer renders 'Perlu dihitung ulang' as a value", !core.includes("Perlu dihitung ulang"));
   ok("CoreIdentity no longer renders 'perlu kalkulasi ulang' as a value", !/perlu kalkulasi ulang/i.test(core));
 

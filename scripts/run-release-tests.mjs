@@ -30,7 +30,10 @@ function runSuite(suite) {
   if (suite.kind === "emulator" && !emulatorLive) {
     return { ...suite, status: "SKIPPED_NO_EMULATOR", code: null };
   }
-  const preload = ["--import", ENV_PRELOAD];
+  const preload = [];
+  if (suite.kind === "env" || suite.kind === "emulator") {
+    preload.push("--import", ENV_PRELOAD);
+  }
   if (suite.file === "tests/unit/p0-auth-skip-native-auth.test.ts") {
     preload.push("--import", "./tests/helpers/p0AuthMocks.mjs");
   }
@@ -40,11 +43,19 @@ function runSuite(suite) {
   }
   console.log(`\n──── ${suite.name}  [${suite.kind}/${suite.evidence}]`);
   console.log(`     ${suite.file}`);
+  const childEnv = { ...process.env, BHUMI_RELEASE_SUITE_KIND: suite.kind };
+  if (suite.kind !== "emulator") {
+    delete childEnv.FIRESTORE_EMULATOR_HOST;
+    delete childEnv.FIREBASE_AUTH_EMULATOR_HOST;
+    delete childEnv.FIREBASE_FUNCTIONS_EMULATOR_HOST;
+    delete childEnv.FIREBASE_EMULATOR_HUB;
+    delete childEnv.GCLOUD_PROJECT;
+  }
   const timeoutMs = Number(process.env.RELEASE_SUITE_TIMEOUT_MS || suite.timeoutMs || 240000);
   const res = spawnSync(process.execPath, [TSX_CLI, ...preload, suite.file], {
     cwd: REPO_ROOT,
     stdio: "inherit",
-    env: process.env,
+    env: childEnv,
     timeout: timeoutMs,
   });
   if (res.error && res.error.code === "ETIMEDOUT") {

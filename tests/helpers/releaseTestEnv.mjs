@@ -5,6 +5,10 @@
 
 const PROJECT_ID = process.env.BHUMI_TEST_PROJECT_ID || "demo-release-suite";
 if (!/^demo-[a-z0-9-]+$/.test(PROJECT_ID)) throw new Error("SYNTHETIC_TEST_PROJECT_REQUIRED");
+const useEmulatorRuntime =
+  process.env.BHUMI_RELEASE_SUITE_KIND === "emulator" &&
+  Boolean(process.env.FIRESTORE_EMULATOR_HOST || process.env.FIREBASE_AUTH_EMULATOR_HOST);
+
 const defaults = {
   NEXT_PUBLIC_FIREBASE_API_KEY: "synthetic-release-key",
   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: `${PROJECT_ID}.firebaseapp.com`,
@@ -14,8 +18,8 @@ const defaults = {
   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "123456789",
   NEXT_PUBLIC_FIREBASE_APP_ID: "1:123456789:web:synthetic",
   NEXT_PUBLIC_USE_FIREBASE_EMULATORS: "false",
-  NEXT_PUBLIC_USE_AUTH_EMULATOR: "true",
-  NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: "true",
+  NEXT_PUBLIC_USE_AUTH_EMULATOR: useEmulatorRuntime ? "true" : "false",
+  NEXT_PUBLIC_USE_FIRESTORE_EMULATOR: useEmulatorRuntime ? "true" : "false",
   NEXT_PUBLIC_USE_FUNCTIONS_EMULATOR: "false",
   BHUMI_QA_HARNESS: "true",
   NEXT_PUBLIC_HUMAN_DESIGN_API_URL: "http://127.0.0.1:18765/api/humandesign/calculate",

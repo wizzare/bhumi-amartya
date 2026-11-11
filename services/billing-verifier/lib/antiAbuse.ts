@@ -166,7 +166,8 @@ export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | 
       deviceIdHash: asCleanHash(obj.deviceIdHash),
       appSetIdHash: asCleanHash(obj.appSetIdHash),
       installIdHash: asCleanHash(obj.installIdHash),
-      birthCoreHmac: asCleanHash(obj.birthCoreHmac),
+      // Ignore client-supplied HMACs; birthCoreHmac must only be computed server-side.
+      birthCoreHmac: null,
       playIntegrityVerified: null,
       appCheckVerified: appCheckHeader ? null : false,
     },

@@ -140,7 +140,8 @@ export function parseBootstrapSignalsBody(
       installIdHash: asCleanHash(obj.installIdHash),
       playIntegrityVerified: headers?.playIntegrityVerified ?? null,
       appCheckVerified: headers?.appCheckVerified ?? null,
-      birthCoreHmac: asCleanHash(obj.birthCoreHmac),
+      // Client-supplied HMAC hashes are ignored; server computes HMAC only from server secrets.
+      birthCoreHmac: null,
       birthInput: birthDate
         ? { birthDate, birthTime, latitude, longitude, birthCity, birthCountry, fullName }
         : null,

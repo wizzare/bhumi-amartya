@@ -426,5 +426,13 @@ test("Anti-Abuse 20-Case Matrix & Security Verification", async () => {
     assert.equal(normalizeBirthDate("1995-03-09T12:00:00Z"), "1995-03-09");
     assert.equal(normalizeBirthTime("7:5"), "07:05");
     assert.equal(normalizeBirthLocation({ latitude: -6.2146, longitude: 106.8451 }), "-6.21,106.85");
+
+    const parsedSpoofed = parseBootstrapSignalsBody({
+      platform: "android",
+      deviceIdHash: computeDeviceIdentityHash("real-device-1"),
+      birthCoreHmac: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    });
+    assert.equal(parsedSpoofed.valid, true);
+    assert.equal(parsedSpoofed.parsed.birthCoreHmac, null);
   }
 });

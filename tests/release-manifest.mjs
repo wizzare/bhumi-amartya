@@ -153,7 +153,7 @@ export const releaseSuites = [
   {
     name: "Build 107 hotfix — production-surface guard (admin console + Auth Diagnostics not exposed; obsolete routes removed; route classification)",
     file: "tests/unit/build107-production-surface-guard.test.ts",
-    kind: "node",
+    kind: "env",
     evidence: "STATIC_GUARD",
   },
   {
