@@ -66,11 +66,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             expectedNonce: challenge.nonce,
           });
           parsed.signals.playIntegrityVerified = decoded.verified;
+          parsed.signals.integrityReason = decoded.reason;
         } else {
           parsed.signals.playIntegrityVerified = false;
+          parsed.signals.integrityReason = challenge.reason;
         }
       } catch {
         parsed.signals.playIntegrityVerified = false;
+        parsed.signals.integrityReason = "PLAY_INTEGRITY_DECODE_ERROR";
       }
     }
 

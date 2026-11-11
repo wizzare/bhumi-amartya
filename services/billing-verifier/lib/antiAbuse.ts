@@ -56,6 +56,7 @@ export type BootstrapSignals = {
   integrityToken?: string | null;
   nonceHash?: string | null;
   playIntegrityVerified: boolean | null;
+  integrityReason?: string | null;
   appCheckVerified: boolean | null;
 };
 
@@ -83,7 +84,7 @@ export function resolveVerifierAntiAbuseFlags(
   remoteConfig?: Record<string, unknown> | null,
 ): AntiAbuseFeatureFlags {
   const env = process.env;
-  if (env.BHUMI_ANTI_ABUSE_KILL_SWITCH === "true") {
+  if (env.BHUMI_ANTI_ABUSE_KILL_SWITCH === "true" || remoteConfig?.killSwitch === true) {
     return {
       mode: "off",
       enforceDeviceFreeClaim: false,
@@ -95,10 +96,12 @@ export function resolveVerifierAntiAbuseFlags(
     };
   }
   const envMode = parseModeEnv(env.BHUMI_ANTI_ABUSE_MODE, "observe");
-  const mode =
+  const remoteMode =
     remoteConfig && typeof remoteConfig.mode === "string"
       ? parseModeEnv(remoteConfig.mode, envMode)
       : envMode;
+  // Server env enforce mode cannot be downgraded to observe/off by remote Firestore config.
+  const mode: AntiAbuseMode = envMode === "enforce" ? "enforce" : remoteMode;
 
   if (mode === "off") {
     return {
@@ -116,13 +119,23 @@ export function resolveVerifierAntiAbuseFlags(
     remoteConfig && typeof remoteConfig[key] === "boolean"
       ? (remoteConfig[key] as boolean)
       : parseBoolEnv(env[envKey], fallback);
+  const envRequirePlayIntegrity = parseBoolEnv(env.BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY, true);
+  const isProdRuntime = env.NODE_ENV === "production";
 
   return {
     mode,
-    enforceDeviceFreeClaim: mode === "enforce" && pick("enforceDeviceFreeClaim", "BHUMI_ANTI_ABUSE_ENFORCE_DEVICE", true),
+    enforceDeviceFreeClaim:
+      mode === "enforce" &&
+      (envMode === "enforce"
+        ? parseBoolEnv(env.BHUMI_ANTI_ABUSE_ENFORCE_DEVICE, true)
+        : pick("enforceDeviceFreeClaim", "BHUMI_ANTI_ABUSE_ENFORCE_DEVICE", true)),
     allowSignalUnavailableFallback: pick("allowSignalUnavailableFallback", "BHUMI_ANTI_ABUSE_SIGNAL_FALLBACK", true),
     enableBirthFingerprintObservation: pick("enableBirthFingerprintObservation", "BHUMI_ANTI_ABUSE_BIRTH_FINGERPRINT", true),
-    requirePlayIntegrity: mode === "enforce" && pick("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", true),
+    requirePlayIntegrity:
+      mode === "enforce" &&
+      (envMode === "enforce" || isProdRuntime
+        ? envRequirePlayIntegrity
+        : pick("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", true)),
     requireAppCheck: mode === "enforce" && pick("requireAppCheck", "BHUMI_ANTI_ABUSE_REQUIRE_APP_CHECK", false),
     enableVc121MigrationGrace: pick("enableVc121MigrationGrace", "BHUMI_ANTI_ABUSE_VC121_GRACE", true),
   };
@@ -386,6 +399,7 @@ export async function runVerifierTrialBootstrap(
           mode: flags.mode,
           platform: signals.platform,
           playIntegrityVerified: Boolean(playIntegrityVerified),
+          integrityReason: nonceReplayed ? "NONCE_REPLAYED" : signals.integrityReason || null,
           appCheckVerified: Boolean(signals.appCheckVerified),
           createdAt: nowIso,
           retainUntil: auditRetainUntil,
@@ -424,6 +438,7 @@ export async function runVerifierTrialBootstrap(
           mode: flags.mode,
           platform: signals.platform,
           playIntegrityVerified: Boolean(playIntegrityVerified),
+          integrityReason: nonceReplayed ? "NONCE_REPLAYED" : signals.integrityReason || null,
           appCheckVerified: Boolean(signals.appCheckVerified),
           createdAt: nowIso,
           retainUntil: auditRetainUntil,
@@ -478,6 +493,7 @@ export async function runVerifierTrialBootstrap(
             mode: flags.mode,
             platform: signals.platform,
             playIntegrityVerified: Boolean(playIntegrityVerified),
+            integrityReason: nonceReplayed ? "NONCE_REPLAYED" : signals.integrityReason || null,
             appCheckVerified: Boolean(signals.appCheckVerified),
             createdAt: nowIso,
             retainUntil: auditRetainUntil,
@@ -582,6 +598,7 @@ export async function runVerifierTrialBootstrap(
       mode: flags.mode,
       platform: signals.platform,
       playIntegrityVerified: Boolean(playIntegrityVerified),
+      integrityReason: nonceReplayed ? "NONCE_REPLAYED" : signals.integrityReason || null,
       appCheckVerified: Boolean(signals.appCheckVerified),
       createdAt: nowIso,
       retainUntil: auditRetainUntil,

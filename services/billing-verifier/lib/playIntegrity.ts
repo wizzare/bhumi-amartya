@@ -28,6 +28,8 @@ export type PlayIntegrityVerificationResult = {
   verified: boolean;
   appRecognitionVerdict: string | null;
   deviceRecognitionVerdict: string[];
+  appPackageName?: string | null;
+  appVersionCode?: number | null;
   reason: string;
 };
 
@@ -156,6 +158,9 @@ type DecodedIntegrityPayload = {
     };
     appIntegrity?: {
       appRecognitionVerdict?: string;
+      packageName?: string;
+      certificateSha256Digest?: string[];
+      versionCode?: string | number;
     };
     deviceIntegrity?: {
       deviceRecognitionVerdict?: string[];
@@ -163,10 +168,30 @@ type DecodedIntegrityPayload = {
   };
 };
 
+function resolveMinPlayVersionCode(explicit?: number): number {
+  if (typeof explicit === "number" && Number.isFinite(explicit) && explicit > 0) {
+    return explicit;
+  }
+  const envVal = Number(process.env.BHUMI_MIN_PLAY_VERSION_CODE || "");
+  return Number.isFinite(envVal) && envVal > 0 ? envVal : 122;
+}
+
+function resolveExpectedCertDigests(explicit?: string[]): string[] {
+  if (Array.isArray(explicit) && explicit.length > 0) {
+    return explicit.map((s) => s.trim()).filter(Boolean);
+  }
+  return (process.env.BHUMI_PLAY_CERT_SHA256_B64 || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 export async function decodeAndVerifyPlayIntegrityToken(params: {
   integrityToken: string;
   expectedNonce: string;
   packageName?: string;
+  minVersionCode?: number;
+  expectedCertDigests?: string[];
   nowMs?: number;
   fetchImpl?: typeof fetch;
   accessTokenProvider?: () => Promise<string>;
@@ -175,10 +200,14 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
     integrityToken,
     expectedNonce,
     packageName = PACKAGE_NAME,
+    minVersionCode: explicitMinVersionCode,
+    expectedCertDigests: explicitCertDigests,
     nowMs = Date.now(),
     fetchImpl = fetch,
     accessTokenProvider = getPlayIntegrityAccessToken,
   } = params;
+  const minVersionCode = resolveMinPlayVersionCode(explicitMinVersionCode);
+  const expectedCertDigests = resolveExpectedCertDigests(explicitCertDigests);
 
   if (!integrityToken || integrityToken.length > 8192) {
     return {
@@ -214,6 +243,16 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
     const ext = body.tokenPayloadExternal;
     const reqDetails = ext?.requestDetails;
     const appVerdict = ext?.appIntegrity?.appRecognitionVerdict || null;
+    const appPackageName =
+      typeof ext?.appIntegrity?.packageName === "string" ? ext.appIntegrity.packageName : null;
+    const rawVersionCode =
+      ext?.appIntegrity?.versionCode !== undefined ? Number(ext.appIntegrity.versionCode) : NaN;
+    const appVersionCode = Number.isFinite(rawVersionCode) ? rawVersionCode : null;
+    const certDigests = Array.isArray(ext?.appIntegrity?.certificateSha256Digest)
+      ? ext!.appIntegrity!.certificateSha256Digest.filter(
+          (item): item is string => typeof item === "string" && item.length > 0,
+        )
+      : [];
     const devVerdicts = Array.isArray(ext?.deviceIntegrity?.deviceRecognitionVerdict)
       ? ext!.deviceIntegrity!.deviceRecognitionVerdict
       : [];
@@ -223,6 +262,19 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
         verified: false,
         appRecognitionVerdict: appVerdict,
         deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
+        reason: "INTEGRITY_PACKAGE_MISMATCH",
+      };
+    }
+
+    if (appPackageName && appPackageName !== packageName) {
+      return {
+        verified: false,
+        appRecognitionVerdict: appVerdict,
+        deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
         reason: "INTEGRITY_PACKAGE_MISMATCH",
       };
     }
@@ -232,6 +284,8 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
         verified: false,
         appRecognitionVerdict: appVerdict,
         deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
         reason: "INTEGRITY_NONCE_MISMATCH",
       };
     }
@@ -242,6 +296,8 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
         verified: false,
         appRecognitionVerdict: appVerdict,
         deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
         reason: "INTEGRITY_TIMESTAMP_STALE",
       };
     }
@@ -251,7 +307,34 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
         verified: false,
         appRecognitionVerdict: appVerdict,
         deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
         reason: "APP_NOT_PLAY_RECOGNIZED",
+      };
+    }
+
+    if (appVersionCode !== null && appVersionCode < minVersionCode) {
+      return {
+        verified: false,
+        appRecognitionVerdict: appVerdict,
+        deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
+        reason: "INTEGRITY_VERSION_TOO_OLD",
+      };
+    }
+
+    if (
+      expectedCertDigests.length > 0 &&
+      !certDigests.some((digest) => expectedCertDigests.includes(digest))
+    ) {
+      return {
+        verified: false,
+        appRecognitionVerdict: appVerdict,
+        deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
+        reason: "INTEGRITY_CERT_MISMATCH",
       };
     }
 
@@ -263,6 +346,8 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
         verified: false,
         appRecognitionVerdict: appVerdict,
         deviceRecognitionVerdict: devVerdicts,
+        appPackageName,
+        appVersionCode,
         reason: "DEVICE_INTEGRITY_UNMET",
       };
     }
@@ -271,6 +356,8 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
       verified: true,
       appRecognitionVerdict: appVerdict,
       deviceRecognitionVerdict: devVerdicts,
+      appPackageName,
+      appVersionCode,
       reason: "VERIFIED",
     };
   } catch {
