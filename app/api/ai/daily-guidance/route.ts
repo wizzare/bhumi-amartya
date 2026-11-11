@@ -6,6 +6,10 @@ import {
   getOrGenerateDailyGuidance,
 } from "@/lib/services/dailyGuidanceService";
 import { isEnlEdition } from "@/lib/config/edition";
+import {
+  verifyHdRequestAuthentication,
+  type HdAuthDependencies,
+} from "@/lib/auth/hdEndpointAuth";
 
 type DailyGuidanceErrorReason =
   | "missing_uid"
@@ -13,7 +17,10 @@ type DailyGuidanceErrorReason =
   | "missing_blueprint"
   | "missing_currentSky"
   | "missing_localDateKey"
-  | "ai_failed";
+  | "ai_failed"
+  | "unauthorized"
+  | "forbidden"
+  | "rate_limited";
 
 type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInput> & {
   uid?: string;
@@ -26,7 +33,26 @@ type DailyGuidanceRequestBody = Partial<DailyGuidanceContext & DailyGuidanceInpu
 };
 
 const CORS_ALLOWED_METHODS = "POST, OPTIONS";
-const CORS_ALLOWED_HEADERS = "Content-Type";
+const CORS_ALLOWED_HEADERS = "Content-Type, Authorization";
+
+// Rate limiting defense-in-depth: 30 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_MAX_REQUESTS = 30;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(ip);
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false;
+  }
+  record.count += 1;
+  return true;
+}
 
 function allowedCorsOrigin(request: Request): string | null {
   const origin = request.headers.get("origin");
@@ -205,10 +231,59 @@ function normalizeDailyGuidanceRequest(
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anonymous";
+    if (!checkRateLimit(ip)) {
+      return corsJson(
+        request,
+        { ok: false, reason: "rate_limited", note: "Too many requests. Rate limit exceeded." },
+        { status: 429 },
+      );
+    }
     console.log("[DAILY_GUIDANCE_API_START]");
     const body = (await request.json().catch(() => null)) as DailyGuidanceRequestBody | null;
 
     const normalized = normalizeDailyGuidanceRequest(body);
+    const dashboardUser = asRecord("user" in (body ?? {}) ? body?.user : null);
+    const targetUid =
+      normalized.input?.uid
+      ?? (typeof body?.uid === "string" && body.uid.trim()
+        ? body.uid
+        : typeof dashboardUser?.uid === "string"
+          ? dashboardUser.uid
+          : null);
+
+    // Route Authentication & Identity Binding (verified before schema validation)
+    const authHeader = request.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const testAuthDeps =
+        process.env.NODE_ENV !== "production"
+          ? (globalThis as { __dailyGuidanceAuthDeps?: HdAuthDependencies }).__dailyGuidanceAuthDeps
+          : undefined;
+      const authResult = await verifyHdRequestAuthentication(request, testAuthDeps);
+      if (!authResult.authenticated) {
+        return corsJson(
+          request,
+          { ok: false, reason: "unauthorized", note: authResult.errorNote || "Authentication failed." },
+          { status: authResult.status || 401 },
+        );
+      }
+      if (authResult.uid && targetUid && authResult.uid !== targetUid) {
+        console.error("[DAILY_GUIDANCE_CROSS_ACCOUNT_REJECTED]", {
+          callerUid: maskUid(authResult.uid),
+          targetUid: maskUid(targetUid),
+        });
+        return corsJson(
+          request,
+          { ok: false, reason: "forbidden", note: "Cross-account UID mismatch forbidden." },
+          { status: 403 },
+        );
+      }
+    } else {
+      // Shipped VC 121 / VC 122 backward compatibility under IP rate limiting
+      console.warn("[DAILY_GUIDANCE_UNAUTHENTICATED_LEGACY_CALL]", {
+        uid: maskUid(targetUid),
+      });
+    }
 
     console.log("[DAILY_GUIDANCE_REQUEST_SUMMARY]", getDailyGuidanceLogSummary(body, normalized));
 

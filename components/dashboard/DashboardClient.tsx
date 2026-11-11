@@ -88,6 +88,7 @@ import type { WeeklyGuidance } from "@/lib/weeklyGuidance/types";
 import { DashboardReviewPrompt } from "@/components/rating/DashboardReviewPrompt";
 import { TrialWelcomePopup } from "@/components/dashboard/TrialWelcomePopup";
 import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
+import { getDailyGuidanceAuthHeaders } from "@/lib/config/dailyGuidanceAuthHeader";
 
 function withCanonicalDailyConclusion(
   guidance: DailyGuidance,
@@ -492,9 +493,13 @@ export function DashboardClient() {
         memoryHash: generateMemoryHash(memoryContext),
       };
 
+      const authHeaders = await getDailyGuidanceAuthHeaders();
       const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify(payload),
       });
 

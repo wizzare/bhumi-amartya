@@ -3,6 +3,7 @@ import test from "node:test";
 import { getEntitlementStatus } from "../../lib/billing/entitlementService";
 import { hasFeatureAccess, type TrialProfile } from "../../lib/billing/accessControl";
 import type { FounderTesterRecord } from "../../lib/billing/founderTesterSourceOfTruth";
+import { POST as dailyGuidancePOST } from "../../app/api/ai/daily-guidance/route";
 
 const BASE_NOW = new Date("2026-11-12T00:00:00.000Z");
 
@@ -187,4 +188,128 @@ test("VC123-07: Account Switch / Cross-User isolation prevents stale access inhe
   const statusB = getEntitlementStatus(userBProfile, BASE_NOW, null);
   assert.equal(statusB.isPremium, false);
   assert.equal(hasFeatureAccess(userBProfile, "profile", BASE_NOW, null), false);
+});
+
+test("VC123-08: /api/ai/daily-guidance rejects cross-account UID mismatch with 403 Forbidden", async () => {
+  const req = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer token_for_caller_A",
+    },
+    body: JSON.stringify({
+      uid: "target_user_B", // Mismatch with authenticated token
+      profile: { name: "Victim Profile" },
+      blueprint: { type: "Projector" },
+      currentSky: { bodies: [] },
+      localDateKey: "2026-11-12",
+    }),
+  });
+
+  (globalThis as any).__dailyGuidanceAuthDeps = {
+    verifyIdToken: async (token: string) => {
+      if (token === "token_for_caller_A") {
+        return { uid: "caller_user_A" };
+      }
+      throw new Error("Invalid token");
+    },
+  };
+  let res: Response;
+  try {
+    res = await dailyGuidancePOST(req);
+  } finally {
+    delete (globalThis as any).__dailyGuidanceAuthDeps;
+  }
+
+  assert.equal(res.status, 403);
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.reason, "forbidden");
+  assert.match(data.note, /Cross-account UID mismatch forbidden/);
+});
+
+test("VC123-09: /api/ai/daily-guidance rejects invalid / expired Bearer token with 403", async () => {
+  const req = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer expired_or_tampered_token",
+    },
+    body: JSON.stringify({
+      uid: "user_1",
+      profile: { name: "Test" },
+      blueprint: { type: "Manifestor" },
+      currentSky: { bodies: [] },
+      localDateKey: "2026-11-12",
+    }),
+  });
+
+  (globalThis as any).__dailyGuidanceAuthDeps = {
+    verifyIdToken: async () => {
+      const err = new Error("auth/id-token-expired");
+      (err as { code?: string }).code = "auth/id-token-expired";
+      throw err;
+    },
+  };
+  let res: Response;
+  try {
+    res = await dailyGuidancePOST(req);
+  } finally {
+    delete (globalThis as any).__dailyGuidanceAuthDeps;
+  }
+
+  assert.equal(res.status, 403);
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.reason, "unauthorized");
+});
+
+test("VC123-10: /api/ai/daily-guidance allows authenticated request when token UID matches body UID", async () => {
+  const req = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: "Bearer valid_token_user_1",
+    },
+    body: JSON.stringify({
+      uid: "legit_user_1",
+      // Omit profile to stop cleanly at validation without calling Gemini
+    }),
+  });
+
+  (globalThis as any).__dailyGuidanceAuthDeps = {
+    verifyIdToken: async () => ({ uid: "legit_user_1" }),
+  };
+  let res: Response;
+  try {
+    res = await dailyGuidancePOST(req);
+  } finally {
+    delete (globalThis as any).__dailyGuidanceAuthDeps;
+  }
+
+  // Stopped cleanly at schema validation (missing_profile 400), not rejected with 401/403
+  assert.equal(res.status, 400);
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.reason, "missing_profile");
+});
+
+test("VC123-11: /api/ai/daily-guidance allows legacy unauthenticated call with masked log and IP rate limiting", async () => {
+  const req = new Request("https://bhumiamartya.app/api/ai/daily-guidance", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      // No Authorization header (simulates shipped VC 121/122 APK)
+    },
+    body: JSON.stringify({
+      uid: "legacy_user_123",
+      // Omit profile to stop cleanly at validation
+    }),
+  });
+
+  const res = await dailyGuidancePOST(req);
+  assert.equal(res.status, 400); // Stopped cleanly at validation (400), not 401
+  const data = await res.json();
+  assert.equal(data.ok, false);
+  assert.equal(data.reason, "missing_profile");
 });

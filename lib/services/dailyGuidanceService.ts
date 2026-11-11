@@ -29,6 +29,7 @@ import { dailyIntelligenceEngine } from "@/lib/engines/dailyIntelligenceEngine";
 import { dailyGuidanceEngine } from "@/lib/engines/dailyGuidanceEngine";
 import type { DailyGuidanceContext } from "@/lib/dailyGuidance/types";
 import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
+import { getDailyGuidanceAuthHeaders } from "@/lib/config/dailyGuidanceAuthHeader";
 export { createDailyGuidanceServiceCore } from "./dailyGuidanceServiceCore";
 
 export interface DailyGuidanceResult {
@@ -383,9 +384,13 @@ async function executeGetOrGenerateDailyGuidance(params: {
     }
   } else {
     try {
+      const authHeaders = await getDailyGuidanceAuthHeaders();
       const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
         body: JSON.stringify(payload),
       });
 

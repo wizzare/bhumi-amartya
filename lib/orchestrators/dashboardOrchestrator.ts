@@ -8,6 +8,7 @@ import type { UserProfile } from "@/lib/types/user";
 import type { Blueprint } from "@/lib/types/blueprint";
 import type { DailyGuidanceInput, DailyGuidanceOutput } from "@/lib/orchestrators/types";
 import { getDailyGuidanceApiUrl } from "@/lib/config/dailyGuidanceApiUrl";
+import { getDailyGuidanceAuthHeaders } from "@/lib/config/dailyGuidanceAuthHeader";
 
 export interface DashboardOrchestratorConfig {
   userProfile: UserProfile;
@@ -88,10 +89,12 @@ export class DashboardOrchestrator {
 
   private async requestDailyGuidance(input: DailyGuidanceInput): Promise<DailyGuidanceOutput | null> {
     try {
+      const authHeaders = await getDailyGuidanceAuthHeaders();
       const response = await fetch(getDailyGuidanceApiUrl(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...authHeaders,
         },
         body: JSON.stringify(input),
       });
