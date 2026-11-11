@@ -10,42 +10,12 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // NEW AUDITABLE FOUNDER RULE
-    function isFounderByEmail() {
-      return isSignedIn() && ('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com';
-    }
-
-    // COMPATIBILITY BRIDGE (Build 83, Option A): production admin/founder
-    // accounts were provisioned via Firestore users/{uid}.role /
-    // .guardianRole, not Auth custom claims. No migration has provisioned
-    // admin/founder custom claims yet (confirmed by read-only audit against
-    // bhumiamartya-fe85c on 2026-07-31), so the legacy Firestore-role path
-    // MUST stay active until that migration runs, or existing non-Founder
-    // admins lose access the moment this ruleset deploys. Remove
-    // legacyRoleIsAdminOrFounder() only after a completed + verified custom
-    // claims migration for every account currently relying on it.
-    function legacyRoleIsAdminOrFounder() {
-      return isSignedIn()
-        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        && (
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '').lower()
-            in ['admin', 'founder', 'dev_admin'] ||
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('guardianRole', '').lower()
-            in ['admin', 'founder', 'dev_admin']
-        );
-    }
-
-    function isFounderOrAdmin() {
-      return isSignedIn() && (
-        (('email' in request.auth.token) && request.auth.token.email == 'wizzare@gmail.com') ||
-        (('admin' in request.auth.token) && request.auth.token.admin == true) ||
-        (('founder' in request.auth.token) && request.auth.token.founder == true) ||
-        legacyRoleIsAdminOrFounder()
-      );
-    }
-
+    // Claims are set by trusted server administration, never by client profiles.
     function isAdminActor() {
-      return isFounderByEmail() || isFounderOrAdmin();
+      return isSignedIn() && (
+        request.auth.token.get('admin', false) == true ||
+        request.auth.token.get('founder', false) == true
+      );
     }
 
     function validSupportCreate(userId) {
@@ -104,7 +74,12 @@ service cloud.firestore {
       return isSignedIn()
         && (
           (
-            (request.method == "create" || request.method == "update")
+            request.method == "create"
+            && request.resource.data[fieldName] == request.auth.uid
+          )
+          || (
+            request.method == "update"
+            && resource.data[fieldName] == request.auth.uid
             && request.resource.data[fieldName] == request.auth.uid
           )
           || (
@@ -196,6 +171,11 @@ service cloud.firestore {
         "trialLoginCount",
         "trialStatus",
         "trialCompletedAt",
+        "trialEligibilityStatus",
+        "antiAbuseDecision",
+        "antiAbuseMode",
+        "antiAbuseEvaluatedAt",
+        "deviceClaimRecorded",
         "lastSuccessfulLoginAt",
         "quota",
         "limits",
@@ -212,41 +192,121 @@ service cloud.firestore {
       return request.resource.data.keys().hasAny(protectedAccessFields()) == false;
     }
 
+    // ---- BUILD 126 canonical birth protection (candidate) ----
+    // Canonical birth data and server-owned revision metadata are authoritative
+    // on users/{uid}/canonical/birth and are written only by the trusted callable
+    // (Admin SDK bypasses these rules). Client writes to these fields — on any
+    // profile-bearing document path — are denied.
+    function canonicalBirthFields() {
+      return [
+        "birthRevision",
+        "placeOfBirth",
+        "birthDate",
+        "dateOfBirth",
+        "birthTime",
+        "timeOfBirth",
+        "birthCity",
+        "birthPlace",
+        "cityOfBirth",
+        "birthCountry",
+        "latitude",
+        "longitude",
+        "timezone",
+        "canonicalBirthRevision",
+        "canonicalBirthEpoch",
+        "canonicalBirthSchemaVersion",
+        "canonicalBirthUpdatedAt",
+        "canonicalBirthOperationId"
+      ];
+    }
+
+    function createsCanonicalBirthFields() {
+      return request.resource.data.keys().hasAny(canonicalBirthFields());
+    }
+
+    function changesCanonicalBirthFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(canonicalBirthFields());
+    }
+
+    // The nested users/{uid}.profile map also carries birth aliases
+    // (blueprintInput, timezone, birthCity, latitude, longitude). A legacy
+    // client could otherwise reach canonical birth data through this path.
+    function nestedProfileBirthChanged(field, fallback) {
+      return resource.data.get('profile', {}).get(field, fallback)
+        != request.resource.data.get('profile', {}).get(field, fallback);
+    }
+
+    function createsNestedProfileBirth() {
+      return request.resource.data.get("profile", {}).keys().hasAny(canonicalBirthFields().concat(["blueprintInput"]));
+    }
+
+    function changesBlueprintInput() {
+      return nestedProfileBirthChanged('blueprintInput', {})
+        || nestedProfileBirthChanged('timezone', null)
+        || nestedProfileBirthChanged('birthCity', null)
+        || nestedProfileBirthChanged('latitude', null)
+        || nestedProfileBirthChanged('longitude', null)
+        || nestedProfileBirthChanged('birthDate', null)
+        || nestedProfileBirthChanged('dateOfBirth', null)
+        || nestedProfileBirthChanged('birthTime', null)
+        || nestedProfileBirthChanged('timeOfBirth', null)
+        || nestedProfileBirthChanged('birthPlace', null)
+        || nestedProfileBirthChanged('placeOfBirth', null)
+        || nestedProfileBirthChanged('cityOfBirth', null)
+        || nestedProfileBirthChanged('birthCountry', null)
+        || nestedProfileBirthChanged('birthRevision', null)
+        || nestedProfileBirthChanged('canonicalBirthRevision', null)
+        || nestedProfileBirthChanged('canonicalBirthEpoch', null)
+        || nestedProfileBirthChanged('canonicalBirthSchemaVersion', null)
+        || nestedProfileBirthChanged('canonicalBirthUpdatedAt', null)
+        || nestedProfileBirthChanged('canonicalBirthOperationId', null);
+    }
+
     match /app_config/{document} {
       allow read: if document == "version";
-      allow write: if isFounderByEmail() || isFounderOrAdmin();
+      allow write: if false;
     }
 
     // Broadcast metadata is admin-owned; user delivery is fanned out into
     // the existing users/{uid}/communications path and follows its rules.
     match /broadcasts/{broadcastId} {
-      allow read: if isAdminActor();
-      allow create: if isAdminActor()
-        && request.resource.data.id == broadcastId
-        && request.resource.data.adminUid == request.auth.uid
-        && request.resource.data.targetGroups is list;
+      allow read, create: if false;
       allow update, delete: if false;
     }
 
     // USERS COLLECTION
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
-      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
-      allow delete: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && doesNotCreateProtectedAccessFields()
+        && !createsCanonicalBirthFields()
+        && !createsNestedProfileBirth();
+      allow update: if isOwner(userId)
+        && doesNotChangeProtectedAccessFields()
+        && !changesCanonicalBirthFields()
+        && !changesBlueprintInput();
+      allow delete: if false;
 
-      // Founder can list and get ALL users
-      allow list: if isFounderByEmail() || isFounderOrAdmin();
-      allow get: if isFounderByEmail() || isFounderOrAdmin();
-      allow create, update, delete: if isFounderByEmail() || isFounderOrAdmin();
+      // Server-owned canonical birth record. Readable by the owner, written only
+      // by the trusted callable (Admin SDK).
+      match /canonical/{document} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      // Server-owned idempotency receipts. Readable by the owner, written only
+      // by the trusted callable (Admin SDK).
+      match /birthOperations/{operationId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
 
       match /communications/{messageId} {
-        allow read: if isOwner(userId) || isAdminActor();
-        allow create: if validSupportCreate(userId) || validUserReply(userId) || validAdminReply(userId) || validSystemBirthday(userId);
+        allow read: if isOwner(userId);
+        allow create: if validSupportCreate(userId) || validUserReply(userId) || validSystemBirthday(userId);
         allow update: if (isOwner(userId)
           && immutableThreadFields()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isRead', 'isArchived', 'isDismissed', 'updatedAt', 'deliveryAttempts', 'lastDeliveredAt']))
-          || (isAdminActor() && immutableThreadFields());
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'isRead', 'isArchived', 'isDismissed', 'updatedAt', 'deliveryAttempts', 'lastDeliveredAt']));
         allow delete: if false;
       }
 
@@ -294,7 +354,7 @@ service cloud.firestore {
       }
 
       match /fcmTokens/{tokenId} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
 
       // Unknown or server-owned nested user paths are denied by default.
@@ -304,98 +364,112 @@ service cloud.firestore {
       }
     }
 
-    // Collection-group reads require an explicit recursive match in Rules v2.
-    // Keep this path admin-only; user reads remain restricted to their own
-    // users/{uid}/communications subcollection above.
+    // Cross-account collection-group reads stay disabled until a trusted
+    // administrative access boundary is approved.
     match /{path=**}/communications/{messageId} {
-      allow read: if isAdminActor();
+      allow read: if false;
     }
 
     match /profiles/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
-      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
-      allow delete: if isOwner(userId);
-      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+      allow create: if isOwner(userId)
+        && doesNotCreateProtectedAccessFields()
+        && !createsCanonicalBirthFields()
+        && !createsNestedProfileBirth();
+      allow update: if isOwner(userId)
+        && doesNotChangeProtectedAccessFields()
+        && !changesCanonicalBirthFields()
+        && !changesBlueprintInput();
+      allow delete: if false;
     }
 
     match /userProfiles/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && doesNotCreateProtectedAccessFields();
-      allow update: if isOwner(userId) && doesNotChangeProtectedAccessFields();
-      allow delete: if isOwner(userId);
-      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+      allow create: if isOwner(userId)
+        && doesNotCreateProtectedAccessFields()
+        && !createsCanonicalBirthFields()
+        && !createsNestedProfileBirth();
+      allow update: if isOwner(userId)
+        && doesNotChangeProtectedAccessFields()
+        && !changesCanonicalBirthFields()
+        && !changesBlueprintInput();
+      allow delete: if false;
     }
 
     match /dailyStates/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /journeyDailyRecords/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /entries/{dateKey} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /activities/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /blueprints/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read: if isOwner(userId);
+      // Client writes are restricted to status metadata. Birth inputs, revision
+      // provenance, and computed results require a reviewed trusted pathway.
+      allow create: if isOwner(userId) && request.resource.data.keys().hasOnly(["status", "error", "updatedAt"]);
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["status", "error", "updatedAt"]);
+      allow delete: if false;
     }
 
     match /wellnessMappings/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
     }
 
     match /wellnessAssessments/{docId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     match /healingProgress/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /journals/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /meditations/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /audioHealing/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
@@ -404,55 +478,55 @@ service cloud.firestore {
     }
 
     match /journalEntries/{docId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     match /meditationEntries/{docId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     match /audioHealingEntries/{docId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     // Path is keyed by {userId}: ownership must be the document path, not a
     // body `uid` field. `uidMatches("uid")` here let user B write coll/{A}
     // with `{ uid: B }` (DEFECT-2A-2). Owner writes already target coll/{authUid}.
     match /healingMemory/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
     }
 
     match /journeyData/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
     }
 
     match /weeklyReports/{reportId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     match /weeklyReflections/{docId} {
-      allow read, write: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if uidMatches("uid");
     }
 
     match /dailyGuidance/{docId} {
       allow create, update: if (dailyGuidanceDocBelongsToUser(docId)
-        && request.resource.data.uid == request.auth.uid) || isFounderByEmail() || isFounderOrAdmin();
+        && request.resource.data.uid == request.auth.uid);
       allow read, delete: if (dailyGuidanceDocBelongsToUser(docId)
-        && (resource == null || resource.data.uid == request.auth.uid)) || isFounderByEmail() || isFounderOrAdmin();
-      allow list: if (isSignedIn() && resource.data.uid == request.auth.uid) || isFounderByEmail() || isFounderOrAdmin();
+        && (resource == null || resource.data.uid == request.auth.uid));
+      allow list: if (isSignedIn() && resource.data.uid == request.auth.uid);
     }
 
     // Path is keyed by {userId}: see healingMemory/journeyData note (DEFECT-2A-2).
     match /notifications/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /{document=**} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
     }
 
     match /adminAuditLogs/{docId} {
-      allow read, write: if isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if false;
     }
 
     match /analytics/{docId} {
@@ -463,17 +537,16 @@ service cloud.firestore {
         ) || (
           isSignedIn() && (!("uid" in request.resource.data) || request.resource.data.uid == request.auth.uid || request.resource.data.uid == null)
         );
-      allow read, update, delete: if isFounderByEmail() || isFounderOrAdmin();
+      allow read, update, delete: if false;
     }
 
-    // PRODUCTION-PRESERVED RULE (deployed 2026-08-01, ruleset 28759450):
-    // user_activity is actively written by lib/analytics/activityMonitor.ts
-    // (ActivityTracker mounted in app/layout.tsx). Preserved verbatim during
-    // reconciliation so deploying repo rules cannot break live writers.
+    // user_activity is actively written by lib/analytics/activityMonitor.ts.
+    // Updates must preserve the existing authenticated owner.
     match /user_activity/{docId} {
-      allow create, update: if isSignedIn()
+      allow create: if isSignedIn()
         && request.resource.data.uid == request.auth.uid;
-      allow read, delete: if uidMatches("uid") || isFounderByEmail() || isFounderOrAdmin();
+      allow update: if uidMatches("uid");
+      allow read, delete: if uidMatches("uid");
     }
 
     match /telemetry_events/{docId} {
@@ -500,23 +573,23 @@ service cloud.firestore {
           request.resource.data.keys().hasOnly(["eventType", "uidHash", "appVersion", "versionCode", "platform", "timestamp", "correlationId", "metadata"])
         );
 
-      // Founder/Admin read access
-      allow read, update, delete: if isFounderOrAdmin();
+      // Administrative reads require a separately approved boundary.
+      allow read, update, delete: if false;
     }
 
     // PUBLIC CONFIG (Version Checker, etc)
     match /app_config/{docId} {
       allow read: if true;
-      allow write: if isFounderOrAdmin();
+      allow write: if false;
     }
 
     // TESTER BADGE REGISTRY — replaces the previous hardcoded client-bundled
     // founder/tester array. Keyed by uid. A user may read only their own
-    // record; admins may read any record (for the admin activity dashboard).
+    // record; cross-account reads require an approved administrative boundary.
     // No client writes — records are provisioned only via the one-time
     // migration script (Admin SDK, bypasses these rules) or a trusted backend.
     match /testerBadgeRegistry/{uid} {
-      allow read: if isOwner(uid) || isAdminActor();
+      allow read: if isOwner(uid);
       allow write: if false;
     }
 
@@ -525,16 +598,31 @@ service cloud.firestore {
     // No client writes — records are provisioned only via the one-time
     // migration script (Admin SDK, bypasses these rules) or a trusted backend.
     match /adminRoleRegistry/{uid} {
-      allow read: if isOwner(uid) || isAdminActor();
+      allow read: if isOwner(uid);
       allow write: if false;
     }
 
     match /journalMemoryCandidates/{userId} {
-      allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+      allow read, write: if isOwner(userId);
 
       match /candidates/{candidateId} {
-        allow read, write: if isOwner(userId) || isFounderByEmail() || isFounderOrAdmin();
+        allow read, write: if isOwner(userId);
       }
+    }
+
+    // ---- BUILD 122: Server-only Anti-Multi Account & Free Tier Abuse Ledger ----
+    // Written and queried strictly via Admin SDK in trusted server bootstrap endpoints.
+    // Never client-readable or client-writable, and never wiped by client account deletion.
+    match /antiAbuseDeviceClaims/{claimId} {
+      allow read, write: if false;
+    }
+
+    match /antiAbuseBirthClaims/{hmacId} {
+      allow read, write: if false;
+    }
+
+    match /antiAbuseAuditLogs/{logId} {
+      allow read, write: if false;
     }
   }
 }
