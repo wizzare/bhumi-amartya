@@ -938,7 +938,7 @@ export function DashboardClient() {
 
       <DashboardReviewPrompt
         profile={profile}
-        dashboardReady={Boolean(dailyGuidance) && !dgLoading && !dgError}
+        dashboardReady={!loading && Boolean(auth?.userProfile?.setupCompleted)}
         blockedByModal={Boolean(safetyState?.isSafetyMode)}
       />
 
