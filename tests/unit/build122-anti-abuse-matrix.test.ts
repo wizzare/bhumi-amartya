@@ -435,4 +435,108 @@ test("Anti-Abuse 20-Case Matrix & Security Verification", async () => {
     assert.equal(parsedSpoofed.valid, true);
     assert.equal(parsedSpoofed.parsed.birthCoreHmac, null);
   }
+
+  // 21. Privacy: raw firstUid never written on new claims; firstUidHash stored instead; legacy firstUid read still works
+  {
+    const devHash = computeDeviceIdentityHash("privacy-device-hash-only");
+    const db = createTransactionalFirestoreMock();
+    const res = await runServerTrialBootstrapTransaction({
+      db: db as any,
+      uid: "privacy-uid-1",
+      signals: parseBootstrapSignalsBody({ platform: "android", deviceIdHash: devHash }).parsed,
+      flagOverrides: enforceFlags,
+      hmacSecretOverride: secret,
+    });
+    assert.equal(res.outcome, "PROVISIONED");
+    const dump = db._dump();
+    const claimEntry = Object.entries(dump).find(([k]) => k.startsWith("antiAbuseDeviceClaims/"));
+    assert.ok(claimEntry);
+    assert.equal((claimEntry[1] as Record<string, unknown>).firstUid, undefined);
+    assert.equal(typeof (claimEntry[1] as Record<string, unknown>).firstUidHash, "string");
+    assert.ok(typeof (claimEntry[1] as Record<string, unknown>).retainUntil === "string");
+
+    // Legacy record with raw firstUid (no firstUidHash) still allows same user retry/recovery
+    const legacyAllow = evaluateTrialEligibility({
+      user: { uid: "legacy-owner-uid", hasHigherEntitlement: false, hasExistingTrial: false },
+      signals: { platform: "android", deviceIdHash: devHash },
+      existingDeviceClaim: {
+        claimKey: `dev:${devHash}`,
+        firstUid: "legacy-owner-uid",
+        firstClaimedAt: "2026-09-01T00:00:00.000Z",
+        lastSeenAt: "2026-09-01T00:00:00.000Z",
+        claimCount: 1,
+      },
+      uidHash: "unrelated-hash",
+      flags: enforceFlags,
+    });
+    assert.equal(legacyAllow.allowFreeTrialProvision, true);
+  }
+
+  // 22. Single-use nonce replay guard prevents reusing one verified Play Integrity attestation
+  {
+    const db = createTransactionalFirestoreMock();
+    const sharedNonceHash = "b".repeat(64);
+    const strictPiFlags = { ...enforceFlags, requirePlayIntegrity: true };
+
+    const first = await runServerTrialBootstrapTransaction({
+      db: db as any,
+      uid: "nonce-uid-1",
+      signals: {
+        ...parseBootstrapSignalsBody({
+          platform: "android",
+          deviceIdHash: computeDeviceIdentityHash("nonce-dev-1"),
+        }).parsed,
+        playIntegrityVerified: true,
+        nonceHash: sharedNonceHash,
+      },
+      flagOverrides: strictPiFlags,
+      hmacSecretOverride: secret,
+    });
+    assert.equal(first.outcome, "PROVISIONED");
+    assert.ok(db._dump()[`antiAbuseUsedNonces/${sharedNonceHash}`]);
+
+    const replayed = await runServerTrialBootstrapTransaction({
+      db: db as any,
+      uid: "nonce-uid-2",
+      signals: {
+        ...parseBootstrapSignalsBody({
+          platform: "android",
+          deviceIdHash: computeDeviceIdentityHash("nonce-dev-2"),
+        }).parsed,
+        playIntegrityVerified: true,
+        nonceHash: sharedNonceHash,
+      },
+      flagOverrides: strictPiFlags,
+      hmacSecretOverride: secret,
+    });
+    assert.equal(replayed.ok, false);
+    assert.equal(replayed.outcome, "VERIFICATION_REQUIRED");
+  }
+
+  // 23. Android plugin & Firestore Rules & Privacy Policy / Settings deletion reconciliation checks
+  {
+    const pluginJava = fs.readFileSync(
+      path.join(process.cwd(), "android/app/src/main/java/com/bhumiamartya/app/DeviceIntegrityPlugin.java"),
+      "utf8",
+    );
+    assert.ok(pluginJava.includes("AppSet.getClient"));
+    assert.ok(pluginJava.includes("requestIntegrityToken"));
+    assert.ok(pluginJava.includes("IntegrityManagerFactory.create"));
+    assert.ok(!pluginJava.includes("READ_PHONE_STATE"));
+
+    const rules = fs.readFileSync(path.join(process.cwd(), "firestore.rules"), "utf8");
+    assert.ok(rules.includes("match /antiAbuseUsedNonces/{nonceHash}"));
+
+    const privacy = fs.readFileSync(path.join(process.cwd(), "app/kebijakan-privasi/page.tsx"), "utf8");
+    assert.ok(privacy.includes("pseudonim") && privacy.includes("bukan data anonim"));
+    assert.ok(privacy.includes("180 hari") || privacy.includes("180 days"));
+    assert.ok(privacy.includes("App Set ID"));
+    assert.ok(privacy.includes("Play Integrity"));
+
+    const settings = fs.readFileSync(path.join(process.cwd(), "app/settings/page.tsx"), "utf8");
+    assert.ok(settings.includes("reconcileAntiAbuseAccountDeletion"));
+
+    const bantuan = fs.readFileSync(path.join(process.cwd(), "app/bantuan/page.tsx"), "utf8");
+    assert.ok(bantuan.includes('id="verifikasi-perangkat"'));
+  }
 });

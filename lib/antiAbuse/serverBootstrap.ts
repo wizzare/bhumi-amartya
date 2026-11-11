@@ -51,6 +51,9 @@ export type ExtendedTrialBootstrapResponse = {
 export type ParsedBootstrapRequestSignals = EligibilitySignalsInput & {
   birthInput: NormalizedBirthInput | null;
   legacyEmptyBody: boolean;
+  challengeToken?: string | null;
+  integrityToken?: string | null;
+  nonceHash?: string | null;
 };
 
 function asCleanHash(value: unknown, maxLen = 128): string | null {
@@ -89,6 +92,9 @@ export function parseBootstrapSignalsBody(
         platform: "unknown",
         birthInput: null,
         legacyEmptyBody: false,
+
+
+      nonceHash: null,
       },
     };
   }
@@ -146,6 +152,9 @@ export function parseBootstrapSignalsBody(
         ? { birthDate, birthTime, latitude, longitude, birthCity, birthCountry, fullName }
         : null,
       legacyEmptyBody: false,
+
+
+      nonceHash: null,
     },
   };
 }
@@ -215,11 +224,23 @@ export async function runServerTrialBootstrapTransaction(params: {
     : null;
   const birthClaimRef = birthCoreHmac ? db.doc(`antiAbuseBirthClaims/${birthCoreHmac}`) : null;
   const auditRef = db.collection("antiAbuseAuditLogs").doc();
+  const usedNonceRef = signals.nonceHash ? db.doc(`antiAbuseUsedNonces/${signals.nonceHash}`) : null;
+  const retainUntil180d = new Date(now.getTime() + 180 * 86400_000).toISOString();
+  const retainUntil90d = new Date(now.getTime() + 90 * 86400_000).toISOString();
+  const retainUntil7d = new Date(now.getTime() + 7 * 86400_000).toISOString();
 
   return db.runTransaction(async (transaction) => {
     const userSnap = await transaction.get(userRef);
     const deviceSnap = deviceClaimRef ? await transaction.get(deviceClaimRef) : null;
     const birthSnap = birthClaimRef ? await transaction.get(birthClaimRef) : null;
+    const usedNonceSnap = usedNonceRef ? await transaction.get(usedNonceRef) : null;
+
+    let effectiveSignals = evalSignals;
+    if (usedNonceRef && usedNonceSnap?.exists) {
+      effectiveSignals = { ...evalSignals, playIntegrityVerified: false };
+    } else if (usedNonceRef && evalSignals.playIntegrityVerified === true) {
+      transaction.set(usedNonceRef, { uidHash, usedAt: nowIso, retainUntil: retainUntil7d }, { merge: true });
+    }
 
     const data = (userSnap.exists ? userSnap.data() : null) || {};
     const badge = data.badge || data.testerBadge || data.guardianBadge;
@@ -257,7 +278,7 @@ export async function runServerTrialBootstrapTransaction(params: {
         hasExistingTrial,
         isLegacyVc121User: isLegacyVc121UserData(data, Boolean(preliminaryKey)),
       },
-      signals: { ...evalSignals, birthCoreHmac },
+      signals: { ...effectiveSignals, birthCoreHmac },
       existingDeviceClaim,
       existingBirthClaim,
       uidHash,
@@ -280,9 +301,10 @@ export async function runServerTrialBootstrapTransaction(params: {
           deviceClaimRef,
           {
             claimKey: preliminaryKey,
-            firstUid: uid,
+            firstUidHash: uidHash,
             firstClaimedAt: String(data.trialStartedAt || nowIso),
             lastSeenAt: nowIso,
+          retainUntil: retainUntil180d,
             claimCount: 1,
             platform: signals.platform || "unknown",
             appVersionCode: signals.appVersionCode ?? null,
@@ -325,6 +347,7 @@ export async function runServerTrialBootstrapTransaction(params: {
           deviceClaimRef,
           {
             lastSeenAt: nowIso,
+          retainUntil: retainUntil180d,
             claimCount: (existingDeviceClaim.claimCount || 1) + 1,
             uidHistory: nextHistory,
           },
@@ -343,6 +366,7 @@ export async function runServerTrialBootstrapTransaction(params: {
         platform: signals.platform || "unknown",
         appVersionCode: signals.appVersionCode ?? null,
         createdAt: nowIso,
+        retainUntil: retainUntil90d,
       });
 
       const outcome: ExtendedTrialBootstrapOutcome =
@@ -398,9 +422,10 @@ export async function runServerTrialBootstrapTransaction(params: {
         deviceClaimRef,
         {
           claimKey: preliminaryKey,
-          firstUid: existingDeviceClaim?.firstUid || uid,
+          firstUidHash: existingDeviceClaim?.firstUidHash || uidHash,
           firstClaimedAt: existingDeviceClaim?.firstClaimedAt || nowIso,
           lastSeenAt: nowIso,
+          retainUntil: retainUntil180d,
           claimCount: (existingDeviceClaim?.claimCount || 0) + 1,
           platform: signals.platform || "unknown",
           appVersionCode: signals.appVersionCode ?? null,
@@ -424,6 +449,7 @@ export async function runServerTrialBootstrapTransaction(params: {
           uidHashes: nextUidHashes,
           firstSeenAt: existingBirthClaim?.firstSeenAt || nowIso,
           lastSeenAt: nowIso,
+          retainUntil: retainUntil180d,
         },
         { merge: true },
       );
@@ -439,6 +465,7 @@ export async function runServerTrialBootstrapTransaction(params: {
       mode: decision.mode,
       platform: signals.platform || "unknown",
       appVersionCode: signals.appVersionCode ?? null,
+      retainUntil: retainUntil90d,
       createdAt: nowIso,
     });
 

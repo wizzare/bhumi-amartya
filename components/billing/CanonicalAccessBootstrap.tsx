@@ -11,7 +11,7 @@ export function CanonicalAccessBootstrap() {
 
   useEffect(() => {
     if (!user || !ready || !auth?.refreshUserProfile) return;
-    void bootstrapCanonicalAccess(user.uid, user.getIdToken.bind(user), auth.refreshUserProfile).then((result) => {
+    void bootstrapCanonicalAccess(user.uid, user.getIdToken.bind(user), async () => { await auth.refreshUserProfile(); }).then((result) => {
       if (!result.ok && result.outcome !== "RETRYABLE_ERROR") console.warn("[ACCESS BOOTSTRAP] Canonical access was not changed:", result.outcome);
     });
   }, [auth?.refreshUserProfile, ready, user]);

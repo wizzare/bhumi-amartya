@@ -52,11 +52,17 @@ export type BootstrapSignals = {
   appSetIdHash: string | null;
   installIdHash: string | null;
   birthCoreHmac: string | null;
+  challengeToken?: string | null;
+  integrityToken?: string | null;
+  nonceHash?: string | null;
   playIntegrityVerified: boolean | null;
   appCheckVerified: boolean | null;
 };
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+const DEVICE_CLAIM_RETENTION_DAYS = 180;
+const AUDIT_LOG_RETENTION_DAYS = 90;
+const NONCE_RETENTION_DAYS = 7;
 const SOURCE = "server_access_bootstrap";
 
 function parseBoolEnv(value: string | undefined, fallback: boolean): boolean {
@@ -128,6 +134,13 @@ function asCleanHash(value: unknown): string | null {
   return /^[a-f0-9-]{16,128}$/i.test(trimmed) ? trimmed : null;
 }
 
+function asCleanToken(value: unknown, maxLen = 8192): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > maxLen) return null;
+  return trimmed;
+}
+
 export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | undefined): {
   valid: boolean;
   signals: BootstrapSignals;
@@ -139,6 +152,9 @@ export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | 
     appSetIdHash: null,
     installIdHash: null,
     birthCoreHmac: null,
+    challengeToken: null,
+    integrityToken: null,
+    nonceHash: null,
     playIntegrityVerified: null,
     appCheckVerified: appCheckHeader ? null : false,
   };
@@ -148,7 +164,15 @@ export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | 
   if (typeof rawBody !== "object" || Array.isArray(rawBody)) {
     return { valid: false, signals: emptySignals };
   }
-  const ALLOWED_KEYS = new Set(["platform", "appVersionCode", "deviceIdHash", "appSetIdHash", "installIdHash"]);
+  const ALLOWED_KEYS = new Set([
+    "platform",
+    "appVersionCode",
+    "deviceIdHash",
+    "appSetIdHash",
+    "installIdHash",
+    "challengeToken",
+    "integrityToken",
+  ]);
   const obj = rawBody as Record<string, unknown>;
   if (Object.keys(obj).length === 0) {
     return { valid: true, signals: emptySignals };
@@ -172,6 +196,9 @@ export function parseVerifierSignals(rawBody: unknown, appCheckHeader: string | 
       installIdHash: asCleanHash(obj.installIdHash),
       // Ignore client-supplied HMACs; birthCoreHmac must only be computed server-side.
       birthCoreHmac: null,
+      challengeToken: asCleanToken(obj.challengeToken, 1024),
+      integrityToken: asCleanToken(obj.integrityToken, 8192),
+      nonceHash: null,
       playIntegrityVerified: null,
       appCheckVerified: appCheckHeader ? null : false,
     },
@@ -207,12 +234,18 @@ export async function runVerifierTrialBootstrap(
 ): Promise<{ statusCode: number; body: TrialBootstrapResponse }> {
   const now = new Date();
   const nowIso = now.toISOString();
+  const deviceRetainUntil = new Date(now.getTime() + DEVICE_CLAIM_RETENTION_DAYS * 86400_000).toISOString();
+  const auditRetainUntil = new Date(now.getTime() + AUDIT_LOG_RETENTION_DAYS * 86400_000).toISOString();
+  const nonceRetainUntil = new Date(now.getTime() + NONCE_RETENTION_DAYS * 86400_000).toISOString();
   const configSnap = await db.doc("app_config/antiAbuse").get().catch(() => null);
   const flags = resolveVerifierAntiAbuseFlags(configSnap?.exists ? configSnap.data() || null : null);
 
   const primaryKey = selectPrimaryKey(signals);
   const deviceClaimRef = primaryKey
     ? db.doc(`antiAbuseDeviceClaims/${sha256Hex(`bhumi-claim-doc-v1:${primaryKey}`)}`)
+    : null;
+  const usedNonceRef = signals.nonceHash
+    ? db.doc(`antiAbuseUsedNonces/${signals.nonceHash}`)
     : null;
   const userRef = db.doc(`users/${uid}`);
   const auditRef = db.collection("antiAbuseAuditLogs").doc();
@@ -222,7 +255,25 @@ export async function runVerifierTrialBootstrap(
   const result = await db.runTransaction<{ statusCode: number; body: TrialBootstrapResponse }>(async (transaction) => {
     const snapshot = await transaction.get(userRef);
     const deviceSnap = deviceClaimRef ? await transaction.get(deviceClaimRef) : null;
+    const usedNonceSnap = usedNonceRef ? await transaction.get(usedNonceRef) : null;
     const data = snapshot.data() || {};
+
+    let playIntegrityVerified = signals.playIntegrityVerified;
+    let nonceReplayed = false;
+    if (usedNonceRef && usedNonceSnap?.exists) {
+      playIntegrityVerified = false;
+      nonceReplayed = true;
+    } else if (usedNonceRef && playIntegrityVerified === true) {
+      transaction.set(
+        usedNonceRef,
+        {
+          uidHash,
+          usedAt: nowIso,
+          retainUntil: nonceRetainUntil,
+        },
+        { merge: true },
+      );
+    }
 
     if (
       [data.badge, data.testerBadge, data.guardianBadge].some((value) =>
@@ -272,12 +323,15 @@ export async function runVerifierTrialBootstrap(
           deviceClaimRef,
           {
             claimKey: primaryKey,
-            firstUid: uid,
+            firstUidHash: uidHash,
             firstClaimedAt: String(data.trialStartedAt || nowIso),
             lastSeenAt: nowIso,
+            retainUntil: deviceRetainUntil,
             claimCount: 1,
             platform: signals.platform,
             appVersionCode: signals.appVersionCode,
+            playIntegrityVerified: Boolean(playIntegrityVerified),
+            appCheckVerified: Boolean(signals.appCheckVerified),
             uidHistory: [uidHash],
           },
           { merge: true },
@@ -297,11 +351,20 @@ export async function runVerifierTrialBootstrap(
     }
 
     const existingDeviceClaim = deviceSnap?.exists ? deviceSnap.data() || null : null;
-    const claimedByOtherUid = Boolean(existingDeviceClaim && existingDeviceClaim.firstUid !== uid);
+    const sameClaimOwner = existingDeviceClaim
+      ? typeof existingDeviceClaim.firstUidHash === "string"
+        ? existingDeviceClaim.firstUidHash === uidHash
+        : existingDeviceClaim.firstUid === uid
+      : false;
+    const claimedByOtherUid = Boolean(existingDeviceClaim && !sameClaimOwner);
     const reasons: string[] = [];
 
     if (flags.mode !== "off") {
-      if (flags.requirePlayIntegrity && signals.platform === "android" && signals.playIntegrityVerified !== true) {
+      if (nonceReplayed) {
+        reasons.push("INTEGRITY_NONCE_REPLAYED");
+      }
+
+      if (flags.requirePlayIntegrity && signals.platform === "android" && playIntegrityVerified !== true) {
         reasons.push("PLAY_INTEGRITY_FAILED");
         transaction.set(
           userRef,
@@ -322,7 +385,48 @@ export async function runVerifierTrialBootstrap(
           reasons,
           mode: flags.mode,
           platform: signals.platform,
+          playIntegrityVerified: Boolean(playIntegrityVerified),
+          appCheckVerified: Boolean(signals.appCheckVerified),
           createdAt: nowIso,
+          retainUntil: auditRetainUntil,
+        });
+        return {
+          statusCode: 200,
+          body: {
+            ok: false,
+            outcome: "VERIFICATION_REQUIRED",
+            eligibilityStatus: "VERIFICATION_REQUIRED",
+            reasons,
+            mode: flags.mode,
+          },
+        };
+      }
+
+      if (flags.requireAppCheck && signals.appCheckVerified !== true) {
+        reasons.push("APP_CHECK_FAILED");
+        transaction.set(
+          userRef,
+          {
+            trialEligibilityStatus: "VERIFICATION_REQUIRED",
+            antiAbuseDecision: reasons.join(","),
+            antiAbuseMode: flags.mode,
+            antiAbuseEvaluatedAt: nowIso,
+            updatedBy: SOURCE,
+            updatedAt: nowIso,
+          },
+          { merge: true },
+        );
+        transaction.set(auditRef, {
+          uidHash,
+          deviceClaimId: deviceClaimRef ? deviceClaimRef.id : null,
+          status: "VERIFICATION_REQUIRED",
+          reasons,
+          mode: flags.mode,
+          platform: signals.platform,
+          playIntegrityVerified: Boolean(playIntegrityVerified),
+          appCheckVerified: Boolean(signals.appCheckVerified),
+          createdAt: nowIso,
+          retainUntil: auditRetainUntil,
         });
         return {
           statusCode: 200,
@@ -359,6 +463,7 @@ export async function runVerifierTrialBootstrap(
               deviceClaimRef,
               {
                 lastSeenAt: nowIso,
+                retainUntil: deviceRetainUntil,
                 claimCount: Number(existingDeviceClaim.claimCount || 1) + 1,
                 uidHistory: history,
               },
@@ -372,7 +477,10 @@ export async function runVerifierTrialBootstrap(
             reasons,
             mode: flags.mode,
             platform: signals.platform,
+            playIntegrityVerified: Boolean(playIntegrityVerified),
+            appCheckVerified: Boolean(signals.appCheckVerified),
             createdAt: nowIso,
+            retainUntil: auditRetainUntil,
           });
           return {
             statusCode: 200,
@@ -399,6 +507,7 @@ export async function runVerifierTrialBootstrap(
             mode: flags.mode,
             platform: signals.platform,
             createdAt: nowIso,
+            retainUntil: auditRetainUntil,
           });
           return {
             statusCode: 200,
@@ -448,12 +557,15 @@ export async function runVerifierTrialBootstrap(
         deviceClaimRef,
         {
           claimKey: primaryKey,
-          firstUid: existingDeviceClaim?.firstUid || uid,
+          firstUidHash: existingDeviceClaim?.firstUidHash || uidHash,
           firstClaimedAt: existingDeviceClaim?.firstClaimedAt || nowIso,
           lastSeenAt: nowIso,
+          retainUntil: deviceRetainUntil,
           claimCount: Number(existingDeviceClaim?.claimCount || 0) + 1,
           platform: signals.platform,
           appVersionCode: signals.appVersionCode,
+          playIntegrityVerified: Boolean(playIntegrityVerified),
+          appCheckVerified: Boolean(signals.appCheckVerified),
           uidHistory: [uidHash],
         },
         { merge: true },
@@ -469,7 +581,10 @@ export async function runVerifierTrialBootstrap(
       reasons: reasons.length ? reasons : ["FIRST_DEVICE_CLAIM"],
       mode: flags.mode,
       platform: signals.platform,
+      playIntegrityVerified: Boolean(playIntegrityVerified),
+      appCheckVerified: Boolean(signals.appCheckVerified),
       createdAt: nowIso,
+      retainUntil: auditRetainUntil,
     });
 
     return {

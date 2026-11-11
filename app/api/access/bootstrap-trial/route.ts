@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertQaOperationAllowed } from '@/lib/config/qaRuntime';
 import { getApps, initializeApp } from "firebase-admin/app";
+import { getAppCheck } from "firebase-admin/app-check";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import {
@@ -8,6 +9,12 @@ import {
   parseBootstrapSignalsBody,
   runServerTrialBootstrapTransaction,
 } from "@/lib/antiAbuse/serverBootstrap";
+import { resolveHmacSecret } from "@/lib/antiAbuse/birthFingerprint";
+import {
+  decodeAndVerifyPlayIntegrityToken,
+  verifyAppCheckHeaderToken,
+  verifyIntegrityChallengeToken,
+} from "@/services/billing-verifier/lib/playIntegrity";
 
 // Canonical 7-day idempotency markers verified by security suite:
 // outcome: "ALREADY_PRESENT" when data.trialStartedAt && data.trialEndsAt;
@@ -133,6 +140,31 @@ export async function POST(request: Request) {
     const uid = authResult.uid;
     initAdminForRoute();
     const db = getFirestore();
+
+    if (appCheckToken) {
+      parsedSignals.parsed.appCheckVerified = await verifyAppCheckHeaderToken(appCheckToken, (t) =>
+        getAppCheck().verifyToken(t),
+      );
+    }
+
+    if (parsedSignals.parsed.challengeToken && parsedSignals.parsed.integrityToken) {
+      try {
+        const { secret } = resolveHmacSecret();
+        const ch = verifyIntegrityChallengeToken(parsedSignals.parsed.challengeToken, uid, secret);
+        if (ch.valid) {
+          parsedSignals.parsed.nonceHash = ch.nonceHash;
+          const pi = await decodeAndVerifyPlayIntegrityToken({
+            integrityToken: parsedSignals.parsed.integrityToken,
+            expectedNonce: ch.nonce,
+          });
+          parsedSignals.parsed.playIntegrityVerified = pi.verified;
+        } else {
+          parsedSignals.parsed.playIntegrityVerified = false;
+        }
+      } catch {
+        parsedSignals.parsed.playIntegrityVerified = false;
+      }
+    }
 
     const result = await runServerTrialBootstrapTransaction({
       db,

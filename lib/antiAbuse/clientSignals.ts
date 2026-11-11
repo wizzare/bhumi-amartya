@@ -6,6 +6,8 @@ export type ClientAntiAbuseSignals = {
   deviceIdHash: string | null;
   appSetIdHash: string | null;
   installIdHash: string | null;
+  challengeToken?: string | null;
+  integrityToken?: string | null;
 };
 
 type DeviceIntegrityPluginType = {
@@ -15,6 +17,10 @@ type DeviceIntegrityPluginType = {
     appVersionCode?: number | null;
     isEmulator?: boolean;
     installerPackage?: string | null;
+  }>;
+  requestIntegrityToken?(options: { nonce: string; cloudProjectNumber?: number }): Promise<{
+    integrityToken?: string | null;
+    integrityError?: string | null;
   }>;
 };
 
@@ -93,4 +99,24 @@ export async function collectClientAntiAbuseSignals(): Promise<ClientAntiAbuseSi
     appSetIdHash: null,
     installIdHash,
   };
+}
+
+export async function requestNativePlayIntegrityToken(
+  nonce: string,
+): Promise<{ integrityToken: string | null; integrityError: string | null }> {
+  if (!nonce || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") {
+    return { integrityToken: null, integrityError: null };
+  }
+  try {
+    if (typeof DeviceIntegrityPlugin.requestIntegrityToken !== "function") {
+      return { integrityToken: null, integrityError: "PLUGIN_METHOD_UNAVAILABLE" };
+    }
+    const res = await DeviceIntegrityPlugin.requestIntegrityToken({ nonce });
+    return {
+      integrityToken: typeof res?.integrityToken === "string" ? res.integrityToken : null,
+      integrityError: typeof res?.integrityError === "string" ? res.integrityError : null,
+    };
+  } catch {
+    return { integrityToken: null, integrityError: "INTEGRITY_CALL_FAILED" };
+  }
 }

@@ -556,5 +556,11 @@ service cloud.firestore {
     match /antiAbuseAuditLogs/{logId} {
       allow read, write: if false;
     }
+
+    match /antiAbuseUsedNonces/{nonceHash} {
+      allow read, write: if false;
+    }
+      allow read, write: if false;
+    }
   }
 }

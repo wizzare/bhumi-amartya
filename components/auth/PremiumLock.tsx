@@ -131,7 +131,7 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
             ) : null}
             {antiAbuseBanner ? (
               <button
-                onClick={() => router.replace("/bantuan")}
+                onClick={() => router.replace("/bantuan#verifikasi-perangkat")}
                 className="block w-full py-2.5 px-6 border border-[#D8DDD5] text-[#5F6B5E] bg-white rounded-2xl text-xs font-medium hover:bg-[#F7F4EE] transition-all"
               >
                 {antiAbuseBanner.verifyAccountCtaLabel}

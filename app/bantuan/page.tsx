@@ -5,7 +5,7 @@ import { AppNav } from "@/components/navigation/AppNav";
 import { isEnlEdition } from "@/lib/config/edition";
 
 export default function BantuanPage() {
-  const isEn = false;
+  const isEn = isEnlEdition();
   return (
     <main className="min-h-screen bg-[#FCFAF5] px-6 py-16 text-[#4F5E52] pb-32">
       <AppNav />
@@ -32,6 +32,17 @@ export default function BantuanPage() {
             ) : (
               <>Kamu bisa menghapus dan menghitung ulang Blueprint melalui menu Pengaturan &gt; Zona Bahaya.</>
             )}</p>
+          </div>
+
+          <div id="verifikasi-perangkat">
+            <h2 className="text-lg font-semibold text-[#4F5E52]">
+              {isEn ? "Account Verification & Shared Device Support" : "Verifikasi Akun & Bantuan Perangkat Bersama"}
+            </h2>
+            <p className="mt-2">
+              {isEn
+                ? "Each Android device is eligible for one initial Free Trial. If you previously logged in on this device, sign back into your existing Google account or tap Restore Purchases on the Premium page. If you share this device with family or experienced a false-positive block, email hello@wedhaswara.my.id with your account email so our team can review and verify your access."
+                : "Setiap perangkat Android mendapatkan satu masa uji coba gratis awal. Jika sebelumnya kamu sudah pernah masuk di perangkat ini, silakan masuk kembali menggunakan akun Google lamamu atau tekan Pulihkan Pembelian di halaman Premium. Jika kamu berbagi perangkat bersama keluarga atau mengalami kendala verifikasi, hubungi hello@wedhaswara.my.id dari email akunmu untuk verifikasi manual oleh tim kami."}
+            </p>
           </div>
 
           <div className="pt-6 border-t border-[#4F5E52]/10">

@@ -24,6 +24,7 @@ import {
   type UserPlan,
 } from "@/lib/billing/getUserPlanStatus";
 import { getAdminRoleRecord } from "@/lib/billing/adminRoleRegistry";
+import { reconcileAntiAbuseAccountDeletion } from "@/lib/billing/canonicalAccessBootstrap";
 import {
   generateLocalBlueprint,
   type LocalHumanDesign,
@@ -493,6 +494,12 @@ export default function SettingsPage() {
       const user = firebaseAuth.currentUser;
 
       // 1. Delete Firestore Data (Scoped to UID)
+      // 1a. Reconcile anti-abuse privacy ledgers while ID token is still valid (best-effort)
+      if (user) {
+        await reconcileAntiAbuseAccountDeletion((forceRefresh) => user.getIdToken(forceRefresh)).catch(() => false);
+      }
+
+      // 1b. Delete Firestore Data (Scoped to UID)
       const dataDeleted = await storageProvider.deleteUserDataCompletely();
       if (!dataDeleted) {
         throw new Error("account-data-delete-failed");

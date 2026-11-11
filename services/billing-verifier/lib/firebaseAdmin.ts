@@ -1,8 +1,9 @@
 import { cert, getApps, initializeApp, type App, type AppOptions, type Credential } from "firebase-admin/app";
+import { getAppCheck } from "firebase-admin/app-check";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 
-import { assertQaOperationAllowed } from '../../../lib/config/qaRuntime';
+import { assertQaOperationAllowed } from "./qaRuntime";
 
 export const EXPECTED_FIREBASE_PROJECT_ID = "bhumiamartya-fe85c";
 export const BHUMI_ADMIN_APP_NAME = "bhumi-billing-verifier-admin";
@@ -78,3 +79,4 @@ export function resolveBhumiAdminServices(
 
 export const adminAuth = () => resolveBhumiAdminServices(getBhumiAdminApp()).auth;
 export const adminDb = () => resolveBhumiAdminServices(getBhumiAdminApp()).firestore;
+export const adminAppCheck = () => getAppCheck(getBhumiAdminApp());

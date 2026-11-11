@@ -25,7 +25,8 @@ export type EligibilityReasonCode =
 
 export type DeviceClaimRecord = {
   claimKey: string;
-  firstUid: string;
+  firstUid?: string;
+  firstUidHash?: string;
   firstClaimedAt: string;
   lastSeenAt: string;
   claimCount: number;
@@ -212,7 +213,8 @@ export function evaluateTrialEligibility(params: {
   }
 
   // Check if device has already claimed a free trial under another UID
-  if (existingDeviceClaim && existingDeviceClaim.firstUid !== user.uid) {
+  const sameClaimOwner = existingDeviceClaim ? (typeof existingDeviceClaim.firstUidHash === "string" && uidHash ? existingDeviceClaim.firstUidHash === uidHash : existingDeviceClaim.firstUid === user.uid) : false;
+  if (existingDeviceClaim && !sameClaimOwner) {
     reasons.push("DEVICE_CLAIM_EXISTS_OTHER_UID");
     observedRiskFlags.push("DEVICE_MULTI_ACCOUNT_FREE_CLAIM");
 

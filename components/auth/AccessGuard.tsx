@@ -10,6 +10,7 @@ import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { isBuild110LocalQa } from "@/lib/config/localQa";
 import type { UserProfile } from "@/lib/repositories/userRepository";
 import { getAntiAbuseUxCopy } from "@/lib/antiAbuse/eligibilityUx";
+import { retryCanonicalAccessVerification } from "@/lib/billing/canonicalAccessBootstrap";
 
 type AccessGuardProps = {
   children: React.ReactNode;
@@ -212,7 +213,19 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
             </button>
             <button
               type="button"
-              onClick={() => router.replace("/bantuan")}
+              onClick={() => {
+                const u = auth?.user;
+                if (u && typeof u.getIdToken === "function") {
+                  void retryCanonicalAccessVerification(u.uid, (f) => u.getIdToken(f), async () => {
+                    reconciledUidRef.current = null;
+                    setResolveAttempt((attempt) => attempt + 1);
+                  }).then((res) => {
+                    if (!res.ok) router.replace("/bantuan#verifikasi-perangkat");
+                  });
+                } else {
+                  router.replace("/bantuan#verifikasi-perangkat");
+                }
+              }}
               className="w-full rounded-2xl border border-[#D8DDD5] px-5 py-3 text-xs font-semibold text-[#5F6B5E] bg-white transition-colors hover:bg-[#F7F4EE]"
             >
               {antiAbuseBanner.verifyAccountCtaLabel}

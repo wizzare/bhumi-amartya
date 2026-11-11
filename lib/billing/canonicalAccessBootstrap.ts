@@ -1,6 +1,9 @@
 import { Capacitor } from "@capacitor/core";
 import { assertQaOperationAllowed } from '../config/qaRuntime';
-import { collectClientAntiAbuseSignals } from "../antiAbuse/clientSignals";
+import {
+  collectClientAntiAbuseSignals,
+  requestNativePlayIntegrityToken,
+} from "../antiAbuse/clientSignals";
 
 export type TrialBootstrapOutcome =
   | "PROVISIONED"
@@ -25,37 +28,76 @@ export type TrialBootstrapResponse = {
 const inFlight = new Map<string, Promise<TrialBootstrapResponse>>();
 const completeUids = new Set<string>();
 
-export function verifierUrl(): string {
+function resolveVerifierEndpoint(apiPath: string): string {
   assertQaOperationAllowed();
   if (process.env.NEXT_PUBLIC_QA_MODE === 'realQA') {
-    return `${process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL!.replace(/\/+$/, '')}/api/access/bootstrap-trial`;
+    return `${process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL!.replace(/\/+$/, '')}${apiPath}`;
   }
   // 1. Browser Web runtime: always prefer the same-origin Next.js route handler.
   // This eliminates cross-origin preflight/CORS dependencies in local and web environments.
   if (typeof window !== "undefined" && !Capacitor.isNativePlatform()) {
-    return "/api/access/bootstrap-trial";
+    return apiPath;
   }
 
   // 2. Native runtime (Capacitor/Android) or server execution: use canonical remote backend.
   const base = process.env.NEXT_PUBLIC_BILLING_VERIFIER_URL?.trim().replace(/\/+$/, "");
-  if (base) return `${base}/api/access/bootstrap-trial`;
+  if (base) return `${base}${apiPath}`;
 
-  if (typeof window !== "undefined") return "/api/access/bootstrap-trial";
+  if (typeof window !== "undefined") return apiPath;
   throw Object.assign(new Error("BILLING_VERIFIER_URL_MISSING"), { retryable: true });
 }
 
-export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRefresh?: boolean) => Promise<string>, refreshUserProfile: () => Promise<unknown>): Promise<TrialBootstrapResponse> {
+export function verifierUrl(): string {
+  return resolveVerifierEndpoint("/api/access/bootstrap-trial");
+}
+
+export function challengeVerifierUrl(): string {
+  return resolveVerifierEndpoint("/api/access/challenge");
+}
+
+export function deletionReconcileUrl(): string {
+  return resolveVerifierEndpoint("/api/account/reconcile-deletion");
+}
+
+export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRefresh?: boolean) => Promise<string>, refreshUserProfile: () => Promise<void>): Promise<TrialBootstrapResponse> {
   assertQaOperationAllowed();
+  if (!uid) return { ok: false, outcome: "RETRYABLE_ERROR" };
   if (completeUids.has(uid)) return { ok: true, outcome: "ALREADY_PRESENT" };
   const existing = inFlight.get(uid);
   if (existing) return existing;
   const request: Promise<TrialBootstrapResponse> = (async (): Promise<TrialBootstrapResponse> => {
     try {
+      const token = await getIdToken(true);
       const clientSignals = await collectClientAntiAbuseSignals().catch(() => null);
+
+      if (clientSignals && clientSignals.platform === "android") {
+        try {
+          const chRes = await fetch(challengeVerifierUrl(), {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (chRes.ok) {
+            const chBody = await chRes.json() as { ok?: boolean; nonce?: string; challengeToken?: string };
+            if (chBody?.ok && chBody.nonce && chBody.challengeToken) {
+              const pi = await requestNativePlayIntegrityToken(chBody.nonce);
+              if (pi.integrityToken) {
+                clientSignals.challengeToken = chBody.challengeToken;
+                clientSignals.integrityToken = pi.integrityToken;
+              }
+            }
+          }
+        } catch {
+          // Best-effort: fallback to device signals when challenge/Play Integrity is unavailable
+        }
+      }
+
       const response = await fetch(verifierUrl(), {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${await getIdToken(true)}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: clientSignals ? JSON.stringify(clientSignals) : undefined,
@@ -92,4 +134,36 @@ export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRe
   })();
   inFlight.set(uid, request);
   return request;
+}
+
+export async function retryCanonicalAccessVerification(
+  uid: string,
+  getIdToken: (forceRefresh?: boolean) => Promise<string>,
+  refreshUserProfile: () => Promise<void>,
+): Promise<TrialBootstrapResponse> {
+  if (uid) completeUids.delete(uid);
+  return bootstrapCanonicalAccess(uid, getIdToken, refreshUserProfile);
+}
+
+export async function reconcileAntiAbuseAccountDeletion(
+  getIdToken: (forceRefresh?: boolean) => Promise<string>,
+): Promise<boolean> {
+  try {
+    const token = await getIdToken(true);
+    const response = await fetch(deletionReconcileUrl(), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+export function resetCanonicalAccessCache() {
+  inFlight.clear();
+  completeUids.clear();
 }

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { adminAuth, adminDb } from "../../lib/firebaseAdmin";
+import { adminAppCheck, adminAuth, adminDb } from "../../lib/firebaseAdmin";
 import { MAX_BODY_BYTES, originAllowed } from "../../lib/security";
 import { sendJson } from "../../lib/response";
 import {
@@ -8,6 +8,12 @@ import {
   type TrialBootstrapOutcome,
   type TrialBootstrapResponse,
 } from "../../lib/antiAbuse";
+import {
+  decodeAndVerifyPlayIntegrityToken,
+  resolveAntiAbuseHmacSecret,
+  verifyAppCheckHeaderToken,
+  verifyIntegrityChallengeToken,
+} from "../../lib/playIntegrity";
 
 export type { TrialBootstrapOutcome, TrialBootstrapResponse };
 
@@ -43,6 +49,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    if (appCheckHeader) {
+      parsed.signals.appCheckVerified = await verifyAppCheckHeaderToken(appCheckHeader, (token) =>
+        adminAppCheck().verifyToken(token),
+      );
+    }
+
+    if (parsed.signals.challengeToken && parsed.signals.integrityToken) {
+      try {
+        const secret = resolveAntiAbuseHmacSecret();
+        const challenge = verifyIntegrityChallengeToken(parsed.signals.challengeToken, uid, secret);
+        if (challenge.valid) {
+          parsed.signals.nonceHash = challenge.nonceHash;
+          const decoded = await decodeAndVerifyPlayIntegrityToken({
+            integrityToken: parsed.signals.integrityToken,
+            expectedNonce: challenge.nonce,
+          });
+          parsed.signals.playIntegrityVerified = decoded.verified;
+        } else {
+          parsed.signals.playIntegrityVerified = false;
+        }
+      } catch {
+        parsed.signals.playIntegrityVerified = false;
+      }
+    }
+
     const db = adminDb();
     const { statusCode, body } = await runVerifierTrialBootstrap(db, uid, parsed.signals);
     return sendJson(res, statusCode, body);
