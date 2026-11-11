@@ -4,11 +4,9 @@ import { useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { revisionOf } from "@/lib/profile/canonicalState";
 import { calculateVedic } from "@/lib/vedic/calculateVedic";
-import { generateVedicEditorial } from "@/lib/vedic/editorialSynthesis";
 import type {
   VedicBlueprint,
   VedicPartialBlueprint,
-  VedicEditorialPayload,
 } from "@/lib/vedic/types";
 
 export type VedicDataStatus = "loading" | "ready" | "partial" | "unavailable" | "error";
@@ -30,7 +28,7 @@ export interface VedicDataState {
   uid: string | null;
   profile: VedicProfileInfo | null;
   vedic: VedicBlueprint | VedicPartialBlueprint | null;
-  editorial: VedicEditorialPayload | null;
+  editorial: Record<string, unknown> | null;
   activeAsOfDate: string;
   setEvaluationDate: (dateStr: string) => void;
   isCanonical?: boolean;
@@ -86,11 +84,11 @@ export function useVedicData(activeUid?: string | null): VedicDataState {
     const asOf = new Date(`${evaluationDate}T00:00:00Z`);
     try {
       if (isTimeProvided && birthTime) {
-        const calculated = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone, asOf }, { includeEditorial: true });
-        return { ...empty, status: "ready", isCanonical, profile: profileInfo, vedic: calculated, editorial: calculated.editorial || generateVedicEditorial(calculated, asOf) };
+        const calculated = calculateVedic({ birthDate, birthTime, birthCity, latitude, longitude, timezone, asOf });
+        return { ...empty, status: "ready", isCanonical, profile: profileInfo, vedic: calculated, editorial: null };
       }
       const partial = calculateVedic({ birthDate, birthTime: null, birthCity, latitude, longitude, timezone, asOf });
-      return { ...empty, status: "partial", isCanonical, profile: profileInfo, vedic: partial, editorial: generateVedicEditorial(partial, asOf) };
+      return { ...empty, status: "partial", isCanonical, profile: profileInfo, vedic: partial, editorial: null };
     } catch {
       return { ...empty, status: "error", errorMessage: "Terjadi kendala saat menghitung peta kelahiran Vedic Jyotish." };
     }

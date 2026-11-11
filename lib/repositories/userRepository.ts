@@ -240,13 +240,15 @@ const markBlueprintRecoveryRequired = async (
         if (current && current.setupCompleted === true && current.blueprintStatus === "ready") {
           return "ALREADY_READY";
         }
-        const payload = stripClientBirthWrites(stripServerOwnedAccessFields({
+        const basePayload = stripCanonicalServerMetadata(stripServerOwnedAccessFields({
           ...profileData,
           uid,
           setupCompleted: false,
           blueprintStatus: "recovery_required" as BlueprintStatus,
           updatedAt: Timestamp.now(),
         }));
+        const hasCanonical = Boolean(current?.canonicalBirthEpoch && current?.canonicalBirthRevision);
+        const payload = hasCanonical ? stripClientBirthWrites(basePayload) : basePayload;
         tx.set(userRef, sanitizeForFirestore(payload), { merge: true });
         return "RECOVERY_REQUIRED_WRITTEN";
       }),

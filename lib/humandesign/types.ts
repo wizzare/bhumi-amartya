@@ -13,6 +13,7 @@ export type HumanDesignSource =
   | "pending"
   | "error"
   | "local-fallback"
+  | "local-calculation"
   | "fallback_approximation"
   | "human-design-py"
   | "verified-override"

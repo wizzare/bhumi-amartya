@@ -7,7 +7,9 @@ import { calculateLifePath } from "@/lib/calculations/calculateLifePath";
 import { calculateCanonicalDestinyMatrixBlueprint } from "@/lib/engines/destinyMatrixBlueprintAdapter";
 import calculateSunSign from "@/lib/calculations/calculateSunSign";
 import { createPendingHumanDesignChart, type HumanDesignChart } from "@/lib/humandesign/types";
-import { isEmptyLegacyPending, isUnchangedStoredValue } from "@/lib/humandesign/persistenceBoundary";
+import { isCanonicalHumanDesign } from "@/lib/humandesign/hdAudit";
+import { isCanonicalCoreComplete } from "@/lib/humandesign/completeness";
+import { compareBirthInputMatch, computeBirthInputFingerprint } from "@/lib/humandesign/birthFingerprint";
 import { normalizeDestinyMatrixIntelligence } from "@/lib/engines/destinyMatrixIntelligence";
 import { calculateNatalBasics } from "@/lib/astrology/calculateNatalBasics";
 import { calculateWeton } from "@/lib/weton/calculateWeton";
@@ -234,12 +236,6 @@ export const omitAstrocartographyForPersistence = (blueprint: Blueprint): Omit<B
 };
 
 const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => {
-  if (Object.prototype.hasOwnProperty.call(blueprint, "humanDesign") && blueprint.humanDesign === null) {
-    throw new Error("HD_TRUSTED_WRITER_REQUIRED");
-  }
-  if (Object.prototype.hasOwnProperty.call(blueprint, "input") && blueprint.input === null) {
-    throw new Error("BLUEPRINT_CANONICAL_INPUT_WRITER_REQUIRED");
-  }
   const blueprintRef = userBlueprintDoc(uid);
   const ensuredHumanDesign = blueprint.humanDesign ?? createPendingHumanDesignChart(
     "Human Design requires precise time zone and birth location.",
@@ -249,26 +245,58 @@ const saveUserBlueprint = async (uid: string, blueprint: Partial<Blueprint>) => 
     const existingSnap = await transaction.get(blueprintRef);
     const existingData = existingSnap.data();
     const oldHd = existingData?.humanDesign;
-    if (blueprint.humanDesign != null && !isUnchangedStoredValue(blueprint.humanDesign, oldHd)
-      && !(oldHd == null && isEmptyLegacyPending(blueprint.humanDesign))) {
-      throw new Error("HD_TRUSTED_WRITER_REQUIRED");
+    const oldCanonical = isCanonicalHumanDesign(oldHd);
+    const incomingCanonical = isCanonicalCoreComplete(ensuredHumanDesign);
+
+    // Compute input match status between existing chart and incoming input
+    const inputMatch = compareBirthInputMatch(uid, oldHd, blueprint.input || existingData?.input);
+
+    let preserveCanonical = false;
+    if (oldCanonical) {
+      if (inputMatch === "CHANGED" && incomingCanonical) {
+        // Legitimate birth data update: incoming chart is a validated complete canonical chart
+        // calculated for the new inputs. Permit replacement.
+        preserveCanonical = false;
+      } else {
+        // Protect stored canonical: do not allow incoming pending/fallback/incomplete to overwrite,
+        // and do not replace matching canonical chart.
+        preserveCanonical = true;
+      }
     }
-    if (blueprint.input != null && !isUnchangedStoredValue(blueprint.input, existingData?.input)) {
-      throw new Error("BLUEPRINT_CANONICAL_INPUT_WRITER_REQUIRED");
+
+    // Attach input fingerprint to incoming HD if it's canonical
+    let finalHd = ensuredHumanDesign;
+    if (incomingCanonical && !preserveCanonical) {
+      const fp = computeBirthInputFingerprint(uid, blueprint.input || existingData?.input);
+      if (fp) {
+        finalHd = { ...ensuredHumanDesign, inputHash: fp.revisionHash };
+      }
     }
-    const persistableBlueprint: Partial<Blueprint> = omitAstrocartographyForPersistence(
-      blueprint.humanDesign != null
-        ? { ...blueprint } as Blueprint
-        : normalizeBlueprint(uid, { ...blueprint, humanDesign: ensuredHumanDesign }),
-    );
-    delete persistableBlueprint.input;
-    delete persistableBlueprint.humanDesign;
+
+    const normalizedPayload = normalizeBlueprint(uid, {
+      ...blueprint,
+      humanDesign: finalHd,
+    });
+    const persistableBlueprint: Partial<Blueprint> = omitAstrocartographyForPersistence(normalizedPayload);
+    if (preserveCanonical) {
+      delete persistableBlueprint.humanDesign;
+    }
     const payload = sanitizeForFirestore({
       ...persistableBlueprint,
       uid,
       updatedAt: Timestamp.now(),
-      ...(blueprint.humanDesign != null ? {} : { generatedAt: Timestamp.now() }),
+      generatedAt: Timestamp.now(),
     });
+
+    if (existingSnap.exists() && !preserveCanonical) {
+      const oldStatus = String(oldHd?.status || oldHd?.calculationStatus || "").toLowerCase();
+      const newStatus = String(ensuredHumanDesign.status || ensuredHumanDesign.calculationStatus || "").toLowerCase();
+      const isOldPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(oldStatus);
+      const isNewPending = ["pending", "missing-input", "missing-location", "needs_verified_timezone"].includes(newStatus);
+      if (!isOldPending && isNewPending) {
+        transaction.set(doc(db, "users", uid), { hdDismissedAt: null }, { merge: true });
+      }
+    }
 
     transaction.set(blueprintRef, payload, { merge: true });
   });

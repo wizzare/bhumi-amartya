@@ -42,6 +42,9 @@ export function useBaziData(activeUid?: string | null): BaziDataState {
     const gender = profileGender === "male" || profileGender === "female" ? profileGender : null;
     const isHourProvided = Boolean(birthTime && birthTime.trim() && birthTime !== "—");
     const isCanonical = Boolean(revisionOf(profile));
+    if (!isHourProvided || !birthTime) {
+      return { ...empty, isCanonical, status: "unavailable", errorMessage: "Jam lahir diperlukan untuk menghitung peta kelahiran BaZi." };
+    }
     try {
       return {
         status: "ready",
@@ -50,13 +53,13 @@ export function useBaziData(activeUid?: string | null): BaziDataState {
         profile: {
           name: profile.displayName || profile.fullName || "Pengguna Bhumi",
           birthDate,
-          birthTime: isHourProvided ? birthTime : null,
+          birthTime,
           timezone,
           gender,
           isHourProvided,
           isCanonical,
         },
-        bazi: calculateBazi({ birthDate, birthTime: isHourProvided ? birthTime : null, timezone, gender, isHourProvided }),
+        bazi: calculateBazi({ birthDate, birthTime, timezone, gender, isHourProvided }),
       };
     } catch {
       return { ...empty, status: "error", errorMessage: "Terjadi kendala saat menghitung peta kelahiran BaZi." };

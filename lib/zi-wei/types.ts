@@ -64,6 +64,8 @@ export type ZiWeiResult = {
     dayBoundary: "late Zi hour (23:00–00:00) advances to the following day";
     algorithm: "default";
   };
+  civilBirthDate?: string;
+  effectiveChartDate?: string;
   birthDataStatus: {
     birthDate: boolean;
     exactBirthTime: boolean;

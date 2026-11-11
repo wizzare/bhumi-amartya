@@ -54,6 +54,8 @@ export interface TzolkinBlueprint {
   growthStyle: string;
   lifePurpose: string;
   summary: string[];
+  isSpecialDay?: boolean;
+  specialDay?: "0.0_HUNAB_KU" | null;
 }
 
 export interface TzolkinInput {

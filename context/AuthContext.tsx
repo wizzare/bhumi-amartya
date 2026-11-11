@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { User, browserLocalPersistence, onAuthStateChanged, setPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase/firebase';
 import {
@@ -26,6 +26,9 @@ import {
 import { enforceFounderQaAllowlist } from '@/lib/auth/founderQaGuard';
 import { logSafeAuthError, warnSafeAuthError } from '@/lib/auth/safeDiagnostics';
 import { isEnlEdition } from '@/lib/config/edition';
+import { createCanonicalStateStore, revisionOf } from '@/lib/profile/canonicalState';
+import { readCanonicalBirth } from '@/lib/profile/canonicalBirth';
+import { extractCanonicalBirth } from '@/lib/profile/canonicalBirthFields';
 
 interface AuthContextType {
   user: User | null;
@@ -37,6 +40,7 @@ interface AuthContextType {
   profileLoading: boolean;
   profileError: string | null;
   refreshUserProfile: () => Promise<UserProfile | null>;
+  syncCanonicalProfile: (epoch: string, revision: number) => Promise<boolean>;
   logout: () => Promise<void>;
 }
 
@@ -69,6 +73,48 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const userProfileRef = useRef(userProfile);
+  useEffect(() => { userProfileRef.current = userProfile; }, [userProfile]);
+
+  const canonicalStoreRef = useRef(createCanonicalStateStore());
+  const profileRefreshGenerationRef = useRef(0);
+  const authSessionGenerationRef = useRef(0);
+
+  const applyProfile = async (profile: UserProfile, allowUnversioned = true, authoritative = false): Promise<boolean> => {
+    if (!auth.currentUser || profile.uid !== auth.currentUser.uid) return false;
+    const session = authSessionGenerationRef.current;
+    const active = () => auth.currentUser?.uid === profile.uid && authSessionGenerationRef.current === session;
+    const incoming = revisionOf(profile);
+    // A legacy snapshot may hydrate an account, but cannot replace a profile
+    // whose revision was already accepted or a more recent refresh request.
+    if (!incoming) {
+      const accepted = allowUnversioned && !canonicalStoreRef.current.currentRevision();
+      if (accepted) {
+        userProfileRef.current = profile;
+        setUserProfile(profile);
+      }
+      return accepted;
+    }
+    if (!authoritative) {
+      const canonical = await readCanonicalBirth(profile.uid);
+      if (!active() || !canonical?.canonicalBirth || canonical.epoch !== incoming.epoch || canonical.revision !== incoming.revision) return false;
+      const snapshotBirth = extractCanonicalBirth(profile as unknown as Record<string, unknown>);
+      if (!snapshotBirth || JSON.stringify(snapshotBirth) !== JSON.stringify(canonical.canonicalBirth)) return false;
+    }
+    if (!active()) return false;
+    const decision = canonicalStoreRef.current.evaluate(incoming, profile as unknown as Record<string, unknown>);
+    if (decision.action !== "accept") {
+      console.warn("[AUTH] Profile rejected by canonical revision guard", {
+        action: decision.action,
+        reason: decision.reason,
+      });
+      return false;
+    }
+    canonicalStoreRef.current.commit(incoming, profile as unknown as Record<string, unknown>);
+    userProfileRef.current = profile;
+    setUserProfile(profile);
+    return true;
+  };
 
   const refreshUserProfile = async (): Promise<UserProfile | null> => {
     const firebaseUser = auth.currentUser;
@@ -79,7 +125,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     const refreshUid = firebaseUser.uid;
-    const isCurrentRefresh = () => auth.currentUser?.uid === refreshUid;
+    const refreshGeneration = ++profileRefreshGenerationRef.current;
+    const authSessionGeneration = authSessionGenerationRef.current;
+    const isLatestRefresh = () => profileRefreshGenerationRef.current === refreshGeneration;
+    const isCurrentRefresh = () => auth.currentUser?.uid === refreshUid && authSessionGenerationRef.current === authSessionGeneration;
     if (!isCurrentRefresh()) return null;
     setProfileError(null);
     if (!isCurrentRefresh()) return null;
@@ -93,14 +142,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const outcome = guardedOutcome.value;
       if (outcome.status === "success") {
         if (!isCurrentRefresh()) return null;
-        setUserProfile(outcome.value);
+        if (!(await applyProfile(outcome.value, isLatestRefresh())) || !isCurrentRefresh()) return null;
         return outcome.value;
       } else if (outcome.status === "missing") {
+        if (!isLatestRefresh()) return null;
         if (isServerIssuedProfilePending(firebaseUser, null)) throw new ServerIssuedProfilePendingError();
         if (!isCurrentRefresh()) return null;
         setUserProfile(null);
         return null;
       } else if (outcome.status === "timeout") {
+        if (!isLatestRefresh()) return null;
         if (isServerIssuedProfilePending(firebaseUser, null)) throw new ServerIssuedProfilePendingError();
         console.warn("Auth profile refresh timed out.", { elapsedMs: outcome.elapsedMs });
         if (!isCurrentRefresh()) return null;
@@ -109,6 +160,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfileError(isEnlEdition() ? "Profile is still being prepared. Please try again." : "Profil masih disiapkan. Silakan coba lagi.");
         return null;
       } else {
+        if (!isLatestRefresh()) return null;
         if (outcome.error instanceof ServerIssuedProfilePendingError) throw outcome.error;
         logSafeAuthError("[AUTH PROFILE REFRESH ERROR]", outcome.error);
         if (!isCurrentRefresh()) return null;
@@ -118,7 +170,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         throw outcome.error;
       }
     } catch (error) {
-      if (!isCurrentRefresh()) return null;
+      if (!isCurrentRefresh() || !isLatestRefresh()) return null;
       setUserProfile(null);
       if (error instanceof ServerIssuedProfilePendingError) {
         setProfileError(isEnlEdition() ? "Profile is being prepared. Please wait." : "Profil sedang disiapkan. Mohon tunggu.");
@@ -128,8 +180,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setProfileError(isEnlEdition() ? "Profile could not be loaded. Please check your connection and try again." : "Profil belum bisa dimuat. Periksa koneksi lalu coba lagi.");
       throw error;
     } finally {
-      if (isCurrentRefresh()) setProfileLoading(false);
+      if (isCurrentRefresh() && isLatestRefresh()) setProfileLoading(false);
     }
+  };
+
+  // Only a fresh authenticated callable read can publish a confirmed save.
+  const syncCanonicalProfile = async (expectedEpoch: string, expectedRevision: number): Promise<boolean> => {
+    const firebaseUser = auth.currentUser;
+    const sessionGeneration = authSessionGenerationRef.current;
+    if (!firebaseUser || !userProfileRef.current || userProfileRef.current.uid !== firebaseUser.uid || !expectedEpoch || !Number.isSafeInteger(expectedRevision) || expectedRevision < 1) return false;
+    const canonical = await readCanonicalBirth(firebaseUser.uid);
+    if (auth.currentUser?.uid !== firebaseUser.uid || authSessionGenerationRef.current !== sessionGeneration || !canonical?.canonicalBirth || canonical.epoch !== expectedEpoch || !Number.isSafeInteger(canonical.revision) || canonical.revision < expectedRevision) return false;
+    const current = userProfileRef.current;
+    if (!current || current.uid !== firebaseUser.uid) return false;
+    const birth = canonical.canonicalBirth;
+    if (!birth.birthDate || !birth.birthTime || !birth.birthCity || !birth.timezone || !Number.isFinite(birth.latitude) || !Number.isFinite(birth.longitude)) return false;
+    const confirmed = {
+      ...current,
+      ...birth,
+      dateOfBirth: birth.birthDate,
+      timeOfBirth: birth.birthTime,
+      cityOfBirth: birth.birthCity,
+      canonicalBirthEpoch: canonical.epoch,
+      canonicalBirthRevision: canonical.revision,
+    } as UserProfile;
+    if (!(await applyProfile(confirmed, true, true))) return false;
+    profileRefreshGenerationRef.current++;
+    setProfileLoading(false);
+    return true;
   };
 
   const logout = async () => {
@@ -174,6 +252,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           clearTimeout(safetyTimeout);
           if (cancelled) return;
           const authStateId = ++activeAuthStateId;
+          profileRefreshGenerationRef.current++;
+          authSessionGenerationRef.current++;
           const authStateUid = firebaseUser?.uid ?? null;
           const isActive = () => isCurrentAuthInvocation(
             authStateId,
@@ -182,6 +262,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             authStateUid,
             auth.currentUser?.uid ?? null,
           );
+          // Scope the canonical revision store to the current authenticated user.
+          canonicalStoreRef.current.scope(authStateUid);
           // Telemetry: auth state established (success or unauthenticated).
           if (firebaseUser) {
             const creationMs = Date.parse(firebaseUser.metadata?.creationTime || "");
@@ -215,6 +297,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           if (!firebaseUser) {
             console.log("[AUTH] No firebase user, clearing profile state.");
+            canonicalStoreRef.current.reset();
             if (!isActive()) return;
             setUserProfile(null);
             if (!isActive()) return;
@@ -363,7 +446,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               );
               if (activityResult.status === "stale") return;
               if (!isActive()) return;
-              setUserProfile(migratedProfile);
+              await applyProfile(migratedProfile);
             } else {
               if (!isActive()) return;
               setUserProfile(null);
@@ -409,7 +492,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             if (localFallback && localFallback.uid === firebaseUser.uid) {
                console.log("[AUTH] Using local fallback profile after error");
                if (!isActive()) return;
-               setUserProfile(localFallback);
+               await applyProfile(localFallback);
             } else {
               if (!isActive()) return;
               setUserProfile(null);
@@ -478,6 +561,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profileLoading,
     profileError,
     refreshUserProfile,
+    syncCanonicalProfile,
     logout,
   };
 

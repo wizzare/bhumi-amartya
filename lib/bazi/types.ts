@@ -66,4 +66,6 @@ export interface BaziInput {
   birthTime: string;
   timezone?: string | null;
   referenceDate?: Date;
+  gender?: "male" | "female" | null;
+  isHourProvided?: boolean;
 }
