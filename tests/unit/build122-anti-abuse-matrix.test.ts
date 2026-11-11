@@ -20,6 +20,10 @@ import {
   parseBootstrapSignalsBody,
   runServerTrialBootstrapTransaction,
 } from "../../lib/antiAbuse/serverBootstrap";
+import {
+  issueIntegrityChallenge,
+  verifyIntegrityChallengeToken,
+} from "../../lib/antiAbuse/playIntegrity";
 import { getAntiAbuseUxCopy } from "../../lib/antiAbuse/eligibilityUx";
 
 /**
@@ -548,5 +552,44 @@ test("Anti-Abuse 20-Case Matrix & Security Verification", async () => {
 
     const dsDoc = fs.readFileSync(path.join(process.cwd(), "docs/VC122_DATA_SAFETY_AND_ANTI_ABUSE.md"), "utf8");
     assert.ok(dsDoc.includes("NOT anonymous") && dsDoc.includes("180 days"));
+  }
+
+  // 24. VC 123 challenge signal binding rejects altered appSetIdHash / deviceIdHash while preserving VC 122 unbound compatibility
+  {
+    const nowMs = Date.UTC(2026, 10, 12, 0, 0, 0);
+    const sigs = {
+      deviceIdHash: computeDeviceIdentityHash("bound-device-1"),
+      appSetIdHash: computeDeviceIdentityHash("bound-appset-1"),
+      installIdHash: computeDeviceIdentityHash("bound-install-1"),
+    };
+    const ch = issueIntegrityChallenge("uid-bound-1", secret, nowMs, sigs);
+    assert.equal(ch.signalBound, true);
+    assert.ok(ch.nonce.includes("."));
+
+    const verifiedSame = verifyIntegrityChallengeToken(ch.challengeToken, "uid-bound-1", secret, nowMs + 1000, sigs);
+    assert.equal(verifiedSame.valid, true);
+
+    const verifiedAlteredAppSet = verifyIntegrityChallengeToken(
+      ch.challengeToken,
+      "uid-bound-1",
+      secret,
+      nowMs + 1000,
+      { ...sigs, appSetIdHash: computeDeviceIdentityHash("spoofed-appset-2") },
+    );
+    assert.equal(verifiedAlteredAppSet.valid, false);
+    if (!verifiedAlteredAppSet.valid) {
+      assert.equal(verifiedAlteredAppSet.reason, "CHALLENGE_SIGNAL_BINDING_MISMATCH");
+    }
+
+    const legacyUnbound = issueIntegrityChallenge("uid-vc122-1", secret, nowMs, null);
+    assert.equal(legacyUnbound.signalBound, false);
+    const legacyVerified = verifyIntegrityChallengeToken(
+      legacyUnbound.challengeToken,
+      "uid-vc122-1",
+      secret,
+      nowMs + 1000,
+      sigs,
+    );
+    assert.equal(legacyVerified.valid, true);
   }
 });

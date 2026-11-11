@@ -34,7 +34,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const secret = resolveAntiAbuseHmacSecret();
-    const challenge = issueIntegrityChallenge(uid, secret);
+    const rawBody = req.body && typeof req.body === "object" && !Array.isArray(req.body)
+      ? (req.body as Record<string, unknown>)
+      : null;
+    const signalBinding = rawBody
+      ? {
+          deviceIdHash: typeof rawBody.deviceIdHash === "string" ? rawBody.deviceIdHash : null,
+          appSetIdHash: typeof rawBody.appSetIdHash === "string" ? rawBody.appSetIdHash : null,
+          installIdHash: typeof rawBody.installIdHash === "string" ? rawBody.installIdHash : null,
+        }
+      : null;
+    const challenge = issueIntegrityChallenge(uid, secret, Date.now(), signalBinding);
     return sendJson(res, 200, { ok: true, ...challenge });
   } catch {
     return failure(500, "CHALLENGE_UNAVAILABLE");

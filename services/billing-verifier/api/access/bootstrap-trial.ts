@@ -58,15 +58,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (parsed.signals.challengeToken && parsed.signals.integrityToken) {
       try {
         const secret = resolveAntiAbuseHmacSecret();
-        const challenge = verifyIntegrityChallengeToken(parsed.signals.challengeToken, uid, secret);
+        const challenge = verifyIntegrityChallengeToken(
+          parsed.signals.challengeToken,
+          uid,
+          secret,
+          Date.now(),
+          {
+            deviceIdHash: parsed.signals.deviceIdHash,
+            appSetIdHash: parsed.signals.appSetIdHash,
+            installIdHash: parsed.signals.installIdHash,
+          },
+        );
         if (challenge.valid) {
           parsed.signals.nonceHash = challenge.nonceHash;
           const decoded = await decodeAndVerifyPlayIntegrityToken({
             integrityToken: parsed.signals.integrityToken,
             expectedNonce: challenge.nonce,
           });
-          parsed.signals.playIntegrityVerified = decoded.verified;
-          parsed.signals.integrityReason = decoded.reason;
+          const effectiveVc = decoded.appVersionCode ?? parsed.signals.appVersionCode ?? 0;
+          const hasSubmittedDeviceSignals = Boolean(
+            parsed.signals.deviceIdHash || parsed.signals.appSetIdHash || parsed.signals.installIdHash,
+          );
+          if (effectiveVc >= 123 && hasSubmittedDeviceSignals && !challenge.signalBound) {
+            parsed.signals.playIntegrityVerified = false;
+            parsed.signals.integrityReason = "CHALLENGE_SIGNAL_BINDING_MISMATCH";
+          } else {
+            parsed.signals.playIntegrityVerified = decoded.verified;
+            parsed.signals.integrityReason = decoded.reason;
+          }
         } else {
           parsed.signals.playIntegrityVerified = false;
           parsed.signals.integrityReason = challenge.reason;

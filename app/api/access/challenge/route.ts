@@ -48,7 +48,24 @@ export async function POST(request: Request) {
     initAdminForRoute();
     const decoded = await getAuth().verifyIdToken(token);
     const { secret } = resolveHmacSecret();
-    const challenge = issueIntegrityChallenge(decoded.uid, secret);
+    let signalBinding: { deviceIdHash?: string | null; appSetIdHash?: string | null; installIdHash?: string | null } | null = null;
+    try {
+      const text = await request.text();
+      if (text.trim()) {
+        const parsed = JSON.parse(text);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const obj = parsed as Record<string, unknown>;
+          signalBinding = {
+            deviceIdHash: typeof obj.deviceIdHash === "string" ? obj.deviceIdHash : null,
+            appSetIdHash: typeof obj.appSetIdHash === "string" ? obj.appSetIdHash : null,
+            installIdHash: typeof obj.installIdHash === "string" ? obj.installIdHash : null,
+          };
+        }
+      }
+    } catch {
+      signalBinding = null;
+    }
+    const challenge = issueIntegrityChallenge(decoded.uid, secret, Date.now(), signalBinding);
     return NextResponse.json({ ok: true, ...challenge }, { status: 200, headers: corsHeaders(request) });
   } catch {
     return NextResponse.json({ ok: false, error: "CHALLENGE_UNAVAILABLE" }, { status: 500, headers: corsHeaders(request) });

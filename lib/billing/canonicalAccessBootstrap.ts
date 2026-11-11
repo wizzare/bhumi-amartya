@@ -78,6 +78,11 @@ export async function bootstrapCanonicalAccess(uid: string, getIdToken: (forceRe
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
+            body: JSON.stringify({
+              deviceIdHash: clientSignals.deviceIdHash,
+              appSetIdHash: clientSignals.appSetIdHash,
+              installIdHash: clientSignals.installIdHash,
+            }),
           });
           if (chRes.ok) {
             const chBody = await chRes.json() as { ok?: boolean; nonce?: string; challengeToken?: string };

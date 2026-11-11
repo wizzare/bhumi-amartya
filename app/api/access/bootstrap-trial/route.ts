@@ -150,14 +150,34 @@ export async function POST(request: Request) {
     if (parsedSignals.parsed.challengeToken && parsedSignals.parsed.integrityToken) {
       try {
         const { secret } = resolveHmacSecret();
-        const ch = verifyIntegrityChallengeToken(parsedSignals.parsed.challengeToken, uid, secret);
+        const ch = verifyIntegrityChallengeToken(
+          parsedSignals.parsed.challengeToken,
+          uid,
+          secret,
+          Date.now(),
+          {
+            deviceIdHash: parsedSignals.parsed.deviceIdHash,
+            appSetIdHash: parsedSignals.parsed.appSetIdHash,
+            installIdHash: parsedSignals.parsed.installIdHash,
+          },
+        );
         if (ch.valid) {
           parsedSignals.parsed.nonceHash = ch.nonceHash;
           const pi = await decodeAndVerifyPlayIntegrityToken({
             integrityToken: parsedSignals.parsed.integrityToken,
             expectedNonce: ch.nonce,
           });
-          parsedSignals.parsed.playIntegrityVerified = pi.verified;
+          const effectiveVc = pi.appVersionCode ?? parsedSignals.parsed.appVersionCode ?? 0;
+          const hasSubmittedDeviceSignals = Boolean(
+            parsedSignals.parsed.deviceIdHash ||
+              parsedSignals.parsed.appSetIdHash ||
+              parsedSignals.parsed.installIdHash,
+          );
+          if (effectiveVc >= 123 && hasSubmittedDeviceSignals && !ch.signalBound) {
+            parsedSignals.parsed.playIntegrityVerified = false;
+          } else {
+            parsedSignals.parsed.playIntegrityVerified = pi.verified;
+          }
         } else {
           parsedSignals.parsed.playIntegrityVerified = false;
         }

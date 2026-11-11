@@ -6,10 +6,17 @@ const PLAY_INTEGRITY_SCOPE = "https://www.googleapis.com/auth/playintegrity";
 const CHALLENGE_TTL_SECONDS = 5 * 60;
 const INTEGRITY_TIMESTAMP_MAX_DRIFT_MS = 10 * 60 * 1000;
 
+export type ChallengeSignalBindingInput = {
+  deviceIdHash?: string | null;
+  appSetIdHash?: string | null;
+  installIdHash?: string | null;
+};
+
 export type ChallengeIssueResult = {
   nonce: string;
   challengeToken: string;
   expiresAt: string;
+  signalBound?: boolean;
 };
 
 export type ChallengeVerificationResult =
@@ -18,6 +25,7 @@ export type ChallengeVerificationResult =
       nonce: string;
       nonceHash: string;
       uidHash: string;
+      signalBound: boolean;
     }
   | {
       valid: false;
@@ -50,19 +58,41 @@ export function computeUidHash(uid: string): string {
   return createHash("sha256").update(`bhumi-uid-v1:${uid}`).digest("hex").slice(0, 32);
 }
 
+function cleanSignalHash(val?: string | null): string {
+  if (typeof val !== "string") return "";
+  const trimmed = val.trim().toLowerCase();
+  return /^[a-f0-9-]{16,128}$/i.test(trimmed) ? trimmed : "";
+}
+
+export function computeSignalBindingHash(signals?: ChallengeSignalBindingInput | null): string | null {
+  if (!signals) return null;
+  const dev = cleanSignalHash(signals.deviceIdHash);
+  const appset = cleanSignalHash(signals.appSetIdHash);
+  const inst = cleanSignalHash(signals.installIdHash);
+  if (!dev && !appset && !inst) return null;
+  return createHash("sha256")
+    .update(`bhumi-sigbind-v1:${dev}|${appset}|${inst}`)
+    .digest("base64url")
+    .slice(0, 22);
+}
+
 export function issueIntegrityChallenge(
   uid: string,
   secret: string,
   nowMs = Date.now(),
+  signals?: ChallengeSignalBindingInput | null,
 ): ChallengeIssueResult {
-  const nonce = randomBytes(24).toString("base64url");
+  const randomNonce = randomBytes(24).toString("base64url");
+  const sigBind = computeSignalBindingHash(signals);
+  const nonce = sigBind ? `${randomNonce}.${sigBind}` : randomNonce;
   const iat = Math.floor(nowMs / 1000);
   const exp = iat + CHALLENGE_TTL_SECONDS;
-  const payload = {
+  const payload: { u: string; n: string; iat: number; exp: number; sh?: string } = {
     u: computeUidHash(uid),
     n: nonce,
     iat,
     exp,
+    ...(sigBind ? { sh: sigBind } : {}),
   };
   const payloadB64 = Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
   const sigHex = createHmac("sha256", secret).update(`challenge-v1:${payloadB64}`).digest("hex");
@@ -70,6 +100,7 @@ export function issueIntegrityChallenge(
     nonce,
     challengeToken: `${payloadB64}.${sigHex}`,
     expiresAt: new Date(exp * 1000).toISOString(),
+    signalBound: Boolean(sigBind),
   };
 }
 
@@ -78,6 +109,7 @@ export function verifyIntegrityChallengeToken(
   uid: string,
   secret: string,
   nowMs = Date.now(),
+  submittedSignals?: ChallengeSignalBindingInput | null,
 ): ChallengeVerificationResult {
   if (!challengeToken || typeof challengeToken !== "string") {
     return { valid: false, reason: "CHALLENGE_TOKEN_MISSING" };
@@ -97,7 +129,7 @@ export function verifyIntegrityChallengeToken(
     return { valid: false, reason: "CHALLENGE_SIGNATURE_INVALID" };
   }
 
-  let parsed: { u?: string; n?: string; iat?: number; exp?: number };
+  let parsed: { u?: string; n?: string; iat?: number; exp?: number; sh?: string };
   try {
     parsed = JSON.parse(Buffer.from(payloadB64, "base64url").toString("utf8"));
   } catch {
@@ -114,12 +146,21 @@ export function verifyIntegrityChallengeToken(
     return { valid: false, reason: "CHALLENGE_EXPIRED" };
   }
 
+  const signalBound = typeof parsed.sh === "string" && parsed.sh.length > 0;
+  if (signalBound) {
+    const submittedHash = computeSignalBindingHash(submittedSignals);
+    if (!submittedHash || submittedHash !== parsed.sh || !parsed.n.endsWith(`.${parsed.sh}`)) {
+      return { valid: false, reason: "CHALLENGE_SIGNAL_BINDING_MISMATCH" };
+    }
+  }
+
   const nonceHash = createHash("sha256").update(`nonce-v1:${parsed.n}`).digest("hex");
   return {
     valid: true,
     nonce: parsed.n,
     nonceHash,
     uidHash,
+    signalBound,
   };
 }
 

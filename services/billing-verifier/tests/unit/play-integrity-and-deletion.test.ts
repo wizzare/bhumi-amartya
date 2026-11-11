@@ -39,6 +39,50 @@ test("Play Integrity challenge issuance, verification, decode, and App Check", a
   equal(expired.valid, false);
   if (!expired.valid) equal(expired.reason, "CHALLENGE_EXPIRED");
 
+  // Signal-bound challenge (VC 123+): binds deviceIdHash + appSetIdHash into nonce & challengeToken
+  const boundSignals = {
+    deviceIdHash: "11112222333344445555666677778888",
+    appSetIdHash: "aaaabbbbccccddddeeeeffff00001111",
+    installIdHash: "99998888777766665555444433332222",
+  };
+  const boundIssued = issueIntegrityChallenge("synthetic-uid-1", secret, nowMs, boundSignals);
+  equal(boundIssued.signalBound, true);
+  ok(boundIssued.nonce.includes("."));
+
+  const boundValid = verifyIntegrityChallengeToken(
+    boundIssued.challengeToken,
+    "synthetic-uid-1",
+    secret,
+    nowMs + 5_000,
+    boundSignals,
+  );
+  equal(boundValid.valid, true);
+  if (boundValid.valid) {
+    equal(boundValid.signalBound, true);
+    equal(boundValid.nonce, boundIssued.nonce);
+  }
+
+  // Altered appSetIdHash / deviceIdHash after challenge issuance is rejected
+  const alteredAppSet = verifyIntegrityChallengeToken(
+    boundIssued.challengeToken,
+    "synthetic-uid-1",
+    secret,
+    nowMs + 5_000,
+    { ...boundSignals, appSetIdHash: "ffff0000eeee1111dddd2222cccc3333" },
+  );
+  equal(alteredAppSet.valid, false);
+  if (!alteredAppSet.valid) equal(alteredAppSet.reason, "CHALLENGE_SIGNAL_BINDING_MISMATCH");
+
+  const alteredDevice = verifyIntegrityChallengeToken(
+    boundIssued.challengeToken,
+    "synthetic-uid-1",
+    secret,
+    nowMs + 5_000,
+    { ...boundSignals, deviceIdHash: "00009999888877776666555544443333" },
+  );
+  equal(alteredDevice.valid, false);
+  if (!alteredDevice.valid) equal(alteredDevice.reason, "CHALLENGE_SIGNAL_BINDING_MISMATCH");
+
   // Play Integrity decode: genuine PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY passes
   const passFetch = (async () =>
     new Response(
