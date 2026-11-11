@@ -97,6 +97,15 @@ async function checkLiveEndpoints() {
       (j) => j?.ok === false && j?.error === "UNAUTHORIZED_CRON",
     ),
   );
+  results.push(
+    await checkEndpoint(
+      "Anti-abuse monitor cron fail-closed",
+      "/api/access/monitor",
+      { method: "GET" },
+      401,
+      (j) => j?.ok === false && j?.error === "UNAUTHORIZED_CRON",
+    ),
+  );
   return results;
 }
 
@@ -208,10 +217,33 @@ async function inspectFirestoreReadOnly() {
   return { available: true, appConfigAntiAbuse, counts, auditSummary };
 }
 
+async function inspectCronMonitor() {
+  const secret = process.env.BHUMI_VERIFIER_CRON_SECRET?.trim();
+  if (!secret) {
+    return { configured: false, reason: "BHUMI_VERIFIER_CRON_SECRET_NOT_SET" };
+  }
+  const res = await fetch(`${BASE_URL}/api/access/monitor`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const text = await res.text();
+  let json = null;
+  try {
+    json = text ? JSON.parse(text) : null;
+  } catch {
+    json = null;
+  }
+  if (!res.ok || json?.healthy === false) {
+    throw new Error(`CRON_MONITOR_ALERT status=${res.status} alerts=${JSON.stringify(json?.alerts || [])}`);
+  }
+  return { configured: true, status: res.status, summary: json };
+}
+
 async function main() {
   const endpoints = await checkLiveEndpoints();
+  const cronMonitor = await inspectCronMonitor();
   const firestore = await inspectFirestoreReadOnly();
-  console.log(JSON.stringify({ ok: true, baseUrl: BASE_URL, projectId: FIREBASE_PROJECT_ID, endpoints, firestore }, null, 2));
+  console.log(JSON.stringify({ ok: true, baseUrl: BASE_URL, projectId: FIREBASE_PROJECT_ID, endpoints, cronMonitor, firestore }, null, 2));
 }
 
 main().catch((err) => {

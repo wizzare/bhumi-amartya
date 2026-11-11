@@ -5,6 +5,12 @@
       "memory": 512
     }
   },
+  "crons": [
+    {
+      "path": "/api/access/monitor",
+      "schedule": "0 2 * * *"
+    }
+  ],
   "regions": ["sin1"],
   "outputDirectory": "."
 }

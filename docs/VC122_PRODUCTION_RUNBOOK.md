@@ -79,10 +79,37 @@ Three independent rollback mechanisms exist without needing a new Android releas
 ## 5. Post-Approval Activation Gate (Execute ONLY After Play Store Approves VC 122)
 
 1. Confirm Google Play Store listing shows **VC 122 (`5.0.22`)** live on Production and install directly from Google Play on an authorized Android device.
-2. Execute Cases A, D, E on the Play-installed app while still in `mode=observe`; inspect `antiAbuseAuditLogs` to verify:
+2. Execute Cases A, D, E on the Play-installed app while still in `mode=observe`; inspect `/api/access/monitor` / `node scripts/monitor-vc122-anti-abuse.mjs` to verify:
    - `playIntegrityVerified === true`
    - `integrityReason === "VERIFIED"`
-   - (Optional) Capture Play App Signing `certificateSha256Digest` and set `BHUMI_PLAY_CERT_SHA256_B64` if strict cert pinning is desired.
-3. Only after Play Integrity verification is confirmed `VERIFIED` on the genuine Play binary:
+   - Confirm Play App Signing `SHA-256` from Google Play Console (`Release > Setup > App integrity > App signing key certificate`) and configure `BHUMI_PLAY_CERT_SHA256_B64` (hex or base64url accepted).
+3. Only after Play Integrity verification is confirmed `VERIFIED` on the genuine Play binary AND Play App Signing pinning (if enabled) passes:
    - Update Vercel `BHUMI_ANTI_ABUSE_MODE=enforce` and redeploy `services/billing-verifier`.
-   - Re-verify Cases B, C, D, E, F, G live and monitor error rate / false positives.
+   - Re-verify Cases B, C, D, E, F, G live and confirm zero false denials before widening rollout.
+
+---
+
+## 6. Device Signal Binding & Known Bypass Boundaries (VC 122 Audit)
+
+- **Cryptographically Bound in VC 122 Play Integrity Flow:**
+  - Authenticated Firebase `uid` (`challengeToken` HMAC signature over `uidHash`, `nonce`, `iat`, `exp`).
+  - Single-use `nonce` freshness (`antiAbuseUsedNonces/{nonceHash}`, 5-minute TTL, 10-minute Play Integrity timestamp window).
+  - Package name (`com.bhumiamartya.app`), `versionCode >= 122`, Play recognition (`PLAY_RECOGNIZED`), and device integrity (`MEETS_DEVICE_INTEGRITY` / `MEETS_STRONG_INTEGRITY`).
+- **Known VC 122 Client Limitation (Must Remain Documented):**
+  - `DeviceIntegrityPlugin.requestIntegrityToken` and `lib/billing/canonicalAccessBootstrap.ts` pass raw `chBody.nonce` directly to Play Integrity without binding `appSetIdHash`/`deviceIdHash` into the Play Integrity `nonce` hash.
+  - Therefore, a legitimate user/device generating an unused `PLAY_RECOGNIZED` token for its own `uid` and tampering with the HTTP JSON fields (`appSetIdHash`/`deviceIdHash`) can cause a different `deviceClaimId` to be evaluated. Closing that binding gap requires a future **VC 123** client update (`nonce = sha256(serverNonce + uid + appSetIdHash + deviceIdHash)`).
+  - Play Integrity tokens also do NOT create an immutable hardware identity across factory resets or full App Set uninstall resets; when `appSetIdHash`/`deviceIdHash` are legitimately unavailable (`allowSignalUnavailableFallback=true`), unsupported signal claims MUST NOT trigger automatic denial.
+
+---
+
+## 7. Play App Signing vs Upload Certificate & Continuous Monitoring
+
+- **Upload Certificate (`bhumi-amartya-release.jks`, verified on `app-release.aab`):**
+  - SHA-1: `B5:1C:84:D0:7B:86:95:80:C7:D5:9D:36:E8:FA:F8:52:F7:92:CC:52`
+  - SHA-256: `1B:C1:30:61:AA:B6:F7:EB:36:2B:FD:0A:71:E3:DB:10:6D:B8:61:57:36:A3:37:B1:97:FC:5F:0D:B5:92:B5:18`
+- **Google Play App Signing Certificate (Unconfirmed from Play Console API):**
+  - Firebase `apps:android:sha:list` (`1:59259824153:android:204d11fa49fa41371ee288`) contains `F7:0F:FC:C9:...` (confirmed local debug keystore) plus two additional SHA-256 hashes (`48:B1:AE:1A:...` and `83:F1:3B:20:...`), none of which matches the upload key (`1B:C1:30:61:...`) and none carries Play App Signing metadata in Firebase.
+  - `BHUMI_PLAY_CERT_SHA256_B64` intentionally remains unset in Production during `OBSERVE` so real Play-distributed installs are never rejected by uploading key pinning (`1B:C1:...`) by mistake. Configure `BHUMI_PLAY_CERT_SHA256_B64` ONLY after verifying the active **App signing key certificate SHA-256** directly in Google Play Console.
+- **Scheduled Continuous Monitoring:**
+  - **Vercel Cron:** `GET /api/access/monitor` scheduled daily (`0 2 * * *`) in `services/billing-verifier/vercel.json`, authenticated via `CRON_SECRET`, reporting non-PII `byStatus`, `byIntegrityReason`, collection counts, HMAC check, and `CRITICAL`/`WARNING` alerts.
+  - **GitHub Actions Cron:** `.github/workflows/vc122-anti-abuse-monitor.yml` runs `node scripts/monitor-vc122-anti-abuse.mjs` every 30 minutes (`*/30 * * * *`) across all live verifier endpoints and optional authenticated `/api/access/monitor` threshold checks (`BHUMI_VERIFIER_CRON_SECRET`).

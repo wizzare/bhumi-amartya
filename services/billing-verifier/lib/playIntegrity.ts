@@ -176,14 +176,31 @@ function resolveMinPlayVersionCode(explicit?: number): number {
   return Number.isFinite(envVal) && envVal > 0 ? envVal : 122;
 }
 
-function resolveExpectedCertDigests(explicit?: string[]): string[] {
-  if (Array.isArray(explicit) && explicit.length > 0) {
-    return explicit.map((s) => s.trim()).filter(Boolean);
+export function normalizeCertDigestToBase64Url(input: string): string | null {
+  const cleaned = input.trim();
+  if (!cleaned) return null;
+  const compactHex = cleaned.replace(/:/g, "");
+  if (/^[a-f0-9]{64}$/i.test(compactHex)) {
+    return Buffer.from(compactHex, "hex").toString("base64url");
   }
-  return (process.env.BHUMI_PLAY_CERT_SHA256_B64 || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const urlSafe = cleaned.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return /^[A-Za-z0-9_-]{16,128}$/.test(urlSafe) ? urlSafe : null;
+}
+
+function resolveExpectedCertDigests(explicit?: string[]): { configured: boolean; digests: string[] } {
+  const raw =
+    Array.isArray(explicit)
+      ? explicit
+      : (process.env.BHUMI_PLAY_CERT_SHA256_B64 || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+  return {
+    configured: raw.length > 0,
+    digests: raw
+      .map((s) => normalizeCertDigestToBase64Url(s))
+      .filter((s): s is string => Boolean(s)),
+  };
 }
 
 export async function decodeAndVerifyPlayIntegrityToken(params: {
@@ -207,7 +224,8 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
     accessTokenProvider = getPlayIntegrityAccessToken,
   } = params;
   const minVersionCode = resolveMinPlayVersionCode(explicitMinVersionCode);
-  const expectedCertDigests = resolveExpectedCertDigests(explicitCertDigests);
+  const { configured: certPinConfigured, digests: expectedCertDigests } =
+    resolveExpectedCertDigests(explicitCertDigests);
 
   if (!integrityToken || integrityToken.length > 8192) {
     return {
@@ -325,8 +343,12 @@ export async function decodeAndVerifyPlayIntegrityToken(params: {
     }
 
     if (
-      expectedCertDigests.length > 0 &&
-      !certDigests.some((digest) => expectedCertDigests.includes(digest))
+      certPinConfigured &&
+      (expectedCertDigests.length === 0 ||
+        !certDigests.some((digest) => {
+          const normalized = normalizeCertDigestToBase64Url(digest);
+          return normalized !== null && expectedCertDigests.includes(normalized);
+        }))
     ) {
       return {
         verified: false,
