@@ -4,9 +4,10 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { reviewTriggerService } from "@/lib/rating/reviewTriggerService";
+import type { UserProfile } from "@/lib/repositories/userRepository";
 
 type Props = {
-  profile: { uid?: string; [key: string]: unknown } | null;
+  profile: UserProfile | null;
   dashboardReady: boolean;
   blockedByModal?: boolean;
 };
