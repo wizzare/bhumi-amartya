@@ -51,7 +51,7 @@ function asTimestamp(value: unknown): number | null {
         return Number.isFinite(ms) && ms > 0 ? ms : null;
       }
     }
-    const ms = new Date(value as string | number).getTime();
+    const ms = typeof value === "number" ? value : Date.parse(String(value));
     return Number.isFinite(ms) && ms > 0 ? ms : null;
   } catch {
     return null;
@@ -86,8 +86,10 @@ export class ReviewTriggerService {
       const raw = this.getStorageItem(this.userKey(uid));
       const value = raw ? JSON.parse(raw) as Partial<UserReviewState> : null;
       return {
-        requestCount: Number.isInteger(value?.requestCount) && (value?.requestCount ?? 0) >= 0
-          ? value!.requestCount!
+        requestCount: typeof value?.requestCount === "number"
+          && Number.isInteger(value.requestCount)
+          && value.requestCount >= 0
+          ? value.requestCount
           : 0,
         lastRequestedAtMs: typeof value?.lastRequestedAtMs === "number" && Number.isFinite(value.lastRequestedAtMs)
           ? value.lastRequestedAtMs
