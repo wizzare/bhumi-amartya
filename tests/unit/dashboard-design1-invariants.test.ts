@@ -56,27 +56,24 @@ check("DashboardClient renders revised hierarchy in exact order", () => {
   const recognitionIndex = clientSrc.indexOf("<GuardianIdentityCard");
   const identityIndex = clientSrc.indexOf("<CoreIdentity");
   const soulIndex = clientSrc.indexOf("<SoulReflectionCard");
-  const actionIndex = clientSrc.indexOf('id="action-title"');
   const astroIndex = clientSrc.indexOf("<AstroTodayCard");
   const envIndex = clientSrc.indexOf("<EnvironmentContextCard");
-  const weeklyIndex = clientSrc.indexOf('id="recent-title"');
+  const weeklyIndex = clientSrc.indexOf('id="weekly-overview-title"');
 
   assert.ok(headerIndex !== -1, "DashboardHeader present");
   assert.ok(recognitionIndex !== -1, "GuardianIdentityCard present");
   assert.ok(identityIndex !== -1, "CoreIdentity present");
   assert.ok(soulIndex !== -1, "SoulReflectionCard present");
-  assert.ok(actionIndex !== -1, "SATU TINDAKAN present");
   assert.ok(astroIndex !== -1, "AstroTodayCard present");
   assert.ok(envIndex !== -1, "EnvironmentContextCard present");
-  assert.ok(weeklyIndex !== -1, "MINGGU INI present");
+  assert.ok(weeklyIndex !== -1, "PANDUAN MINGGU INI present");
 
   assert.ok(headerIndex < recognitionIndex, "Header precedes Pengakuan Bhumi");
   assert.ok(recognitionIndex < identityIndex, "Pengakuan Bhumi precedes Identitas Inti");
   assert.ok(identityIndex < soulIndex, "Identitas Inti precedes SoulReflection");
-  assert.ok(soulIndex < actionIndex, "SoulReflection precedes SATU TINDAKAN");
-  assert.ok(actionIndex < astroIndex, "SATU TINDAKAN precedes Astro");
+  assert.ok(soulIndex < astroIndex, "SoulReflection precedes Astro");
   assert.ok(astroIndex < envIndex, "Astro precedes Environment");
-  assert.ok(envIndex < weeklyIndex, "Environment precedes MINGGU INI");
+  assert.ok(envIndex < weeklyIndex, "Environment precedes PANDUAN MINGGU INI");
 });
 
 check("Dashboard CSS applies Design0 tokens and controls >= 44px", () => {

@@ -46,15 +46,26 @@ const intiTesterRecord: FounderTesterRecord = {
 // WHY CHANGE IS REQUIRED: bootstrap intentionally preserves legacy plan while writing canonical timestamps.
 // RUNTIME BEHAVIOR PROTECTED BY: plan-free users receive only their immutable server-issued window.
 {
-  const profile = { trialStartedAt: "2026-07-20T00:00:00Z", trialEndsAt: "2026-07-27T00:00:00Z", entitlementSource: "firebase_auth_creation_time", plan: "free" } as any;
+  const profile = { trialStartedAt: "2026-07-20T00:00:00Z", trialEndsAt: "2026-07-27T00:00:00Z", entitlementSource: "server_access_bootstrap", plan: "free" } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("legacy free plan with canonical active trial is premium", s.isPremium === true);
   test("legacy free plan with canonical active trial reason is trial", s.reason === "trial");
 }
 
+// Security invariant: legacy Firebase Auth creation-time / onCreate sources must fail closed
+{
+  const authCreationProfile = { trialStartedAt: "2026-07-22T00:00:00Z", trialEndsAt: "2026-07-29T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
+  const sAuth = getEntitlementStatus(authCreationProfile, NOW);
+  test("firebase_auth_creation_time trial source fails closed", sAuth.isPremium === false && sAuth.reason === "none" && sAuth.status === "Invalid Trial Setup");
+
+  const onCreateProfile = { trialStartedAt: "2026-07-22T00:00:00Z", trialEndsAt: "2026-07-29T00:00:00Z", accessSource: "firebase_auth_on_create", setupCompleted: true } as any;
+  const sCreate = getEntitlementStatus(onCreateProfile, NOW);
+  test("firebase_auth_on_create accessSource fails closed", sCreate.isPremium === false && sCreate.reason === "none" && sCreate.status === "Invalid Trial Setup");
+}
+
 // Trial active (started 3 days ago)
 {
-  const profile = { trialStartedAt: "2026-07-22T00:00:00Z", trialEndsAt: "2026-07-29T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-22T00:00:00Z", trialEndsAt: "2026-07-29T00:00:00Z", entitlementSource: "server_access_bootstrap", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("trial user started 3 days ago is premium", s.isPremium === true);
   test("trial user reason is trial", s.reason === "trial");
@@ -63,7 +74,7 @@ const intiTesterRecord: FounderTesterRecord = {
 
 // Trial boundary: exact start (0 days elapsed)
 {
-  const profile = { trialStartedAt: "2026-07-25T00:00:00Z", trialEndsAt: "2026-08-01T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-25T00:00:00Z", trialEndsAt: "2026-08-01T00:00:00Z", entitlementSource: "server_access_bootstrap", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("exact trial start is still trial", s.isPremium === true && s.reason === "trial");
   test("days remaining is 7", s.daysRemaining === 7);
@@ -71,7 +82,7 @@ const intiTesterRecord: FounderTesterRecord = {
 
 // Trial boundary: 8 days ago (expired)
 {
-  const profile = { trialStartedAt: "2026-07-17T00:00:00Z", trialEndsAt: "2026-07-24T00:00:00Z", entitlementSource: "firebase_auth_creation_time", setupCompleted: true } as any;
+  const profile = { trialStartedAt: "2026-07-17T00:00:00Z", trialEndsAt: "2026-07-24T00:00:00Z", entitlementSource: "server_access_bootstrap", setupCompleted: true } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("trial started 8 days ago is not premium", s.isPremium === false);
   test("expired trial status is Trial Exhausted", s.status === "Trial Exhausted");
@@ -82,7 +93,7 @@ const intiTesterRecord: FounderTesterRecord = {
 // WHY CHANGE IS REQUIRED: plan is a legacy presentation field, not trial provenance.
 // RUNTIME BEHAVIOR PROTECTED BY: only source-marked exact seven-day windows unlock access.
 {
-  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", trialEndsAt: "2026-07-31T00:00:00Z", entitlementSource: "firebase_auth_creation_time", plan: "free" } as any;
+  const profile = { trialStartedAt: "2026-07-24T00:00:00Z", trialEndsAt: "2026-07-31T00:00:00Z", entitlementSource: "server_access_bootstrap", plan: "free" } as any;
   const s = getEntitlementStatus(profile, NOW);
   test("canonical trial outranks stale free plan", s.isPremium === true && s.reason === "trial");
 }
@@ -236,7 +247,7 @@ const intiTesterRecord: FounderTesterRecord = {
     uid: "user-free",
     trialStartedAt: "2026-07-01T00:00:00Z",
     trialEndsAt: "2026-07-08T00:00:00Z",
-    entitlementSource: "firebase_auth_creation_time",
+    entitlementSource: "server_access_bootstrap",
   } as any;
   const s = getEntitlementStatus(profile, WIDYA_NOW, null);
   test("F: no badge + expired trial -> FREE", s.isPremium === false && s.status === "Trial Exhausted", `got isPremium=${s.isPremium} status=${s.status}`);
