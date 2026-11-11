@@ -3,8 +3,11 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { hasActiveModalInDom } from "@/lib/rating/reviewEligibility";
 import { reviewTriggerService } from "@/lib/rating/reviewTriggerService";
 import type { UserProfile } from "@/lib/repositories/userRepository";
+
+export { hasActiveModalInDom };
 
 type Props = {
   profile: UserProfile | null;
@@ -24,9 +27,19 @@ export function DashboardReviewPrompt({
   const pathname = usePathname();
   const auth = useAuth();
   const attemptedInThisDashboard = useRef(new Set<string>());
+  const lastUidRef = useRef<string | null>(null);
 
   const uid = auth?.user?.uid;
   const firebaseCreatedAt = auth?.user?.metadata?.creationTime;
+
+  useEffect(() => {
+    const normalizedUid = typeof uid === "string" && uid.trim() ? uid.trim() : null;
+    if (lastUidRef.current !== normalizedUid) {
+      lastUidRef.current = normalizedUid;
+      attemptedInThisDashboard.current.clear();
+      reviewTriggerService.syncActiveUser(normalizedUid);
+    }
+  }, [uid]);
 
   useEffect(() => {
     if (
@@ -45,6 +58,8 @@ export function DashboardReviewPrompt({
 
     const requestIfEligible = () => {
       if (!active || document.visibilityState !== "visible") return;
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+      if (blockedByModal || hasActiveModalInDom()) return;
       if (!reviewTriggerService.isEligibleForDashboard(profile, firebaseCreatedAt)) return;
       attemptedInThisDashboard.current.add(uid);
       void reviewTriggerService.requestReview(uid);

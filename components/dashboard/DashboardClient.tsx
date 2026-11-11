@@ -939,7 +939,7 @@ export function DashboardClient() {
       <DashboardReviewPrompt
         profile={profile}
         dashboardReady={!loading && Boolean(auth?.userProfile?.setupCompleted)}
-        blockedByModal={Boolean(safetyState?.isSafetyMode)}
+        blockedByModal={Boolean(safetyState?.isSafetyMode) || Boolean(weeklyDetailsOpen) || Boolean(dgError && !dailyGuidance)}
       />
 
       <DashboardHeader userName={profile.fullName} language={legacyUiLanguage} compact />
