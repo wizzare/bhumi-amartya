@@ -14,7 +14,7 @@ import {
   decodeAndVerifyPlayIntegrityToken,
   verifyAppCheckHeaderToken,
   verifyIntegrityChallengeToken,
-} from "@/services/billing-verifier/lib/playIntegrity";
+} from "@/lib/antiAbuse/playIntegrity";
 
 // Canonical 7-day idempotency markers verified by security suite:
 // outcome: "ALREADY_PRESENT" when data.trialStartedAt && data.trialEndsAt;

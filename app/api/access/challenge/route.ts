@@ -3,7 +3,7 @@ import { assertQaOperationAllowed } from "@/lib/config/qaRuntime";
 import { getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { resolveHmacSecret } from "@/lib/antiAbuse/birthFingerprint";
-import { issueIntegrityChallenge } from "@/services/billing-verifier/lib/playIntegrity";
+import { issueIntegrityChallenge } from "@/lib/antiAbuse/playIntegrity";
 
 const CORS_ALLOWED_METHODS = "POST, OPTIONS";
 const CORS_ALLOWED_HEADERS = "Authorization, Content-Type, X-Firebase-AppCheck";
