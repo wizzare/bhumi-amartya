@@ -538,5 +538,15 @@ test("Anti-Abuse 20-Case Matrix & Security Verification", async () => {
 
     const bantuan = fs.readFileSync(path.join(process.cwd(), "app/bantuan/page.tsx"), "utf8");
     assert.ok(bantuan.includes('id="verifikasi-perangkat"'));
+
+    const premiumLock = fs.readFileSync(path.join(process.cwd(), "components/auth/PremiumLock.tsx"), "utf8");
+    assert.ok(premiumLock.includes("retryCanonicalAccessVerification"));
+
+    const defaultEnforce = resolveAntiAbuseFeatureFlags({ mode: "enforce" }, { NODE_ENV: "production" });
+    assert.equal(defaultEnforce.enforceDeviceFreeClaim, true);
+    assert.equal(defaultEnforce.requirePlayIntegrity, true);
+
+    const dsDoc = fs.readFileSync(path.join(process.cwd(), "docs/VC122_DATA_SAFETY_AND_ANTI_ABUSE.md"), "utf8");
+    assert.ok(dsDoc.includes("NOT anonymous") && dsDoc.includes("180 days"));
   }
 });

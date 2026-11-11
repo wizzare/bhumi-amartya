@@ -248,3 +248,110 @@ test("reconcile-deletion authenticates, strips raw firstUid, cleans birth claims
   equal(auditDocs.get("antiAbuseAuditLogs/aud1")?.birthCoreHmac, null);
   ok(typeof auditDocs.get("antiAbuseAuditLogs/aud1")?.retainUntil === "string");
 });
+
+test("parseVerifierSignals ignores spoofed client flags and enforce mode defaults requirePlayIntegrity=true", async () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { parseVerifierSignals, resolveVerifierAntiAbuseFlags } = require("../../lib/antiAbuse");
+
+  const spoofed = parseVerifierSignals(
+    {
+      platform: "android",
+      appVersionCode: 122,
+      deviceIdHash: "11223344556677889900aabbccddeeff",
+      playIntegrityVerified: true,
+      appCheckVerified: true,
+      birthCoreHmac: "c".repeat(64),
+    },
+    "unverified-header",
+  );
+  equal(spoofed.valid, false);
+  equal(spoofed.signals.playIntegrityVerified, null);
+  equal(spoofed.signals.appCheckVerified, null);
+  equal(spoofed.signals.birthCoreHmac, null);
+
+  const validBody = parseVerifierSignals(
+    {
+      platform: "android",
+      appVersionCode: 122,
+      deviceIdHash: "11223344556677889900aabbccddeeff",
+    },
+    "unverified-header",
+  );
+  equal(validBody.valid, true);
+  equal(validBody.signals.playIntegrityVerified, null);
+  equal(validBody.signals.appCheckVerified, null);
+  equal(validBody.signals.birthCoreHmac, null);
+
+  const enforceFlags = resolveVerifierAntiAbuseFlags({ mode: "enforce" });
+  equal(enforceFlags.enforceDeviceFreeClaim, true);
+  equal(enforceFlags.requirePlayIntegrity, true);
+
+  // Stale Play Integrity timestamp (>10 min) rejected
+  const nowMs = Date.UTC(2026, 10, 11, 12, 0, 0);
+  const stale = await decodeAndVerifyPlayIntegrityToken({
+    integrityToken: "synthetic-pi-token",
+    expectedNonce: "nonce-1234567890abcdef",
+    nowMs,
+    fetchImpl: (async () =>
+      new Response(
+        JSON.stringify({
+          tokenPayloadExternal: {
+            requestDetails: {
+              requestPackageName: "com.bhumiamartya.app",
+              nonce: "nonce-1234567890abcdef",
+              timestampMillis: String(nowMs - 11 * 60 * 1000),
+            },
+            appIntegrity: { appRecognitionVerdict: "PLAY_RECOGNIZED" },
+            deviceIntegrity: { deviceRecognitionVerdict: ["MEETS_DEVICE_INTEGRITY"] },
+          },
+        }),
+        { status: 200 },
+      )) as typeof fetch,
+    accessTokenProvider: async () => "synthetic-google-oauth",
+  });
+  equal(stale.verified, false);
+  equal(stale.reason, "INTEGRITY_TIMESTAMP_STALE");
+
+  // Package mismatch rejected
+  const wrongPkg = await decodeAndVerifyPlayIntegrityToken({
+    integrityToken: "synthetic-pi-token",
+    expectedNonce: "nonce-1234567890abcdef",
+    nowMs,
+    fetchImpl: (async () =>
+      new Response(
+        JSON.stringify({
+          tokenPayloadExternal: {
+            requestDetails: {
+              requestPackageName: "com.evil.clone",
+              nonce: "nonce-1234567890abcdef",
+              timestampMillis: String(nowMs - 1000),
+            },
+            appIntegrity: { appRecognitionVerdict: "PLAY_RECOGNIZED" },
+            deviceIntegrity: { deviceRecognitionVerdict: ["MEETS_DEVICE_INTEGRITY"] },
+          },
+        }),
+        { status: 200 },
+      )) as typeof fetch,
+    accessTokenProvider: async () => "synthetic-google-oauth",
+  });
+  equal(wrongPkg.verified, false);
+  equal(wrongPkg.reason, "INTEGRITY_PACKAGE_MISMATCH");
+
+  // challenge handler check
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const challengeHandler = require("../../api/access/challenge").default;
+  let chStatus = 0;
+  let chBody: Record<string, unknown> = {};
+  await challengeHandler(
+    { method: "POST", headers: { authorization: "Bearer synthetic-token", origin: "https://localhost" } },
+    {
+      setHeader() {},
+      status(s: number) { chStatus = s; return this; },
+      json(v: Record<string, unknown>) { chBody = v; },
+      end() {},
+    },
+  );
+  equal(chStatus, 200);
+  equal(chBody.ok, true);
+  ok(typeof chBody.challengeToken === "string" && chBody.challengeToken.includes("."));
+});

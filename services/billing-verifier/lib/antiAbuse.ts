@@ -122,7 +122,7 @@ export function resolveVerifierAntiAbuseFlags(
     enforceDeviceFreeClaim: mode === "enforce" && pick("enforceDeviceFreeClaim", "BHUMI_ANTI_ABUSE_ENFORCE_DEVICE", true),
     allowSignalUnavailableFallback: pick("allowSignalUnavailableFallback", "BHUMI_ANTI_ABUSE_SIGNAL_FALLBACK", true),
     enableBirthFingerprintObservation: pick("enableBirthFingerprintObservation", "BHUMI_ANTI_ABUSE_BIRTH_FINGERPRINT", true),
-    requirePlayIntegrity: mode === "enforce" && pick("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", false),
+    requirePlayIntegrity: mode === "enforce" && pick("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", true),
     requireAppCheck: mode === "enforce" && pick("requireAppCheck", "BHUMI_ANTI_ABUSE_REQUIRE_APP_CHECK", false),
     enableVc121MigrationGrace: pick("enableVc121MigrationGrace", "BHUMI_ANTI_ABUSE_VC121_GRACE", true),
   };

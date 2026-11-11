@@ -82,7 +82,7 @@ export function resolveAntiAbuseFeatureFlags(
       DEFAULT_ANTI_ABUSE_FLAGS.enableBirthFingerprintObservation,
     ),
     requirePlayIntegrity:
-      mode === "enforce" && pickBool("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", false),
+      mode === "enforce" && pickBool("requirePlayIntegrity", "BHUMI_ANTI_ABUSE_REQUIRE_PLAY_INTEGRITY", true),
     requireAppCheck:
       mode === "enforce" && pickBool("requireAppCheck", "BHUMI_ANTI_ABUSE_REQUIRE_APP_CHECK", false),
     enableVc121MigrationGrace: pickBool(

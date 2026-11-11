@@ -7,6 +7,7 @@ import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
 import { useAuth } from "@/context/AuthContext";
 import { getAntiAbuseUxCopy } from "@/lib/antiAbuse/eligibilityUx";
+import { retryCanonicalAccessVerification } from "@/lib/billing/canonicalAccessBootstrap";
 
 interface PremiumLockProps {
   children: React.ReactNode;
@@ -131,7 +132,18 @@ export function PremiumLock({ children, feature }: PremiumLockProps) {
             ) : null}
             {antiAbuseBanner ? (
               <button
-                onClick={() => router.replace("/bantuan#verifikasi-perangkat")}
+                onClick={() => {
+                  const u = auth?.user;
+                  if (u && typeof u.getIdToken === "function") {
+                    void retryCanonicalAccessVerification(u.uid, (f) => u.getIdToken(f), async () => {
+                      await auth?.refreshUserProfile?.();
+                    }).then((res) => {
+                      if (!res.ok) router.replace("/bantuan#verifikasi-perangkat");
+                    });
+                  } else {
+                    router.replace("/bantuan#verifikasi-perangkat");
+                  }
+                }}
                 className="block w-full py-2.5 px-6 border border-[#D8DDD5] text-[#5F6B5E] bg-white rounded-2xl text-xs font-medium hover:bg-[#F7F4EE] transition-all"
               >
                 {antiAbuseBanner.verifyAccountCtaLabel}
