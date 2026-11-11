@@ -69,3 +69,33 @@ Partial value beats hidden value. Use progressive disclosure. Show value now. Ex
 - Mission: Menjelaskan ("Aku memahami diriku lebih baik")
 - Priorities: Edukasi, interpretasi, penjelasan, pemahaman diri. Structured and informative.
 <!-- END:kara-voice-architecture -->
+
+
+<!-- BEGIN:bhumi-antigravity-system -->
+# BHUMI AMARTYA — PERMANENT ANTIGRAVITY DEVELOPMENT SYSTEM
+
+## 10 Mandatory Engineering Rules
+1. Audit before edit — inspect provenance, branches, build artifacts, consumers, and contracts before editing.
+2. Minimal diff — change only files authorized for the task; avoid speculative refactors.
+3. Canonical data preservation — never alter ephemeris, house, or Human Design gate/channel math without separate authorization and failing proof.
+4. No undocumented engine changes — all calculation changes require documented justification and golden-fixture regression tests.
+5. No production database mutation during QA — use local emulators or synthetic fixtures; never touch live Firestore/Auth.
+6. No authorization bypass — keep UID ownership, Firestore Rules, and server-side entitlement strict and fail-closed.
+7. No secret exposure — never print keystore passwords, service-account keys, HMAC secrets, or user PII.
+8. No destructive Git operation — no force push, `git clean`, hard reset, or unapproved rebase/stash.
+9. No fabricated test evidence — compilation is NOT proof the app works. Classify checks strictly as `PASS`, `FAIL`, `BLOCKED`, `NOT_RUN`, or `HISTORICAL`.
+10. No release without Founder approval — never bump/publish to Play Store or flip destructive production flags without explicit Founder sign-off.
+
+## 5 Specialized Agent Roles (Skills in `.agents/skills/`)
+1. `bhumi-architecture-audit` — Phase 0 provenance, dependency policy, blast radius & impact analysis.
+2. `bhumi-frontend-visualization` — React/Next.js responsive SVG/UI, WebView rendering, collision & mobile overflow fixes.
+3. `bhumi-backend-security` — Firebase Auth, Firestore Rules, atomic server eligibility, observe-first feature flags, Play Billing integrity.
+4. `bhumi-qa-browser-emulator` — Playwright multi-viewport QA (`320x640` to `768x1024`), Firebase Emulator suites, screenshot evidence.
+5. `bhumi-android-release` — Capacitor sync, Gradle `bundleRelease`, AAB/APK signing & checksum verification, Crashlytics/Play Integrity readiness.
+
+Parallel subagent execution is allowed ONLY on independent tasks with disjoint file ownership.
+
+## 8-Stage Delivery Lifecycle
+`AUDIT -> PLAN -> IMPLEMENT -> SELF-REVIEW -> TEST -> SECURITY CHECK -> ANDROID QA -> RELEASE REVIEW`
+See [BHUMI_ANTIGRAVITY_DEV_SYSTEM.md](docs/BHUMI_ANTIGRAVITY_DEV_SYSTEM.md).
+<!-- END:bhumi-antigravity-system -->

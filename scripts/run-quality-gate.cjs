@@ -1,300 +1,245 @@
 /*
- * BHUMI QUALITY GATE — ONE-COMMAND LOCAL VALIDATION
+ * BHUMI QUALITY GATE — EVIDENCE-BASED VALIDATION RUNNER
  * Run: npm run quality:gate
  *
- * Output verdicts:
- *   DEVELOPMENT GATE PASS  — all applicable mandatory local checks passed
- *   DEVELOPMENT GATE FAIL  — any mandatory local check failed or was skipped without explicit justified policy
- *   RELEASE GATE BLOCKED   — any required native runtime, Billing, Auth, QA isolation or other release acceptance remains incomplete
- *
- * Verdict distinctions (exactly one per category):
- *   CURRENT_RUN_PASS      — this execution passed the check
- *   HISTORICAL_EVIDENCE   — passed in a prior execution; not re-executed here
- *   NOT_RUN               — check not executed (e.g., missing dependency)
- *   RUNTIME_PENDING       — synthetic PASS; native/runtime verification not completed
- *   BLOCKED               — check cannot execute (environment lacks required config)
- *   FAIL                  — check executed and returned non-PASS result
- *
- * This gate reuses existing npm scripts where possible and records prior
- * evidence status; does NOT re-run native device/QA tests.
+ * Strict Evidence Status Taxonomy (Phase 7):
+ *   PASS       — check executed in THIS run and passed (exitCode === 0)
+ *   FAIL       — check executed in THIS run and returned non-zero
+ *   BLOCKED    — prerequisite unavailable in this environment (e.g. missing emulator JDK 21+ / ADB device)
+ *   NOT_RUN    — check intentionally not executed in this invocation
+ *   HISTORICAL — prior evidence only; NEVER promoted to PASS
  */
 
-const { execSync } = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
+const { execSync, spawnSync } = require("node:child_process");
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
 
-// Ensure output directory exists
-const REPORTS_DIR = path.join(process.cwd(), 'reports-qualitygate');
+const REPORTS_DIR = path.join(process.cwd(), "reports-qualitygate");
 if (!fs.existsSync(REPORTS_DIR)) {
   fs.mkdirSync(REPORTS_DIR, { recursive: true });
 }
 
-/** Run an npm script and capture exit code + stdout */
-function runScript(name) {
-  try {
-    const output = execSync(`npm run ${name}`, {
-      encoding: 'utf8',
-      maxBuffer: 10 * 1024 * 1024,
-    });
-    return { exitCode: 0, output };
-  } catch (e) {
-    return { exitCode: 1, output: e.stdout ?? e.stderr ?? String(e) };
-  }
-}
-
-/** Trim and limit output for report */
-function cap(s, n = 300) {
-  if (s.length <= n) return s;
-  return s.slice(0, n) + '...';
-}
-
-/*
- * HUMAN DESIGN CHECK — golden fixture present;
- * engine fix recorded (no special-case overrides).
- * The fixture file is test_widhi_hd.js at the repo root.
- */
-function humanDesignCheck() {
-  const goldenPath = path.join(process.cwd(), 'test_widhi_hd.js');
-  if (!fs.existsSync(goldenPath)) {
-    return { result: 'NOT_RUN', detail: 'Golden fixture absent', evidence: 'none' };
-  }
+function getGitInfo() {
+  const runGit = (cmd) => {
+    try {
+      return execSync(cmd, { encoding: "utf8" }).trim();
+    } catch {
+      return "unknown";
+    }
+  };
   return {
-    result: 'CURRENT_RUN_PASS',
-    detail:
-      'Golden fixture present; engine fix recorded (no special-case overrides).',
-    evidence: 'test_widhi_hd.js fixture',
+    branch: runGit("git branch --show-current"),
+    head: runGit("git rev-parse HEAD"),
   };
 }
 
-/*
- * PLATFORM BOUNDARY CHECK — platform-scope.json must exist;
- * earlier audit verified 808/66/9,213,286 bytes parity.
- */
-function platformBoundaryCheck() {
-  const scopePath = path.join(process.cwd(), 'config', 'platform-scope.json');
-  if (!fs.existsSync(scopePath)) {
+function runCommand(command, args, opts = {}) {
+  const start = Date.now();
+  const res = spawnSync(command, args, {
+    cwd: opts.cwd || process.cwd(),
+    encoding: "utf8",
+    maxBuffer: 15 * 1024 * 1024,
+    shell: process.platform === "win32",
+    env: opts.env || process.env,
+    timeout: opts.timeoutMs || 180000,
+  });
+  const durationMs = Date.now() - start;
+  const exitCode = res.status ?? (res.error ? 1 : 2);
+  const combined = `${res.stdout || ""}\n${res.stderr || ""}`.trim();
+  return {
+    exitCode,
+    durationMs,
+    outputTail: combined.split(/\r?\n/).slice(-12).join(" | ").slice(0, 350),
+  };
+}
+
+function checkTypeScriptRoot() {
+  const res = runCommand("npx", ["tsc", "--noEmit"]);
+  return {
+    name: "TYPESCRIPT_ROOT",
+    status: res.exitCode === 0 ? "PASS" : "FAIL",
+    exitCode: res.exitCode,
+    command: "npx tsc --noEmit",
+    detail: res.exitCode === 0 ? `tsc passed in ${res.durationMs}ms` : res.outputTail || "tsc failed",
+  };
+}
+
+function checkTypeScriptBillingVerifier() {
+  const verifierDir = path.join(process.cwd(), "services", "billing-verifier");
+  if (!fs.existsSync(verifierDir)) {
     return {
-      result: 'NOT_RUN',
-      detail: 'platform-scope.json absent',
-      evidence: 'none',
+      name: "TYPESCRIPT_BILLING_VERIFIER",
+      status: "BLOCKED",
+      exitCode: null,
+      command: "npm --prefix services/billing-verifier run typecheck",
+      detail: "services/billing-verifier directory missing",
     };
   }
+  const res = runCommand("npm", ["--prefix", "services/billing-verifier", "run", "typecheck"]);
   return {
-    result: 'CURRENT_RUN_PASS',
-    detail:
-      'platform-scope.json present; 808 files / 66 HTML / 9,213,286 bytes verified identical.',
-    evidence: 'PLATFORM-01_FULL_WEB_ANDROID_SCOPE_AUDIT_REPORT.md; artifact parity confirmed.',
+    name: "TYPESCRIPT_BILLING_VERIFIER",
+    status: res.exitCode === 0 ? "PASS" : "FAIL",
+    exitCode: res.exitCode,
+    command: "npm --prefix services/billing-verifier run typecheck",
+    detail: res.exitCode === 0 ? `verifier tsc passed in ${res.durationMs}ms` : res.outputTail || "verifier tsc failed",
   };
 }
 
-/*
- * TYPESCRIPT / LINT CHECK — known status from prior evidence.
- * TSC: baseline warnings only (TS7016). Lint: 421 warnings, 0 errors.
- */
-function tscLintCheck() {
+function checkEslintCore() {
+  const res = runCommand("npx", [
+    "eslint",
+    "components/ui/BhumiPageHeader.tsx",
+    "components/dashboard/DashboardHeader.tsx",
+    "components/blueprint/NatalChartWheel.tsx",
+    "components/blueprint/HumanDesignBodygraphLite.tsx",
+    "app/blueprint/natal-chart/page.tsx",
+    "lib/antiAbuse",
+    "lib/billing/canonicalAccessBootstrap.ts",
+    "components/auth/AccessGuard.tsx",
+    "components/auth/PremiumLock.tsx",
+    "app/premium-bhumi/page.tsx",
+    "app/api/access/bootstrap-trial/route.ts",
+  ]);
   return {
-    result: 'CURRENT_RUN_PASS',
-    detail:
-      'TSC: baseline warnings only (TS7016); Lint: 421 warnings, 0 errors.',
-    evidence: 'prior evidence; not re-executed in this environment',
+    name: "ESLINT_MODIFIED_SCOPE",
+    status: res.exitCode === 0 ? "PASS" : "FAIL",
+    exitCode: res.exitCode,
+    command: "npx eslint <vc122-modified-scope>",
+    detail: res.exitCode === 0 ? `0 errors (${res.durationMs}ms)` : res.outputTail || "eslint failed",
   };
 }
 
-/*
- * BILLING CHECK — known status from prior evidence.
- * Synthetic PASS; native runtime NOT VERIFIED.
- * Clearly distinguish verdicts.
- */
-function billingCheck() {
+function checkUnitSuites() {
+  const tsxCli = path.join("node_modules", "tsx", "dist", "cli.mjs");
+  const suites = [
+    "tests/unit/dashboard-design1-invariants.test.ts",
+    "tests/unit/build119-bp04-final-gate.test.ts",
+    "tests/unit/build119-bp03-d5-page-audit.test.ts",
+    "tests/unit/build108-cdi02-hd-advanced-variables.test.ts",
+    "tests/unit/version-reconciliation.test.ts",
+    "tests/unit/build122-anti-abuse-matrix.test.ts",
+    "tests/unit/billing-entitlement-contract.test.ts",
+    "tests/unit/billing-entitlement-presentation.test.ts",
+    "tests/unit/build121-sprint02-billing-verifier.test.ts",
+    "tests/unit/build126r3-entitlement-forgery.test.ts",
+    "tests/unit/p0-01-accessguard-hardening.test.ts",
+  ];
+  const res = runCommand("node", [tsxCli, "--import", "./tests/helpers/initTestEnv.ts", "--test", ...suites]);
   return {
-    result: 'RUNTIME_PENDING',
-    detail:
-      '14 assertions PASS (synthetic acceptance); native Google Sign-In / Billing runtime NOT VERIFIED.',
-    evidence: 'BHUMI_AUTH_NEW_02_LOGIN_FIX_ACCEPTANCE_REPORT.md (synthetic); native runtime pending.',
+    name: "UNIT_AND_SECURITY_SUITES",
+    status: res.exitCode === 0 ? "PASS" : "FAIL",
+    exitCode: res.exitCode,
+    command: `node ${tsxCli} --import ./tests/helpers/initTestEnv.ts --test (${suites.length} files)`,
+    detail: res.exitCode === 0 ? `All ${suites.length} suites passed (${res.durationMs}ms)` : res.outputTail || "unit suites failed",
   };
 }
 
-/*
- * AUTH / NEW USER CHECK — same known status as billing.
- */
-function authNewUserCheck() {
+function checkAndroidArtifact() {
+  const gradlePath = path.join(process.cwd(), "android", "app", "build.gradle");
+  const aabPath = path.join(
+    process.cwd(),
+    "android",
+    "app",
+    "build",
+    "outputs",
+    "bundle",
+    "release",
+    "app-release.aab",
+  );
+  if (!fs.existsSync(gradlePath)) {
+    return {
+      name: "ANDROID_BUNDLE_ARTIFACT",
+      status: "BLOCKED",
+      exitCode: null,
+      command: "stat android/app/build/outputs/bundle/release/app-release.aab",
+      detail: "android/app/build.gradle not found",
+    };
+  }
+  const gradleSrc = fs.readFileSync(gradlePath, "utf8");
+  const versionCode = gradleSrc.match(/versionCode\s+(\d+)/)?.[1] || "unknown";
+  const versionName = gradleSrc.match(/versionName\s+"([^"]+)"/)?.[1] || "unknown";
+
+  if (!fs.existsSync(aabPath)) {
+    return {
+      name: "ANDROID_BUNDLE_ARTIFACT",
+      status: "NOT_RUN",
+      exitCode: null,
+      command: "stat android/app/build/outputs/bundle/release/app-release.aab",
+      detail: `AAB not yet built for versionCode=${versionCode} (${versionName})`,
+    };
+  }
+
+  const stat = fs.statSync(aabPath);
+  const hash = crypto.createHash("sha256").update(fs.readFileSync(aabPath)).digest("hex");
   return {
-    result: 'RUNTIME_PENDING',
-    detail:
-      'Synthetic pass; native runtime NOT VERIFIED. ' +
-      'Prior evidence: AUTH-NEW-02 login fix; native Google Sign-In pending.',
-    evidence: 'AUTH-NEW-02 login fix; native Google Sign-In pending.',
+    name: "ANDROID_BUNDLE_ARTIFACT",
+    status: "PASS",
+    exitCode: 0,
+    command: "sha256 app-release.aab",
+    detail: `versionCode=${versionCode} (${versionName}), bytes=${stat.size}, mtime=${stat.mtime.toISOString()}, sha256=${hash}`,
   };
 }
 
-/*
- * ANDROID ARTIFACT CHECK — cannot build APK here;
- * record prior parity PASS and note AUTH-NEW-02 not included.
- */
-function androidArtifactCheck() {
+function checkEmulatorStatus() {
+  const hasEmulatorHost = Boolean(process.env.FIRESTORE_EMULATOR_HOST);
   return {
-    result: 'NOT_RUN',
-    detail:
-      'Gradle not invoked in this environment; APK parity previously PASS ' +
-      '(808 files / 66 HTML / 9,213,286 bytes). ' +
-      'Do not claim that the old Android APK includes AUTH-NEW-02 changes.',
-    evidence: 'BILL-05A.4H_ANDROID_APK_FINAL_ACCEPTANCE_REPORT.md; prior artifact parity.',
+    name: "FIREBASE_EMULATOR_SUITE",
+    status: hasEmulatorHost ? "NOT_RUN" : "BLOCKED",
+    exitCode: null,
+    command: "npm run test:release",
+    detail: hasEmulatorHost
+      ? "Emulator detected; invoke npm run test:release directly"
+      : "Requires active Firebase Auth/Firestore emulator + JDK 21+",
   };
 }
 
-/*
- * QA ISOLATION CHECK — guard status from prior implementation.
- * Local guard present; native QA runtime BLOCKED.
- */
-function qaIsolationCheck() {
-  return {
-    result: 'BLOCKED',
-    detail:
-      'Native QA runtime not verified; Firebase/QA project not configured. ' +
-      'Local guard implementation present but runtime BLOCKED.',
-    evidence: 'BHUMI_QA_BACKEND_AUTH_DB_CONFIG_01_REPORT.md; local guard only.',
-  };
-}
-
-/*
- * Gate verdict logic.
- *
- * DEVELOPMENT GATE PASS  — all mandatory checks are CURRENT_RUN_PASS
- * DEVELOPMENT GATE FAIL  — any mandatory check is FAIL, NOT_RUN without justified policy, or RUNTIME_PENDING/BLOCKED
- * RELEASE GATE BLOCKED   — any required native runtime, Billing, Auth, QA isolation or other release acceptance remains incomplete
- *
- * Verdict distinctions per category (exactly one):
- *   CURRENT_RUN_PASS      — this execution passed the check
- *   HISTORICAL_EVIDENCE   — passed in a prior execution; not re-executed here
- *   NOT_RUN               — check not executed (e.g., missing dependency)
- *   RUNTIME_PENDING       — synthetic PASS; native/runtime verification not completed
- *   BLOCKED               — check cannot execute (environment lacks required config)
- *   FAIL                  — check executed and returned non-PASS result
- *
- * DEVELOPMENT GATE PASS rule: all mandatory checks must be CURRENT_RUN_PASS.
- * Mandatory = Human Design + Platform Boundary.
- * If any mandatory is not CURRENT_RUN_PASS, Development Gate = FAIL.
- * Release Gate = BLOCKED if billing or auth RUNTIME_PENDING or QA BLOCKED.
- */
 function runGate() {
-  const hd = humanDesignCheck();
-  const platform = platformBoundaryCheck();
-  const billing = billingCheck();
-  const auth = authNewUserCheck();
-  const android = androidArtifactCheck();
-  const qa = qaIsolationCheck();
-
+  const git = getGitInfo();
   const categories = [
-    { name: 'HUMAN DESIGN', result: hd.result, detail: hd.detail, evidence: hd.evidence, idLink: 'RCV-21' },
-    { name: 'PLATFORM BOUNDARY', result: platform.result, detail: platform.detail, evidence: platform.evidence, idLink: 'RCV-24' },
-    { name: 'TYPESCRIPT / LINT', result: tscLintCheck().result, detail: tscLintCheck().detail, evidence: tscLintCheck().evidence, idLink: 'RCV-25' },
-    { name: 'BILLING', result: billing.result, detail: billing.detail, evidence: billing.evidence, idLink: 'RCV-22' },
-    { name: 'AUTH / NEW USER', result: auth.result, detail: auth.detail, evidence: auth.evidence, idLink: 'RCV-23' },
-    { name: 'ANDROID ARTIFACT', result: android.result, detail: android.detail, evidence: android.evidence, idLink: 'RCV-26' },
-    { name: 'QA ISOLATION', result: qa.result, detail: qa.detail, evidence: qa.evidence, idLink: 'RCV-28' },
+    checkTypeScriptRoot(),
+    checkTypeScriptBillingVerifier(),
+    checkEslintCore(),
+    checkUnitSuites(),
+    checkAndroidArtifact(),
+    checkEmulatorStatus(),
   ];
 
-  const mandatory = [categories[0], categories[1]]; // HD, Platform
-  const allMandatoryCurrentPass = mandatory.every((c) => c.result === 'CURRENT_RUN_PASS');
+  const mandatoryNames = new Set([
+    "TYPESCRIPT_ROOT",
+    "TYPESCRIPT_BILLING_VERIFIER",
+    "ESLINT_MODIFIED_SCOPE",
+    "UNIT_AND_SECURITY_SUITES",
+  ]);
+  const mandatoryFailed = categories.some((c) => mandatoryNames.has(c.name) && c.status !== "PASS");
+  const devGate = mandatoryFailed ? "DEVELOPMENT GATE FAIL" : "DEVELOPMENT GATE PASS";
 
-  let devGate;
-  if (allMandatoryCurrentPass) {
-    devGate = 'DEVELOPMENT GATE PASS';
-  } else {
-    const hasFail = mandatory.some((c) => c.result === 'FAIL');
-    const hasNotRun = mandatory.some((c) => c.result === 'NOT_RUN');
-    const hasPendingOrBlocked = mandatory.some((c) => c.result === 'RUNTIME_PENDING' || c.result === 'BLOCKED');
-    if (hasFail || hasNotRun || hasPendingOrBlocked) {
-      devGate = 'DEVELOPMENT GATE FAIL';
-    } else {
-      devGate = 'DEVELOPMENT GATE FAIL';
-    }
-  }
+  const aabReady = categories.find((c) => c.name === "ANDROID_BUNDLE_ARTIFACT")?.status === "PASS";
+  const releaseGate = mandatoryFailed || !aabReady ? "RELEASE GATE BLOCKED" : "RELEASE CANDIDATE LOCAL PASS (FOUNDER REVIEW REQUIRED)";
 
-  let billingBlocked = billing.result === 'RUNTIME_PENDING' || billing.result === 'BLOCKED';
-  let authBlocked = auth.result === 'RUNTIME_PENDING' || auth.result === 'BLOCKED';
-  let qaBlocked = qa.result === 'BLOCKED';
-  let releaseBlocked =
-    billingBlocked || authBlocked || qaBlocked ? 'RELEASE GATE BLOCKED' : 'UNKNOWN';
-
-  const lines = [];
-  lines.push('BHUMI QUALITY GATE — LOCAL VALIDATION REPORT');
-  lines.push('='.repeat(50));
-  lines.push(`Date: ${new Date().toISOString().split('T')[0]}`);
-  lines.push(`Branch: hotfix/build110-indonesian-only`);
-  lines.push(`HEAD: e63f334cf0ac20cc076bc88e98e3e06808b024f3`);
-  lines.push('');
-
-  const categoryLines = [];
-  for (const c of categories) {
-    categoryLines.push(`  ${c.name}: ${c.result} — ${c.detail} (evidence: ${c.evidence})`);
-    categoryLines.push(`    → ID: ${c.idLink}`);
-  }
-  lines.push(categoryLines.join('\n'));
-  lines.push('');
-
-  lines.push('DEVELOPMENT GATE: ' + devGate);
-  lines.push('RELEASE GATE: ' + releaseBlocked);
-  lines.push('');
-
-  lines.push('INTEGRATION:');
-  lines.push(
-    'This gate reuses existing npm scripts where possible and prior evidence ' +
-      'statuses for categories requiring native/QA resources. No native device/QA tests are re-executed here.'
-  );
-  lines.push(
-    'Connects to 44-item evidence-based ledger (RCV-21 through RCV-28).'
-  );
-  lines.push(
-    'Verdict distinctions: CURRENT_RUN_PASS (this run), HISTORICAL_EVIDENCE (prior runs), ' +
-      'NOT_RUN (skipped), RUNTIME_PENDING (synthetic only), BLOCKED (env lacks config), FAIL (executed, not PASS).'
-  );
-  lines.push(
-    'DEVELOPMENT GATE PASS must NEVER be displayed as RELEASE READY.'
-  );
-  lines.push('');
-
-  const reportPath = path.join(REPORTS_DIR, 'BHUMI_QUALITY_GATE_REPORT.md');
-  fs.writeFileSync(reportPath, lines.join('\n'), 'utf8');
-  console.log(`Report written to ${reportPath}`);
-
-  // Append gate-reference footer to three master docs
-  const footer = [
-    '',
-    '---',
-    'Quality Gate Validation (run: `npm run quality:gate`)',
-    'Result: see reports-qualitygate/BHUMI_QUALITY_GATE_REPORT.md',
-    'Linked requirement IDs: RCV-21 .. RCV-28 (44-item ledger)',
-    'Preserved: 25 RSK rows, 21 DS rows, 44-item ledger.',
-    '---',
-  ].join('\n');
-
-  const masterDocs = [
-    'BHUMI_MASTER_PROJECT_CHECKLIST.md',
-    'BHUMI_MASTER_GAP_AND_RISK_REGISTER.md',
-    'BHUMI_REMAINING_WORK_EXECUTION_PLAN.md',
+  const lines = [
+    "BHUMI QUALITY GATE — EVIDENCE-BASED VALIDATION REPORT",
+    "======================================================",
+    `Date: ${new Date().toISOString()}`,
+    `Branch: ${git.branch}`,
+    `HEAD: ${git.head}`,
+    "",
+    ...categories.map(
+      (c) =>
+        `  ${c.name}: ${c.status} (exit=${c.exitCode ?? "N/A"}) — ${c.detail}\n    cmd: ${c.command}`,
+    ),
+    "",
+    `DEVELOPMENT GATE: ${devGate}`,
+    `RELEASE GATE: ${releaseGate}`,
+    "",
+    "EVIDENCE POLICY: Only PASS/FAIL/BLOCKED/NOT_RUN/HISTORICAL are permitted; no historical evidence is promoted to PASS.",
   ];
 
-  for (const doc of masterDocs) {
-    const p = path.join(process.cwd(), doc);
-    if (fs.existsSync(p)) {
-      const content = fs.readFileSync(p, 'utf8');
-      if (!content.includes('Quality Gate Validation')) {
-        fs.appendFileSync(p, '\n' + footer, 'utf8');
-        console.log(`Appended gate reference to ${doc}`);
-      }
-    }
-  }
+  const reportPath = path.join(REPORTS_DIR, "BHUMI_QUALITY_GATE_REPORT.md");
+  fs.writeFileSync(reportPath, lines.join("\n") + "\n", "utf8");
+  console.log(lines.join("\n"));
 
-  return {
-    developmentGate: devGate,
-    releaseGate: releaseBlocked,
-    categories,
-  };
+  process.exit(mandatoryFailed ? 1 : 0);
 }
 
-// Execute and output verdicts
-const result = runGate();
-console.log('DEVELOPMENT GATE: ' + result.developmentGate);
-console.log('RELEASE GATE: ' + result.releaseGate);
-process.exit(0);
+runGate();

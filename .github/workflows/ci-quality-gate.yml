@@ -1,0 +1,54 @@
+name: Bhumi Amartya CI Quality Gate
+
+on:
+  pull_request:
+    branches: ["hotfix/**", "release/**", "feat/**", "main"]
+  push:
+    branches: ["hotfix/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck-and-unit-gates:
+    name: TypeScript, ESLint, Security & Blueprint Unit Gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies (main app & billing verifier)
+        run: |
+          npm ci --ignore-scripts
+          npm --prefix services/billing-verifier ci --ignore-scripts
+
+      - name: TypeScript typecheck (app)
+        run: npx tsc --noEmit
+
+      - name: TypeScript typecheck (billing verifier)
+        run: npm --prefix services/billing-verifier run typecheck
+
+      - name: ESLint verification
+        run: npm run lint
+
+      - name: Unit, Blueprint & Anti-Abuse Security Matrix Tests
+        run: |
+          node node_modules/tsx/dist/cli.mjs --import ./tests/helpers/initTestEnv.ts --test \
+            tests/unit/dashboard-design1-invariants.test.ts \
+            tests/unit/build119-bp04-final-gate.test.ts \
+            tests/unit/build119-bp03-d5-page-audit.test.ts \
+            tests/unit/build108-cdi02-hd-advanced-variables.test.ts \
+            tests/unit/version-reconciliation.test.ts \
+            tests/unit/build122-anti-abuse-matrix.test.ts \
+            tests/unit/billing-entitlement-contract.test.ts \
+            tests/unit/billing-entitlement-presentation.test.ts \
+            tests/unit/build121-sprint02-billing-verifier.test.ts \
+            tests/unit/build126r3-entitlement-forgery.test.ts \
+            tests/unit/p0-01-accessguard-hardening.test.ts
