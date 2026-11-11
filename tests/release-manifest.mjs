@@ -115,6 +115,12 @@ export const releaseSuites = [
     evidence: "STATIC_GUARD",
   },
   {
+    name: "VC 123 Live access expiration & fail-closed security contract",
+    file: "tests/unit/vc123-access-expiration-security.test.ts",
+    kind: "env",
+    evidence: "STRONG_UNIT",
+  },
+  {
     name: "Build 106 Step 11 DS-2C1 profile read-error is not 'profile missing'",
     file: "tests/unit/build106-ds2c1-profile-read-error.test.ts",
     kind: "node",

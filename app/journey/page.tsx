@@ -36,7 +36,7 @@ import { getLocalDateKey } from "@/lib/dailyGuidance/dateKey";
 import { MoanaRuntimeDiagnosticsPanel } from "@/components/debug/MoanaRuntimeDiagnosticsPanel";
 import { appendMoanaRuntimeDiagnostic, toDiagnosticError } from "@/lib/innerwork/moanaRuntimeDiagnostics";
 
-export default function JourneyPage() {
+function JourneyPageContent() {
   const auth = useAuth();
   const isEn = false;
   const [todaySummary, setTodaySummary] = useState<CompletionSummary | null>(null);
@@ -135,8 +135,6 @@ export default function JourneyPage() {
   ];
 
   return (
-    <ProtectedRoute>
-      <AccessGuard feature="journey">
         <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
           <AppNav />
           <div className="mx-auto max-w-lg space-y-6">
@@ -309,6 +307,15 @@ export default function JourneyPage() {
             )}
           </div>
         </main>
+  );
+}
+
+
+export default function JourneyPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="journey">
+        <JourneyPageContent />
       </AccessGuard>
     </ProtectedRoute>
   );

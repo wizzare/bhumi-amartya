@@ -254,8 +254,6 @@ export default function ProfileSectionClient({ section }: { section: string }) {
   }, [auditUser, section]);
 
     return (
-    <ProtectedRoute>
-      <AccessGuard feature="profile">
         <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
           <AppNav />
           <div className="mx-auto max-w-lg">
@@ -286,6 +284,15 @@ export default function ProfileSectionClient({ section }: { section: string }) {
             )}
           </div>
         </main>
+  );
+}
+
+
+function ProfileSectionContent({ section }: { section: string }) {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="profile">
+        <ProfileSectionContent section={section} />
       </AccessGuard>
     </ProtectedRoute>
   );

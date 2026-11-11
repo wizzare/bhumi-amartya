@@ -1,3 +1,4 @@
+import { getEntitlementStatus } from "@/lib/billing/entitlementService";
 import { isGaiaAccessOverrideActive } from "@/lib/billing/gaiaAccess";
 import {
   getCurrentBadge,
@@ -145,12 +146,22 @@ export function getTrialDaysLeft(
 }
 
 export function hasFeatureAccess(
-  profile: TrialProfile,
-  feature: FeatureKey,
+  profileOrFeature: TrialProfile | FeatureKey | string,
+  featureOrProfile?: FeatureKey | TrialProfile | string,
   now = new Date(),
   testerRecord?: { badge?: string | null } | null,
 ): boolean {
+  let profile: TrialProfile | null = null;
+  let feature: string | null = null;
+  if (typeof profileOrFeature === "string" && featureOrProfile && typeof featureOrProfile === "object") {
+    feature = profileOrFeature;
+    profile = featureOrProfile as TrialProfile;
+  } else {
+    profile = (profileOrFeature as TrialProfile) || null;
+    feature = (featureOrProfile as string) || null;
+  }
   if (feature === "dashboard") return true;
   if (isGaiaAccessOverrideActive(now)) return true;
-  return hasLifetimeOrActiveAccess(profile, now, testerRecord);
+  if (!profile) return false;
+  return getEntitlementStatus(profile as any, now, testerRecord as any).isPremium;
 }

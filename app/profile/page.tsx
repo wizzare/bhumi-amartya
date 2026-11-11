@@ -165,7 +165,7 @@ function IdentitasJiwaHub({ bazi }: { bazi: EnrichedBaziBlueprint | null }) {
   );
 }
 
-export default function ProfilePage() {
+function ProfilePageContent() {
   const auth = useAuth();
   const trackedRef = useRef(false);
   const activeProfileLoadRef = useRef(0);
@@ -363,8 +363,6 @@ export default function ProfilePage() {
   if (readiness.status === "incomplete") return <main className="min-h-screen bg-[#FCFAF5] px-5 py-8"><AppNav /><p className="mx-auto mt-24 max-w-lg text-center text-[#7B8776]">{isEn ? "Your profile is not ready yet. Please complete your birth data first." : "Profilmu belum siap dibaca. Lengkapi data kelahiran terlebih dahulu."}</p></main>;
 
     return (
-    <ProtectedRoute>
-      <AccessGuard feature="profile">
         <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
           <AppNav />
           <div className="mx-auto max-w-lg space-y-8">
@@ -419,6 +417,15 @@ export default function ProfilePage() {
 
           </div>
         </main>
+  );
+}
+
+
+export default function ProfilePage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="profile">
+        <ProfilePageContent />
       </AccessGuard>
     </ProtectedRoute>
   );

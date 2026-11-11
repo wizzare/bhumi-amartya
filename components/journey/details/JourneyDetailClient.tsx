@@ -145,7 +145,7 @@ function indonesianize(text: string, isEn = false): string {
   return sanitizeNarrative(replaced);
 }
 
-export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
+function JourneyDetailContent({ id }: JourneyDetailClientProps) {
   const auth = useAuth();
   const isEn = isEnlEdition();
   const [history, setHistory] = useState<DailyState[]>([]);
@@ -650,8 +650,6 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
   };
 
   return (
-    <ProtectedRoute>
-      <AccessGuard feature="journey">
       <main className="min-h-screen bg-[#FCFAF5] px-5 py-8 pb-32">
         <AppNav />
         <div className="mx-auto max-w-lg">
@@ -669,6 +667,15 @@ export default function JourneyDetailClient({ id }: JourneyDetailClientProps) {
           <MoanaRuntimeDiagnosticsPanel label={`Journey detail readback: ${id}`} />
         </div>
       </main>
+  );
+}
+
+
+export default function JourneyDetailClient(props: JourneyDetailClientProps) {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="journey">
+        <JourneyDetailContent {...props} />
       </AccessGuard>
     </ProtectedRoute>
   );

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
 import { AccessGuard } from "@/components/auth/AccessGuard";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppNav } from "@/components/navigation/AppNav";
 import { loadLocalJournalEntries } from "@/lib/journal/localJournal";
 import { safeJsonParse } from "@/lib/storage/safeJson";
@@ -79,7 +80,7 @@ function createYoutubeSearchUrl(query: string) {
   return `https://www.youtube.com/results?search_query=${encodeURIComponent(`${query} mudra tutorial`)}`;
 }
 
-export default function MeditationPage() {
+function MeditationPageContent() {
   const isEn = isEnlEdition();
   const router = useRouter();
   const auth = useAuth();
@@ -240,7 +241,6 @@ export default function MeditationPage() {
   const firstName = typeof profile?.fullName === "string" ? profile.fullName.split(" ")[0] : defaultName;
 
   return (
-    <AccessGuard feature="meditation">
     <main className="min-h-screen px-5 py-8 pb-24 bg-[#FCFAF5]">
       <AppNav />
       <div className="max-w-3xl mx-auto space-y-6">
@@ -441,6 +441,16 @@ export default function MeditationPage() {
       </div>
       <InnerworkCelebration isOpen={saved} />
     </main>
-    </AccessGuard>
+  );
+}
+
+
+export default function MeditationPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="meditation">
+        <MeditationPageContent />
+      </AccessGuard>
+    </ProtectedRoute>
   );
 }

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/navigation/AppNav";
 import { FeatureLocked } from "@/components/billing/FeatureLocked";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AccessGuard } from "@/components/auth/AccessGuard";
 import { hasFeatureAccess } from "@/lib/billing/accessControl";
 import { resolveActiveProfile } from "@/lib/auth/resolveActiveProfile";
 import { getFounderTesterRecord, type FounderTesterRecord } from "@/lib/billing/founderTesterSourceOfTruth";
@@ -17,7 +19,7 @@ import {
 import { syncDerivedCacheFromStorageProvider } from "@/lib/storage/syncDerivedCache";
 import { isEnlEdition } from "@/lib/config/edition";
 
-export default function WeeklyReportPage() {
+function WeeklyReportContent() {
   const auth = useAuth();
   const isEn = isEnlEdition();
   const [report, setReport] = useState<WeeklySoulReportOutput | null>(null);
@@ -36,7 +38,12 @@ export default function WeeklyReportPage() {
       }
       const record = await getFounderTesterRecord((resolved.profile as any)?.uid).catch(() => null);
       setTesterRecord(record);
-      setLocked(!hasFeatureAccess(resolved.profile as any, "weeklyReport", new Date(), record));
+      const isPermitted = hasFeatureAccess(resolved.profile as any, "weeklyReport", new Date(), record);
+      setLocked(!isPermitted);
+      if (!isPermitted) {
+        setLoading(false);
+        return;
+      }
       await syncDerivedCacheFromStorageProvider({
         profile: resolved.profile as object,
         source: "weeklyReport",
@@ -170,5 +177,16 @@ export default function WeeklyReportPage() {
         )}
       </div>
     </main>
+  );
+}
+
+
+export default function WeeklyReportPage() {
+  return (
+    <ProtectedRoute>
+      <AccessGuard feature="journey">
+        <WeeklyReportContent />
+      </AccessGuard>
+    </ProtectedRoute>
   );
 }

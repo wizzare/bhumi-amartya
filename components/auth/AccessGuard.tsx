@@ -31,6 +31,8 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
   const [resolvedProfile, setResolvedProfile] = useState<UserProfile | null>(null);
   const [resolveUnavailable, setResolveUnavailable] = useState(false);
   const [resolveAttempt, setResolveAttempt] = useState(0);
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+  const [clockTick, setClockTick] = useState(0);
   const reconciledUidRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -56,6 +58,9 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     let cancelled = false;
 
     reconciledUidRef.current = authUid;
+    setHasAccess(false);
+    setCheckingAccess(true);
+    setTesterRecord(null);
     setCheckingProfile(true);
     setResolveUnavailable(false);
     void resolveActiveProfile(currentAuth).then((resolved) => {
@@ -89,8 +94,9 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     let cancelled = false;
     async function checkAccess() {
       // 1. Synchronous Firestore entitlement check
-      const syncAccess = getEntitlementStatus(userProfile || null, new Date(), testerRecord).isPremium;
-      if (syncAccess) {
+      const syncStatus = getEntitlementStatus(userProfile || null, new Date(), testerRecord);
+      setExpiresAt(syncStatus.expiresAt ?? null);
+      if (syncStatus.isPremium) {
         if (!cancelled) {
           setHasAccess(true);
           setCheckingAccess(false);
@@ -130,7 +136,42 @@ export function AccessGuard({ children, feature }: AccessGuardProps) {
     return () => {
       cancelled = true;
     };
-  }, [checkingProfile, userProfile, testerRecord]);
+  }, [checkingProfile, userProfile, testerRecord, clockTick]);
+
+  // Real-time wall-clock timer & visibility/focus listener for instant expiration
+  useEffect(() => {
+    if (!hasAccess || !expiresAt) return;
+
+    const msUntilExpiry = expiresAt.getTime() - Date.now();
+    if (msUntilExpiry <= 0) {
+      setClockTick((t) => t + 1);
+      return;
+    }
+
+    const delay = Math.min(Math.max(100, msUntilExpiry), 2_147_483_647);
+    const timer = setTimeout(() => {
+      setClockTick((t) => t + 1);
+    }, delay);
+
+    const onVisibleOrFocus = () => {
+      if (Date.now() >= expiresAt.getTime()) {
+        setClockTick((t) => t + 1);
+      }
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("focus", onVisibleOrFocus);
+      document.addEventListener("visibilitychange", onVisibleOrFocus);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (typeof window !== "undefined") {
+        window.removeEventListener("focus", onVisibleOrFocus);
+        document.removeEventListener("visibilitychange", onVisibleOrFocus);
+      }
+    };
+  }, [hasAccess, expiresAt]);
 
   if (
     (process.env.NODE_ENV === "development" &&
