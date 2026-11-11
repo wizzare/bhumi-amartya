@@ -30,11 +30,11 @@ function test(label: string, condition: boolean, detail?: string) {
 const versionContent = readFileSync(resolve(__dirname, "../../src/lib/version.ts"), "utf8");
 const layoutContent = readFileSync(resolve(__dirname, "../../app/layout.tsx"), "utf8");
 
-test("APP_VERSION is canonical 5.0.22", APP_VERSION === "5.0.22", `got "${APP_VERSION}"`);
+test("APP_VERSION is canonical 5.0.23", APP_VERSION === "5.0.23", `got "${APP_VERSION}"`);
 test("APP_VERSION derives from CURRENT_VERSION_NAME", APP_VERSION === CURRENT_VERSION_NAME);
 test(
-  "RELEASE_NAME is canonical V5 Build 122",
-  RELEASE_NAME === "BHUMI AMARTYA V5 BUILD 122",
+  "RELEASE_NAME is canonical V5 Build 123",
+  RELEASE_NAME === "BHUMI AMARTYA V5 BUILD 123",
   `got "${RELEASE_NAME}"`,
 );
 test(
@@ -58,18 +58,18 @@ test(
 test("root layout has no stale 4.4.5", !layoutContent.includes("4.4.5"));
 test("root layout has no stale V4 BUILD 82", !layoutContent.includes("V4 BUILD 82"));
 
-// 2. Canonical BuildInfo is Build 122.
-test("CURRENT_VERSION_NAME is 5.0.22", CURRENT_VERSION_NAME === "5.0.22");
-test("CURRENT_VERSION_CODE is 122", CURRENT_VERSION_CODE === 122);
-test("CURRENT_BUILD_NUMBER is 122", CURRENT_BUILD_NUMBER === "122");
+// 2. Canonical BuildInfo is Build 123.
+test("CURRENT_VERSION_NAME is 5.0.23", CURRENT_VERSION_NAME === "5.0.23");
+test("CURRENT_VERSION_CODE is 123", CURRENT_VERSION_CODE === 123);
+test("CURRENT_BUILD_NUMBER is 123", CURRENT_BUILD_NUMBER === "123");
 
 // 3. Android release metadata is Build 122 and matches BuildInfo.
 const gradleContent = readFileSync(resolve(__dirname, "../../android/app/build.gradle"), "utf8");
 const androidVersionName = gradleContent.match(/versionName\s*"([^"]+)"/)?.[1];
 const androidVersionCode = gradleContent.match(/versionCode\s+(\d+)/)?.[1];
 
-test("android versionName is 5.0.22", androidVersionName === "5.0.22", `got "${androidVersionName}"`);
-test("android versionCode is 122", androidVersionCode === "122", `got "${androidVersionCode}"`);
+test("android versionName is 5.0.23", androidVersionName === "5.0.23", `got "${androidVersionName}"`);
+test("android versionCode is 123", androidVersionCode === "123", `got "${androidVersionCode}"`);
 test("Android and display version names agree", androidVersionName === APP_VERSION);
 test("Android versionCode matches canonical build number", androidVersionCode === CURRENT_BUILD_NUMBER);
 

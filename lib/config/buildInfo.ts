@@ -1,8 +1,8 @@
 import { Capacitor } from "@capacitor/core";
 
-export const CURRENT_VERSION_NAME = "5.0.22";
-export const CURRENT_VERSION_CODE = 122;
-export const CURRENT_BUILD_NUMBER = "122";
+export const CURRENT_VERSION_NAME = "5.0.23";
+export const CURRENT_VERSION_CODE = 123;
+export const CURRENT_BUILD_NUMBER = "123";
 export const INTERNAL_TESTING_TRACK = "Internal Testing";
 
 export type BuildInfo = {
